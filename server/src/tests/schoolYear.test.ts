@@ -17,7 +17,7 @@ import {
 	getEnrollmentPhase,
 } from '../features/settings/enrollment-gate.service.js';
 
-// Test Helper: Create a mock SchoolYear object
+/// Test Helper: Create a mock SchoolYear object
 function createMockSchoolYear(overrides: Partial<any> = {}): any {
 	return {
 		id: 1,
@@ -26,11 +26,9 @@ function createMockSchoolYear(overrides: Partial<any> = {}): any {
 		isActive: true,
 		classOpeningDate: new Date('2026-06-01T12:00:00.000Z'),
 		classEndDate: new Date('2027-03-31T12:00:00.000Z'),
-		earlyRegOpenDate: new Date('2026-01-31T12:00:00.000Z'),
-		earlyRegCloseDate: new Date('2026-02-27T12:00:00.000Z'),
 		enrollOpenDate: new Date('2026-05-25T12:00:00.000Z'),
 		enrollCloseDate: new Date('2026-05-31T12:00:00.000Z'),
-		isManualOverrideOpen: false,
+		portalControl: 'AUTO',
 		clonedFromId: null,
 		createdAt: new Date(),
 		...overrides,
@@ -83,7 +81,7 @@ console.assert(feb2024.getUTCDate() <= 29, '❌ Should handle leap year');
 console.log('  ✅ PASSED\n');
 
 // ============================================================================
-// TEST SUITE 2: School Year Schedule Derivation
+// TEST SUITE 2: Academic Year Schedule Derivation
 // ============================================================================
 
 console.log('\n🧪 TEST SUITE 2: School Year Schedule Derivation\n');
@@ -96,10 +94,6 @@ const schedule2026 = deriveSchoolYearScheduleFromOpeningDate(
 console.log(`  Year Label: ${schedule2026.yearLabel}`);
 console.log(`  Class Opening: ${schedule2026.classOpeningDate.toISOString()}`);
 console.log(`  Class End: ${schedule2026.classEndDate.toISOString()}`);
-console.log(`  Early Reg Open: ${schedule2026.earlyRegOpenDate.toISOString()}`);
-console.log(
-	`  Early Reg Close: ${schedule2026.earlyRegCloseDate.toISOString()}`,
-);
 console.log(`  Enroll Open: ${schedule2026.enrollOpenDate.toISOString()}`);
 console.log(`  Enroll Close: ${schedule2026.enrollCloseDate.toISOString()}`);
 
@@ -161,40 +155,20 @@ console.log('\n🧪 TEST SUITE 3: Enrollment Gate Logic\n');
 
 // Test 3.1: Manual Override
 console.log('Test 3.1: Manual Override - Should always be open');
-const overrideYear = createMockSchoolYear({ isManualOverrideOpen: true });
+const overrideYear = createMockSchoolYear({ portalControl: 'FORCE_OPEN_PHASE_2' });
 console.assert(
 	isEnrollmentOpen(overrideYear) === true,
 	'❌ Should be open with override',
 );
 console.assert(
-	getEnrollmentPhase(overrideYear) === 'OVERRIDE',
-	'❌ Phase should be OVERRIDE',
-);
-console.log('  ✅ PASSED\n');
-
-// Test 3.2: Early Registration Phase (Active)
-console.log('Test 3.2: Early Registration Phase - Currently active');
-const earlyRegYear = createMockSchoolYear({
-	earlyRegOpenDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-	earlyRegCloseDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-	enrollOpenDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-	enrollCloseDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000), // 37 days from now
-});
-console.assert(
-	isEnrollmentOpen(earlyRegYear) === true,
-	'❌ Should be open during early reg',
-);
-console.assert(
-	getEnrollmentPhase(earlyRegYear) === 'EARLY_REGISTRATION',
-	'❌ Phase should be EARLY_REGISTRATION',
+	getEnrollmentPhase(overrideYear) === 'REGULAR_ENROLLMENT',
+	'❌ Phase should be REGULAR_ENROLLMENT',
 );
 console.log('  ✅ PASSED\n');
 
 // Test 3.3: Regular Enrollment Phase (Active)
 console.log('Test 3.3: Regular Enrollment Phase - Currently active');
 const regularEnrollYear = createMockSchoolYear({
-	earlyRegOpenDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
-	earlyRegCloseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
 	enrollOpenDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
 	enrollCloseDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
 });
@@ -211,8 +185,6 @@ console.log('  ✅ PASSED\n');
 // Test 3.4: Closed (Between phases)
 console.log('Test 3.4: Closed - Between phases');
 const closedYear = createMockSchoolYear({
-	earlyRegOpenDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
-	earlyRegCloseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
 	enrollOpenDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
 	enrollCloseDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000), // 37 days from now
 });
@@ -229,8 +201,6 @@ console.log('  ✅ PASSED\n');
 // Test 3.5: Closed (After all phases)
 console.log('Test 3.5: Closed - After all phases');
 const pastYear = createMockSchoolYear({
-	earlyRegOpenDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-	earlyRegCloseDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
 	enrollOpenDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
 	enrollCloseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
 });
@@ -247,8 +217,6 @@ console.log('  ✅ PASSED\n');
 // Test 3.6: Null dates handling
 console.log('Test 3.6: Null dates - Should be closed');
 const nullDatesYear = createMockSchoolYear({
-	earlyRegOpenDate: null,
-	earlyRegCloseDate: null,
 	enrollOpenDate: null,
 	enrollCloseDate: null,
 });
@@ -301,21 +269,13 @@ console.assert(
 );
 console.log('  ✅ PASSED\n');
 
-// Test 5.2: Enrollment phases overlap prevention
-console.log('Test 5.2: Phases should not overlap');
-const testSchedule = deriveSchoolYearScheduleFromOpeningDate(
-	new Date('2026-06-01'),
-);
-const earlyRegEnd = testSchedule.earlyRegCloseDate.getTime();
-const regularEnrollStart = testSchedule.enrollOpenDate.getTime();
-console.assert(
-	earlyRegEnd < regularEnrollStart,
-	'❌ Early reg should end before regular enrollment',
-);
-console.log('  ✅ PASSED\n');
+
 
 // Test 5.3: Class opening before enrollment close
 console.log('Test 5.3: Enrollment should close before classes open');
+const testSchedule = deriveSchoolYearScheduleFromOpeningDate(
+	new Date('2026-06-01'),
+);
 const enrollClose = testSchedule.enrollCloseDate.getTime();
 const classOpen = testSchedule.classOpeningDate.getTime();
 console.assert(

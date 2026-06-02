@@ -23,11 +23,7 @@ function toManilaDateToken(date: Date): number {
 }
 
 export function isEnrollmentOpen(year: SchoolYear): boolean {
-  if (
-    year.portalControl === "FORCE_OPEN_PHASE_1" ||
-    year.portalControl === "FORCE_OPEN_PHASE_2"
-  )
-    return true;
+  if (year.portalControl === "FORCE_OPEN_PHASE_2") return true;
   if (year.portalControl === "FORCE_CLOSE_ALL") return false;
 
   const todayToken = toManilaDateToken(new Date());
@@ -38,13 +34,7 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
     todayToken >= toManilaDateToken(year.enrollOpenDate) &&
     todayToken <= toManilaDateToken(year.enrollCloseDate);
 
-  const inPhase1 =
-    year.earlyRegOpenDate &&
-    year.earlyRegCloseDate &&
-    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
-    todayToken <= toManilaDateToken(year.earlyRegCloseDate);
-
-  return Boolean(inPhase1 || inPhase2);
+  return Boolean(inPhase2);
 }
 
 /**
@@ -72,28 +62,14 @@ export function isRegularEnrollmentWindowOpen(year: SchoolYear): boolean {
 export function getEnrollmentPhase(
   year: SchoolYear,
 ):
-  | "EARLY_REGISTRATION"
   | "REGULAR_ENROLLMENT"
   | "CLOSED"
-  | "OVERRIDE"
   | "BOSY_LOCKED" {
   if (year.status === "BOSY_LOCKED") return "BOSY_LOCKED";
-  if (year.portalControl === "FORCE_OPEN_PHASE_1") return "EARLY_REGISTRATION";
   if (year.portalControl === "FORCE_OPEN_PHASE_2") return "REGULAR_ENROLLMENT";
   if (year.portalControl === "FORCE_CLOSE_ALL") return "CLOSED";
 
   const todayToken = toManilaDateToken(new Date());
-
-  // Keep Early Registration active through its inclusive close date,
-  // even when Phase 2 opens on the same calendar day.
-  if (
-    year.earlyRegOpenDate &&
-    year.earlyRegCloseDate &&
-    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
-    todayToken <= toManilaDateToken(year.earlyRegCloseDate)
-  ) {
-    return "EARLY_REGISTRATION";
-  }
 
   if (
     year.enrollOpenDate &&

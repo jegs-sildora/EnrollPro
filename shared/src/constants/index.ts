@@ -264,12 +264,6 @@ export const LearnerTypeEnum = z.enum([
 export const ApplicantTypeEnum = z.enum([
   "REGULAR",
   "LATE_ENROLLEE",
-  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-  "SPECIAL_PROGRAM_IN_THE_ARTS",
-  "SPECIAL_PROGRAM_IN_SPORTS",
-  "SPECIAL_PROGRAM_IN_JOURNALISM",
-  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
 export const AdmissionChannelEnum = z.enum(["ONLINE", "F2F"]);
 export const DocumentStatusEnum = z.enum([
@@ -298,21 +292,7 @@ export const DocumentTypeEnum = z.enum([
 export const AssessmentPeriodEnum = z.enum(["BOSY", "EOSY"]);
 export const AddressTypeEnum = z.enum(["CURRENT", "PERMANENT"]);
 export const FamilyRelationshipEnum = z.enum(["MOTHER", "FATHER", "GUARDIAN"]);
-export const AssessmentKindEnum = z.enum([
-  "INTERVIEW",
-  "QUALIFYING_EXAMINATION",
-  "PRELIMINARY_EXAMINATION",
-  "FINAL_EXAMINATION",
-  "GENERAL_ADMISSION_TEST",
-  "TALENT_AUDITION",
-  "PHYSICAL_FITNESS_TEST",
-  "SPORTS_SKILLS_TRYOUT",
-  "SKILLS_ASSESSMENT",
-  "STANDARDIZED_ADMISSION_TOOL",
-  "APTITUDE_TEST",
-  "INTEREST_INVENTORY",
-]);
-export const ScpOptionTypeEnum = z.enum(["ART_FIELD", "LANGUAGE", "SPORT"]);
+
 export const LastSchoolTypeEnum = z.enum([
   "PUBLIC",
   "PRIVATE",
@@ -777,8 +757,8 @@ export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
   },
 ] as const;
 
-// ─── DO 017 s.2025 Early Registration Enums ─────────────
-export const EarlyRegGradeLevelEnum = z.enum(["7", "8", "9", "10"]);
+
+
 export const DisabilityTypeEnum = z.enum([
   "VISUAL",
   "HEARING",
@@ -791,21 +771,6 @@ export const DisabilityTypeEnum = z.enum([
   "CHRONIC_ILLNESS",
   "MULTIPLE",
 ]);
-export const EarlyRegistrationStatusEnum = z.enum([
-  "DRAFT",
-  "SUBMITTED",
-  "VERIFIED",
-  "LINKED",
-]);
-
-export const ScpTypeEnum = z.enum([
-  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-  "SPECIAL_PROGRAM_IN_THE_ARTS",
-  "SPECIAL_PROGRAM_IN_SPORTS",
-  "SPECIAL_PROGRAM_IN_JOURNALISM",
-  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
-]);
 
 export const SectioningMethodEnum = z.enum([
   "BATCH_ALGORITHM",
@@ -814,192 +779,17 @@ export const SectioningMethodEnum = z.enum([
   "TRANSFER",
 ]);
 
-// ─── Capacity Defaults ──────────────────────────────────
 export const DEFAULT_MAX_CAPACITY_REGULAR = 45;
-export const DEFAULT_MAX_CAPACITY_SCP = 35;
 
-// â"€â"€â"€ Types derived from enums â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-export type AssessmentKind = z.infer<typeof AssessmentKindEnum>;
-export type ScpType = z.infer<typeof ScpTypeEnum>;
 export type ApplicationStatus = z.infer<typeof ApplicationStatusEnum>;
 export type DisabilityType = z.infer<typeof DisabilityTypeEnum>;
-export type EarlyRegGradeLevel = z.infer<typeof EarlyRegGradeLevelEnum>;
-export type EarlyRegistrationStatus = z.infer<
-  typeof EarlyRegistrationStatusEnum
->;
 export type ReadingProfileLevel = z.infer<typeof ReadingProfileLevelEnum>;
 export type SectioningMethod = z.infer<typeof SectioningMethodEnum>;
 export type TrackingProgramType = z.infer<typeof TrackingProgramTypeEnum>;
 export type TrackingStatus = z.infer<typeof TrackingStatusEnum>;
 export type TrackingCurrentStep = z.infer<typeof TrackingCurrentStepEnum>;
 
-// ─── Assessment Kind Labels ─────────────────────────────
-export const ASSESSMENT_KIND_LABELS: Record<AssessmentKind, string> = {
-  INTERVIEW: "Interview",
-  QUALIFYING_EXAMINATION: "Qualifying Examination",
-  PRELIMINARY_EXAMINATION: "Preliminary Examination",
-  FINAL_EXAMINATION: "Final Examination",
-  GENERAL_ADMISSION_TEST: "General Admission Test",
-  TALENT_AUDITION: "Talent Audition / Performance",
-  PHYSICAL_FITNESS_TEST: "Physical Fitness Test (PFT)",
-  SPORTS_SKILLS_TRYOUT: "Sports Skills Demonstration",
-  SKILLS_ASSESSMENT: "Skills Assessment",
-  STANDARDIZED_ADMISSION_TOOL: "Standardized Admission Tool",
-  APTITUDE_TEST: "Aptitude Test",
-  INTEREST_INVENTORY: "Interest Inventory / Interview",
-};
 
-// ─── Default DepEd SCP Assessment Pipelines ─────────────
-export interface ScpProgramStepDef {
-  stepOrder: number;
-  kind: AssessmentKind;
-  label: string;
-  description: string;
-  isRequired: boolean;
-}
-
-// ─── STE Pipeline Variants ──────────────────────────────
-export const STE_ONE_PHASE_PIPELINE: ScpProgramStepDef[] = [
-  {
-    stepOrder: 1,
-    kind: "QUALIFYING_EXAMINATION",
-    label: "Qualifying Examination",
-    description:
-      "Single comprehensive written exam: English, Science, Mathematics, critical thinking, and problem-solving",
-    isRequired: true,
-  },
-  {
-    stepOrder: 2,
-    kind: "INTERVIEW",
-    label: "Interview",
-    description:
-      "Face-to-face or virtual interview: interest, mental alertness, readiness for rigorous curriculum",
-    isRequired: true,
-  },
-];
-
-export const STE_TWO_PHASE_PIPELINE: ScpProgramStepDef[] = [
-  {
-    stepOrder: 1,
-    kind: "PRELIMINARY_EXAMINATION",
-    label: "Preliminary Examination (ESM)",
-    description:
-      "Written screening test: English, Science, Mathematics — determines eligibility for final exam",
-    isRequired: true,
-  },
-  {
-    stepOrder: 2,
-    kind: "FINAL_EXAMINATION",
-    label: "Final Examination",
-    description:
-      "Comprehensive written exam: 21st-century skills, critical thinking, and advanced problem-solving",
-    isRequired: true,
-  },
-  {
-    stepOrder: 3,
-    kind: "INTERVIEW",
-    label: "Interview",
-    description:
-      "Face-to-face or virtual interview: interest, mental alertness, readiness for rigorous curriculum",
-    isRequired: true,
-  },
-];
-
-/** Return the correct STE pipeline based on the two-phase toggle. */
-export function getSteSteps(isTwoPhase: boolean): ScpProgramStepDef[] {
-  return isTwoPhase ? STE_TWO_PHASE_PIPELINE : STE_ONE_PHASE_PIPELINE;
-}
-
-export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: STE_ONE_PHASE_PIPELINE,
-  SPECIAL_PROGRAM_IN_THE_ARTS: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description: "Written exam covering general knowledge and aptitude",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Assess passion for the arts and commitment to the 4-year program",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_SPORTS: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description: "Written exam covering general knowledge and aptitude",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description: "Assess discipline, sportsmanship, and parental support",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_JOURNALISM: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written exam: English and Filipino proficiency, grammar, basic news writing",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Screening committee: communication skills and ethical awareness",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written test assessing linguistic aptitude and readiness for foreign language acquisition",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Validate documents and gauge commitment to the extra hours required",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written exam: inclination towards IT, Agriculture, Home Economics, or Industrial Arts",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Align student interests with specific shop offerings (specializations)",
-      isRequired: true,
-    },
-  ],
-};
 
 // ─── TLE Specialization Constants ───────────────────────
 /** Grade displayOrder values that require a TLE program selection */

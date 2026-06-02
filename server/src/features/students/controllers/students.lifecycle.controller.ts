@@ -59,7 +59,6 @@ async function findStudentOrThrow(
       learner: true,
       gradeLevel: true,
       schoolYear: true,
-      programDetail: true,
       enrollmentRecord: {
         include: {
           section: {

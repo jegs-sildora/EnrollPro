@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Link } from "react-router";
-import { ArrowRight, ExternalLink } from "lucide-react";
+
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { StatusBadge } from "./StatusBadge";
 import { ActionButtons } from "./ActionButtons";
-import { SCPAssessmentBlock } from "./SCPAssessmentBlock";
 import { StatusTimeline } from "./StatusTimeline";
 import {
   PersonalInfo,
@@ -34,11 +32,11 @@ interface Props {
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onScheduleExam: () => void;
-  onRecordResult: () => void;
-  onPass: () => void;
-  onFail: () => void;
-  onOfferRegular: () => void;
+  onScheduleExam?: () => void;
+  onRecordResult?: () => void;
+  onPass?: () => void;
+  onFail?: () => void;
+  onOfferRegular?: () => void;
   onTemporarilyEnroll: () => void;
   onAssignLrn?: () => Promise<void> | void;
   onEnroll?: () => Promise<void> | void;
@@ -47,15 +45,9 @@ interface Props {
   onRecordStepResult?: (step: AssessmentStep) => void;
   onSetProfileLock?: (lock: boolean) => Promise<void> | void;
   onMarkVerified?: () => Promise<void> | void;
-  onSaveStepResult?: (
-    stepOrder: number,
-    kind: string,
-    score: number,
-    cutoffScore: number | null,
-  ) => Promise<void>;
+
   showActions?: boolean;
   showRawJson?: boolean;
-  pipelineProcessHref?: string;
 }
 
 export function ApplicationDetailPanel({
@@ -77,10 +69,8 @@ export function ApplicationDetailPanel({
   onRecordStepResult,
   onSetProfileLock,
   onMarkVerified,
-  onSaveStepResult,
   showActions = true,
   showRawJson = false,
-  pipelineProcessHref,
 }: Props) {
   const {
     data: applicant,
@@ -249,41 +239,6 @@ export function ApplicationDetailPanel({
           </div>
         </div>
 
-        {/* SCP Assessment Block (Only if not regular) */}
-        <SCPAssessmentBlock
-          applicant={applicant}
-          onSaveStepResult={
-            showActions && onSaveStepResult
-              ? async (stepOrder, kind, score, cutoffScore) => {
-                  await onSaveStepResult(stepOrder, kind, score, cutoffScore);
-                  refetch();
-                }
-              : undefined
-          }
-          onSubmitInterviewResult={
-            showActions && onSaveStepResult
-              ? async (score) => {
-                  const interviewStep = applicant.assessmentSteps?.find(
-                    (s) => s.kind === "INTERVIEW",
-                  );
-                  if (interviewStep) {
-                    await onSaveStepResult(
-                      interviewStep.stepOrder,
-                      "INTERVIEW",
-                      score,
-                      interviewStep.cutoffScore,
-                    );
-                    refetch();
-                  }
-                }
-              : undefined
-          }
-          interviewScore={
-            applicant.assessmentSteps?.find((s) => s.kind === "INTERVIEW")
-              ?.score
-          }
-        />
-
         {/* Documentary Checklist */}
         <RequirementChecklist
           applicantId={applicant.id}
@@ -327,30 +282,9 @@ export function ApplicationDetailPanel({
           </div>
         )}
 
-        {pipelineProcessHref && (
-          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-            <p className="text-[11px] sm:text-xs uppercase  text-foreground">
-              Processing Needed?
-            </p>
-            <Link
-              to={pipelineProcessHref}
-              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-              onClick={onClose}>
-              Go to Registration Pipeline to Process
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        )}
 
-        {/* Link to full details */}
-        <div className="py-2 border-t mt-4 flex justify-center">
-          <Link
-            to={`/monitoring/early-registration/${applicant.id}`}
-            className="text-[hsl(var(--accent-link))] hover:underline flex items-center gap-1.5 text-xs sm:text-sm font-bold"
-            onClick={onClose}>
-            View Full Details <ExternalLink className="h-3 w-3" />
-          </Link>
-        </div>
+
+
       </div>
 
       {showActions && (

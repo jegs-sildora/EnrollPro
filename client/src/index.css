@@ -1,17 +1,25 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 
   --animate-modal-in: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-modal-out: modal-out 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-in: fade-in 0.2s ease-out forwards;
   --animate-out: fade-out 0.15s ease-in forwards;
+
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-slide-up: slideUp 0.5s ease-out forwards;
+  --animate-slide-in-right: slideInRight 0.4s ease-out forwards;
+  --animate-scale-in: scaleIn 0.3s ease-out forwards;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-gradient: gradient-shift 8s ease infinite;
 
   @keyframes modal-in {
     from {
@@ -53,6 +61,58 @@
     }
   }
 
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from { 
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+    }
+  }
+
   @keyframes shimmer {
     from {
       background-position: 200% 0;
@@ -61,15 +121,21 @@
       background-position: -200% 0;
     }
   }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 }
 
 :root {
   /* ─── PERMANENT MAIN LAYER — never overridden by logo extraction ─── */
-  --background: 0 0% 100%; /* #F5F5F5 */
+  --background: 220 15% 99%;
   --foreground: 222 47% 11%;
-  --muted: 220 14% 96%;
+  --muted: 220 14% 97%;
   --muted-foreground: 215 16% 47%;
-  --border: 220 13% 91%;
+  --border: 220 13% 92%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
@@ -77,22 +143,22 @@
   --input: 220 13% 91%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
+  --secondary: 220 14% 97%;
   --secondary-foreground: 222 47% 11%;
 
-  /* ─── DEFAULT ACCENT LAYER — blue; replaced on logo upload ─── */
-  --accent: 221 83% 53%;
+  /* ─── DEFAULT ACCENT LAYER — emerald-600; replaced on logo upload ─── */
+  --accent: 162 76% 40%;
   --accent-foreground: 0 0% 100%;
-  --accent-muted: 213 97% 94%;
-  --accent-ring: 221 83% 53%;
+  --accent-muted: 153 72% 94%;
+  --accent-ring: 162 76% 40%;
 
   /* shadcn/ui semantic aliases — point to accent tokens */
   --primary: var(--accent);
   --primary-foreground: var(--accent-foreground);
   --ring: var(--accent-ring);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --sidebar-background: 0 0% 94%; /* #EBEBEB */
+  --sidebar-background: 0 0% 94%;
   --sidebar-foreground: 222 47% 11%;
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: var(--accent-foreground);
@@ -100,10 +166,123 @@
   --sidebar-accent-foreground: 222 47% 11%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: var(--accent-ring);
+
+  /* Modern color palette tokens from latest-smart */
+  --text: #64748b;
+  --text-h: #0f172a;
+  --bg: #fafbfc;
+  --border-smart: oklch(0.922 0 0);
+  --code-bg: #f1f5f9;
+  --accent-smart: oklch(0.97 0 0);
+  --accent-bg: rgba(16, 185, 129, 0.08);
+  --accent-border: rgba(16, 185, 129, 0.4);
+  --social-bg: rgba(241, 245, 249, 0.8);
+  
+  /* Premium shadow system */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.15);
+  
+  /* Emerald accent shadows */
+  --shadow-emerald: 0 10px 30px -5px rgba(16, 185, 129, 0.25);
+  --shadow-emerald-sm: 0 4px 14px -3px rgba(16, 185, 129, 0.2);
+
+  letter-spacing: -0.01em;
+  color-scheme: light;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --border: 217.2 32.6% 17.5%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --input: 217.2 32.6% 17.5%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 156 72% 54%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --accent-muted: 217.2 32.6% 17.5%;
+  --accent-ring: 156 72% 54%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --ring: 212.7 26.8% 83.9%;
+  
+  --sidebar-background: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 156 72% 54%;
+  --sidebar-primary-foreground: 222.2 84% 4.9%;
+  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-ring: 212.7 26.8% 83.9%;
+
+  --text: #94a3b8;
+  --text-h: #f1f5f9;
+  --bg: #0f172a;
+  --border-smart: #1e293b;
+  --code-bg: #1e293b;
+  --accent-smart: #34d399;
+  --accent-bg: rgba(52, 211, 153, 0.12);
+  --accent-border: rgba(52, 211, 153, 0.4);
+  --social-bg: rgba(30, 41, 59, 0.8);
+  --shadow-glow: 0 0 40px rgba(52, 211, 153, 0.15);
+
+  color-scheme: dark;
 }
 
 @theme inline {
-  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -131,24 +310,13 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* ─── Sileo toast: WCAG contrast against accent fill ───────────────────────────
-   Sileo's state colors (--sileo-state-success, etc.) flow into --_c → --sileo-tone → color.
-   Overriding them at the viewport level ensures ALL internal elements
-   (badge icons, title text, action buttons) inherit the correct foreground color.
-   Sileo's own CSS already handles [data-sileo-description] via data-theme.
-─────────────────────────────────────────────────────────────────────────────── */
-
+/* ─── Sileo toast: WCAG contrast against accent fill ─────────────────────────── */
 [data-sileo-viewport] {
   z-index: 10001 !important;
 }
 
-/* Dark accent fill (theme="light") → white internal elements */
 [data-sileo-viewport][data-theme="light"] {
   --sileo-state-success: rgba(255, 255, 255, 1);
   --sileo-state-loading: rgba(255, 255, 255, 1);
@@ -163,7 +331,6 @@
   color: rgba(255, 255, 255, 1) !important;
 }
 
-/* Light accent fill (theme="dark") → black internal elements */
 [data-sileo-viewport][data-theme="dark"] {
   --sileo-state-success: rgba(0, 0, 0, 1);
   --sileo-state-loading: rgba(0, 0, 0, 1);
@@ -183,20 +350,57 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-bold bg-background text-foreground;
+    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #fafbfc 0%, hsl(var(--primary) / 0.03) 50%, hsl(var(--primary) / 0.06) 100%);
+    font-family: var(--font-sans);
+    color: var(--text);
+  }
+  .dark body {
+    background: linear-gradient(135deg, #0f172a 0%, hsl(var(--primary) / 0.08) 50%, hsl(var(--primary) / 0.04) 100%);
   }
   html {
     @apply font-sans;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+  }
+  h1 {
+    font-size: clamp(1.875rem, 4vw, 2.5rem);
+    font-weight: 700;
+  }
+  h2 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  }
+  h3 {
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
+  }
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+  code,
+  .counter {
+    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+    display: inline-flex;
+    border-radius: 6px;
+    color: var(--text-h);
+    font-size: 0.875em;
+  }
+  code {
+    padding: 0.25em 0.5em;
+    background: var(--code-bg);
+  }
 }
 
 @layer utilities {
-  /* Global remap: treat all `font-normal` usage as medium app-wide. */
   .font-normal {
     @apply font-bold;
   }
 
-  /* Selected calendar day: lock bg/text to accent, suppress any hover change */
   .rdp-day_button[aria-selected="true"]:hover,
   [data-selected] button:hover,
   button[aria-selected="true"]:hover {
@@ -205,12 +409,12 @@
   }
 
   .scrollbar-thin {
-    scrollbar-width: auto; /* Use auto for better visibility on Windows */
+    scrollbar-width: auto;
     scrollbar-color: hsl(var(--primary)) hsl(var(--muted));
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    height: 10px; /* Thicker scrollbar */
+    height: 10px;
     width: 10px;
     display: block !important;
   }
@@ -229,4 +433,154 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.8);
   }
+
+  /* Smooth scrollbar from latest-smart */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  /* Glass morphism utilities */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Premium card styles */
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Print Styles for School Forms */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .print-hide {
+    display: none !important;
+  }
+  
+  .print-form {
+    box-shadow: none !important;
+    border: 2px solid #000 !important;
+    margin: 0 !important;
+    padding: 0.5in !important;
+    max-width: 100% !important;
+  }
+  
+  .print-form * {
+    color: black !important;
+    background: white !important;
+  }
+  
+  .print-form table {
+    border-collapse: collapse !important;
+  }
+  
+  .print-form table td,
+  .print-form table th {
+    border: 1px solid #000 !important;
+    padding: 4px !important;
+  }
+  
+  .print-form .bg-gray-200,
+  .print-form .bg-gray-100,
+  .print-form .bg-gray-50 {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  @page {
+    size: legal;
+    margin: 0;
+  }
+}
+
+/* Override dark mode for school forms to ensure text visibility */
+.print-form h1,
+.print-form h2,
+.print-form h3,
+.print-form h4,
+.print-form h5,
+.print-form h6 {
+  color: #111827 !important;
+}
+
+.print-form p,
+.print-form span,
+.print-form td,
+.print-form th,
+.print-form label,
+.print-form div {
+  color: inherit !important;
 }

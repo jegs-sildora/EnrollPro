@@ -100,7 +100,6 @@ export function createSchoolYearLifecycleController(
       include: {
         _count: {
           select: {
-            earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
           },
@@ -122,7 +121,6 @@ export function createSchoolYearLifecycleController(
     }
 
     if (
-      year._count.earlyRegistrationApplications > 0 ||
       year._count.enrollmentApplications > 0 ||
       year._count.enrollmentRecords > 0
     ) {

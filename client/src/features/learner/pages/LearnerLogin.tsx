@@ -159,7 +159,7 @@ export function LookupForm() {
               <Input
                 id="lrn"
                 placeholder="e.g., 101234567890"
-                className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold"
+                className="h-12 text-base bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 focus-visible:ring-offset-0 font-bold rounded-xl transition-all duration-200"
                 value={lrn}
                 onChange={(e) =>
                   setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
@@ -180,7 +180,7 @@ export function LookupForm() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 pr-10 font-bold"
+                  className="h-12 text-base bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 focus-visible:ring-offset-0 pr-10 font-bold rounded-xl transition-all duration-200"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
@@ -213,7 +213,7 @@ export function LookupForm() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-base font-black bg-primary text-primary-foreground hover:bg-primary/90 hover:-translate-y-0.5 shadow-lg transition-all"
+              className="w-full h-12 text-base font-black bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground hover:-translate-y-0.5 shadow-emerald-sm hover:shadow-emerald transition-all duration-300 rounded-xl"
               disabled={!isFormValid || loading}>
               {loading ? (
                 <>

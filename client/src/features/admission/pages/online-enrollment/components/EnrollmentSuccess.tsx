@@ -32,7 +32,6 @@ type EnrollmentSuccessProps = Pick<
   | "programType"
   | "status"
   | "currentStep"
-  | "assessmentData"
 > & {
   onBackHome?: () => void;
 };
@@ -43,7 +42,6 @@ export default function EnrollmentSuccess({
   programType,
   status,
   currentStep,
-  assessmentData,
   onBackHome,
 }: EnrollmentSuccessProps) {
   const { schoolName, logoUrl } = useSettingsStore();
@@ -241,7 +239,6 @@ export default function EnrollmentSuccess({
               programType={programType}
               status={status}
               currentStep={currentStep}
-              assessmentData={assessmentData}
             />
           </div>
 
@@ -330,7 +327,6 @@ export default function EnrollmentSuccess({
               programType={programType}
               status={status}
               currentStep={currentStep}
-              assessmentData={assessmentData}
             />
           </div>
 

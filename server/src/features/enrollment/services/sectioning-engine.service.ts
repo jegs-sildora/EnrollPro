@@ -64,35 +64,10 @@ interface ApplicantWithRelations {
   previousSchool?: {
     generalAverage: number | null;
   } | null;
-  earlyRegistration?: {
-    assessments: {
-      type: string;
-      score: number;
-    }[];
-  } | null;
 }
 
 export class SectioningEngine {
   constructor(private prisma: PrismaClient) {}
-
-  // Helper to compute weighted score for Grade 7 STE
-  private getWeightedScpScore(app: ApplicantWithRelations): number {
-    const assessments = app.earlyRegistration?.assessments ?? [];
-
-    // Qualifying Exam (65%)
-    const examScore =
-      assessments.find((a) => a.type === "QUALIFYING_EXAMINATION")?.score ?? 0;
-
-    // Interview (15%)
-    const interviewScore =
-      assessments.find((a) => a.type === "INTERVIEW")?.score ?? 0;
-
-    // Grade Average (20%)
-    const gradeAve = app.previousSchool?.generalAverage ?? 0;
-
-    const composite = examScore * 0.65 + interviewScore * 0.15 + gradeAve * 0.2;
-    return Math.round(composite * 1000) / 1000;
-  }
 
   // ── Gen Ave Resolver ─────────────────────────────────────────────────────────
   // Resolves the best available general average for an applicant.
@@ -115,13 +90,6 @@ export class SectioningEngine {
     );
   }
 
-  // ── Naming Engine ────────────────────────────────────────────────────────────
-  // Converts an array index to an alphabetic suffix: 0→A, 1→B, 2→C …
-  private getScpSectionName(prefix: string, index: number): string {
-    const suffix = String.fromCharCode(65 + index);
-    return `${prefix}-${suffix}`;
-  }
-
   // ── Distribution Math ────────────────────────────────────────────────────────
   // Distributes quota evenly across sections using floor + remainder:
   // 100 ÷ 3 → [34, 33, 33]  |  70 ÷ 2 → [35, 35]
@@ -136,46 +104,6 @@ export class SectioningEngine {
       { length: sectionCount },
       (_, i) => base + (i < remainder ? 1 : 0),
     );
-  }
-
-  // ── Auto-Create SCP Sections ─────────────────────────────────────────────────
-  // Upserts STE sections (STE-A, STE-B, …) for a grade level.
-  // maxCapacity for each section is calculated via floor+remainder distribution.
-  // Returns all matching sections ordered by sortOrder.
-  private async ensureScpSections(
-    gradeLevelId: number,
-    schoolYearId: number,
-    quota: number,
-    sectionCount: number,
-  ): Promise<SectionWithCount[]> {
-    const PREFIX = "STE";
-    const capacities = this.distributeQuotaToSections(quota, sectionCount);
-    const targetNames: string[] = [];
-
-    for (let i = 0; i < sectionCount; i++) {
-      const name = this.getScpSectionName(PREFIX, i);
-      targetNames.push(name);
-      await this.prisma.section.upsert({
-        where: {
-          uq_sections_name_grade_sy: { name, gradeLevelId, schoolYearId },
-        },
-        create: {
-          name,
-          programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-          gradeLevelId,
-          schoolYearId,
-          maxCapacity: capacities[i],
-          sortOrder: i + 1,
-        },
-        update: { maxCapacity: capacities[i] },
-      });
-    }
-
-    return this.prisma.section.findMany({
-      where: { gradeLevelId, schoolYearId, name: { in: targetNames } },
-      include: { _count: { select: { enrollmentRecords: true } } },
-      orderBy: { sortOrder: "asc" },
-    });
   }
 
   async getPrerequisites(gradeLevelId: number, schoolYearId: number) {
@@ -201,20 +129,16 @@ export class SectioningEngine {
       (schoolYear?.sectioningConfig as SectioningParams | null) ??
       DEFAULT_SECTIONING_PARAMS;
 
-    const steSections = sections.filter(
-      (s) => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-    );
     const regularSections = sections.filter((s) => s.programType === "REGULAR");
 
-    const isSteReady = steSections.length >= config.steSections;
     const isPilotReady = regularSections.length >= config.pilotSectionCount;
 
     return {
-      steSectionsCount: steSections.length,
+      steSectionsCount: 0,
       regularSectionsCount: regularSections.length,
-      isSteReady,
+      isSteReady: true,
       isPilotReady,
-      isReady: isSteReady && isPilotReady,
+      isReady: isPilotReady,
       unassignedCount,
       config,
     };
@@ -260,15 +184,6 @@ export class SectioningEngine {
           },
           gradeLevel: true,
           previousSchool: true,
-          earlyRegistration: {
-            include: {
-              assessments: {
-                where: {
-                  type: { in: ["QUALIFYING_EXAMINATION", "INTERVIEW"] },
-                },
-              },
-            },
-          },
         },
       }) as any); // Type assertion needed for complex include
 
@@ -303,29 +218,9 @@ export class SectioningEngine {
       orderBy: { sortOrder: "asc" },
     });
 
-    let steSections = sections.filter(
-      (s) => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-    );
     const regularSections = sections.filter((s) => s.programType === "REGULAR");
     const pilotSections = regularSections.slice(0, params.pilotSectionCount);
     const heteroSections = regularSections.slice(params.pilotSectionCount);
-
-    // For Grade 7: auto-create any missing STE sections using the naming engine.
-    if (isGrade7 && steSections.length < params.steSections) {
-      steSections = await this.ensureScpSections(
-        gradeLevelId,
-        schoolYearId,
-        params.steQuota,
-        params.steSections,
-      );
-    }
-
-    if (steSections.length < params.steSections) {
-      throw new AppError(
-        400,
-        `Config requires ${params.steSections} STE section(s), but only ${steSections.length} found.`,
-      );
-    }
 
     const preview: SectioningPreview = {
       schoolYearLabel: schoolYear.yearLabel,
@@ -340,114 +235,8 @@ export class SectioningEngine {
       (a) => a.learner.promotionStatus !== "RETAINED",
     );
 
-    // --- STEP 1: SCP Segregation (Top 70 STE or Vacancy Fill) ---
-    const steApplicants = eligibleApplicants.filter(
-      (a) => a.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-    );
-
-    // Sort by Admission Exam Score (Grade 7) or Previous Gen Ave (Grade 8-10)
-    const sortedSte = [...steApplicants].sort((a, b) => {
-      if (isGrade7) {
-        return this.getWeightedScpScore(b) - this.getWeightedScpScore(a);
-      } else {
-        const aveA = this.resolveGenAve(a, false) ?? 0;
-        const aveB = this.resolveGenAve(b, false) ?? 0;
-        return aveB - aveA;
-      }
-    });
-
-    let steToAssign: ApplicantWithRelations[] = [];
-    let steSpillover: ApplicantWithRelations[] = [];
-    let steCutoffScore: number | null = null;
-
-    if (isGrade7) {
-      const actualSteCount = Math.min(sortedSte.length, params.steQuota);
-      steToAssign = sortedSte.slice(0, actualSteCount);
-      steSpillover = sortedSte.slice(actualSteCount);
-
-      if (sortedSte.length >= params.steQuota) {
-        steCutoffScore = this.getWeightedScpScore(
-          sortedSte[params.steQuota - 1],
-        );
-      } else if (sortedSte.length > 0) {
-        steCutoffScore = this.getWeightedScpScore(
-          sortedSte[sortedSte.length - 1],
-        );
-      }
-
-      const perSectionCounts = this.distributeQuotaToSections(
-        steToAssign.length,
-        params.steSections,
-      );
-      let steOffset = 0;
-      perSectionCounts.forEach((count, sectionIndex) => {
-        const targetSection = steSections[sectionIndex];
-        steToAssign
-          .slice(steOffset, steOffset + count)
-          .forEach((app, idxInSegment) => {
-            const absoluteIdx = steOffset + idxInSegment;
-            preview.proposedAssignments.push(
-              this.mapToProposed(app, targetSection, isGrade7, {
-                rankingScore: this.getWeightedScpScore(app),
-                rank: absoluteIdx + 1,
-              }),
-            );
-          });
-        steOffset += count;
-      });
-    } else {
-      sortedSte.forEach((app, idx) => {
-        const availableSection = steSections.find(
-          (s) => s.maxCapacity - s._count.enrollmentRecords > 0,
-        );
-        if (availableSection) {
-          preview.proposedAssignments.push(
-            this.mapToProposed(app, availableSection, isGrade7, {
-              rankingScore: this.resolveGenAve(app, false) ?? null,
-              rank: idx + 1,
-            }),
-          );
-          availableSection._count.enrollmentRecords++;
-          steToAssign.push(app);
-        } else {
-          steSpillover.push(app);
-        }
-      });
-    }
-
-    preview.steps.push({
-      title: "SCP Segregation (STE)",
-      description: isGrade7
-        ? sortedSte.length < params.steQuota
-          ? `Target quota was ${params.steQuota}, but only ${sortedSte.length} eligible applicants found. Proceeded with ${steToAssign.length}.`
-          : `Allocated top ${params.steQuota} STE applicants across ${params.steSections} STE section(s) based on weighted ranking (Exam 65%, Interview 15%, Grades 20%).`
-        : "Filled vacancies in STE sections with qualified applicants.",
-      stats: {
-        assigned: steToAssign.length,
-        spillover: steSpillover.length,
-        steCutoffScore,
-        reclassifiedLearners: steSpillover.map((app, idx) =>
-          this.mapToProposed(
-            app,
-            { id: 0, name: "RECLASSIFIED" } as SectionWithCount,
-            isGrade7,
-            {
-              rankingScore: isGrade7
-                ? this.getWeightedScpScore(app)
-                : (this.resolveGenAve(app, false) ?? null),
-              rank: steToAssign.length + idx + 1,
-            },
-          ),
-        ),
-        sections: steSections.map((s) => s.name),
-      },
-    });
-
     // --- STEP 2: BEC Pilot Slicing ---
-    const regularPool = [
-      ...eligibleApplicants.filter((a) => a.applicantType === "REGULAR"),
-      ...steSpillover,
-    ];
+    const regularPool = eligibleApplicants;
 
     const sortedRegular = regularPool.sort((a, b) => {
       const aveA = this.resolveGenAve(a, isGrade7) ?? 0;

@@ -5,10 +5,8 @@ import {
   ReadingProfileLevelEnum,
   SexEnum,
   GradeLevelEnum,
-  ScpTypeEnum,
   LastSchoolTypeEnum,
   LearnerTypeEnum,
-  AssessmentKindEnum,
   TrackingCurrentStepEnum,
   TrackingProgramTypeEnum,
   TrackingStatusEnum,
@@ -105,11 +103,7 @@ export const applicationSubmitSchema = z
       .nullable(),
     psaBirthCertNumber: z.string().trim().toUpperCase().optional().nullable(),
 
-    earlyRegistrationId: z.number().int().positive().optional(),
-
     gradeLevel: GradeLevelEnum,
-    isScpApplication: z.boolean().default(false),
-    scpType: ScpTypeEnum.optional().nullable(),
 
     lastName: z.string().min(1, "Last name is required").max(100),
     firstName: z.string().min(1, "First name is required").max(100),
@@ -167,9 +161,7 @@ export const applicationSubmitSchema = z
     grade10MathGrade: z.number().optional().nullable(),
     generalAverage: optionalGeneralAverageSchema,
 
-    artField: z.string().optional().nullable(),
-    sportsList: z.array(z.string()).default([]),
-    foreignLanguage: z.string().optional().nullable(),
+
 
     isPrivacyConsentGiven: z.boolean().refine((val) => val === true, {
       message: "Consent is required",
@@ -211,52 +203,15 @@ export const applicationSubmitSchema = z
       });
     }
 
-    if (data.isScpApplication && !data.scpType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["scpType"],
-        message: "Select an SCP track to continue.",
-      });
-    }
+
   });
-
-export const assessmentTrackerStepSchema = z.object({
-  stepOrder: z.number().int().min(1),
-  kind: z.string(),
-  label: z.string(),
-  status: z.enum(["PENDING", "SCHEDULED", "COMPLETED"]),
-  scheduledDate: z.string().nullable(),
-  scheduledTime: z.string().nullable(),
-  venue: z.string().nullable(),
-  result: z.string().nullable(),
-  score: z.number().nullable(),
-  notes: z.string().nullable(),
-  conductedAt: z.string().nullable(),
-});
-
-export const trackingAssessmentDataSchema = z
-  .object({
-    phaseStatus: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]),
-    latestSchedule: z
-      .object({
-        stepOrder: z.number().int().min(1),
-        label: z.string(),
-        kind: z.string(),
-        scheduledDate: z.string().nullable(),
-        scheduledTime: z.string().nullable(),
-        venue: z.string().nullable(),
-      })
-      .nullable(),
-    steps: z.array(assessmentTrackerStepSchema),
-  })
-  .nullable();
 
 export const applicationTrackingStateSchema = z.object({
   programType: TrackingProgramTypeEnum,
   status: TrackingStatusEnum,
   rawStatus: ApplicationStatusEnum,
   currentStep: TrackingCurrentStepEnum,
-  assessmentData: trackingAssessmentDataSchema,
+  assessmentData: z.null().default(null).nullable(),
 });
 
 export const applicationSubmitResponseSchema = z
@@ -457,58 +412,6 @@ export const specialEnrollmentSchema = z
     }
   });
 
-export const scheduleExamSchema = z.object({
-  examDate: z.string().or(z.date()),
-  examTime: z.string().optional().nullable(),
-  assessmentType: z.string().optional(),
-});
-
-export const recordResultSchema = z.object({
-  // Written exam
-  examScore: z.number().optional().nullable(),
-  examResult: z.string().optional().nullable(),
-  examNotes: z.string().optional().nullable(),
-  // Interview
-  interviewResult: z.string().optional().nullable(),
-  interviewDate: z.string().or(z.date()).optional().nullable(),
-  interviewNotes: z.string().optional().nullable(),
-  // Audition/Tryout
-  auditionResult: z.string().optional().nullable(),
-  tryoutResult: z.string().optional().nullable(),
-  // Grades
-  natScore: z.number().optional().nullable(),
-});
-
-export const rescheduleExamSchema = z.object({
-  examDate: z.string().or(z.date()),
-});
-
-// ─── Pipeline-Aware Assessment Schemas ──────────────────
-export const scheduleAssessmentStepSchema = z.object({
-  stepOrder: z.number().int().min(1),
-  kind: AssessmentKindEnum,
-  scheduledDate: z.string().or(z.date()),
-  scheduledTime: z.string().optional().nullable(),
-  venue: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-});
-
-export const recordStepResultSchema = z.object({
-  stepOrder: z.number().int().min(1),
-  kind: AssessmentKindEnum,
-  score: z.number().optional().nullable(),
-  result: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-});
-
-export const rescheduleAssessmentStepSchema = z.object({
-  stepOrder: z.number().int().min(1),
-  kind: AssessmentKindEnum,
-  scheduledDate: z.string().or(z.date()),
-  scheduledTime: z.string().optional().nullable(),
-  venue: z.string().optional().nullable(),
-});
-
 export const updateChecklistSchema = z.object({
   isPsaBirthCertPresented: z.boolean().optional(),
   isOriginalPsaBcCollected: z.boolean().optional(),
@@ -524,199 +427,6 @@ export const updateChecklistSchema = z.object({
 
 export const requestRevisionSchema = z.object({
   message: z.string().optional(),
-});
-
-// Legacy interview schemas — kept for backward compatibility
-export const scheduleInterviewSchema = z.object({
-  interviewDate: z.string().or(z.date()),
-  interviewTime: z.string().optional().nullable(),
-  interviewVenue: z.string().optional().nullable(),
-  interviewNotes: z.string().optional().nullable(),
-});
-
-export const recordInterviewResultSchema = z.object({
-  interviewScore: z.number().optional().nullable(),
-  interviewResult: z.string().optional().nullable(),
-  interviewNotes: z.string().optional().nullable(),
-});
-
-// ─── Metadata-Driven SCP Rule Schemas ─────────────────
-export const scpGradeSubjectEnum = z.enum([
-  "ENGLISH",
-  "SCIENCE",
-  "MATHEMATICS",
-  "FILIPINO",
-  "GENERAL_AVERAGE",
-]);
-
-export const scpGradeRuleTypeEnum = z.enum([
-  "GENERAL_AVERAGE_MIN",
-  "SUBJECT_AVERAGE_MIN",
-  "SUBJECT_MINIMUMS",
-]);
-
-export const scpSubjectThresholdSchema = z.object({
-  subject: scpGradeSubjectEnum,
-  min: z.number().min(0).max(100),
-});
-
-export const scpGradeRequirementSchema = z
-  .object({
-    ruleType: scpGradeRuleTypeEnum,
-    minAverage: z.number().min(0).max(100).optional().nullable(),
-    subjects: z.array(scpGradeSubjectEnum).optional().default([]),
-    subjectThresholds: z
-      .array(scpSubjectThresholdSchema)
-      .optional()
-      .default([]),
-  })
-  .superRefine((data, ctx) => {
-    if (data.ruleType === "GENERAL_AVERAGE_MIN" && data.minAverage == null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "minAverage is required for GENERAL_AVERAGE_MIN",
-        path: ["minAverage"],
-      });
-    }
-
-    if (data.ruleType === "SUBJECT_AVERAGE_MIN") {
-      if (data.minAverage == null) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "minAverage is required for SUBJECT_AVERAGE_MIN",
-          path: ["minAverage"],
-        });
-      }
-      if (data.subjects.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "subjects are required for SUBJECT_AVERAGE_MIN",
-          path: ["subjects"],
-        });
-      }
-    }
-
-    if (
-      data.ruleType === "SUBJECT_MINIMUMS" &&
-      data.subjectThresholds.length === 0
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "subjectThresholds are required for SUBJECT_MINIMUMS",
-        path: ["subjectThresholds"],
-      });
-    }
-  });
-
-const scpDocumentRequirementSchema = z
-  .object({
-    docId: z.string().trim().min(1),
-    policy: z.enum(["REQUIRED", "OPTIONAL", "HIDDEN"]),
-    phase: z.enum(["EARLY_REGISTRATION", "ENROLLMENT"]).optional().nullable(),
-    notes: z.string().optional().nullable(),
-  })
-  .passthrough();
-
-const scpGradeRequirementsPayloadSchema = z
-  .object({
-    qualifyingTrack: ApplicantTypeEnum.optional().nullable(),
-    minimumGeneralAverage: z.number().min(0).max(100).optional().nullable(),
-    documentRequirements: z.array(scpDocumentRequirementSchema).optional(),
-  })
-  .passthrough();
-
-export const scpRankingComponentSchema = z
-  .object({
-    // Supports both legacy formulas (`metric`) and newer formulas (`key`).
-    key: z.string().trim().min(1).optional(),
-    metric: z.string().trim().min(1).optional(),
-    label: z.string().trim().min(1).optional(),
-    weight: z.number().gt(0).max(100),
-  })
-  .passthrough()
-  .superRefine((data, ctx) => {
-    if (!data.key && !data.metric) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Ranking component must include either `key` or `metric`",
-        path: ["key"],
-      });
-    }
-  });
-
-export const scpRankingFormulaSchema = z
-  .object({
-    components: z.array(scpRankingComponentSchema).min(1),
-  })
-  .passthrough()
-  .superRefine((data, ctx) => {
-    const total = data.components.reduce((sum, item) => sum + item.weight, 0);
-    const isFractional = total <= 1.0001;
-    const expected = isFractional ? 1 : 100;
-    if (Math.abs(total - expected) > 0.01) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Ranking component weights must total either 1.0 (fractional) or 100 (percentage)",
-        path: ["components"],
-      });
-    }
-  });
-
-// ─── SCP Assessment Step Config Schema (for CurriculumTab) ───
-const scpInterviewRubricCriterionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional().nullable(),
-  maxPts: z.number(),
-});
-
-const scpInterviewRubricCategorySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  criteria: z.array(scpInterviewRubricCriterionSchema),
-});
-
-export const scpProgramStepConfigSchema = z.object({
-  id: z.number().optional(),
-  stepOrder: z.number().int().min(1),
-  kind: AssessmentKindEnum,
-  label: z.string().min(1),
-  description: z.string().optional().nullable(),
-  isRequired: z.boolean().default(true),
-  scheduledDate: z.string().or(z.date()).optional().nullable(),
-  scheduledTime: z.string().optional().nullable(),
-  venue: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  cutoffScore: z.number().min(0).max(100).optional().nullable(),
-  rubric: z.array(scpInterviewRubricCategorySchema).optional().nullable(),
-});
-
-export const scpProgramConfigUpdateSchema = z.object({
-  id: z.number().optional(),
-  scpType: ScpTypeEnum,
-  isOffered: z.boolean().default(false),
-  isTwoPhase: z.boolean().optional().default(false),
-  maxSlots: z.number().int().positive().optional().nullable(),
-  cutoffScore: z.number().min(0).max(100).optional().nullable(),
-  notes: z.string().optional().nullable(),
-  // Accept both the legacy rule-array format and the current metadata object shape.
-  gradeRequirements: z
-    .union([
-      z.array(scpGradeRequirementSchema),
-      scpGradeRequirementsPayloadSchema,
-    ])
-    .optional()
-    .nullable(),
-  rankingFormula: scpRankingFormulaSchema.optional().nullable(),
-  artFields: z.array(z.string()).optional().default([]),
-  languages: z.array(z.string()).optional().default([]),
-  sportsList: z.array(z.string()).optional().default([]),
-  steps: z.array(scpProgramStepConfigSchema).optional().default([]),
-});
-
-export const updateScpProgramConfigsSchema = z.object({
-  scpProgramConfigs: z.array(scpProgramConfigUpdateSchema),
 });
 
 // ─── Batch Processing Schema ───────────────────────────
@@ -747,20 +457,7 @@ export const batchProcessSchema = z.object({
   targetStatus: batchTargetStatusSchema,
 });
 
-export const publishScpRankingsSchema = z.object({
-  scpType: ApplicantTypeEnum,
-  schoolYearId: z.number().int().positive().optional(),
-  cutoffSlot: z
-    .number()
-    .int()
-    .positive()
-    .max(500, "Cutoff slot cannot exceed 500")
-    .default(70),
-  rankedApplicationIds: z
-    .array(z.number().int().positive())
-    .min(1, "At least one ranked application ID is required")
-    .max(500, "Cannot publish more than 500 ranked applications at once"),
-});
+
 
 const CHECKLIST_FIELD_KEYS = [
   "isPsaBirthCertPresented",
@@ -838,59 +535,4 @@ export const batchAssignRegularSectionSchema = z.object({
   expectedStatuses: batchExpectedStatusesSchema,
 });
 
-export const batchScheduleStepSchema = z.object({
-  ids: z
-    .array(z.number().int().positive())
-    .min(1, "Select at least one applicant")
-    .max(500, "Cannot process more than 500 applicants at once"),
-  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
-  mode: z.enum(["EXAM", "INTERVIEW"]),
-  scheduledDate: z.string().or(z.date()),
-  scheduledTime: z.string().min(1, "Scheduled time is required"),
-  venue: z.string().min(1, "Venue is required"),
-  notes: z.string().optional().nullable(),
-});
 
-export const batchSaveScoresSchema = z.object({
-  rows: z
-    .array(
-      z.object({
-        id: z.number().int().positive(),
-        componentScores: z
-          .record(z.string(), z.number().min(0).max(100))
-          .default({}),
-        totalScore: z.number().min(0).max(100).optional(),
-        absentNoShow: z.boolean().optional().default(false),
-        remarks: z.string().max(500).optional().nullable(),
-      }),
-    )
-    .min(1, "At least one score row is required")
-    .max(500, "Cannot process more than 500 applicants at once"),
-  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
-});
-
-export const batchFinalizeInterviewSchema = z.object({
-  rows: z
-    .array(
-      z
-        .object({
-          id: z.number().int().positive(),
-          decision: z.enum(["PASS", "REJECT"]),
-          interviewScore: z.number().min(0).max(100).optional().nullable(),
-          remarks: z.string().max(500).optional().nullable(),
-          rejectOutcome: z.enum(["SUBMITTED_BEERF", "REJECTED"]).optional(),
-        })
-        .superRefine((value, ctx) => {
-          if (value.decision === "REJECT" && !value.rejectOutcome) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "rejectOutcome is required when decision is REJECT",
-              path: ["rejectOutcome"],
-            });
-          }
-        }),
-    )
-    .min(1, "At least one interview result is required")
-    .max(500, "Cannot process more than 500 applicants at once"),
-  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
-});

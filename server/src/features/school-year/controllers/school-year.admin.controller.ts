@@ -316,8 +316,6 @@ export function createSchoolYearAdminController(
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         clonedFromId: normalizedCloneFromId,
@@ -327,8 +325,6 @@ export function createSchoolYearAdminController(
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         clonedFromId: normalizedCloneFromId,
@@ -364,7 +360,6 @@ export function createSchoolYearAdminController(
         },
         _count: {
           select: {
-            earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
           },
@@ -509,8 +504,6 @@ export function createSchoolYearAdminController(
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         clonedFromId: activeYear.id,
@@ -520,8 +513,6 @@ export function createSchoolYearAdminController(
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         clonedFromId: activeYear.id,
@@ -567,7 +558,6 @@ export function createSchoolYearAdminController(
         },
         _count: {
           select: {
-            earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
           },
@@ -681,8 +671,6 @@ export function createSchoolYearAdminController(
       update: {
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         status: "DRAFT",
@@ -692,8 +680,6 @@ export function createSchoolYearAdminController(
         status: "DRAFT",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
-        earlyRegOpenDate: schedule.earlyRegOpenDate,
-        earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
         clonedFromId: activeYear?.id ?? null,
@@ -731,8 +717,6 @@ export function createSchoolYearAdminController(
     const {
       classOpeningDate,
       classEndDate,
-      earlyRegOpenDate,
-      earlyRegCloseDate,
       enrollOpenDate,
       enrollCloseDate,
     } = req.body;
@@ -744,8 +728,6 @@ export function createSchoolYearAdminController(
         yearLabel: true,
         classOpeningDate: true,
         classEndDate: true,
-        earlyRegOpenDate: true,
-        earlyRegCloseDate: true,
         enrollOpenDate: true,
         enrollCloseDate: true,
       },
@@ -817,46 +799,11 @@ export function createSchoolYearAdminController(
           : null
         : existingYear.enrollCloseDate;
 
-    // ─── Phase Date Collision Validation (DepEd Alignment) ───
-    const nextEarlyRegOpenDate =
-      earlyRegOpenDate !== undefined
-        ? earlyRegOpenDate
-          ? deps.normalizeDateToUtcNoon(new Date(earlyRegOpenDate))
-          : null
-        : existingYear.earlyRegOpenDate;
-
-    const nextEarlyRegCloseDate =
-      earlyRegCloseDate !== undefined
-        ? earlyRegCloseDate
-          ? deps.normalizeDateToUtcNoon(new Date(earlyRegCloseDate))
-          : null
-        : existingYear.earlyRegCloseDate;
-
-    if (nextEarlyRegOpenDate && nextEarlyRegCloseDate) {
-      if (nextEarlyRegCloseDate.getTime() < nextEarlyRegOpenDate.getTime()) {
-        res.status(400).json({
-          message:
-            "Early Registration close date cannot be earlier than its open date.",
-        });
-        return;
-      }
-    }
-
     if (nextEnrollOpenDate && nextEnrollCloseDate) {
       if (nextEnrollCloseDate.getTime() < nextEnrollOpenDate.getTime()) {
         res.status(400).json({
           message:
             "Official Enrollment close date cannot be earlier than its open date.",
-        });
-        return;
-      }
-    }
-
-    if (nextEarlyRegCloseDate && nextEnrollOpenDate) {
-      if (nextEnrollOpenDate.getTime() < nextEarlyRegCloseDate.getTime()) {
-        res.status(400).json({
-          message:
-            "Phase 2 cannot begin before Phase 1 closes. Same-day handoff is allowed.",
         });
         return;
       }
@@ -873,20 +820,6 @@ export function createSchoolYearAdminController(
         ...(classEndDate !== undefined
           ? {
               classEndDate: nextClassEndDate,
-            }
-          : {}),
-        ...(earlyRegOpenDate !== undefined
-          ? {
-              earlyRegOpenDate: earlyRegOpenDate
-                ? deps.normalizeDateToUtcNoon(new Date(earlyRegOpenDate))
-                : null,
-            }
-          : {}),
-        ...(earlyRegCloseDate !== undefined
-          ? {
-              earlyRegCloseDate: earlyRegCloseDate
-                ? deps.normalizeDateToUtcNoon(new Date(earlyRegCloseDate))
-                : null,
             }
           : {}),
         ...(enrollOpenDate !== undefined

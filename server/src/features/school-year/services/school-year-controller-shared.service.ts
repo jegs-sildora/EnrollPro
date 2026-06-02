@@ -81,22 +81,6 @@ export async function cloneSchoolYearStructure(
     where: { id: cloneFromId },
     include: {
       sections: true,
-      scpProgramConfigs: {
-        include: {
-          options: true,
-          steps: {
-            orderBy: { stepOrder: "asc" },
-            include: {
-              rubricCategories: {
-                orderBy: { displayOrder: "asc" },
-                include: {
-                  criteria: { orderBy: { displayOrder: "asc" } },
-                },
-              },
-            },
-          },
-        },
-      },
     },
   });
 
@@ -117,85 +101,5 @@ export async function cloneSchoolYearStructure(
         isSnake: section.isSnake,
       },
     });
-  }
-
-  for (const scpProgram of source.scpProgramConfigs) {
-    const newScpProgram = await deps.prisma.scpProgramConfig.create({
-      data: {
-        schoolYearId: targetSchoolYearId,
-        scpType: scpProgram.scpType,
-        isOffered: scpProgram.isOffered,
-        isTwoPhase: scpProgram.isTwoPhase,
-        cutoffScore: scpProgram.cutoffScore,
-        gradeRequirements:
-          scpProgram.gradeRequirements === null
-            ? undefined
-            : scpProgram.gradeRequirements,
-        rankingFormula:
-          scpProgram.rankingFormula === null
-            ? undefined
-            : scpProgram.rankingFormula,
-        notes: scpProgram.notes,
-      },
-    });
-
-    if (scpProgram.options.length > 0) {
-      await deps.prisma.scpProgramOption.createMany({
-        data: scpProgram.options.map((option) => ({
-          scpProgramConfigId: newScpProgram.id,
-          optionType: option.optionType,
-          value: option.value,
-        })),
-      });
-    }
-
-    if (scpProgram.steps.length > 0) {
-      for (const step of scpProgram.steps) {
-        const newStep = await deps.prisma.scpProgramStep.create({
-          data: {
-            scpProgramConfigId: newScpProgram.id,
-            stepOrder: step.stepOrder,
-            kind: step.kind,
-            label: step.label,
-            description: step.description,
-            isRequired: step.isRequired,
-            scheduledDate: step.scheduledDate,
-            scheduledTime: step.scheduledTime,
-            venue: step.venue,
-            notes: step.notes,
-            cutoffScore: step.cutoffScore,
-            rubric:
-              step.rubric === null
-                ? Prisma.JsonNull
-                : (step.rubric as Prisma.InputJsonValue),
-          },
-        });
-
-        if (step.rubricCategories.length > 0) {
-          for (const category of step.rubricCategories) {
-            const newCategory =
-              await deps.prisma.scpInterviewRubricCategory.create({
-                data: {
-                  scpProgramStepId: newStep.id,
-                  name: category.name,
-                  displayOrder: category.displayOrder,
-                },
-              });
-
-            if (category.criteria.length > 0) {
-              await deps.prisma.scpInterviewRubricCriterion.createMany({
-                data: category.criteria.map((criterion) => ({
-                  rubricCategoryId: newCategory.id,
-                  name: criterion.name,
-                  description: criterion.description,
-                  maxPts: criterion.maxPts,
-                  displayOrder: criterion.displayOrder,
-                })),
-              });
-            }
-          }
-        }
-      }
-    }
   }
 }

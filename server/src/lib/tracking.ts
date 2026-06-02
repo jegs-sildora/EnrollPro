@@ -4,24 +4,7 @@ import { ApplicantType } from "../generated/prisma/index.js";
  * Maps applicant type to tracking number prefix
  */
 export function getTrackingPrefix(applicantType: ApplicantType): string {
-  switch (applicantType) {
-    case "SCIENCE_TECHNOLOGY_AND_ENGINEERING":
-      return "STE";
-    case "SPECIAL_PROGRAM_IN_THE_ARTS":
-      return "SPA";
-    case "SPECIAL_PROGRAM_IN_SPORTS":
-      return "SPS";
-    case "SPECIAL_PROGRAM_IN_JOURNALISM":
-      return "SPJ";
-    case "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE":
-      return "SPFL";
-    case "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION":
-      return "SPTVE";
-    case "REGULAR":
-    case "LATE_ENROLLEE":
-    default:
-      return "REG";
-  }
+  return "REG";
 }
 
 /**

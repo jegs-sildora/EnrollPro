@@ -1,5 +1,5 @@
 import { cn } from "@/shared/lib/utils";
-import { format } from "date-fns";
+
 import { CheckCircle2, CircleAlert, CircleDashed, Clock3 } from "lucide-react";
 import {
   deriveProgramTypeFromApplicantType,
@@ -8,7 +8,6 @@ import {
 } from "./trackingState";
 import type {
   ApplicationTrackResponse,
-  TrackingAssessmentData as SharedTrackingAssessmentData,
   TrackingCurrentStep,
   TrackingProgramType,
   TrackingStatus,
@@ -16,14 +15,9 @@ import type {
 
 export type { TrackingCurrentStep, TrackingProgramType, TrackingStatus };
 
-export type TrackingAssessmentData = SharedTrackingAssessmentData;
-
-export type TrackingAssessmentStep =
-  NonNullable<TrackingAssessmentData>["steps"][number];
-
 type TrackingNextStepsPayload = Pick<
   ApplicationTrackResponse,
-  "applicantType" | "programType" | "status" | "currentStep" | "assessmentData"
+  "applicantType" | "programType" | "status" | "currentStep"
 >;
 
 interface TrackingNextStepsProps extends Omit<
@@ -216,7 +210,6 @@ function computeSteps(
   currentStep: TrackingCurrentStep,
   programType: TrackingProgramType,
   status: TrackingStatus,
-  assessmentData?: TrackingAssessmentData,
   hasBeerf?: boolean,
 ): RenderStep[] {
   const steps: RenderStep[] = [];
@@ -291,64 +284,7 @@ function computeSteps(
     });
   }
 
-  // 2. Assessment steps (SCP only)
-  if (programType === "SCP") {
-    if (assessmentData && assessmentData.steps.length > 0) {
-      let foundActive = false;
-      const isPastAssessment =
-        currentStep === "ENROLLMENT_QUALIFICATION" ||
-        currentStep === "ENROLLED";
-      const isBeforeAssessment =
-        currentIndex < orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
 
-      for (const s of assessmentData.steps) {
-        const isStepCompleted =
-          isPastAssessment || (s.result !== null && s.result !== undefined);
-        let isStepActive = false;
-
-        if (
-          currentStep === "ASSESSMENT_PHASE" &&
-          !isPastAssessment &&
-          !isBeforeAssessment &&
-          !foundActive &&
-          !isStepCompleted
-        ) {
-          isStepActive = true;
-          foundActive = true;
-        }
-
-        let desc = s.scheduledDate
-          ? `Scheduled: ${format(new Date(s.scheduledDate), "MMMM d, yyyy")}${s.scheduledTime ? ` at ${s.scheduledTime}` : ""}${s.venue ? ` (${s.venue})` : ""}`
-          : "Scheduling in progress...";
-
-        if (s.result) {
-          desc = `Result: ${s.result}${s.score !== null ? ` (Score: ${s.score})` : ""}`;
-        }
-
-        steps.push({
-          id: `ASSESSMENT_${s.stepOrder}`,
-          title: s.label,
-          description: desc,
-          isCompleted: isStepCompleted,
-          isActive: isStepActive,
-        });
-      }
-    } else {
-      // Fallback if no steps are configured yet
-      const stepIdx = orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
-      const metadata = STEP_METADATA["ASSESSMENT_PHASE"];
-      const isCompleted = stepIdx < currentIndex;
-      const isActive = stepIdx === currentIndex && status !== "ENROLLED";
-
-      steps.push({
-        id: "ASSESSMENT_PHASE",
-        title: metadata.title,
-        description: metadata.description["SCP"],
-        isCompleted,
-        isActive,
-      });
-    }
-  }
 
   // 3. Post-assessment steps
   const postAssessmentSteps: TrackingCurrentStep[] = [
@@ -381,7 +317,6 @@ export default function TrackingNextSteps({
   programType,
   status,
   currentStep,
-  assessmentData,
   hasBeerf,
   className,
 }: TrackingNextStepsProps) {
@@ -409,7 +344,6 @@ export default function TrackingNextSteps({
     resolvedCurrentStep,
     resolvedProgramType,
     resolvedStatus,
-    assessmentData,
     hasBeerf,
   );
 

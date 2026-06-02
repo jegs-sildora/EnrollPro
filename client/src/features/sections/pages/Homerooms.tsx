@@ -24,7 +24,6 @@ import type {
 } from "../types"
 import {
   DEFAULT_MAX_CAPACITY_REGULAR,
-  DEFAULT_MAX_CAPACITY_SCP,
 } from "@enrollpro/shared/constants"
 
 interface GradeLevelGroup {
@@ -395,7 +394,7 @@ export default function Homerooms() {
       programType,
       sectionType: "HOME_ROOM",
       adviserId: "none",
-      maxCapacity: programType === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP,
+      maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
       tleProgramId: null,
     })
     setIsFormSheetOpen(true)
@@ -422,8 +421,7 @@ export default function Homerooms() {
       setSectionFormData((prev) => {
         const next = { ...prev, [field]: value }
         if (field === "programType") {
-          next.maxCapacity =
-            value === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP
+          next.maxCapacity = DEFAULT_MAX_CAPACITY_REGULAR
         }
         return next
       })

@@ -5,8 +5,6 @@ import type {
   ApplicantDetail,
   AssessmentStep,
 } from "@/features/enrollment/hooks/useApplicationDetail";
-import { ASSESSMENT_KIND_LABELS } from "@enrollpro/shared";
-import type { AssessmentKind } from "@enrollpro/shared";
 import { Lock } from "lucide-react";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 
@@ -14,11 +12,11 @@ interface Props {
   applicant: ApplicantDetail;
   onApprove: () => void;
   onReject: () => void;
-  onScheduleExam: () => void;
-  onRecordResult: () => void;
-  onPass: () => void;
-  onFail: () => void;
-  onOfferRegular: () => void;
+  onScheduleExam?: () => void;
+  onRecordResult?: () => void;
+  onPass?: () => void;
+  onFail?: () => void;
+  onOfferRegular?: () => void;
   onTemporarilyEnroll: () => void;
   onAssignLrn?: () => void | Promise<void>;
   onEnroll?: () => void | Promise<void>;
@@ -46,11 +44,7 @@ function getNextPendingStep(
 }
 
 function getStepLabel(step: AssessmentStep): string {
-  return (
-    step.label ||
-    ASSESSMENT_KIND_LABELS[step.kind as AssessmentKind] ||
-    step.kind
-  );
+  return step.label || step.kind;
 }
 
 function getAssessmentDecisionAction(
@@ -245,7 +239,7 @@ export function ActionButtons({
                 ) : (
                   <Button
                     className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-                    onClick={handlers.onScheduleExam}
+                    onClick={handlers.onScheduleExam || (() => {})}
                     disabled={!isMandatoryDocumentsMet}>
                     Verify &amp; Schedule Exam
                   </Button>
@@ -294,8 +288,8 @@ export function ActionButtons({
                 }`}
                 onClick={
                   assessmentDecisionAction === "PASS"
-                    ? handlers.onPass
-                    : handlers.onFail
+                    ? (handlers.onPass || (() => {}))
+                    : (handlers.onFail || (() => {}))
                 }>
                 {assessmentDecisionAction === "PASS"
                   ? "Mark as Passed"
@@ -330,7 +324,7 @@ export function ActionButtons({
             <>
               <Button
                 className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-                onClick={handlers.onOfferRegular}>
+                onClick={handlers.onOfferRegular || (() => {})}>
                 Offer Regular Section
               </Button>
               <Button

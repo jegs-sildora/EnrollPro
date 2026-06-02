@@ -221,7 +221,6 @@ export const createStudentsQueryController = (
         return {
           learningProgram:
             applicant.enrollmentRecord?.section?.programType ||
-            applicant.programDetail?.scpType ||
             "REGULAR",
           dateEnrolled:
             applicant.enrollmentRecord?.enrolledAt || applicant.createdAt,
@@ -237,7 +236,7 @@ export const createStudentsQueryController = (
           address: buildAddress(applicant.addresses as AddressLike[]),
           parentGuardianName: parentOrGuardian.name,
           parentGuardianContact: parentOrGuardian.contact,
-          emailAddress: applicant.earlyRegistration?.email ?? null,
+          emailAddress: null,
           trackingNumber: applicant.trackingNumber,
           status: applicant.status,
           learnerStatus: applicant.learner?.status || "ACTIVE",
@@ -306,7 +305,6 @@ export const createStudentsQueryController = (
           addresses: true,
           familyMembers: true,
           previousSchool: true,
-          earlyRegistration: true,
           enrollmentRecord: {
             include: {
               section: {
@@ -376,7 +374,7 @@ export const createStudentsQueryController = (
         guardianInfo: guardian || null,
         parentGuardianName: parentOrGuardian.name,
         parentGuardianContact: parentOrGuardian.contact,
-        emailAddress: applicant.earlyRegistration?.email ?? null,
+        emailAddress: null,
         contactNumber: applicant.contactNumber,
         religion: applicant.learner?.religion,
         learnerStatus: applicant.learner?.status || "ACTIVE",
@@ -543,18 +541,6 @@ export const createStudentsQueryController = (
 
       if (enrollmentApp) {
         return res.json({ id: enrollmentApp.id });
-      }
-
-      // Fallback to early registration application
-      const earlyRegApp =
-        await deps.prisma.earlyRegistrationApplication.findFirst({
-          where: { learnerId, schoolYearId },
-          select: { id: true },
-          orderBy: { createdAt: "desc" },
-        });
-
-      if (earlyRegApp) {
-        return res.json({ id: earlyRegApp.id });
       }
 
       return res

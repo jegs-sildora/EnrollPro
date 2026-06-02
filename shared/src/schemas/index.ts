@@ -7,4 +7,4 @@ export * from "./school-year.schema.js";
 export * from "./student.schema.js";
 export * from "./admin.schema.js";
 export * from "./learner.schema.js";
-export * from "./early-registration.schema.js";
+

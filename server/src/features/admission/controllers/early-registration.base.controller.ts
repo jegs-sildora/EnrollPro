@@ -21,7 +21,7 @@ import {
   normalizeTrackingStatus,
   resolveCurrentStep,
 } from "../services/early-registration-shared.service.js";
-import { getSCPRankings } from "../services/scp-ranking.service.js";
+
 
 import { ensureLearnerUserAccount } from "../../learner/learner.service.js";
 
@@ -40,7 +40,6 @@ export function createEarlyRegistrationBaseController(
     flattenAssessmentData,
     toUpperCaseRecursive,
     findApplicantOrThrow,
-    resolveLinkedEarlyRegistration,
   } = createEarlyRegistrationSharedService(deps);
 
   const LRN_REGEX = /^\d{12}$/;
@@ -90,40 +89,6 @@ export function createEarlyRegistrationBaseController(
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant } = await findApplicantOrThrow(applicantId);
 
-      let documentRequirements: Array<{
-        docId: string;
-        policy: "REQUIRED" | "OPTIONAL" | "HIDDEN";
-        phase?: "EARLY_REGISTRATION" | "ENROLLMENT" | null;
-        notes?: string | null;
-      }> | null = null;
-
-      if (applicant.applicantType !== "REGULAR") {
-        const scpConfig = await prisma.scpProgramConfig.findUnique({
-          where: {
-            uq_scp_program_configs_type: {
-              schoolYearId: applicant.schoolYearId,
-              scpType: applicant.applicantType,
-            },
-          },
-          select: { gradeRequirements: true },
-        });
-
-        if (scpConfig?.gradeRequirements) {
-          const payload = scpConfig.gradeRequirements as {
-            documentRequirements?: Array<{
-              docId: string;
-              policy: "REQUIRED" | "OPTIONAL" | "HIDDEN";
-              phase?: "EARLY_REGISTRATION" | "ENROLLMENT" | null;
-              notes?: string | null;
-            }>;
-          };
-
-          if (Array.isArray(payload.documentRequirements)) {
-            documentRequirements = payload.documentRequirements;
-          }
-        }
-      }
-
       const requirements = getRequiredDocuments({
         learnerType: applicant.learnerType,
         gradeLevel: applicant.gradeLevel.name,
@@ -131,7 +96,7 @@ export function createEarlyRegistrationBaseController(
         isLwd: applicant.learner?.isLearnerWithDisability ?? false,
         isPeptAePasser: false,
         hasPsaVerified: applicant.learner?.hasPsaBirthCertificate ?? false,
-        documentRequirements,
+        documentRequirements: null,
       });
 
       res.json({ requirements });
@@ -276,32 +241,6 @@ export function createEarlyRegistrationBaseController(
             ${learnerType && learnerType !== "ALL" ? Prisma.sql`AND ea.learner_type::text = ${learnerType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
-
-          UNION ALL
-
-          -- Phase 1: Early Registration Applications (Queued for Phase 2)
-          -- ONLY include if NOT yet migrated to an enrollment_application record.
-          SELECT 
-            era.id, 
-            era.created_at, 
-            'EARLY_REGISTRATION'::text as source,
-            era.status,
-            era.applicant_type,
-            era.learner_type,
-            era.grade_level_id,
-            era.school_year_id,
-            era.tracking_number,
-            era.learner_id
-          FROM early_registration_applications era
-          WHERE 1=1
-            AND NOT EXISTS (SELECT 1 FROM enrollment_applications ea_link WHERE ea_link.early_registration_id = era.id)
-            ${syId ? Prisma.sql`AND era.school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND era.grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND era.status::text = ANY(${statusFilters})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND era.applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${learnerType && learnerType !== "ALL" ? Prisma.sql`AND era.learner_type::text = ${learnerType}` : Prisma.empty}
-            -- Early reg apps NEVER have enrollment records (Phase 2 only)
-            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         ),
         filtered_queue AS (
           SELECT q.* FROM base_queue q
@@ -339,25 +278,6 @@ export function createEarlyRegistrationBaseController(
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND ea.applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
-
-          UNION ALL
-
-          SELECT 
-            era.id, 
-            era.learner_id, 
-            era.tracking_number,
-            era.status,
-            era.applicant_type,
-            era.grade_level_id,
-            era.school_year_id
-          FROM early_registration_applications era
-          WHERE 1=1
-            AND NOT EXISTS (SELECT 1 FROM enrollment_applications ea_link WHERE ea_link.early_registration_id = era.id)
-            ${syId ? Prisma.sql`AND era.school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND era.grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND era.status::text = ANY(${statusFilters})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND era.applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         )
         SELECT COUNT(*) as count FROM base_queue q
         JOIN learners l ON q.learner_id = l.id
@@ -375,49 +295,30 @@ export function createEarlyRegistrationBaseController(
       const enrollmentIds = results
         .filter((r) => r.source === "ENROLLMENT")
         .map((r) => r.id);
-      const earlyRegIds = results
-        .filter((r) => r.source === "EARLY_REGISTRATION")
-        .map((r) => r.id);
 
-      const [enrollmentApps, earlyRegApps] = await Promise.all([
-        prisma.enrollmentApplication.findMany({
-          where: { id: { in: enrollmentIds } },
-          include: {
-            learner: {
-              include: {
-                enrollmentRecords: {
-                  where: syId ? { schoolYearId: { lt: syId } } : undefined,
-                  orderBy: { schoolYearId: "desc" },
-                  take: 1,
-                  select: { finalAverage: true },
-                },
+      const enrollmentApps = await prisma.enrollmentApplication.findMany({
+        where: { id: { in: enrollmentIds } },
+        include: {
+          learner: {
+            include: {
+              enrollmentRecords: {
+                where: syId ? { schoolYearId: { lt: syId } } : undefined,
+                orderBy: { schoolYearId: "desc" },
+                take: 1,
+                select: { finalAverage: true },
               },
             },
-            gradeLevel: true,
-            enrollmentRecord: { include: { section: true } },
-            programDetail: true,
-            previousSchool: true,
-            checklist: true,
-            earlyRegistration: {
-              include: { assessments: { orderBy: { createdAt: "desc" } } },
-            },
           },
-        }),
-        prisma.earlyRegistrationApplication.findMany({
-          where: { id: { in: earlyRegIds } },
-          include: {
-            learner: true,
-            gradeLevel: true,
-            checklist: true,
-            assessments: { orderBy: { createdAt: "desc" } },
-          },
-        }),
-      ]);
+          gradeLevel: true,
+          enrollmentRecord: { include: { section: true } },
+          previousSchool: true,
+          checklist: true,
+        },
+      });
 
       // Combine and Restore Original Sort Order
       const appsMap = new Map<string, any>();
       enrollmentApps.forEach((a) => appsMap.set(`ENROLLMENT-${a.id}`, a));
-      earlyRegApps.forEach((a) => appsMap.set(`EARLY_REGISTRATION-${a.id}`, a));
 
       const sortedApps = results
         .map((r) => {
@@ -454,12 +355,6 @@ export function createEarlyRegistrationBaseController(
           addresses: true,
           familyMembers: true,
           previousSchool: true,
-          programDetail: true,
-          earlyRegistration: {
-            include: {
-              assessments: { orderBy: { createdAt: "desc" } },
-            },
-          },
           checklist: {
             include: {
               updatedBy: {
@@ -498,64 +393,10 @@ export function createEarlyRegistrationBaseController(
       });
 
       if (!application) {
-        // Fallback: check early registration table
-        const earlyReg = await prisma.earlyRegistrationApplication.findUnique({
-          where: { id: parseInt(String(req.params.id)) },
-          include: {
-            learner: true,
-            gradeLevel: true,
-            schoolYear: true,
-            familyMembers: true,
-            addresses: true,
-            assessments: { orderBy: { createdAt: "desc" } },
-            checklist: {
-              include: {
-                updatedBy: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    role: true,
-                  },
-                },
-              },
-            },
-            encodedBy: {
-              select: { id: true, firstName: true, lastName: true, role: true },
-            },
-            verifiedBy: {
-              select: { id: true, firstName: true, lastName: true, role: true },
-            },
-          },
-        });
-
-        if (!earlyReg) throw new AppError(404, "Application not found");
-
-        const canStartReview =
-          req.user?.role === "HEAD_REGISTRAR" ||
-          req.user?.role === "SYSTEM_ADMIN";
-
-        if (earlyReg.status === "SUBMITTED_BEERF" && canStartReview) {
-          await prisma.earlyRegistrationApplication.update({
-            where: { id: earlyReg.id },
-            data: { status: "UNDER_REVIEW" },
-          });
-          earlyReg.status = "UNDER_REVIEW";
-
-          await auditLog({
-            userId: req.user!.userId,
-            actionType: "APPLICATION_REVIEWED",
-            description: `Started reviewing early registration application for ${earlyReg.learner.firstName} ${earlyReg.learner.lastName}`,
-            subjectType: "EarlyRegistrationApplication",
-            recordId: earlyReg.id,
-            req,
-          });
-        }
-
-        return res.json(await flattenAssessmentData(earlyReg));
+        throw new AppError(404, "Application not found");
       }
 
-      res.json(await flattenAssessmentData(application!));
+      res.json(await flattenAssessmentData(application));
     } catch (error) {
       next(error);
     }
@@ -660,24 +501,7 @@ export function createEarlyRegistrationBaseController(
     }
 
     // 5. Determine applicant type
-    let applicantType: ApplicantType = "REGULAR";
-    if (body.isScpApplication && body.scpType) {
-      applicantType = body.scpType;
-    }
-
-    const { linkedEarlyRegistrationId } = await resolveLinkedEarlyRegistration({
-      requestedEarlyRegistrationId: body.earlyRegistrationId,
-      activeSchoolYearId: activeYear.id,
-      submittedLrn: lrn,
-      expectedApplicantType: applicantType,
-    });
-
-    if (applicantType !== "REGULAR" && !linkedEarlyRegistrationId) {
-      throw new AppError(
-        422,
-        "SCP applicants must complete Early Registration and run LRN lookup before final enrollment.",
-      );
-    }
+    const applicantType: ApplicantType = "REGULAR";
 
     const buildExistingTrackingResponse = (existingApplication: {
       trackingNumber: string;
@@ -705,64 +529,16 @@ export function createEarlyRegistrationBaseController(
       };
     };
 
-    let linkedEarlyRegistrationTrackingNumber: string | null = null;
-
-    if (linkedEarlyRegistrationId) {
-      const [linkedEarlyRegistration, existingByLinkedEarlyRegistration] =
-        await Promise.all([
-          prisma.earlyRegistrationApplication.findUnique({
-            where: { id: linkedEarlyRegistrationId },
-            select: { trackingNumber: true },
-          }),
-          prisma.enrollmentApplication.findFirst({
-            where: {
-              earlyRegistrationId: linkedEarlyRegistrationId,
-              schoolYearId: activeYear.id,
-            },
-            select: {
-              applicantType: true,
-              status: true,
-              trackingNumber: true,
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-        ]);
-
-      linkedEarlyRegistrationTrackingNumber =
-        linkedEarlyRegistration?.trackingNumber ?? null;
-
-      if (existingByLinkedEarlyRegistration?.trackingNumber) {
-        return buildExistingTrackingResponse({
-          trackingNumber: existingByLinkedEarlyRegistration.trackingNumber,
-          applicantType: existingByLinkedEarlyRegistration.applicantType,
-          status: existingByLinkedEarlyRegistration.status,
-        });
-      }
-
-      if (existingByLinkedEarlyRegistration) {
-        throw new AppError(
-          409,
-          "An enrollment application linked to this early registration already exists for this School Year.",
-        );
-      }
-    }
-
     if (lrn) {
-      const [existingByLrn, existingEarlyRegByLrn] = await Promise.all([
-        prisma.enrollmentApplication.findFirst({
-          where: { learner: { lrn }, schoolYearId: activeYear.id },
-          select: {
-            applicantType: true,
-            status: true,
-            trackingNumber: true,
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.earlyRegistrationApplication.findFirst({
-          where: { learner: { lrn }, schoolYearId: activeYear.id },
-          select: { id: true, trackingNumber: true },
-        }),
-      ]);
+      const existingByLrn = await prisma.enrollmentApplication.findFirst({
+        where: { learner: { lrn }, schoolYearId: activeYear.id },
+        select: {
+          applicantType: true,
+          status: true,
+          trackingNumber: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
       if (existingByLrn?.trackingNumber) {
         return buildExistingTrackingResponse({
@@ -772,87 +548,11 @@ export function createEarlyRegistrationBaseController(
         });
       }
 
-      if (existingByLrn && !existingByLrn.trackingNumber) {
+      if (existingByLrn) {
         throw new AppError(
           409,
           `An enrollment application with LRN ${lrn} already exists for this School Year.`,
         );
-      }
-
-      if (
-        existingEarlyRegByLrn &&
-        existingEarlyRegByLrn.id !== linkedEarlyRegistrationId
-      ) {
-        throw new AppError(
-          409,
-          `An early registration with LRN ${lrn} already exists for this School Year. Tracking number: ${existingEarlyRegByLrn.trackingNumber}.`,
-        );
-      }
-    }
-
-    // 5b. SCP grade-gate validation
-    if (applicantType !== "REGULAR") {
-      const scpConfig = await prisma.scpProgramConfig.findFirst({
-        where: {
-          schoolYearId: activeYear.id,
-          scpType: applicantType,
-          isOffered: true,
-        },
-        select: { gradeRequirements: true },
-      });
-
-      if (scpConfig?.gradeRequirements) {
-        const reqs = scpConfig.gradeRequirements as {
-          minGeneralAverage?: number;
-          subjectRequirements?: { subject: string; minGrade: number }[];
-        };
-        const failures: string[] = [];
-
-        // Online enrollment no longer requires grade payload fields to be present.
-        // If grades are provided, they are still validated against configured thresholds.
-        const submittedGeneralAverage =
-          typeof body.generalAverage === "number" &&
-          Number.isFinite(body.generalAverage)
-            ? body.generalAverage
-            : null;
-
-        if (
-          reqs.minGeneralAverage != null &&
-          submittedGeneralAverage != null &&
-          submittedGeneralAverage < reqs.minGeneralAverage
-        ) {
-          failures.push(
-            `General Average must be at least ${reqs.minGeneralAverage} (submitted: ${submittedGeneralAverage})`,
-          );
-        }
-
-        if (reqs.subjectRequirements) {
-          const gradeMap: Record<string, number | null | undefined> = {
-            SCIENCE: body.g10ScienceGrade,
-            MATH: body.grade10MathGrade,
-          };
-          for (const sr of reqs.subjectRequirements) {
-            const key = sr.subject.toUpperCase();
-            const submitted = gradeMap[key];
-
-            if (submitted == null) {
-              continue;
-            }
-
-            if (submitted < sr.minGrade) {
-              failures.push(
-                `${sr.subject} grade must be at least ${sr.minGrade} (submitted: ${submitted})`,
-              );
-            }
-          }
-        }
-
-        if (failures.length > 0) {
-          throw new AppError(
-            422,
-            `Grade requirements not met for ${applicantType.replace(/_/g, " ")}: ${failures.join("; ")}`,
-          );
-        }
       }
     }
 
@@ -868,8 +568,7 @@ export function createEarlyRegistrationBaseController(
 
     const startYear = extractStartYear(activeYear.yearLabel);
     const tempTracking = `${options.trackingPrefix}-${startYear}-TEMP-${Date.now()}`;
-    const initialTrackingNumber =
-      linkedEarlyRegistrationTrackingNumber ?? tempTracking;
+    const initialTrackingNumber = tempTracking;
 
     // Build nested address data
     const addressData: Prisma.ApplicationAddressCreateManyInput[] = [];
@@ -949,7 +648,6 @@ export function createEarlyRegistrationBaseController(
       const createdApplication = await tx.enrollmentApplication.create({
         data: {
           learnerId: learner.id,
-          earlyRegistrationId: linkedEarlyRegistrationId,
           learningModalities: body.learningModalities || [],
 
           // Enrollment preferences
@@ -1007,53 +705,10 @@ export function createEarlyRegistrationBaseController(
                 },
               }
             : undefined,
-          programDetail:
-            body.isScpApplication && body.scpType
-              ? {
-                  create: {
-                    scpType: body.scpType,
-                    artField:
-                      body.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS"
-                        ? body.artField
-                        : null,
-                    sportsList:
-                      body.scpType === "SPECIAL_PROGRAM_IN_SPORTS"
-                        ? body.sportsList || []
-                        : [],
-                    foreignLanguage:
-                      body.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
-                        ? body.foreignLanguage
-                        : null,
-                  },
-                }
-              : undefined,
-          // Reuse existing checklist if early registration is linked
-          ...(linkedEarlyRegistrationId ? {} : { checklist: { create: {} } }),
+          checklist: { create: {} },
         },
         include: { learner: true },
       });
-
-      if (linkedEarlyRegistrationId) {
-        // Link existing checklist to the new enrollment application
-        const existingChecklist = await tx.applicationChecklist.findUnique({
-          where: { earlyRegistrationId: linkedEarlyRegistrationId },
-        });
-
-        if (existingChecklist) {
-          await tx.applicationChecklist.update({
-            where: { id: existingChecklist.id },
-            data: { enrollmentId: createdApplication.id },
-          });
-        } else {
-          // Create new checklist linked to both
-          await tx.applicationChecklist.create({
-            data: {
-              enrollmentId: createdApplication.id,
-              earlyRegistrationId: linkedEarlyRegistrationId,
-            },
-          });
-        }
-      }
 
       return createdApplication;
     });
@@ -1063,31 +718,18 @@ export function createEarlyRegistrationBaseController(
       await ensureLearnerUserAccount(tx, (application as any).learner);
     });
 
-    const shouldReuseLinkedTracking =
-      Boolean(linkedEarlyRegistrationId) &&
-      Boolean(linkedEarlyRegistrationTrackingNumber);
-
     const generatedTrackingNumber = generateTrackingNumber({
       prefix: getTrackingPrefix(application.applicantType),
       schoolYear: activeYear.yearLabel,
       id: application.id,
     });
 
-    const trackingNumber = shouldReuseLinkedTracking
-      ? (application.trackingNumber ??
-        linkedEarlyRegistrationTrackingNumber ??
-        generatedTrackingNumber)
-      : generatedTrackingNumber;
+    const trackingNumber = generatedTrackingNumber;
 
-    if (
-      !shouldReuseLinkedTracking ||
-      application.trackingNumber !== trackingNumber
-    ) {
-      await prisma.enrollmentApplication.update({
-        where: { id: application.id },
-        data: { trackingNumber },
-      });
-    }
+    await prisma.enrollmentApplication.update({
+      where: { id: application.id },
+      data: { trackingNumber },
+    });
 
     // Audit log
     const logPrefix =
@@ -1105,18 +747,6 @@ export function createEarlyRegistrationBaseController(
       recordId: application.id,
       req,
     });
-
-    // Link early registration if provided
-    if (linkedEarlyRegistrationId) {
-      const nextEarlyRegStatus: ApplicationStatus = "SUBMITTED_BEEF";
-
-      await prisma.earlyRegistrationApplication.update({
-        where: { id: linkedEarlyRegistrationId },
-        data: {
-          status: nextEarlyRegStatus,
-        },
-      });
-    }
 
     return {
       trackingNumber,
@@ -1152,16 +782,6 @@ export function createEarlyRegistrationBaseController(
       "code" in error &&
       (error as { code: string }).code === "P2003"
     ) {
-      const fieldName = String(
-        (error as { meta?: { field_name?: string } }).meta?.field_name ?? "",
-      );
-      if (fieldName.includes("early_registration_id")) {
-        throw new AppError(
-          422,
-          "The selected early registration record is invalid or outdated. Please run LRN lookup again.",
-        );
-      }
-
       throw new AppError(
         409,
         "The request references related data that no longer exists.",
@@ -1211,7 +831,7 @@ export function createEarlyRegistrationBaseController(
   async function track(req: Request, res: Response, next: NextFunction) {
     try {
       const trackingNumber = String(req.params.trackingNumber);
-      let application = await prisma.enrollmentApplication.findUnique({
+      const application = await prisma.enrollmentApplication.findUnique({
         where: { trackingNumber },
         include: {
           learner: true,
@@ -1220,12 +840,6 @@ export function createEarlyRegistrationBaseController(
           addresses: true,
           familyMembers: true,
           previousSchool: true,
-          programDetail: true,
-          earlyRegistration: {
-            include: {
-              assessments: { orderBy: { createdAt: "desc" } },
-            },
-          },
           enrollmentRecord: {
             include: { section: true },
           },
@@ -1233,37 +847,18 @@ export function createEarlyRegistrationBaseController(
       });
 
       if (!application) {
-        // Fallback: Check early registration applications
-        const earlyReg = await prisma.earlyRegistrationApplication.findUnique({
-          where: { trackingNumber },
-          include: {
-            learner: true,
-            gradeLevel: true,
-            schoolYear: true,
-            familyMembers: true,
-            addresses: true,
-            assessments: {
-              orderBy: { createdAt: "desc" },
-              take: 1,
-            },
-          },
-        });
-
-        if (!earlyReg) {
-          throw new AppError(
-            404,
-            "No application found with this tracking number.",
-          );
-        }
-        application = earlyReg as any;
+        throw new AppError(
+          404,
+          "No application found with this tracking number.",
+        );
       }
 
-      const flattened = (await flattenAssessmentData(application!)) as Record<
+      const flattened = (await flattenAssessmentData(application)) as Record<
         string,
         any
       >;
       const rawStatus = String(
-        flattened.status ?? "SUBMITTED_BEERF",
+        flattened.status ?? "SUBMITTED_BEEF",
       ).toUpperCase();
       const status = normalizeTrackingStatus(
         flattened.trackingStatus ?? rawStatus,
@@ -1301,37 +896,6 @@ export function createEarlyRegistrationBaseController(
           enrollmentApplications: {
             where: {
               schoolYearId: settings.activeSchoolYearId,
-              status: {
-                in: ["PENDING_BEEF", "AWAITING_VERIFICATION", "SUBMITTED_BEEF"],
-              },
-            },
-            include: {
-              familyMembers: true,
-              addresses: true,
-              gradeLevel: { select: { name: true } },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
-          earlyRegistrationApplications: {
-            where: {
-              schoolYearId: settings.activeSchoolYearId,
-              status: {
-                in: [
-                  "SUBMITTED_BEERF",
-                  "VERIFIED",
-                  "UNDER_REVIEW",
-                  "FOR_REVISION",
-                  "ELIGIBLE",
-                  "EXAM_SCHEDULED",
-                  "ASSESSMENT_TAKEN",
-                  "PASSED",
-                  "INTERVIEW_SCHEDULED",
-                  "READY_FOR_ENROLLMENT",
-                  "TEMPORARILY_ENROLLED",
-                  "FAILED_ASSESSMENT",
-                ],
-              },
             },
             include: {
               familyMembers: true,
@@ -1344,43 +908,42 @@ export function createEarlyRegistrationBaseController(
         },
       })) as any;
 
-      const pendingEnrollment = learner?.enrollmentApplications?.[0] ?? null;
-      const latestEarlyRegistration =
-        learner?.earlyRegistrationApplications?.[0] ?? null;
-      const reg = pendingEnrollment ?? latestEarlyRegistration;
+      const reg = learner?.enrollmentApplications?.[0] ?? null;
 
-      if (!learner || !reg) {
+      if (!learner) {
         throw new AppError(
           404,
-          "No eligible early registration found for this LRN in the current School Year.",
+          "No record found for this LRN.",
         );
       }
 
-      // Map family members to father/mother/guardian fields
-      const father = reg.familyMembers.find(
-        (g: any) => g.relationship === "FATHER",
-      );
-      const mother = reg.familyMembers.find(
-        (g: any) => g.relationship === "MOTHER",
-      );
-      const guardian = reg.familyMembers.find(
-        (g: any) => g.relationship === "GUARDIAN",
-      );
-      const currentAddress = reg.addresses.find(
+      const currentAddress = reg?.addresses?.find(
         (address: any) => address.addressType === "CURRENT",
-      );
-      const permanentAddress = reg.addresses.find(
+      ) ?? null;
+      const permanentAddress = reg?.addresses?.find(
         (address: any) => address.addressType === "PERMANENT",
-      );
-      const normalizedGradeLevel =
+      ) ?? null;
+
+      const father = reg?.familyMembers?.find(
+        (g: any) => g.relationship === "FATHER",
+      ) ?? null;
+      const mother = reg?.familyMembers?.find(
+        (g: any) => g.relationship === "MOTHER",
+      ) ?? null;
+      const guardian = reg?.familyMembers?.find(
+        (g: any) => g.relationship === "GUARDIAN",
+      ) ?? null;
+
+      const normalizedGradeLevel = reg ? (
         normalizeGradeLevelToken(reg.gradeLevel?.name) ||
-        normalizeGradeLevelToken(reg.gradeLevelId);
+        normalizeGradeLevelToken(reg.gradeLevelId)
+      ) : null;
 
       res.json({
-        source: pendingEnrollment ? "ENROLLMENT" : "EARLY_REGISTRATION",
-        status: reg.status,
-        enrollmentApplicationId: pendingEnrollment?.id ?? null,
-        earlyRegistrationId: pendingEnrollment?.earlyRegistrationId ?? reg.id,
+        source: "ENROLLMENT",
+        status: reg?.status ?? null,
+        enrollmentApplicationId: reg?.id ?? null,
+        earlyRegistrationId: null,
         lrn: learner.lrn,
         psaBirthCertNumber: learner.psaBirthCertNumber,
         firstName: learner.firstName,
@@ -1405,16 +968,15 @@ export function createEarlyRegistrationBaseController(
         is4PsBeneficiary: learner.is4PsBeneficiary,
         householdId4Ps: learner.householdId4Ps,
         hasPsaBirthCertificate: learner.hasPsaBirthCertificate,
-        // Demographic fields from learner table
         gradeLevel: normalizedGradeLevel,
-        learnerType: reg.learnerType,
-        applicantType: reg.applicantType,
-        contactNumber: reg.contactNumber,
-        email: reg.email,
-        primaryContact: reg.primaryContact,
-        guardianRelationship: reg.guardianRelationship,
-        hasNoMother: reg.hasNoMother,
-        hasNoFather: reg.hasNoFather,
+        learnerType: reg?.learnerType ?? null,
+        applicantType: reg?.applicantType ?? "REGULAR",
+        contactNumber: reg?.contactNumber ?? null,
+        email: reg?.email ?? null,
+        primaryContact: reg?.primaryContact ?? null,
+        guardianRelationship: reg?.guardianRelationship ?? null,
+        hasNoMother: reg?.hasNoMother ?? false,
+        hasNoFather: reg?.hasNoFather ?? false,
         currentAddress: currentAddress
           ? {
               houseNo: currentAddress.houseNoStreet,
@@ -1466,33 +1028,7 @@ export function createEarlyRegistrationBaseController(
     }
   }
 
-  // ── SCP Rankings ──
-  async function getRankings(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { scpType, schoolYearId } = req.query;
 
-      if (!scpType) {
-        throw new AppError(400, "scpType query parameter is required.");
-      }
-
-      // Resolve school year — prioritize query param, then global SY context (req.schoolYearId)
-      const syId = schoolYearId ? parseInt(String(schoolYearId)) : req.schoolYearId;
-
-      if (!syId) {
-        throw new AppError(400, "School Year context is required.");
-      }
-
-      const rankings = await getSCPRankings(
-        syId,
-        scpType as ApplicantType,
-        prisma,
-      );
-
-      res.json({ rankings, total: rankings.length });
-    } catch (error) {
-      next(error);
-    }
-  }
 
   // ── Approve + Enroll ──
   return {
@@ -1503,7 +1039,6 @@ export function createEarlyRegistrationBaseController(
     storeF2F,
     track,
     lookupByLrn,
-    getRankings,
   };
 }
 
@@ -1516,4 +1051,3 @@ export const store = baseController.store;
 export const storeF2F = baseController.storeF2F;
 export const track = baseController.track;
 export const lookupByLrn = baseController.lookupByLrn;
-export const getRankings = baseController.getRankings;

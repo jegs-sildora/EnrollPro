@@ -27,12 +27,8 @@ export async function upload(req: Request, res: Response) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const { data: applicant, type: appType } =
-      await findApplicantOrThrow(applicantId);
-    const subjectType =
-      appType === "ENROLLMENT"
-        ? "EnrollmentApplication"
-        : "EarlyRegistrationApplication";
+    const { data: applicant } = await findApplicantOrThrow(applicantId);
+    const subjectType = "EnrollmentApplication";
 
     if (!applicant) {
       // Remove the uploaded file if applicant not found
@@ -47,10 +43,7 @@ export async function upload(req: Request, res: Response) {
       return res.status(404).json({ message: "Applicant not found" });
     }
 
-    // Detect if it's Early Registration or Enrollment
-    const enrollmentId = appType === "ENROLLMENT" ? applicantId : null;
-    const earlyRegistrationId =
-      appType === "ENROLLMENT" ? applicant.earlyRegistrationId : applicantId;
+    const enrollmentId = applicantId;
 
     // Automatically update checklist
     const checklistMapping: Record<string, string> = {
@@ -78,14 +71,9 @@ export async function upload(req: Request, res: Response) {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Find if a checklist exists for either ID
+      // Find if a checklist exists
       const existingChecklist = await tx.applicationChecklist.findFirst({
-        where: {
-          OR: [
-            ...(enrollmentId ? [{ enrollmentId }] : []),
-            ...(earlyRegistrationId ? [{ earlyRegistrationId }] : []),
-          ],
-        },
+        where: { enrollmentId },
       });
 
       if (existingChecklist) {
@@ -94,20 +82,12 @@ export async function upload(req: Request, res: Response) {
           data: {
             [checklistField]: true,
             updatedById: req.user!.userId,
-            // Ensure both IDs are linked if available
-            ...(enrollmentId && !existingChecklist.enrollmentId
-              ? { enrollmentId }
-              : {}),
-            ...(earlyRegistrationId && !existingChecklist.earlyRegistrationId
-              ? { earlyRegistrationId }
-              : {}),
           },
         });
       } else {
         await tx.applicationChecklist.create({
           data: {
             enrollmentId,
-            earlyRegistrationId,
             [checklistField]: true,
             updatedById: req.user!.userId,
           },
@@ -154,13 +134,8 @@ export async function remove(req: Request, res: Response) {
       return res.status(400).json({ message: "documentType is required" });
     }
 
-    const { data: applicant, type: appType } =
-      await findApplicantOrThrow(applicantId);
-
-    const subjectType =
-      appType === "ENROLLMENT"
-        ? "EnrollmentApplication"
-        : "EarlyRegistrationApplication";
+    const { data: applicant } = await findApplicantOrThrow(applicantId);
+    const subjectType = "EnrollmentApplication";
 
     const checklistMapping: Record<string, string> = {
       PSA_BIRTH_CERTIFICATE: "isPsaBirthCertPresented",
@@ -180,13 +155,7 @@ export async function remove(req: Request, res: Response) {
     if (checklistField) {
       await prisma.applicationChecklist.updateMany({
         where: {
-          OR: [
-            { enrollmentId: applicantId },
-            { earlyRegistrationId: applicantId },
-            ...(appType === "ENROLLMENT" && applicant.earlyRegistrationId
-              ? [{ earlyRegistrationId: applicant.earlyRegistrationId }]
-              : []),
-          ],
+          enrollmentId: applicantId,
         },
         data: { [checklistField]: false, updatedById: req.user!.userId },
       });

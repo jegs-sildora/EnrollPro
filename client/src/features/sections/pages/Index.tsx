@@ -29,7 +29,6 @@ import { InsertLateEnrolleeModal } from "../components/InsertLateEnrolleeModal";
 import { SectionHandoverModal } from "../components/SectionHandoverModal";
 import {
   DEFAULT_MAX_CAPACITY_REGULAR,
-  DEFAULT_MAX_CAPACITY_SCP,
 } from "@enrollpro/shared/constants";
 
 import {
@@ -860,10 +859,7 @@ export default function Sections() {
 
         // Auto-update capacity when program type changes
         if (field === "programType" && next.sectionType !== "TLE_LABORATORY") {
-          next.maxCapacity =
-            value === "REGULAR"
-              ? DEFAULT_MAX_CAPACITY_REGULAR
-              : DEFAULT_MAX_CAPACITY_SCP;
+          next.maxCapacity = DEFAULT_MAX_CAPACITY_REGULAR;
         }
 
         if (field === "sectionType") {

@@ -363,7 +363,7 @@ export default function Dashboard() {
                 Seasonal Focus
               </p>
               <div
-                className="inline-flex rounded-lg border bg-card p-1 shadow-sm relative"
+                className="inline-flex rounded-xl border border-border/50 bg-card/60 backdrop-blur-md p-1 shadow-xs relative"
                 role="group"
                 aria-label="Command center seasonal focus">
                 {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
@@ -385,7 +385,7 @@ export default function Dashboard() {
                       {selected && (
                         <motion.div
                           layoutId="dashboard-seasonal-focus-pill"
-                          className="absolute inset-0 bg-primary rounded-md"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-sm"
                           transition={{
                             type: "spring",
                             bounce: 0.15,
@@ -415,7 +415,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Classes Finalized */}
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border border-slate-200/50 shadow-sm card-hover hover:shadow-md bg-white">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xs font-black uppercase text-foreground">
@@ -475,7 +475,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Final Enrollment Count */}
-            <Card className="border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
+            <Card className="border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/20 shadow-md card-hover hover:shadow-lg">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
@@ -530,7 +530,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Grade Level Summary */}
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border border-slate-200/50 shadow-sm card-hover hover:shadow-md bg-white">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
                   Grade Level Summary
@@ -590,7 +590,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
               className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-              <Card className="lg:col-span-4 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
+              <Card className="lg:col-span-4 border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/20 shadow-md card-hover hover:shadow-lg">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
@@ -661,7 +661,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="lg:col-span-8 border-slate-200 bg-white shadow-sm flex flex-col">
+              <Card className="lg:col-span-8 border border-slate-200/50 bg-white shadow-sm flex flex-col card-hover hover:shadow-md">
                 <CardHeader className="pb-3 border-b border-slate-50">
                   <CardTitle className="text-xs font-black uppercase text-foreground">
                     Forecast vs. Actual Enrollment
@@ -740,7 +740,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}>
-              <Card className="border-slate-200 bg-white shadow-sm border-l-4 border-l-emerald-500">
+              <Card className="border border-slate-200/50 bg-white shadow-sm border-l-4 border-l-emerald-500 card-hover hover:shadow-md">
                 <CardHeader className="py-3 px-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -792,10 +792,10 @@ export default function Dashboard() {
           {/* Card 1 — Pending Verifications (always visible) */}
           <Card
             className={cn(
-              "shadow-sm transition-all hover:shadow-md border-2",
+              "shadow-sm card-hover hover:shadow-md border-2",
               pendingReviewAlert
                 ? "border-amber-400 bg-amber-50/30"
-                : "border-slate-200 bg-white",
+                : "border-slate-200/50 bg-white",
             )}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -872,10 +872,10 @@ export default function Dashboard() {
                 return (
                   <Card
                     className={cn(
-                      "shadow-sm transition-all hover:shadow-md border-2",
+                      "shadow-sm card-hover hover:shadow-md border-2",
                       hasCapacityPressure
                         ? "border-amber-300 bg-amber-50/50"
-                        : "border-slate-200 bg-white",
+                        : "border-slate-200/50 bg-white",
                     )}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
@@ -960,10 +960,10 @@ export default function Dashboard() {
                 return (
                   <Card
                     className={cn(
-                      "shadow-sm transition-all hover:shadow-md border-2",
+                      "shadow-sm card-hover hover:shadow-md border-2",
                       hasUnsectioned
                         ? "border-amber-400 bg-amber-50/30"
-                        : "border-slate-200 bg-white",
+                        : "border-slate-200/50 bg-white",
                     )}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
@@ -1056,7 +1056,7 @@ export default function Dashboard() {
               {leslPipeline.map((stat) => (
                 <Card
                   key={stat.title}
-                  className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md border-b-2">
+                  className="border border-amber-100/60 bg-white shadow-sm card-hover hover:shadow-md border-b-2">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-xs font-black uppercase  text-foreground">
                       {stat.title}
@@ -1086,7 +1086,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}>
-              <Card className="border-amber-100 bg-white shadow-sm border-l-4 border-l-amber-500">
+              <Card className="border border-amber-100/60 bg-white shadow-sm border-l-4 border-l-amber-500 card-hover hover:shadow-md">
                 <CardHeader className="py-3 px-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1138,7 +1138,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* ── Card 1: Enrollment Conversion Index ── */}
-            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
                   Conversion Index
@@ -1182,7 +1182,7 @@ export default function Dashboard() {
             </Card>
 
             {/* ── Card 2: Active ERP Personnel ── */}
-            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
                   Active Personnel
@@ -1231,7 +1231,7 @@ export default function Dashboard() {
             </Card>
 
             {/* ── Card 3: Enrollment Pipeline Snapshot ── */}
-            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
                   Enrollment Pipeline

@@ -16,28 +16,14 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     }
   }
 
-  if (pathname === "/monitoring/early-registration") {
-    const view = new URLSearchParams(search).get("view");
-    return view === "batch"
-      ? "Registration Pipelines"
-      : "Basic Education Early Registration Form — Monitoring";
-  }
-
   // Exact matches first
   const exact: Record<string, string> = {
     "/": "Dashboard",
     "/dashboard": "Dashboard",
     "/login": "Sign In",
-    "/early-registration": "Basic Education Early Registration Form",
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",
-    "/monitoring/f2f-early-registration":
-      "Walk-in Basic Education Early Registration Form",
-    "/applications": "Basic Education Early Registration Form",
-    "/applications/early-registration":
-      "Basic Education Early Registration Form",
     "/applications/enrollment": "Enrollment",
-    "/monitoring/early-registration/pipelines": "Registration Pipelines",
     "/monitoring/enrollment": "Enrollment Monitoring",
     "/students": "Learner Directory",
     "/sections": "Sections",

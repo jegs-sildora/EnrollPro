@@ -533,7 +533,7 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 w-full max-w-[420px]">
-          <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden">
+          <Card className="border border-slate-200/50 shadow-xl bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden animate-scale-in">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div
                 className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"
@@ -616,7 +616,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
+                      className="pl-12 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold focus-visible:ring-offset-0"
                       autoComplete="username"
                       required
                     />
@@ -646,7 +646,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
+                      className="pl-12 pr-11 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold focus-visible:ring-offset-0"
                       autoComplete="current-password"
                       required
                     />
@@ -690,7 +690,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-0 disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90">
+                  className="w-full h-11 font-bold text-sm rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
                   {isLoading ? (
                     <span className="flex items-center gap-3">
                       <Loader2 className="animate-spin h-5 w-5" />

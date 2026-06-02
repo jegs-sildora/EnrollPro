@@ -1,6 +1,22 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 
+interface SectionInfo {
+  id: number;
+  name: string;
+  maxCapacity: number;
+  enrollmentRecords: { id: number }[];
+}
+
+interface GradeLevelInfo {
+  id: number;
+  name: string;
+  _count: {
+    enrollmentApplications: number;
+  };
+  sections: SectionInfo[];
+}
+
 export async function getStats(req: Request, res: Response): Promise<void> {
   try {
     const schoolYearId = req.schoolYearId;
@@ -44,11 +60,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       totalEnrolled,
       totalPreRegistered,
       sectionsAtCapacity,
-      earlyRegSubmitted,
-      earlyRegVerified,
-      earlyRegExamScheduled,
-      earlyRegReadyForEnrollment,
-      earlyRegTotal,
       totalSectionCapacity,
       gradeLevels,
     ] = await Promise.all([
@@ -85,36 +96,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             AND e."school_year_id" = ${schoolYearId}
         ) >= s."max_capacity"
     `,
-      // ── Early Registration counts ──
-      prisma.earlyRegistrationApplication.count({
-        where: {
-          status: "SUBMITTED_BEERF",
-          schoolYearId,
-        },
-      }),
-      prisma.earlyRegistrationApplication.count({
-        where: {
-          status: { in: ["READY_FOR_ENROLLMENT", "VERIFIED"] },
-          schoolYearId,
-        },
-      }),
-      prisma.earlyRegistrationApplication.count({
-        where: {
-          status: "EXAM_SCHEDULED",
-          schoolYearId,
-        },
-      }),
-      prisma.earlyRegistrationApplication.count({
-        where: {
-          status: "READY_FOR_ENROLLMENT",
-          schoolYearId,
-        },
-      }),
-      prisma.earlyRegistrationApplication.count({
-        where: {
-          schoolYearId,
-        },
-      }),
       prisma.section.aggregate({
         where: { schoolYearId },
         _sum: { maxCapacity: true },
@@ -150,9 +131,9 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       }),
     ]);
 
-    const gradeLevelBreakdown = gradeLevels.map((gl) => {
+    const gradeLevelBreakdown = (gradeLevels as GradeLevelInfo[]).map((gl) => {
       const current = gl._count.enrollmentApplications;
-      const target = gl.sections.reduce((sum, s) => sum + s.maxCapacity, 0);
+      const target = gl.sections.reduce((sum: number, s: SectionInfo) => sum + s.maxCapacity, 0);
       return {
         id: gl.id,
         name: gl.name,
@@ -163,9 +144,9 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       };
     });
 
-    const capacityAlerts = gradeLevels.flatMap((gl) =>
+    const capacityAlerts = (gradeLevels as GradeLevelInfo[]).flatMap((gl) =>
       gl.sections
-        .map((s) => ({
+        .map((s: SectionInfo) => ({
           sectionId: s.id,
           sectionName: s.name,
           gradeLevelName: gl.name,
@@ -206,13 +187,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           sectionsAtCapacity: Number(sectionsAtCapacity[0]?.count ?? 0),
         },
         earlyRegistration: {
-          submitted: earlyRegSubmitted,
-          verified: earlyRegVerified,
-          examScheduled: earlyRegExamScheduled,
-          readyForEnrollment: earlyRegReadyForEnrollment,
+          submitted: 0,
+          verified: 0,
+          examScheduled: 0,
+          readyForEnrollment: 0,
           enrolled: totalEnrolled,
-          inPipeline: earlyRegExamScheduled + earlyRegReadyForEnrollment,
-          total: earlyRegTotal,
+          inPipeline: 0,
+          total: 0,
         },
       },
     });

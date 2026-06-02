@@ -2,7 +2,6 @@ import { useSearchParams } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import SchoolProfileTab from "./SchoolProfileTab";
 import SchoolYearTab from "./SchoolYearTab";
-import CurriculumTab from "./CurriculumTab";
 import EnrollmentGateTab from "./EnrollmentGateTab";
 import AcademicYearLifecycleTab from "./AcademicYearLifecycleTab";
 import { motion, AnimatePresence } from "motion/react";
@@ -10,7 +9,6 @@ import { motion, AnimatePresence } from "motion/react";
 const VALID_TABS = [
   "profile",
   "school-year",
-  "curriculum",
   "enrollment",
   "lifecycle",
 ] as const;
@@ -82,18 +80,7 @@ export default function Settings() {
             )}
             <span className="relative z-20">Enrollment Gate</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="curriculum"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-            {activeTab === "curriculum" && (
-              <motion.div
-                layoutId="settings-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-20">Curriculum</span>
-          </TabsTrigger>
+
           <TabsTrigger
             value="lifecycle"
             className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
@@ -143,22 +130,7 @@ export default function Settings() {
             </motion.div>
           )}
 
-          {activeTab === "curriculum" && (
-            <motion.div
-              key="curriculum"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="w-full">
-              <TabsContent
-                value="curriculum"
-                forceMount
-                className="mt-0 focus-visible:outline-none ring-0">
-                <CurriculumTab />
-              </TabsContent>
-            </motion.div>
-          )}
+
 
           {activeTab === "enrollment" && (
             <motion.div

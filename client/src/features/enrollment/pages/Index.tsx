@@ -84,7 +84,6 @@ import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSectioningWizard";
 import { BatchSectioningParamsModal } from "@/features/enrollment/components/BatchSectioningParamsModal";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
-import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { AdminPinInput } from "@/shared/components/AdminPinInput";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
@@ -115,7 +114,6 @@ import {
 } from "@/features/enrollment/workflow.constants";
 import type {
   ApplicantDetail,
-  AssessmentStep,
 } from "@/features/enrollment/hooks/useApplicationDetail";
 
 interface Application {
@@ -592,8 +590,7 @@ export default function Enrollment() {
     Application | ApplicantDetail | null
   >(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [scheduleStep, setScheduleStep] = useState<AssessmentStep | null>(null);
+
 
   const [exitModal, setExitModal] = useState<{
     open: boolean;
@@ -2657,51 +2654,13 @@ export default function Enrollment() {
                   /* not applicable in enrollment phase */
                 }}
                 onScheduleExam={async () => {
-                  const app = applications.find((a) => a.id === selectedId);
-                  if (app) {
-                    setLoading(true);
-                    try {
-                      const fullRes = await api.get(
-                        `/applications/${selectedId}`,
-                      );
-                      setSelectedApp(fullRes.data);
-                      setScheduleStep(null);
-                      setIsScheduleDialogOpen(true);
-                    } catch (err) {
-                      toastApiError(err as never);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }
+                  /* obsolete */
                 }}
-                onScheduleStep={async (step: AssessmentStep) => {
-                  setLoading(true);
-                  try {
-                    const fullRes = await api.get(
-                      `/applications/${selectedId}`,
-                    );
-                    setSelectedApp(fullRes.data);
-                    setScheduleStep(step);
-                    setIsScheduleDialogOpen(true);
-                  } catch (err) {
-                    toastApiError(err as never);
-                  } finally {
-                    setLoading(false);
-                  }
+                onScheduleStep={async () => {
+                  /* obsolete */
                 }}
-                onRecordStepResult={async (step: AssessmentStep) => {
-                  setLoading(true);
-                  try {
-                    const fullRes = await api.get(
-                      `/applications/${selectedId}`,
-                    );
-                    setSelectedApp(fullRes.data);
-                    setScheduleStep(step);
-                  } catch (err) {
-                    toastApiError(err as never);
-                  } finally {
-                    setLoading(false);
-                  }
+                onRecordStepResult={async () => {
+                  /* obsolete */
                 }}
                 onRecordResult={() => {
                   /* not primary in enrollment phase */
@@ -2793,23 +2752,7 @@ export default function Enrollment() {
                   }
                 }}
                 onScheduleInterview={async () => {
-                  setLoading(true);
-                  try {
-                    const fullRes = await api.get(
-                      `/applications/${selectedId}`,
-                    );
-                    const fullApp = fullRes.data as ApplicantDetail;
-                    setSelectedApp(fullApp);
-                    const interviewStep = fullApp.assessmentSteps?.find(
-                      (s) => s.kind === "INTERVIEW" && s.status !== "COMPLETED",
-                    );
-                    setScheduleStep(interviewStep || null);
-                    setIsScheduleDialogOpen(true);
-                  } catch (err) {
-                    toastApiError(err as never);
-                  } finally {
-                    setLoading(false);
-                  }
+                  /* obsolete */
                 }}
                 onMarkVerified={async () => {
                   try {
@@ -2938,14 +2881,7 @@ export default function Enrollment() {
         </DialogContent>
       </Dialog>
 
-      <ScheduleExamDialog
-        open={isScheduleDialogOpen}
-        onOpenChange={isScheduleDialogOpen ? setIsScheduleDialogOpen : () => {}}
-        applicant={selectedApp as ApplicantDetail | null}
-        step={scheduleStep}
-        onSuccess={fetchData}
-        onCloseSheet={() => setSelectedId(null)}
-      />
+
 
       <Dialog
         open={isLockModalOpen}

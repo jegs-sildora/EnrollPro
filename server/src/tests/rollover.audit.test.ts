@@ -185,10 +185,6 @@ async function cleanupSchoolYears(syIds: number[]): Promise<void> {
     where: { schoolYearId: { in: syIds } },
   });
   await prisma.section.deleteMany({ where: { schoolYearId: { in: syIds } } });
-  // ScpProgramStep and ScpProgramOption cascade from ScpProgramConfig.
-  await prisma.scpProgramConfig.deleteMany({
-    where: { schoolYearId: { in: syIds } },
-  });
   await prisma.teacherDesignation.deleteMany({
     where: { schoolYearId: { in: syIds } },
   });
@@ -421,26 +417,6 @@ async function runTests(): Promise<void> {
       },
     });
 
-    // ── SCP Program Config (STE) — must be cloned (Rule 1) ───────────────
-    const srcScp = await prisma.scpProgramConfig.create({
-      data: {
-        schoolYearId: sourceSY.id,
-        scpType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-        isOffered: true,
-        isTwoPhase: false,
-      },
-    });
-
-    await prisma.scpProgramStep.create({
-      data: {
-        scpProgramConfigId: srcScp.id,
-        stepOrder: 1,
-        kind: "QUALIFYING_EXAMINATION",
-        label: "STE Qualifying Examination",
-        isRequired: true,
-      },
-    });
-
     // ── Learner A — Grade 7 PROMOTED → must advance to Grade 8 (Rule 3) ──
     const learnerA = await prisma.learner.create({
       data: {
@@ -595,7 +571,7 @@ async function runTests(): Promise<void> {
     //   in the new SY.
     // ─────────────────────────────────────────────────────────────────────
 
-    const [newSections, srcSections, newScpConfigs, srcScpConfigs] =
+    const [newSections, srcSections] =
       await Promise.all([
         prisma.section.findMany({
           where: { schoolYearId: newSyId },
@@ -604,14 +580,6 @@ async function runTests(): Promise<void> {
         prisma.section.findMany({
           where: { schoolYearId: sourceSY.id },
           select: { name: true, gradeLevelId: true, programType: true },
-        }),
-        prisma.scpProgramConfig.findMany({
-          where: { schoolYearId: newSyId },
-          select: { id: true, scpType: true },
-        }),
-        prisma.scpProgramConfig.findMany({
-          where: { schoolYearId: sourceSY.id },
-          select: { id: true, scpType: true },
         }),
       ]);
 
@@ -628,32 +596,6 @@ async function runTests(): Promise<void> {
         `Rule 1: Cloned section "${section.name}" must match a source section name`,
       );
     }
-
-    assert.equal(
-      newScpConfigs.length,
-      srcScpConfigs.length,
-      `Rule 1: SCP config count must match source (expected ${srcScpConfigs.length}, got ${newScpConfigs.length})`,
-    );
-
-    assert.equal(
-      newScpConfigs[0]?.scpType,
-      "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-      "Rule 1: STE SCP config type must be preserved in the clone",
-    );
-
-    // Verify SCP steps were also cloned.
-    const clonedScpStep = await prisma.scpProgramStep.findFirst({
-      where: { scpProgramConfigId: { in: newScpConfigs.map((c) => c.id) } },
-    });
-    assert.ok(
-      clonedScpStep !== null,
-      "Rule 1: SCP program steps must be cloned into the new school year",
-    );
-    assert.equal(
-      clonedScpStep.label,
-      "STE Qualifying Examination",
-      "Rule 1: Cloned SCP step must preserve its label",
-    );
 
     console.log("  ✅ Rule 1 (Infrastructure Cloning): PASSED");
 

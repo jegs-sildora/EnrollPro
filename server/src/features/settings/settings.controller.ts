@@ -70,8 +70,8 @@ export async function getPublicSettings(
       systemStatus: contextSy?.status ?? activeSy?.status ?? "DRAFT",
       portalControl:
         contextSy?.portalControl ?? activeSy?.portalControl ?? "AUTO",
-      earlyRegOpenDate: contextSy?.earlyRegOpenDate ?? null,
-      earlyRegCloseDate: contextSy?.earlyRegCloseDate ?? null,
+      earlyRegOpenDate: null,
+      earlyRegCloseDate: null,
       classOpeningDate: contextSy?.classOpeningDate ?? null,
       classEndDate: contextSy?.classEndDate ?? null,
       enrollOpenDate: contextSy?.enrollOpenDate ?? null,
@@ -269,28 +269,5 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
 }
 
 export async function getScpConfig(req: Request, res: Response): Promise<void> {
-  const targetSchoolYearId = req.schoolYearId;
-
-  if (!targetSchoolYearId) {
-    res.json({ scpProgramConfigs: [] });
-    return;
-  }
-
-  const scpProgramConfigs = await prisma.scpProgramConfig.findMany({
-    where: { schoolYearId: targetSchoolYearId, isOffered: true },
-    select: {
-      id: true,
-      schoolYearId: true,
-      scpType: true,
-      isOffered: true,
-      isTwoPhase: true,
-      cutoffScore: true,
-      gradeRequirements: true,
-      rankingFormula: true,
-      notes: true,
-    },
-    orderBy: { scpType: "asc" },
-  });
-
-  res.json({ scpProgramConfigs });
+  res.json({ scpProgramConfigs: [] });
 }

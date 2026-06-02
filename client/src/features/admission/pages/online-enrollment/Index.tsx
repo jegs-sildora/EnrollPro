@@ -23,7 +23,6 @@ type EnrollmentSubmitSuccessPayload = Pick<
   | "programType"
   | "status"
   | "currentStep"
-  | "assessmentData"
 >;
 
 export default function Apply() {
@@ -367,7 +366,6 @@ export default function Apply() {
                         programType={submittedSuccessData.programType}
                         status={submittedSuccessData.status}
                         currentStep={submittedSuccessData.currentStep}
-                        assessmentData={submittedSuccessData.assessmentData}
                         onBackHome={handleBackHome}
                       />
                     </motion.div>

@@ -4,7 +4,6 @@ import { useNavigate, useLocation, Link, Outlet } from "react-router";
 import { Toaster } from "sileo";
 import {
   LayoutDashboard,
-  FileSignature,
   Users,
   Layers,
   Settings,
@@ -70,7 +69,7 @@ import {
 } from "@/shared/ui/tooltip";
 import { AccessibilityMenu } from "@/shared/components/AccessibilityMenu";
 import { useAccessibility } from "@/shared/hooks/useAccessibility";
-import { NoSchoolYearState } from "@/features/settings/pages/curriculum/components/NoSchoolYearState";
+import { NoSchoolYearState } from "@/shared/components/NoSchoolYearState";
 import { HistoricalBanner } from "../components/HistoricalBanner";
 import { useHistoricalReadOnly } from "../hooks/useHistoricalReadOnly";
 import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionModal";
@@ -109,7 +108,7 @@ function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="relative h-9 w-fit gap-2 px-2 rounded-lg border border-transparent transition-all">
+            className="relative h-9 w-fit gap-2 px-2.5 rounded-xl border border-border/45 hover:border-border/80 bg-card/60 hover:bg-card transition-all shadow-xs hover:shadow-sm">
             <Avatar className="h-7 w-7 border shadow-sm">
               <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
                 {initials}
@@ -290,10 +289,10 @@ function SYSwitcher() {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-2 text-xs font-bold transition-all duration-200 border",
+                "h-8 gap-2 text-xs font-bold transition-all duration-300 border rounded-xl hover:-translate-y-0.5 shadow-xs hover:shadow-sm",
                 currentYear?.status === "ARCHIVED"
-                  ? "border-slate-300 bg-slate-50"
-                  : "border-border",
+                  ? "border-slate-300 bg-slate-50/80 hover:bg-slate-50"
+                  : "border-border/60 hover:border-border bg-card/60 hover:bg-card",
               )}
               onClick={() => setOpen(!open)}>
               <Calendar
@@ -522,13 +521,6 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Intake & Preparation" />
-                    <NavItem
-                      to="/monitoring/early-registration"
-                      icon={FileSignature}
-                      label="Early Registration"
-                      pathname={pathname}
-                    />
                     <NavItem
                       to="/bosy"
                       icon={UserPlus}
@@ -761,8 +753,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         {/* Top bar */}
         <header
           className={cn(
-            "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4",
-            isHistoricalReadOnly ? "bg-muted" : "bg-background",
+            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4 sticky top-0 z-40 backdrop-blur-md bg-background/80",
+            isHistoricalReadOnly ? "bg-muted/80" : "",
           )}>
           <SidebarTrigger className="-ml-1" />
           <Separator

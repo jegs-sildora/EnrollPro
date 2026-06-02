@@ -5,7 +5,6 @@ import {
 } from "../../../lib/tracking.js";
 import type {
   EnrollmentApplication,
-  EarlyRegistrationApplication,
   ApplicationStatus,
 } from "../../../generated/prisma/index.js";
 import {
@@ -14,7 +13,7 @@ import {
 } from "@enrollpro/shared";
 import type { AdmissionControllerDeps } from "./admission-controller.deps.js";
 
-export type PublicProgramType = "REGULAR" | "SCP";
+export type PublicProgramType = "REGULAR";
 
 export type PublicTrackingStatus =
   | "SUBMITTED"
@@ -31,37 +30,13 @@ export type PublicTrackingStatus =
 export type PublicCurrentStep =
   | "APPLICATION_SUBMITTED"
   | "REGISTRAR_REVIEW"
-  | "ASSESSMENT_PHASE"
   | "ENROLLMENT_QUALIFICATION"
   | "ENROLLED";
 
-type PublicAssessmentStepStatus = "PENDING" | "SCHEDULED" | "COMPLETED";
-
-interface PublicAssessmentStep {
-  stepOrder: number;
-  kind: string;
-  label: string;
-  status: PublicAssessmentStepStatus;
-  scheduledDate: string | null;
-  scheduledTime: string | null;
-  venue: string | null;
-  result: string | null;
-  score: number | null;
-  notes: string | null;
-  conductedAt: string | null;
-}
-
 export interface PublicAssessmentData {
-  phaseStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
-  latestSchedule: {
-    stepOrder: number;
-    label: string;
-    kind: string;
-    scheduledDate: string | null;
-    scheduledTime: string | null;
-    venue: string | null;
-  } | null;
-  steps: PublicAssessmentStep[];
+  phaseStatus: "NOT_STARTED";
+  latestSchedule: null;
+  steps: [];
 }
 
 const NORMALIZED_TRACKING_STATUSES = new Set<PublicTrackingStatus>([
@@ -85,7 +60,7 @@ const RAW_TO_TRACKING_STATUS = APPLICATION_STATUS_TO_TRACKING_STATUS as Record<
 export function deriveProgramType(
   applicantType: string | null | undefined,
 ): PublicProgramType {
-  return applicantType && applicantType !== "REGULAR" ? "SCP" : "REGULAR";
+  return "REGULAR";
 }
 
 export function normalizeTrackingStatus(
@@ -110,9 +85,8 @@ export function resolveCurrentStep(
     case "SUBMITTED":
       return "APPLICATION_SUBMITTED";
     case "IN_REVIEW":
-      return "REGISTRAR_REVIEW";
     case "ASSESSMENT_IN_PROGRESS":
-      return programType === "SCP" ? "ASSESSMENT_PHASE" : "REGISTRAR_REVIEW";
+      return "REGISTRAR_REVIEW";
     case "QUALIFIED_FOR_ENROLLMENT":
       return "ENROLLMENT_QUALIFICATION";
     case "ENROLLED":
@@ -120,68 +94,13 @@ export function resolveCurrentStep(
     case "DROPPED":
       return "ENROLLED";
     case "NOT_QUALIFIED":
-      return programType === "SCP"
-        ? "ASSESSMENT_PHASE"
-        : "ENROLLMENT_QUALIFICATION";
+      return "ENROLLMENT_QUALIFICATION";
     case "REJECTED":
     case "WITHDRAWN":
       return "REGISTRAR_REVIEW";
     default:
       return "APPLICATION_SUBMITTED";
   }
-}
-
-function resolveAssessmentPhaseStatus(
-  steps: PublicAssessmentStep[],
-): "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" {
-  if (steps.length === 0) {
-    return "NOT_STARTED";
-  }
-
-  if (steps.every((step) => step.status === "COMPLETED")) {
-    return "COMPLETED";
-  }
-
-  if (
-    steps.some(
-      (step) =>
-        step.status === "SCHEDULED" ||
-        step.status === "COMPLETED" ||
-        Boolean(step.scheduledDate),
-    )
-  ) {
-    return "IN_PROGRESS";
-  }
-
-  return "NOT_STARTED";
-}
-
-function buildAssessmentData(
-  programType: PublicProgramType,
-  steps: PublicAssessmentStep[],
-): PublicAssessmentData | null {
-  if (programType !== "SCP") {
-    return null;
-  }
-
-  const latestScheduleCandidate = [...steps]
-    .filter((step) => Boolean(step.scheduledDate))
-    .sort((a, b) => b.stepOrder - a.stepOrder)[0];
-
-  return {
-    phaseStatus: resolveAssessmentPhaseStatus(steps),
-    latestSchedule: latestScheduleCandidate
-      ? {
-          stepOrder: latestScheduleCandidate.stepOrder,
-          label: latestScheduleCandidate.label,
-          kind: latestScheduleCandidate.kind,
-          scheduledDate: latestScheduleCandidate.scheduledDate,
-          scheduledTime: latestScheduleCandidate.scheduledTime,
-          venue: latestScheduleCandidate.venue,
-        }
-      : null,
-    steps,
-  };
 }
 
 export function createInitialTrackingPayload(
@@ -203,9 +122,14 @@ export function createInitialTrackingPayload(
     status,
     rawStatus,
     currentStep: resolveCurrentStep(status, programType),
-    assessmentData: buildAssessmentData(programType, []),
+    assessmentData: {
+      phaseStatus: "NOT_STARTED",
+      latestSchedule: null,
+      steps: [],
+    },
   };
 }
+
 export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ...(APPLICATION_VALID_TRANSITIONS as Record<string, ApplicationStatus[]>),
   ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "TRANSFERRED_OUT", "DROPPED"],
@@ -216,11 +140,7 @@ export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
 };
 
 function isRegularApplicant(applicantType: string | null | undefined): boolean {
-  return (
-    String(applicantType ?? "")
-      .trim()
-      .toUpperCase() === "REGULAR"
-  );
+  return true; // SCP removed, so all applicants are treated as regular JHS path enrollees.
 }
 
 export function resolveAllowedTransitionsForApplicant(application: {
@@ -228,8 +148,7 @@ export function resolveAllowedTransitionsForApplicant(application: {
   applicantType?: string | null;
 }): ApplicationStatus[] {
   if (
-    application.status === "SUBMITTED_BEERF" &&
-    isRegularApplicant(application.applicantType)
+    application.status === "SUBMITTED_BEERF"
   ) {
     return ["PENDING_BEEF"];
   }
@@ -240,62 +159,23 @@ export function resolveAllowedTransitionsForApplicant(application: {
 export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
-  const LINKABLE_EARLY_REG_STATUSES = new Set<ApplicationStatus>([
-    "PENDING_BEEF",
-    "AWAITING_VERIFICATION",
-    "SUBMITTED_BEERF",
-    "VERIFIED",
-    "UNDER_REVIEW",
-    "FOR_REVISION",
-    "ELIGIBLE",
-    "EXAM_SCHEDULED",
-    "ASSESSMENT_TAKEN",
-    "PASSED",
-    "INTERVIEW_SCHEDULED",
-    "READY_FOR_ENROLLMENT",
-    "TEMPORARILY_ENROLLED",
-    "FAILED_ASSESSMENT",
-  ]);
 
   async function findApplicantOrThrow(
     id: number,
     tx?: any,
-  ): Promise<{ data: any; type: "ENROLLMENT" | "EARLY_REGISTRATION" }> {
+  ): Promise<{ data: any; type: "ENROLLMENT" }> {
     const p = tx || deps.prisma;
     const applicant = await p.enrollmentApplication.findUnique({
       where: { id },
       include: {
         learner: true,
-        earlyRegistration: true,
         gradeLevel: true,
         previousSchool: true,
       },
     });
 
-    if (applicant) return { data: applicant, type: "ENROLLMENT" };
-
-    // Fallback to early registration table
-    const earlyReg = await p.earlyRegistrationApplication.findUnique({
-      where: { id },
-      include: { learner: true, gradeLevel: true },
-    });
-
-    if (!earlyReg) throw new AppError(404, "Application not found");
-    return { data: earlyReg, type: "EARLY_REGISTRATION" };
-  }
-
-  async function findEarlyRegOrThrow(id: number): Promise<
-    EarlyRegistrationApplication & {
-      learner: { firstName: string; lastName: string; lrn: string | null };
-    }
-  > {
-    const earlyReg = await deps.prisma.earlyRegistrationApplication.findUnique({
-      where: { id },
-      include: { learner: true },
-    });
-    if (!earlyReg)
-      throw new AppError(404, "Early registration application not found");
-    return earlyReg as any;
+    if (!applicant) throw new AppError(404, "Application not found");
+    return { data: applicant, type: "ENROLLMENT" };
   }
 
   function assertTransition(
@@ -316,169 +196,14 @@ export function createEarlyRegistrationSharedService(
   }
 
   async function flattenAssessmentData(application: Record<string, any>) {
-    // Check if it's EarlyRegistrationApplication or EnrollmentApplication
-    const assessments = (application.assessments ||
-      application.earlyRegistration?.assessments ||
-      []) as Array<{
-      id: number;
-      type: string;
-      stepOrder: number | null;
-      scheduledDate: string | null;
-      scheduledTime: string | null;
-      venue: string | null;
-      score: number | null;
-      result: string | null;
-      notes: string | null;
-      conductedAt: string | null;
-      createdAt?: string | null;
-    }>;
-
-    const scpDetail = application.programDetail ?? null;
-
-    let pipelineSteps: Array<{
-      stepOrder: number;
-      kind: string;
-      label: string;
-      description: string | null;
-      isRequired: boolean;
-      scheduledDate: string | null;
-      scheduledTime: string | null;
-      venue: string | null;
-      notes: string | null;
-      cutoffScore: number | null;
-    }> = [];
-
-    if (application.applicantType !== "REGULAR") {
-      const scpConfig = await deps.prisma.scpProgramConfig.findUnique({
-        where: {
-          uq_scp_program_configs_type: {
-            schoolYearId: application.schoolYearId,
-            scpType: application.applicantType,
-          },
-        },
-        include: { steps: { orderBy: { stepOrder: "asc" } } },
-      });
-
-      if (scpConfig) {
-        pipelineSteps = scpConfig.steps.map((s) => ({
-          stepOrder: s.stepOrder,
-          kind: s.kind,
-          label: s.label,
-          description: s.description,
-          isRequired: s.isRequired,
-          scheduledDate: s.scheduledDate?.toISOString() ?? null,
-          scheduledTime: s.scheduledTime,
-          venue: s.venue,
-          notes: s.notes,
-          cutoffScore: s.cutoffScore ?? null,
-        }));
-      }
-    }
-
-    const steps = pipelineSteps.map((step) => {
-      const matchesForKind = assessments.filter((a) => a.type === step.kind);
-      const match =
-        matchesForKind.length > 1
-          ? matchesForKind.reduce((latest, current) =>
-              current.id > latest.id ? current : latest,
-            )
-          : (matchesForKind[0] ?? null);
-
-      let stepStatus: "PENDING" | "SCHEDULED" | "COMPLETED" = "PENDING";
-      if (match?.conductedAt || match?.result != null || match?.score != null) {
-        stepStatus = "COMPLETED";
-      } else if (match?.scheduledDate) {
-        stepStatus = "SCHEDULED";
-      }
-
-      return {
-        stepOrder: step.stepOrder,
-        kind: step.kind,
-        label: step.label,
-        description: step.description,
-        isRequired: step.isRequired,
-        configDate: step.scheduledDate,
-        configTime: step.scheduledTime,
-        configVenue: step.venue,
-        configNotes: step.notes,
-        cutoffScore: step.cutoffScore ?? null,
-        assessmentId: match?.id ?? null,
-        scheduledDate: match?.scheduledDate ?? null,
-        scheduledTime: match?.scheduledTime ?? null,
-        venue: match?.venue ?? null,
-        score: match?.score ?? null,
-        result: match?.result ?? null,
-        notes: match?.notes ?? null,
-        conductedAt: match?.conductedAt ?? null,
-        status: stepStatus,
-      };
-    });
-
-    const toSortableTimestamp = (
-      value: string | null | undefined,
-      fallback: number,
-    ): number => {
-      if (!value) return fallback;
-      const parsed = Date.parse(value);
-      return Number.isNaN(parsed) ? fallback : parsed;
-    };
-
-    const sortedAssessments = [...assessments].sort((a, b) => {
-      const left = toSortableTimestamp(
-        a.conductedAt ?? a.scheduledDate ?? a.createdAt,
-        a.id,
-      );
-      const right = toSortableTimestamp(
-        b.conductedAt ?? b.scheduledDate ?? b.createdAt,
-        b.id,
-      );
-
-      if (left !== right) return right - left;
-      return b.id - a.id;
-    });
-
-    const isInterviewLikeAssessment = (type: string | null | undefined) => {
-      const normalizedType = String(type ?? "")
-        .trim()
-        .toUpperCase();
-
-      return normalizedType === "INTERVIEW" || normalizedType === "AUDITION";
-    };
-
-    const examAssessment =
-      sortedAssessments.find(
-        (assessment) => !isInterviewLikeAssessment(assessment.type),
-      ) ?? null;
-    const interviewAssessment =
-      sortedAssessments.find((assessment) =>
-        isInterviewLikeAssessment(assessment.type),
-      ) ?? null;
-
     const programType = deriveProgramType(application.applicantType);
     const trackingStatus = normalizeTrackingStatus(application.status);
     const currentStep = resolveCurrentStep(trackingStatus, programType);
-    const publicAssessmentSteps: PublicAssessmentStep[] = steps.map((step) => ({
-      stepOrder: step.stepOrder,
-      kind: step.kind,
-      label: step.label,
-      status: step.status,
-      scheduledDate: step.scheduledDate ?? step.configDate ?? null,
-      scheduledTime: step.scheduledTime ?? step.configTime ?? null,
-      venue: step.venue ?? step.configVenue ?? null,
-      result: step.result ?? null,
-      score: step.score ?? null,
-      notes: step.notes ?? step.configNotes ?? null,
-      conductedAt: step.conductedAt ?? null,
-    }));
-    const assessmentData = buildAssessmentData(
-      programType,
-      publicAssessmentSteps,
-    );
 
     // Normalize name fields if it's joined from learner table
     const learner = application.learner || application;
 
-    // Map family members (Early Registration and Enrollment use 'familyMembers' relation)
+    // Map family members (Enrollment uses 'familyMembers' relation)
     const familyMembers = (application.familyMembers || []) as any[];
     const mother = familyMembers.find((m) => m.relationship === "MOTHER");
     const father = familyMembers.find((m) => m.relationship === "FATHER");
@@ -491,10 +216,7 @@ export function createEarlyRegistrationSharedService(
     const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
     const permanentAddr = addresses.find((a) => a.addressType === "PERMANENT");
 
-    const primaryContact =
-      application.primaryContact ??
-      application.earlyRegistration?.primaryContact ??
-      null;
+    const primaryContact = application.primaryContact ?? null;
 
     const motherEmail = mother?.email ?? application.motherName?.email ?? null;
     const fatherEmail = father?.email ?? application.fatherName?.email ?? null;
@@ -511,10 +233,7 @@ export function createEarlyRegistrationSharedService(
             : null;
 
     const learningProgram =
-      application.enrollmentRecord?.section?.programType ??
-      scpDetail?.scpType ??
-      application.applicantType ??
-      "REGULAR";
+      application.enrollmentRecord?.section?.programType ?? "REGULAR";
 
     return {
       ...application,
@@ -616,7 +335,6 @@ export function createEarlyRegistrationSharedService(
       primaryContact,
       emailAddress:
         primaryContactEmail ||
-        application.earlyRegistration?.email ||
         application.emailAddress ||
         application.email ||
         guardianEmail ||
@@ -652,28 +370,24 @@ export function createEarlyRegistrationSharedService(
       programType,
       trackingStatus,
       currentStep,
-      assessmentData,
+      assessmentData: null,
 
-      isScpApplication: application.applicantType !== "REGULAR",
-      scpType:
-        scpDetail?.scpType ??
-        (application.applicantType !== "REGULAR"
-          ? application.applicantType
-          : null),
-      artField: scpDetail?.artField ?? null,
-      foreignLanguage: scpDetail?.foreignLanguage ?? null,
-      sportsList: scpDetail?.sportsList ?? [],
-      assessmentSteps: steps,
-      assessmentType: examAssessment?.type ?? null,
-      examDate: examAssessment?.scheduledDate ?? null,
-      examVenue: examAssessment?.venue ?? null,
-      examScore: examAssessment?.score ?? null,
-      examResult: examAssessment?.result ?? null,
-      examNotes: examAssessment?.notes ?? null,
-      interviewDate: interviewAssessment?.scheduledDate ?? null,
-      interviewScore: interviewAssessment?.score ?? null,
-      interviewResult: interviewAssessment?.result ?? null,
-      interviewNotes: interviewAssessment?.notes ?? null,
+      isScpApplication: false,
+      scpType: null,
+      artField: null,
+      foreignLanguage: null,
+      sportsList: [],
+      assessmentSteps: [],
+      assessmentType: null,
+      examDate: null,
+      examVenue: null,
+      examScore: null,
+      examResult: null,
+      examNotes: null,
+      interviewDate: null,
+      interviewScore: null,
+      interviewResult: null,
+      interviewNotes: null,
     };
   }
 
@@ -684,96 +398,53 @@ export function createEarlyRegistrationSharedService(
       allowEnrollmentFallback?: boolean;
     } = {},
   ) {
-    const { includeAuditLogs = false, allowEnrollmentFallback = true } =
-      options;
+    const { includeAuditLogs = false } = options;
 
-    let application: Record<string, any> | null = null;
-
-    if (allowEnrollmentFallback) {
-      application = await deps.prisma.enrollmentApplication.findUnique({
-        where: { id },
-        include: {
-          learner: true,
-          gradeLevel: true,
-          schoolYear: true,
-          addresses: true,
-          familyMembers: true,
-          previousSchool: true,
-          earlyRegistration: {
-            include: {
-              assessments: { orderBy: { createdAt: "desc" } },
-            },
-          },
-          programDetail: true,
-          checklist: {
-            include: {
-              updatedBy: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  role: true,
-                },
+    const application = await deps.prisma.enrollmentApplication.findUnique({
+      where: { id },
+      include: {
+        learner: true,
+        gradeLevel: true,
+        schoolYear: true,
+        addresses: true,
+        familyMembers: true,
+        previousSchool: true,
+        checklist: {
+          include: {
+            updatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                role: true,
               },
             },
           },
-          encodedBy: {
-            select: { id: true, firstName: true, lastName: true, role: true },
-          },
-          enrollmentRecord: {
-            include: {
-              section: {
-                include: {
-                  advisers: {
-                    where: { status: "ACTIVE" },
-                    include: {
-                      teacher: {
-                        select: { id: true, firstName: true, lastName: true },
-                      },
+        },
+        encodedBy: {
+          select: { id: true, firstName: true, lastName: true, role: true },
+        },
+        enrollmentRecord: {
+          include: {
+            section: {
+              include: {
+                advisers: {
+                  where: { status: "ACTIVE" },
+                  include: {
+                    teacher: {
+                      select: { id: true, firstName: true, lastName: true },
                     },
                   },
                 },
               },
-              enrolledBy: {
-                select: { id: true, firstName: true, lastName: true },
-              },
+            },
+            enrolledBy: {
+              select: { id: true, firstName: true, lastName: true },
             },
           },
         },
-      });
-    }
-
-    if (!application) {
-      application = await deps.prisma.earlyRegistrationApplication.findUnique({
-        where: { id },
-        include: {
-          learner: true,
-          gradeLevel: true,
-          schoolYear: true,
-          familyMembers: true,
-          addresses: true,
-          assessments: { orderBy: { createdAt: "desc" } },
-          checklist: {
-            include: {
-              updatedBy: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  role: true,
-                },
-              },
-            },
-          },
-          encodedBy: {
-            select: { id: true, firstName: true, lastName: true, role: true },
-          },
-          verifiedBy: {
-            select: { id: true, firstName: true, lastName: true, role: true },
-          },
-        },
-      });
-    }
+      },
+    });
 
     if (!application) {
       throw new AppError(404, "Application not found");
@@ -786,7 +457,6 @@ export function createEarlyRegistrationSharedService(
             in: [
               "Applicant",
               "EnrollmentApplication",
-              "EarlyRegistrationApplication",
             ],
           },
           recordId: id,
@@ -833,104 +503,6 @@ export function createEarlyRegistrationSharedService(
     return obj;
   }
 
-  async function resolveLinkedEarlyRegistration(
-    params: {
-      requestedEarlyRegistrationId: unknown;
-      activeSchoolYearId: number;
-      submittedLrn: string | null;
-      expectedApplicantType: string;
-    },
-    tx?: any,
-  ): Promise<{
-    linkedEarlyRegistrationId: number | null;
-    reason:
-      | "missing"
-      | "invalid"
-      | "school_year_mismatch"
-      | "lrn_mismatch"
-      | "applicant_type_mismatch"
-      | "status_ineligible"
-      | "ok";
-  }> {
-    const {
-      requestedEarlyRegistrationId,
-      activeSchoolYearId,
-      submittedLrn,
-      expectedApplicantType,
-    } = params;
-
-    if (
-      typeof requestedEarlyRegistrationId !== "number" ||
-      !Number.isInteger(requestedEarlyRegistrationId) ||
-      requestedEarlyRegistrationId <= 0
-    ) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "missing",
-      };
-    }
-
-    const p = tx || deps.prisma;
-    const linkedEarlyRegistration =
-      await p.earlyRegistrationApplication.findUnique({
-        where: { id: requestedEarlyRegistrationId },
-        select: {
-          id: true,
-          schoolYearId: true,
-          status: true,
-          applicantType: true,
-          learner: { select: { lrn: true } },
-        },
-      });
-
-    if (!linkedEarlyRegistration) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "invalid",
-      };
-    }
-
-    if (linkedEarlyRegistration.schoolYearId !== activeSchoolYearId) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "school_year_mismatch",
-      };
-    }
-
-    if (
-      submittedLrn &&
-      linkedEarlyRegistration.learner?.lrn &&
-      linkedEarlyRegistration.learner.lrn !== submittedLrn
-    ) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "lrn_mismatch",
-      };
-    }
-
-    if (
-      expectedApplicantType !== "REGULAR" &&
-      linkedEarlyRegistration.applicantType !== expectedApplicantType
-    ) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "applicant_type_mismatch",
-      };
-    }
-
-    if (!LINKABLE_EARLY_REG_STATUSES.has(linkedEarlyRegistration.status)) {
-      return {
-        linkedEarlyRegistrationId: null,
-        reason: "status_ineligible",
-      };
-    }
-
-    return {
-      linkedEarlyRegistrationId: linkedEarlyRegistration.id,
-      reason: "ok",
-    };
-  }
-
   async function updateApplicationStatus(
     id: number,
     status: ApplicationStatus,
@@ -950,138 +522,15 @@ export function createEarlyRegistrationSharedService(
       });
     }
 
-    const earlyReg = await p.earlyRegistrationApplication.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (earlyReg) {
-      return p.earlyRegistrationApplication.update({
-        where: { id },
-        data: { status, ...extraData },
-      });
-    }
-
     throw new AppError(404, "Application not found");
-  }
-
-  async function migrateEarlyRegToEnrollment(
-    earlyRegId: number,
-    userId: number,
-    tx?: any,
-  ): Promise<EnrollmentApplication> {
-    const p = tx || deps.prisma;
-
-    // 1. Fetch early registration record with all needed relations
-    const earlyReg = await p.earlyRegistrationApplication.findUnique({
-      where: { id: earlyRegId },
-      include: {
-        learner: true,
-        addresses: true,
-        familyMembers: true,
-        gradeLevel: true,
-        schoolYear: true,
-      },
-    });
-
-    if (!earlyReg) {
-      throw new AppError(404, "Early registration not found for migration.");
-    }
-
-    // 2. Perform Migration Transaction
-    const enrollmentApp = await (tx
-      ? Promise.resolve(tx)
-      : deps.prisma.$transaction(async (ptx) => {
-          const year = new Date().getFullYear();
-
-          // Create Phase 2 Enrollment Application
-          const created = await ptx.enrollmentApplication.create({
-            data: {
-              learnerId: earlyReg.learnerId,
-              earlyRegistrationId: earlyReg.id,
-              schoolYearId: earlyReg.schoolYearId,
-              gradeLevelId: earlyReg.gradeLevelId,
-              applicantType: earlyReg.applicantType,
-              learnerType: earlyReg.learnerType,
-              status: "SUBMITTED_BEEF",
-              admissionChannel: "F2F", // Registrar-initiated migration
-              encodedById: userId,
-              isPrivacyConsentGiven: earlyReg.isPrivacyConsentGiven,
-              guardianRelationship: earlyReg.guardianRelationship,
-              hasNoMother: earlyReg.hasNoMother,
-              hasNoFather: earlyReg.hasNoFather,
-            },
-          });
-
-          const trackingNumber = generateTrackingNumber({
-            prefix: getTrackingPrefix(earlyReg.applicantType),
-            schoolYear: earlyReg.schoolYear.yearLabel,
-            id: created.id,
-          });
-
-          const finalApp = await ptx.enrollmentApplication.update({
-            where: { id: created.id },
-            data: { trackingNumber },
-          });
-
-          // Re-link existing Addresses, Family Members, and Checklist to the new Phase 2 app
-          await ptx.applicationAddress.updateMany({
-            where: { earlyRegistrationId: earlyReg.id },
-            data: { enrollmentId: finalApp.id },
-          });
-
-          await ptx.applicationFamilyMember.updateMany({
-            where: { earlyRegistrationId: earlyReg.id },
-            data: { enrollmentId: finalApp.id },
-          });
-
-          await ptx.applicationChecklist.updateMany({
-            where: { earlyRegistrationId: earlyReg.id },
-            data: { enrollmentId: finalApp.id },
-          });
-
-          // Mark original Phase 1 record as "Enrolled" (Migrated)
-          await ptx.earlyRegistrationApplication.update({
-            where: { id: earlyReg.id },
-            data: { status: "ENROLLED" },
-          });
-
-          // Ensure Learner has a corresponding User record (Single Source of Truth)
-          const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
-          await ensureLearnerUserAccount(ptx, earlyReg.learner);
-
-          // Carry over Previous School data from reportedGrades JSON
-          const grades = earlyReg.reportedGrades as any;
-          if (grades?.lastSchoolName || grades?.generalAverage) {
-            await ptx.enrollmentPreviousSchool.create({
-              data: {
-                applicationId: finalApp.id,
-                schoolName: grades.lastSchoolName || null,
-                schoolDepedId: grades.lastSchoolId || null,
-                gradeCompleted: grades.lastGradeCompleted || null,
-                schoolYearAttended: grades.schoolYearLastAttended || null,
-                schoolAddress: grades.lastSchoolAddress || null,
-                schoolType: grades.lastSchoolType || null,
-                generalAverage: grades.generalAverage || null,
-              },
-            });
-          }
-
-          return finalApp;
-        }));
-
-    return enrollmentApp;
   }
 
   return {
     findApplicantOrThrow,
-    findEarlyRegOrThrow,
     assertTransition,
     flattenAssessmentData,
     getDetailedApplicationOrThrow,
     toUpperCaseRecursive,
     updateApplicationStatus,
-    resolveLinkedEarlyRegistration,
-    migrateEarlyRegToEnrollment,
   };
 }

@@ -34,7 +34,6 @@ import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
 import { PinResetHandoverModal } from "@/features/students/components/PinResetHandoverModal";
 import { StatusTimeline } from "@/features/enrollment/components/StatusTimeline";
-import { SCPAssessmentBlock } from "@/features/enrollment/components/SCPAssessmentBlock";
 import { Badge } from "@/shared/ui/badge";
 import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
@@ -871,13 +870,7 @@ export default function StudentProfile() {
                     </CardContent>
                   </Card>
                 )}
-                <SCPAssessmentBlock
-                  applicant={student}
-                  interviewScore={
-                    student.assessmentSteps?.find((s) => s.kind === "INTERVIEW")
-                      ?.score
-                  }
-                />
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1024,24 +1017,6 @@ export default function StudentProfile() {
                           </Badge>
                         )}
                       </div>
-                    </div>
-                    <div className="space-y-6">
-                      {student.isScpApplication && (
-                        <div className="space-y-2">
-                          <Label className="text-foreground">
-                            Special Curricular Program
-                          </Label>
-                          <p className="font-bold text-lg">{student.scpType}</p>
-                          <div className="text-foreground">
-                            {student.artField && (
-                              <p>Field: {student.artField}</p>
-                            )}
-                            {student.sportsList.length > 0 && (
-                              <p>Sports: {student.sportsList.join(", ")}</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>

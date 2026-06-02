@@ -84,7 +84,7 @@ import {
   type StudentDetail as PanelStudentDetail,
 } from "../components/StudentDetailPanel";
 import { PaginationBar } from "@/shared/components/PaginationBar";
-import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { motion, AnimatePresence } from "motion/react";

@@ -11,8 +11,7 @@ import ProtectedRoute from "@/shared/components/ProtectedRoute";
 
 import Login from "@/features/auth/pages/Login";
 import Dashboard from "@/features/dashboard/pages/Index";
-import EarlyRegistrationWorkspace from "@/features/admission/pages/early-registration/EarlyRegistrationWorkspace";
-import EarlyRegistrationDetail from "@/features/admission/pages/early-registration/EarlyRegistrationDetail";
+
 import Enrollment from "@/features/enrollment/pages/Index";
 import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
 import RegistrarEOSYWorkspace from "@/features/enrollment/pages/RegistrarEOSYWorkspace";
@@ -38,15 +37,13 @@ import SystemHealth from "@/features/admin/pages/SystemHealth";
 import Teachers from "@/features/teachers/pages/Index";
 import IntakeDashboard from "@/features/intake/pages/IntakeDashboard";
 
-// F2F Basic Education Early Registration Form Page
-import F2FEarlyRegistration from "@/features/admission/pages/f2f/Index";
+
 
 import Apply from "@/features/admission/pages/online-enrollment/Index";
 import Monitor from "@/features/admission/pages/online-enrollment/Monitor";
 import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 
-// DO 017 s.2025 — Standalone Early Registration Module (Grades 7–10)
-import EarlyRegistrationApply from "@/features/early-registration/pages/apply/Index";
+
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
 import ReadingAssessmentPage from "@/features/reading-assessment/pages/ReadingAssessmentPage";
 
@@ -109,10 +106,7 @@ export const router = createBrowserRouter([
             path: "/enrollment",
             element: <Apply />,
           },
-          {
-            path: "/early-registration",
-            element: <EarlyRegistrationApply />,
-          },
+
           {
             path: "/monitor",
             element: <Monitor />,
@@ -155,61 +149,13 @@ export const router = createBrowserRouter([
                 element: <Dashboard />,
               },
               {
-                path: "/monitoring/f2f-early-registration",
-                element: <F2FEarlyRegistration />,
-              },
-              {
                 path: "/applications",
-                element: (
-                  <Navigate
-                    to="/monitoring/early-registration"
-                    replace
-                  />
-                ),
-              },
-              {
-                path: "/applications/early-registration",
-                element: (
-                  <Navigate
-                    to="/monitoring/early-registration"
-                    replace
-                  />
-                ),
-              },
-              {
-                path: "/applications/enrollment",
                 element: (
                   <Navigate
                     to="/monitoring/enrollment"
                     replace
                   />
                 ),
-              },
-              {
-                path: "/applications/admission/:id",
-                element: (
-                  <Navigate
-                    to="/monitoring/early-registration"
-                    replace
-                  />
-                ),
-              },
-              {
-                path: "/monitoring/early-registration",
-                element: <EarlyRegistrationWorkspace />,
-              },
-              {
-                path: "/monitoring/early-registration/pipelines",
-                element: (
-                  <Navigate
-                    to="/monitoring/early-registration?view=batch"
-                    replace
-                  />
-                ),
-              },
-              {
-                path: "/monitoring/early-registration/:id",
-                element: <EarlyRegistrationDetail />,
               },
               {
                 path: "/monitoring/enrollment",

@@ -58,7 +58,6 @@ export function createSchoolYearQueryController(
         _count: {
           select: {
             sections: true,
-            earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
           },
@@ -88,7 +87,6 @@ export function createSchoolYearQueryController(
         },
         _count: {
           select: {
-            earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
           },

@@ -47,7 +47,7 @@ function TeacherUserNav() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="relative h-9 w-fit gap-2 px-2 rounded-lg border border-transparent transition-all"
+            className="relative h-9 w-fit gap-2 px-2.5 rounded-xl border border-border/45 hover:border-border/80 bg-card/60 hover:bg-card transition-all shadow-xs hover:shadow-sm"
           >
             <Avatar className="h-7 w-7 border shadow-sm">
               <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
@@ -128,7 +128,7 @@ export default function TeacherIntakeLayout() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Slim top bar — no sidebar, no SY switcher */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4 bg-background">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 px-4 sticky top-0 z-40 backdrop-blur-md bg-background/80">
         {/* School identity */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           {logoUrl ? (

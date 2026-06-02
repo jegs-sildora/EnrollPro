@@ -367,23 +367,11 @@ export default function TrackApplication({
     LEARNING_PROGRAM_LABELS[learningProgramType] ||
     learningProgramType.replace(/_/g, " ");
 
-  const latestAssessment = status?.assessments?.[0] ?? null;
-  const latestScheduledAssessment = status?.assessmentData?.latestSchedule;
-  const examDate =
-    latestScheduledAssessment?.scheduledDate ??
-    latestAssessment?.scheduledDate ??
-    null;
-  const examTime =
-    latestScheduledAssessment?.scheduledTime ??
-    latestAssessment?.scheduledTime ??
-    null;
-  const examVenue =
-    latestScheduledAssessment?.venue ?? latestAssessment?.venue ?? null;
-  const examNotes = latestAssessment?.notes ?? null;
-  const isAssessmentInProgress =
-    normalizedStatus === "ASSESSMENT_IN_PROGRESS" ||
-    status?.rawStatus === "EXAM_SCHEDULED" ||
-    status?.rawStatus === "INTERVIEW_SCHEDULED";
+  const examDate = null;
+  const examTime = null;
+  const examVenue = null;
+  const examNotes = null;
+  const isAssessmentInProgress = false;
   const nextStepsStatus =
     status?.rawStatus ||
     status?.status ||
@@ -717,7 +705,6 @@ export default function TrackApplication({
                     programType={status.programType}
                     status={nextStepsStatus}
                     currentStep={status.currentStep}
-                    assessmentData={status.assessmentData}
                     hasBeerf={Boolean(status.earlyRegistrationId)}
                   />
                   <div className="mt-8 pt-6 border-t border-dashed text-center">
@@ -910,7 +897,6 @@ export default function TrackApplication({
                     programType={status.programType}
                     status={nextStepsStatus}
                     currentStep={status.currentStep}
-                    assessmentData={status.assessmentData}
                     hasBeerf={Boolean(status.earlyRegistrationId)}
                   />
                 </div>

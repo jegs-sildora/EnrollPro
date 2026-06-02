@@ -9,12 +9,7 @@ type StudentSortOrder = "asc" | "desc";
 
 const PROGRAM_TYPES: ApplicantType[] = [
   "REGULAR",
-  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-  "SPECIAL_PROGRAM_IN_THE_ARTS",
-  "SPECIAL_PROGRAM_IN_SPORTS",
-  "SPECIAL_PROGRAM_IN_JOURNALISM",
-  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+  "LATE_ENROLLEE",
 ];
 
 const ACTIVE_STATUS_DEFAULTS: ApplicationStatus[] = [
@@ -214,7 +209,6 @@ export async function findStudents(query: {
           take: 1,
           include: {
             gradeLevel: true,
-            programDetail: { select: { scpType: true } },
             enrollmentRecord: {
               include: {
                 section: { select: { id: true, name: true, programType: true } },
@@ -222,7 +216,6 @@ export async function findStudents(query: {
             },
             addresses: true,
             familyMembers: true,
-            earlyRegistration: { select: { email: true } },
           },
         },
       },
@@ -311,9 +304,7 @@ export async function findStudents(query: {
     where,
     include: {
       learner: true,
-      earlyRegistration: { select: { email: true } },
       gradeLevel: true,
-      programDetail: { select: { scpType: true } },
       enrollmentRecord: {
         include: {
           section: { select: { id: true, name: true, programType: true } },
@@ -369,11 +360,7 @@ export async function getStudentsSummary(query: {
           name: true,
         },
       },
-      programDetail: {
-        select: {
-          scpType: true,
-        },
-      },
+
       enrollmentRecord: {
         select: {
           eosyStatus: true,
@@ -424,7 +411,6 @@ export async function getStudentsSummary(query: {
 
     const programType =
       application.enrollmentRecord?.section?.programType ||
-      application.programDetail?.scpType ||
       "REGULAR";
 
     if (programBreakdown[programType] !== undefined) {
