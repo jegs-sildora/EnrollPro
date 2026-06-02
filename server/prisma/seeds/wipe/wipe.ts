@@ -14,9 +14,6 @@ type PreservedCounts = {
   schoolYears: number;
   gradeLevels: number;
   sections: number;
-  scpProgramConfigs: number;
-  scpProgramSteps: number;
-  scpProgramOptions: number;
 };
 
 type PreservedCountsClient = Pick<
@@ -27,9 +24,6 @@ type PreservedCountsClient = Pick<
   | "schoolYear"
   | "gradeLevel"
   | "section"
-  | "scpProgramConfig"
-  | "scpProgramStep"
-  | "scpProgramOption"
 >;
 
 async function getPreservedCounts(
@@ -42,9 +36,6 @@ async function getPreservedCounts(
     schoolYears,
     gradeLevels,
     sections,
-    scpProgramConfigs,
-    scpProgramSteps,
-    scpProgramOptions,
   ] = await Promise.all([
     client.user.count(),
     client.teacher.count(),
@@ -52,9 +43,6 @@ async function getPreservedCounts(
     client.schoolYear.count(),
     client.gradeLevel.count(),
     client.section.count(),
-    client.scpProgramConfig.count(),
-    client.scpProgramStep.count(),
-    client.scpProgramOption.count(),
   ]);
 
   return {
@@ -64,9 +52,6 @@ async function getPreservedCounts(
     schoolYears,
     gradeLevels,
     sections,
-    scpProgramConfigs,
-    scpProgramSteps,
-    scpProgramOptions,
   };
 }
 
@@ -81,10 +66,7 @@ function formatPreservedCounts(
     `schoolSettings=${counts.schoolSettings}, ` +
     `schoolYears=${counts.schoolYears}, ` +
     `gradeLevels=${counts.gradeLevels}, ` +
-    `sections=${counts.sections}, ` +
-    `scpProgramConfigs=${counts.scpProgramConfigs}, ` +
-    `scpProgramSteps=${counts.scpProgramSteps}, ` +
-    `scpProgramOptions=${counts.scpProgramOptions}`
+    `sections=${counts.sections}`
   );
 }
 
@@ -98,10 +80,7 @@ function hasPreservedCountMismatch(
     before.schoolSettings !== after.schoolSettings ||
     before.schoolYears !== after.schoolYears ||
     before.gradeLevels !== after.gradeLevels ||
-    before.sections !== after.sections ||
-    before.scpProgramConfigs !== after.scpProgramConfigs ||
-    before.scpProgramSteps !== after.scpProgramSteps ||
-    before.scpProgramOptions !== after.scpProgramOptions
+    before.sections !== after.sections
   );
 }
 
@@ -116,8 +95,6 @@ async function main() {
       const enrollmentRecordsResult = await tx.enrollmentRecord.deleteMany({});
       const enrollmentPreviousSchoolsResult =
         await tx.enrollmentPreviousSchool.deleteMany({});
-      const enrollmentProgramDetailsResult =
-        await tx.enrollmentProgramDetail.deleteMany({});
       const applicationAddressesResult = await tx.applicationAddress.deleteMany(
         {},
       );
@@ -125,15 +102,11 @@ async function main() {
         await tx.applicationFamilyMember.deleteMany({});
       const applicationChecklistsResult =
         await tx.applicationChecklist.deleteMany({});
-      const earlyRegAssessmentsResult =
-        await tx.earlyRegistrationAssessment.deleteMany({});
 
-      // 3. Delete phase 2 applications first, then phase 1 applications.
+      // 3. Delete enrollment applications.
       const enrollmentAppsResult = await tx.enrollmentApplication.deleteMany(
         {},
       );
-      const earlyRegAppsResult =
-        await tx.earlyRegistrationApplication.deleteMany({});
 
       // 4. Clear health records, then learners.
       const healthRecordsResult = await tx.healthRecord.deleteMany({});
@@ -152,13 +125,10 @@ async function main() {
       return {
         enrollmentRecordsCleared: enrollmentRecordsResult.count,
         enrollmentPreviousSchoolsCleared: enrollmentPreviousSchoolsResult.count,
-        enrollmentProgramDetailsCleared: enrollmentProgramDetailsResult.count,
         applicationAddressesCleared: applicationAddressesResult.count,
         applicationFamilyMembersCleared: applicationFamilyMembersResult.count,
         applicationChecklistsCleared: applicationChecklistsResult.count,
-        earlyRegAssessmentsCleared: earlyRegAssessmentsResult.count,
         enrollmentAppsCleared: enrollmentAppsResult.count,
-        earlyRegAppsCleared: earlyRegAppsResult.count,
         healthRecordsCleared: healthRecordsResult.count,
         learnersCleared: learnersResult.count,
         preservedAfter,
@@ -172,9 +142,6 @@ async function main() {
       `Enrollment previous school rows cleared (${summary.enrollmentPreviousSchoolsCleared}).`,
     );
     console.log(
-      `Enrollment program details cleared (${summary.enrollmentProgramDetailsCleared}).`,
-    );
-    console.log(
       `Application addresses cleared (${summary.applicationAddressesCleared}).`,
     );
     console.log(
@@ -184,13 +151,7 @@ async function main() {
       `Application checklists cleared (${summary.applicationChecklistsCleared}).`,
     );
     console.log(
-      `Early registration assessments cleared (${summary.earlyRegAssessmentsCleared}).`,
-    );
-    console.log(
       `Enrollment applications cleared (${summary.enrollmentAppsCleared}).`,
-    );
-    console.log(
-      `Early registration applications cleared (${summary.earlyRegAppsCleared}).`,
     );
     console.log(`Health records cleared (${summary.healthRecordsCleared}).`);
     console.log(`Learners cleared (${summary.learnersCleared}).`);
@@ -207,19 +168,10 @@ async function main() {
       `Grade levels preserved: ${summary.preservedAfter.gradeLevels}`,
     );
     console.log(`Sections preserved: ${summary.preservedAfter.sections}`);
-    console.log(
-      `SCP configs preserved: ${summary.preservedAfter.scpProgramConfigs}`,
-    );
-    console.log(
-      `SCP steps preserved: ${summary.preservedAfter.scpProgramSteps}`,
-    );
-    console.log(
-      `SCP options preserved: ${summary.preservedAfter.scpProgramOptions}`,
-    );
 
     console.log("\nLearner/application data reset successful!");
     console.log(
-      "   Preserved: Users, Teachers, SchoolYears, Sections, GradeLevels, SchoolSettings, and SCP configuration.",
+      "   Preserved: Users, Teachers, SchoolYears, Sections, GradeLevels, and SchoolSettings.",
     );
   } catch (error) {
     console.error("Error during wipe:", error);
