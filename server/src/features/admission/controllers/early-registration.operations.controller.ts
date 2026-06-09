@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
 import { saveBase64Image } from "../../../lib/fileUploader.js";
 import type {
+  ApplicantType,
   ApplicationStatus,
   Prisma,
 } from "../../../generated/prisma/index.js";
@@ -18,20 +19,129 @@ export function createEarlyRegistrationOperationsController(
   const { prisma, auditLog, normalizeDateToUtcNoon } = deps;
   const {
     findApplicantOrThrow,
+    assertTransition,
     getDetailedApplicationOrThrow,
     updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
-
+  const resolveExpectedSectionProgramType = (applicantType: string): string =>
+    applicantType === "REGULAR" ? "REGULAR" : applicantType;
   const csvEscape = (value: unknown): string =>
     `"${String(value ?? "").replace(/"/g, '""')}"`;
   const toDateOnly = (value?: Date | null): string =>
     value ? value.toISOString().slice(0, 10) : "";
 
+  async function pass(req: Request, res: Response, next: NextFunction) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      assertTransition(
+        applicant,
+        "PASSED",
+        `Cannot mark as passed. Current status: "${applicant.status}". Only ASSESSMENT_TAKEN applications can be marked as passed.`,
+      );
+
+      const updated = await updateApplicationStatus(applicantId, "PASSED");
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "APPLICATION_PASSED",
+        description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) as PASSED - ready for interview scheduling`,
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // â"€â"€ Mark as failed and reroute to regular flow â"€â"€
+  async function fail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { examNotes } = (req.body ?? {}) as { examNotes?: string };
+      const applicantId = parseInt(String(req.params.id));
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+      const reroutedStatus: ApplicationStatus =
+        appType === "ENROLLMENT" ? "SUBMITTED_BEEF" : "SUBMITTED_BEERF";
+
+      assertTransition(
+        applicant,
+        reroutedStatus,
+        `Cannot reroute failed assessment. Current status: "${applicant.status}". Only ASSESSMENT_TAKEN applications can be rerouted to regular intake.`,
+      );
+
+      // Persist failure notes, then reroute directly to regular intake queue.
+      const updated = await prisma.$transaction(async (tx) => {
+        if (examNotes) {
+          const earlyRegId =
+            applicant.earlyRegistrationId ||
+            (appType === "EARLY_REGISTRATION" ? applicant.id : null);
+          if (earlyRegId) {
+            const latestAssessment =
+              await tx.earlyRegistrationAssessment.findFirst({
+                where: { applicationId: earlyRegId },
+                orderBy: { createdAt: "desc" },
+              });
+            if (latestAssessment) {
+              await tx.earlyRegistrationAssessment.update({
+                where: { id: latestAssessment.id },
+                data: { notes: examNotes },
+              });
+            }
+          }
+        }
+
+        const failedUpdate = await updateApplicationStatus(
+          applicantId,
+          reroutedStatus,
+          { applicantType: "REGULAR" },
+          tx,
+        );
+
+        if (appType === "ENROLLMENT" && applicant.earlyRegistrationId) {
+          await tx.earlyRegistrationApplication.update({
+            where: { id: applicant.earlyRegistrationId },
+            data: {
+              status: "SUBMITTED_BEERF",
+              applicantType: "REGULAR",
+            },
+          });
+        }
+
+        return failedUpdate;
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "APPLICATION_FAILED",
+        description: `Assessment failed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}); rerouted to ${reroutedStatus} as REGULAR. Notes: ${examNotes || "N/A"}`,
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // — Get application timeline (audit history) —
   async function getTimeline(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      await findApplicantOrThrow(applicantId);
+      const { type: appType } = await findApplicantOrThrow(applicantId);
 
       const timeline = await prisma.auditLog.findMany({
         where: {
@@ -39,6 +149,7 @@ export function createEarlyRegistrationOperationsController(
             in: [
               "Applicant",
               "EnrollmentApplication",
+              "EarlyRegistrationApplication",
             ],
           },
           recordId: applicantId,
@@ -57,6 +168,159 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
+  // — Offer regular section (legacy fallback for FAILED_ASSESSMENT records) —
+  async function offerRegular(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sectionId } = req.body;
+      const applicantId = parseInt(String(req.params.id));
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      // Only allow offering regular section to FAILED_ASSESSMENT SCP applicants
+      if (applicant.status !== "FAILED_ASSESSMENT") {
+        throw new AppError(
+          422,
+          `Cannot offer regular section. Current status: "${applicant.status}". Only FAILED_ASSESSMENT applications can be offered a regular section.`,
+        );
+      }
+
+      if (applicant.applicantType === "REGULAR") {
+        throw new AppError(
+          422,
+          "This applicant is already in the regular program.",
+        );
+      }
+
+      const originalType = applicant.applicantType;
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Lock section for capacity check
+        const [section] = await tx.$queryRaw<
+          {
+            id: number;
+            maxCapacity: number;
+            gradeLevelId: number;
+            programType: string;
+          }[]
+        >`
+        SELECT
+          id,
+          "max_capacity" as "maxCapacity",
+          "grade_level_id" as "gradeLevelId",
+          "program_type" as "programType"
+        FROM "sections"
+        WHERE id = ${sectionId}
+        FOR UPDATE
+      `;
+
+        if (!section) throw new AppError(404, "Section not found");
+
+        if (section.gradeLevelId !== applicant.gradeLevelId) {
+          throw new AppError(
+            422,
+            "Selected section does not belong to the applicant's grade level.",
+          );
+        }
+
+        if (section.programType !== "REGULAR") {
+          throw new AppError(
+            422,
+            `Only REGULAR-tagged sections can be used for regular placement. Selected section is ${section.programType}.`,
+          );
+        }
+
+        const enrolledCount = await tx.enrollmentRecord.count({
+          where: { sectionId },
+        });
+        if (enrolledCount >= section.maxCapacity) {
+          throw new AppError(422, "This section has reached maximum capacity");
+        }
+
+        // Update applicant to REGULAR type and create enrollment
+        // This promotes an EarlyReg to an EnrollmentApp if it wasn't one already
+        let enrollmentAppId = applicantId;
+
+        if (appType === "EARLY_REGISTRATION") {
+          const newApp = await tx.enrollmentApplication.create({
+            data: {
+              learnerId: applicant.learnerId,
+              earlyRegistrationId: applicant.id,
+              schoolYearId: applicant.schoolYearId,
+              gradeLevelId: applicant.gradeLevelId,
+              applicantType: "REGULAR",
+              learnerType: applicant.learnerType,
+              status: "READY_FOR_ENROLLMENT",
+              admissionChannel: applicant.channel,
+              isPrivacyConsentGiven: applicant.isPrivacyConsentGiven,
+              encodedById: req.user!.userId,
+            },
+          });
+          enrollmentAppId = newApp.id;
+
+          await tx.earlyRegistrationApplication.update({
+            where: { id: applicant.id },
+            data: { status: "READY_FOR_ENROLLMENT" },
+          });
+
+          // Link existing checklist to the new enrollment application
+          const existingChecklist = await tx.applicationChecklist.findUnique({
+            where: { earlyRegistrationId: applicant.id },
+          });
+
+          if (existingChecklist) {
+            await tx.applicationChecklist.update({
+              where: { id: existingChecklist.id },
+              data: { enrollmentId: newApp.id },
+            });
+          } else {
+            await tx.applicationChecklist.create({
+              data: {
+                enrollmentId: newApp.id,
+                earlyRegistrationId: applicant.id,
+              },
+            });
+          }
+        } else {
+          await tx.enrollmentApplication.update({
+            where: { id: applicantId },
+            data: {
+              applicantType: "REGULAR",
+              status: "READY_FOR_ENROLLMENT",
+            },
+          });
+        }
+
+        const enrollment = await tx.enrollmentRecord.create({
+          data: {
+            enrollmentApplicationId: enrollmentAppId,
+            learnerId: applicant.learnerId,
+            sectionId,
+            schoolYearId: applicant.schoolYearId,
+            enrolledById: req.user!.userId,
+          },
+        });
+
+        return enrollment;
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "OFFER_REGULAR_SECTION",
+        description: `Converted ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) from ${originalType} to REGULAR and assigned to section ${sectionId}`,
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // — Navigate to prev/next application —
   async function navigate(req: Request, res: Response, next: NextFunction) {
     try {
@@ -68,47 +332,79 @@ export function createEarlyRegistrationOperationsController(
         throw new AppError(400, 'Direction must be "prev" or "next"');
       }
 
-      // Build filters
-      const where: Prisma.EnrollmentApplicationWhereInput = {};
+      // Build filters (can be shared as both use Learner relation)
+      const buildWhere = (type: "ENROLLMENT" | "EARLY_REGISTRATION"): any => {
+        const where: any = {};
 
-      if (search) {
-        const s = String(search);
-        where.OR = [
-          { learner: { lrn: { contains: s, mode: "insensitive" } } },
-          { learner: { firstName: { contains: s, mode: "insensitive" } } },
-          { learner: { lastName: { contains: s, mode: "insensitive" } } },
-          { trackingNumber: { contains: s, mode: "insensitive" } },
-        ];
-      }
+        if (search) {
+          const s = String(search);
+          where.OR = [
+            { learner: { lrn: { contains: s, mode: "insensitive" } } },
+            { learner: { firstName: { contains: s, mode: "insensitive" } } },
+            { learner: { lastName: { contains: s, mode: "insensitive" } } },
+            { trackingNumber: { contains: s, mode: "insensitive" } },
+          ];
+        }
 
-      if (gradeLevelId) where.gradeLevelId = parseInt(String(gradeLevelId));
-      if (status && status !== "ALL")
-        where.status = status as ApplicationStatus;
-      if (applicantType && applicantType !== "ALL")
-        where.applicantType = applicantType as any;
+        if (gradeLevelId) where.gradeLevelId = parseInt(String(gradeLevelId));
+        if (status && status !== "ALL")
+          where.status = status as ApplicationStatus;
+        if (applicantType && applicantType !== "ALL")
+          where.applicantType = applicantType as any;
+
+        return where;
+      };
 
       // Scope to active School Year by default
       const settings = await prisma.schoolSetting.findFirst({
         select: { activeSchoolYearId: true },
       });
+      const commonWhere: any = {};
       if (settings?.activeSchoolYearId) {
-        where.schoolYearId = settings.activeSchoolYearId;
+        commonWhere.schoolYearId = settings.activeSchoolYearId;
       }
 
-      // Get ordered list of IDs from EnrollmentApplication table only
-      const enrollmentApps = await prisma.enrollmentApplication.findMany({
-        where,
-        select: { id: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const whereEnrollment = { ...commonWhere, ...buildWhere("ENROLLMENT") };
+      const whereEarlyReg = {
+        ...commonWhere,
+        ...buildWhere("EARLY_REGISTRATION"),
+      };
 
-      const combined = enrollmentApps.map((a: { id: number; createdAt: Date }) => ({
-        id: a.id,
-        createdAt: a.createdAt,
-        type: "ENROLLMENT",
-      }));
+      // Get ordered list of IDs from both tables
+      const [enrollmentApps, earlyRegApps] = await Promise.all([
+        prisma.enrollmentApplication.findMany({
+          where: whereEnrollment,
+          select: { id: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.earlyRegistrationApplication.findMany({
+          where: whereEarlyReg,
+          select: { id: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
 
-      const currentIndex = combined.findIndex((a) => a.id === currentId);
+      // Merge and sort
+      // We store type because IDs can collide
+      const combined = [
+        ...enrollmentApps.map((a) => ({
+          id: a.id,
+          createdAt: a.createdAt,
+          type: "ENROLLMENT",
+        })),
+        ...earlyRegApps.map((a) => ({
+          id: a.id,
+          createdAt: a.createdAt,
+          type: "EARLY_REGISTRATION",
+        })),
+      ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      // Determine the type of the current ID to avoid collision ambiguity
+      const { type: currentType } = await findApplicantOrThrow(currentId);
+
+      const currentIndex = combined.findIndex(
+        (a) => a.id === currentId && a.type === currentType,
+      );
 
       if (currentIndex === -1) {
         throw new AppError(404, "Current application not found in list");
@@ -145,12 +441,14 @@ export function createEarlyRegistrationOperationsController(
     try {
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant } = await findApplicantOrThrow(applicantId);
-      const requiredSectionProgramType = "REGULAR";
+      const requiredSectionProgramType = resolveExpectedSectionProgramType(
+        applicant.applicantType,
+      );
 
       const sections = await prisma.section.findMany({
         where: {
           gradeLevelId: applicant.gradeLevelId,
-          programType: "REGULAR",
+          programType: requiredSectionProgramType as any,
         },
         include: {
           advisers: {
@@ -171,7 +469,7 @@ export function createEarlyRegistrationOperationsController(
         orderBy: { name: "asc" },
       });
 
-      const formatted = sections.map((s) => ({
+      const formatted = sections.map((s: any) => ({
         id: s.id,
         name: s.name,
         programType: s.programType,
@@ -213,10 +511,10 @@ export function createEarlyRegistrationOperationsController(
   async function update(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant } =
+      const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
-      if (applicant.isProfileLocked) {
+      if (appType === "ENROLLMENT" && applicant.isProfileLocked) {
         throw new AppError(
           423,
           "Enrollment profile is locked after official enrollment. A SYSTEM_ADMIN must run explicit profile-lock override before editing.",
@@ -256,11 +554,14 @@ export function createEarlyRegistrationOperationsController(
         isBalikAral,
         lastYearEnrolled,
         lastGradeLevel,
+        artField,
+        foreignLanguage,
+        sportsList,
         motherMaidenName,
       } = req.body;
 
       // Fields that belong to Learner model
-      const learnerData: Record<string, unknown> = {};
+      const learnerData: Record<string, any> = {};
       if (firstName !== undefined) learnerData.firstName = firstName;
       if (middleName !== undefined) learnerData.middleName = middleName;
       if (lastName !== undefined) learnerData.lastName = lastName;
@@ -291,8 +592,8 @@ export function createEarlyRegistrationOperationsController(
         learnerData.studentPhoto = await saveBase64Image(studentPhoto, "photo");
       }
 
-      // Fields that belong to PreviousSchool
-      const prevSchoolData: Record<string, unknown> = {};
+      // Fields that belong to PreviousSchool (Enrollment only)
+      const prevSchoolData: Record<string, any> = {};
       if (lastSchoolName !== undefined)
         prevSchoolData.schoolName = lastSchoolName;
       if (lastSchoolId !== undefined)
@@ -317,7 +618,7 @@ export function createEarlyRegistrationOperationsController(
             : null;
 
       // Fields that belong to application models
-      const appData: Record<string, unknown> = {};
+      const appData: Record<string, any> = {};
       if (applicantType !== undefined) appData.applicantType = applicantType;
       if (learnerType !== undefined) appData.learnerType = learnerType;
       if (gradeLevelId !== undefined)
@@ -326,8 +627,8 @@ export function createEarlyRegistrationOperationsController(
         appData.learningModalities = learningModalities;
 
       // Family member updates
-      const familyUpdatePromises: Promise<unknown>[] = [];
-      if (motherMaidenName !== undefined) {
+      const familyUpdatePromises: any[] = [];
+      if (motherMaidenName !== undefined && appType === "ENROLLMENT") {
         familyUpdatePromises.push(
           prisma.applicationFamilyMember.updateMany({
             where: { enrollmentId: applicantId, relationship: "MOTHER" },
@@ -335,6 +636,15 @@ export function createEarlyRegistrationOperationsController(
           }),
         );
       }
+
+      // SCP Program Details
+      const programDetailData: Record<string, any> = {};
+      if (applicantType !== undefined)
+        programDetailData.scpType = applicantType;
+      if (artField !== undefined) programDetailData.artField = artField;
+      if (foreignLanguage !== undefined)
+        programDetailData.foreignLanguage = foreignLanguage;
+      if (sportsList !== undefined) programDetailData.sportsList = sportsList;
 
       const updated = await prisma.$transaction(async (tx) => {
         if (Object.keys(learnerData).length > 0) {
@@ -348,29 +658,67 @@ export function createEarlyRegistrationOperationsController(
           await Promise.all(familyUpdatePromises);
         }
 
-        return tx.enrollmentApplication.update({
-          where: { id: applicantId },
-          data: {
-            ...appData,
-            previousSchool:
-              Object.keys(prevSchoolData).length > 0
-                ? {
-                    upsert: {
-                      create: prevSchoolData as any,
-                      update: prevSchoolData as any,
-                    },
-                  }
-                : undefined,
-          },
-          include: { learner: true },
-        });
+        if (appType === "ENROLLMENT") {
+          return tx.enrollmentApplication.update({
+            where: { id: applicantId },
+            data: {
+              ...appData,
+              previousSchool:
+                Object.keys(prevSchoolData).length > 0
+                  ? {
+                      upsert: {
+                        create: prevSchoolData,
+                        update: prevSchoolData,
+                      },
+                    }
+                  : undefined,
+              programDetail:
+                Object.keys(programDetailData).length > 0 &&
+                (applicantType !== "REGULAR" ||
+                  applicant.applicantType !== "REGULAR")
+                  ? {
+                      upsert: {
+                        create: {
+                          ...programDetailData,
+                          scpType:
+                            programDetailData.scpType ||
+                            applicant.applicantType,
+                        },
+                        update: programDetailData,
+                      },
+                    }
+                  : undefined,
+            },
+            include: { learner: true },
+          });
+        } else {
+          // Early Registration - limited family update via MaidenName if relationship is Mother
+          if (motherMaidenName !== undefined) {
+            await tx.applicationFamilyMember.updateMany({
+              where: {
+                earlyRegistrationId: applicantId,
+                relationship: "MOTHER",
+              },
+              data: { maidenName: motherMaidenName },
+            });
+          }
+
+          return tx.earlyRegistrationApplication.update({
+            where: { id: applicantId },
+            data: appData,
+            include: { learner: true },
+          });
+        }
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_UPDATED",
         description: `Updated application info for ${updated.learner.firstName} ${updated.learner.lastName} (#${applicantId})`,
-        subjectType: "EnrollmentApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -397,8 +745,15 @@ export function createEarlyRegistrationOperationsController(
         throw new AppError(422, 'Field "lock" must be a boolean value.');
       }
 
-      const { data: applicant } =
+      const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
+
+      if (appType !== "ENROLLMENT") {
+        throw new AppError(
+          422,
+          "Profile lock can only be applied to enrollment applications.",
+        );
+      }
 
       if (applicant.status !== "ENROLLED") {
         throw new AppError(
@@ -724,7 +1079,9 @@ export function createEarlyRegistrationOperationsController(
   async function showDetailed(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant } = await findApplicantOrThrow(applicantId);
+
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       const canStartReview =
         req.user?.role === "HEAD_REGISTRAR" ||
@@ -735,16 +1092,26 @@ export function createEarlyRegistrationOperationsController(
         applicant.status === "SUBMITTED_BEEF";
 
       if (isSubmittedStatus && canStartReview) {
-        await prisma.enrollmentApplication.update({
-          where: { id: applicant.id },
-          data: { status: "UNDER_REVIEW" },
-        });
+        if (appType === "ENROLLMENT") {
+          await prisma.enrollmentApplication.update({
+            where: { id: applicant.id },
+            data: { status: "UNDER_REVIEW" },
+          });
+        } else {
+          await prisma.earlyRegistrationApplication.update({
+            where: { id: applicant.id },
+            data: { status: "UNDER_REVIEW" },
+          });
+        }
 
         await auditLog({
           userId: req.user!.userId,
           actionType: "APPLICATION_REVIEWED",
-          description: `Started reviewing enrollment application for ${applicant.learner.firstName} ${applicant.learner.lastName}`,
-          subjectType: "EnrollmentApplication",
+          description: `Started reviewing ${appType === "ENROLLMENT" ? "enrollment" : "early registration"} application for ${applicant.learner.firstName} ${applicant.learner.lastName}`,
+          subjectType:
+            appType === "ENROLLMENT"
+              ? "EnrollmentApplication"
+              : "EarlyRegistrationApplication",
           recordId: applicant.id,
           req,
         });
@@ -759,7 +1126,97 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
-  // — Batch Process Registration —
+  // — Reschedule assessment —
+  async function rescheduleAssessmentStep(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { stepOrder, kind, scheduledDate, scheduledTime, venue } = req.body;
+      const applicantId = parseInt(String(req.params.id));
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      const earlyRegId =
+        applicant.earlyRegistrationId ||
+        (appType === "EARLY_REGISTRATION" ? applicant.id : null);
+      if (!earlyRegId) throw new AppError(400, "No early registration linked");
+
+      const scpConfig = await prisma.scpProgramConfig.findUnique({
+        where: {
+          uq_scp_program_configs_type: {
+            schoolYearId: applicant.schoolYearId,
+            scpType: applicant.applicantType as any,
+          },
+        },
+        include: { steps: { orderBy: { stepOrder: "asc" } } },
+      });
+
+      const requiredNonInterviewSteps = (scpConfig?.steps ?? []).filter(
+        (step) => step.isRequired && step.kind !== "INTERVIEW",
+      );
+
+      if (requiredNonInterviewSteps.length > 0) {
+        const existingAssessments =
+          await prisma.earlyRegistrationAssessment.findMany({
+            where: { applicationId: earlyRegId },
+          });
+
+        const hasFailedRequiredStep = requiredNonInterviewSteps.some((step) =>
+          existingAssessments.some(
+            (assessment) =>
+              assessment.type === step.kind && assessment.result === "FAILED",
+          ),
+        );
+
+        if (hasFailedRequiredStep) {
+          throw new AppError(
+            422,
+            "Cannot schedule additional assessments or interviews after a failed cut-off result. Mark the learner as FAILED.",
+          );
+        }
+      }
+
+      // Create a new assessment record for the reschedule
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.earlyRegistrationAssessment.create({
+          data: {
+            applicationId: earlyRegId,
+            type: (kind || "QUALIFYING_EXAMINATION") as any,
+            scheduledDate: normalizeDateToUtcNoon(new Date(scheduledDate)),
+            scheduledTime: scheduledTime || null,
+            venue: venue || null,
+            notes: "Rescheduled",
+          },
+        });
+
+        return updateApplicationStatus(applicantId, "EXAM_SCHEDULED");
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "ASSESSMENT_RESCHEDULED",
+        description: `Rescheduled step ${stepOrder ?? "?"} (${kind || "WRITTEN_EXAM"}) for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) to ${scheduledDate}`,
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Legacy alias
+  const rescheduleExam = rescheduleAssessmentStep;
+
+  // ── Batch Process Registration ──
+
   async function batchProcess(req: Request, res: Response, next: NextFunction) {
     try {
       const { ids, targetStatus } = req.body as {
@@ -774,17 +1231,41 @@ export function createEarlyRegistrationOperationsController(
         );
       }
 
-      // Fetch from EnrollmentApplication table only
-      const enrollmentApps = await prisma.enrollmentApplication.findMany({
-        where: { id: { in: ids } },
-        select: {
-          id: true,
-          status: true,
-          applicantType: true,
-          learner: { select: { firstName: true, lastName: true } },
-          trackingNumber: true,
-        },
-      });
+      // Fetch from both tables and combine
+      const [enrollmentApps, earlyRegApps] = await Promise.all([
+        prisma.enrollmentApplication.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            status: true,
+            applicantType: true,
+            learner: { select: { firstName: true, lastName: true } },
+            trackingNumber: true,
+          },
+        }),
+        prisma.earlyRegistrationApplication.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            status: true,
+            applicantType: true,
+            learner: { select: { firstName: true, lastName: true } },
+            trackingNumber: true,
+          },
+        }),
+      ]);
+
+      // Map by ID, prioritizing EnrollmentApplication if ID is same (unlikely but following findApplicantOrThrow logic)
+      const appMap = new Map<
+        number,
+        { data: any; type: "ENROLLMENT" | "EARLY_REGISTRATION" }
+      >();
+      earlyRegApps.forEach((a) =>
+        appMap.set(a.id, { data: a, type: "EARLY_REGISTRATION" }),
+      );
+      enrollmentApps.forEach((a) =>
+        appMap.set(a.id, { data: a, type: "ENROLLMENT" }),
+      );
 
       const succeeded: Array<{
         id: number;
@@ -801,14 +1282,15 @@ export function createEarlyRegistrationOperationsController(
 
       const validApplicants: Array<{
         id: number;
+        type: "ENROLLMENT" | "EARLY_REGISTRATION";
         previousStatus: string;
         name: string;
         trackingNumber: string;
       }> = [];
 
       for (const id of ids) {
-        const applicant = enrollmentApps.find((a) => a.id === id);
-        if (!applicant) {
+        const applicantInfo = appMap.get(id);
+        if (!applicantInfo) {
           failed.push({
             id,
             name: "Unknown",
@@ -818,6 +1300,7 @@ export function createEarlyRegistrationOperationsController(
           continue;
         }
 
+        const { data: applicant, type: appType } = applicantInfo;
         const allowedTransitions = resolveAllowedTransitionsForApplicant({
           status: applicant.status,
           applicantType: applicant.applicantType,
@@ -835,6 +1318,7 @@ export function createEarlyRegistrationOperationsController(
 
         validApplicants.push({
           id: applicant.id,
+          type: appType,
           previousStatus: applicant.status,
           name: `${applicant.learner.lastName}, ${applicant.learner.firstName}`,
           trackingNumber: applicant.trackingNumber ?? "",
@@ -845,10 +1329,17 @@ export function createEarlyRegistrationOperationsController(
       if (validApplicants.length > 0) {
         await prisma.$transaction(async (tx) => {
           for (const app of validApplicants) {
-            await tx.enrollmentApplication.update({
-              where: { id: app.id },
-              data: { status: targetStatus },
-            });
+            if (app.type === "ENROLLMENT") {
+              await tx.enrollmentApplication.update({
+                where: { id: app.id },
+                data: { status: targetStatus },
+              });
+            } else {
+              await tx.earlyRegistrationApplication.update({
+                where: { id: app.id },
+                data: { status: targetStatus },
+              });
+            }
           }
         });
 
@@ -865,7 +1356,10 @@ export function createEarlyRegistrationOperationsController(
             userId: req.user!.userId,
             actionType: "STATUS_CHANGED",
             description: `Batch: ${app.name} (#${app.id}) status changed from ${app.previousStatus} to ${targetStatus}`,
-            subjectType: "EnrollmentApplication",
+            subjectType:
+              app.type === "ENROLLMENT"
+                ? "EnrollmentApplication"
+                : "EarlyRegistrationApplication",
             recordId: app.id,
             req,
           }).catch(() => {});
@@ -882,28 +1376,272 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
+  async function publishScpRankings(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const {
+        scpType,
+        schoolYearId,
+        rankedApplicationIds,
+        cutoffSlot,
+      } = (req.body ?? {}) as {
+        scpType?: string;
+        schoolYearId?: number;
+        rankedApplicationIds?: number[];
+        cutoffSlot?: number;
+      };
+
+      const normalizedScpType = String(scpType ?? "")
+        .trim()
+        .toUpperCase();
+
+      if (!normalizedScpType) {
+        throw new AppError(422, "scpType is required.");
+      }
+
+      if (normalizedScpType === "REGULAR") {
+        throw new AppError(
+          422,
+          "Publishing rankings is only available for SCP applicant types.",
+        );
+      }
+
+      const syId = Number(schoolYearId ?? req.schoolYearId);
+      if (!Number.isInteger(syId) || syId <= 0) {
+        throw new AppError(422, "A valid schoolYearId is required.");
+      }
+
+      const dedupedRankedIds = Array.from(
+        new Set(
+          (rankedApplicationIds ?? [])
+            .map((id) => Number(id))
+            .filter((id) => Number.isInteger(id) && id > 0),
+        ),
+      );
+
+      if (dedupedRankedIds.length === 0) {
+        throw new AppError(422, "rankedApplicationIds must contain at least one application id.");
+      }
+
+      const normalizedCutoff =
+        Number.isInteger(cutoffSlot) && Number(cutoffSlot) > 0
+          ? Number(cutoffSlot)
+          : 70;
+
+      if (dedupedRankedIds.length < normalizedCutoff) {
+        throw new AppError(
+          422,
+          `Cannot publish ${normalizedScpType} rankings yet. ` +
+            `Only ${dedupedRankedIds.length} ranked PASSED applicants are available (minimum required: ${normalizedCutoff}).`,
+        );
+      }
+
+      const resolvedCutoff = Math.min(normalizedCutoff, dedupedRankedIds.length);
+      const rankingOrder = new Map(
+        dedupedRankedIds.map((applicationId, index) => [applicationId, index]),
+      );
+
+      const cohortApplications = await prisma.enrollmentApplication.findMany({
+        where: {
+          id: { in: dedupedRankedIds },
+          schoolYearId: syId,
+        },
+        select: {
+          id: true,
+          applicantType: true,
+          status: true,
+          trackingNumber: true,
+          earlyRegistrationId: true,
+          learner: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      });
+
+      if (cohortApplications.length !== dedupedRankedIds.length) {
+        const foundIds = new Set(cohortApplications.map((candidate) => candidate.id));
+        const missingIds = dedupedRankedIds.filter((id) => !foundIds.has(id));
+
+        throw new AppError(
+          404,
+          `Some ranked applications were not found for ${normalizedScpType} in school year ${syId}: ${missingIds.join(", ")}`,
+        );
+      }
+
+      const isFinalPriority = (
+        candidate: (typeof cohortApplications)[number],
+      ): boolean =>
+        candidate.applicantType === normalizedScpType &&
+        candidate.status === "READY_FOR_ENROLLMENT";
+
+      const isFinalRedirect = (
+        candidate: (typeof cohortApplications)[number],
+      ): boolean =>
+        candidate.applicantType === "REGULAR" &&
+        candidate.status === "READY_FOR_ENROLLMENT";
+
+      const alreadyPublished = cohortApplications.every(
+        (candidate) => isFinalPriority(candidate) || isFinalRedirect(candidate),
+      );
+
+      if (alreadyPublished) {
+        throw new AppError(
+          409,
+          `Publish already executed for ${normalizedScpType} rankings in school year ${syId}. No changes were applied.`,
+        );
+      }
+
+      const invalidApplicantTypeIds = cohortApplications
+        .filter((candidate) => candidate.applicantType !== normalizedScpType)
+        .map((candidate) => candidate.id);
+
+      if (invalidApplicantTypeIds.length > 0) {
+        throw new AppError(
+          409,
+          `Cannot publish ${normalizedScpType} rankings because some applications are no longer ${normalizedScpType}: ${invalidApplicantTypeIds.join(", ")}`,
+        );
+      }
+
+      const invalidStatusIds = cohortApplications
+        .filter(
+          (candidate) =>
+            candidate.status !== "PASSED" &&
+            candidate.status !== "READY_FOR_ENROLLMENT",
+        )
+        .map((candidate) => candidate.id);
+
+      if (invalidStatusIds.length > 0) {
+        throw new AppError(
+          409,
+          `Cannot publish ${normalizedScpType} rankings because some applications are not finalized. Expected PASSED (or READY_FOR_ENROLLMENT), got: ${invalidStatusIds.join(", ")}`,
+        );
+      }
+
+      const candidates = cohortApplications;
+
+      const orderedCandidates = [...candidates].sort(
+        (a, b) =>
+          (rankingOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (rankingOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+      );
+
+      const priorityIds = orderedCandidates.slice(0, resolvedCutoff).map((candidate) => candidate.id);
+      const redirectIds = orderedCandidates.slice(resolvedCutoff).map((candidate) => candidate.id);
+
+      await prisma.$transaction(async (tx) => {
+        for (const candidate of orderedCandidates) {
+          const isPriorityLane = priorityIds.includes(candidate.id);
+
+          if (isPriorityLane) {
+            await tx.enrollmentApplication.update({
+              where: { id: candidate.id },
+              data: {
+                status: "READY_FOR_ENROLLMENT",
+              },
+            });
+
+            if (candidate.earlyRegistrationId) {
+              await tx.earlyRegistrationApplication.updateMany({
+                where: { id: candidate.earlyRegistrationId },
+                data: {
+                  status: "READY_FOR_ENROLLMENT",
+                },
+              });
+            }
+
+            continue;
+          }
+
+          await tx.enrollmentProgramDetail.deleteMany({
+            where: { applicationId: candidate.id },
+          });
+
+          await tx.enrollmentApplication.update({
+            where: { id: candidate.id },
+            data: {
+              applicantType: "REGULAR",
+              status: "READY_FOR_ENROLLMENT",
+            },
+          });
+
+          if (candidate.earlyRegistrationId) {
+            await tx.earlyRegistrationApplication.updateMany({
+              where: { id: candidate.earlyRegistrationId },
+              data: {
+                applicantType: "REGULAR",
+                status: "READY_FOR_ENROLLMENT",
+              },
+            });
+          }
+        }
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "SCP_RANKINGS_PUBLISHED",
+        description:
+          `Published ${normalizedScpType} selection board for SY#${syId}: ` +
+          `${priorityIds.length} routed to READY_FOR_ENROLLMENT, ` +
+          `${redirectIds.length} redirected to REGULAR/READY_FOR_ENROLLMENT.`,
+        subjectType: "EnrollmentApplication",
+        recordId: null,
+        req,
+      }).catch(() => {});
+
+      res.json({
+        schoolYearId: syId,
+        scpType: normalizedScpType,
+        cutoffSlot: resolvedCutoff,
+        published: {
+          priorityCount: priorityIds.length,
+          redirectedCount: redirectIds.length,
+        },
+        priorityIds,
+        redirectedIds: redirectIds,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   return {
+    pass,
+    fail,
     exportLisMasterCsv,
     exportSf1Csv,
     getTimeline,
+    offerRegular,
     navigate,
     getSectionsForAssignment,
     update,
     setProfileLock,
     showDetailed,
+    rescheduleAssessmentStep,
+    rescheduleExam,
     batchProcess,
+    publishScpRankings,
   };
 }
 
 const operationsController = createEarlyRegistrationOperationsController();
 
+export const pass = operationsController.pass;
+export const fail = operationsController.fail;
 export const exportLisMasterCsv = operationsController.exportLisMasterCsv;
 export const exportSf1Csv = operationsController.exportSf1Csv;
 export const getTimeline = operationsController.getTimeline;
+export const offerRegular = operationsController.offerRegular;
 export const navigate = operationsController.navigate;
 export const getSectionsForAssignment =
   operationsController.getSectionsForAssignment;
 export const update = operationsController.update;
 export const setProfileLock = operationsController.setProfileLock;
 export const showDetailed = operationsController.showDetailed;
+export const rescheduleAssessmentStep =
+  operationsController.rescheduleAssessmentStep;
+export const rescheduleExam = operationsController.rescheduleExam;
 export const batchProcess = operationsController.batchProcess;
+export const publishScpRankings = operationsController.publishScpRankings;

@@ -232,5 +232,136 @@ export function getRequiredDocuments(params: {
     return applyDynamicDocumentRules(requirements, documentRequirements);
   }
 
+  if (applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+    requirements.push(
+      {
+        type: "GOOD_MORAL_CERTIFICATE",
+        label: "Certificate of Good Moral Character",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Issued by previous school principal/adviser.",
+        phase: 1,
+      },
+      {
+        type: "MEDICAL_CERTIFICATE",
+        label: "Medical Certificate",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Physical health clearance for STE admission.",
+        phase: 1,
+      },
+      {
+        type: "ID_PICTURE_2PCS",
+        label: "1x1 or 2x2 ID Picture (2 pieces)",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Required for STE application profiling and records.",
+        phase: 1,
+      },
+      {
+        type: "LONG_PLASTIC_ENVELOPE",
+        label: "Long Plastic Envelope (1 piece)",
+        isRequired: true,
+        isOnceOnly: false,
+        description:
+          "Required for organizing and submitting documentary records.",
+        phase: 1,
+      },
+    );
+  }
+
+  if (applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
+    requirements.push({
+      type: "ACCOMPLISHED_APPLICATION_FORM",
+      label: "Accomplished Application Form",
+      isRequired: true,
+      isOnceOnly: false,
+      description: "Program-specific SPA application form.",
+      phase: 1,
+    });
+  }
+
+  if (applicantType === "SPECIAL_PROGRAM_IN_SPORTS") {
+    requirements.push(
+      {
+        type: "ACCOMPLISHED_APPLICATION_FORM",
+        label: "Accomplished Application Form",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Program-specific SPS application form.",
+        phase: 1,
+      },
+      {
+        type: "MEDICAL_CERTIFICATE",
+        label: "Strict Medical Certificate",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Clearing for intense physical activity/tryouts.",
+        phase: 1,
+      },
+      {
+        type: "CERTIFICATE_OF_RECOGNITION",
+        label: "Certificates of Recognition in Sports",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Proof of participation or achievement in sports.",
+        phase: 1,
+      },
+    );
+  }
+
+  if (applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM") {
+    requirements.push(
+      {
+        type: "ACCOMPLISHED_APPLICATION_FORM",
+        label: "Accomplished Application Form",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Program-specific SPJ application form.",
+        phase: 1,
+      },
+      {
+        type: "WRITING_PORTFOLIO",
+        label: "Portfolio of Published Works",
+        isRequired: false,
+        isOnceOnly: false,
+        description: "Recommended if available.",
+        phase: 1,
+      },
+    );
+  }
+
+  if (applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE") {
+    requirements.push({
+      type: "ACCOMPLISHED_APPLICATION_FORM",
+      label: "Accomplished Application Form",
+      isRequired: true,
+      isOnceOnly: false,
+      description: "Program-specific SPFL application form.",
+      phase: 1,
+    });
+  }
+
+  if (applicantType === "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION") {
+    requirements.push(
+      {
+        type: "ACCOMPLISHED_APPLICATION_FORM",
+        label: "Accomplished Application Form",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Program-specific SPTVE application form.",
+        phase: 1,
+      },
+      {
+        type: "GOOD_MORAL_CERTIFICATE",
+        label: "Certificate of Good Moral Character",
+        isRequired: true,
+        isOnceOnly: false,
+        description: "Issued by previous school principal/adviser.",
+        phase: 1,
+      },
+    );
+  }
+
   return requirements;
 }

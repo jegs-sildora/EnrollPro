@@ -8,11 +8,20 @@ import {
   rejectSchema,
   unenrollSchema,
   processExitSchema,
+  scheduleExamSchema,
+  recordResultSchema,
+  rescheduleExamSchema,
   updateChecklistSchema,
   requestRevisionSchema,
+  scheduleInterviewSchema,
+  recordInterviewResultSchema,
+  scheduleAssessmentStepSchema,
+  recordStepResultSchema,
+  rescheduleAssessmentStepSchema,
   batchProcessSchema,
-  readingProfileUpdateSchema,
+  publishScpRankingsSchema,
   specialEnrollmentSchema,
+  readingProfileUpdateSchema,
 } from "@enrollpro/shared";
 import * as ctrl from "./early-registration.controller.js";
 import * as docCtrl from "./document.controller.js";
@@ -52,7 +61,21 @@ router.post(
   ctrl.batchProcess,
 );
 
+// SCP Rankings — must be before /:id routes
+router.get(
+  "/scp-rankings",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.getRankings,
+);
 
+router.patch(
+  "/scp-rankings/publish",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(publishScpRankingsSchema),
+  ctrl.publishScpRankings,
+);
 
 router.get(
   "/exports/lis-master",
@@ -73,6 +96,10 @@ router.post(
   "/special-enrollment",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  (req, res, next) => {
+    console.log("[DEBUG] Hit special-enrollment route");
+    next();
+  },
   validate(specialEnrollmentSchema),
   ctrl.specialEnrollment,
 );
@@ -233,7 +260,97 @@ router.patch(
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.withdraw,
 );
+router.patch(
+  "/:id/offer-regular",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(approveSchema),
+  ctrl.offerRegular,
+);
 
+// SCP routes — pipeline-aware
+router.patch(
+  "/:id/mark-eligible",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.markEligible,
+);
+router.patch(
+  "/:id/schedule-assessment",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(scheduleAssessmentStepSchema),
+  ctrl.scheduleAssessmentStep,
+);
+router.patch(
+  "/:id/record-step-result",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(recordStepResultSchema),
+  ctrl.recordStepResult,
+);
+router.patch(
+  "/:id/reschedule-assessment",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(rescheduleAssessmentStepSchema),
+  ctrl.rescheduleAssessmentStep,
+);
+
+// Legacy SCP routes (backward compat — same handlers)
+router.patch(
+  "/:id/schedule-exam",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(scheduleAssessmentStepSchema),
+  ctrl.scheduleExam,
+);
+router.patch(
+  "/:id/reschedule-exam",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(rescheduleAssessmentStepSchema),
+  ctrl.rescheduleExam,
+);
+router.patch(
+  "/:id/schedule-interview",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(scheduleInterviewSchema),
+  ctrl.scheduleInterview,
+);
+router.patch(
+  "/:id/record-interview-result",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(recordInterviewResultSchema),
+  ctrl.recordInterviewResult,
+);
+router.patch(
+  "/:id/mark-interview-passed",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.markInterviewPassed,
+);
+router.patch(
+  "/:id/record-result",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(recordStepResultSchema),
+  ctrl.recordResult,
+);
+router.patch(
+  "/:id/pass",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.pass,
+);
+router.patch(
+  "/:id/fail",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.fail,
+);
 
 // Catch-all for unhandled routes in this router
 router.use((req, res) => {
