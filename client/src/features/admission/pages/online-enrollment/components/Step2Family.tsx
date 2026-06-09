@@ -10,6 +10,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Separator } from "@/shared/ui/separator";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { cn } from "@/shared/lib/utils";
+import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 
 type ContactKey = "MOTHER" | "FATHER" | "GUARDIAN";
 
@@ -34,7 +35,6 @@ export default function Step2Family() {
     watch,
     setValue,
     clearErrors,
-    trigger,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
 
@@ -43,8 +43,6 @@ export default function Step2Family() {
   const hasNoFather = data.hasNoFather;
   const isPermanentSameAsCurrent = data.isPermanentSameAsCurrent;
   const isGuardianRequired = hasNoMother && hasNoFather;
-  const isLinkedFromEarlyRegistration =
-    typeof data.earlyRegistrationId === "number";
 
   const motherInfoFilled =
     !hasNoMother &&
@@ -70,19 +68,16 @@ export default function Step2Family() {
       setValue("mother.contactNumber", data.contactNumber, {
         shouldValidate: false,
       });
-      setValue("mother.email", data.email, { shouldValidate: false });
     } else if (data.primaryContact === "FATHER") {
       setValue("father.contactNumber", data.contactNumber, {
         shouldValidate: false,
       });
-      setValue("father.email", data.email, { shouldValidate: false });
     } else if (data.primaryContact === "GUARDIAN") {
       setValue("guardian.contactNumber", data.contactNumber, {
         shouldValidate: false,
       });
-      setValue("guardian.email", data.email, { shouldValidate: false });
     }
-  }, [data.primaryContact, data.contactNumber, data.email, setValue]);
+  }, [data.primaryContact, data.contactNumber, setValue]);
 
   useEffect(() => {
     const availableContacts: ContactKey[] = [];
@@ -119,17 +114,6 @@ export default function Step2Family() {
           updates and enrollment notices.
         </AlertDescription>
       </Alert>
-
-      {isLinkedFromEarlyRegistration && (
-        <Alert className="bg-amber-50 border-amber-200">
-          <Info className="h-4 w-4 stroke-amber-600" />
-          <AlertDescription className="text-amber-900 font-bold">
-            You are submitting from a linked Early Registration record. Please
-            review and confirm the contact details below before final
-            submission.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="space-y-8">
         <h3 className="text-sm font-bold uppercase  text-primary">
@@ -177,95 +161,27 @@ export default function Step2Family() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.barangay"
-              className="text-xs font-bold uppercase">
-              Barangay <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.barangay"
-              {...register("currentAddress.barangay")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.currentAddress?.barangay &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. BARANGAY 1"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.currentAddress?.barangay && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.currentAddress.barangay.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.cityMunicipality"
-              className="text-xs font-bold uppercase">
-              City / Municipality <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.cityMunicipality"
-              {...register("currentAddress.cityMunicipality")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.currentAddress?.cityMunicipality &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. QUEZON CITY"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.currentAddress?.cityMunicipality && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.currentAddress.cityMunicipality.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="currentAddress.province"
-              className="text-xs font-bold uppercase">
-              Province <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="currentAddress.province"
-              {...register("currentAddress.province")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.currentAddress?.province &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. METRO MANILA"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.currentAddress?.province && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.currentAddress.province.message}
-              </p>
-            )}
-          </div>
-        </div>
+        <PhilippineAddressSelector
+          value={{
+            region: data.currentAddress?.region ?? "",
+            province: data.currentAddress?.province ?? "",
+            cityMunicipality: data.currentAddress?.cityMunicipality ?? "",
+            barangay: data.currentAddress?.barangay ?? "",
+          }}
+          onChange={(field, val) =>
+            setValue(`currentAddress.${field}`, val, {
+              shouldValidate: true,
+              shouldDirty: true,
+            })
+          }
+          errors={{
+            region: errors.currentAddress?.region?.message,
+            province: errors.currentAddress?.province?.message,
+            cityMunicipality: errors.currentAddress?.cityMunicipality?.message,
+            barangay: errors.currentAddress?.barangay?.message,
+          }}
+          required
+        />
 
         <div className="flex items-center space-x-3 pt-2">
           <Checkbox
@@ -297,7 +213,7 @@ export default function Step2Family() {
                 <h3 className="text-sm font-bold uppercase  text-primary">
                   Permanent Address
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.houseNo"
@@ -317,7 +233,7 @@ export default function Step2Family() {
                       }}
                     />
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
+                  <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.street"
                       className="text-xs font-bold uppercase">
@@ -336,64 +252,30 @@ export default function Step2Family() {
                       }}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="permanentAddress.barangay"
-                      className="text-xs font-bold uppercase">
-                      Barangay
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.barangay"
-                      {...register("permanentAddress.barangay")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. BARANGAY 2"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="permanentAddress.cityMunicipality"
-                      className="text-xs font-bold uppercase">
-                      City / Municipality
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.cityMunicipality"
-                      {...register("permanentAddress.cityMunicipality")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. MAKATI CITY"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="permanentAddress.province"
-                      className="text-xs font-bold uppercase">
-                      Province
-                    </Label>
-                    <Input
-                      autoComplete="off"
-                      id="permanentAddress.province"
-                      {...register("permanentAddress.province")}
-                      className="h-11 font-bold uppercase"
-                      placeholder="e.g. METRO MANILA"
-                      onInput={(e) => {
-                        (e.target as HTMLInputElement).value = (
-                          e.target as HTMLInputElement
-                        ).value.toUpperCase();
-                      }}
-                    />
-                  </div>
                 </div>
+
+                <PhilippineAddressSelector
+                    value={{
+                      region: data.permanentAddress?.region ?? "",
+                      province: data.permanentAddress?.province ?? "",
+                      cityMunicipality:
+                        data.permanentAddress?.cityMunicipality ?? "",
+                      barangay: data.permanentAddress?.barangay ?? "",
+                    }}
+                    onChange={(field, val) =>
+                      setValue(`permanentAddress.${field}`, val, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    errors={{
+                      region: errors.permanentAddress?.region?.message,
+                      province: errors.permanentAddress?.province?.message,
+                      cityMunicipality:
+                        errors.permanentAddress?.cityMunicipality?.message,
+                      barangay: errors.permanentAddress?.barangay?.message,
+                    }}
+                  />
               </div>
             </motion.div>
           )}
@@ -855,12 +737,6 @@ export default function Step2Family() {
                       shouldValidate: true,
                       shouldDirty: true,
                     });
-                    if (isLinkedFromEarlyRegistration) {
-                      setValue("isContactInfoConfirmed", false, {
-                        shouldValidate: false,
-                        shouldDirty: true,
-                      });
-                    }
                   }}
                   className={cn(
                     "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
@@ -911,56 +787,15 @@ export default function Step2Family() {
             </p>
           )}
 
-          <div
-            className={cn(
-              "rounded-xl border p-4 space-y-3 transition-colors",
-              errors.isContactInfoConfirmed
-                ? "border-destructive bg-destructive/5"
-                : "border-blue-200 bg-blue-50",
-            )}>
-            <div className="flex items-start gap-2">
-              <Checkbox
-                id="isContactInfoConfirmed"
-                checked={!!data.isContactInfoConfirmed}
-                className={cn(
-                  errors.isContactInfoConfirmed &&
-                    "border-destructive data-[state=unchecked]:border-destructive",
-                )}
-                onCheckedChange={(checked) => {
-                  setValue("isContactInfoConfirmed", checked === true, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                  void trigger("isContactInfoConfirmed");
-                }}
-              />
-              <Label
-                htmlFor="isContactInfoConfirmed"
-                className={cn(
-                  "text-xs font-bold leading-relaxed cursor-pointer",
-                  errors.isContactInfoConfirmed
-                    ? "text-destructive"
-                    : "text-blue-900",
-                )}>
-                I confirm that the primary contact number and email are still
-                active and correct for this enrollment.{" "}
-                <span className="text-destructive">*</span>
-              </Label>
-            </div>
-            {errors.isContactInfoConfirmed && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.isContactInfoConfirmed.message}
-              </p>
-            )}
-          </div>
 
           <div
             className={cn(
               "grid grid-cols-1 gap-8 items-start",
-              motherInfoFilled && fatherInfoFilled && guardianInfoFilled
+              [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length >= 3
                 ? "md:grid-cols-3"
-                : "md:grid-cols-2",
+                : [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length === 2
+                  ? "md:grid-cols-2"
+                  : "md:grid-cols-1"
             )}>
             {data.primaryContact && (
               <div className="space-y-4">
@@ -1006,51 +841,12 @@ export default function Step2Family() {
                       onInput={(event) => {
                         const input = event.target as HTMLInputElement;
                         input.value = formatContactNumber(input.value);
-                        if (isLinkedFromEarlyRegistration) {
-                          setValue("isContactInfoConfirmed", false, {
-                            shouldValidate: false,
-                            shouldDirty: true,
-                          });
-                        }
                       }}
                     />
                     {errors.contactNumber && (
                       <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
                         <AlertCircle className="w-3 h-3" />
                         {errors.contactNumber.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="email"
-                      className="text-xs font-bold uppercase flex items-center gap-1">
-                      Email Address <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="email"
-                      {...register("email")}
-                      type="email"
-                      placeholder="email@example.com"
-                      className={cn(
-                        "h-11 font-bold bg-white",
-                        errors.email &&
-                          "border-destructive focus-visible:ring-destructive",
-                      )}
-                      onInput={() => {
-                        if (isLinkedFromEarlyRegistration) {
-                          setValue("isContactInfoConfirmed", false, {
-                            shouldValidate: false,
-                            shouldDirty: true,
-                          });
-                        }
-                      }}
-                    />
-                    {errors.email && (
-                      <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.email.message}
                       </p>
                     )}
                   </div>
@@ -1091,11 +887,6 @@ export default function Step2Family() {
                   | "father.contactNumber"
                   | "guardian.contactNumber";
 
-                const emailField = `${secondary.path}.email` as
-                  | "mother.email"
-                  | "father.email"
-                  | "guardian.email";
-
                 return (
                   <div
                     key={secondary.id}
@@ -1128,21 +919,6 @@ export default function Step2Family() {
                             const input = event.target as HTMLInputElement;
                             input.value = formatContactNumber(input.value);
                           }}
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor={emailField}
-                          className="text-xs font-bold uppercase">
-                          Email Address
-                        </Label>
-                        <Input
-                          id={emailField}
-                          {...register(emailField)}
-                          type="email"
-                          placeholder="email@example.com"
-                          className="h-11 font-bold bg-white"
                         />
                       </div>
                     </div>

@@ -10,7 +10,6 @@ import {
   transitionSchoolYear,
   deleteSchoolYear,
   getNextDefaults,
-  toggleOverride,
   updateDates,
   updateAssessmentConfig,
 } from "./school-year.controller.js";
@@ -84,13 +83,7 @@ router.patch(
   validate(transitionSchoolYearSchema),
   transitionSchoolYear,
 );
-router.patch(
-  "/:id/override",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  validate(toggleOverrideSchema),
-  toggleOverride,
-);
+
 router.patch(
   "/:id/dates",
   authenticate,

@@ -141,7 +141,7 @@ export async function listEnrolledLearners(req: Request, res: Response) {
       readingProfileLevel: true,
       readingProfileNotes: true,
       readingProfileAssessedAt: true,
-      checklist: { select: { isConfirmationSlipReceived: true } },
+      confirmationConsent: true,
       learner: {
         select: {
           id: true,
@@ -233,14 +233,13 @@ export async function updateConfirmationSlip(req: Request, res: Response) {
     return;
   }
 
-  const updated = await prisma.applicationChecklist.upsert({
-    where: { enrollmentId: applicationId },
-    create: { enrollmentId: applicationId, isConfirmationSlipReceived },
-    update: { isConfirmationSlipReceived },
-    select: { isConfirmationSlipReceived: true },
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { confirmationConsent: isConfirmationSlipReceived },
+    select: { confirmationConsent: true },
   });
 
-  res.json({ application: { id: applicationId, ...updated } });
+  res.json({ application: { id: applicationId, isConfirmationSlipReceived: updated.confirmationConsent } });
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -274,7 +273,7 @@ export async function getReadingQueue(req: Request, res: Response) {
     prisma.enrollmentApplication.findMany({
       where: {
         schoolYearId,
-        status: "READY_FOR_ENROLLMENT",
+        status: "VERIFIED",
         readingProfileLevel: null,
       },
       select: {
@@ -334,7 +333,7 @@ export async function assessListing(req: Request, res: Response) {
   res.json({ listing: updated });
 }
 
-/** PATCH /applications/:applicationId/intake-assess — Record Phil-IRI and advance application to PENDING_CONFIRMATION */
+/** PATCH /applications/:applicationId/intake-assess — Record Phil-IRI and advance application to PENDING_VERIFICATION */
 export async function assessApplicationForIntake(req: Request, res: Response) {
   const userId = (req as AuthRequest).user?.id;
   if (!userId) {
@@ -360,7 +359,7 @@ export async function assessApplicationForIntake(req: Request, res: Response) {
     res.status(404).json({ message: "Application not found." });
     return;
   }
-  if (existing.status !== "READY_FOR_ENROLLMENT") {
+  if (existing.status !== "VERIFIED") {
     res.status(409).json({
       message: "Application is not in READY_FOR_ENROLLMENT status.",
     });
@@ -373,7 +372,7 @@ export async function assessApplicationForIntake(req: Request, res: Response) {
       readingProfileLevel: readingLevel,
       readingProfileAssessedAt: new Date(),
       readingProfileAssessedById: userId,
-      status: "PENDING_CONFIRMATION",
+      status: "VERIFIED",
     },
     select: {
       id: true,
@@ -386,7 +385,7 @@ export async function assessApplicationForIntake(req: Request, res: Response) {
   res.json({ application: updated });
 }
 
-/** GET /confirmation-queue?schoolYearId=X — PROCESSED listings + PENDING_CONFIRMATION apps */
+/** GET /confirmation-queue?schoolYearId=X — PROCESSED listings + PENDING_VERIFICATION apps */
 export async function getConfirmationQueue(req: Request, res: Response) {
   const schoolYearId = Number(req.query.schoolYearId);
   if (!schoolYearId || isNaN(schoolYearId)) {
@@ -412,14 +411,14 @@ export async function getConfirmationQueue(req: Request, res: Response) {
       orderBy: { createdAt: "asc" },
     }),
     prisma.enrollmentApplication.findMany({
-      where: { schoolYearId, status: "PENDING_CONFIRMATION" },
+      where: { schoolYearId, status: "VERIFIED" },
       select: {
         id: true,
         status: true,
         learnerType: true,
         readingProfileLevel: true,
         readingProfileAssessedAt: true,
-        checklist: { select: { isConfirmationSlipReceived: true } },
+        confirmationConsent: true,
         learner: {
           select: {
             id: true,
@@ -473,7 +472,7 @@ export async function confirmListing(req: Request, res: Response) {
   res.json({ listing: updated });
 }
 
-/** PATCH /applications/:id/officialize — Advance PENDING_CONFIRMATION app with BMI to READY_FOR_SECTIONING */
+/** PATCH /applications/:id/officialize — Advance PENDING_VERIFICATION app with BMI to VERIFIED */
 export async function officializeApplication(req: Request, res: Response) {
   const applicationId = Number(req.params.applicationId);
   const { heightCm, weightKg, confirmationSlipReceived } = req.body as {
@@ -490,8 +489,8 @@ export async function officializeApplication(req: Request, res: Response) {
     res.status(404).json({ message: "Application not found." });
     return;
   }
-  if (existing.status !== "PENDING_CONFIRMATION") {
-    res.status(409).json({ message: "Application is not in PENDING_CONFIRMATION status." });
+  if (existing.status !== "PENDING_VERIFICATION") {
+    res.status(409).json({ message: "Application is not in PENDING_VERIFICATION status." });
     return;
   }
 
@@ -499,20 +498,14 @@ export async function officializeApplication(req: Request, res: Response) {
     await tx.enrollmentApplication.update({
       where: { id: applicationId },
       data: {
-        status: "READY_FOR_SECTIONING",
+        status: "VERIFIED",
         intakeHeightCm: heightCm != null ? Number(heightCm) : undefined,
         intakeWeightKg: weightKg != null ? Number(weightKg) : undefined,
         confirmationConsent: confirmationSlipReceived ?? false,
       },
     });
 
-    if (confirmationSlipReceived) {
-      await tx.applicationChecklist.upsert({
-        where: { enrollmentId: applicationId },
-        create: { enrollmentId: applicationId, isConfirmationSlipReceived: true },
-        update: { isConfirmationSlipReceived: true },
-      });
-    }
+
   });
 
   res.json({ message: "Application officialized successfully." });

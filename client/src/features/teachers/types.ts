@@ -75,10 +75,12 @@ export interface Teacher {
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
+  natureOfAppointment?: "REGULAR_PERMANENT" | "SUBSTITUTE" | "CONTRACTUAL" | "LOCAL_SCHOOL_BOARD" | null;
   photoPath: string | null;
   sectionCount: number;
   designation: TeacherDesignation | null;
   isActive: boolean;
+  serviceStatus: TeacherServiceStatus;
   createdAt: string;
   userAccount: {
     id: number;
@@ -115,3 +117,16 @@ export interface DesignationFormState {
 export type DesignationDrawerTab = "designation" | "schedule-notes" | "review";
 export type TeacherStatusFilter = "all" | "active" | "inactive";
 export type TeacherDesignationFilter = string;
+
+export type TeacherServiceStatus =
+  | "ACTIVE"
+  | "ON_LEAVE"
+  | "TRANSFERRED"
+  | "RETIRED_RESIGNED"
+  | "DROPPED_FROM_ROLLS";
+
+export interface UpdateServiceStatusInput {
+  status: TeacherServiceStatus;
+  effectiveDate: string;
+  remarks?: string | null;
+}

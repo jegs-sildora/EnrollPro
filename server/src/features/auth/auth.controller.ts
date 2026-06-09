@@ -21,7 +21,6 @@ type AuthUser = {
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "24h";
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
-const LEARNER_COOKIE_NAME = "learner_session";
 
 function parseExpiresInToMs(
   expiresIn: jwt.SignOptions["expiresIn"],
@@ -159,10 +158,6 @@ export async function logout(_req: Request, res: Response): Promise<void> {
   res.status(204).send();
 }
 
-export async function logoutLearner(_req: Request, res: Response): Promise<void> {
-  clearSessionCookie(res, LEARNER_COOKIE_NAME);
-  res.status(204).send();
-}
 
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
@@ -232,13 +227,7 @@ export async function changePassword(
   });
 
   const token = createAuthToken(updated);
-  const isLearner = updated.role === "LEARNER";
-  setSessionCookie(res, token, isLearner ? LEARNER_COOKIE_NAME : AUTH_COOKIE_NAME);
-
-  if (isLearner) {
-    res.json({ user: toUserResponse(updated) });
-    return;
-  }
+  setSessionCookie(res, token, AUTH_COOKIE_NAME);
 
   res.json({ token, user: toUserResponse(updated) });
 }
@@ -294,58 +283,3 @@ export async function verifyCredentials(
   }
 }
 
-/**
- * POST /api/auth/learner-login
- * Issues a JWT for a learner identified by LRN (accountName) + password.
- * Uses the same createAuthToken helper as staff login — payload includes { userId, role, mustChangePassword }.
- */
-export async function learnerLogin(req: Request, res: Response): Promise<void> {
-  const lrn = String(req.body.lrn ?? "").trim();
-  const password = String(req.body.password ?? "");
-
-  if (!lrn || lrn.length !== 12) {
-    res.status(400).json({ message: "LRN must be exactly 12 characters." });
-    return;
-  }
-  if (!password) {
-    res.status(400).json({ message: "password is required." });
-    return;
-  }
-
-  const INVALID_MSG = "Invalid LRN or password.";
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { accountName: lrn },
-    });
-
-    if (!user || user.role !== "LEARNER" || !user.isActive) {
-      res.status(401).json({ message: INVALID_MSG });
-      return;
-    }
-
-    const passwordValid = await bcrypt.compare(password, user.password);
-    if (!passwordValid) {
-      res.status(401).json({ message: INVALID_MSG });
-      return;
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
-    const token = createAuthToken(updatedUser);
-    setSessionCookie(res, token, LEARNER_COOKIE_NAME);
-
-    res.json({
-      user: toUserResponse(updatedUser),
-    });
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message });
-      return;
-    }
-    res.status(500).json({ message: "Learner authentication failed." });
-  }
-}

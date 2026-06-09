@@ -89,8 +89,6 @@ export function deriveSchoolYearScheduleFromOpeningDate(
 		normalizedClassEndTemplate.getUTCDate(),
 	);
 
-	const earlyRegOpenDate = lastSaturdayOfJanuary(startYear);
-	const earlyRegCloseDate = lastFridayOfFebruary(startYear);
 	const enrollOpenDate = subDays(normalizedOpeningDate, 7);
 	const enrollCloseDate = subDays(normalizedOpeningDate, 1);
 
@@ -98,8 +96,6 @@ export function deriveSchoolYearScheduleFromOpeningDate(
 		yearLabel: `${startYear}-${endYear}`,
 		classOpeningDate: normalizedOpeningDate,
 		classEndDate,
-		earlyRegOpenDate,
-		earlyRegCloseDate,
 		enrollOpenDate,
 		enrollCloseDate,
 	};

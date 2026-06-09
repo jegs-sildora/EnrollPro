@@ -2,11 +2,11 @@ import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "@/shared/components/PrivacyNotice";
-import EarlyRegistrationForm from "./EarlyRegistrationForm";
+import EnrollmentForm from "./EnrollmentForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
 import { Button } from "@/shared/ui/button";
 import { IntakeChoice } from "./components/IntakeChoice";
-import { ReturningLearnerFlow } from "./components/ReturningLearnerFlow";
+
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -390,17 +390,6 @@ export default function Apply() {
                       transition={{ duration: 0.3 }}>
                       <IntakeChoice onChoice={handleIntakeChoice} />
                     </motion.div>
-                  ) : intakeChoice === "RETURNING" ? (
-                    <motion.div
-                      key="returning"
-                      initial={{ opacity: 0, scale: 1.02, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 1.02 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}>
-                      <ReturningLearnerFlow
-                        onBack={() => setIntakeChoice(null)}
-                      />
-                    </motion.div>
                   ) : (
                     <motion.div
                       key="form"
@@ -408,7 +397,7 @@ export default function Apply() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 1.02 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}>
-                      <EarlyRegistrationForm
+                      <EnrollmentForm
                         onBack={() => setIntakeChoice(null)}
                         onSuccess={(data) => setSubmittedSuccessData(data)}
                       />

@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
+
 import { motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -20,20 +21,16 @@ import {
   getBOSYQueue,
   confirmReturn,
   bulkConfirm,
-  syncBOSYQueue,
-  getJHSCompleters,
   apiRevertToPendingBeef,
   apiFlushNoShows,
 } from "../api/bosy.api";
-import type { BOSYReadiness, BOSYQueueItem, JHSCompleter } from "../types";
-import { Phase2IntakeHub } from "../components/Phase2IntakeHub";
+import type { BOSYReadiness, BOSYQueueItem } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useAuthStore } from "@/store/auth.slice";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+// Select import removed
 import { Badge } from "@/shared/ui/badge";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -48,7 +45,6 @@ import {
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/lib/utils";
 import { QueueTable } from "../components/QueueTable";
-import { JHSCompleterTable } from "../components/JHSCompleterTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
@@ -119,10 +115,8 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 
 export default function BOSYPage() {
   const navigate = useNavigate();
-  const { activeSchoolYearId, activeSchoolYearLabel, viewingSchoolYearId } =
+  const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
-  const { user } = useAuthStore();
-  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const syId =
     typeof resolvedSchoolYearId === "number" &&
@@ -137,7 +131,7 @@ export default function BOSYPage() {
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("PENDING_VERIFICATION");
   const {
     inputValue: queueSearch,
     setInputValue: setQueueSearch,
@@ -145,51 +139,25 @@ export default function BOSYPage() {
     isSearching,
   } = useDebouncedSearch();
 
-  // Pending Confirmation state
-  const [pendingItems, setPendingItems] = useState<BOSYQueueItem[]>([]);
-  const [pendingTotal, setPendingTotal] = useState(0);
-  const [pendingPage, setPendingPage] = useState(1);
-  const [pendingLimit, setPendingLimit] = useState(25);
-  const [pendingLoading, setPendingLoading] = useState(false);
-
-  // Confirmed state
-  const [confirmedItems, setConfirmedItems] = useState<BOSYQueueItem[]>([]);
-  const [confirmedTotal, setConfirmedTotal] = useState(0);
-  const [confirmedPage, setConfirmedPage] = useState(1);
-  const [confirmedLimit, setConfirmedLimit] = useState(25);
-  const [confirmedLoading, setConfirmedLoading] = useState(false);
-
-  // Transferred Out / Dropped state
-  const [droppedItems, setDroppedItems] = useState<BOSYQueueItem[]>([]);
-  const [droppedTotal, setDroppedTotal] = useState(0);
-  const [droppedPage, setDroppedPage] = useState(1);
-  const [droppedLimit, setDroppedLimit] = useState(25);
-  const [droppedLoading, setDroppedLoading] = useState(false);
-
-  // JHS Completers state
-  const [completersItems, setCompletersItems] = useState<JHSCompleter[]>([]);
-  const [completersTotal, setCompletersTotal] = useState(0);
-  const [completersPage, setCompletersPage] = useState(1);
-  const [completersLimit, setCompletersLimit] = useState(25);
-  const [completersLoading, setCompletersLoading] = useState(false);
+  const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
+  const [queueTotal, setQueueTotal] = useState(0);
+  const [queuePage, setQueuePage] = useState(1);
+  const [queueLimit, setQueueLimit] = useState(25);
+  const [queueLoading, setQueueLoading] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [workspaceView, setWorkspaceView] = useState<"continuing" | "phase2">("continuing");
 
-  // Revert to pending state
+
   const [revertTargetId, setRevertTargetId] = useState<number | null>(null);
   const [revertReason, setRevertReason] = useState("");
   const [revertBusy, setRevertBusy] = useState(false);
 
-  // Flush no-shows state
   const [flushDialogOpen, setFlushDialogOpen] = useState(false);
   const [flushBusy, setFlushBusy] = useState(false);
   const [noShowItems, setNoShowItems] = useState<BOSYQueueItem[]>([]);
   const [noShowLoading, setNoShowLoading] = useState(false);
-  // Confirm single return state
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
   const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -211,137 +179,43 @@ export default function BOSYPage() {
     }
   }, [syId]);
 
-  const handleSync = async () => {
-    if (!syId) return;
-    lifecycleFeedback.progress(
-      "Synchronizing BOSY Queue",
-      "Refreshing continuing-learner records for the active academic year.",
-    );
-    setSyncing(true);
-    try {
-      const res = await syncBOSYQueue(syId);
-      lifecycleFeedback.success(
-        "BOSY Synchronization Complete",
-        `Successfully repaired ${res.created} learner record(s).`,
-      );
-      void handleRefresh();
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
-  const fetchPending = useCallback(async () => {
+
+  const fetchQueue = useCallback(async () => {
     if (!syId) return;
-    setPendingLoading(true);
+    setQueueLoading(true);
     try {
       const data = await getBOSYQueue({
         schoolYearId: syId,
-        status: "PENDING_CONFIRMATION",
+        status: statusFilter,
         search: activeQueueSearch || undefined,
-        page: pendingPage,
-        limit: pendingLimit,
+        page: queuePage,
+        limit: queueLimit,
       });
-      setPendingItems(data.items);
-      setPendingTotal(data.total);
+      setQueueItems(data.items);
+      setQueueTotal(data.total);
     } catch (e) {
       toastApiError(e as never);
     } finally {
-      setPendingLoading(false);
+      setQueueLoading(false);
     }
-  }, [syId, activeQueueSearch, pendingPage, pendingLimit]);
-
-  const fetchConfirmed = useCallback(async () => {
-    if (!syId) return;
-    setConfirmedLoading(true);
-    try {
-      const data = await getBOSYQueue({
-        schoolYearId: syId,
-        status: "READY_FOR_SECTIONING",
-        search: activeQueueSearch || undefined,
-        page: confirmedPage,
-        limit: confirmedLimit,
-      });
-      setConfirmedItems(data.items);
-      setConfirmedTotal(data.total);
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setConfirmedLoading(false);
-    }
-  }, [syId, activeQueueSearch, confirmedPage, confirmedLimit]);
-
-  const fetchDropped = useCallback(async () => {
-    if (!syId) return;
-    setDroppedLoading(true);
-    try {
-      const data = await getBOSYQueue({
-        schoolYearId: syId,
-        status: "TRANSFERRED_OUT",
-        search: activeQueueSearch || undefined,
-        page: droppedPage,
-        limit: droppedLimit,
-      });
-      setDroppedItems(data.items);
-      setDroppedTotal(data.total);
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setDroppedLoading(false);
-    }
-  }, [syId, activeQueueSearch, droppedPage, droppedLimit]);
-
-  const fetchCompleters = useCallback(async () => {
-    if (!syId) return;
-    setCompletersLoading(true);
-    try {
-      const data = await getJHSCompleters({
-        schoolYearId: syId,
-        search: activeQueueSearch || undefined,
-        page: completersPage,
-        limit: completersLimit,
-      });
-      setCompletersItems(data.items);
-      setCompletersTotal(data.total);
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setCompletersLoading(false);
-    }
-  }, [syId, activeQueueSearch, completersPage, completersLimit]);
+  }, [syId, activeQueueSearch, queuePage, queueLimit, statusFilter]);
 
   useEffect(() => {
     void fetchReadiness();
   }, [fetchReadiness]);
 
   useEffect(() => {
-    if (activeTab === "pending") void fetchPending();
-  }, [activeTab, fetchPending]);
+    void fetchQueue();
+  }, [fetchQueue]);
 
-  useEffect(() => {
-    if (activeTab === "confirmed") void fetchConfirmed();
-  }, [activeTab, fetchConfirmed]);
-
-  useEffect(() => {
-    if (activeTab === "dropped") void fetchDropped();
-  }, [activeTab, fetchDropped]);
-
-  useEffect(() => {
-    if (activeTab === "completers") void fetchCompleters();
-  }, [activeTab, fetchCompleters]);
-
-  // ── Auto-polling: refresh readiness + active tab data every 5 seconds ────
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (typeof syId !== "number" || isUserInteracting) return;
 
     const tick = () => {
       void fetchReadiness();
-      if (activeTab === "pending") void fetchPending();
-      else if (activeTab === "confirmed") void fetchConfirmed();
-      else if (activeTab === "dropped") void fetchDropped();
-      else if (activeTab === "completers") void fetchCompleters();
+      void fetchQueue();
     };
 
     const intervalId = setInterval(tick, 5_000);
@@ -354,25 +228,18 @@ export default function BOSYPage() {
     };
   }, [
     syId,
-    activeTab,
     isUserInteracting,
     fetchReadiness,
-    fetchPending,
-    fetchConfirmed,
-    fetchDropped,
-    fetchCompleters,
+    fetchQueue,
   ]);
 
   const handleRefresh = () => {
     void fetchReadiness();
-    if (activeTab === "pending") void fetchPending();
-    else if (activeTab === "confirmed") void fetchConfirmed();
-    else if (activeTab === "dropped") void fetchDropped();
-    else if (activeTab === "completers") void fetchCompleters();
+    void fetchQueue();
   };
 
   const handleConfirmSingle = (applicationId: number) => {
-    const item = pendingItems.find((i) => i.applicationId === applicationId);
+    const item = queueItems.find((i) => i.applicationId === applicationId);
     if (!item) return;
     setConfirmSingleTarget(item);
   };
@@ -392,10 +259,10 @@ export default function BOSYPage() {
         "Learner Return Confirmed",
         "Application confirmed for sectioning.",
       );
-      setPendingItems((prev) =>
+      setQueueItems((prev) =>
         prev.filter((item) => item.applicationId !== applicationId),
       );
-      setPendingTotal((prev) => Math.max(0, prev - 1));
+      setQueueTotal((prev) => Math.max(0, prev - 1));
       setConfirmSingleTarget(null);
       void fetchReadiness();
     } catch (e) {
@@ -410,7 +277,7 @@ export default function BOSYPage() {
     }
   };
 
-  const pendingIdSet = new Set(pendingItems.map((item) => item.applicationId));
+  const pendingIdSet = new Set(queueItems.map((item) => item.applicationId));
   const selectedIds = Object.keys(rowSelection)
     .filter((k) => rowSelection[k])
     .map((k) => Number(k))
@@ -433,10 +300,10 @@ export default function BOSYPage() {
           "Bulk Confirmation Completed",
           `${result.confirmed.length} learner(s) confirmed for sectioning.`,
         );
-        setPendingItems((prev) =>
+        setQueueItems((prev) =>
           prev.filter((item) => !result.confirmed.includes(item.applicationId)),
         );
-        setPendingTotal((prev) => Math.max(0, prev - result.confirmed.length));
+        setQueueTotal((prev) => Math.max(0, prev - result.confirmed.length));
       }
       if (result.failed.length > 0) {
         lifecycleFeedback.warning(
@@ -464,7 +331,7 @@ export default function BOSYPage() {
       );
       setRevertTargetId(null);
       setRevertReason("");
-      void fetchConfirmed();
+      void fetchQueue();
       void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
@@ -473,7 +340,6 @@ export default function BOSYPage() {
     }
   };
 
-  // Load no-show applicants when the flush dialog opens
   useEffect(() => {
     if (!flushDialogOpen || !syId) {
       if (!flushDialogOpen) setNoShowItems([]);
@@ -514,55 +380,12 @@ export default function BOSYPage() {
     }
   };
 
-  const BOSY_TABS = [
-    {
-      key: "pending",
-      label: "Pending Confirmation",
-      count: readiness?.pendingConfirmationCount,
-    },
-    {
-      key: "confirmed",
-      label: "Confirmed (Walk-in & Portal)",
-      count: readiness?.readyForSectioningCount,
-    },
-    {
-      key: "dropped",
-      label: "Transferred Out / Dropped",
-      count: readiness?.droppedCount,
-    },
-    {
-      key: "completers",
-      label: "JHS Completers",
-      count: readiness?.jhsCompleterCount,
-    },
-  ];
-
-  const phase2TotalCount =
-    (readiness?.scpPriorityCount ?? 0) +
-    (readiness?.onlineBeefCount ?? 0) +
-    (readiness?.walkInBeefCount ?? 0) +
-    (readiness?.pendingBeefCount ?? 0);
-
-  const WORKSPACE_VIEWS = [
-    {
-      key: "continuing" as const,
-      label: "Continuing Learners",
-      badge: readiness?.pendingConfirmationCount ?? 0,
-    },
-    {
-      key: "phase2" as const,
-      label: "Phase 2 Intake (BEEF)",
-      badge: phase2TotalCount,
-    },
-  ];
-
   return (
     <motion.div
       className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
       variants={listVariants}
       transition={staggerTransition}
       {...motionState}>
-      {/* CONDITIONALLY_PROMOTED blocker warning */}
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
           initial={{ opacity: 0, x: -10 }}
@@ -581,7 +404,6 @@ export default function BOSYPage() {
         </motion.div>
       )}
 
-      {/* Header */}
       <motion.div
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
         variants={sectionVariants}
@@ -589,8 +411,7 @@ export default function BOSYPage() {
         <div>
           <h1 className="text-3xl font-bold">BOSY Confirmation</h1>
           <p className="text-sm font-bold">
-            Beginning of School Year Processing Hub
-            {activeSchoolYearLabel ? ` · ${activeSchoolYearLabel}` : ""}
+            Review and verify incoming and returning learners.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
@@ -613,124 +434,69 @@ export default function BOSYPage() {
             />
             {isUserInteracting ? "Paused" : "Live Sync"}
           </div>
-          {workspaceView === "phase2" && (
-            <Button
-              variant="outline"
-              className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
-              onClick={() => navigate("/monitoring/enrollment/walk-in")}
-              disabled={!canMutate}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              + Walk-In BEEF
-            </Button>
-          )}
-          {workspaceView === "continuing" && (
-            <Button
-              variant="outline"
-              className="h-10 font-bold gap-2 bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 text-primary transition-all"
-              onClick={handleSync}
-              disabled={syncing || readinessLoading || !canMutate}>
-              {syncing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Synchronize Roster
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
+            onClick={() => navigate("/monitoring/enrollment/walk-in")}
+            disabled={!canMutate}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            + Encode Paper Form
+          </Button>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-10 w-10 shrink-0 hover:bg-muted"
-            title="Refresh Data"
+            size="sm"
+            className="h-10 px-3 text-sm font-bold text-muted-foreground hover:text-foreground shrink-0"
             onClick={handleRefresh}
-            disabled={
-              readinessLoading ||
-              pendingLoading ||
-              confirmedLoading ||
-              droppedLoading ||
-              completersLoading
-            }>
+            disabled={readinessLoading || queueLoading}>
             <RefreshCw
               className={cn(
-                "h-5 w-5",
-                (readinessLoading ||
-                  pendingLoading ||
-                  confirmedLoading ||
-                  droppedLoading ||
-                  completersLoading) &&
-                  "animate-spin",
+                "h-4 w-4 mr-2",
+                (readinessLoading || queueLoading) && "animate-spin",
               )}
             />
+            Refresh Data
           </Button>
         </div>
       </motion.div>
 
-      {/* ─── Top-Level Workspace Selector ─── */}
-      <motion.div
-        className="flex gap-1 bg-white border border-border rounded-xl p-1"
-        variants={sectionVariants}
-        transition={panelTransition}>
-        {WORKSPACE_VIEWS.map((view) => (
-          <button
-            key={view.key}
-            type="button"
-            onClick={() => setWorkspaceView(view.key)}
-            className={cn(
-              "relative flex-1 px-5 py-3 text-sm font-bold rounded-lg transition-colors",
-              workspaceView === view.key
-                ? "text-primary-foreground"
-                : "text-foreground hover:text-foreground",
-            )}>
-            {workspaceView === view.key && (
-              <motion.div
-                layoutId="bosy-workspace-pill"
-                className="absolute inset-0 bg-primary rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {view.label}
-              {view.badge > 0 && (
-                <Badge
-                  variant={workspaceView === view.key ? "secondary" : "outline"}
-                  className="h-5 px-1.5 text-xs font-bold">
-                  {view.badge}
-                </Badge>
-              )}
-            </span>
-          </button>
-        ))}
-      </motion.div>
-
-      {/* ═══════════════════════════════════════════ */}
-      {/* VIEW 1 — CONTINUING LEARNERS               */}
-      {/* ═══════════════════════════════════════════ */}
-      {workspaceView === "continuing" && <>
-      {/* Readiness stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           {
             icon: AlertCircle,
             label: "Pending Confirmation",
             value: readiness?.pendingConfirmationCount ?? 0,
+            filterVal: "PENDING_VERIFICATION",
           },
           {
             icon: CheckCircle2,
             label: "Confirmed (Returning)",
             value: readiness?.readyForSectioningCount ?? 0,
+            filterVal: "READY_FOR_SECTIONING",
           },
           {
             icon: LogOut,
             label: "Transferred / Dropped",
             value: readiness?.droppedCount ?? 0,
+            filterVal: "TRANSFERRED_OUT",
           },
-        ].map(({ icon: Icon, label, value }) => (
+        ].map(({ icon: Icon, label, value, filterVal }) => (
           <Card
             key={label}
-            className="border-none shadow-sm bg-[hsl(var(--card))]">
+            onClick={() => {
+              setStatusFilter(filterVal);
+              setQueuePage(1);
+              setRowSelection({});
+            }}
+            className={cn(
+              "shadow-sm cursor-pointer transition-colors border-2",
+              statusFilter === filterVal ? "border-primary bg-primary/5" : "border-transparent bg-[hsl(var(--card))] hover:border-primary/50"
+            )}>
             <CardHeader className="p-3 pb-1 flex-row items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-muted shrink-0">
-                <Icon className="h-3.5 w-3.5 text-foreground" />
+              <div className={cn(
+                "p-1.5 rounded-lg shrink-0",
+                statusFilter === filterVal ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+              )}>
+                <Icon className="h-3.5 w-3.5" />
               </div>
               <p className="text-[10px] font-black uppercase text-foreground leading-tight">
                 {label}
@@ -747,311 +513,66 @@ export default function BOSYPage() {
         ))}
       </div>
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => {
-          setActiveTab(v);
-          setRowSelection({});
-        }}
-        className="w-full">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 bg-white border border-border relative">
-          {BOSY_TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.key}
-              value={tab.key}
-              className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              {activeTab === tab.key && (
-                <motion.div
-                  layoutId="bosy-active-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-              <span className="relative z-20 inline-flex items-center gap-2 text-xs sm:text-sm">
-                {tab.label}
-                {tab.count !== undefined && tab.count > 0 && (
-                  <Badge
-                    variant={activeTab === tab.key ? "secondary" : "outline"}
-                    className="h-5 px-1.5 text-xs font-bold">
-                    {tab.count}
-                  </Badge>
-                )}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* PENDING CONFIRMATION */}
-        <TabsContent
-          value="pending"
-          className="mt-3">
-          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-                <Input
-                  placeholder="Search LRN, First Name, Last Name..."
-                  className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                  value={queueSearch}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  onChange={(e) => {
-                    setQueueSearch(e.target.value);
-                    startTransition(() => {
-                      setPendingPage(1);
-                    });
-                  }}
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex flex-col min-h-0">
-              <div
-                className="overflow-auto bg-muted/5"
-                onMouseEnter={() => setIsTableHovered(true)}
-                onMouseLeave={() => setIsTableHovered(false)}
-              >
-                <QueueTable
-                  items={pendingItems}
-                  loading={pendingLoading}
-                  isSearching={isSearching}
-                  showConfirmAction={canMutate}
-                  rowSelection={rowSelection}
-                  onRowSelectionChange={setRowSelection}
-                  onConfirmSingle={handleConfirmSingle}
-                  confirmingIds={confirmingIds}
-                />
-              </div>
-              <PaginationBar
-                page={pendingPage}
-                total={pendingTotal}
-                limit={pendingLimit}
-                onPageChange={setPendingPage}
-                onLimitChange={(l) => {
-                  setPendingLimit(l);
-                  setPendingPage(1);
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
+        <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+              <Input
+                placeholder="Search LRN, First Name, Last Name..."
+                className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+                value={queueSearch}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                onChange={(e) => {
+                  setQueueSearch(e.target.value);
+                  startTransition(() => {
+                    setQueuePage(1);
+                  });
                 }}
-                itemName="Learners"
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* CONFIRMED */}
-        <TabsContent
-          value="confirmed"
-          className="mt-3">
-          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-                <Input
-                  placeholder="Search LRN, First Name, Last Name..."
-                  className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                  value={queueSearch}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  onChange={(e) => {
-                    setQueueSearch(e.target.value);
-                    startTransition(() => {
-                      setConfirmedPage(1);
-                    });
-                  }}
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex flex-col min-h-0">
-              <div
-                className="overflow-auto bg-muted/5"
-                onMouseEnter={() => setIsTableHovered(true)}
-                onMouseLeave={() => setIsTableHovered(false)}
-              >
-                <QueueTable
-                  items={confirmedItems}
-                  loading={confirmedLoading}
-                  isSearching={isSearching}
-                  showConfirmAction={false}
-                  rowSelection={{}}
-                  onRowSelectionChange={() => {}}
-                  onConfirmSingle={() => {}}
-                  confirmingIds={new Set()}
-                  onRevertSingle={canMutate ? (id) => { setRevertTargetId(id); setRevertReason(""); } : undefined}
-                />
-              </div>
-              <PaginationBar
-                page={confirmedPage}
-                total={confirmedTotal}
-                limit={confirmedLimit}
-                onPageChange={setConfirmedPage}
-                onLimitChange={(l) => {
-                  setConfirmedLimit(l);
-                  setConfirmedPage(1);
-                }}
-                itemName="Learners"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* DROPPED / TRANSFERRED */}
-        <TabsContent
-          value="dropped"
-          className="mt-3">
-          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-                <Input
-                  placeholder="Search LRN, First Name, Last Name..."
-                  className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                  value={queueSearch}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  onChange={(e) => {
-                    setQueueSearch(e.target.value);
-                    startTransition(() => {
-                      setDroppedPage(1);
-                    });
-                  }}
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex flex-col min-h-0">
-              <div
-                className="overflow-auto bg-muted/5"
-                onMouseEnter={() => setIsTableHovered(true)}
-                onMouseLeave={() => setIsTableHovered(false)}
-              >
-                <QueueTable
-                  items={droppedItems}
-                  loading={droppedLoading}
-                  isSearching={isSearching}
-                  showConfirmAction={false}
-                  rowSelection={{}}
-                  onRowSelectionChange={() => {}}
-                  onConfirmSingle={() => {}}
-                  confirmingIds={new Set()}
-                />
-              </div>
-              <PaginationBar
-                page={droppedPage}
-                total={droppedTotal}
-                limit={droppedLimit}
-                onPageChange={setDroppedPage}
-                onLimitChange={(l) => {
-                  setDroppedLimit(l);
-                  setDroppedPage(1);
-                }}
-                itemName="Learners"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* JHS COMPLETERS */}
-        <TabsContent
-          value="completers"
-          className="mt-3">
-          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-                <Input
-                  placeholder="Search LRN, First Name, Last Name..."
-                  className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                  value={queueSearch}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  onChange={(e) => {
-                    setQueueSearch(e.target.value);
-                    startTransition(() => {
-                      setCompletersPage(1);
-                    });
-                  }}
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex flex-col min-h-0">
-              <div
-                className="overflow-auto bg-muted/5"
-                onMouseEnter={() => setIsTableHovered(true)}
-                onMouseLeave={() => setIsTableHovered(false)}
-              >
-                <JHSCompleterTable
-                  items={completersItems}
-                  loading={completersLoading}
-                  isSearching={isSearching}
-                />
-              </div>
-              <PaginationBar
-                page={completersPage}
-                total={completersTotal}
-                limit={completersLimit}
-                onPageChange={setCompletersPage}
-                onLimitChange={(l) => {
-                  setCompletersLimit(l);
-                  setCompletersPage(1);
-                }}
-                itemName="Completers"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {canMutate && (
+            </div>
+            {/* Select/Filter removed to rely entirely on card click toggles */}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 flex flex-col min-h-0">
+          <div
+            className="overflow-auto bg-muted/5"
+            onMouseEnter={() => setIsTableHovered(true)}
+            onMouseLeave={() => setIsTableHovered(false)}
+          >
+            <QueueTable
+              items={queueItems}
+              loading={queueLoading}
+              isSearching={isSearching}
+              showConfirmAction={statusFilter === "PENDING_VERIFICATION" && canMutate}
+              rowSelection={statusFilter === "PENDING_VERIFICATION" ? rowSelection : {}}
+              onRowSelectionChange={setRowSelection}
+              onConfirmSingle={handleConfirmSingle}
+              confirmingIds={confirmingIds}
+              onRevertSingle={statusFilter === "READY_FOR_SECTIONING" && canMutate ? (id) => { setRevertTargetId(id); setRevertReason(""); } : undefined}
+            />
+          </div>
+          <PaginationBar
+            page={queuePage}
+            total={queueTotal}
+            limit={queueLimit}
+            onPageChange={setQueuePage}
+            onLimitChange={(l) => {
+              setQueueLimit(l);
+              setQueuePage(1);
+            }}
+            itemName="Learners"
+          />
+        </CardContent>
+      </Card>
+      {canMutate && statusFilter === "PENDING_VERIFICATION" && (
         <BulkConfirmBar
           selectedCount={selectedIds.length}
           loading={bulkLoading}
           onConfirm={() => void handleBulkConfirm()}
           onClear={() => setRowSelection({})}
         />
-      )}
-      </>}
-
-      {/* ═══════════════════════════════════════════ */}
-      {/* VIEW 2 — PHASE 2 INTAKE (BEEF)             */}
-      {/* ═══════════════════════════════════════════ */}
-      {workspaceView === "phase2" && (
-        <>
-          {/* SCP no-shows stat card + SYSTEM_ADMIN flush */}
-          {isSystemAdmin && ((readiness?.scpPriorityCount ?? 0) + (readiness?.pendingBeefCount ?? 0)) > 0 && (
-            <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-1.5 rounded-lg bg-amber-100 shrink-0">
-                  <LogOut className="h-4 w-4 text-amber-700" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-amber-700">
-                    SCP No-Shows (Ready for Enrollment + Pending Docs)
-                  </p>
-                  {readinessLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-amber-600 mt-0.5" />
-                  ) : (
-                    <p className="text-xl font-black text-amber-900">
-                      {(readiness?.scpPriorityCount ?? 0) + (readiness?.pendingBeefCount ?? 0)}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="shrink-0 font-bold"
-                disabled={flushBusy || !canMutate}
-                onClick={() => setFlushDialogOpen(true)}>
-                <Trash2 className="h-4 w-4 mr-1.5" />
-                Flush No-Shows
-              </Button>
-            </div>
-          )}
-
-          <Phase2IntakeHub
-            syId={syId}
-            canMutate={canMutate}
-            onDataChange={fetchReadiness}
-          />
-        </>
       )}
 
       {/* Confirm Single Return Dialog */}

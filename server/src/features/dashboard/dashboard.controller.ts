@@ -41,14 +41,15 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             pendingReview: 0,
             sectionsAtCapacity: 0,
           },
-          earlyRegistration: {
-            submitted: 0,
-            verified: 0,
-            examScheduled: 0,
-            readyForEnrollment: 0,
-            enrolled: 0,
-            inPipeline: 0,
-            total: 0,
+          kpiHeader: {
+            pendingTotal: 0,
+            pendingIncomingG7: 0,
+            pendingTransferees: 0,
+            enrolledTotal: 0,
+            enrolledNew: 0,
+            enrolledContinuing: 0,
+            unassignedTotal: 0,
+            unassignedCriticalG7: 0,
           },
         },
       });
@@ -62,11 +63,19 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       sectionsAtCapacity,
       totalSectionCapacity,
       gradeLevels,
+      pendingTotal,
+      pendingIncomingG7,
+      pendingTransferees,
+      enrolledTotal,
+      enrolledNew,
+      enrolledContinuing,
+      unassignedTotal,
+      unassignedCriticalG7,
     ] = await Promise.all([
       prisma.enrollmentApplication.count({
         where: {
           status: {
-            in: ["UNDER_REVIEW", "READY_FOR_ENROLLMENT", "SUBMITTED_BEEF"],
+            in: ["VERIFIED", "VERIFIED", "VERIFIED"],
           },
           enrollmentRecord: { is: null },
           schoolYearId,
@@ -74,13 +83,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       }),
       prisma.enrollmentApplication.count({
         where: {
-          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+          status: { in: ["ENROLLED", "ENROLLED", "VERIFIED"] },
           schoolYearId,
         },
       }),
       prisma.enrollmentApplication.count({
         where: {
-          status: "READY_FOR_ENROLLMENT",
+          status: "VERIFIED",
           schoolYearId,
         },
       }),
@@ -109,7 +118,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             select: {
               enrollmentApplications: {
                 where: {
-                  status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+                  status: { in: ["ENROLLED", "ENROLLED", "VERIFIED"] },
                   schoolYearId,
                 },
               },
@@ -128,6 +137,33 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             },
           },
         },
+      }),
+      // KPI Header 1: Pending Verifications
+      prisma.enrollmentApplication.count({
+        where: { status: "PENDING_VERIFICATION", schoolYearId },
+      }),
+      prisma.enrollmentApplication.count({
+        where: { status: "PENDING_VERIFICATION", schoolYearId, learnerType: "NEW_ENROLLEE", gradeLevel: { name: "Grade 7" } },
+      }),
+      prisma.enrollmentApplication.count({
+        where: { status: "PENDING_VERIFICATION", schoolYearId, learnerType: "TRANSFEREE" },
+      }),
+      // KPI Header 2: Officially Enrolled
+      prisma.enrollmentApplication.count({
+        where: { status: "ENROLLED", schoolYearId },
+      }),
+      prisma.enrollmentApplication.count({
+        where: { status: "ENROLLED", schoolYearId, learnerType: "NEW_ENROLLEE" },
+      }),
+      prisma.enrollmentApplication.count({
+        where: { status: "ENROLLED", schoolYearId, learnerType: "CONTINUING" },
+      }),
+      // KPI Header 3: Unassigned Learners
+      prisma.enrollmentApplication.count({
+        where: { status: "VERIFIED", schoolYearId, enrollmentRecord: { is: null } },
+      }),
+      prisma.enrollmentApplication.count({
+        where: { status: "VERIFIED", schoolYearId, enrollmentRecord: { is: null }, gradeLevel: { name: "Grade 7" } },
       }),
     ]);
 
@@ -186,14 +222,15 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           pendingReview: totalPending,
           sectionsAtCapacity: Number(sectionsAtCapacity[0]?.count ?? 0),
         },
-        earlyRegistration: {
-          submitted: 0,
-          verified: 0,
-          examScheduled: 0,
-          readyForEnrollment: 0,
-          enrolled: totalEnrolled,
-          inPipeline: 0,
-          total: 0,
+        kpiHeader: {
+          pendingTotal,
+          pendingIncomingG7,
+          pendingTransferees,
+          enrolledTotal,
+          enrolledNew,
+          enrolledContinuing,
+          unassignedTotal,
+          unassignedCriticalG7,
         },
       },
     });

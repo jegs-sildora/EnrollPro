@@ -13,7 +13,7 @@ import {
   PreviousSchool,
   Classifications,
 } from "./BeefSections";
-import { RequirementChecklist } from "./RequirementChecklist";
+
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Button } from "@/shared/ui/button";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
@@ -76,7 +76,6 @@ export function ApplicationDetailPanel({
     data: applicant,
     loading,
     error,
-    refetch,
   } = useApplicationDetail(id, false, endpointBase);
 
   // Rule A & B: Delayed loading
@@ -238,19 +237,6 @@ export function ApplicationDetailPanel({
             </div>
           </div>
         </div>
-
-        {/* Documentary Checklist */}
-        <RequirementChecklist
-          applicantId={applicant.id}
-          learnerType={applicant.learnerType}
-          checklist={applicant.checklist}
-          documents={applicant.documents}
-          hasPsaBirthCertificate={applicant.hasPsaBirthCertificate}
-          endpointBase={endpointBase}
-          onRefresh={refetch}
-          onMandatoryStatusChange={setMandatoryMet}
-          readOnly={!showActions}
-        />
 
         {/* Enrollment Form Sections */}
         <div className="space-y-2">

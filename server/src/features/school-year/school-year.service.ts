@@ -98,6 +98,12 @@ export function deriveSchoolYearScheduleFromOpeningDate(
 		classEndDate,
 		enrollOpenDate,
 		enrollCloseDate,
+		term1Start: utcNoonDate(startYear, 5, 8),   // June 8
+		term1End: utcNoonDate(startYear, 8, 15),    // Sept 15
+		term2Start: utcNoonDate(startYear, 8, 16),  // Sept 16
+		term2End: utcNoonDate(startYear, 11, 18),   // Dec 18
+		term3Start: utcNoonDate(endYear, 0, 4),     // Jan 4
+		term3End: utcNoonDate(endYear, 3, 8),       // April 8
 	};
 }
 

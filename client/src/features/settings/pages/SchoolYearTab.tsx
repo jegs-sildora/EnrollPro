@@ -24,11 +24,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -49,9 +51,12 @@ import {
   LoaderCore,
   type LoadingState as MultiStepLoadingState,
 } from "@/components/ui/multi-step-loader";
+import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import ExecuteRolloverModal from "../components/ExecuteRolloverModal";
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
+import { CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
-const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
@@ -148,6 +153,12 @@ function buildSchoolYearSchedule(
     earlyRegCloseDate: lastFridayOfFebruary(startYear),
     enrollOpenDate: subUtcDays(openingDate, 7),
     enrollCloseDate: subUtcDays(openingDate, 1),
+    term1Start: utcNoonDate(startYear, 5, 8).toISOString(),
+    term1End: utcNoonDate(startYear, 8, 15).toISOString(),
+    term2Start: utcNoonDate(startYear, 8, 16).toISOString(),
+    term2End: utcNoonDate(startYear, 11, 18).toISOString(),
+    term3Start: utcNoonDate(endYear, 0, 4).toISOString(),
+    term3End: utcNoonDate(endYear, 3, 8).toISOString(),
   };
 }
 
@@ -176,20 +187,6 @@ function formatManilaDate(value: string | Date | null | undefined) {
   }).format(date);
 }
 
-function formatCompactManilaDate(value: string | Date | null | undefined) {
-  if (!value) {
-    return "Not set";
-  }
-
-  const date = typeof value === "string" ? new Date(value) : value;
-
-  return new Intl.DateTimeFormat("en-PH", {
-    timeZone: MANILA_TIME_ZONE,
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
 
 function toManilaDateToken(value: string | Date): number {
   const date = typeof value === "string" ? new Date(value) : value;
@@ -241,6 +238,37 @@ function getDateWindowStatus(
   };
 }
 
+function getEnrollmentWindowStatus(
+  openDate: string | null | undefined,
+  closeDate: string | null | undefined,
+) {
+  if (!openDate || !closeDate) {
+    return { label: "⚫ UNSCHEDULED", color: "bg-gray-100 text-gray-700" };
+  }
+
+  const todayToken = toManilaDateToken(new Date());
+  const startToken = toManilaDateToken(openDate);
+  const endToken = toManilaDateToken(closeDate);
+
+  if (todayToken < startToken) {
+    const days = diffTokenDays(startToken, todayToken);
+    return {
+      label: `🔵 SCHEDULED (Opens in ${days} day(s))`,
+      color: "bg-blue-100 text-blue-700",
+    };
+  }
+
+  if (todayToken > endToken) {
+    return { label: "⚫ ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-500 font-bold" };
+  }
+
+  const daysLeft = diffTokenDays(endToken, todayToken);
+  return {
+    label: `🟢 ENROLLMENT OPEN · Closes in ${daysLeft} day(s)`,
+    color: "bg-green-100 text-green-700 font-bold",
+  };
+}
+
 interface SYItem {
   id: number;
   yearLabel: string;
@@ -248,6 +276,17 @@ interface SYItem {
   isEosyFinalized: boolean;
   classOpeningDate: string | null;
   classEndDate: string | null;
+  term1Start: string | null;
+  term1End: string | null;
+  term2Start: string | null;
+  term2End: string | null;
+  term3Start: string | null;
+  term3End: string | null;
+  term4Start: string | null;
+  term4End: string | null;
+  enrollOpenDate: string | null;
+  enrollCloseDate: string | null;
+  termFormat: "TRIMESTER" | "QUARTERS" | null;
   _count: {
     gradeLevels: number;
     earlyRegistrationApplications: number;
@@ -320,6 +359,7 @@ export default function SchoolYearTab() {
   const [isRolloverFinishing, setIsRolloverFinishing] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
+  const [isExecuteRolloverOpen, setIsExecuteRolloverOpen] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
   const pendingSuccessToastRef = useRef<(() => void) | null>(null);
@@ -336,15 +376,7 @@ export default function SchoolYearTab() {
 
   // Activation & Legal state
   const [isAgreedToActivation, setIsAgreedToActivation] = useState(false);
-  const [isEditingActiveCalendar, setIsEditingActiveCalendar] = useState(false);
-  const [savingActiveCalendarDates, setSavingActiveCalendarDates] =
-    useState(false);
-  const [editActiveClassOpening, setEditActiveClassOpening] = useState<
-    Date | undefined
-  >();
-  const [editActiveClassEnd, setEditActiveClassEnd] = useState<
-    Date | undefined
-  >();
+  const [, setIsUpdatingTimeline] = useState(false);
 
   const currentManilaYear = useMemo(
     () => getDatePartsInTimeZone(new Date()).year,
@@ -513,51 +545,6 @@ export default function SchoolYearTab() {
     );
   }, [editYearLabel, years]);
 
-  const activeCalendarMinEosyDate = useMemo(() => {
-    return editActiveClassOpening
-      ? addUtcDays(editActiveClassOpening, 1)
-      : undefined;
-  }, [editActiveClassOpening]);
-
-  const activeCalendarCurrentOpening = useMemo(
-    () =>
-      activeYear?.classOpeningDate
-        ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
-        : undefined,
-    [activeYear?.classOpeningDate],
-  );
-
-  const activeCalendarCurrentEnd = useMemo(
-    () =>
-      activeYear?.classEndDate
-        ? normalizeDateToManila(new Date(activeYear.classEndDate))
-        : undefined,
-    [activeYear?.classEndDate],
-  );
-
-  const activeCalendarSpanDays = useMemo(() => {
-    if (!editActiveClassOpening || !editActiveClassEnd) {
-      return 0;
-    }
-
-    return Math.floor(
-      (editActiveClassEnd.getTime() - editActiveClassOpening.getTime()) /
-        DAY_IN_MS,
-    );
-  }, [editActiveClassEnd, editActiveClassOpening]);
-
-  const isActiveCalendarRangeValid = useMemo(() => {
-    if (!editActiveClassOpening || !editActiveClassEnd) {
-      return false;
-    }
-
-    if (editActiveClassEnd.getTime() <= editActiveClassOpening.getTime()) {
-      return false;
-    }
-
-    return activeCalendarSpanDays >= MIN_ACTIVE_CALENDAR_SPAN_DAYS;
-  }, [activeCalendarSpanDays, editActiveClassEnd, editActiveClassOpening]);
-
   const activeCalendarStatus = useMemo(
     () =>
       getDateWindowStatus(
@@ -567,33 +554,14 @@ export default function SchoolYearTab() {
     [activeYear?.classEndDate, activeYear?.classOpeningDate],
   );
 
-  const isActiveCalendarDirty = useMemo(
+  const enrollmentPhaseStatus = useMemo(
     () =>
-      !sameUtcCalendarDate(
-        editActiveClassOpening,
-        activeCalendarCurrentOpening,
-      ) || !sameUtcCalendarDate(editActiveClassEnd, activeCalendarCurrentEnd),
-    [
-      activeCalendarCurrentEnd,
-      activeCalendarCurrentOpening,
-      editActiveClassEnd,
-      editActiveClassOpening,
-    ],
+      getEnrollmentWindowStatus(
+        activeYear?.enrollOpenDate ?? null,
+        activeYear?.enrollCloseDate ?? null,
+      ),
+    [activeYear?.enrollCloseDate, activeYear?.enrollOpenDate],
   );
-
-  useEffect(() => {
-    if (!activeYear || isEditingActiveCalendar) {
-      return;
-    }
-
-    setEditActiveClassOpening(activeCalendarCurrentOpening);
-    setEditActiveClassEnd(activeCalendarCurrentEnd);
-  }, [
-    activeCalendarCurrentEnd,
-    activeCalendarCurrentOpening,
-    activeYear,
-    isEditingActiveCalendar,
-  ]);
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
     if (!editClassOpening || !editClassEnd) {
@@ -616,7 +584,7 @@ export default function SchoolYearTab() {
     return (
       currentRolloverDraft.yearLabel !== rolloverDraftBaseline.yearLabel ||
       currentRolloverDraft.classOpeningDate !==
-        rolloverDraftBaseline.classOpeningDate ||
+      rolloverDraftBaseline.classOpeningDate ||
       currentRolloverDraft.classEndDate !== rolloverDraftBaseline.classEndDate
     );
   }, [currentRolloverDraft, rolloverDraftBaseline]);
@@ -784,16 +752,16 @@ export default function SchoolYearTab() {
         : "/school-years/activate";
       const requestPayload = activeYear
         ? {
-            yearLabel: activationPayload.yearLabel,
-            classOpeningDate: activationPayload.classOpeningDate,
-            classEndDate: activationPayload.classEndDate,
-            cloneStructure: rolloverOptions.cloneStructure,
-            carryOverLearners: rolloverOptions.carryOverLearners,
-          }
+          yearLabel: activationPayload.yearLabel,
+          classOpeningDate: activationPayload.classOpeningDate,
+          classEndDate: activationPayload.classEndDate,
+          cloneStructure: rolloverOptions.cloneStructure,
+          carryOverLearners: rolloverOptions.carryOverLearners,
+        }
         : {
-            ...activationPayload,
-            cloneFromId: null,
-          };
+          ...activationPayload,
+          cloneFromId: null,
+        };
 
       if (isRolloverFlow) {
         setRolloverLoaderStep(1);
@@ -920,61 +888,137 @@ export default function SchoolYearTab() {
     setShowNextForm(true);
   };
 
-  const handleBeginActiveCalendarEdit = () => {
-    if (!activeYear) {
+  const handleAutoFillTerms = async () => {
+    if (!activeYear || !activeYear.classOpeningDate || !activeYear.classEndDate) {
+      sileo.error({ title: "Missing Dates", description: "BOSY and EOSY must be set first." });
       return;
     }
-
-    setEditActiveClassOpening(
-      activeYear.classOpeningDate
-        ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
-        : undefined,
-    );
-    setEditActiveClassEnd(
-      activeYear.classEndDate
-        ? normalizeDateToManila(new Date(activeYear.classEndDate))
-        : undefined,
-    );
-    setIsEditingActiveCalendar(true);
-  };
-
-  const handleDiscardActiveCalendarChanges = () => {
-    setEditActiveClassOpening(activeCalendarCurrentOpening);
-    setEditActiveClassEnd(activeCalendarCurrentEnd);
-    setIsEditingActiveCalendar(false);
-  };
-
-  const handleSaveActiveCalendarDates = async () => {
-    if (!activeYear || !editActiveClassOpening || !editActiveClassEnd) {
+    const start = new Date(activeYear.classOpeningDate);
+    const end = new Date(activeYear.classEndDate);
+    const totalDays = (end.getTime() - start.getTime()) / DAY_IN_MS;
+    if (totalDays < 28) {
+      sileo.error({ title: "Invalid duration", description: "School year is too short." });
       return;
     }
+    
+    const isTrimester = activeYear.termFormat === "TRIMESTER" || !activeYear.termFormat;
+    const termCount = isTrimester ? 3 : 4;
+    const termDays = Math.floor(totalDays / termCount);
 
-    if (!isActiveCalendarRangeValid) {
-      sileo.error({
-        title: "Invalid calendar range",
-        description:
-          "EOSY must be later than BOSY and at least 240 days after BOSY.",
-      });
-      return;
-    }
-
-    setSavingActiveCalendarDates(true);
+    setIsUpdatingTimeline(true);
     try {
-      await api.patch(`/school-years/${activeYear.id}/dates`, {
-        classOpeningDate: editActiveClassOpening.toISOString(),
-        classEndDate: editActiveClassEnd.toISOString(),
-      });
+      const startYear = start.getUTCFullYear();
+      const endYear = startYear + 1;
+      const payload: Record<string, string | null> = {};
 
-      sileo.success({
-        title: "Active calendar updated",
-        description: "BOSY and EOSY dates were saved successfully.",
-      });
-      setIsEditingActiveCalendar(false);
+      if (termCount === 3) {
+        payload.term1Start = new Date(Date.UTC(startYear, 5, 8, 12, 0, 0)).toISOString();
+        payload.term1End = new Date(Date.UTC(startYear, 8, 15, 12, 0, 0)).toISOString();
+        payload.term2Start = new Date(Date.UTC(startYear, 8, 16, 12, 0, 0)).toISOString();
+        payload.term2End = new Date(Date.UTC(startYear, 11, 18, 12, 0, 0)).toISOString();
+        payload.term3Start = new Date(Date.UTC(endYear, 0, 4, 12, 0, 0)).toISOString();
+        payload.term3End = new Date(Date.UTC(endYear, 3, 8, 12, 0, 0)).toISOString();
+        payload.term4Start = null;
+        payload.term4End = null;
+      } else {
+        let currentStart = start;
+        for (let i = 1; i <= 4; i++) {
+          if (i <= termCount) {
+            const isLastTerm = i === termCount;
+            const currentEnd = isLastTerm ? end : addUtcDays(currentStart, termDays);
+            payload[`term${i}Start`] = currentStart.toISOString();
+            payload[`term${i}End`] = currentEnd.toISOString();
+            currentStart = addUtcDays(currentEnd, 1);
+          } else {
+            payload[`term${i}Start`] = null;
+            payload[`term${i}End`] = null;
+          }
+        }
+      }
+
+      await api.put(`/school-years/${activeYear.id}`, payload);
+      sileo.success({ title: "Terms auto-filled", description: `Standard duration distributed across ${termCount} terms.` });
       await fetchData();
     } catch (err) {
       toastApiError(err as never);
     } finally {
-      setSavingActiveCalendarDates(false);
+      setIsUpdatingTimeline(false);
+    }
+  };
+
+  const handleSaveTermDate = async (
+    field: "term1Start" | "term1End" | "term2Start" | "term2End" | "term3Start" | "term3End" | "term4Start" | "term4End",
+    date: Date,
+  ) => {
+    if (!activeYear) return;
+    setIsUpdatingTimeline(true);
+    try {
+      const payload: Record<string, string> = { 
+        [field]: date.toISOString() 
+      };
+
+      if (field === "term1Start") {
+        payload.classOpeningDate = date.toISOString();
+      }
+      if (field === "term1End") {
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        payload.term2Start = nextDay.toISOString();
+      }
+      if (field === "term2End") {
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        payload.term3Start = nextDay.toISOString();
+      }
+      if (field === "term3End") {
+        if (activeYear.termFormat === "TRIMESTER" || !activeYear.termFormat) {
+          payload.classEndDate = date.toISOString();
+        } else {
+          const nextDay = new Date(date);
+          nextDay.setDate(nextDay.getDate() + 1);
+          payload.term4Start = nextDay.toISOString();
+        }
+      }
+      if (field === "term4End") {
+        payload.classEndDate = date.toISOString();
+      }
+
+      await api.put(`/school-years/${activeYear.id}`, payload);
+      sileo.success({
+        title: "Date updated",
+        description: "The quarter date has been saved.",
+      });
+      await fetchData();
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsUpdatingTimeline(false);
+    }
+  };
+
+  const handleSaveEnrollmentDate = async (
+    field: "enrollOpenDate" | "enrollCloseDate",
+    date: Date,
+  ) => {
+    if (!activeYear) return;
+    setIsUpdatingTimeline(true);
+    try {
+      const payload: Record<string, any> = { 
+        [field]: date.toISOString() 
+      };
+
+      await api.patch(`/school-years/${activeYear.id}/dates`, payload);
+      sileo.success({
+        title: "Date updated",
+        description: "The enrollment date has been saved.",
+      });
+      await fetchData();
+      const pubRes = await api.get("/settings/public");
+      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsUpdatingTimeline(false);
     }
   };
 
@@ -1148,14 +1192,14 @@ export default function SchoolYearTab() {
             )}>
             <CardHeader
               className={cn(
-                "border-b pb-4 rounded-t-lg",
+                "border-b pb-4 rounded-t-lg flex flex-row items-center justify-between",
                 activeYear
                   ? "bg-green-500/5 border-green-500/10"
                   : "bg-amber-500/5 border-amber-500/20",
               )}>
               <CardTitle
                 className={cn(
-                  "text-sm font-bold  flex items-center gap-2 uppercase",
+                  "text-sm font-bold flex items-center gap-2 uppercase",
                   activeYear ? "text-green-700" : "text-amber-700",
                 )}>
                 {activeYear ? (
@@ -1164,7 +1208,7 @@ export default function SchoolYearTab() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </span>
-                    Currently Active School Year
+                    School Year {activeYear.yearLabel} Configuration
                   </>
                 ) : (
                   <>
@@ -1173,102 +1217,188 @@ export default function SchoolYearTab() {
                   </>
                 )}
               </CardTitle>
+              {activeYear && (
+                <span
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
+                  {activeCalendarStatus.label}
+                </span>
+              )}
             </CardHeader>
             <CardContent className="p-6">
               {activeYear ? (
                 <div className="space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <span className="text-2xl font-black text-foreground">
-                      School Year {activeYear.yearLabel}
+                  {/* Term Format Selection */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                      <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
+                        DepEd Term Configuration
+                      </h4>
+                    </div>
+                    <RadioGroup
+                      value={activeYear.termFormat ?? "TRIMESTER"}
+                      onValueChange={async (value) => {
+                        setIsUpdatingTimeline(true);
+                        try {
+                          await api.put(`/school-years/${activeYear.id}`, { termFormat: value });
+                          sileo.success({ title: "Term format updated", description: "Term format has been updated." });
+                          await fetchData();
+                        } catch (err) {
+                          toastApiError(err as never);
+                        } finally {
+                          setIsUpdatingTimeline(false);
+                        }
+                      }}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" />
+                        <Label htmlFor="TRIMESTER" className="font-bold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="QUARTERS" id="QUARTERS" />
+                        <Label htmlFor="QUARTERS" className="font-bold cursor-pointer text-foreground">4-Quarter System</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Term Date rows */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                      <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
+                        Term Dates
+                      </h4>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleAutoFillTerms}
+                        className="font-bold text-xs"
+                      >
+                        Auto-Fill Standard Terms
+                      </Button>
+                    </div>
+                    {[
+                      { num: 1, label: activeYear.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: activeYear.term1Start, end: activeYear.term1End },
+                      { num: 2, label: activeYear.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: activeYear.term2Start, end: activeYear.term2End },
+                      { num: 3, label: activeYear.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: activeYear.term3Start, end: activeYear.term3End },
+                      ...(activeYear.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: (activeYear as any).term4Start, end: (activeYear as any).term4End }] : []),
+                    ].map((term) => (
+                        <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/40">
+                          <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
+                          <div className="flex items-center gap-3 flex-1 w-full">
+                              <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                                <div className="text-xs font-semibold text-foreground uppercase mb-0.5">Start Date</div>
+                                <HybridDatePicker
+                                  value={term.start ? term.start.split('T')[0] : ""}
+                                  onChange={(val) => {
+                                    if (val) {
+                                      const [y, m, d] = val.split('-');
+                                      const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+                                      handleSaveTermDate(term.startField as Parameters<typeof handleSaveTermDate>[0], dateObj);
+                                    }
+                                  }}
+                                  className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                                  placeholder="Set date"
+                                />
+                              </div>
+                            <span className="text-foreground font-bold">to</span>
+                            <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                              <div className="text-xs font-semibold text-foreground uppercase mb-0.5">End Date</div>
+                              <HybridDatePicker
+                                value={term.end ? term.end.split('T')[0] : ""}
+                                onChange={(val) => {
+                                  if (val) {
+                                    const [y, m, d] = val.split('-');
+                                    const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+                                    handleSaveTermDate(term.endField as Parameters<typeof handleSaveTermDate>[0], dateObj);
+                                  }
+                                }}
+                                className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                                placeholder="Set date"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                  {/* Summary footer mapping to Total Academic Duration */}
+                  <div className="mt-8 pt-4 border-t border-border/40 flex flex-col sm:flex-row sm:items-center justify-between text-muted-foreground bg-muted/10 rounded-lg p-4 mb-8">
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">First Day of Classes — Last Day of Classes</span>
+                    <span className="text-sm font-bold text-foreground">
+                      {activeYear.classOpeningDate && activeYear.classEndDate 
+                        ? `${formatManilaDate(activeYear.classOpeningDate)} — ${formatManilaDate(activeYear.classEndDate)}`
+                        : "Dates not fully configured"}
                     </span>
-                    <div className="flex items-center gap-3">
+                  </div>
+
+                  {/* BOSY Enrollment Period */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wider">
+                            BOSY Enrollment Period
+                          </h4>
+                        </div>
+                        <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                          Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
+                        </p>
+                      </div>
                       <span
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
-                        {activeCalendarStatus.label}
+                        className={`text-sm font-bold px-3 py-1.5 rounded-full border shadow-sm ${enrollmentPhaseStatus.color}`}>
+                        {enrollmentPhaseStatus.label}
                       </span>
-                      {!isEditingActiveCalendar && (
-                        <Button
-                          variant="outline"
-                          className="font-bold"
-                          onClick={handleBeginActiveCalendarEdit}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit Timeline
-                        </Button>
-                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                        <div className="space-y-2 relative">
+                          <Label className="text-sm font-bold uppercase text-foreground">
+                            Opens On
+                          </Label>
+                          <HybridDatePicker
+                            value={activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : ""}
+                            onChange={(val) => {
+                              if (val) {
+                                const [y, m, d] = val.split('-');
+                                const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+                                handleSaveEnrollmentDate("enrollOpenDate", dateObj);
+                              }
+                            }}
+                            placeholder="Set start date"
+                          />
+                        </div>
+                        <div className="space-y-2 relative">
+                          <Label className="text-sm font-bold uppercase text-foreground">
+                            Closes On
+                          </Label>
+                          <HybridDatePicker
+                            value={activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : ""}
+                            onChange={(val) => {
+                              if (val) {
+                                const [y, m, d] = val.split('-');
+                                const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+                                handleSaveEnrollmentDate("enrollCloseDate", dateObj);
+                              }
+                            }}
+                            placeholder="Set end date"
+                          />
+                        </div>
+                      </div>
+
+                      {activeYear.enrollOpenDate !== null &&
+                        activeYear.enrollCloseDate !== null &&
+                        toManilaDateToken(activeYear.enrollCloseDate) < toManilaDateToken(activeYear.enrollOpenDate) && (
+                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p>
+                              Closes On date cannot be earlier than Opens On.
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
 
-                  {isEditingActiveCalendar ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase  text-foreground">
-                            Opens On
-                          </Label>
-                          <DatePicker
-                            date={editActiveClassOpening}
-                            setDate={(date) =>
-                              setEditActiveClassOpening(
-                                date ? normalizeDateToManila(date) : undefined,
-                              )
-                            }
-                            timeZone={MANILA_TIME_ZONE}
-                            className="font-bold h-12 text-lg shadow-sm border-2"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase  text-foreground">
-                            Closes On
-                          </Label>
-                          <DatePicker
-                            date={editActiveClassEnd}
-                            setDate={(date) =>
-                              setEditActiveClassEnd(
-                                date ? normalizeDateToManila(date) : undefined,
-                              )
-                            }
-                            timeZone={MANILA_TIME_ZONE}
-                            minDate={activeCalendarMinEosyDate}
-                            className="font-bold h-12 text-lg shadow-sm border-2"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                        <p className="font-bold">
-                          Adjusting these dates does not automatically change
-                          your Enrollment Gate deadlines.
-                        </p>
-                      </div>
-
-                      {editActiveClassOpening &&
-                        editActiveClassEnd &&
-                        !isActiveCalendarRangeValid && (
-                          <p className="text-xs font-bold text-destructive">
-                            EOSY must be later than BOSY and at least 240 days
-                            after BOSY.
-                          </p>
-                        )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
-                          Opens
-                        </span>
-                        <span className="text-2xl font-black text-foreground ">
-                          {formatCompactManilaDate(activeYear.classOpeningDate)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
-                          Closes
-                        </span>
-                        <span className="text-2xl font-black text-foreground ">
-                          {formatCompactManilaDate(activeYear.classEndDate)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="text-center space-y-4">
@@ -1336,7 +1466,7 @@ export default function SchoolYearTab() {
                 <div className="text-center space-y-5">
                   <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
                     No upcoming school year has been drafted yet. Prepare the
-                    next academic year to allow for Early Registration setup.
+                    next academic year.
                   </p>
                   <Button
                     className="font-bold shadow-sm"
@@ -1349,15 +1479,15 @@ export default function SchoolYearTab() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">School Year Archive</CardTitle>
-              <CardDescription>
-                Historical years are kept for audit and reporting.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {archivedYears.length > 0 ? (
+          {archivedYears.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">School Year Archive</CardTitle>
+                <CardDescription>
+                  Historical years are kept for audit and reporting.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1395,50 +1525,102 @@ export default function SchoolYearTab() {
                     ))}
                   </TableBody>
                 </Table>
-              ) : (
-                <p className="text-sm text-foreground">
-                  No archived school years yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {activeYear && isEditingActiveCalendar && (
-            <div className="sticky bottom-0 z-20">
-              <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs font-bold text-foreground">
-                    {isActiveCalendarDirty
-                      ? "You have unsaved active calendar changes."
-                      : "No active calendar changes yet."}
-                  </p>
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      className="font-bold"
-                      onClick={handleDiscardActiveCalendarChanges}
-                      disabled={savingActiveCalendarDates}>
-                      Discard Changes
-                    </Button>
-                    <Button
-                      className="font-bold"
-                      disabled={
-                        savingActiveCalendarDates ||
-                        !editActiveClassOpening ||
-                        !editActiveClassEnd ||
-                        !isActiveCalendarRangeValid ||
-                        !isActiveCalendarDirty
-                      }
-                      onClick={handleSaveActiveCalendarDates}>
-                      {savingActiveCalendarDates
-                        ? "Saving..."
-                        : "Save Schedule Changes"}
-                    </Button>
+          {activeYear && (
+            <Card
+              className={cn(
+                "shadow-sm mt-8 border-red-200",
+                isRolloverReady ? "bg-white" : "bg-slate-50/50",
+              )}>
+              <CardHeader className="border-b border-red-100 bg-red-50/30">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle
+                      className={cn(
+                        "text-xl flex items-center gap-2",
+                        !isRolloverReady ? "text-slate-500" : "text-red-700",
+                      )}>
+                      <RotateCcw
+                        className={cn(
+                          "h-5 w-5",
+                          isRolloverReady ? "text-red-600" : "text-slate-400",
+                        )}
+                      />
+                      Danger Zone: School Year Rollover
+                    </CardTitle>
+                    <CardDescription>
+                      Irreversible actions for active school year:{" "}
+                      <span className="font-bold text-foreground">
+                        {activeYear.yearLabel}
+                      </span>
+                    </CardDescription>
+                  </div>
+                  <div
+                    className={cn(
+                      "px-4 py-1.5 rounded-full text-xs font-black uppercase border",
+                      isRolloverReady
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : "bg-slate-100 text-slate-500 border-slate-200",
+                    )}>
+                    {isRolloverReady ? "READY" : "LOCKED"}
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                {isRolloverReady ? (
+                  <Alert className="bg-red-50 border-red-200 text-red-900">
+                    <CheckCircle2 className="h-4 w-4 text-red-600" />
+                    <AlertTitle className="font-bold">
+                      EOSY Finalized — Ready for Rollover
+                    </AlertTitle>
+                    <AlertDescription className="text-sm font-bold">
+                      All sections have been finalized and EOSY is complete. Initiating rollover will archive
+                      the current school year and create the next one with the carried-over learner population.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="font-bold">Rollover Locked</AlertTitle>
+                    <AlertDescription className="text-sm font-bold">
+                      All class sections must complete End of School Year (EOSY) finalization before
+                      rollover can be initiated.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+              <CardFooter
+                className={cn(
+                  "border-t p-6",
+                  isRolloverReady ? "bg-white" : "bg-slate-50/50",
+                )}>
+                {isRolloverReady && (
+                  <Button
+                    className="font-black uppercase bg-red-600 hover:bg-red-700 text-white border-b-4 border-red-800 active:border-b-0 active:translate-y-1 shadow-lg"
+                    onClick={() => setIsExecuteRolloverOpen(true)}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Initiate School Year Rollover
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
           )}
+
+          <ExecuteRolloverModal
+            open={isExecuteRolloverOpen}
+            activeSchoolYearLabel={activeYear?.yearLabel ?? null}
+            onOpenChange={setIsExecuteRolloverOpen}
+            onSuccess={async () => {
+              const pubRes = await api.get("/settings/public");
+              setSettings(pubRes.data);
+              await fetchData();
+            }}
+          />
+
+
         </>
       ) : null}
 

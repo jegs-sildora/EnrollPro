@@ -288,7 +288,7 @@ export const createStudentsProfileController = (
           data: {
             ...updateData,
             isTemporarilyEnrolled: !isNowClear,
-            status: isNowClear ? "ENROLLED" : "TEMPORARILY_ENROLLED",
+            status: isNowClear ? "ENROLLED" : "VERIFIED",
           },
           include: { learner: true },
         });
@@ -377,16 +377,7 @@ export const createStudentsProfileController = (
           });
         }
 
-        // 3. Automatically update the checklist for the current application
-        await tx.applicationChecklist.updateMany({
-          where: { enrollmentId: parsedId },
-          data: {
-            isPsaBirthCertPresented: true, // This allows the enrollment to proceed
-            isSecondaryBirthDocPresented: !isPsa,
-            isOriginalPsaBcCollected: isPsa,
-            updatedById: userId,
-          },
-        });
+
       });
 
       await deps.prisma.auditLog.create({

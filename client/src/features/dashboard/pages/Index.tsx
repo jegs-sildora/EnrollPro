@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   ClipboardList,
   Users,
   CheckCircle,
   AlertTriangle,
-  FileText,
-  FileCheck,
   TrendingUp,
   TrendingDown,
   Lock,
@@ -21,7 +19,6 @@ import { cn } from "@/shared/lib/utils";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -74,6 +71,16 @@ interface Stats {
     sectionName?: string;
     gradeLevel?: string;
   }>;
+  kpiHeader?: {
+    pendingTotal: number;
+    pendingIncomingG7: number;
+    pendingTransferees: number;
+    enrolledTotal: number;
+    enrolledNew: number;
+    enrolledContinuing: number;
+    unassignedTotal: number;
+    unassignedCriticalG7: number;
+  };
 }
 
 interface AdminStats {
@@ -93,27 +100,18 @@ interface EosyLockState {
   lockReason: string | null;
 }
 
-type FocusOverride = "AUTO" | "EARLY" | "ENROLLMENT";
-type FocusMode = "EARLY" | "ENROLLMENT" | "BALANCED";
 
-const ACTION_THRESHOLDS = {
-  pendingReview: 15,
-  sectionsAtCapacity: 2,
-};
 
 function formatMetric(value: number): string {
   return Number(value || 0).toLocaleString("en-PH");
 }
 
-function clampProgress(value: number): number {
-  return Math.min(100, Math.max(0, value));
-}
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const {
-    enrollmentPhase,
     systemStatus,
     activeSchoolYearId,
     viewingSchoolYearId,
@@ -127,8 +125,6 @@ export default function Dashboard() {
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [eosyLockState, setEosyLockState] = useState<EosyLockState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [focusOverride, setFocusOverride] = useState<FocusOverride>("AUTO");
-
   const showSkeleton = useDelayedLoading(loading);
 
   useEffect(() => {
@@ -185,80 +181,10 @@ export default function Dashboard() {
     fetchData();
   }, [isAdmin, ayId, isBosyLocked]);
 
-  const autoFocus = useMemo<FocusMode>(() => {
-    // BOSY phase: collapse both enrollment and early reg (EOSY section takes over)
-    if (isBosyLocked) return "BALANCED";
-
-    if (enrollmentPhase === "EARLY_REGISTRATION") {
-      return "EARLY";
-    }
-
-    if (
-      enrollmentPhase === "REGULAR_ENROLLMENT" ||
-      enrollmentPhase === "OVERRIDE"
-    ) {
-      return "ENROLLMENT";
-    }
-
-    return "BALANCED";
-  }, [enrollmentPhase, isBosyLocked]);
-
-  const effectiveFocus: FocusMode =
-    focusOverride === "AUTO" ? autoFocus : focusOverride;
-  const isEnrollmentExpanded = effectiveFocus !== "EARLY";
-  const isEarlyRegistrationExpanded = effectiveFocus !== "ENROLLMENT";
-
   const pendingReviewCount =
     stats?.actions?.pendingReview ?? stats?.totalPending ?? 0;
-  const pendingReviewAlert =
-    pendingReviewCount >= ACTION_THRESHOLDS.pendingReview;
-
-  const enrollmentCurrent =
-    stats?.enrollmentTarget?.current ?? stats?.totalEnrolled ?? 0;
-  const enrollmentTarget = stats?.enrollmentTarget?.target ?? 0;
-  const enrollmentProgress =
-    stats?.enrollmentTarget?.progressPercent ??
-    (enrollmentTarget > 0
-      ? Number(((enrollmentCurrent / enrollmentTarget) * 100).toFixed(1))
-      : 0);
-
-  const leslPipeline = [
-    {
-      title: "Encoded (BEEF)",
-      value: stats?.earlyRegistration?.submitted ?? 0,
-      icon: FileText,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-      tooltip: "Forms entered into the system",
-    },
-    {
-      title: "Pending Documents",
-      value:
-        stats?.earlyRegistration?.pendingDocuments ??
-        stats?.earlyRegistration?.inPipeline ??
-        0,
-      icon: ClipboardList,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-      tooltip: "Awaiting PSA Birth Certificate or SF9",
-    },
-    {
-      title: "Verified",
-      value: stats?.earlyRegistration?.verified ?? 0,
-      icon: FileCheck,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
-      tooltip: "Documents cleared",
-    },
-    {
-      title: "Ready for Sectioning",
-      value: stats?.earlyRegistration?.readyForEnrollment ?? 0,
-      icon: CheckCircle,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      tooltip: "Confirmed for BOSY — awaiting homeroom assignment",
-    },
-  ];
+  const pendingReviewAlert = pendingReviewCount > 0;
+  const enrollmentCurrent = stats?.totalEnrolled ?? 0;
 
   // System Analytics — admin footer row
   const registrarCount =
@@ -267,29 +193,8 @@ export default function Dashboard() {
   const teacherCount = adminStats?.usersByRole?.["TEACHER"] ?? 0;
   const totalPersonnel = registrarCount + teacherCount;
 
-  // Enrollment conversion: enrolled ÷ (enrolled + pending review)
-  const totalApplicants = enrollmentCurrent + pendingReviewCount;
-  const conversionRate =
-    totalApplicants > 0
-      ? Math.round((enrollmentCurrent / totalApplicants) * 100)
-      : 0;
-  const conversionLabel =
-    conversionRate >= 80
-      ? "High Efficiency"
-      : conversionRate >= 50
-        ? "Moderate"
-        : "Review Needed";
-
   // Schoolwide average fill rate across all grade levels
   const glBreakdown = stats?.gradeLevelBreakdown ?? [];
-  const totalForecastAll = glBreakdown.reduce(
-    (s, g) => s + (g.forecastedTarget ?? g.target),
-    0,
-  );
-  const avgFillPct =
-    totalForecastAll > 0
-      ? clampProgress(Math.round((enrollmentCurrent / totalForecastAll) * 100))
-      : 0;
 
   const eosyProgress =
     eosyLockState && eosyLockState.totalSections > 0
@@ -356,51 +261,111 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {viewingStatus !== 'ARCHIVED' && (
-          <div className="flex flex-col items-start gap-3 md:items-end">
-            <div className="flex flex-col items-start gap-1 md:items-end">
-              <p className="text-xs font-bold uppercase  text-foreground">
-                Seasonal Focus
-              </p>
-              <div
-                className="inline-flex rounded-xl border border-border/50 bg-card/60 backdrop-blur-md p-1 shadow-xs relative"
-                role="group"
-                aria-label="Command center seasonal focus">
-                {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
-                  const selected = focusOverride === mode;
+      </div>
 
-                  return (
-                    <Button
-                      key={mode}
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setFocusOverride(mode)}
-                      className={cn(
-                        "relative h-7 px-3 text-xs font-black uppercase transition-all z-10",
-                        selected
-                          ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent"
-                          : "text-foreground hover:text-foreground",
-                      )}>
-                      {selected && (
-                        <motion.div
-                          layoutId="dashboard-seasonal-focus-pill"
-                          className="absolute inset-0 bg-primary rounded-lg shadow-sm"
-                          transition={{
-                            type: "spring",
-                            bounce: 0.15,
-                            duration: 0.5,
-                          }}
-                        />
-                      )}
-                      <span className="relative z-20">{mode}</span>
-                    </Button>
-                  );
-                })}
+      {/* ── KPI Header (Top Row) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: PENDING VERIFICATIONS */}
+        <Card
+          onClick={() => navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION")}
+          className="border-2 border-amber-200/60 bg-gradient-to-br from-white to-amber-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-black uppercase text-amber-900/60 flex items-center justify-between">
+              Pending Verifications
+              <div className="bg-amber-100 rounded-lg p-2">
+                <ClipboardList className="h-4 w-4 text-amber-600" />
               </div>
-            </div>
-          </div>
-        )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showSkeleton ? (
+              <Skeleton className="h-10 w-32" />
+            ) : (
+              <>
+                <AnimatedNumber
+                  value={stats?.kpiHeader?.pendingTotal ?? 0}
+                  className="text-5xl font-black text-amber-700 tabular-nums"
+                />
+                <div className="flex items-center gap-2 pt-1 border-t border-amber-100">
+                  <Badge variant="outline" className="bg-white border-amber-200 text-amber-700 text-[10px] uppercase font-bold">
+                    {stats?.kpiHeader?.pendingIncomingG7 ?? 0} Incoming G7
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-amber-200 text-amber-700 text-[10px] uppercase font-bold">
+                    {stats?.kpiHeader?.pendingTransferees ?? 0} Transferees
+                  </Badge>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 2: OFFICIALLY ENROLLED */}
+        <Card
+          onClick={() => navigate("/students")}
+          className="border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-black uppercase text-emerald-900/60 flex items-center justify-between">
+              Officially Enrolled
+              <div className="bg-emerald-100 rounded-lg p-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showSkeleton ? (
+              <Skeleton className="h-10 w-32" />
+            ) : (
+              <>
+                <AnimatedNumber
+                  value={stats?.kpiHeader?.enrolledTotal ?? 0}
+                  className="text-5xl font-black text-emerald-700 tabular-nums"
+                />
+                <div className="flex items-center gap-2 pt-1 border-t border-emerald-100">
+                  <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] uppercase font-bold">
+                    {stats?.kpiHeader?.enrolledNew ?? 0} New
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] uppercase font-bold">
+                    {stats?.kpiHeader?.enrolledContinuing ?? 0} Continuing
+                  </Badge>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 3: UNASSIGNED LEARNERS */}
+        <Card
+          onClick={() => navigate("/monitoring/enrollment")}
+          className="border-2 border-blue-200/60 bg-gradient-to-br from-white to-blue-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-black uppercase text-blue-900/60 flex items-center justify-between">
+              Unassigned Learners
+              <div className="bg-blue-100 rounded-lg p-2">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showSkeleton ? (
+              <Skeleton className="h-10 w-32" />
+            ) : (
+              <>
+                <AnimatedNumber
+                  value={stats?.kpiHeader?.unassignedTotal ?? 0}
+                  className="text-5xl font-black text-blue-700 tabular-nums"
+                />
+                <div className="flex items-center gap-2 pt-1 border-t border-blue-100">
+                  <Badge variant="outline" className="bg-white border-blue-200 text-blue-700 text-[10px] uppercase font-bold">
+                    {stats?.kpiHeader?.unassignedCriticalG7 ?? 0} Critical (Grade 7)
+                  </Badge>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* ── EOSY Progress (when BOSY locked) ── */}
@@ -581,20 +546,12 @@ export default function Dashboard() {
           <div className="h-px flex-1 bg-emerald-100/50"></div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {isEnrollmentExpanded ? (
-            <motion.div
-              key="enrollment-expanded"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
               <Card className="lg:col-span-4 border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/20 shadow-md card-hover hover:shadow-lg">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
-                      Growth Indicator
+                      Total Enrolled
                     </CardTitle>
                     <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
                       School-Wide
@@ -664,7 +621,7 @@ export default function Dashboard() {
               <Card className="lg:col-span-8 border border-slate-200/50 bg-white shadow-sm flex flex-col card-hover hover:shadow-md">
                 <CardHeader className="pb-3 border-b border-slate-50">
                   <CardTitle className="text-xs font-black uppercase text-foreground">
-                    Forecast vs. Actual Enrollment
+                    Enrollment per Grade Level
                   </CardTitle>
                 </CardHeader>
 
@@ -686,10 +643,6 @@ export default function Dashboard() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                       {stats?.gradeLevelBreakdown?.map((gl) => {
-                        const forecast = gl.forecastedTarget ?? gl.target;
-                        const fillPct = forecast > 0
-                          ? clampProgress((gl.current / forecast) * 100)
-                          : 0;
                         return (
                         <div
                           key={gl.id}
@@ -699,24 +652,9 @@ export default function Dashboard() {
                               {gl.name}
                             </span>
                             <span className="text-xs font-black text-emerald-700 tabular-nums">
-                              <AnimatedNumber value={gl.current} /> / <AnimatedNumber value={forecast} /> Forecasted
+                              <AnimatedNumber value={gl.current} /> Enrolled
                             </span>
                           </div>
-                          <div className="h-2.5 w-full rounded-full bg-white overflow-hidden shadow-inner border border-slate-200/50">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${fillPct}%` }}
-                              transition={{
-                                duration: 1,
-                                ease: "easeOut",
-                                delay: 0.2,
-                              }}
-                              className="h-full rounded-full bg-emerald-500"
-                            />
-                          </div>
-                          <p className="text-[10px] font-bold text-foreground uppercase">
-                            Forecast Fill Rate — <AnimatedNumber value={Math.round(fillPct)} suffix="%" />
-                          </p>
                         </div>
                         );
                       })}
@@ -732,49 +670,7 @@ export default function Dashboard() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="enrollment-collapsed"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}>
-              <Card className="border border-slate-200/50 bg-white shadow-sm border-l-4 border-l-emerald-500 card-hover hover:shadow-md">
-                <CardHeader className="py-3 px-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm font-black ">
-                        Enrollment Summary
-                      </CardTitle>
-                      <CardDescription className="text-xs font-bold er">
-                        Collapsed for Early Registration Focus
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-foreground uppercase">
-                          Enrolled
-                        </p>
-                        <p className="text-lg font-black text-emerald-600">
-                          <AnimatedNumber value={enrollmentCurrent} />
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-foreground uppercase">
-                          Utilization
-                        </p>
-                        <p className="text-lg font-black text-emerald-600">
-                          <AnimatedNumber value={Math.round(enrollmentProgress)} suffix="%" />
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </section>
 
       {/* ── Action Queues ── */}
@@ -800,9 +696,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-black text-foreground">
-                  {effectiveFocus === "ENROLLMENT"
-                    ? "Pending BOSY Verifications"
-                    : "Pending Verifications"}
+                  Pending Verifications
                 </CardTitle>
                 <div
                   className={cn(
@@ -832,11 +726,7 @@ export default function Dashboard() {
                     className="text-5xl font-black tabular-nums"
                   />
                   <p className="text-xs font-bold text-foreground min-h-[2rem] leading-relaxed">
-                    {effectiveFocus === "ENROLLMENT"
-                      ? "Basic Education Enrollment Forms (BEEF) requiring SF9 and physical PSA validation."
-                      : pendingReviewAlert
-                        ? "Review queue has reached critical volume. Registrar intervention required."
-                        : "Process is stable. Review queue is performing within established parameters."}
+                    There are {formatMetric(pendingReviewCount)} applications waiting for registrar approval.
                   </p>
                 </>
               )}
@@ -857,9 +747,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Cards 2 & 3 — hidden in EARLY mode (sectioning hasn't started) */}
-          {effectiveFocus !== "EARLY" && (
-            <>
+
               {/* Card 2 — Section Capacity Index */}
               {(() => {
                 const sectionsAtMax = stats?.sectionsAtCapacity ?? 0;
@@ -880,7 +768,7 @@ export default function Dashboard() {
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xs font-black text-foreground">
-                          Section Capacity Index
+                          Overcrowded Sections
                         </CardTitle>
                         <div
                           className={cn(
@@ -910,8 +798,7 @@ export default function Dashboard() {
                       ) : (
                         <>
                           <AnimatedNumber
-                            value={avgFillPct}
-                            suffix="%"
+                            value={sectionsAtMax}
                             className={cn(
                               "text-5xl font-black tabular-nums",
                               hasCapacityPressure
@@ -1028,101 +915,9 @@ export default function Dashboard() {
                   </Card>
                 );
               })()}
-            </>
-          )}
         </div>
       </section>
 
-      {/* ── Early Registration Section ── */}
-      <section
-        className="space-y-4"
-        aria-label="Early registration">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase  text-amber-600/80">
-            Early Registration Pipeline
-          </h2>
-          <div className="h-px flex-1 bg-amber-100/50"></div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          {isEarlyRegistrationExpanded ? (
-            <motion.div
-              key="early-reg-expanded"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {leslPipeline.map((stat) => (
-                <Card
-                  key={stat.title}
-                  className="border border-amber-100/60 bg-white shadow-sm card-hover hover:shadow-md border-b-2">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs font-black uppercase  text-foreground">
-                      {stat.title}
-                    </CardTitle>
-                    <div className={`${stat.bg} rounded-lg p-2`}>
-                      <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    {showSkeleton ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      <AnimatedNumber
-                        value={stat.value}
-                        className="text-3xl font-black tabular-nums"
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="early-reg-collapsed"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}>
-              <Card className="border border-amber-100/60 bg-white shadow-sm border-l-4 border-l-amber-500 card-hover hover:shadow-md">
-                <CardHeader className="py-3 px-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm font-black ">
-                        Phase 1: Early Registration Summary
-                      </CardTitle>
-                      <CardDescription className="text-xs font-bold er">
-                        Minimized: Dashboard is currently adapting to the Phase
-                        2 (BOSY) operational window.
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-foreground uppercase">
-                          Verified
-                        </p>
-                        <p className="text-lg font-black text-amber-600">
-                          <AnimatedNumber value={stats?.earlyRegistration?.verified ?? 0} />
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-foreground uppercase">
-                          Ready for Sectioning
-                        </p>
-                        <p className="text-lg font-black text-blue-600">
-                          <AnimatedNumber value={stats?.earlyRegistration?.readyForEnrollment ?? 0} />
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </section>
 
       {/* ── System Analytics (Admin Footer) ── */}
       {isAdmin && (
@@ -1136,50 +931,8 @@ export default function Dashboard() {
             <div className="h-px flex-1 bg-white"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* ── Card 1: Enrollment Conversion Index ── */}
-            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
-                  Conversion Index
-                </CardTitle>
-                <TrendingUp className="h-3.5 w-3.5 text-foreground" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {showSkeleton ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <>
-                    <div className="flex items-baseline gap-2">
-                      <AnimatedNumber
-                        value={conversionRate}
-                        suffix="%"
-                        className="text-2xl font-black"
-                      />
-                      <span
-                        className={cn(
-                          "text-xs font-bold uppercase",
-                          conversionRate >= 80
-                            ? "text-emerald-600"
-                            : conversionRate >= 50
-                              ? "text-amber-600"
-                              : "text-red-600",
-                        )}>
-                        {conversionLabel}
-                      </span>
-                    </div>
-                    <p className="text-xs font-bold text-foreground uppercase">
-                      <AnimatedNumber value={enrollmentCurrent} /> enrolled
-                      &nbsp;&middot;&nbsp;
-                      <AnimatedNumber value={pendingReviewCount} /> in queue
-                    </p>
-                    <p className="text-xs text-foreground border-t border-slate-100 pt-2">
-                      Applications converted to active enrollment records.
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
 
             {/* ── Card 2: Active ERP Personnel ── */}
             <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
@@ -1200,7 +953,7 @@ export default function Dashboard() {
                         className="text-2xl font-black"
                       />
                       <span className="text-xs font-bold text-foreground uppercase">
-                        ERP accounts
+                        Staff Accounts
                       </span>
                     </div>
                     <p className="text-xs font-bold text-foreground uppercase">
@@ -1209,22 +962,7 @@ export default function Dashboard() {
                       &nbsp;&middot;&nbsp;
                       <AnimatedNumber value={teacherCount} /> Teachers
                     </p>
-                    <div className="flex items-center gap-1.5 border-t border-slate-100 pt-2">
-                      <span
-                        className={cn(
-                          "h-1.5 w-1.5 rounded-full shrink-0",
-                          adminStats?.systemStatus === "OK"
-                            ? "bg-emerald-500"
-                            : "bg-red-500",
-                        )}
-                      />
-                      <span className="text-xs text-foreground">
-                        Database{" "}
-                        {adminStats?.systemStatus === "OK"
-                          ? "nominal"
-                          : "degraded"}
-                      </span>
-                    </div>
+
                   </>
                 )}
               </CardContent>

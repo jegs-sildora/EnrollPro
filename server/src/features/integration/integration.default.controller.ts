@@ -111,10 +111,7 @@ async function fetchAimsLearnerRows(
           },
         },
       },
-      // Include checklist for remedial risk flag
-      checklist: {
-        select: { isRemedialRequired: true },
-      },
+      // Include isRemedialRequired for remedial risk flag
     },
     orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
     skip,
@@ -135,7 +132,7 @@ async function fetchSmartLearnerRows(
     where: {
       schoolYearId,
       // Include dropped students so SMART can reflect their status in class records
-      status: { in: ["ENROLLED", "TEMPORARILY_ENROLLED", "DROPPED"] },
+      status: { in: ["ENROLLED", "SECTIONED"] },
       enrollmentRecord: { isNot: null },
     },
     include: {
@@ -381,7 +378,7 @@ export async function listDefaultSmartStudents(
     prisma.enrollmentApplication.count({
       where: {
         schoolYearId: scope.schoolYearId,
-        status: { in: ["ENROLLED", "TEMPORARILY_ENROLLED", "DROPPED"] },
+        status: { in: ["ENROLLED", "SECTIONED"] },
         enrollmentRecord: { isNot: null },
       },
     }),
@@ -469,7 +466,7 @@ export async function listDefaultAimsContext(
       applicantType: application.applicantType,
       learnerType: application.learnerType,
       learningModalities: application.learningModalities,
-      isRemedialRequired: application.checklist?.isRemedialRequired ?? false,
+      isRemedialRequired: application.isRemedialRequired ?? false,
       learner: {
         externalId: application.learner.externalId,
         lrn: application.learner.lrn,

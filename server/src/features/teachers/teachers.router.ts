@@ -8,6 +8,7 @@ import {
   updateTeacherSchema,
   teacherDesignationSchema,
   deactivateTeacherSchema,
+  updateServiceStatusSchema,
 } from "@enrollpro/shared";
 
 const router: Router = Router();
@@ -36,5 +37,10 @@ router.patch(
   teachersCtrl.deactivate,
 );
 router.patch("/:id/reactivate", teachersCtrl.reactivate);
+router.patch(
+  "/:id/service-status",
+  validate(updateServiceStatusSchema),
+  teachersCtrl.updateServiceStatus,
+);
 
 export default router;

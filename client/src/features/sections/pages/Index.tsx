@@ -668,31 +668,11 @@ export default function Sections() {
     const fetchProgramOptions = async () => {
       if (!ayId) return;
       try {
-        const res = await api.get(`/curriculum/${ayId}/scp-config`);
-        const configs = res.data.scpProgramConfigs || [];
-        const offeredScps = configs
-          .filter(
-            (cfg: { isOffered: boolean; scpType: string }) => cfg.isOffered,
-          )
-          .map((cfg: { scpType: string }) => ({
-            value: cfg.scpType,
-            label: SCP_SHORT_LABELS[cfg.scpType] || cfg.scpType,
-          }));
-
-        const offeredLabels = offeredScps.reduce(
-          (acc: Record<string, string>, scp: { value: string; label: string }) => {
-            acc[scp.value] = scp.label;
-            return acc;
-          },
-          {} as Record<string, string>,
-        );
-
-        setOfferedScpTypeLabels(offeredLabels);
-        setOfferedScpTypes(offeredScps.map((scp: { value: string; label: string }) => scp.value));
+        setOfferedScpTypeLabels({});
+        setOfferedScpTypes([]);
 
         setProgramOptions([
-          { value: "REGULAR", label: "Regular (BEC)" },
-          ...offeredScps,
+          { value: "REGULAR", label: "Regular (BEC)" }
         ]);
       } catch (err) {
         console.error("Failed to fetch SCP configs", err);

@@ -16,6 +16,7 @@ import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useSettingsStore } from "@/store/settings.slice";
+import { LisEnrollmentDialog } from "./LisEnrollmentDialog";
 
 // ── Program-type short labels (matches Homerooms.tsx) ───────────────────────
 
@@ -194,6 +195,7 @@ export default function SectionRosterModal({
   const [data, setData] = useState<RosterResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatingSf1, setGeneratingSf1] = useState(false);
+  const [isEnrollOpen, setIsEnrollOpen] = useState(false);
 
   const { isHistoricalReadOnly, isArchivedYear } = useHistoricalReadOnly();
   const { viewingSchoolYearLabel } = useSettingsStore();
@@ -283,102 +285,124 @@ export default function SectionRosterModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* ── Header ── */}
-        <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
-          {/* Historical / Archived year badge */}
-          {isHistoricalReadOnly && (
-            <div className="mb-2.5">
-              <Badge variant="secondary" className="text-[10px]">
-                {isArchivedYear ? "Archived" : "Historical"} SY {viewingSchoolYearLabel ?? "–"}
-              </Badge>
-            </div>
-          )}
-
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle className="text-base font-black uppercase tracking-wide">
-                {loading || !section ? (
-                  <Skeleton className="h-5 w-48" />
-                ) : (
-                  section.name
-                )}
-              </DialogTitle>
-              {loading || !section ? (
-                <Skeleton className="h-3.5 w-64 mt-1.5" />
-              ) : (
-                <p className="text-xs text--foreground mt-1 font-bold">
-                  {section.gradeLevel}
-                  {programTrack ? ` — ${programTrack}` : ""}
-                  {section.advisingTeacher
-                    ? ` · Adviser: ${section.advisingTeacher.name}`
-                    : ""}
-                </p>
-              )}
-            </div>
-
-            {!loading && section && (
-              <div className="flex items-center gap-1 text-xs text--foreground font-bold shrink-0">
-                <Users className="size-3.5" />
-                <span>{totalLearners}/{section.maxCapacity}</span>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+          {/* ── Header ── */}
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
+            {/* Historical / Archived year badge */}
+            {isHistoricalReadOnly && (
+              <div className="mb-2.5">
+                <Badge variant="secondary" className="text-[10px]">
+                  {isArchivedYear ? "Archived" : "Historical"} SY {viewingSchoolYearLabel ?? "–"}
+                </Badge>
               </div>
             )}
-          </div>
-        </DialogHeader>
 
-        {/* ── Body ── */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <DataTable
-            columns={ROSTER_COLUMNS}
-            data={rows}
-            loading={loading}
-            virtualize={false}
-            getRowId={(row) => String(row.id)}
-            getRowClassName={(row) =>
-              row._kind === "divider" ? "bg-muted/50 pointer-events-none" : ""
-            }
-            emptyStateContent={
-              <div className="flex flex-col items-center justify-center py-16 text--foreground">
-                <Users className="size-10 opacity-30 mb-3" />
-                <p className="text-sm font-bold">No enrolled learners</p>
-                <p className="text-xs mt-1">This section has no active enrollment records.</p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <DialogTitle className="text-base font-black uppercase tracking-wide">
+                  {loading || !section ? (
+                    <Skeleton className="h-5 w-48" />
+                  ) : (
+                    section.name
+                  )}
+                </DialogTitle>
+                {loading || !section ? (
+                  <Skeleton className="h-3.5 w-64 mt-1.5" />
+                ) : (
+                  <p className="text-xs text--foreground mt-1 font-bold">
+                    {section.gradeLevel}
+                    {programTrack ? ` — ${programTrack}` : ""}
+                    {section.advisingTeacher
+                      ? ` · Adviser: ${section.advisingTeacher.name}`
+                      : ""}
+                  </p>
+                )}
               </div>
-            }
-            className="h-auto rounded-none border-0"
-          />
-        </div>
 
-        {/* ── Footer ── */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
-          <p className="text-[11px] text--foreground font-bold">
-            {loading
-              ? "Loading roster…"
-              : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="text-xs font-bold">
-              Close
-            </Button>
-            <Button
-              size="sm"
-              disabled={loading || totalLearners === 0 || generatingSf1}
-              onClick={() => void handleGenerateSf1()}
-              className="text-xs font-bold gap-1.5">
-              {generatingSf1 ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <FileSpreadsheet className="size-3.5" />
+              {!loading && section && (
+                <div className="flex items-center gap-1 text-xs text--foreground font-bold shrink-0">
+                  <Users className="size-3.5" />
+                  <span>{totalLearners}/{section.maxCapacity}</span>
+                </div>
               )}
-              Generate SF1
-            </Button>
+            </div>
+          </DialogHeader>
+
+          {/* ── Body ── */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <DataTable
+              columns={ROSTER_COLUMNS}
+              data={rows}
+              loading={loading}
+              virtualize={false}
+              getRowId={(row) => String(row.id)}
+              getRowClassName={(row) =>
+                row._kind === "divider" ? "bg-muted/50 pointer-events-none" : ""
+              }
+              emptyStateContent={
+                <div className="flex flex-col items-center justify-center py-16 text--foreground">
+                  <Users className="size-10 opacity-30 mb-3" />
+                  <p className="text-sm font-bold">No enrolled learners</p>
+                  <p className="text-xs mt-1">This section has no active enrollment records.</p>
+                </div>
+              }
+              className="h-auto rounded-none border-0"
+            />
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+          {/* ── Footer ── */}
+          <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
+            <p className="text-[11px] text--foreground font-bold">
+              {loading
+                ? "Loading roster…"
+                : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="text-xs font-bold">
+                Close
+              </Button>
+              {!isHistoricalReadOnly && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEnrollOpen(true)}
+                  className="text-xs font-bold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800">
+                  + Enrol Learner
+                </Button>
+              )}
+              <Button
+                size="sm"
+                disabled={loading || totalLearners === 0 || generatingSf1}
+                onClick={() => void handleGenerateSf1()}
+                className="text-xs font-bold gap-1.5">
+                {generatingSf1 ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="size-3.5" />
+                )}
+                Generate SF1
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <LisEnrollmentDialog
+        open={isEnrollOpen}
+        onOpenChange={setIsEnrollOpen}
+        sectionId={sectionId}
+        sectionName={section?.name || ""}
+        onEnrollSuccess={() => {
+          if (sectionId) {
+            void fetchRoster(sectionId);
+          }
+        }}
+      />
+    </>
   );
 }

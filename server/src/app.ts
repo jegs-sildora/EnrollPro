@@ -10,16 +10,16 @@ import authRoutes from "./features/auth/auth.router.js";
 import settingsRoutes from "./features/settings/settings.router.js";
 import dashboardRoutes from "./features/dashboard/dashboard.router.js";
 import schoolYearRoutes from "./features/school-year/school-year.router.js";
-import curriculumRoutes from "./features/curriculum/curriculum.router.js";
 import sectionsRoutes from "./features/sections/sections.router.js";
 import sectioningRoutes from "./features/sections/sectioning.router.js";
 import studentsRoutes from "./features/students/students.router.js";
-import applicationRoutes from "./features/admission/admission.router.js";
+
 import adminRoutes from "./features/admin/admin.router.js";
 import auditLogRoutes from "./features/audit-logs/audit-logs.router.js";
 import teachersRoutes from "./features/teachers/teachers.router.js";
 import learnerRoutes from "./features/learner/learner.router.js";
-import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
+import { admissionRoutes } from "./features/admission/admission.router.js";
+
 import enrollmentListingRoutes from "./features/enrollment-listing/enrollment-listing.router.js";
 import eosyRoutes from "./features/enrollment/eosy.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
@@ -30,9 +30,11 @@ import remedialRoutes from "./features/remedial/remedial.router.js";
 import integrationTriggerRoutes from "./features/integration/integration-trigger.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
 import addressRoutes from "./features/address/address.router.js";
+import { geographyRouter } from "./features/geography/geography.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
+import { auditContext } from "./lib/context.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,7 +125,14 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
-// 4. Guards & Routes
+// 4. Guards, Context, & Routes
+app.use((req, res, next) => {
+  auditContext.run({
+    ipAddress: req.ip ?? "0.0.0.0",
+    userAgent: (req.headers["user-agent"] as string) ?? null,
+  }, next);
+});
+
 app.use(historicalReadOnlyGuard);
 
 const apiRouter = express.Router();
@@ -157,16 +166,16 @@ apiRouter.use("/dashboard", dashboardRoutes);
 apiRouter.use("/school-years", schoolYearRoutes);
 // Backward-compatible singular alias used by legacy clients.
 apiRouter.use("/school-year", schoolYearRoutes);
-apiRouter.use("/curriculum", curriculumRoutes);
 apiRouter.use("/sections", sectionsRoutes);
 apiRouter.use("/sectioning", sectioningRoutes);
 apiRouter.use("/students", studentsRoutes);
-apiRouter.use("/applications", applicationRoutes);
+
 apiRouter.use("/admin", adminRoutes);
 apiRouter.use("/audit-logs", auditLogRoutes);
 apiRouter.use("/teachers", teachersRoutes);
 apiRouter.use("/learner", learnerRoutes);
-apiRouter.use("/early-registrations", earlyRegRoutes);
+apiRouter.use("/applications", admissionRoutes);
+
 apiRouter.use("/enrollment-listings", enrollmentListingRoutes);
 apiRouter.use("/eosy", eosyRoutes);
 apiRouter.use("/enrollment", enrollmentRoutes);
@@ -179,6 +188,7 @@ apiRouter.use("/integration", integrationTriggerRoutes);
 apiRouter.use("/integration/v1", integrationRoutes);
 // Public reference data — no auth; needed by unauthenticated online applicants
 apiRouter.use("/address", addressRoutes);
+apiRouter.use("/geography", geographyRouter);
 
 // Catch-all for unmatched API routes (Express 5 regex)
 apiRouter.all(/(.*)/, (req, res) => {

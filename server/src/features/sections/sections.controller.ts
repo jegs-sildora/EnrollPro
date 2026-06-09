@@ -15,7 +15,7 @@ import type { SectioningParams } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { fireOfficialEnrollmentNotification } from "../../lib/notificationService.js";
 
-const sectioningEngine = new SectioningEngine(prisma);
+const sectioningEngine = new SectioningEngine(prisma as any);
 
 export async function getBatchPrerequisites(req: Request, res: Response) {
   const { gradeLevelId } = req.params;
@@ -99,9 +99,9 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         await tx.enrollmentApplication.updateMany({
           where: {
             id: { in: appIds },
-            status: { not: "TEMPORARILY_ENROLLED" },
+            
           },
-          data: { status: "OFFICIALLY_ENROLLED" },
+          data: { status: "SECTIONED" },
         });
 
         // Clear any existing enrollment records for these applications to avoid unique constraint violations
@@ -842,7 +842,7 @@ export async function getUnsectionedPool(
     where: {
       gradeLevelId: parseInt(gradeLevelId as string),
       schoolYearId: schoolYearId,
-      status: "PASSED",
+      status: "VERIFIED",
       enrollmentRecord: null,
     },
     include: {

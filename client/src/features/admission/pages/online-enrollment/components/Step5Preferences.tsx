@@ -7,10 +7,8 @@ import type { EnrollmentFormData } from "../types";
 import {
   SPA_ART_FIELDS,
   SPS_SPORTS,
-  SPFL_LANGUAGES,
-  LEARNING_MODALITIES,
 } from "../types";
-import { cn, SCP_LABELS } from "@/shared/lib/utils";
+import { cn, SCP_LABELS, SCP_ACRONYMS } from "@/shared/lib/utils";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
@@ -21,13 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 
 const LEARNER_TYPES = [
-  { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
+  { value: "NEW_ENROLLEE", label: "Incoming Grade 7" },
   { value: "TRANSFEREE", label: "TRANSFEREE" },
-  { value: "RETURNING", label: "RETURNING" },
+  { value: "RETURNING", label: "Returning (Balik-Aral)" },
 ] as const;
 
 const GRADE_OPTIONS = [
@@ -38,21 +35,6 @@ const GRADE_OPTIONS = [
 ] as const;
 
 type ScpTypeValue = NonNullable<EnrollmentFormData["scpType"]>;
-
-interface OfferedScpProgramConfig {
-  scpType: ScpTypeValue;
-  gradeRequirements: unknown;
-}
-
-interface PublicScpProgramConfig {
-  scpType: unknown;
-  isOffered?: boolean;
-  gradeRequirements?: unknown;
-}
-
-interface PublicScpConfigResponse {
-  scpProgramConfigs?: PublicScpProgramConfig[];
-}
 
 const SCP_PROGRAMS: Array<{ id: ScpTypeValue; label: string; desc: string }> = [
   {
@@ -87,10 +69,6 @@ const SCP_PROGRAMS: Array<{ id: ScpTypeValue; label: string; desc: string }> = [
   },
 ] as const;
 
-const isScpTypeValue = (value: unknown): value is ScpTypeValue =>
-  typeof value === "string" &&
-  SCP_PROGRAMS.some((program) => program.id === value);
-
 export default function Step5Enrollment() {
   const {
     watch,
@@ -99,9 +77,7 @@ export default function Step5Enrollment() {
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
 
-  const { activeSchoolYearId, viewingSchoolYearId } =
-    useSettingsStore();
-  const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
 
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
@@ -112,14 +88,8 @@ export default function Step5Enrollment() {
   const artField = watch("artField");
   const sportsList = watch("sportsList");
   const foreignLanguage = watch("foreignLanguage");
-  const learningModalities = watch("learningModalities");
   const reportedGa = watch("generalAverage");
 
-  const [isLoadingScpConfig, setIsLoadingScpConfig] = useState(true);
-  const [scpConfigError, setScpConfigError] = useState<string | null>(null);
-  const [offeredScpConfigs, setOfferedScpConfigs] = useState<
-    OfferedScpProgramConfig[]
-  >([]);
   const [inputGaValue, setInputGaValue] = useState<string>("");
 
   useEffect(() => {
@@ -130,30 +100,27 @@ export default function Step5Enrollment() {
     }
   }, [reportedGa]);
 
-  const selectedSportsList = sportsList ?? [];
   const selectedSportsCount = sportsList?.length ?? 0;
-  const selectedLearningModalities = learningModalities ?? [];
 
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
   const hasQuickLrnLookupSuccess =
     typeof quickLrnLookupId === "number" && Number.isFinite(quickLrnLookupId);
   const isProgramSelectionLocked = hasQuickLrnLookupSuccess;
   const isLockedRegularTrack = isProgramSelectionLocked && !isScpApplication;
-  const shouldShowScpCard =
-    isScpEligible && hasQuickLrnLookupSuccess && !isLockedRegularTrack;
 
-  const availableScpPrograms = useMemo(
-    () =>
-      SCP_PROGRAMS.filter((program) =>
-        offeredScpConfigs.some((config) => config.scpType === program.id),
-      ),
-    [offeredScpConfigs],
-  );
+  const availableScpPrograms = useMemo(() => {
+    return SCP_PROGRAMS.filter((program) => {
+      if (program.id === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && steEnabled) return true;
+      if (program.id === "SPECIAL_PROGRAM_IN_THE_ARTS" && spaEnabled) return true;
+      if (program.id === "SPECIAL_PROGRAM_IN_SPORTS" && spsEnabled) return true;
+      return false;
+    });
+  }, [steEnabled, spaEnabled, spsEnabled]);
 
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
 
-  const canSelectScpTrack =
-    shouldShowScpCard && !isLoadingScpConfig && hasOfferedScpPrograms;
+  const shouldShowScpCard =
+    isScpEligible && !isLockedRegularTrack && hasOfferedScpPrograms;
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -162,56 +129,6 @@ export default function Step5Enrollment() {
     learnerType === "NEW_ENROLLEE"
       ? GRADE_OPTIONS.filter((option) => option.value === "7")
       : GRADE_OPTIONS;
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadScpConfig = async () => {
-      setIsLoadingScpConfig(true);
-      setScpConfigError(null);
-
-      try {
-        const response = await api.get<PublicScpConfigResponse>(
-          "/settings/scp-config",
-        );
-
-        const offered = (response.data.scpProgramConfigs ?? []).reduce<
-          OfferedScpProgramConfig[]
-        >((acc, config) => {
-          if (config.isOffered !== false && isScpTypeValue(config.scpType)) {
-            acc.push({
-              scpType: config.scpType,
-              gradeRequirements: config.gradeRequirements,
-            });
-          }
-          return acc;
-        }, []);
-
-        if (!isMounted) return;
-        const deduped = Array.from(
-          new Map(offered.map((config) => [config.scpType, config])).values(),
-        );
-        setOfferedScpConfigs(deduped);
-      } catch (error) {
-        console.error("Failed to load SCP configuration:", error);
-        if (!isMounted) return;
-        setOfferedScpConfigs([]);
-        setScpConfigError(
-          "We could not load available SCP tracks right now. Please try again in a few minutes.",
-        );
-      } finally {
-        if (isMounted) {
-          setIsLoadingScpConfig(false);
-        }
-      }
-    };
-
-    void loadScpConfig();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [contextSchoolYearId]);
 
   useEffect(() => {
     if (learnerType === "NEW_ENROLLEE" && gradeLevel !== "7") {
@@ -223,12 +140,13 @@ export default function Step5Enrollment() {
     if (!shouldShowScpCard && (isScpApplication || scpType)) {
       setValue("isScpApplication", false, { shouldValidate: true });
       setValue("scpType", undefined, { shouldValidate: true });
-      clearErrors("scpType");
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true });
+      clearErrors(["scpType", "hasScpFallbackConsent"]);
     }
   }, [shouldShowScpCard, isScpApplication, scpType, setValue, clearErrors]);
 
   useEffect(() => {
-    if (isLoadingScpConfig || !isScpApplication || hasOfferedScpPrograms) {
+    if (!isScpApplication || hasOfferedScpPrograms) {
       return;
     }
 
@@ -236,7 +154,6 @@ export default function Step5Enrollment() {
     setValue("scpType", undefined, { shouldValidate: true });
     clearErrors("scpType");
   }, [
-    isLoadingScpConfig,
     isScpApplication,
     hasOfferedScpPrograms,
     setValue,
@@ -244,7 +161,7 @@ export default function Step5Enrollment() {
   ]);
 
   useEffect(() => {
-    if (isLoadingScpConfig || !scpType) return;
+    if (!scpType) return;
 
     const isStillAvailable = availableScpPrograms.some(
       (program) => program.id === scpType,
@@ -253,10 +170,10 @@ export default function Step5Enrollment() {
     if (!isStillAvailable) {
       setValue("isScpApplication", false, { shouldValidate: true });
       setValue("scpType", undefined, { shouldValidate: true });
-      clearErrors("scpType");
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true });
+      clearErrors(["scpType", "hasScpFallbackConsent"]);
     }
   }, [
-    isLoadingScpConfig,
     scpType,
     availableScpPrograms,
     setValue,
@@ -315,31 +232,13 @@ export default function Step5Enrollment() {
     }
   }, [canDeclareNoLrn, hasNoLrn, setValue, clearErrors]);
 
-  const selectRegularTrack = () => {
-    if (isProgramSelectionLocked) return;
-    setValue("isScpApplication", false, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-    setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
-    clearErrors("scpType");
-  };
-
-  const selectScpTrack = () => {
-    if (!canSelectScpTrack || isProgramSelectionLocked) return;
-    setValue("isScpApplication", true, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-  };
-
   return (
     <div className="space-y-12">
       <div className="space-y-4">
         <Label className="text-sm font-bold uppercase  text-primary">
           Learner Category <span className="text-destructive">*</span>
         </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {LEARNER_TYPES.map((typeOption) => (
             <button
               key={typeOption.value}
@@ -378,7 +277,7 @@ export default function Step5Enrollment() {
             "grid gap-3",
             learnerType === "NEW_ENROLLEE"
               ? "grid-cols-1"
-              : "grid-cols-2 sm:grid-cols-4",
+              : "grid-cols-2 md:grid-cols-4",
           )}>
           {visibleGradeOptions.map((gradeOption) => (
             <button
@@ -413,17 +312,36 @@ export default function Step5Enrollment() {
         <Label
           htmlFor="generalAverage"
           className="text-sm font-bold uppercase  text-primary">
-          Final General Average <span className="text-destructive">*</span>
+          Final General Average {!watch("hasSf9Deficiency") && <span className="text-destructive">*</span>}
         </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        
+        <div className="flex items-start space-x-2 p-3 bg-blue-50/50 border border-blue-200 rounded-lg">
+          <Checkbox
+            id="sf9-deficiency"
+            checked={watch("hasSf9Deficiency")}
+            onCheckedChange={(checked) => {
+              setValue("hasSf9Deficiency", checked === true, { shouldValidate: true, shouldDirty: true });
+              if (checked === true) {
+                setValue("generalAverage", undefined, { shouldValidate: true, shouldDirty: true });
+                setInputGaValue("");
+              }
+            }}
+          />
+          <Label htmlFor="sf9-deficiency" className="text-xs font-bold leading-tight cursor-pointer text-blue-900">
+            I do not have my SF9 / Report Card yet. I am applying for Temporary Enrollment per DepEd Order 017.
+          </Label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 items-start pt-2">
           <div className="space-y-2">
             <Input
               id="generalAverage"
               type="text"
               inputMode="decimal"
               placeholder="e.g. 88.50"
+              disabled={watch("hasSf9Deficiency")}
               className={cn(
-                "h-12 font-bold text-lg bg-white border-2",
+                "h-12 font-bold text-lg bg-white border-2 disabled:opacity-50",
                 errors.generalAverage && "border-destructive",
               )}
               value={inputGaValue}
@@ -436,7 +354,7 @@ export default function Step5Enrollment() {
                   if (parsed === null || (!isNaN(parsed) && parsed <= 100)) {
                     setValue(
                       "generalAverage",
-                      parsed === null ? Number.NaN : Number(parsed.toFixed(2)),
+                      parsed === null ? undefined : Number(parsed.toFixed(2)),
                       { shouldValidate: true, shouldDirty: true },
                     );
                     setInputGaValue(val);
@@ -446,7 +364,11 @@ export default function Step5Enrollment() {
             />
             <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
-              Final general average from the last completed grade level.
+              {watch("learnerType") === "NEW_ENROLLEE" 
+                ? "Final general average from Grade 6." 
+                : watch("learnerType") === "TRANSFEREE" 
+                ? "Final general average from the last completed grade level." 
+                : "Final general average from your last attended school year."}
             </p>
           </div>
         </div>
@@ -464,103 +386,36 @@ export default function Step5Enrollment() {
               <BookOpen className="w-5 h-5 text-primary" />
             </div>
             <Label className="text-base font-bold text-primary">
-              Learning Program <span className="text-destructive">*</span>
+              Preferred Curriculum Program <span className="text-destructive">*</span>
             </Label>
           </div>
 
-          <div
-            className={cn(
-              "grid gap-4",
-              shouldShowScpCard ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
-            )}>
-            <button
-              type="button"
-              disabled={isProgramSelectionLocked}
-              className={cn(
-                "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
-                !isScpApplication
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-white hover:bg-primary/5",
-              )}
-              onClick={selectRegularTrack}>
-              <div className="flex items-center gap-3 mb-1">
-                <div
-                  className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    !isScpApplication
-                      ? "border-white"
-                      : "border-muted-foreground",
-                  )}>
-                  {!isScpApplication && (
-                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                  )}
-                </div>
-                <span className="font-bold">Regular Section</span>
-              </div>
-              <p
-                className={cn(
-                  "text-xs pl-8",
-                  !isScpApplication
-                    ? "text-primary-foreground/80"
-                    : "text-foreground",
-                )}>
-                Standard Junior High curriculum.
-              </p>
-            </button>
-
-            {shouldShowScpCard && (
-              <button
-                type="button"
-                disabled={!canSelectScpTrack || isProgramSelectionLocked}
-                className={cn(
-                  "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
-                  isScpApplication
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : canSelectScpTrack
-                      ? "border-border bg-white hover:bg-primary/5"
-                      : "border-border bg-muted/40 text-foreground cursor-not-allowed opacity-70",
-                )}
-                onClick={selectScpTrack}>
-                <div className="flex items-center gap-3 mb-1">
-                  <div
-                    className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                      isScpApplication
-                        ? "border-white"
-                        : "border-muted-foreground",
-                    )}>
-                    {isScpApplication && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                    )}
-                  </div>
-                  <span className="font-bold">
-                    Special Curricular Program (SCP)
-                  </span>
-                </div>
-                <p
-                  className={cn(
-                    "text-xs pl-8",
-                    isScpApplication
-                      ? "text-primary-foreground/80"
-                      : "text-foreground",
-                  )}>
-                  {isLoadingScpConfig
-                    ? "Loading available SCP tracks..."
-                    : hasOfferedScpPrograms
-                      ? "Select this if the learner will apply for an SCP track."
-                      : "No SCP tracks are open for this School Year."}
-                </p>
-              </button>
-            )}
-          </div>
-
-          {isProgramSelectionLocked && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
-              <Info className="w-4 h-4" />
-              Learning Program and SCP selection are locked because this form is
-              linked to an existing Early Registration.
-            </p>
-          )}
+          <Select
+            disabled={isProgramSelectionLocked || !isScpEligible}
+            value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
+            onValueChange={(val) => {
+              if (val === "REGULAR") {
+                setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: true });
+                setValue("scpType", undefined, { shouldValidate: true, shouldDirty: true });
+                setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
+              } else {
+                setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
+                setValue("scpType", val as any, { shouldValidate: true, shouldDirty: true });
+              }
+            }}
+          >
+            <SelectTrigger className="w-full bg-white font-bold h-12">
+              <SelectValue placeholder="Select Preferred Curriculum Program" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="REGULAR">Regular Basic Education</SelectItem>
+              {availableScpPrograms.map((program) => (
+                <SelectItem key={program.id} value={program.id}>
+                  {SCP_ACRONYMS[program.id]} ({program.label})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {!isScpEligible && (
             <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
@@ -569,257 +424,116 @@ export default function Step5Enrollment() {
             </p>
           )}
 
-          {shouldShowScpCard && isLoadingScpConfig && (
+          {isProgramSelectionLocked && (
             <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
-              Loading available SCP programs...
+              Learning Program and SCP selection are locked because this form is linked to an existing Early Registration.
             </p>
           )}
-
-          {shouldShowScpCard && !isLoadingScpConfig && scpConfigError && (
-            <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
-              <AlertCircle className="w-3 h-3" />
-              {scpConfigError}
-            </p>
-          )}
-
-          {shouldShowScpCard &&
-            !isLoadingScpConfig &&
-            !scpConfigError &&
-            !hasOfferedScpPrograms && (
-              <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
-                <Info className="w-4 h-4" />
-                No SCP programs are currently offered for this School Year.
-              </p>
-            )}
 
           <AnimatePresence>
-            {isScpApplication && shouldShowScpCard && hasOfferedScpPrograms && (
+            {isScpApplication && scpType && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden">
-                <div className="pt-6 space-y-6">
-                  <Label className="text-sm font-bold uppercase  text-primary">
-                    Select SCP Program{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="grid grid-cols-1 gap-3">
-                    {availableScpPrograms.map((program) => (
-                      <div
-                        key={program.id}
-                        className="space-y-0">
-                        <button
-                          type="button"
-                          disabled={isProgramSelectionLocked}
-                          className={cn(
-                            "w-full flex flex-col p-4 rounded-xl border-2 transition-all text-left",
-                            scpType === program.id
-                              ? "border-primary bg-primary text-primary-foreground shadow-md"
-                              : "border-border bg-white text-foreground hover:bg-primary/5",
-                          )}
-                          onClick={() =>
-                            setValue("scpType", program.id, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            })
-                          }>
-                          <div className="flex items-center gap-3 mb-1">
-                            <div
-                              className={cn(
-                                "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                                scpType === program.id
-                                  ? "border-white"
-                                  : "border-muted-foreground",
-                              )}>
-                              {scpType === program.id && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                              )}
-                            </div>
-                            <span className="font-bold">{program.label}</span>
-                          </div>
-                          <p
-                            className={cn(
-                              "text-[0.6875rem] pl-8 italic",
-                              scpType === program.id
-                                ? "text-primary-foreground/80"
-                                : "text-foreground",
-                            )}>
-                            {program.desc}
-                          </p>
-                        </button>
-
-                        <AnimatePresence>
-                          {scpType === program.id && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden">
-                              <div className="pl-8 pt-4">
-                                {program.id ===
-                                  "SPECIAL_PROGRAM_IN_THE_ARTS" && (
-                                  <div className="space-y-2">
-                                    <Label className="text-[0.625rem] font-bold uppercase text-primary">
-                                      Preferred Art Field *
-                                    </Label>
-                                    <Select
-                                      disabled={isProgramSelectionLocked}
-                                      onValueChange={(value) =>
-                                        setValue("artField", value, {
-                                          shouldValidate: true,
-                                          shouldDirty: true,
-                                        })
-                                      }
-                                      value={artField}>
-                                      <SelectTrigger className="h-10 bg-white border-2 font-bold">
-                                        <SelectValue placeholder="Select Art Field" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {SPA_ART_FIELDS.map((field) => (
-                                          <SelectItem
-                                            key={field}
-                                            value={field}>
-                                            {field}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
-
-                                {program.id === "SPECIAL_PROGRAM_IN_SPORTS" && (
-                                  <div className="space-y-2">
-                                    <Label className="text-[0.625rem] font-bold uppercase text-primary">
-                                      Primary Sport *
-                                    </Label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {SPS_SPORTS.map((sport) => (
-                                        <div
-                                          key={sport}
-                                          className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`sport-${sport}`}
-                                            disabled={isProgramSelectionLocked}
-                                            checked={selectedSportsList.includes(
-                                              sport,
-                                            )}
-                                            onCheckedChange={(checked) => {
-                                              const nextSports = checked
-                                                ? [...selectedSportsList, sport]
-                                                : selectedSportsList.filter(
-                                                    (item) => item !== sport,
-                                                  );
-                                              setValue(
-                                                "sportsList",
-                                                nextSports,
-                                                {
-                                                  shouldValidate: true,
-                                                  shouldDirty: true,
-                                                },
-                                              );
-                                            }}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
-                                          />
-                                          <Label
-                                            htmlFor={`sport-${sport}`}
-                                            className="text-xs font-bold cursor-pointer">
-                                            {sport}
-                                          </Label>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {program.id ===
-                                  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" && (
-                                  <div className="space-y-2">
-                                    <Label className="text-[0.625rem] font-bold uppercase text-primary">
-                                      Preferred Language *
-                                    </Label>
-                                    <Select
-                                      disabled={isProgramSelectionLocked}
-                                      onValueChange={(value) =>
-                                        setValue("foreignLanguage", value, {
-                                          shouldValidate: true,
-                                          shouldDirty: true,
-                                        })
-                                      }
-                                      value={foreignLanguage}>
-                                      <SelectTrigger className="h-10 bg-white border-2 font-bold">
-                                        <SelectValue placeholder="Select Language" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {SPFL_LANGUAGES.map((language) => (
-                                          <SelectItem
-                                            key={language}
-                                            value={language}>
-                                            {language}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
+                className="overflow-hidden space-y-6 pt-2"
+              >
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 space-y-4">
+                  <p className="text-sm font-bold flex items-start gap-2">
+                    <Info className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
+                    Note: Enrollment in Special Curricular Programs is strictly for learners who have passed the pre-enrollment screening. The Registrar's Office will manually cross-reference this submission with the official master list of passers.
+                  </p>
+                  <div className="flex items-start space-x-3 pt-3 border-t border-yellow-200/50">
+                    <Checkbox
+                      id="scp-consent"
+                      checked={watch("hasScpFallbackConsent")}
+                      onCheckedChange={(checked) =>
+                        setValue("hasScpFallbackConsent", checked === true, { shouldValidate: true, shouldDirty: true })
+                      }
+                      className="mt-0.5 border-yellow-500 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600"
+                    />
+                    <Label htmlFor="scp-consent" className="text-xs font-bold leading-tight cursor-pointer">
+                      I confirm that the learner is on the official published list of passers for this program. I understand that submitting a false claim will result in enrollment delays and automatic placement in the Regular curriculum. <span className="text-destructive">*</span>
+                    </Label>
                   </div>
-                  {errors.scpType?.message && (
+                  {errors.hasScpFallbackConsent?.message && (
                     <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
                       <AlertCircle className="w-3 h-3" />{" "}
-                      {errors.scpType.message}
+                      {errors.hasScpFallbackConsent.message}
                     </p>
                   )}
                 </div>
+
+                {scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-primary">
+                      Preferred Art Field <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      disabled={isProgramSelectionLocked}
+                      onValueChange={(value) =>
+                        setValue("artField", value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
+                      value={watch("artField")}>
+                      <SelectTrigger className="h-10 bg-white border-2 font-bold">
+                        <SelectValue placeholder="Select Art Field" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPA_ART_FIELDS.map((field) => (
+                          <SelectItem
+                            key={field}
+                            value={field}>
+                            {field}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {scpType === "SPECIAL_PROGRAM_IN_SPORTS" && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-primary">
+                      Primary Sport <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {SPS_SPORTS.map((sport) => (
+                        <div
+                          key={sport}
+                          className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`sport-${sport}`}
+                            disabled={isProgramSelectionLocked}
+                            checked={watch("sportsList")?.includes(sport)}
+                            onCheckedChange={(checked) => {
+                              const list = watch("sportsList") || [];
+                              const nextSports = checked
+                                ? [...list, sport]
+                                : list.filter((item) => item !== sport);
+                              setValue("sportsList", nextSports, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            }}
+                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                          />
+                          <Label
+                            htmlFor={`sport-${sport}`}
+                            className="text-xs font-bold cursor-pointer">
+                            {sport}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </div>
-
-      <div className="space-y-10 pt-6 border-t border-border/40">
-        <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase  text-primary">
-            If the school implements other distance learning modalities aside
-            from face-to-face instruction, which would the learner prefer? Check
-            all that applies:
-          </Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            {LEARNING_MODALITIES.map((modality) => (
-              <div
-                key={modality}
-                className="flex items-center space-x-3">
-                <Checkbox
-                  id={`modality-${modality}`}
-                  checked={selectedLearningModalities.includes(modality)}
-                  onCheckedChange={(checked) => {
-                    const nextModalities = checked
-                      ? [...selectedLearningModalities, modality]
-                      : selectedLearningModalities.filter(
-                          (item) => item !== modality,
-                        );
-
-                    setValue("learningModalities", nextModalities, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }}
-                  className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
-                />
-                <Label
-                  htmlFor={`modality-${modality}`}
-                  className="text-sm font-bold cursor-pointer">
-                  {modality}
-                </Label>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

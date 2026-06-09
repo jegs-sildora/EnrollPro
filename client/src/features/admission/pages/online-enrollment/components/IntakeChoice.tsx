@@ -6,12 +6,10 @@ import {
   CardDescription,
 } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import {
   UserPlus,
   UserCheck,
   ArrowRight,
-  HelpCircle,
   FileCheck,
   ClipboardList,
 } from "lucide-react";
@@ -40,121 +38,108 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <UserPlus className="h-24 w-24" />
           </div>
           <CardHeader className="pb-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
               <UserPlus className="h-6 w-6" />
             </div>
             <CardTitle className="text-2xl font-bold">
-              Incoming Grade 7, Transferees & Balik-Aral
+              Incoming Grade 7, Transferees & Returning (Balik-Aral)
             </CardTitle>
             <CardDescription className="text-foreground font-bold leading-relaxed">
-              For new entrants to HNHS or learners resuming their studies after
+              For new entrants or learners resuming their studies after
               a gap year.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-black uppercase  text-foreground">
-                <FileCheck className="h-3 w-3" />
-                Please prepare the following:
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-600/70">
+                  <ClipboardList className="h-3 w-3" />
+                  Instructions:
+                </div>
+                <p className="text-sm font-bold text-emerald-900 leading-relaxed">
+                  Please fill out the digital form completely. Ensure all details match your official documents before submitting.
+                </p>
               </div>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm font-bold text-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  PSA Birth Certificate
-                </li>
-                <li className="flex items-center gap-2 text-sm font-bold text-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  SF9 (Previous Report Card)
-                </li>
-              </ul>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full h-12 group-hover:bg-primary group-hover:text-white transition-all font-bold">
-              Fill out Enrollment Form (BEEF){" "}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="group relative overflow-hidden border-2 transition-all hover:border-emerald-600 hover:shadow-xl cursor-pointer flex flex-col"
-          onClick={() => onChoice("RETURNING")}>
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-emerald-600">
-            <UserCheck className="h-24 w-24" />
-          </div>
-          <CardHeader className="pb-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-              <UserCheck className="h-6 w-6 text-emerald-600 group-hover:text-white" />
-            </div>
-            <CardTitle className="text-2xl font-bold">
-              Continuing Learners (Grades 8-10)
-            </CardTitle>
-            <CardDescription className="text-foreground font-bold leading-relaxed">
-              For continuous HNHS learners moving up to the next grade level. No
-              long forms required.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
-            <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-black uppercase  text-emerald-600/70">
-                <ClipboardList className="h-3 w-3" />
-                Please prepare the following:
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase  text-foreground">
+                  <FileCheck className="h-3 w-3" />
+                  Please prepare the following:
+                </div>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    PSA Birth Certificate
+                  </li>
+                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    SF9 (Previous Report Card)
+                  </li>
+                </ul>
               </div>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm font-bold text-emerald-900">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  12-Digit Learner Reference Number (LRN)
-                </li>
-              </ul>
             </div>
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full h-12 group-hover:bg-emerald-600 group-hover:text-white transition-all font-bold border-emerald-100 text-emerald-700">
-                Submit Confirmation Slip <ArrowRight className="ml-2 h-4 w-4" />
+                className="w-full h-12 group-hover:bg-primary group-hover:text-white transition-all font-bold border-primary/20 text-primary">
+                Fill out Enrollment Form (BEEF){" "}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <div className="flex justify-center">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground hover:text-primary transition-colors cursor-help"
-                      onClick={(e) => e.stopPropagation()}>
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      Don't know your child's LRN?
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-72 p-4 shadow-2xl border-2"
-                    onClick={(e) => e.stopPropagation()}>
-                    <div className="space-y-3">
-                      <h4 className="font-black text-sm uppercase ">
-                        Where to find the LRN?
-                      </h4>
-                      <p className="text-sm text-foreground leading-relaxed font-bold">
-                        You can find the 12-digit LRN on your child's{" "}
-                        <span className="text-primary font-bold">
-                          previous Report Card (SF9)
-                        </span>{" "}
-                        or{" "}
-                        <span className="text-primary font-bold">
-                          School ID
-                        </span>
-                        .
-                      </p>
-                      <div className="pt-3 border-t space-y-2">
-                        <p className="text-xs font-black uppercase text-foreground ">
-                          Still lost?
-                        </p>
-                        <p className="text-xs font-bold text-foreground leading-normal">
-                          Please contact your child's previous Class Adviser or
-                          the Registrar's Office for assistance.
-                        </p>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group relative overflow-hidden border-2 transition-all hover:border-emerald-600 hover:shadow-xl flex flex-col">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-emerald-600">
+            <UserCheck className="h-24 w-24" />
+          </div>
+          <CardHeader className="pb-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <UserCheck className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-bold">
+              Continuing Learners (Grades 8–10)
+            </CardTitle>
+            <CardDescription className="text-foreground font-bold leading-relaxed">
+              For existing students moving up to the next grade level.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-600/70">
+                  <ClipboardList className="h-3 w-3" />
+                  Instructions:
+                </div>
+                <p className="text-sm font-bold text-emerald-900 leading-relaxed">
+                  Do not fill out online forms. Please submit your physical, signed Confirmation Slip directly to your designated Class Adviser during enrollment week.
+                </p>
               </div>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase  text-foreground">
+                  <FileCheck className="h-3 w-3" />
+                  Please prepare the following:
+                </div>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    Signed Confirmation Slip
+                  </li>
+                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    SF9 (Previous Report Card)
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full h-12 group-hover:bg-emerald-600 group-hover:text-white hover:bg-emerald-600 hover:text-white transition-all font-bold border-emerald-100 text-emerald-700"
+                asChild>
+                <a href="/Confirmation%20Slip.pdf" download="Confirmation_Slip.pdf">
+                  Download Blank Confirmation Slip (PDF) <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>

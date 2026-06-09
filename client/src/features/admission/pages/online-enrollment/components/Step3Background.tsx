@@ -5,9 +5,8 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Badge } from "@/shared/ui/badge";
-import { Lock, Info } from "lucide-react";
+import { Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Step3Background() {
@@ -306,7 +305,7 @@ export default function Step3Background() {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden">
-                          <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
                             {DISABILITY_TYPES_A1.map((type) => (
                               <div
                                 key={type}
@@ -369,7 +368,7 @@ export default function Step3Background() {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden">
-                          <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
                             {DISABILITY_TYPES_A2.map((type) => (
                               <div
                                 key={type}
@@ -447,15 +446,6 @@ export default function Step3Background() {
           </AnimatePresence>
         </div>
       </div>
-
-      <Alert className="bg-primary/5 border-primary/10 mt-12">
-        <Info className="h-4 w-4 text-primary" />
-        <AlertDescription className="font-bold text-primary/80">
-          This information is used exclusively to connect the learner to
-          appropriate support services. It will not affect their eligibility for
-          enrollment in any way.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 }

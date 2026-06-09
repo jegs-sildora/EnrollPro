@@ -212,6 +212,9 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   DROPPED: [],
 };
 
+export const TermFormatEnum = z.enum(["TRIMESTER", "QUARTERS"]);
+export type TermFormat = z.infer<typeof TermFormatEnum>;
+
 export const SchoolYearStatusEnum = z.enum([
   "DRAFT",
   "UPCOMING",

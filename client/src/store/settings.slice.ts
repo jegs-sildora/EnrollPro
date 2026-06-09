@@ -22,8 +22,7 @@ export interface SettingsState {
   activeSchoolYearId: number | null;
   activeSchoolYearLabel: string | null;
   activeSchoolYearStatus: string | null;
-  earlyRegOpenDate: string | null;
-  earlyRegCloseDate: string | null;
+  depedSchoolId: string | null;
   classOpeningDate: string | null;
   classEndDate: string | null;
   enrollOpenDate: string | null;
@@ -31,6 +30,13 @@ export interface SettingsState {
   facebookPageUrl: string | null;
   depedEmail: string | null;
   schoolWebsite: string | null;
+  region: string | null;
+  division: string | null;
+  schoolHeadName: string | null;
+  schoolHeadTitle: string | null;
+  steEnabled: boolean;
+  spaEnabled: boolean;
+  spsEnabled: boolean;
   isBosyEnrollmentOpen: boolean;
   enrollmentPhase:
     | "EARLY_REGISTRATION"
@@ -82,8 +88,7 @@ export const useSettingsStore = create<SettingsState>()(
       activeSchoolYearId: null,
       activeSchoolYearLabel: null,
       activeSchoolYearStatus: null,
-      earlyRegOpenDate: null,
-      earlyRegCloseDate: null,
+      depedSchoolId: null,
       classOpeningDate: null,
       classEndDate: null,
       enrollOpenDate: null,
@@ -91,6 +96,13 @@ export const useSettingsStore = create<SettingsState>()(
       facebookPageUrl: null,
       depedEmail: null,
       schoolWebsite: null,
+      region: null,
+      division: null,
+      schoolHeadName: null,
+      schoolHeadTitle: null,
+      steEnabled: false,
+      spaEnabled: false,
+      spsEnabled: false,
       isBosyEnrollmentOpen: false,
       enrollmentPhase: "CLOSED",
       systemStatus: "DRAFT",

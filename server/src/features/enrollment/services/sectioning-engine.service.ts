@@ -64,12 +64,7 @@ interface ApplicantWithRelations {
   previousSchool?: {
     generalAverage: number | null;
   } | null;
-  earlyRegistration?: {
-    assessments: {
-      type: string;
-      score: number;
-    }[];
-  } | null;
+  
 }
 
 export class SectioningEngine {
@@ -77,7 +72,7 @@ export class SectioningEngine {
 
   // Helper to compute weighted score for Grade 7 STE
   private getWeightedScpScore(app: ApplicantWithRelations): number {
-    const assessments = app.earlyRegistration?.assessments ?? [];
+    const assessments: any[] = [];
 
     // Qualifying Exam (65%)
     const examScore =
@@ -191,7 +186,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: "READY_FOR_SECTIONING",
+          status: "VERIFIED",
           enrollmentRecord: null,
         },
       }),
@@ -244,7 +239,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: "READY_FOR_SECTIONING",
+          status: "VERIFIED",
           enrollmentRecord: null,
         },
         include: {
@@ -260,15 +255,7 @@ export class SectioningEngine {
           },
           gradeLevel: true,
           previousSchool: true,
-          earlyRegistration: {
-            include: {
-              assessments: {
-                where: {
-                  type: { in: ["QUALIFYING_EXAMINATION", "INTERVIEW"] },
-                },
-              },
-            },
-          },
+          
         },
       }) as any); // Type assertion needed for complex include
 

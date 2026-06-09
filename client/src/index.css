@@ -350,10 +350,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-semibold;
     background: linear-gradient(135deg, #fafbfc 0%, hsl(var(--primary) / 0.03) 50%, hsl(var(--primary) / 0.06) 100%);
     font-family: var(--font-sans);
-    color: var(--text);
   }
   .dark body {
     background: linear-gradient(135deg, #0f172a 0%, hsl(var(--primary) / 0.08) 50%, hsl(var(--primary) / 0.04) 100%);

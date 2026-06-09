@@ -4,12 +4,14 @@ import { AddressCombobox, type AddressComboboxItem } from "./AddressCombobox";
 import api from "@/shared/api/axiosInstance";
 
 export interface PhilippineAddressValue {
+  region: string;
   province: string;
   cityMunicipality: string;
   barangay: string;
 }
 
 export interface PhilippineAddressErrors {
+  region?: string;
   province?: string;
   cityMunicipality?: string;
   barangay?: string;
@@ -18,7 +20,7 @@ export interface PhilippineAddressErrors {
 interface PhilippineAddressSelectorProps {
   value: PhilippineAddressValue;
   onChange: (
-    field: "province" | "cityMunicipality" | "barangay",
+    field: "region" | "province" | "cityMunicipality" | "barangay",
     value: string,
   ) => void;
   errors?: PhilippineAddressErrors;
@@ -57,9 +59,18 @@ export function PhilippineAddressSelector({
   React.useEffect(() => {
     api
       .get<{ data: AddressComboboxItem[] }>("/address/regions")
-      .then((r) => setRegions(r.data.data))
+      .then((r) => {
+        setRegions(r.data.data);
+        // If a region is pre-selected in the value, set it as selected
+        if (value.region && !selectedRegion) {
+          const matched = r.data.data.find(x => x.name.toUpperCase() === value.region.toUpperCase());
+          if (matched) {
+            setSelectedRegion({ code: matched.code, name: matched.name });
+          }
+        }
+      })
       .catch(() => setRegions([]));
-  }, []);
+  }, [value.region, selectedRegion]);
 
   // Load provinces when region changes
   React.useEffect(() => {
@@ -72,10 +83,18 @@ export function PhilippineAddressSelector({
       .get<{ data: AddressComboboxItem[] }>(
         `/address/provinces/${selectedRegion.code}`,
       )
-      .then((r) => setProvinces(r.data.data))
+      .then((r) => {
+        setProvinces(r.data.data);
+        if (value.province && !selectedProvince) {
+          const matched = r.data.data.find(x => x.name.toUpperCase() === value.province.toUpperCase());
+          if (matched) {
+            setSelectedProvince({ code: matched.code, name: matched.name });
+          }
+        }
+      })
       .catch(() => setProvinces([]))
       .finally(() => setLoadingProvinces(false));
-  }, [selectedRegion]);
+  }, [selectedRegion, value.province, selectedProvince]);
 
   // Load cities when province changes
   React.useEffect(() => {
@@ -88,10 +107,18 @@ export function PhilippineAddressSelector({
       .get<{ data: AddressComboboxItem[] }>(
         `/address/cities/${selectedProvince.code}`,
       )
-      .then((r) => setCities(r.data.data))
+      .then((r) => {
+        setCities(r.data.data);
+        if (value.cityMunicipality && !selectedCity) {
+          const matched = r.data.data.find(x => x.name.toUpperCase() === value.cityMunicipality.toUpperCase());
+          if (matched) {
+            setSelectedCity({ code: matched.code, name: matched.name });
+          }
+        }
+      })
       .catch(() => setCities([]))
       .finally(() => setLoadingCities(false));
-  }, [selectedProvince]);
+  }, [selectedProvince, value.cityMunicipality, selectedCity]);
 
   // Load barangays when city changes
   React.useEffect(() => {
@@ -114,6 +141,7 @@ export function PhilippineAddressSelector({
     setSelectedProvince(null);
     setSelectedCity(null);
     // Clear downstream form values
+    onChange("region", name.toUpperCase());
     onChange("province", "");
     onChange("cityMunicipality", "");
     onChange("barangay", "");
@@ -150,11 +178,18 @@ export function PhilippineAddressSelector({
         </label>
         <AddressCombobox
           items={regions}
-          value={selectedRegion?.name ?? ""}
+          value={value.region || selectedRegion?.name || ""}
           onChange={handleRegionChange}
           placeholder="Select region…"
           searchPlaceholder="Search regions…"
+          error={!!errors?.region}
         />
+        {errors?.region && (
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.region}
+          </p>
+        )}
       </div>
 
       {/* Province */}

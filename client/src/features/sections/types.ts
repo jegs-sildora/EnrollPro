@@ -2,7 +2,8 @@ export type SectionTypeMode = "HOME_ROOM" | "TLE_LABORATORY";
 
 export interface SectionFormState {
   name: string;
-  programType: string;
+  curriculumProgram?: string;
+  programType?: string;
   sectionType: SectionTypeMode;
   adviserId: string;
   maxCapacity: number;

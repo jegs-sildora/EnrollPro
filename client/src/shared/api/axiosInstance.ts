@@ -1,7 +1,7 @@
 import axios from "axios";
 import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
-import { useLearnerAuthStore } from "@/store/learner-auth.slice";
+
 import { useSettingsStore } from "@/store/settings.slice";
 
 const MIN_FETCH_LOADING_MS = 0;
@@ -40,40 +40,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
-function getCurrentAuthOrigin(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
 
-  const path = window.location.pathname;
-  if (path.startsWith("/learner")) {
-    return "learner";
-  }
-
-  if (path === "/change-password") {
-    return new URLSearchParams(window.location.search).get("origin");
-  }
-
-  return "staff";
-}
 
 api.interceptors.request.use((config) => {
   const timedConfig = config as typeof config & TimedRequestConfig;
   timedConfig.__requestStartedAt = Date.now();
   timedConfig.__shouldDelayResponse = shouldDelayFetchRequest(config.method);
 
-  const currentOrigin = getCurrentAuthOrigin();
-  const isLearnerPath = currentOrigin === "learner";
-  const hasLearnerSession = !!useLearnerAuthStore.getState().user;
 
-  const isLearnerApi =
-    config.url?.startsWith("/learner") ||
-    config.url === "/auth/logout-learner" ||
-    (config.url === "/auth/change-password" && isLearnerPath && hasLearnerSession);
-
-  if (isLearnerApi) {
-    // Learner auth is cookie-session based. Do not attach bearer token.
-  }
 
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore.getState();
@@ -83,9 +57,7 @@ api.interceptors.request.use((config) => {
     config.headers["x-school-year-context-id"] = String(contextSchoolYearId);
   }
 
-  const currentToken = isLearnerApi
-    ? (useLearnerAuthStore.getState().user ? "learner-session" : null)
-    : (useAuthStore.getState().user ? "staff-session" : null);
+  const currentToken = useAuthStore.getState().user ? "staff-session" : null;
 
   if (currentToken) {
     const { historicalCorrectionToken } = useSettingsStore.getState();
@@ -114,74 +86,35 @@ api.interceptors.response.use(
     const code: string | undefined = error.response?.data?.code;
 
     if (status === 401) {
-      const isLearnerApi =
-        error.config?.url?.startsWith("/learner") ||
-        error.config?.url === "/auth/logout-learner";
-      const isLearnerPath = getCurrentAuthOrigin() === "learner";
+      // Staff API 401
+      const hadStaffSession = !!useAuthStore.getState().user;
+      if (hadStaffSession) {
+        useAuthStore.getState().clearAuth();
+        if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
+          _sessionExpiredHandled = true;
+          useAuthStore.getState().setSessionExpired(true);
 
-      if (isLearnerApi) {
-        const hadLearnerSession = !!useLearnerAuthStore.getState().user;
-        if (hadLearnerSession) {
-          if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
-            _sessionExpiredHandled = true;
-            useLearnerAuthStore.getState().setSessionExpired(true);
-            useLearnerAuthStore.getState().clearAuth();
+          sileo.error({
+            title: "Session Expired",
+            description: "Your session has expired. Please sign in again.",
+          });
 
-            sileo.error({
-              title: "Session Expired",
-              description: "Your session has expired. Please sign in again.",
-            });
-
-            setTimeout(() => {
-              _sessionExpiredHandled = false;
-              if (window.location.pathname !== "/learner/login") {
-                window.location.replace("/learner/login");
-              }
-            }, 1500);
-          } else {
-            useLearnerAuthStore.getState().clearAuth();
-            if (window.location.pathname !== "/learner/login") {
-              window.location.replace("/learner/login");
-            }
-          }
-        }
-      } else {
-        // Staff API 401
-        const hadStaffSession = !!useAuthStore.getState().user;
-        if (hadStaffSession) {
-          useAuthStore.getState().clearAuth();
-          if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
-            _sessionExpiredHandled = true;
-            useAuthStore.getState().setSessionExpired(true);
-
-            // Only show toast and redirect if the user is currently on a staff path
-            if (!isLearnerPath) {
-              sileo.error({
-                title: "Session Expired",
-                description: "Your session has expired. Please sign in again.",
-              });
-
-              setTimeout(() => {
-                _sessionExpiredHandled = false;
-                if (window.location.pathname !== "/staff/login") {
-                  window.location.replace("/staff/login");
-                }
-              }, 1500);
-            } else {
-              _sessionExpiredHandled = false;
-            }
-          } else {
-            if (!isLearnerPath && window.location.pathname !== "/staff/login") {
+          setTimeout(() => {
+            _sessionExpiredHandled = false;
+            if (window.location.pathname !== "/staff/login") {
               window.location.replace("/staff/login");
             }
+          }, 1500);
+        } else {
+          if (window.location.pathname !== "/staff/login") {
+            window.location.replace("/staff/login");
           }
         }
       }
     }
 
     if (status === 403 && code === "SY_ARCHIVED_LOCKED") {
-      const hadToken =
-        useLearnerAuthStore.getState().user || useAuthStore.getState().user;
+      const hadToken = !!useAuthStore.getState().user;
       if (hadToken && !_historicalReadOnlyHandled) {
         _historicalReadOnlyHandled = true;
 

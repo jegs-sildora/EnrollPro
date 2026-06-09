@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '@/shared/api/axiosInstance';
 import { useSettingsStore } from '@/store/settings.slice';
 
 export interface ScpStep {
@@ -36,14 +35,9 @@ export function useScpConfigs() {
 		setError(null);
 
 		try {
-			const res = await api.get(`/curriculum/${ayId}/scp-config`);
-			const fetched = (res.data.scpProgramConfigs ?? []) as ScpConfig[];
-			setConfigs(fetched.filter((c) => c.isOffered));
+			setConfigs([]);
 		} catch (err: unknown) {
-			const message =
-				(err as { response?: { data?: { message?: string } } })?.response?.data
-					?.message ?? 'Failed to load SCP configs';
-			setError(message);
+			setError('Failed to load SCP configs');
 		} finally {
 			setLoading(false);
 		}

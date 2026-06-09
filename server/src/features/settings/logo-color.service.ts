@@ -128,8 +128,8 @@ export async function extractPalette(
 
 		// Process top applicants to find unique colors
 		for (const c of applicants) {
-			// Exclude white
-			if (c.l > 96 && c.s < 10) continue;
+			// Exclude pure white or near-white and pure black
+			if (c.l > 92 || c.l < 8) continue;
 
 			const isDupe = unique.some((u) => {
 				const lDiff = Math.abs(u.l - c.l);
@@ -137,24 +137,23 @@ export async function extractPalette(
 
 				// If both are very low saturation (grays), only compare lightness
 				if (u.s < 8 && c.s < 8) {
-					return lDiff < 12;
+					return lDiff < 15;
 				}
 
 				// Handle hue wrap-around for chromatic colors
 				let hDiff = Math.abs(u.h - c.h);
 				if (hDiff > 180) hDiff = 360 - hDiff;
 
-				// Tighter thresholds for vibrant colors to allow more variety,
-				// but still deduplicate very similar ones.
-				return hDiff < 15 && sDiff < 15 && lDiff < 15;
+				// Prioritize distinct hues over minor shade variations of the same color
+				return hDiff < 25 && sDiff < 25 && lDiff < 25;
 			});
 
 			if (!isDupe) {
 				unique.push(c);
 			}
 
-			// Increased limit to 64 to ensure "ALL" available colors are captured
-			if (unique.length >= 64) break;
+			// Maximum 5 colors
+			if (unique.length >= 5) break;
 		}
 
 		if (unique.length === 0) {

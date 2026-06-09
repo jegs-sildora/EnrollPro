@@ -65,6 +65,7 @@ interface WalkInFormState {
   currentAddressSitio: string;
   currentAddressBarangay: string;
   currentAddressCityMunicipality: string;
+  currentAddressRegion: string;
   currentAddressProvince: string;
   mother: ContactPersonState;
   father: ContactPersonState;
@@ -126,6 +127,7 @@ const INITIAL_FORM_STATE: WalkInFormState = {
   currentAddressSitio: "",
   currentAddressBarangay: "",
   currentAddressCityMunicipality: "",
+  currentAddressRegion: "",
   currentAddressProvince: "",
   mother: { ...EMPTY_CONTACT },
   father: { ...EMPTY_CONTACT },
@@ -348,7 +350,7 @@ export default function WalkInEncoder() {
           const fatherPayload = (payload.father as Partial<ContactPersonState> | undefined) ?? EMPTY_CONTACT;
           const guardianPayload = (payload.guardian as Partial<ContactPersonState> | undefined) ?? EMPTY_CONTACT;
           const currentAddressPayload = (payload.currentAddress as {
-            houseNo?: string; street?: string; barangay?: string;
+            houseNo?: string; street?: string; region?: string; barangay?: string;
             cityMunicipality?: string; province?: string;
           } | undefined) ?? undefined;
 
@@ -393,6 +395,7 @@ export default function WalkInEncoder() {
             currentAddressHouseNoStreet: String(currentAddressPayload?.houseNo ?? prev.currentAddressHouseNoStreet) || prev.currentAddressHouseNoStreet,
             currentAddressBarangay: String(currentAddressPayload?.barangay ?? prev.currentAddressBarangay) || prev.currentAddressBarangay,
             currentAddressCityMunicipality: String(currentAddressPayload?.cityMunicipality ?? prev.currentAddressCityMunicipality) || prev.currentAddressCityMunicipality,
+            currentAddressRegion: String(currentAddressPayload?.region ?? prev.currentAddressRegion) || prev.currentAddressRegion,
             currentAddressProvince: String(currentAddressPayload?.province ?? prev.currentAddressProvince) || prev.currentAddressProvince,
           };
         });
@@ -480,6 +483,7 @@ export default function WalkInEncoder() {
               | {
                   houseNo?: string;
                   street?: string;
+                  region?: string;
                   barangay?: string;
                   cityMunicipality?: string;
                   province?: string;
@@ -564,6 +568,10 @@ export default function WalkInEncoder() {
                 currentAddressPayload?.cityMunicipality ??
                   prev.currentAddressCityMunicipality,
               ) || prev.currentAddressCityMunicipality,
+            currentAddressRegion:
+              String(
+                currentAddressPayload?.region ?? prev.currentAddressRegion,
+              ) || prev.currentAddressRegion,
             currentAddressProvince:
               String(
                 currentAddressPayload?.province ?? prev.currentAddressProvince,
@@ -736,6 +744,7 @@ export default function WalkInEncoder() {
     if (
       !formData.currentAddressBarangay.trim() ||
       !formData.currentAddressCityMunicipality.trim() ||
+      !formData.currentAddressRegion.trim() ||
       !formData.currentAddressProvince.trim()
     ) {
       sileo.error({
@@ -890,6 +899,7 @@ export default function WalkInEncoder() {
         sitio: toOptionalTrimmed(formData.currentAddressSitio),
         barangay: formData.currentAddressBarangay.trim(),
         cityMunicipality: formData.currentAddressCityMunicipality.trim(),
+        region: formData.currentAddressRegion.trim(),
         province: formData.currentAddressProvince.trim(),
       },
       mother: hasContactIdentity(formData.mother)
@@ -917,14 +927,6 @@ export default function WalkInEncoder() {
           }
         : undefined,
       guardianRelationship: toOptionalTrimmed(formData.guardianRelationship),
-      checklist: {
-        isSf9Submitted: formData.isSf9Submitted,
-        isPsaBirthCertPresented: formData.isPsaBirthCertPresented,
-        isOriginalPsaBcCollected: formData.isPsaBirthCertPresented,
-        isPsaPhase1CopyMatched: formData.isPsaBirthCertPresented,
-        academicStatus: formData.academicStatus,
-        finalGeneralAverage,
-      },
     };
 
     setSubmitting(true);
@@ -1449,6 +1451,8 @@ export default function WalkInEncoder() {
                         disabled={(date) =>
                           date > new Date() || date < new Date(1950, 0, 1)
                         }
+                        startMonth={new Date(1900, 0, 1)}
+                        endMonth={new Date(2100, 11, 31)}
                         initialFocus
                       />
                     </PopoverContent>
@@ -1690,12 +1694,21 @@ export default function WalkInEncoder() {
 
             <PhilippineAddressSelector
               value={{
+                region: formData.currentAddressRegion,
                 province: formData.currentAddressProvince,
                 cityMunicipality: formData.currentAddressCityMunicipality,
                 barangay: formData.currentAddressBarangay,
               }}
               onChange={(field, val) => {
-                if (field === "province") {
+                if (field === "region") {
+                  setFormData((prev) => ({
+                    ...prev,
+                    currentAddressRegion: val,
+                    currentAddressProvince: "",
+                    currentAddressCityMunicipality: "",
+                    currentAddressBarangay: "",
+                  }));
+                } else if (field === "province") {
                   setFormData((prev) => ({
                     ...prev,
                     currentAddressProvince: val,
@@ -1954,7 +1967,7 @@ export default function WalkInEncoder() {
             </p>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-3">
                 <Label className="text-[11px] font-bold uppercase ">
                   Final General Average (SF9) *
                 </Label>

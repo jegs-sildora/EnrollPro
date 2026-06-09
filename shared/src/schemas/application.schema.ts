@@ -22,6 +22,7 @@ export const addressSchema = z.object({
   barangay: z.string().min(1, "Barangay is required"),
   cityMunicipality: z.string().min(1, "City/Municipality is required"),
   province: z.string().min(1, "Province is required"),
+  region: z.string().min(1, "Region is required"),
 });
 
 export const optionalAddressSchema = z
@@ -31,6 +32,7 @@ export const optionalAddressSchema = z
     barangay: z.string().optional(),
     cityMunicipality: z.string().optional(),
     province: z.string().optional(),
+    region: z.string().optional(),
   })
   .optional()
   .nullable();
@@ -81,7 +83,7 @@ const optionalGeneralAverageSchema = z.preprocess(
 
 export const previousSchoolSchema = z.object({
   lastSchoolName: z.string().min(1, "Last school name is required"),
-  lastSchoolId: z.string().optional().nullable(),
+  lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").optional().nullable(),
   lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
   schoolYearLastAttended: z
     .string()
@@ -111,8 +113,8 @@ export const applicationSubmitSchema = z
     isScpApplication: z.boolean().default(false),
     scpType: ScpTypeEnum.optional().nullable(),
 
-    lastName: z.string().min(1, "Last name is required").max(100),
-    firstName: z.string().min(1, "First name is required").max(100),
+    lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long"),
+    firstName: z.string().min(1, "First name is required").max(100, "First name is too long"),
     middleName: z.string().optional().nullable(),
     extensionName: z.string().optional().nullable(),
     birthdate: z.string().or(z.date()),
@@ -124,6 +126,8 @@ export const applicationSubmitSchema = z
     ipGroupName: z.string().optional().nullable(),
     is4PsBeneficiary: z.boolean().default(false),
     householdId4Ps: z.string().optional().nullable(),
+    intakeHeightCm: z.number().min(30, "Height must be at least 30 cm").max(250, "Height must not exceed 250 cm").optional().nullable(),
+    intakeWeightKg: z.number().min(10, "Weight must be at least 10 kg").max(200, "Weight must not exceed 200 kg").optional().nullable(),
     isBalikAral: z.boolean().default(false),
     lastYearEnrolled: z.string().optional().nullable(),
     isLearnerWithDisability: z.boolean().default(false),
@@ -148,14 +152,10 @@ export const applicationSubmitSchema = z
       })
       .optional()
       .nullable(),
-    email: z
-      .string()
-      .email("Invalid email address")
-      .min(1, "Email address is required"),
 
     // Previous school (now maps to PreviousSchool model)
     lastSchoolName: z.string().min(1, "Last school name is required"),
-    lastSchoolId: z.string().optional().nullable(),
+    lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").optional().nullable(),
     lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
     schoolYearLastAttended: z
       .string()
@@ -176,6 +176,7 @@ export const applicationSubmitSchema = z
     }),
     learnerType: LearnerTypeEnum,
     learningModalities: z.array(z.string()).default([]),
+    bypassDuplicate: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     const lrn = data.lrn?.trim() ?? "";

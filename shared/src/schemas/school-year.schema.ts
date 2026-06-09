@@ -1,14 +1,21 @@
 import { z } from "zod";
-import { SchoolYearStatusEnum, PortalControlEnum } from "../constants/index.js";
+import { SchoolYearStatusEnum, PortalControlEnum, TermFormatEnum } from "../constants/index.js";
 
 export const createSchoolYearSchema = z.object({
   yearLabel: z.string().min(1, "Year label is required"),
   classOpeningDate: z.string().or(z.date()),
   classEndDate: z.string().or(z.date()),
-  earlyRegOpenDate: z.string().or(z.date()).optional().nullable(),
-  earlyRegCloseDate: z.string().or(z.date()).optional().nullable(),
   enrollOpenDate: z.string().or(z.date()).optional().nullable(),
   enrollCloseDate: z.string().or(z.date()).optional().nullable(),
+  term1Start: z.string().or(z.date()).optional().nullable(),
+  term1End: z.string().or(z.date()).optional().nullable(),
+  term2Start: z.string().or(z.date()).optional().nullable(),
+  term2End: z.string().or(z.date()).optional().nullable(),
+  term3Start: z.string().or(z.date()).optional().nullable(),
+  term3End: z.string().or(z.date()).optional().nullable(),
+  term4Start: z.string().or(z.date()).optional().nullable(),
+  term4End: z.string().or(z.date()).optional().nullable(),
+  termFormat: TermFormatEnum.optional(),
   cloneFromId: z.number().int().positive().optional().nullable(),
 });
 

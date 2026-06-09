@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { useSettingsStore } from "@/store/settings.slice";
 import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
@@ -21,12 +21,9 @@ import {
   Check as CheckIcon,
   MoreVertical,
   History,
-  Mail,
   Users as UsersIcon,
   GraduationCap,
-  Command,
   Fingerprint,
-  Lock as LockIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
@@ -65,7 +62,6 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -88,12 +84,12 @@ interface User {
   mobileNumber: string | null;
   email: string;
   role:
-    | "SYSTEM_ADMIN"
-    | "HEAD_REGISTRAR"
-    | "CLASS_ADVISER"
-    | "TEACHER"
-    | "MRF"
-    | "LEARNER";
+  | "SYSTEM_ADMIN"
+  | "HEAD_REGISTRAR"
+  | "CLASS_ADVISER"
+  | "TEACHER"
+  | "MRF"
+  | "LEARNER";
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -139,7 +135,7 @@ interface Section {
 }
 
 const PROGRAM_FILTER_OPTIONS = [
-  { value: "REGULAR", label: "Regular (BEC)" },
+  { value: "REGULAR", label: "Basic Education Curriculum" },
   { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
   { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
   { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
@@ -174,6 +170,7 @@ function generatePassword() {
 }
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuthStore();
   const { activeSchoolYearId } = useSettingsStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -183,11 +180,7 @@ export default function AdminUsers() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState({
-    totalActiveStaff: 0,
-    pendingUnverified: 0,
-    lockedDeactivated: 0,
-  });
+
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -203,13 +196,8 @@ export default function AdminUsers() {
     inputValue: search,
     setInputValue: setSearch,
     activeFilter: debouncedSearch,
-    isSearching,
     clearSearch,
   } = useDebouncedSearch(searchParams.get("search") || "");
-  const shouldShowSearchingState =
-    isSearching &&
-    search.trim().length > 0 &&
-    search.trim() !== debouncedSearch;
 
   const [roleFilter, setRoleFilter] = useState<string>(
     () => searchParams.get("role") || "all",
@@ -234,7 +222,6 @@ export default function AdminUsers() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     () => (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
   );
-  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const updateUrlParams = useCallback(
     (newParams: Record<string, string | number | undefined | null>) => {
@@ -278,7 +265,6 @@ export default function AdminUsers() {
     setGradeLevelFilter("all");
     setSectionFilter("all");
     setLearnerStatusFilter("all");
-    setRowSelection({});
   };
 
   const handleCreateFieldChange = useCallback((field: string, value: unknown) => {
@@ -299,27 +285,8 @@ export default function AdminUsers() {
     setGradeLevelFilter("all");
     setSectionFilter("all");
     setLearnerStatusFilter("all");
-    setRowSelection({});
   }, [activeTab]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      if (
-        e.key === "/" &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA"
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   useEffect(() => {
     if (activeTab === "learners") {
@@ -562,19 +529,9 @@ export default function AdminUsers() {
     activeTab,
   ]);
 
-  const fetchMetrics = useCallback(async () => {
-    try {
-      const res = await api.get("/admin/users/metrics");
-      setMetrics(res.data);
-    } catch (err) {
-      console.error("Failed to fetch metrics", err);
-    }
-  }, []);
-
   useEffect(() => {
     fetchUsers();
-    fetchMetrics();
-  }, [fetchUsers, fetchMetrics]);
+  }, [fetchUsers]);
 
   const computeEmail = (first: string, last: string) => {
     const f = first.trim().toLowerCase().replace(/\s+/g, "");
@@ -714,12 +671,18 @@ export default function AdminUsers() {
     id: number,
     action: "deactivate" | "reactivate",
   ) => {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
     setSubmitting(true);
     try {
       await api.patch(`/admin/users/${id}/${action}`);
+      const newState = action === "reactivate" ? "Active" : "Deactivated";
+
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, isActive: action === "reactivate" } : u));
+
       sileo.success({
         title: "Status Updated",
-        description: "Account status updated.",
+        description: `${user.firstName} ${user.lastName}'s account has been successfully ${newState}.`,
       });
       setDeactivateId(null);
       setReactivateId(null);
@@ -765,43 +728,12 @@ export default function AdminUsers() {
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <div className="flex h-11 items-center justify-center px-3 bg-maroon-50/50 rounded-tl-lg">
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(value) =>
-                table.toggleAllPageRowsSelected(!!value)
-              }
-              aria-label="Select all"
-              className="border-maroon-300 data-[state=checked]:bg-maroon-600 data-[state=checked]:border-maroon-600"
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center px-3">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
-              className="border-maroon-200 data-[state=checked]:bg-maroon-600 data-[state=checked]:border-maroon-600"
-            />
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-        size: 40,
-      },
-      {
         id: "identity",
         header: () => (
           <button
             onClick={() => handleSort("lastName")}
             className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
-            {activeTab === "staff" ? "Personnel Identity" : "Learner Identity"}
+            {activeTab === "staff" ? "Name & Contact Details" : "Learner Identity"}
             {getSortIcon("lastName")}
           </button>
         ),
@@ -893,20 +825,15 @@ export default function AdminUsers() {
             );
           }
           return (
-            <div className="space-y-1 text-center min-w-[140px] py-1">
-              <div className="text-[11px] font-black text-primary uppercase  leading-none">
-                {user.designation || "NO DESIGNATION"}
-              </div>
-              <div className="flex justify-center">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-[9px] font-black uppercase px-1.5 h-4 border-none",
-                    getRoleColorClasses(user.role),
-                  )}>
-                  {formatUserRole(user.role)}
-                </Badge>
-              </div>
+            <div className="flex justify-center min-w-[140px] py-1">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[9px] font-black uppercase px-2 h-5 border-none",
+                  getRoleColorClasses(user.role),
+                )}>
+                {formatUserRole(user.role)}
+              </Badge>
             </div>
           );
         },
@@ -943,7 +870,7 @@ export default function AdminUsers() {
                   />
                   <span className="text-xs font-extrabold uppercase ">
                     {isDropped || !user.isActive
-                      ? "LOCKED"
+                      ? "Deactivated"
                       : !isActivated
                         ? "PENDING ACTIVATION"
                         : "ACTIVATED"}
@@ -966,7 +893,7 @@ export default function AdminUsers() {
                 />
                 <span className="text-xs font-extrabold uppercase ">
                   {!user.isActive
-                    ? "LOCKED"
+                    ? "Deactivated"
                     : "ACTIVE"}
                 </span>
               </div>
@@ -985,45 +912,7 @@ export default function AdminUsers() {
           const user = row.original;
           return (
             <div className="flex items-center justify-center gap-1.5 min-w-[140px]">
-              {user.role === "LEARNER" ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 font-black text-xs uppercase  gap-1.5 border-orange-100 hover:bg-orange-50 hover:text-orange-600 transition-all"
-                  title="Reset to Default Password"
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setFormData((p) => ({ ...p, password: "DepEd2026!" }));
-                    setResetOpen(true);
-                  }}>
-                  <RefreshCw className="h-3 w-3" /> Reset to Default
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600 transition-colors border-orange-100"
-                    title="Reset Password"
-                    onClick={() => {
-                      setSelectedUser(user);
-                      setFormData((p) => ({
-                        ...p,
-                        password: generatePassword(),
-                      }));
-                      setResetOpen(true);
-                    }}>
-                    <Key className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-3 font-bold text-xs gap-1 hover:bg-primary hover:text-white transition-colors"
-                    onClick={() => openProfileEditor(user)}>
-                    <Edit2 className="h-3 w-3" /> Edit
-                  </Button>
-                </>
-              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1046,23 +935,32 @@ export default function AdminUsers() {
                         setFormData((p) => ({ ...p, password: "DepEd2026!" }));
                         setResetOpen(true);
                       }}
-                      className="gap-2 font-bold text-xs">
-                      <RefreshCw className="h-3.5 w-3.5 text-orange-600" />{" "}
+                      className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
+                      <RefreshCw className="h-3.5 w-3.5 text-orange-600 group-focus:text-primary-foreground" />{" "}
                       Reset to Default
+                    </DropdownMenuItem>
+                  )}
+                  {user.role !== "LEARNER" && (
+                    <DropdownMenuItem
+                      onClick={() => openProfileEditor(user)}
+                      className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
+                      <Edit2 className="h-3.5 w-3.5 text-primary group-focus:text-primary-foreground" /> Edit Account
                     </DropdownMenuItem>
                   )}
                   {user.role !== "LEARNER" && (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUser(user);
+                        const newPass = generatePassword();
                         setFormData((p) => ({
                           ...p,
-                          password: generatePassword(),
+                          password: newPass,
                         }));
+                        copyToClipboard(newPass);
                         setResetOpen(true);
                       }}
-                      className="gap-2 font-bold text-xs">
-                      <Key className="h-3.5 w-3.5 text-orange-600" /> Reset
+                      className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
+                      <Key className="h-3.5 w-3.5 text-orange-600 group-focus:text-primary-foreground" /> Reset
                       Password
                     </DropdownMenuItem>
                   )}
@@ -1071,18 +969,20 @@ export default function AdminUsers() {
                     <DropdownMenuItem
                       disabled={currentUser?.id === user.id}
                       onClick={() => setDeactivateId(user.id)}
-                      className="gap-2 font-bold text-xs text-destructive focus:text-destructive">
-                      <UserMinus className="h-3.5 w-3.5" /> Deactivate User
+                      className="gap-2 font-bold text-xs text-destructive focus:text-primary-foreground focus:bg-primary group">
+                      <UserMinus className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Deactivate User
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
                       onClick={() => setReactivateId(user.id)}
-                      className="gap-2 font-bold text-xs text-emerald-600 focus:text-emerald-600">
-                      <UserCheck className="h-3.5 w-3.5" /> Reactivate User
+                      className="gap-2 font-bold text-xs text-emerald-600 focus:text-primary-foreground focus:bg-primary group">
+                      <UserCheck className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Reactivate User
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem className="gap-2 font-bold text-xs opacity-50 cursor-not-allowed">
-                    <History className="h-3.5 w-3.5" /> Audit Trail
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/audit-logs?actorId=${user.id}`)}
+                    className="gap-2 font-bold text-xs focus:text-primary-foreground focus:bg-primary group">
+                    <History className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Audit Trail
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1091,41 +991,55 @@ export default function AdminUsers() {
         },
       },
     ],
-    [currentUser, activeTab, handleSort, getSortIcon, openProfileEditor],
+    [currentUser, activeTab, handleSort, getSortIcon, openProfileEditor, handleToggleStatus],
   );
 
   const metricsElement = useMemo(
-    () => (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
-        {[
-          {
-            label: "Total Active Personnel",
-            val: metrics.totalActiveStaff,
-            color: "text-emerald-600",
-          },
-          {
-            label: "Locked / Deactivated",
-            val: metrics.lockedDeactivated,
-            color: "text-destructive",
-          },
-        ].map((m, i) => (
-          <Card
-            key={i}
-            className="border-none shadow-sm bg-[hsl(var(--card))]">
-            <CardHeader className="pb-2">
-              <p className="text-xs uppercase  font-bold text-foreground">
-                {m.label}
-              </p>
-              <CardTitle className={cn("text-2xl font-extrabold", m.color)}>
-                {m.val}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    ),
-    [metrics],
+    () => {
+      const active = users.filter(u => u.isActive && u.role !== "LEARNER").length;
+      const Deactivated = users.filter(u => !u.isActive && u.role !== "LEARNER").length;
+      return (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+          {[
+            {
+              label: "Total Active Personnel",
+              val: active,
+              color: "text-emerald-600",
+            },
+            {
+              label: "Total Deactivated Personnel",
+              val: Deactivated,
+              color: "text-destructive",
+            },
+          ].map((m, i) => (
+            <Card
+              key={i}
+              className="border-none shadow-sm bg-[hsl(var(--card))]">
+              <CardHeader className="pb-2">
+                <p className="text-xs uppercase font-bold text-foreground">
+                  {m.label}
+                </p>
+                <CardTitle className={cn("text-2xl font-extrabold", m.color)}>
+                  {m.val}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      );
+    },
+    [users],
   );
+
+  const availableProgramTypes = useMemo(() => {
+    return Array.from(new Set(sections.map((s) => s.programType)));
+  }, [sections]);
+
+  const dynamicProgramOptions = useMemo(() => {
+    return PROGRAM_FILTER_OPTIONS.filter((option) =>
+      availableProgramTypes.includes(option.value)
+    );
+  }, [availableProgramTypes]);
 
   const filterElement = useMemo(
     () => (
@@ -1133,17 +1047,12 @@ export default function AdminUsers() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
             <div className="flex-1 space-y-2 w-full">
-              <Label className="text-xs sm:text-sm uppercase  font-bold flex items-center justify-between">
+              <Label className="text-xs sm:text-sm uppercase font-bold flex items-center justify-between">
                 <span>
                   {activeTab === "staff"
                     ? "Personnel Filter"
                     : "Search Learner"}
                 </span>
-                {activeTab === "staff" && (
-                  <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 rounded border text-xs text-foreground font-extrabold">
-                    <Command className="h-2.5 w-2.5" /> F or /
-                  </div>
-                )}
               </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
@@ -1197,7 +1106,7 @@ export default function AdminUsers() {
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Locked</SelectItem>
+                        <SelectItem value="inactive">Deactivated</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1239,7 +1148,7 @@ export default function AdminUsers() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all" className="text-sm font-bold">All Programs</SelectItem>
-                        {PROGRAM_FILTER_OPTIONS.map((option) => (
+                        {dynamicProgramOptions.map((option) => (
                           <SelectItem
                             key={option.value}
                             value={option.value}
@@ -1318,6 +1227,7 @@ export default function AdminUsers() {
       fetchUsers,
       activeTab,
       gradeLevels,
+      dynamicProgramOptions,
     ],
   );
 
@@ -1344,20 +1254,6 @@ export default function AdminUsers() {
                   <div className="h-9 bg-muted rounded w-full" />
                 </div>
               ))
-            ) : shouldShowSearchingState ? (
-              <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
-                <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                <div className="space-y-1">
-                  <p className="text-lg font-bold text-slate-500">
-                    Searching...
-                  </p>
-                  <p className="text-sm font-bold text-slate-400">
-                    {activeTab === "staff"
-                      ? "Scanning personnel accounts..."
-                      : "Scanning learner accounts..."}
-                  </p>
-                </div>
-              </div>
             ) : users.length === 0 ? (
               <div className="rounded-xl border p-6 text-center text-sm font-bold">
                 No users found matching the selected criteria.
@@ -1395,7 +1291,7 @@ export default function AdminUsers() {
                       )}>
                       {activeTab === "learners"
                         ? user.learnerProfile?.enrollmentApplications?.[0]
-                            ?.gradeLevel?.name || "LEARNER"
+                          ?.gradeLevel?.name || "LEARNER"
                         : formatUserRole(user.role)}
                     </Badge>
                   </div>
@@ -1417,119 +1313,13 @@ export default function AdminUsers() {
           </div>
 
           <div className="hidden md:block w-full max-w-full overflow-x-hidden relative">
-            <AnimatePresence>
-              {Object.keys(rowSelection).length > 0 && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 20, opacity: 0 }}
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-6 py-3 bg-maroon-900 text-white rounded-full shadow-2xl border border-maroon-700/50 backdrop-blur-md">
-                  <span className="text-xs font-black uppercase  border-r border-white/20 pr-3">
-                    {Object.keys(rowSelection).length} Selected
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {activeTab === "staff" ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-xs font-bold uppercase  hover:bg-white/10 text-white"
-                          onClick={() =>
-                            sileo.info({
-                              title: "Bulk Action",
-                              description:
-                                "Batch Email Activation is coming soon.",
-                            })
-                          }>
-                          <Mail className="h-3.5 w-3.5 mr-1.5" /> Resend Invites
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-xs font-bold uppercase  hover:bg-white/10 text-white"
-                          onClick={() =>
-                            sileo.info({
-                              title: "Bulk Action",
-                              description:
-                                "Batch Password Reset is coming soon.",
-                            })
-                          }>
-                          <Key className="h-3.5 w-3.5 mr-1.5" /> Reset Passwords
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-xs font-black uppercase  hover:bg-white/10 text-white"
-                          onClick={() =>
-                            sileo.info({
-                              title: "Bulk Action",
-                              description:
-                                "Batch Reset to Default is coming soon.",
-                            })
-                          }>
-                          <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Batch
-                          Reset to Default
-                        </Button>
-                      </>
-                    )}
-                    <div className="w-px h-4 bg-white/20 mx-1" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs font-bold uppercase  hover:bg-red-500/20 text-red-200 hover:text-red-100"
-                      onClick={() =>
-                        sileo.info({
-                          title: "Bulk Action",
-                          description: "Batch Account Locking is coming soon.",
-                        })
-                      }>
-                      <LockIcon className="h-3.5 w-3.5 mr-1.5" />{" "}
-                      {activeTab === "learners"
-                        ? "Batch Lock Accounts"
-                        : "Deactivate"}
-                    </Button>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 ml-2 hover:bg-white/10 text-white/60 hover:text-white"
-                    onClick={() => setRowSelection({})}>
-                    <Plus className="h-4 w-4 rotate-45" />
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <DataTable
               columns={columns}
               data={users}
               loading={loading}
-              forceEmptyState={shouldShowSearchingState}
               virtualize={false}
               tableClassName="table-fixed w-full"
-              emptyStateContent={
-                shouldShowSearchingState ? (
-                  <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
-                    <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                    <div className="space-y-1">
-                      <p className="text-lg font-bold text-slate-500">
-                        Searching...
-                      </p>
-                      <p className="text-sm font-bold text-slate-400">
-                        {activeTab === "staff"
-                          ? "Scanning personnel accounts..."
-                          : "Scanning learner accounts..."}
-                      </p>
-                    </div>
-                  </div>
-                ) : undefined
-              }
               noResultsMessage="No records found matching the selected criteria."
-              rowSelection={rowSelection}
-              onRowSelectionChange={setRowSelection}
             />
           </div>
 
@@ -1554,8 +1344,6 @@ export default function AdminUsers() {
       limit,
       showSkeleton,
       activeTab,
-      shouldShowSearchingState,
-      rowSelection,
       handlePageChange,
       handleLimitChange,
     ],
@@ -1705,7 +1493,7 @@ export default function AdminUsers() {
               />
               {selectedUser?.role === "LEARNER"
                 ? "Reset to Default Credential"
-                : "Reset Personnel Password"}
+                : "Reset Staff Password"}
             </DialogTitle>
             <DialogDescription className="font-bold text-xs">
               {selectedUser?.role === "LEARNER"
@@ -1724,7 +1512,7 @@ export default function AdminUsers() {
               )}>
               {selectedUser?.role === "LEARNER"
                 ? "This will reset the student's portal access to the universal default: DepEd2026!"
-                : "Existing sessions will be invalidated. User must reset this on first login."}
+                : "They will be logged out immediately and required to change this password upon signing back in."}
             </div>
 
             {selectedUser?.role !== "LEARNER" && (
@@ -1746,10 +1534,12 @@ export default function AdminUsers() {
                     className="h-10 w-10"
                     onClick={() => {
                       setIsGenerating(true);
+                      const newPass = generatePassword();
                       setFormData({
                         ...formData,
-                        password: generatePassword(),
+                        password: newPass,
                       });
+                      copyToClipboard(newPass);
                       setTimeout(() => setIsGenerating(false), 600);
                     }}>
                     <RefreshCw

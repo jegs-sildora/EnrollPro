@@ -59,6 +59,7 @@ export async function getPublicSettings(
 
     res.json({
       schoolName: settings.schoolName,
+      depedSchoolId: settings.depedSchoolId,
       logoUrl: settings.logoUrl,
       colorScheme: settings.colorScheme,
       selectedAccentHsl: settings.selectedAccentHsl,
@@ -68,8 +69,6 @@ export async function getPublicSettings(
       viewingSchoolYearLabel: contextSy?.yearLabel ?? activeSy?.yearLabel ?? null,
       activeSchoolYearStatus: activeSy?.status ?? null,
       systemStatus: contextSy?.status ?? activeSy?.status ?? "DRAFT",
-      portalControl:
-        contextSy?.portalControl ?? activeSy?.portalControl ?? "AUTO",
       earlyRegOpenDate: null,
       earlyRegCloseDate: null,
       classOpeningDate: contextSy?.classOpeningDate ?? null,
@@ -79,6 +78,13 @@ export async function getPublicSettings(
       facebookPageUrl: settings.facebookPageUrl,
       depedEmail: settings.depedEmail,
       schoolWebsite: settings.schoolWebsite,
+      region: settings.region,
+      division: settings.division,
+      schoolHeadName: settings.schoolHeadName,
+      schoolHeadTitle: settings.schoolHeadTitle,
+      steEnabled: settings.steEnabled,
+      spaEnabled: settings.spaEnabled,
+      spsEnabled: settings.spsEnabled,
       enrollmentPhase,
       isBosyEnrollmentOpen,
     });
@@ -89,16 +95,31 @@ export async function getPublicSettings(
   }
 }
 
-export async function updateIdentity(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const { schoolName, facebookPageUrl, depedEmail, schoolWebsite } = req.body;
-  const settings = await getOrCreateSettings();
+export async function updateIdentity(req: Request, res: Response): Promise<void> {
+  const {
+    schoolName,
+    depedSchoolId,
+    facebookPageUrl,
+    depedEmail,
+    schoolWebsite,
+    region,
+    division,
+    schoolHeadName,
+    schoolHeadTitle,
+  } = req.body;
 
-  const updated = await prisma.schoolSetting.update({
-    where: { id: settings.id },
-    data: { schoolName, facebookPageUrl, depedEmail, schoolWebsite },
+  const updated = await prisma.schoolSetting.updateMany({
+    data: {
+      schoolName,
+      depedSchoolId,
+      facebookPageUrl,
+      depedEmail,
+      schoolWebsite,
+      region,
+      division,
+      schoolHeadName,
+      schoolHeadTitle,
+    },
   });
 
   await auditLog({
@@ -270,4 +291,28 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
 
 export async function getScpConfig(req: Request, res: Response): Promise<void> {
   res.json({ scpProgramConfigs: [] });
+}
+
+export async function updatePrograms(req: Request, res: Response): Promise<void> {
+  const { steEnabled, spaEnabled, spsEnabled } = req.body;
+
+  const settings = await getOrCreateSettings();
+
+  const updated = await prisma.schoolSetting.update({
+    where: { id: settings.id },
+    data: {
+      steEnabled,
+      spaEnabled,
+      spsEnabled,
+    },
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: "SETTINGS_UPDATED",
+    description: `Admin updated active academic programs`,
+    req,
+  });
+
+  res.json(updated);
 }

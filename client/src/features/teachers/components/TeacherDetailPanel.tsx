@@ -1,6 +1,5 @@
 import { memo, useMemo, useState, useEffect } from "react";
 import {
-  X,
   Mail,
   Smartphone,
   Briefcase,
@@ -100,7 +99,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       return { label: "SSO Active", color: "text-indigo-700 bg-indigo-50 border-indigo-200", icon: "🌐" };
     }
     if (activeTeacher.isActive) return { label: "No Account", color: "text-rose-700 bg-rose-50 border-rose-200" };
-    return { label: "No Account", color: "text-foreground bg-muted border-muted-foreground/30" };
+    return { label: "No Account", color: "text-foreground bg-muted border-foreground/30" };
   }, [activeTeacher]);
 
   if (!activeTeacher) return null;
@@ -123,27 +122,22 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               </SheetDescription>
             </div>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            <X className="size-5" />
-          </button>
+
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-muted/5">
           {/* Block 1: Current Status (Volatile) */}
           <div className="grid grid-cols-2 gap-px rounded-xl border bg-border overflow-hidden shadow-sm">
             <div className="p-4 bg-background space-y-1">
-              <p className="text-[10px] font-black uppercase text-foreground">Faculty Status</p>
+              <p className="text-xs font-black uppercase text-foreground">Faculty Status</p>
               <div className="flex items-center gap-2">
                 <div className={cn("size-2 rounded-full", activeTeacher.isActive ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-slate-400")} />
                 <span className="font-bold text-sm uppercase">{activeTeacher.isActive ? "Active" : "Inactive"}</span>
               </div>
             </div>
             <div className="p-4 bg-background space-y-1">
-              <p className="text-[10px] font-black uppercase text-foreground">System Access</p>
-              <Badge variant="outline" className={cn("text-[10px] font-black uppercase px-2 h-5 border whitespace-nowrap gap-1", accountStatus?.color)}>
+              <p className="text-xs font-black uppercase text-foreground">System Access</p>
+              <Badge variant="outline" className={cn("text-xs font-black uppercase px-2 h-5 border whitespace-nowrap gap-1", accountStatus?.color)}>
                 {accountStatus?.icon && <span>{accountStatus.icon}</span>}
                 {accountStatus?.label}
               </Badge>
@@ -159,11 +153,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
             <div className="rounded-xl border bg-background overflow-hidden divide-y">
               <div className="p-4 grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Department</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Department</p>
                   <p className="font-bold text-sm uppercase text-primary">{activeTeacher.department || "Unassigned"}</p>
                 </div>
                 <div className="space-y-1 border-l pl-4">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Specialization</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Specialization</p>
                   <p className="font-bold text-sm uppercase">{activeTeacher.specialization || "Generalist"}</p>
                 </div>
               </div>
@@ -180,7 +174,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               {/* Primary Designation & Advisory */}
               <div className="p-4 grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Primary Designation</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Primary Designation</p>
                   <div className="pt-1">
                      {activeTeacher.designation?.isClassAdviser ? (
                         <Badge variant="outline" className={cn("text-xs font-black uppercase px-2 h-6 border-none", getAcademicDesignationColorClasses("CLASS ADVISER"))}>
@@ -192,11 +186,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   </div>
                 </div>
                 <div className="space-y-1 border-l pl-4">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Advisory Section</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Advisory Section</p>
                   {activeTeacher.designation?.advisorySection ? (
                     <div className="space-y-0.5">
                       <p className="font-black text-sm text-primary uppercase">{activeTeacher.designation.advisorySection.name}</p>
-                      <p className="text-[10px] font-bold text-foreground uppercase">{activeTeacher.designation.advisorySection.gradeLevelName}</p>
+                      <p className="text-xs font-bold text-foreground uppercase">{activeTeacher.designation.advisorySection.gradeLevelName}</p>
                     </div>
                   ) : (
                     <p className="text-sm font-bold text-slate-400 italic pt-1">None assigned</p>
@@ -207,14 +201,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               {/* Teaching Load (Dynamic data from ATLAS integration) */}
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Subject Teaching Load</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Subject Teaching Load</p>
                   {loadLoading ? (
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-primary animate-pulse">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-primary animate-pulse">
                       <RefreshCw className="h-3 w-3 animate-spin" />
                       SYNCING ATLAS...
                     </div>
                   ) : (
-                    <Badge variant="outline" className="text-[9px] font-bold border-dashed border-primary/30 text-primary/60 bg-primary/5">
+                    <Badge variant="outline" className="text-xs font-bold border-dashed border-primary/30 text-primary/60 bg-primary/5">
                       {loadError ? "SYNC FAILED" : "LIVE FROM ATLAS"}
                     </Badge>
                   )}
@@ -231,22 +225,22 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       {teachingLoad.map((load, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
                           <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase text-primary leading-none">{load.subjectName}</p>
-                            <p className="text-[9px] font-bold text-foreground uppercase">{load.subjectCode}</p>
+                            <p className="text-xs font-black uppercase text-primary leading-none">{load.subjectName}</p>
+                            <p className="text-xs font-bold text-foreground uppercase">{load.subjectCode}</p>
                           </div>
                           <div className="text-right">
                             <p className="font-black text-xs uppercase text-foreground leading-none">{load.sectionName}</p>
-                            <p className="text-[9px] font-bold text-foreground uppercase">{load.gradeLevel}</p>
+                            <p className="text-xs font-bold text-foreground uppercase">{load.gradeLevel}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
-                      <p className="text-[10px] font-black uppercase text-foreground mb-1">
+                      <p className="text-xs font-black uppercase text-foreground mb-1">
                         {loadError ? "ATLAS Service Unavailable" : "No Load Data Found"}
                       </p>
-                      <p className="text-[9px] font-bold text-foreground/60 leading-tight max-w-[240px]">
+                      <p className="text-xs font-bold text-foreground/60 leading-tight max-w-[240px]">
                         {loadError 
                           ? "We couldn't connect to the ATLAS scheduling engine. Please verify connectivity in the Integration Hub." 
                           : "Detailed section-subject loading is managed via ATLAS. Ensure this faculty is assigned to sections in ATLAS."}
@@ -259,10 +253,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               {/* Ancillary Roles */}
               {activeTeacher.designation?.ancillaryRoles && activeTeacher.designation.ancillaryRoles.length > 0 && (
                 <div className="p-4 space-y-2">
-                  <p className="text-[10px] font-black uppercase text-foreground leading-none">Ancillary Roles</p>
+                  <p className="text-xs font-black uppercase text-foreground leading-none">Ancillary Roles</p>
                   <div className="flex flex-wrap gap-2">
                     {activeTeacher.designation.ancillaryRoles.map((role) => (
-                      <Badge key={role} variant="outline" className={cn("text-[10px] font-bold uppercase px-2 h-5 border-none", getAncillaryRoleColorClasses(role))}>
+                      <Badge key={role} variant="outline" className={cn("text-xs font-bold uppercase px-2 h-5 border-none", getAncillaryRoleColorClasses(role))}>
                         {role}
                       </Badge>
                     ))}
@@ -285,7 +279,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <Mail className="size-4" />
                   </div>
                   <div className="space-y-0.5 min-w-0">
-                    <p className="text-[10px] font-black uppercase text-foreground leading-none">Email</p>
+                    <p className="text-xs font-black uppercase text-foreground leading-none">Email</p>
                     <p className="font-bold text-xs truncate">{activeTeacher.email || "N/A"}</p>
                   </div>
                 </div>
@@ -294,7 +288,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <Smartphone className="size-4" />
                   </div>
                   <div className="space-y-0.5 min-w-0">
-                    <p className="text-[10px] font-black uppercase text-foreground leading-none">Mobile</p>
+                    <p className="text-xs font-black uppercase text-foreground leading-none">Mobile</p>
                     <p className="font-bold text-xs">{activeTeacher.contactNumber || "N/A"}</p>
                   </div>
                 </div>
@@ -303,7 +297,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           </section>
 
           {/* System Audit */}
-          <div className="pt-4 flex items-center justify-center gap-6 text-[10px] font-bold uppercase text-foreground/60">
+          <div className="pt-4 flex items-center justify-center gap-6 text-xs font-bold uppercase text-foreground/60">
             <div className="flex items-center gap-1.5">
               <Calendar className="size-3" />
               Created {new Date(activeTeacher.createdAt).toLocaleDateString()}

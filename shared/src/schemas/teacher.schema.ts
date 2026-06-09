@@ -183,3 +183,27 @@ export const deactivateTeacherSchema = z.object({
 });
 
 export type DeactivateTeacherInput = z.infer<typeof deactivateTeacherSchema>;
+
+export const TEACHER_SERVICE_STATUS_VALUES = [
+  "ACTIVE",
+  "ON_LEAVE",
+  "TRANSFERRED",
+  "RETIRED_RESIGNED",
+  "DROPPED_FROM_ROLLS",
+] as const;
+
+export const updateServiceStatusSchema = z.object({
+  status: z.enum(TEACHER_SERVICE_STATUS_VALUES, {
+    message: "Please select a valid service status",
+  }),
+  effectiveDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Effective date must be in YYYY-MM-DD format"),
+  remarks: z
+    .string()
+    .max(500, "Remarks must not exceed 500 characters")
+    .optional()
+    .nullable(),
+});
+
+export type UpdateServiceStatusInput = z.infer<typeof updateServiceStatusSchema>;

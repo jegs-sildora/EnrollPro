@@ -1,5 +1,0 @@
-InvalidOperation: 
-Line |
-  31 |  await prisma.\$disconnect(); await dbPool.end();
-     |                ~~~~~~~~~~~
-     | The variable '$disconnect' cannot be retrieved because it has not been set.

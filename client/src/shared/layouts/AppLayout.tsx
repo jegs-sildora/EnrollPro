@@ -532,7 +532,7 @@ function AppSidebar() {
                     <NavItem
                       to="/monitoring/enrollment"
                       icon={Calendar}
-                      label="Sectioning Workspace"
+                      label="Verification & Sectioning"
                       pathname={pathname}
                     />
 

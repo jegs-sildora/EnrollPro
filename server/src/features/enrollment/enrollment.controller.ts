@@ -42,7 +42,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
         learnerId,
         schoolYearId,
         gradeLevelId,
-        status: isTemporary ? "TEMPORARILY_ENROLLED" : "READY_FOR_SECTIONING",
+        status: isTemporary ? "VERIFIED" : "VERIFIED",
         intakeMethod: "CONFIRMATION_SLIP",
         admissionChannel: "F2F", // Registrar workflow is F2F
         encodedById: userId,
@@ -51,15 +51,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
         hasSf9CertificationLetter: hasSf9CertificationLetter || false,
         hasUnsettledPrivateAccount: hasUnsettledPrivateAccount || false,
         originatingSchoolName: originatingSchoolName || null,
-        checklist: {
-          create: {
-            academicStatus: "PROMOTED",
-            isConfirmationSlipReceived: true,
-            isSf9Submitted: !isMissingSf9,
-            isPsaBirthCertPresented: learner.hasPsaBirthCertificate,
-            isOriginalPsaBcCollected: learner.hasPsaBirthCertificate,
-          },
-        },
+        academicStatus: "PROMOTED",
       },
       include: {
         learner: true,
@@ -74,7 +66,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
 
     // Process 1.1: Event-Driven Delta Sync (Automated)
     // Officially enrolling a single late-enrollee/returning student triggers immediate sync
-    if (application.status === "READY_FOR_SECTIONING") {
+    if (application.status === "VERIFIED") {
     }
 
     return res.json({
@@ -132,11 +124,6 @@ export async function batchConfirmConfirmationSlips(
         // Create or update EnrollmentApplication
         const app = await tx.enrollmentApplication.upsert({
           where: {
-            // Find existing application for this learner and school year
-            // Note: Since we don't have a unique constraint on (learnerId, schoolYearId) for EnrollmentApplication
-            // we'll use a findFirst check or rely on the assumption of one app per sy.
-            // Actually, uq_early_reg_per_sy exists on EarlyRegistrationApplication, but not on BEEF.
-            // Let's find by learnerId and schoolYearId first.
             id:
               (
                 await tx.enrollmentApplication.findFirst({
@@ -149,7 +136,7 @@ export async function batchConfirmConfirmationSlips(
             learnerId,
             schoolYearId,
             gradeLevelId,
-            status: isEnrolling ? "READY_FOR_SECTIONING" : "TRANSFERRING_OUT",
+            status: isEnrolling ? "VERIFIED" : "VERIFIED",
             intakeMethod: "CONFIRMATION_SLIP",
             admissionChannel: "F2F",
             encodedById: userId,
@@ -157,17 +144,11 @@ export async function batchConfirmConfirmationSlips(
             contactNumber,
             confirmationConsent: isEnrolling,
             batchIntakeMethod: intakeMethod,
-            checklist: {
-              create: {
-                academicStatus: "PROMOTED",
-                isConfirmationSlipReceived: true,
-                isSf9Submitted: true,
-              },
-            },
+            academicStatus: "PROMOTED",
           },
           update: {
             gradeLevelId,
-            status: isEnrolling ? "READY_FOR_SECTIONING" : "TRANSFERRING_OUT",
+            status: isEnrolling ? "VERIFIED" : "VERIFIED",
             guardianName,
             contactNumber,
             confirmationConsent: isEnrolling,
@@ -343,7 +324,7 @@ export async function syncSmartGrades(req: Request, res: Response) {
  * Intake Desk Tab 3 — Finalizes a learner's physical document confirmation:
  *  - Saves height (cm) and weight (kg)
  *  - Verifies the physical document checklist
- *  - Advances status from PENDING_CONFIRMATION → READY_FOR_SECTIONING
+ *  - Advances status from PENDING_VERIFICATION → VERIFIED
  *  - Fires Notification Event A (Intake Receipt Confirmation)
  */
 export async function finalizeIntake(req: Request, res: Response) {
@@ -387,11 +368,11 @@ export async function finalizeIntake(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  if (application.status !== "PENDING_CONFIRMATION") {
+  if (application.status !== "PENDING_VERIFICATION") {
     throw new AppError(
       409,
       `Application is in status '${application.status}'. ` +
-        `Only PENDING_CONFIRMATION applications can be finalized at intake.`,
+        `Only PENDING_VERIFICATION applications can be finalized at intake.`,
     );
   }
 
@@ -400,27 +381,14 @@ export async function finalizeIntake(req: Request, res: Response) {
     await tx.enrollmentApplication.update({
       where: { id: applicationId },
       data: {
-        status: "READY_FOR_SECTIONING",
+        status: "VERIFIED",
         intakeHeightCm: heightCm ?? undefined,
         intakeWeightKg: weightKg ?? undefined,
         confirmationConsent: checklistVerified,
       },
     });
 
-    // Upsert checklist to mark confirmation slip received
-    await tx.applicationChecklist.upsert({
-      where: { enrollmentId: applicationId },
-      create: {
-        enrollmentId: applicationId,
-        isConfirmationSlipReceived: checklistVerified,
-        academicStatus: "PROMOTED",
-        updatedById: userId ?? undefined,
-      },
-      update: {
-        isConfirmationSlipReceived: checklistVerified,
-        updatedById: userId ?? undefined,
-      },
-    });
+
   });
 
   await auditLog({
@@ -460,6 +428,6 @@ export async function finalizeIntake(req: Request, res: Response) {
     success: true,
     message: "Intake finalized. Learner is now queued for batch sectioning.",
     applicationId,
-    newStatus: "READY_FOR_SECTIONING",
+    newStatus: "VERIFIED",
   });
 }

@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useMemo } from "react";
-import { Navigate, useLocation } from "react-router";
+import { Navigate } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import {
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
-import { useLearnerAuthStore } from "@/store/learner-auth.slice";
+
 import { useSettingsStore } from "@/store/settings.slice";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -96,35 +96,19 @@ const SecurityRequirements = memo(function SecurityRequirements({
 
 export default function ChangePassword() {
   const staffAuth = useAuthStore();
-  const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
-  const location = useLocation();
 
-  const origin = new URLSearchParams(location.search).get("origin");
-  const isLearnerOrigin = origin === "learner";
-  const isStaffOrigin = origin === "staff" || !isLearnerOrigin;
-  
+
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const user = isLearnerOrigin ? learnerAuth.user : staffAuth.user;
-  const hasSession = isLearnerOrigin
-    ? Boolean(learnerAuth.user)
-    : Boolean(staffAuth.user);
+  const user = staffAuth.user;
+  const hasSession = Boolean(staffAuth.user);
 
-  const isLearnerRole = (role: string | null | undefined): boolean =>
-    role === "LEARNER";
-
-  const getStaffHomeRoute = (role: string | null | undefined): string =>
-    role === "TEACHER" || role === "MRF" ? "/reading-assessment" : "/dashboard";
-
-  // Fall back to any stored role when token is already gone (session expired on this page)
-  const activeRole = user?.role ?? (isLearnerOrigin ? learnerAuth.user?.role : staffAuth.user?.role) ?? null;
-  const homeRoute = isLearnerRole(activeRole)
-    ? "/learner"
-    : getStaffHomeRoute(activeRole);
-  const loginRoute = isLearnerOrigin ? "/learner/login" : "/staff/login";
+  const activeRole = user?.role ?? staffAuth.user?.role ?? null;
+  const homeRoute = activeRole === "TEACHER" || activeRole === "MRF" ? "/reading-assessment" : "/dashboard";
+  const loginRoute = "/staff/login";
 
   const {
     register,
@@ -194,11 +178,7 @@ export default function ChangePassword() {
         newPassword: data.newPassword,
       });
 
-      if (isLearnerOrigin || isLearnerRole(res.data.user?.role)) {
-        learnerAuth.setAuth(res.data.user);
-      } else {
-        staffAuth.setAuth(res.data.user);
-      }
+      staffAuth.setAuth(res.data.user);
       sileo.success({
         title: "Password Updated",
         description:
@@ -207,9 +187,9 @@ export default function ChangePassword() {
       
       // Delay slightly for toast visibility, then hard-replace so the target portal
       // boots from its own cookie/session channel instead of reusing stale SPA state.
-      const finalHome = isLearnerOrigin || isLearnerRole(res.data.user?.role)
-        ? "/learner"
-        : getStaffHomeRoute(res.data.user?.role);
+      const finalHome = res.data.user?.role === "TEACHER" || res.data.user?.role === "MRF"
+        ? "/reading-assessment"
+        : "/dashboard";
       setTimeout(() => {
         window.location.replace(finalHome);
       }, 500);
@@ -377,11 +357,7 @@ export default function ChangePassword() {
                 variant="ghost"
                 className="w-full text-xs text-foreground hover:text-primary h-8"
                 onClick={() => {
-                  if (isStaffOrigin) {
-                    staffAuth.clearAuth();
-                  } else {
-                    learnerAuth.clearAuth();
-                  }
+                  staffAuth.clearAuth();
                   window.location.replace(loginRoute);
                 }}>
                 Cancel and Return to Login

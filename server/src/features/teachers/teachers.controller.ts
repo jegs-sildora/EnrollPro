@@ -151,6 +151,7 @@ export async function index(req: Request, res: Response) {
         sex: teacher.sex,
         subjects: [],
         isActive: teacher.isActive,
+        serviceStatus: teacher.serviceStatus,
         createdAt: teacher.createdAt,
         userAccount: teacher.user
           ? {
@@ -232,6 +233,7 @@ export async function show(req: Request, res: Response) {
         designationTitle: teacher.designation,
         subjects: [],
         department: teacher.department?.code || null,
+        serviceStatus: teacher.serviceStatus,
       },
     });
   } catch (error: unknown) {
@@ -613,6 +615,58 @@ export async function reactivate(req: Request, res: Response) {
       userId: req.user!.userId,
       actionType: "TEACHER_REACTIVATED",
       description: `Reactivated teacher: ${teacher.lastName}, ${teacher.firstName}`,
+      subjectType: "Teacher",
+      recordId: id,
+      req,
+    });
+
+    res.json({ teacher });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
+export async function updateServiceStatus(req: Request, res: Response) {
+  const idStr = String(req.params.id);
+  const id = parseInt(idStr);
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid teacher ID" });
+  }
+
+  const { status, effectiveDate, remarks } = req.body as {
+    status: string;
+    effectiveDate: string;
+    remarks?: string | null;
+  };
+
+  try {
+    const existing = await prisma.teacher.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const isActive = status === "ACTIVE";
+
+    const teacher = await prisma.$transaction(async (tx) => {
+      await tx.user.updateMany({
+        where: { employeeId: existing.employeeId },
+        data: { isActive },
+      });
+
+      return await tx.teacher.update({
+        where: { id },
+        data: {
+          serviceStatus: status,
+          isActive,
+        },
+      });
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "TEACHER_SERVICE_STATUS_UPDATED",
+      description: `Updated service status for ${teacher.lastName}, ${teacher.firstName}: ${status} (effective ${effectiveDate})${remarks ? ` — ${remarks}` : ""}`,
       subjectType: "Teacher",
       recordId: id,
       req,

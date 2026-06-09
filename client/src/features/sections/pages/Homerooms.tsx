@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "motion/react"
 import { sileo } from "sileo"
-import { ArrowRightLeft, Plus, Users } from "lucide-react"
+import { Plus } from "lucide-react"
 import api from "@/shared/api/axiosInstance"
 import { queryKeys } from "@/shared/lib/queryKeys"
 import { useSettingsStore } from "@/store/settings.slice"
@@ -15,7 +15,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { SectionFormSheet } from "../components/SectionFormSheet"
 import SectionRosterModal from "../components/SectionRosterModal"
-import { AssignAdviserModal } from "../components/AssignAdviserModal"
+import { cn } from "@/shared/lib/utils"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select"
 import type {
   AdviserCandidate,
   SectionFormState,
@@ -24,6 +39,7 @@ import type {
 } from "../types"
 import {
   DEFAULT_MAX_CAPACITY_REGULAR,
+  DEFAULT_MAX_CAPACITY_SCP,
 } from "@enrollpro/shared/constants"
 
 interface GradeLevelGroup {
@@ -43,113 +59,7 @@ const SCP_SHORT_LABELS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
 }
 
-function SectionCard({
-  section,
-  onEdit,
-  onDelete,
-  onViewRoster,
-  onOpenAssignAdviser,
-  canMutate,
-}: {
-  section: SectionItem
-  onEdit: () => void
-  onDelete: () => void
-  onViewRoster: () => void
-  onOpenAssignAdviser: () => void
-  canMutate: boolean
-}) {
-  const pct = section.fillPercent ?? Math.round((section.enrolledCount / section.maxCapacity) * 100)
 
-  return (
-    <div
-      className="rounded-lg border bg-card p-4 space-y-3 hover:border-primary/40 transition-colors cursor-pointer"
-      onClick={onViewRoster}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onViewRoster() }}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-black uppercase text-sm text-foreground truncate">{section.name}</p>
-          {section.programType !== "REGULAR" && (
-            <Badge variant="outline" className="mt-1 text-[10px] font-bold uppercase">
-              {SCP_SHORT_LABELS[section.programType] ?? section.programType}
-            </Badge>
-          )}
-        </div>
-        {canMutate && (
-          <div className="flex gap-1 shrink-0">
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold" onClick={(e) => { e.stopPropagation(); onEdit() }}>
-              Edit
-            </Button>
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete() }}>
-              Remove
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="text-xs text-foreground font-bold space-y-1">
-        {canMutate ? (
-          section.advisingTeacher ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onOpenAssignAdviser()
-              }}
-              className="w-full rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-left hover:bg-primary/10 transition-colors"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-xs font-black text-foreground">
-                  Adviser: {section.advisingTeacher.name}
-                </p>
-                <ArrowRightLeft className="h-3.5 w-3.5 text-primary shrink-0" />
-              </div>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onOpenAssignAdviser()
-              }}
-              className="w-full rounded-md border-2 border-dashed border-amber-300 bg-amber-50/60 px-2 py-2 text-left text-amber-800 hover:border-primary/50 hover:bg-amber-50 transition-colors"
-            >
-              + Assign Class Adviser
-            </button>
-          )
-        ) : (
-          <p>
-            <span className="text-foreground/70">Adviser:</span>{" "}
-            {section.advisingTeacher?.name ?? (
-              <span className="italic opacity-60">Unassigned</span>
-            )}
-          </p>
-        )}
-        <div className="flex items-center gap-2">
-          <Users className="size-3 shrink-0" />
-          <span>
-            {section.enrolledCount} / {section.maxCapacity}
-          </span>
-          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${
-                pct > 100
-                  ? "bg-red-500"
-                  : pct >= 90
-                    ? "bg-orange-400"
-                    : pct >= 75
-                      ? "bg-yellow-400"
-                      : "bg-green-500"
-              }`}
-              style={{ width: `${Math.min(pct, 100)}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function Homerooms() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore()
@@ -165,7 +75,7 @@ export default function Homerooms() {
   const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">("create")
   const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
     name: "",
-    programType: "REGULAR",
+    curriculumProgram: "REGULAR",
     sectionType: "HOME_ROOM",
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
@@ -175,13 +85,7 @@ export default function Homerooms() {
   const [createGlId, setCreateGlId] = useState<number | null>(null)
   const [createGlName, setCreateGlName] = useState("")
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
-  const [assignTarget, setAssignTarget] = useState<{
-    id: number
-    name: string
-    gradeLevelName: string
-    programType: string
-    currentAdviser: { id: number; name: string } | null
-  } | null>(null)
+
 
   // Delete state
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -202,15 +106,12 @@ export default function Homerooms() {
   const programOptionsQuery = useQuery({
     queryKey: ayId ? queryKeys.homeroomPrograms(ayId) : (["homerooms", "programs", null] as const),
     queryFn: async () => {
-      const res = await api.get(`/curriculum/${ayId}/scp-config`)
-      const configs: { isOffered: boolean; scpType: string }[] = res.data.scpProgramConfigs || []
-      const offered = configs
-        .filter((config) => config.isOffered)
-        .map((config) => ({
-          value: config.scpType,
-          label: SCP_SHORT_LABELS[config.scpType] ?? config.scpType,
-        }))
-      return [{ value: "REGULAR", label: "Regular (BEC)" }, ...offered]
+      return [
+        { value: "REGULAR", label: "Basic Education Curriculum (BEC/Regular)" },
+        { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" },
+        { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" },
+        { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in Sports (SPS)" },
+      ]
     },
     enabled: Boolean(ayId),
   })
@@ -246,9 +147,7 @@ export default function Homerooms() {
 
       return (res.data.teachers || [])
         .filter(
-          (teacher: { isActive?: boolean; designationTitle?: string | null }) =>
-            teacher.isActive &&
-            String(teacher.designationTitle ?? "").toUpperCase() === "CLASS ADVISER",
+          (teacher: { isActive?: boolean }) => teacher.isActive
         )
         .map(
           (teacher: {
@@ -280,10 +179,10 @@ export default function Homerooms() {
             assignedSection:
               teacher.designation?.isClassAdviser && teacher.designation?.advisorySection
                 ? {
-                    id: teacher.designation.advisorySection.id,
-                    name: teacher.designation.advisorySection.name,
-                    gradeLevelName: teacher.designation.advisorySection.gradeLevelName,
-                  }
+                  id: teacher.designation.advisorySection.id,
+                  name: teacher.designation.advisorySection.name,
+                  gradeLevelName: teacher.designation.advisorySection.gradeLevelName,
+                }
                 : null,
           }),
         ) as AdviserCandidate[]
@@ -298,8 +197,6 @@ export default function Homerooms() {
   const availableTeachers = availableTeachersQuery.data ?? []
   const loadingTeachers = availableTeachersQuery.isPending || availableTeachersQuery.isFetching
   const adviserCandidates = adviserCandidatesQuery.data ?? []
-  const loadingAdviserCandidates =
-    adviserCandidatesQuery.isPending || adviserCandidatesQuery.isFetching
 
   useEffect(() => {
     if (groups.length > 0) {
@@ -320,7 +217,7 @@ export default function Homerooms() {
     mutationFn: async () => {
       const payload = {
         name: sectionFormData.name.trim(),
-        programType: sectionFormData.programType,
+        programType: sectionFormData.curriculumProgram,
         advisingTeacherId:
           sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
@@ -369,19 +266,158 @@ export default function Homerooms() {
     },
   })
 
-  const handleOpenAssignAdviser = useCallback(
-    (section: SectionItem, gradeLevelName: string) => {
-      if (!canMutate) return
-      setAssignTarget({
-        id: section.id,
-        name: section.name,
-        gradeLevelName,
-        programType: section.programType,
-        currentAdviser: section.advisingTeacher,
+  const updateAdviserMutation = useMutation({
+    mutationFn: async ({ sectionId, teacherId }: { sectionId: number; teacherId: number | null }) => {
+      return api.put(`/sections/${sectionId}`, { advisingTeacherId: teacherId })
+    },
+    onSuccess: async () => {
+      sileo.success({
+        title: "Class adviser updated",
+        description: "Advisory assignment updated successfully.",
+      })
+      await invalidateHomeroomQueries()
+    },
+    onError: (err: unknown) => {
+      const apiErr = err as { response?: { data?: { message?: string } } }
+      sileo.error({
+        title: "Update failed",
+        description: apiErr.response?.data?.message ?? "Please try again.",
       })
     },
-    [canMutate],
-  )
+  })
+
+  const handleInlineAdviserChange = useCallback((sectionId: number, value: string) => {
+    const teacherId = value === "unassigned" ? null : parseInt(value)
+    void updateAdviserMutation.mutateAsync({ sectionId, teacherId })
+  }, [updateAdviserMutation])
+
+  const renderSectionTable = (
+    sectionsToRender: SectionItem[],
+    gradeLevelName: string,
+  ) => {
+    if (sectionsToRender.length === 0) {
+      return (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm font-bold text-foreground italic bg-muted/10">
+          No sections in this group.
+        </div>
+      )
+    }
+
+    return (
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30">
+              <TableHead className="font-bold text-xs uppercase text-foreground pl-6">Section Name</TableHead>
+              <TableHead className="font-bold text-xs uppercase text-foreground w-[280px]">Class Adviser</TableHead>
+              <TableHead className="font-bold text-xs uppercase text-foreground text-center w-[180px]">Enrolled / Capacity</TableHead>
+              {canMutate && <TableHead className="font-bold text-xs uppercase text-foreground text-right pr-6 w-[200px]">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sectionsToRender.map((s) => {
+              const pct = s.fillPercent ?? Math.round((s.enrolledCount / s.maxCapacity) * 100)
+              return (
+                <TableRow
+                  key={s.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={() => setRosterSectionId(s.id)}
+                >
+                  <TableCell className="font-medium pl-6">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black uppercase text-sm text-foreground">{s.name}</span>
+                      {s.programType !== "REGULAR" && (
+                        <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                          {SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                        </Badge>
+                      )}
+                      {s.isHomogeneous && s.programType === "REGULAR" && (
+                        <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary uppercase">
+                          Pilot
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="w-[240px]">
+                      <Select
+                        disabled={!canMutate || updateAdviserMutation.isPending}
+                        value={s.advisingTeacher ? String(s.advisingTeacher.id) : "unassigned"}
+                        onValueChange={(val) => handleInlineAdviserChange(s.id, val)}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-9 font-bold text-xs uppercase bg-background border transition-all",
+                          !s.advisingTeacher
+                            ? "text-muted-foreground border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
+                            : "border-input hover:bg-muted/20"
+                        )}>
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          <SelectItem value="unassigned" className="font-bold text-xs text-muted-foreground italic uppercase">
+                            Unassigned
+                          </SelectItem>
+                          {adviserCandidates.map((t) => {
+                            const isAssignedElsewhere = Boolean(t.assignedSection && t.assignedSection.id !== s.id)
+                            const labelSuffix = t.assignedSection && t.assignedSection.id !== s.id
+                              ? ` (Assigned: ${t.assignedSection.gradeLevelName} - ${t.assignedSection.name})`
+                              : ""
+                            return (
+                              <SelectItem
+                                key={t.id}
+                                value={String(t.id)}
+                                disabled={isAssignedElsewhere}
+                                className="font-bold text-xs uppercase"
+                              >
+                                {t.name}{labelSuffix}
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex flex-col gap-1 max-w-[140px] mx-auto">
+                      <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                        <span>{s.enrolledCount} / {s.maxCapacity}</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct > 100
+                              ? "bg-red-500"
+                              : pct >= 90
+                                ? "bg-orange-400"
+                                : pct >= 75
+                                  ? "bg-yellow-400"
+                                  : "bg-green-500"
+                            }`}
+                          style={{ width: `${Math.min(pct, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TableCell>
+                  {canMutate && (
+                    <TableCell onClick={(e) => e.stopPropagation()} className="text-right pr-6">
+                      <div className="flex justify-end gap-1.5">
+                        <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-bold" onClick={() => handleOpenEdit(s, gradeLevelName)}>
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-bold text-destructive hover:text-destructive" onClick={() => { setDeleteId(s.id); setDeleteName(s.name) }}>
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    )
+  }
 
   const handleOpenCreate = useCallback((glId: number, glName: string, programType = "REGULAR", isHomogeneous = false) => {
     setFormSheetMode("create")
@@ -391,10 +427,10 @@ export default function Homerooms() {
     setPendingIsHomogeneous(isHomogeneous)
     setSectionFormData({
       name: "",
-      programType,
+      curriculumProgram: programType,
       sectionType: "HOME_ROOM",
       adviserId: "none",
-      maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+      maxCapacity: programType === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP,
       tleProgramId: null,
     })
     setIsFormSheetOpen(true)
@@ -407,7 +443,7 @@ export default function Homerooms() {
     setPendingIsHomogeneous(section.isHomogeneous)
     setSectionFormData({
       name: section.name,
-      programType: section.programType,
+      curriculumProgram: section.programType,
       sectionType: "HOME_ROOM",
       adviserId: section.advisingTeacher ? String(section.advisingTeacher.id) : "none",
       maxCapacity: section.maxCapacity,
@@ -420,8 +456,9 @@ export default function Homerooms() {
     (field: keyof SectionFormState, value: string | number | null) => {
       setSectionFormData((prev) => {
         const next = { ...prev, [field]: value }
-        if (field === "programType") {
-          next.maxCapacity = DEFAULT_MAX_CAPACITY_REGULAR
+        if (field === "curriculumProgram") {
+          next.maxCapacity =
+            value === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP
         }
         return next
       })
@@ -458,9 +495,9 @@ export default function Homerooms() {
 
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-black uppercase text-foreground">Homeroom Sections</h1>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold">Homeroom Sections</h1>
         <p className="text-sm text-foreground font-bold">Manage grade level sections and advising teachers</p>
       </div>
 
@@ -478,7 +515,9 @@ export default function Homerooms() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className="relative z-20">{g.gradeLevelName.replace(/grade\s*/i, "Grade ")}</span>
+              <span className={cn("relative z-20 text-xs uppercase", activeGradeId === String(g.gradeLevelId) ? "text-primary-foreground" : "text-foreground")}>
+                {g.gradeLevelName}
+              </span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -514,40 +553,51 @@ export default function Homerooms() {
                     const presentScpTypes = SCP_TYPES.filter(
                       (pt) => g.sections.some((s) => s.programType === pt)
                     )
-                    if (presentScpTypes.length === 0) return null
                     return (
                       <section className="space-y-4">
-                        <div className="flex items-center justify-center gap-3">
-                          <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Special Curricular Programs (SCP)</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1" />
+                          <div className="flex items-center justify-center flex-1">
+                            <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Special Curricular Programs (SCP)</span>
+                          </div>
+                          <div className="flex-1 flex justify-end">
+                            {canMutate && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", true)}
+                                className="font-bold text-xs uppercase h-8"
+                              >
+                                <Plus className="size-4 mr-1.5" />
+                                Add SCP Section
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         <div className="space-y-6 pl-4 border-l-2 border-muted">
+                          {presentScpTypes.length === 0 && (
+                            <p className="py-8 text-center text-sm font-bold text-foreground">
+                              No sections in this group.
+                            </p>
+                          )}
                           {presentScpTypes.map((programType) => {
                             const label = SCP_SHORT_LABELS[programType] ?? programType
                             const sections = g.sections.filter((s) => s.programType === programType)
                             return (
                               <div key={programType} className="space-y-3">
-                                <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                  {sections.map((s) => (
-                                    <SectionCard
-                                      key={s.id}
-                                      section={s}
-                                      onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                                      onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
-                                      onViewRoster={() => setRosterSectionId(s.id)}
-                                      onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
-                                      canMutate={canMutate}
-                                    />
-                                  ))}
+                                <div className="flex items-center justify-between">
+                                  <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
                                   {canMutate && (
-                                    <button
+                                    <Button
+                                      size="sm"
                                       onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
-                                      className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
-                                      <Plus className="size-4" />
+                                      className="font-bold text-xs uppercase h-8"
+                                    >
+                                      <Plus className="size-4 mr-1.5" />
                                       Add {label} Section
-                                    </button>
+                                    </Button>
                                   )}
                                 </div>
+                                {renderSectionTable(sections, g.gradeLevelName)}
                               </div>
                             )
                           })}
@@ -564,58 +614,42 @@ export default function Homerooms() {
                     <div className="space-y-6 pl-4 border-l-2 border-muted">
                       {/* Homogeneous / Pilot */}
                       <div className="space-y-3">
-                        <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                          BEC <span className="font-bold normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
-                        </h3>
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {homoBecSections.map((s) => (
-                            <SectionCard
-                              key={s.id}
-                              section={s}
-                              onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                              onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
-                              onViewRoster={() => setRosterSectionId(s.id)}
-                              onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
-                              canMutate={canMutate}
-                            />
-                          ))}
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
+                            BEC <span className="font-bold normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
+                          </h3>
                           {canMutate && (
-                            <button
+                            <Button
+                              size="sm"
                               onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", true)}
-                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
-                              <Plus className="size-4" />
+                              className="font-bold text-xs uppercase h-8"
+                            >
+                              <Plus className="size-4 mr-1.5" />
                               Add Homogeneous Section
-                            </button>
+                            </Button>
                           )}
                         </div>
+                        {renderSectionTable(homoBecSections, g.gradeLevelName)}
                       </div>
 
                       {/* Heterogeneous */}
                       <div className="space-y-3">
-                        <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                          BEC <span className="font-bold normal-case text-foreground/60">(Heterogeneous Section)</span>
-                        </h3>
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {heteroBecSections.map((s) => (
-                            <SectionCard
-                              key={s.id}
-                              section={s}
-                              onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                              onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
-                              onViewRoster={() => setRosterSectionId(s.id)}
-                              onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
-                              canMutate={canMutate}
-                            />
-                          ))}
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
+                            BEC <span className="font-bold normal-case text-foreground/60">(Heterogeneous Section)</span>
+                          </h3>
                           {canMutate && (
-                            <button
+                            <Button
+                              size="sm"
                               onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", false)}
-                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
-                              <Plus className="size-4" />
+                              className="font-bold text-xs uppercase h-8"
+                            >
+                              <Plus className="size-4 mr-1.5" />
                               Add Heterogeneous Section
-                            </button>
+                            </Button>
                           )}
                         </div>
+                        {renderSectionTable(heteroBecSections, g.gradeLevelName)}
                       </div>
 
                       {homoBecSections.length === 0 && heteroBecSections.length === 0 && !canMutate && (
@@ -675,18 +709,7 @@ export default function Homerooms() {
         onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
       />
 
-      <AssignAdviserModal
-        open={assignTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setAssignTarget(null)
-        }}
-        section={assignTarget}
-        teachers={adviserCandidates}
-        loadingTeachers={loadingAdviserCandidates}
-        onSuccess={() => {
-          void invalidateHomeroomQueries()
-        }}
-      />
+
     </div>
   )
 }

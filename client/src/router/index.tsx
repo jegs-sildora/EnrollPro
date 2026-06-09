@@ -18,15 +18,10 @@ import RegistrarEOSYWorkspace from "@/features/enrollment/pages/RegistrarEOSYWor
 import WalkInEncoder from "@/features/enrollment/pages/WalkInEncoder";
 import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
-import LearnerPortal from "@/features/learner/pages/LearnerPortal";
-import { LookupForm as LearnerLogin } from "@/features/learner/pages/LearnerLogin";
-import OnboardingConfirm from "@/features/learner/pages/OnboardingConfirm";
-import OnboardingGuard from "@/features/learner/components/OnboardingGuard";
+
 import ChangePassword from "@/features/auth/components/ChangePasswordModal";
 import Sections from "@/features/sections/pages/Index"
 import Homerooms from "@/features/sections/pages/Homerooms"
-import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
-import SectioningHub from "@/features/sections/pages/SectioningHub";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
@@ -58,45 +53,7 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      // 1. All Learner Routes (Isolated by Prefix)
-      {
-        path: "/learner",
-        children: [
-          {
-            path: "login",
-            element: <LearnerLogin />,
-          },
-          {
-            // Onboarding Tunnel & Dashboard Guard
-            element: <OnboardingGuard />,
-            children: [
-              {
-                path: "onboarding",
-                children: [
-                  {
-                    path: "confirm",
-                    element: <OnboardingConfirm />,
-                  },
-                ],
-              },
-              {
-                element: <ProtectedRoute allowedRoles={["LEARNER"]} />,
-                children: [
-                  {
-                    element: <PublicLayout />,
-                    children: [
-                      {
-                        index: true,
-                        element: <LearnerPortal />,
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
+
 
       // 2. Public routes (other than learner portal)
       {
@@ -192,18 +149,6 @@ export const router = createBrowserRouter([
               {
                 path: "/sections/homerooms",
                 element: <Homerooms />,
-              },
-              {
-                path: "/sections/workspace",
-                element: <SectioningWorkspace />,
-              },
-              {
-                path: "/sectioning",
-                element: <SectioningHub />,
-              },
-              {
-                path: "/sectioning/home-room",
-                element: <SectioningWorkspace />,
               },
               {
                 path: "/monitoring/enrollment/requirements",

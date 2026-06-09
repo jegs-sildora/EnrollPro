@@ -73,7 +73,7 @@ async function carryOverEligibleLearners(
           schoolYearId: sourceSchoolYearId,
           enrollmentApplication: {
             status: {
-              in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
+              in: ["ENROLLED", "SECTIONED"],
             },
           },
         },
@@ -186,6 +186,11 @@ async function carryOverEligibleLearners(
       continue;
     }
 
+    const resolvedAcademicStatus =
+      eosyStatus === EosyStatus.PROMOTED
+        ? AcademicStatus.PROMOTED
+        : AcademicStatus.RETAINED;
+
     const createdApplication = await deps.prisma.enrollmentApplication.create({
       data: {
         learnerId,
@@ -193,7 +198,7 @@ async function carryOverEligibleLearners(
         gradeLevelId: targetGradeLevel.id,
         applicantType: record.enrollmentApplication.applicantType,
         learnerType: "CONTINUING",
-        status: "PENDING_CONFIRMATION",
+        status: "VERIFIED",
         admissionChannel: "F2F",
         isPrivacyConsentGiven:
           record.enrollmentApplication.isPrivacyConsentGiven,
@@ -202,6 +207,8 @@ async function carryOverEligibleLearners(
         hasNoFather: record.enrollmentApplication.hasNoFather,
         encodedById:
           record.enrollmentApplication.encodedById ?? actingUserId ?? null,
+        academicStatus: resolvedAcademicStatus,
+        isRemedialRequired: isIrregular,
       },
       select: {
         id: true,
@@ -222,20 +229,6 @@ async function carryOverEligibleLearners(
       data: { promotionStatus: eosyStatus },
     });
 
-    const resolvedAcademicStatus =
-      eosyStatus === EosyStatus.PROMOTED
-        ? AcademicStatus.PROMOTED
-        : AcademicStatus.RETAINED;
-
-    await deps.prisma.applicationChecklist.create({
-      data: {
-        enrollmentId: createdApplication.id,
-        academicStatus: resolvedAcademicStatus,
-        isRemedialRequired: isIrregular,
-        updatedById: actingUserId,
-      },
-    });
-
     existingTargetLearnerIds.add(learnerId);
     summary.createdApplications += 1;
   }
@@ -247,7 +240,7 @@ export function createSchoolYearAdminController(
   deps: SchoolYearControllerDeps = createSchoolYearControllerDeps(),
 ) {
   async function createSchoolYear(req: Request, res: Response): Promise<void> {
-    const { yearLabel, classOpeningDate, classEndDate, cloneFromId } = req.body;
+    const { yearLabel, classOpeningDate, classEndDate, cloneFromId, termFormat } = req.body;
 
     const parsedOpeningDate = parseDateInput(classOpeningDate);
     if (!parsedOpeningDate) {
@@ -318,6 +311,13 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
+        termFormat: termFormat ?? "TRIMESTER",
         clonedFromId: normalizedCloneFromId,
       },
       create: {
@@ -327,6 +327,13 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
+        termFormat: termFormat ?? "TRIMESTER",
         clonedFromId: normalizedCloneFromId,
       },
     });
@@ -381,6 +388,7 @@ export function createSchoolYearAdminController(
       cloneStructure = true,
       carryOverLearners = true,
       pin,
+      termFormat,
     } = req.body;
 
     const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
@@ -506,6 +514,13 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
+        termFormat: termFormat ?? "TRIMESTER",
         clonedFromId: activeYear.id,
       },
       create: {
@@ -515,6 +530,13 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
+        termFormat: termFormat ?? "TRIMESTER",
         clonedFromId: activeYear.id,
       },
     });
@@ -673,6 +695,12 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
         status: "DRAFT",
       },
       create: {
@@ -682,6 +710,12 @@ export function createSchoolYearAdminController(
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        term1Start: schedule.term1Start,
+        term1End: schedule.term1End,
+        term2Start: schedule.term2Start,
+        term2End: schedule.term2End,
+        term3Start: schedule.term3Start,
+        term3End: schedule.term3End,
         clonedFromId: activeYear?.id ?? null,
       },
     });
@@ -691,26 +725,7 @@ export function createSchoolYearAdminController(
     });
   }
 
-  async function toggleOverride(req: Request, res: Response): Promise<void> {
-    const id = parseSchoolYearId(req);
-    const { portalControl } = req.body;
 
-    const updated = await deps.prisma.schoolYear.update({
-      where: { id },
-      data: { portalControl },
-    });
-
-    await deps.auditLog({
-      userId: req.user!.userId,
-      actionType: "SCHOOL_YEAR_OVERRIDE_TOGGLED",
-      description: `Manual override state set to ${portalControl} for year "${updated.yearLabel}"`,
-      subjectType: "SchoolYear",
-      recordId: id,
-      req,
-    });
-
-    res.json({ year: updated });
-  }
 
   async function updateDates(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
@@ -764,24 +779,26 @@ export function createSchoolYearAdminController(
         ? deps.normalizeDateToUtcNoon(parsedClassEndDate!)
         : existingYear.classEndDate;
 
-    if (nextClassOpeningDate && nextClassEndDate) {
-      if (nextClassEndDate.getTime() <= nextClassOpeningDate.getTime()) {
-        res.status(400).json({
-          message: "End of School Year must be later than Start of Classes.",
-        });
-        return;
-      }
+    if (classOpeningDate !== undefined || classEndDate !== undefined) {
+      if (nextClassOpeningDate && nextClassEndDate) {
+        if (nextClassEndDate.getTime() <= nextClassOpeningDate.getTime()) {
+          res.status(400).json({
+            message: "End of School Year must be later than Start of Classes.",
+          });
+          return;
+        }
 
-      const activeCalendarSpanDays = Math.floor(
-        (nextClassEndDate.getTime() - nextClassOpeningDate.getTime()) /
-          DAY_IN_MS,
-      );
-      if (activeCalendarSpanDays < MIN_ACTIVE_CALENDAR_SPAN_DAYS) {
-        res.status(400).json({
-          message:
-            "End of School Year must be at least 240 days after Start of Classes.",
-        });
-        return;
+        const activeCalendarSpanDays = Math.floor(
+          (nextClassEndDate.getTime() - nextClassOpeningDate.getTime()) /
+            DAY_IN_MS,
+        );
+        if (activeCalendarSpanDays < MIN_ACTIVE_CALENDAR_SPAN_DAYS) {
+          res.status(400).json({
+            message:
+              "End of School Year must be at least 240 days after Start of Classes.",
+          });
+          return;
+        }
       }
     }
 
@@ -842,25 +859,12 @@ export function createSchoolYearAdminController(
     const isCalendarDateUpdate =
       classOpeningDate !== undefined || classEndDate !== undefined;
 
-    await deps.auditLog({
-      userId: req.user!.userId,
-      actionType: isCalendarDateUpdate
-        ? "SY_UPDATED"
-        : "ENROLLMENT_DATES_UPDATED",
-      description: isCalendarDateUpdate
-        ? `Updated school calendar dates for "${updated.yearLabel}"`
-        : `Updated enrollment dates for "${updated.yearLabel}"`,
-      subjectType: "SchoolYear",
-      recordId: id,
-      req,
-    });
-
     res.json({ year: updated });
   }
 
   async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat } = req.body;
 
     const year = await deps.prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -877,17 +881,30 @@ export function createSchoolYearAdminController(
       where: { id },
       data: {
         ...(yearLabel ? { yearLabel } : {}),
+        ...(classOpeningDate ? { classOpeningDate: new Date(classOpeningDate) } : {}),
+        ...(classOpeningDate !== undefined ? { classOpeningDate: classOpeningDate ? deps.normalizeDateToUtcNoon(new Date(classOpeningDate)) : year.classOpeningDate } : {}),
+        ...(classEndDate !== undefined ? { classEndDate: classEndDate ? deps.normalizeDateToUtcNoon(new Date(classEndDate)) : year.classEndDate } : {}),
+        ...(term1Start !== undefined ? { term1Start: term1Start ? deps.normalizeDateToUtcNoon(new Date(term1Start)) : null } : {}),
+        ...(term1End !== undefined ? { term1End: term1End ? deps.normalizeDateToUtcNoon(new Date(term1End)) : null } : {}),
+        ...(term2Start !== undefined ? { term2Start: term2Start ? deps.normalizeDateToUtcNoon(new Date(term2Start)) : null } : {}),
+        ...(term2End !== undefined ? { term2End: term2End ? deps.normalizeDateToUtcNoon(new Date(term2End)) : null } : {}),
+        ...(term3Start !== undefined ? { term3Start: term3Start ? deps.normalizeDateToUtcNoon(new Date(term3Start)) : null } : {}),
+        ...(term3End !== undefined ? { term3End: term3End ? deps.normalizeDateToUtcNoon(new Date(term3End)) : null } : {}),
+        ...(term4Start !== undefined ? { term4Start: term4Start ? deps.normalizeDateToUtcNoon(new Date(term4Start)) : null } : {}),
+        ...(term4End !== undefined ? { term4End: term4End ? deps.normalizeDateToUtcNoon(new Date(term4End)) : null } : {}),
+        ...(termFormat !== undefined ? { termFormat } : {}),
       },
     });
 
-    await deps.auditLog({
-      userId: req.user!.userId,
-      actionType: "SY_UPDATED",
-      description: `Updated school year "${updated.yearLabel}"`,
-      subjectType: "SchoolYear",
-      recordId: id,
-      req,
-    });
+    const isTermDateUpdate =
+      yearLabel !== undefined ||
+      term1Start !== undefined || term1End !== undefined ||
+      term2Start !== undefined || term2End !== undefined ||
+      term3Start !== undefined || term3End !== undefined ||
+      term4Start !== undefined || term4End !== undefined;
+
+    const isCalendarDateUpdate = classOpeningDate !== undefined || classEndDate !== undefined;
+    const isYearLabelUpdate = yearLabel !== undefined;
 
     res.json({ year: updated });
   }
@@ -911,15 +928,6 @@ export function createSchoolYearAdminController(
       data: { requireReadingAssessmentNew, requireReadingAssessmentContinuing },
     });
 
-    await deps.auditLog({
-      userId: req.user!.userId,
-      actionType: "SY_UPDATED",
-      description: `Updated intake assessment configuration for "${updated.yearLabel}"`,
-      subjectType: "SchoolYear",
-      recordId: id,
-      req,
-    });
-
     res.json({ year: updated });
   }
 
@@ -927,7 +935,6 @@ export function createSchoolYearAdminController(
     createSchoolYear,
     rolloverSchoolYear,
     updateRolloverDraft,
-    toggleOverride,
     updateDates,
     updateSchoolYear,
     updateAssessmentConfig,
@@ -940,7 +947,6 @@ export const {
   createSchoolYear,
   rolloverSchoolYear,
   updateRolloverDraft,
-  toggleOverride,
   updateDates,
   updateSchoolYear,
   updateAssessmentConfig,

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,40 +12,32 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
+
 import {
   Search,
-  Loader2,
   CheckCircle2,
   Clock,
   AlertCircle,
   FileText,
+  LogOut,
+  ArrowLeft,
   Calendar,
   User,
   BookOpen,
-  Download,
-  MapPin,
-  ClipboardList,
-  LogOut,
-  ArrowLeft,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
   cn,
-  formatDisplayTime12Hour,
-  formatManilaDate,
-  getManilaNow,
 } from "@/shared/lib/utils";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
-import { useSettingsStore } from "@/store/settings.slice";
-import { toJpeg } from "html-to-image";
-import jsPDF from "jspdf";
+
+
 import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
 import { normalizeTrackingStatus } from "@/features/admission/components/trackingState";
 import type { ApplicationTrackResponse } from "@enrollpro/shared";
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+
 const trackSchema = z.object({
   trackingNumber: z
     .string()
@@ -251,12 +243,10 @@ interface TrackApplicationProps {
 export default function TrackApplication({
   onResultsFetched,
 }: TrackApplicationProps) {
-  const { schoolName, logoUrl } = useSettingsStore();
   const [status, setStatus] = useState<ApplicationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
-  const pdfRef = useRef<HTMLDivElement>(null);
+
 
   const {
     register,
@@ -274,44 +264,7 @@ export default function TrackApplication({
     reset({ trackingNumber: "" });
   };
 
-  const downloadPDF = async () => {
-    if (!pdfRef.current || !status) return;
-    setIsGenerating(true);
 
-    try {
-      const element = pdfRef.current;
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      const dataUrl = await toJpeg(element, {
-        quality: 0.98,
-        backgroundColor: "#ffffff",
-        pixelRatio: 2,
-      });
-
-      const imgWidth = 595.28;
-      const imgHeight = (element.offsetHeight * imgWidth) / element.offsetWidth;
-      const pageHeight = 841.89; // A4 height in pt
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4",
-      });
-
-      const pageCount = Math.ceil(imgHeight / pageHeight);
-      for (let i = 0; i < pageCount; i++) {
-        if (i > 0) pdf.addPage();
-        pdf.addImage(dataUrl, "JPEG", 0, -(i * pageHeight), imgWidth, imgHeight);
-      }
-      pdf.save(`Confirmation_Slip_${status.trackingNumber}.pdf`);
-    } catch (error) {
-      console.error("PDF Generation failed:", error);
-      alert("Failed to generate PDF. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const onTrack = async (data: TrackFormData) => {
     setIsLoading(true);
@@ -367,11 +320,7 @@ export default function TrackApplication({
     LEARNING_PROGRAM_LABELS[learningProgramType] ||
     learningProgramType.replace(/_/g, " ");
 
-  const examDate = null;
-  const examTime = null;
-  const examVenue = null;
-  const examNotes = null;
-  const isAssessmentInProgress = false;
+
   const nextStepsStatus =
     status?.rawStatus ||
     status?.status ||
@@ -379,38 +328,6 @@ export default function TrackApplication({
     normalizedStatus ||
     undefined;
 
-  const applicantName =
-    status?.applicantName?.trim() ||
-    [status?.firstName, status?.middleName, status?.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-  const monitorProgram =
-    status?.program || status?.scpDetail?.scpType || status?.learningProgram || status?.programType;
-  const monitorStatus = String(
-    status?.status || status?.trackingStatus || status?.rawStatus || "",
-  )
-    .trim()
-    .toUpperCase();
-  const isSteProgram = ["STE", "SCIENCE_TECHNOLOGY_AND_ENGINEERING"].includes(
-    String(monitorProgram || "").trim().toUpperCase(),
-  );
-  const isEvaluatedMonitorState = monitorStatus === "EVALUATED";
-  const hasCompassionateMonitorState =
-    Boolean(status) &&
-    isSteProgram &&
-    isEvaluatedMonitorState &&
-    typeof status?.isPassed === "boolean" &&
-    typeof status?.rank === "number";
-
-  const compassionateView = !hasCompassionateMonitorState
-    ? null
-    : status?.isPassed && (status.rank ?? 0) <= 70
-      ? "priority-success"
-      : status?.isPassed && (status.rank ?? 0) > 70
-        ? "capacity-redirect"
-        : "standard-redirect";
 
   return (
     <div
@@ -469,17 +386,7 @@ export default function TrackApplication({
             </Button>
           </form>
 
-          {!status && !error && (
-            <div className="mt-8 pt-6 border-t border-dashed text-center">
-              <p className="text-md font-bold text-foreground uppercase ">
-                Lost or missing confirmation slip?
-              </p>
-              <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
-                Enter your tracking number above to retrieve and download your
-                official slip.
-              </p>
-            </div>
-          )}
+
 
           <AnimatePresence mode="wait">
             {error && (
@@ -504,94 +411,6 @@ export default function TrackApplication({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="mt-10 space-y-8">
-                {compassionateView ? (
-                  <Card className="border-2 border-primary/10 shadow-sm">
-                    <CardContent className="p-4 sm:p-6 space-y-4">
-                      <div
-                        className={cn(
-                          "rounded-2xl border-2 p-4 sm:p-5 space-y-3",
-                          compassionateView === "priority-success"
-                            ? "border-emerald-300 bg-emerald-50"
-                            : compassionateView === "capacity-redirect"
-                              ? "border-blue-300 bg-blue-50"
-                              : "border-amber-300 bg-amber-50",
-                        )}>
-                        <h3
-                          className={cn(
-                            "text-base sm:text-lg font-black uppercase leading-tight",
-                            compassionateView === "priority-success"
-                              ? "text-emerald-800"
-                              : compassionateView === "capacity-redirect"
-                                ? "text-blue-800"
-                                : "text-amber-800",
-                          )}>
-                          {compassionateView === "priority-success"
-                            ? "🎉 QUALIFIED: Ready for STE Enrollment"
-                            : compassionateView === "capacity-redirect"
-                              ? "ℹ️ REDIRECTED: Regular BEC Track"
-                              : "🔄 REDIRECTED: Regular BEC Track"}
-                        </h3>
-
-                        <p className="text-sm sm:text-base font-bold leading-relaxed text-foreground">
-                          {compassionateView === "priority-success"
-                            ? `Congratulations, ${applicantName || "Applicant"}! You have officially qualified for the Top 70 slots of the ${String(monitorProgram || "STE")} program.`
-                            : compassionateView === "capacity-redirect"
-                              ? `Hello, ${applicantName || "Applicant"}. You successfully passed the academic assessments for the ${String(monitorProgram || "STE")} program. However, due to strict DepEd capacity limits, only the Top 70 applicants can be accommodated this school year. Based on the composite ranking, you are currently waitlisted.`
-                              : `Hello, ${applicantName || "Applicant"}. Your screening results have been processed. While you did not meet the cutoff score for the ${String(monitorProgram || "STE")} program, you are fully cleared to proceed with standard high school enrollment.`}
-                        </p>
-
-                        <Alert
-                          className={cn(
-                            "border text-sm sm:text-base",
-                            compassionateView === "priority-success"
-                              ? "border-emerald-300 bg-white text-emerald-900"
-                              : compassionateView === "capacity-redirect"
-                                ? "border-blue-300 bg-white text-blue-900"
-                                : "border-amber-300 bg-white text-amber-900",
-                          )}>
-                          <AlertTitle className="font-black uppercase text-xs sm:text-sm">
-                            Next Step
-                          </AlertTitle>
-                          <AlertDescription className="font-bold leading-relaxed">
-                            {compassionateView === "priority-success"
-                              ? "Please proceed to the school gymnasium on your scheduled date and present this tracking number at the SCP Priority Lane for your BOSY Confirmation."
-                              : compassionateView === "capacity-redirect"
-                                ? "You are officially cleared to enroll in the Regular Basic Education Curriculum (BEC). Please proceed to the standard enrollment lane during BOSY Confirmation."
-                                : "Please proceed to the standard BEC enrollment lane during BOSY Confirmation."}
-                          </AlertDescription>
-                        </Alert>
-                      </div>
-
-                      <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
-                        <p className="text-[0.625rem] font-black uppercase tracking-wider text-primary/70">
-                          Tracking Number
-                        </p>
-                        <p className="mt-1 text-lg sm:text-2xl font-black text-primary break-all">
-                          {status.trackingNumber}
-                        </p>
-                        {typeof status.rank === "number" ? (
-                          <p className="mt-2 text-xs sm:text-sm font-bold text-primary/80">
-                            Rank #{status.rank}
-                            {typeof status.compositeScore === "number"
-                              ? ` • Composite Score: ${status.compositeScore.toFixed(2)}`
-                              : ""}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="flex justify-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full sm:w-auto h-11 px-5 font-black"
-                          onClick={handleBackToSearch}>
-                          <ArrowLeft className="h-4 w-4 mr-2" />
-                          Back to Search
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
                   <div
                     className={cn(
                       "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
@@ -612,7 +431,6 @@ export default function TrackApplication({
                       {config.desc}
                     </p>
                   </div>
-                )}
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
@@ -642,49 +460,9 @@ export default function TrackApplication({
                     </p>
                   </div>
 
-                  {isAssessmentInProgress && examDate && (
-                    <>
-                      <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
-                          <Calendar className="w-3 h-3" /> Scheduled Date
-                        </p>
-                        <p className="font-black text-purple-900 uppercase">
-                          {format(new Date(examDate), "MMMM dd, yyyy")}
-                        </p>
-                        <p className="text-[0.625rem] font-bold text-purple-700/70 uppercase">
-                          {formatDisplayTime12Hour(examTime) || "TBA"}
-                        </p>
-                      </div>
-                      <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
-                          <MapPin className="w-3 h-3" /> Exam Location
-                        </p>
-                        <p className="font-black text-purple-900 uppercase">
-                          {examVenue || "TO BE ANNOUNCED"}
-                        </p>
-                      </div>
-                      <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
-                          <ClipboardList className="w-3 h-3" /> Additional Notes
-                        </p>
-                        <p className="font-bold text-purple-900/80 text-[0.625rem] uppercase italic leading-tight line-clamp-2">
-                          {examNotes || "No special instructions"}
-                        </p>
-                      </div>
-                    </>
-                  )}
 
-                  {status.rawStatus === "FOR_REVISION" &&
-                    status.rejectionReason && (
-                      <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl space-y-1 md:col-span-3">
-                        <p className="text-[0.625rem] font-black uppercase text-primary  flex items-center justify-center gap-1.5">
-                          <AlertCircle className="w-3 h-3" /> Revision Details
-                        </p>
-                        <p className="font-bold text-primary/90 italic">
-                          "{status.rejectionReason}"
-                        </p>
-                      </div>
-                    )}
+
+
 
                   <div className="p-5 bg-white border border-border rounded-2xl space-y-1 text-center md:col-span-3">
                     <p className="text-[0.625rem] font-black uppercase text-foreground ">
@@ -705,44 +483,18 @@ export default function TrackApplication({
                     programType={status.programType}
                     status={nextStepsStatus}
                     currentStep={status.currentStep}
-                    hasBeerf={Boolean(status.earlyRegistrationId)}
                   />
-                  <div className="mt-8 pt-6 border-t border-dashed text-center">
-                    <p className="text-md font-bold text-foreground uppercase ">
-                      Lost or missing confirmation slip?
-                    </p>
-                    <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
-                      Enter your tracking number above to retrieve and download
-                      your official slip.
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center mt-6">
+
+                  <div className="flex items-center justify-center mt-3">
                     <Button
-                      className="h-12 px-8 font-bold w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                      onClick={downloadPDF}
-                      disabled={isGenerating}>
-                      {isGenerating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Download className="w-4 h-4" />
-                      )}
-                      {isGenerating
-                        ? "Generating PDF..."
-                        : "Retrieve Confirmation Slip (PDF)"}
+                      type="button"
+                      variant="outline"
+                      className="h-11 px-5 font-black w-full sm:w-auto"
+                      onClick={handleBackToSearch}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Search
                     </Button>
                   </div>
-                  {!compassionateView ? (
-                    <div className="flex items-center justify-center mt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 px-5 font-black w-full sm:w-auto"
-                        onClick={handleBackToSearch}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Search
-                      </Button>
-                    </div>
-                  ) : null}
                 </div>
 
                 <div className="pt-4 text-center">
@@ -754,187 +506,7 @@ export default function TrackApplication({
             )}
           </AnimatePresence>
 
-          {/* ── PDF Container (Hidden) ── */}
-          {status && (
-            <div
-              aria-hidden="true"
-              style={{
-                position: "fixed",
-                top: "0",
-                left: "-9999px",
-                overflow: "visible",
-                pointerEvents: "none",
-              }}>
-              <div
-                ref={pdfRef}
-                style={{
-                  width: "800px",
-                  padding: "60px",
-                  backgroundColor: "#ffffff",
-                  color: "#061E29",
-                }}
-                className="font-sans">
-              <div
-                style={{ borderColor: "#061E29" }}
-                className="flex flex-col items-center justify-center gap-6 mb-4 border-b-2 pb-10">
-                <div className="flex items-center justify-center gap-10 w-full">
-                  {logoUrl ? (
-                    <img
-                      src={`${API_BASE}${logoUrl}`}
-                      crossOrigin="anonymous"
-                      alt="School Logo"
-                      className="h-28 w-28 object-contain"
-                    />
-                  ) : (
-                    <div
-                      style={{ backgroundColor: "#f3f4f6" }}
-                      className="h-28 w-28 rounded-full flex items-center justify-center font-bold text-4xl text-[#061E29]">
-                      {schoolName?.charAt(0)}
-                    </div>
-                  )}
-                  <div className="text-center flex-1">
-                    <h1
-                      style={{ color: "#061E29" }}
-                      className="text-3xl font-black uppercase  mb-1">
-                      {schoolName}
-                    </h1>
-                    <p
-                      style={{ color: "#4b5563" }}
-                      className="text-base font-bold uppercase  mb-2">
-                      Basic Education Early Registration Form Portal
-                    </p>
-                    <div
-                      style={{ backgroundColor: "#061E29", color: "#ffffff" }}
-                      className="flex items-center justify-center px-6 py-3 rounded-xl text-xs font-black  uppercase text-center">
-                      <p className="-mt-3">
-                        Official Basic Education Early Registration Form
-                        Confirmation Slip
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-6">
-                <div className="text-center space-y-4">
-                  <h2
-                    style={{ color: "#061E29" }}
-                    className="text-4xl font-black ">
-                    Application Received!
-                  </h2>
-                  <p
-                    style={{ color: "#4b5563" }}
-                    className="text-xl font-bold">
-                    Your application has been successfully submitted to{" "}
-                    <span
-                      style={{ color: "#061E29" }}
-                      className="font-bold">
-                      {schoolName}
-                    </span>
-                    .
-                  </p>
-                </div>
-
-                <div
-                  style={{ backgroundColor: "#f9fafb", borderColor: "#061E29" }}
-                  className="p-12 rounded-lg border-4 text-center space-y-6 relative overflow-hidden border-dashed">
-                  <p
-                    style={{ color: "#6b7280" }}
-                    className="text-xs uppercase  font-black">
-                    Application Tracking Number
-                  </p>
-                  <p
-                    style={{ color: "#061E29" }}
-                    className="text-7xl  font-black ">
-                    {status.trackingNumber}
-                  </p>
-
-                  <div className="pt-6 flex justify-center gap-12 text-center">
-                    <div className="space-y-1">
-                      <p
-                        style={{ color: "#9ca3af" }}
-                        className="text-[0.625rem] font-black uppercase">
-                        Date Generated
-                      </p>
-                      <p
-                        style={{ color: "#061E29" }}
-                        className="text-sm font-bold">
-                        {formatManilaDate(getManilaNow(), {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p
-                        style={{ color: "#9ca3af" }}
-                        className="text-[0.625rem] font-black uppercase">
-                        Time Generated
-                      </p>
-                      <p
-                        style={{ color: "#061E29" }}
-                        className="text-sm font-bold">
-                        {formatManilaDate(getManilaNow(), {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{ borderColor: "#f3f4f6" }}
-                  className="space-y-8 bg-white p-8 border-2 rounded-lg">
-                  <h3
-                    style={{ color: "#061E29" }}
-                    className="text-2xl font-black flex items-center gap-3 uppercase  -mt-3">
-                    Important Next Steps
-                  </h3>
-                  <TrackingNextSteps
-                    applicantType={status.applicantType}
-                    programType={status.programType}
-                    status={nextStepsStatus}
-                    currentStep={status.currentStep}
-                    hasBeerf={Boolean(status.earlyRegistrationId)}
-                  />
-                </div>
-
-                <div
-                  style={{ borderColor: "#061E29" }}
-                  className="border-t-4 pt-12 mt-12 flex justify-between items-end">
-                  <div className="space-y-2">
-                    <p
-                      style={{ color: "#9ca3af" }}
-                      className="text-[0.625rem] font-black uppercase ">
-                      Security Validation
-                    </p>
-                    <div
-                      style={{ backgroundColor: "#061E29", color: "#ffffff" }}
-                      className="px-4 py-2  text-xs font-bold">
-                      VALID_AUTHENTIC_SUBMISSION_
-                      {status.trackingNumber?.replace(/-/g, "_") || "PENDING"}
-                    </div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p
-                      style={{ color: "#061E29" }}
-                      className="font-black uppercase  text-lg leading-none">
-                      EnrollPro Management System
-                    </p>
-                    <p
-                      style={{ color: "#9ca3af" }}
-                      className="text-[0.625rem] font-bold">
-                      This document is electronically generated. No physical
-                      signature required.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

@@ -11,7 +11,9 @@ import {
   selectAccentColor,
   updateIdentity,
   uploadLogo,
+  updatePrograms,
 } from "./settings.controller.js";
+import { updateProgramsSchema } from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -41,6 +43,13 @@ router.put(
   authorize("SYSTEM_ADMIN"),
   validate(selectAccentSchema),
   selectAccentColor,
+);
+router.patch(
+  "/programs",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  validate(updateProgramsSchema),
+  updatePrograms,
 );
 
 export default router;

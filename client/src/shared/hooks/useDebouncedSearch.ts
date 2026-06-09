@@ -50,15 +50,12 @@ export function useDebouncedSearch(initialValue = ""): UseDebouncedSearchResult 
       return;
     }
 
+    setIsSearching(true);
     debounceTimerRef.current = setTimeout(() => {
-      setIsSearching(true);
-      commitTimerRef.current = setTimeout(() => {
-        setActiveFilter(trimmedValue);
-        setIsSearching(false);
-        commitTimerRef.current = null;
-      }, 1000);
+      setActiveFilter(trimmedValue);
+      setIsSearching(false);
       debounceTimerRef.current = null;
-    }, 800);
+    }, 300);
 
     return clearTimers;
   }, [activeFilter, inputValue]);

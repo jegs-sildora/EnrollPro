@@ -18,19 +18,19 @@ export async function getSystemStatus(req: Request, res: Response) {
       prisma.enrollmentApplication.count({
         where: {
           schoolYearId: setting.activeSchoolYear.id,
-          status: "SUBMITTED_BEEF",
+          status: "VERIFIED",
         },
       }),
       prisma.enrollmentApplication.count({
         where: {
           schoolYearId: setting.activeSchoolYear.id,
-          status: { in: ["READY_FOR_SECTIONING", "VERIFIED"] },
+          status: { in: ["VERIFIED", "VERIFIED"] },
         },
       }),
       prisma.enrollmentApplication.count({
         where: {
           schoolYearId: setting.activeSchoolYear.id,
-          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED"] },
+          status: { in: ["ENROLLED", "ENROLLED"] },
         },
       }),
     ]);

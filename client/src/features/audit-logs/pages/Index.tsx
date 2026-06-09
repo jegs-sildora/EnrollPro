@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSearchParams } from "react-router";
 import { sileo } from "sileo";
@@ -9,12 +10,12 @@ import {
   AlertTriangle,
   History,
   Activity,
+  ChevronDown,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
@@ -30,6 +31,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { PaginationBar } from "@/shared/components/PaginationBar";
+import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
 interface AuditUser {
   id: number;
@@ -50,6 +52,9 @@ interface AuditLogRow {
   userAgent: string | null;
   createdAt: string;
   user: AuditUser | null;
+  metadata?: any;
+  newValue?: string | null;
+  oldValue?: string | null;
 }
 
 interface FilterMetadata {
@@ -69,9 +74,103 @@ function formatTimestamp(iso: string) {
   });
 }
 
+const ACTION_MAP: Record<string, string> = {
+  SY_CREATED: "Created School Year",
+  SY_UPDATED: "Updated School Year",
+  SY_DELETED: "Deleted School Year",
+  SY_ARCHIVED: "Archived School Year",
+  SY_ROLLOVER: "Rolled Over School Year",
+  TERM_DATES_UPDATED: "Updated Term Dates",
+  ENROLLMENT_DATES_UPDATED: "Updated Enrollment Dates",
+  BOSY_LOCKED: "Locked BOSY",
+  BOSY_UNLOCKED: "Unlocked BOSY",
+  EOSY_FINALIZED: "Finalized EOSY",
+  ENROLLMENT_CREATED: "Created Enrollment",
+  ENROLLMENT_UPDATED: "Updated Enrollment",
+  ENROLLMENT_DELETED: "Deleted Enrollment",
+  ENROLLMENT_VERIFIED: "Verified Enrollment",
+  ENROLLMENT_REJECTED: "Rejected Enrollment",
+  STUDENT_CREATED: "Added Learner",
+  STUDENT_UPDATED: "Updated Learner",
+  STUDENT_DELETED: "Deleted Learner",
+  SECTION_CREATED: "Created Section",
+  SECTION_UPDATED: "Updated Section",
+  SECTION_DELETED: "Deleted Section",
+  USER_CREATED: "Added Staff Member",
+  USER_UPDATED: "Updated Staff Member",
+  USER_DELETED: "Deleted Staff Member",
+  LOGIN: "Logged In",
+  LOGOUT: "Logged Out",
+  FAILED_LOGIN: "Failed Login Attempt",
+};
+
+function toTitleCase(str: string) {
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
+
 function actionLabel(actionType: string) {
-  const label = actionType.replaceAll("_", " ").toLowerCase();
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  const upper = actionType.toUpperCase();
+  if (ACTION_MAP[upper]) return ACTION_MAP[upper];
+
+  const parts = upper.split("_");
+  const verbMap: Record<string, string> = {
+    CREATED: "Created",
+    UPDATED: "Updated",
+    DELETED: "Deleted",
+    REMOVED: "Removed",
+    ADDED: "Added",
+    ARCHIVED: "Archived",
+    RESTORED: "Restored",
+  };
+  const nounMap: Record<string, string> = {
+    SY: "School Year",
+    STUDENT: "Learner",
+    USER: "Staff Member",
+    SECTION: "Class Section",
+    SCHOOLYEAR: "School Year",
+    SCHOOLSETTING: "School Profile Settings",
+  };
+
+  if (parts.length === 2 && verbMap[parts[1]]) {
+    const noun = nounMap[parts[0]] || toTitleCase(parts[0]);
+    return `${verbMap[parts[1]]} ${noun}`;
+  }
+
+  if (parts.length === 2 && verbMap[parts[0]]) {
+    const noun = nounMap[parts[1]] || toTitleCase(parts[1]);
+    return `${verbMap[parts[0]]} ${noun}`;
+  }
+
+  const label = actionType.replaceAll("_", " ");
+  return toTitleCase(label)
+    .replace(/Schoolyear/ig, "School Year")
+    .replace(/Schoolsetting/ig, "School Profile Settings");
+}
+
+function getDiffs(log: AuditLogRow) {
+  if (log.metadata?.previousData && log.metadata?.newData) {
+    return { old: log.metadata.previousData, new: log.metadata.newData };
+  }
+  if (log.oldValue || log.newValue) {
+    let oldData = {};
+    let newData = {};
+    try { oldData = JSON.parse(log.oldValue || '{}'); } catch (e) { }
+    try { newData = JSON.parse(log.newValue || '{}'); } catch (e) { }
+    return { old: oldData, new: newData };
+  }
+  return null;
+}
+
+const FIELD_MAP: Record<string, string> = {
+  spsEnabled: "SPS (Sports) Status",
+  spaEnabled: "SPA (Arts) Status",
+  steEnabled: "STE (Science) Status",
+};
+
+function formatKeyName(key: string) {
+  if (FIELD_MAP[key]) return FIELD_MAP[key];
+  const spaced = key.replace(/([A-Z])/g, " $1");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 /**
@@ -86,6 +185,7 @@ export default function AuditLogs() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
   const [total, setTotal] = useState(0);
@@ -114,6 +214,7 @@ export default function AuditLogs() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    setExpandedRowId(null);
     updateUrlParams({ page: newPage });
   };
 
@@ -129,6 +230,24 @@ export default function AuditLogs() {
     } catch (err) {
       console.error("Failed to fetch filter metadata", err);
     }
+  };
+
+  const handlePresetDate = (daysBack: number | null) => {
+    const today = new Date();
+    const to = today.toISOString().slice(0, 10);
+    let from = "";
+    if (daysBack !== null) {
+      const fromDate = new Date();
+      fromDate.setDate(today.getDate() - daysBack);
+      from = fromDate.toISOString().slice(0, 10);
+    } else {
+      // This Month
+      const fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      from = fromDate.toISOString().slice(0, 10);
+    }
+    setDateFrom(from);
+    setDateTo(to);
+    setPage(1);
   };
 
   useEffect(() => {
@@ -152,7 +271,7 @@ export default function AuditLogs() {
       },
       {
         accessorKey: "user",
-        header: "Actor",
+        header: "Staff Member",
         cell: ({ row }) => {
           const log = row.original;
           return (
@@ -187,7 +306,7 @@ export default function AuditLogs() {
         cell: ({ row }) => {
           const action = row.original.actionType;
           const isDestructive = action.includes("DELETE") || action.includes("REMOVE") || action.includes("DROP");
-          
+
           return (
             <div className="text-center">
               <Badge
@@ -208,15 +327,19 @@ export default function AuditLogs() {
         cell: ({ row }) => {
           const log = row.original;
           const type = log.subjectType ? log.subjectType.charAt(0) + log.subjectType.slice(1).toLowerCase() : "System";
-          
+
+          let displayType = type;
+          if (type === "Schoolyear") displayType = "School Year";
+          if (type === "Schoolsetting") displayType = "School Profile Settings";
+
           return (
             <div className="text-left space-y-0.5 flex justify-center items-center flex-col">
               <span className="text-xs font-bold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
-                {type}
+                {displayType}
               </span>
               {log.resolvedSubject ? (
                 <p className="text-sm font-bold text-foreground">
-                  {log.resolvedSubject}
+                  {log.resolvedSubject.replace(/Schoolyear/ig, "S.Y.").replace(/Schoolsetting Record #\d+/ig, "School Profile Settings")}
                 </p>
               ) : log.recordId ? (
                 <p className="text-xs font-bold text-foreground">
@@ -237,18 +360,27 @@ export default function AuditLogs() {
         ),
       },
       {
-        accessorKey: "ipAddress",
-        header: "IP Address",
-        cell: ({ row }) => (
-          <div className="text-center">
-            <span className="text-xs font-bold text-foreground bg-muted/30 px-1.5 py-0.5 rounded">
-              {row.original.ipAddress}
-            </span>
-          </div>
-        ),
+        id: "expander",
+        header: "",
+        cell: ({ row }) => {
+          const diff = getDiffs(row.original);
+          const hasChanges = diff && (Object.keys(diff.old).length > 0 || Object.keys(diff.new).length > 0);
+          if (!hasChanges) return null;
+
+          return (
+            <div className="flex items-center justify-center pr-2">
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                  expandedRowId === row.original.id && "rotate-180 text-primary"
+                )}
+              />
+            </div>
+          );
+        },
       },
     ],
-    [],
+    [expandedRowId],
   );
 
   const filterParams = useMemo(() => {
@@ -324,7 +456,7 @@ export default function AuditLogs() {
 
       sileo.success({
         title: "Export Ready",
-        description: "Forensic Audit CSV downloaded successfully.",
+        description: "Activity Report CSV downloaded successfully.",
       });
     } catch (err) {
       toastApiError(err as never);
@@ -341,7 +473,7 @@ export default function AuditLogs() {
             Audit Logs
           </h1>
           <p className="text-sm font-bold text-foreground ">
-            Forensic analysis of immutable system activity and actor metadata.
+            Track system changes and staff activity.
           </p>
         </div>
         <div className="flex gap-2">
@@ -361,7 +493,7 @@ export default function AuditLogs() {
               onClick={handleExport}
               disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
-              {exporting ? "Exporting..." : "Export forensic CSV"}
+              {exporting ? "Exporting..." : "Download Activity Report"}
             </Button>
           )}
         </div>
@@ -387,7 +519,7 @@ export default function AuditLogs() {
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-xs font-bold uppercase text-foreground">
-                Forensic Search Filters
+                Search Filters
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -434,12 +566,10 @@ export default function AuditLogs() {
                   <Label className="text-xs font-bold uppercase st text-foreground">
                     Date From
                   </Label>
-                  <Input
-                    type="date"
+                  <HybridDatePicker
                     value={dateFrom}
-                    className="font-bold text-xs"
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
+                    onChange={(val) => {
+                      setDateFrom(val);
                       setPage(1);
                     }}
                   />
@@ -448,21 +578,25 @@ export default function AuditLogs() {
                   <Label className="text-xs font-bold uppercase st text-foreground">
                     Date To
                   </Label>
-                  <Input
-                    type="date"
+                  <HybridDatePicker
                     value={dateTo}
-                    className="font-bold text-xs"
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
+                    onChange={(val) => {
+                      setDateTo(val);
                       setPage(1);
                     }}
                   />
                 </div>
               </div>
-              <div className="flex justify-end">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase text-foreground/70 mr-2">Quick Presets:</span>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(0)}>Today</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(null)}>This Month</Button>
+                </div>
                 <Button
                   variant="ghost"
-                  className="font-bold text-xs st h-8"
+                  className="font-bold text-xs h-8"
                   onClick={() => {
                     setActionType("all");
                     setActorId("all");
@@ -470,7 +604,7 @@ export default function AuditLogs() {
                     setDateTo("");
                     setPage(1);
                   }}>
-                  Clear Investigation Filters
+                  Clear Filters
                 </Button>
               </div>
             </CardContent>
@@ -518,12 +652,96 @@ export default function AuditLogs() {
             </Card>
           </div>
 
-          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden min-h-[500px]">
+          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden h-[calc(100vh-250px)] min-h-[500px] flex flex-col">
             <DataTable
               columns={columns}
               data={logs}
               loading={loading}
               virtualize={false}
+              containerHeight="100%"
+              isRowClickable={(row) => {
+                const diff = getDiffs(row);
+                return diff !== null && (Object.keys(diff.old).length > 0 || Object.keys(diff.new).length > 0);
+              }}
+              onRowClick={(row) => {
+                setExpandedRowId((prev) => (prev === row.id ? null : row.id))
+              }}
+              renderRowAfter={(row) => {
+                if (expandedRowId !== row.id) return null;
+                const diff = getDiffs(row);
+                if (!diff || (Object.keys(diff.old).length === 0 && Object.keys(diff.new).length === 0)) {
+                  return null;
+                }
+                const allKeys = Array.from(new Set([...Object.keys(diff.old), ...Object.keys(diff.new)]));
+
+                return (
+                  <tr className="bg-muted/5 border-b">
+                    <td colSpan={columns.length} className="p-0">
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-6 border-l-4 border-l-primary/50 mx-4 my-2 rounded-r-lg bg-card shadow-sm border border-border/50">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary" />
+                            Detailed Changes
+                          </h4>
+                          <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
+                            <table className="w-full text-sm text-left">
+                              <thead className="bg-muted/50 border-b">
+                                <tr>
+                                  <th className="px-4 py-3 font-bold text-foreground">Modified Field</th>
+                                  <th className="px-4 py-3 font-bold text-foreground">Changed From</th>
+                                  <th className="px-4 py-3 font-bold text-foreground">Changed To</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {allKeys.map(key => {
+                                  let oldVal = diff.old[key];
+                                  let newVal = diff.new[key];
+                                  if (JSON.stringify(oldVal) === JSON.stringify(newVal)) return null;
+
+                                  const isIsoDate = (str: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(str);
+                                  const formatVal = (v: any) => {
+                                    if (v === null || v === undefined) return "—";
+                                    if (v === true || String(v) === "true") return <span className="text-green-600 font-bold">Enabled</span>;
+                                    if (v === false || String(v) === "false") return <span className="text-destructive font-bold">Disabled</span>;
+                                    if (typeof v === "object") return JSON.stringify(v);
+                                    const str = String(v);
+                                    if (isIsoDate(str)) {
+                                      return new Date(str).toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                      });
+                                    }
+                                    return str;
+                                  };
+
+                                  return (
+                                    <tr key={key} className="hover:bg-muted/30 transition-colors">
+                                      <td className="px-4 py-3 font-bold text-foreground/80">{formatKeyName(key)}</td>
+                                      <td className="px-4 py-3 font-medium text-destructive bg-destructive/5">
+                                        <span className="line-through decoration-destructive/40 opacity-80">{formatVal(oldVal)}</span>
+                                      </td>
+                                      <td className="px-4 py-3 font-medium text-green-700 bg-green-50">
+                                        {formatVal(newVal)}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </td>
+                  </tr>
+                );
+              }}
             />
 
             {total > 0 && (
@@ -532,7 +750,7 @@ export default function AuditLogs() {
                 total={total}
                 limit={PAGE_SIZE}
                 onPageChange={handlePageChange}
-                onLimitChange={() => {}} // Fixed page size for forensic scannability
+                onLimitChange={() => { }} // Fixed page size for scannability
                 itemName="Audit Records"
               />
             )}

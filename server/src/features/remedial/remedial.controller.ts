@@ -29,61 +29,52 @@ export async function getRemedialPending(
     const where = {
       academicStatus: "CONDITIONALLY_PROMOTED" as const,
       isRemedialRequired: true,
-      enrollment: schoolYearId ? { schoolYearId } : undefined,
+      ...(schoolYearId ? { schoolYearId } : {}),
     };
 
-    const [total, checklists] = await Promise.all([
-      prisma.applicationChecklist.count({ where }),
-      prisma.applicationChecklist.findMany({
+    const [total, applications] = await Promise.all([
+      prisma.enrollmentApplication.count({ where }),
+      prisma.enrollmentApplication.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { updatedAt: "desc" },
+        orderBy: { id: "desc" },
         include: {
-          enrollment: {
-            include: {
-              learner: {
-                select: {
-                  id: true,
-                  lrn: true,
-                  firstName: true,
-                  lastName: true,
-                  middleName: true,
-                  sex: true,
-                },
-              },
-              gradeLevel: { select: { id: true, name: true } },
-              schoolYear: { select: { id: true, yearLabel: true } },
-              enrollmentRecord: {
-                select: { id: true, finalAverage: true, eosyStatus: true },
-              },
+          learner: {
+            select: {
+              id: true,
+              lrn: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              sex: true,
             },
+          },
+          gradeLevel: { select: { id: true, name: true } },
+          schoolYear: { select: { id: true, yearLabel: true } },
+          enrollmentRecord: {
+            select: { id: true, finalAverage: true, eosyStatus: true },
           },
         },
       }),
     ]);
 
-    const items = checklists
-      .filter((c) => c.enrollment !== null)
-      .map((c) => {
-        const app = c.enrollment!;
-        return {
-          checklistId: c.id,
-          enrollmentApplicationId: app.id,
-          learnerId: app.learnerId,
-          lrn: app.learner.lrn,
-          firstName: app.learner.firstName,
-          lastName: app.learner.lastName,
-          middleName: app.learner.middleName,
-          sex: app.learner.sex,
-          gradeLevel: app.gradeLevel,
-          schoolYear: app.schoolYear,
-          academicStatus: c.academicStatus,
-          isRemedialRequired: c.isRemedialRequired,
-          currentFinalAverage: app.enrollmentRecord?.finalAverage ?? null,
-          eosyStatus: app.enrollmentRecord?.eosyStatus ?? null,
-        };
-      });
+    const items = applications.map((app) => ({
+      checklistId: app.id,
+      enrollmentApplicationId: app.id,
+      learnerId: app.learnerId,
+      lrn: app.learner.lrn,
+      firstName: app.learner.firstName,
+      lastName: app.learner.lastName,
+      middleName: app.learner.middleName,
+      sex: app.learner.sex,
+      gradeLevel: app.gradeLevel,
+      schoolYear: app.schoolYear,
+      academicStatus: app.academicStatus,
+      isRemedialRequired: app.isRemedialRequired,
+      currentFinalAverage: app.enrollmentRecord?.finalAverage ?? null,
+      eosyStatus: app.enrollmentRecord?.eosyStatus ?? null,
+    }));
 
     res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (error) {
@@ -132,7 +123,7 @@ export async function resolveRemedial(
           schoolYearId,
           status: "ENROLLED",
         },
-        select: { id: true },
+        select: { id: true, academicStatus: true, isRemedialRequired: true },
       });
 
       if (!application) {
@@ -144,21 +135,9 @@ export async function resolveRemedial(
         );
       }
 
-      const checklist = await tx.applicationChecklist.findUnique({
-        where: { enrollmentId: application.id },
-        select: { id: true, academicStatus: true, isRemedialRequired: true },
-      });
-
-      if (!checklist) {
-        throw Object.assign(
-          new Error("No checklist found for this enrollment application."),
-          { statusCode: 404 },
-        );
-      }
-
       if (
-        checklist.academicStatus !== "CONDITIONALLY_PROMOTED" ||
-        !checklist.isRemedialRequired
+        application.academicStatus !== "CONDITIONALLY_PROMOTED" ||
+        !application.isRemedialRequired
       ) {
         throw Object.assign(
           new Error("This application is not pending remedial resolution."),
@@ -166,13 +145,12 @@ export async function resolveRemedial(
         );
       }
 
-      const [updatedChecklist, updatedRecord] = await Promise.all([
-        tx.applicationChecklist.update({
-          where: { id: checklist.id },
+      const [updatedApplication, updatedRecord] = await Promise.all([
+        tx.enrollmentApplication.update({
+          where: { id: application.id },
           data: {
             academicStatus: "PROMOTED",
             isRemedialRequired: false,
-            updatedById: req.user!.userId,
           },
         }),
         tx.enrollmentRecord.update({
@@ -184,7 +162,7 @@ export async function resolveRemedial(
         }),
       ]);
 
-      return { updatedChecklist, updatedRecord };
+      return { updatedApplication, updatedRecord };
     });
 
     await auditLog({
@@ -198,7 +176,7 @@ export async function resolveRemedial(
 
     res.json({
       message: "Remedial case resolved successfully.",
-      checklistId: result.updatedChecklist.id,
+      checklistId: result.updatedApplication.id,
       enrollmentRecordId: result.updatedRecord.id,
       finalAverage: result.updatedRecord.finalAverage,
       eosyStatus: result.updatedRecord.eosyStatus,

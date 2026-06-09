@@ -27,7 +27,7 @@ interface QueueTableProps {
 }
 
 function statusBadge(status: string) {
-  if (status === "PENDING_CONFIRMATION")
+  if (status === "PENDING_VERIFICATION")
     return (
       <Badge
         variant="outline"
@@ -222,7 +222,7 @@ export function QueueTable({
         cell: ({ row }) => {
           const r = row.original;
           const isConfirming = confirmingIds.has(r.applicationId);
-          if (r.status !== "PENDING_CONFIRMATION") return null;
+          if (r.status !== "PENDING_VERIFICATION") return null;
           return (
             <div className="flex justify-center">
               <Button

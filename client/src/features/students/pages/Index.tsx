@@ -373,6 +373,7 @@ export default function Students() {
     contactNumber: "",
     emergencyContactName: "",
     emergencyContactNumber: "",
+    region: "",
     barangay: "",
     province: "",
     cityMunicipality: "",
@@ -655,6 +656,7 @@ export default function Students() {
         const res = await api.get(`/students/${s.id}`);
         const detail = res.data.student as StudentDetail & {
           currentAddress?: {
+            region?: string | null;
             barangay?: string | null;
             province?: string | null;
             cityMunicipality?: string | null;
@@ -676,6 +678,7 @@ export default function Students() {
             ? `${detail.guardianInfo.firstName} ${detail.guardianInfo.lastName}`
             : "",
           emergencyContactNumber: detail.guardianInfo?.contactNumber ?? "",
+          region: detail.currentAddress?.region ?? "",
           barangay: detail.currentAddress?.barangay ?? "",
           province: detail.currentAddress?.province ?? "",
           cityMunicipality: detail.currentAddress?.cityMunicipality ?? "",
@@ -693,6 +696,7 @@ export default function Students() {
           contactNumber: s.parentGuardianContact ?? "",
           emergencyContactName: "",
           emergencyContactNumber: "",
+          region: "",
           barangay: "",
           province: "",
           cityMunicipality: "",
@@ -820,6 +824,7 @@ export default function Students() {
       const payload: Record<string, unknown> = {
         emailAddress: profileForm.emailAddress.trim() || null,
         currentAddress: {
+          region: profileForm.region.trim() || null,
           barangay: profileForm.barangay.trim() || null,
           province: profileForm.province.trim() || null,
           cityMunicipality: profileForm.cityMunicipality.trim() || null,
@@ -2201,6 +2206,7 @@ export default function Students() {
               </div>
               <PhilippineAddressSelector
                 value={{
+                  region: profileForm.region,
                   province: profileForm.province,
                   cityMunicipality: profileForm.cityMunicipality,
                   barangay: profileForm.barangay,
@@ -2209,6 +2215,9 @@ export default function Students() {
                   setProfileForm((prev) => ({
                     ...prev,
                     [field]: val,
+                    ...(field === "region"
+                      ? { province: "", cityMunicipality: "", barangay: "" }
+                      : {}),
                     ...(field === "province"
                       ? { cityMunicipality: "", barangay: "" }
                       : {}),

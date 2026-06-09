@@ -1,12 +1,11 @@
 import { memo, useEffect } from "react";
 import {
-  Briefcase,
   Eye,
   FilterX,
   MoreHorizontal,
   RefreshCw,
   Search,
-  UserCheck,
+  UserCog,
   UserRoundPen,
   Users,
 } from "lucide-react";
@@ -37,7 +36,6 @@ import {
   cn,
   getAcademicDesignationColorClasses,
   getAncillaryRoleColorClasses,
-  getPlantillaColorClasses,
 } from "@/shared/lib/utils";
 import type {
   Teacher,
@@ -59,7 +57,6 @@ interface TeacherDirectoryCardProps {
   availableDepartments: string[];
   availableDesignationFilters: Array<{ value: string; label: string }>;
   hasActiveFilters: boolean;
-  ayId: number | null;
   page: number;
   limit: number;
   onPageChange: (page: number) => void;
@@ -70,10 +67,8 @@ interface TeacherDirectoryCardProps {
   onDepartmentFilterChange: (value: string) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
-  onOpenDesignationEditor: (teacher: Teacher) => void;
   onEditTeacher: (teacher: Teacher) => void;
-  onDeactivateTeacher: (teacher: Teacher) => void;
-  onReactivateTeacher: (id: number) => void;
+  onUpdateServiceStatus: (teacher: Teacher) => void;
   onOpenDetail: (teacher: Teacher) => void;
 }
 
@@ -90,7 +85,6 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   availableDepartments,
   availableDesignationFilters,
   hasActiveFilters,
-  ayId,
   page,
   limit,
   onPageChange,
@@ -101,10 +95,8 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onDepartmentFilterChange,
   onClearFilters,
   onRefresh,
-  onOpenDesignationEditor,
   onEditTeacher,
-  onDeactivateTeacher,
-  onReactivateTeacher,
+  onUpdateServiceStatus,
   onOpenDetail,
 }: TeacherDirectoryCardProps) {
   const {
@@ -142,16 +134,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
     );
   };
 
-  const renderTeacherStatus = (teacher: Teacher) => (
-    <div className="flex items-center justify-center gap-1.5">
-      <div
-        className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${teacher.isActive ? "bg-green-500 ring-green-100" : "bg-slate-400 ring-slate-100"}`}
-      />
-      <span className="text-[0.6875rem] font-bold">
-        {teacher.isActive ? "Active" : "Inactive"}
-      </span>
-    </div>
-  );
+
 
   const renderTeacherActions = (teacher: Teacher) => (
     <div className="flex items-center justify-center gap-2 min-w-[180px]">
@@ -177,33 +160,17 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           align="end"
           className="w-56 font-bold">
           <DropdownMenuItem
-            onClick={() => onOpenDesignationEditor(teacher)}
-            className="cursor-pointer"
-            disabled={!ayId}>
-            <Briefcase className="mr-2 h-4 w-4" />
-            Update Designation
-          </DropdownMenuItem>
-          <DropdownMenuItem
             onClick={() => onEditTeacher(teacher)}
-            className="cursor-pointer">
+            className="cursor-pointer font-bold">
             <UserRoundPen className="mr-2 h-4 w-4" />
             Quick Update Profile
           </DropdownMenuItem>
-          {teacher.isActive ? (
-            <DropdownMenuItem
-              onClick={() => onDeactivateTeacher(teacher)}
-              className="cursor-pointer text-destructive focus:text-destructive">
-              <UserCheck className="mr-2 h-4 w-4" />
-              Deactivate Faculty
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              onClick={() => onReactivateTeacher(teacher.id)}
-              className="cursor-pointer text-emerald-700 focus:text-emerald-700">
-              <UserCheck className="mr-2 h-4 w-4" />
-              Reactivate Faculty
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => onUpdateServiceStatus(teacher)}
+            className="cursor-pointer text-primary focus:text-primary-foreground font-bold">
+            <UserCog className="mr-2 h-4 w-4" />
+            Update Service Status
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -216,6 +183,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       size: 60,
       minSize: 60,
       maxSize: 60,
+      meta: {
+        customSkeleton: (
+          <Skeleton className="h-8 w-8 rounded-full mx-auto animate-pulse" />
+        ),
+      },
       cell: ({ row }) => {
         const teacher = row.original;
         const initials =
@@ -234,10 +206,18 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       accessorKey: "lastName",
       size: 260,
       minSize: 240,
+      meta: {
+        customSkeleton: (
+          <div className="flex flex-col gap-1.5 text-left pl-2">
+            <Skeleton className="h-5 w-36 animate-pulse" />
+            <Skeleton className="h-4 w-48 animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="TEACHER IDENTITY"
+          title="FACULTY IDENTITY"
           className="justify-center pl-0 font-bold"
         />
       ),
@@ -245,20 +225,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         const teacher = row.original;
         return (
           <div className="flex flex-col text-left pl-2 py-1">
-            <span className="font-extrabold text-sm uppercase leading-tight truncate">
-              {formatTeacherName(teacher)}
+            <span className="font-semibold text-sm text-foreground">
+              {teacher.lastName}, {teacher.firstName}
             </span>
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {/* Level 1: Plantilla Badge (Muted blue/indigo) */}
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-[10px] px-1.5 h-4 font-bold border-none",
-                  getPlantillaColorClasses(teacher.designationTitle),
-                )}>
-                {teacher.designationTitle || "UNRANKED"}
-              </Badge>
-            </div>
+            <span className="text-xs text-foreground leading-tight">
+              {teacher.email || "No email address"}
+            </span>
           </div>
         );
       },
@@ -268,83 +240,150 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       accessorKey: "employeeId",
       size: 130,
       minSize: 120,
+      meta: {
+        customSkeleton: (
+          <div className="flex flex-col gap-1.5 text-left pl-2">
+            <Skeleton className="h-5 w-24 animate-pulse" />
+            <Skeleton className="h-4 w-28 animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="EMPLOYEE ID"
+          title="EMPLOYMENT METADATA"
           className="font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {row.original.employeeId ? (
-            <span className="text-xs font-bold">{row.original.employeeId}</span>
-          ) : (
-            <span className="text-slate-400 italic font-bold text-xs">
-              N/A
+      cell: ({ row }) => {
+        const teacher = row.original;
+        return (
+          <div className="flex flex-col text-left pl-2 py-1">
+            <span className="text-sm font-bold text-foreground">
+              {teacher.employeeId || "N/A"}
             </span>
-          )}
-        </div>
-      ),
+            <span className="text-xs text-foreground italic leading-tight">
+              {teacher.plantillaPosition || "UNRANKED"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       id: "department",
       accessorKey: "department",
       size: 200,
       minSize: 180,
+      meta: {
+        customSkeleton: (
+          <div className="flex flex-col gap-1.5 items-start pl-2">
+            <Skeleton className="h-5 w-24 rounded-full animate-pulse" />
+            <Skeleton className="h-4 w-32 animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="DEPT / SPECIALIZATION"
+          title="ASSIGNMENT & MAJOR"
           className="font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex flex-col items-center text-center">
-          {row.original.department ? (
-            <span className="text-xs font-bold uppercase text-primary">
-              {row.original.department}
+      cell: ({ row }) => {
+        const teacher = row.original;
+        return (
+          <div className="flex flex-col items-start text-left gap-1 pl-2 py-1">
+            <Badge variant="default" className="text-xs uppercase whitespace-nowrap">
+              {teacher.department || "UNASSIGNED"}
+            </Badge>
+            <span className="text-xs text-foreground leading-tight">
+              {teacher.specialization || "Generalist"}
             </span>
-          ) : (
-            <span className="text-slate-400 italic font-bold text-xs">
-              Unassigned
-            </span>
-          )}
-          {row.original.specialization ? (
-            <span className="text-xs font-bold text-foreground">
-              {row.original.specialization}
-            </span>
-          ) : (
-            <span className="text-slate-400 italic font-bold text-[10px]">
-              Generalist
-            </span>
-          )}
-        </div>
-      ),
+          </div>
+        );
+      },
     },
     {
       id: "facultyStatus",
       accessorKey: "isActive",
       size: 140,
       minSize: 120,
+      meta: {
+        customSkeleton: (
+          <div className="flex flex-col gap-1.5 items-start pl-2">
+            <Skeleton className="h-5 w-16 rounded-full animate-pulse" />
+            <Skeleton className="h-4 w-28 animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="FACULTY STATUS"
+          title="STATUS & TENURE"
           className="font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {renderTeacherStatus(row.original)}
-        </div>
-      ),
-    },
+      cell: ({ row }) => {
+        const teacher = row.original;
+        const status = teacher.serviceStatus;
 
+        const statusConfig: Record<string, { label: string; pillClass: string }> = {
+          ACTIVE: {
+            label: "Active",
+            pillClass: "bg-primary/10 text-primary border-primary/20",
+          },
+          ON_LEAVE: {
+            label: "On Leave",
+            pillClass: "bg-secondary text-secondary-foreground border-secondary/20",
+          },
+          TRANSFERRED: {
+            label: "Transferred",
+            pillClass: "bg-muted text-foreground border-border",
+          },
+          RETIRED_RESIGNED: {
+            label: "Retired / Resigned",
+            pillClass: "bg-muted text-foreground border-border",
+          },
+          DROPPED_FROM_ROLLS: {
+            label: "Dropped from Rolls",
+            pillClass: "bg-destructive/10 text-destructive border-destructive/20",
+          },
+        };
+
+        const config = statusConfig[status] ?? statusConfig.ACTIVE;
+
+        const formatAppointment = (track?: string | null) => {
+          if (!track) return "Regular Permanent";
+          return track
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(" ");
+        };
+
+        return (
+          <div className="flex flex-col items-start text-left gap-1 pl-2 py-1">
+            <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full", config.pillClass)}>
+              {config.label}
+            </Badge>
+            <span className="text-xs text-foreground leading-tight">
+              {formatAppointment(teacher.natureOfAppointment)}
+            </span>
+          </div>
+        );
+      },
+    },
     {
       id: "designation",
       size: 180,
       minSize: 160,
+      meta: {
+        customSkeleton: (
+          <div className="flex flex-col gap-1.5 items-center mx-auto">
+            <Skeleton className="h-5 w-24 rounded-full animate-pulse" />
+            <Skeleton className="h-4 w-20 rounded-full animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -358,7 +397,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         if (!designation) {
           return (
             <div className="flex justify-center">
-              <span className="text-slate-500 font-bold uppercase text-[10px] whitespace-nowrap">
+              <span className="text-foreground font-bold uppercase text-xs whitespace-nowrap">
                 Subject Teacher
               </span>
             </div>
@@ -369,23 +408,21 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
         return (
           <div className="flex flex-col items-center gap-1.5 py-1">
-            {/* Level 2: Academic Designation (Solid DepEd Colors) */}
             {designation.isClassAdviser ? (
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-[10px] font-black uppercase px-2 h-5 border-none whitespace-nowrap",
+                  "text-xs font-black uppercase px-2 h-5 border-none whitespace-nowrap",
                   getAcademicDesignationColorClasses("CLASS ADVISER"),
                 )}>
                 Class Adviser
               </Badge>
             ) : (
-              <span className="text-slate-500 font-bold uppercase text-[10px] whitespace-nowrap">
+              <span className="text-foreground font-bold uppercase text-xs whitespace-nowrap">
                 Subject Teacher
               </span>
             )}
 
-            {/* Level 3: Ancillary Tags (Pastel Domains) */}
             {ancillaryRoles.length > 0 && (
               <div className="flex flex-wrap justify-center gap-1 max-w-[170px]">
                 {ancillaryRoles.map((role) => (
@@ -393,7 +430,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     key={`${row.original.id}-${role}`}
                     variant="outline"
                     className={cn(
-                      "text-[9px] font-bold uppercase px-1.5 h-4 border-none",
+                      "text-xs font-bold uppercase px-1.5 h-4 border-none",
                       getAncillaryRoleColorClasses(role),
                     )}>
                     {role}
@@ -409,6 +446,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       id: "advisorySection",
       size: 200,
       minSize: 180,
+      meta: {
+        customSkeleton: (
+          <Skeleton className="h-5 w-36 mx-auto animate-pulse" />
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -426,6 +468,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       id: "actions",
       size: 200,
       minSize: 180,
+      meta: {
+        customSkeleton: (
+          <div className="flex gap-2 justify-center w-full">
+            <Skeleton className="h-8 w-20 animate-pulse" />
+            <Skeleton className="h-8 w-8 animate-pulse" />
+          </div>
+        ),
+      },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -442,12 +492,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   ];
 
   return (
-    <Card className="w-full min-w-0 overflow-hidden shadow-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col max-h-full min-h-0 rounded-xl">
+    <Card className="w-full min-w-0 overflow-hidden shadow-xl border flex flex-col max-h-full min-h-0 rounded-xl">
       <CardHeader className="border-b bg-gradient-to-r from-muted/20 via-muted/10 to-transparent py-3 px-4 shrink-0">
-        <div className="flex flex-wrap items-center gap-4 pb-3 border-b border-dashed border-border/60 mb-3">
+        <div className="flex flex-wrap items-center gap-4 pb-3 border-b border-dashed border-border mb-3">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-foreground" />
-            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+            <span className="text-xs font-black uppercase text-foreground tracking-wider">
               Total
             </span>
             <span className="text-base font-black text-primary tabular-nums">
@@ -456,31 +506,31 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           </div>
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
-            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+            <div className="h-2 w-2 rounded-full bg-primary ring-2 ring-primary/20" />
+            <span className="text-xs font-black uppercase text-foreground tracking-wider">
               Active
             </span>
-            <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <span className="text-base font-black text-primary tabular-nums">
               {teachers.filter((t) => t.isActive).length}
             </span>
           </div>
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-slate-400 ring-2 ring-slate-400/20" />
-            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+            <div className="h-2 w-2 rounded-full bg-muted-foreground ring-2 ring-muted-foreground/20" />
+            <span className="text-xs font-black uppercase text-foreground tracking-wider">
               Inactive
             </span>
-            <span className="text-base font-black text-slate-400 tabular-nums">
+            <span className="text-base font-black text-foreground tabular-nums">
               {teachers.filter((t) => !t.isActive).length}
             </span>
           </div>
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20" />
-            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+            <div className="h-2 w-2 rounded-full bg-foreground ring-2 ring-foreground/20" />
+            <span className="text-xs font-black uppercase text-foreground tracking-wider">
               Class Advisers
             </span>
-            <span className="text-base font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
+            <span className="text-base font-black text-foreground tabular-nums">
               {teachers.filter((t) => t.designation?.isClassAdviser).length}
             </span>
           </div>
@@ -488,93 +538,96 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             <>
               <div className="h-4 w-px bg-border/50" />
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black uppercase text-amber-600 tracking-wider">
+                <span className="text-xs font-black uppercase text-primary tracking-wider">
                   Showing
                 </span>
-                <span className="text-base font-black text-amber-600 tabular-nums">
+                <span className="text-base font-black text-primary tabular-nums">
                   {filteredTeachers.length}
                 </span>
               </div>
             </>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full mt-3">
+          <div className="relative w-full md:w-[40%] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground pointer-events-none" />
             <Input
               value={searchInputValue}
               onChange={(event) => setSearchInputValue(event.target.value)}
               placeholder="Search name, ID, learning area, section..."
+              autoComplete="off"
               className="h-9 pl-9 font-bold text-xs"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) =>
-              onStatusFilterChange(value as TeacherStatusFilter)
-            }>
-            <SelectTrigger className="h-9 w-auto min-w-[130px] font-bold uppercase text-xs">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
-              <SelectItem value="active" className="font-bold">Active Only</SelectItem>
-              <SelectItem value="inactive" className="font-bold">Inactive Only</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={designationFilter}
-            onValueChange={(value) =>
-              onDesignationFilterChange(value as TeacherDesignationFilter)
-            }>
-            <SelectTrigger className="h-9 w-auto min-w-[150px] font-bold uppercase text-xs">
-              <SelectValue placeholder="Designation" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="font-bold">All Designations</SelectItem>
-              {availableDesignationFilters.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="font-bold text-xs uppercase">
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={departmentFilter}
-            onValueChange={onDepartmentFilterChange}>
-            <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-xs">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              <SelectItem value="all" className="font-bold">All Departments</SelectItem>
-              {availableDepartments.map((department) => (
-                <SelectItem key={department} value={department} className="font-bold text-xs uppercase">
-                  {department}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            className="h-9 font-bold uppercase text-xs px-3"
-            disabled={!hasActiveFilters}
-            onClick={() => {
-              clearSearch();
-              onClearFilters();
-            }}>
-            <FilterX className="mr-1.5 h-3.5 w-3.5" />
-            Clear
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-1.5 font-bold uppercase text-xs"
-            onClick={onRefresh}>
-            <RefreshCw
-              className={cn("h-3.5 w-3.5", loading && "animate-spin")}
-            />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center justify-end gap-3 flex-1 min-w-0">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                onStatusFilterChange(value as TeacherStatusFilter)
+              }>
+              <SelectTrigger className="h-9 w-auto min-w-[130px] font-bold uppercase text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
+                <SelectItem value="active" className="font-bold">Active Only</SelectItem>
+                <SelectItem value="inactive" className="font-bold">Inactive Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={designationFilter}
+              onValueChange={(value) =>
+                onDesignationFilterChange(value as TeacherDesignationFilter)
+              }>
+              <SelectTrigger className="h-9 w-auto min-w-[150px] font-bold uppercase text-xs">
+                <SelectValue placeholder="Designation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="font-bold">All Designations</SelectItem>
+                {availableDesignationFilters.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="font-bold text-xs uppercase">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={departmentFilter}
+              onValueChange={onDepartmentFilterChange}>
+              <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-xs">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all" className="font-bold">All Departments</SelectItem>
+                {availableDepartments.map((department) => (
+                  <SelectItem key={department} value={department} className="font-bold text-xs uppercase">
+                    {department}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              className="h-9 font-bold uppercase text-xs px-3"
+              disabled={!hasActiveFilters}
+              onClick={() => {
+                clearSearch();
+                onClearFilters();
+              }}>
+              <FilterX className="mr-1.5 h-3.5 w-3.5" />
+              Clear
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 font-bold uppercase text-xs"
+              onClick={onRefresh}>
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", loading && "animate-spin")}
+              />
+              Refresh
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0 min-w-0 flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -584,29 +637,38 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             isRefetching ? "opacity-50 pointer-events-none" : "opacity-100",
           )}>
           <div className="md:hidden space-y-3">
-            {showSkeleton ? (
-              Array.from({ length: 3 }).map((_, index) => (
+            {(showSkeleton || isSearching) ? (
+              Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border-2 p-3 space-y-3">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-8 w-full" />
+                  className="rounded-xl border-2 p-3 space-y-3 animate-pulse bg-background">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-8 rounded-full shrink-0" />
+                    <div className="space-y-1.5 flex-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2">
+                    <div className="space-y-1">
+                      <div className="h-3 w-16 bg-muted rounded" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-3 w-20 bg-muted rounded" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-3 w-16 bg-muted rounded" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-3 w-16 bg-muted rounded" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
                 </div>
               ))
-            ) : isSearching ? (
-              <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
-                <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                <div className="space-y-1">
-                  <p className="text-lg font-bold text-slate-500">
-                    Searching...
-                  </p>
-                  <p className="text-sm font-bold text-slate-400">
-                    Scanning DepEd faculty records...
-                  </p>
-                </div>
-              </div>
             ) : paginatedTeachers.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
                 {hasActiveFilters
@@ -626,118 +688,144 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       </div>
                       <div>
                         <p className="font-black text-sm uppercase leading-tight">
-                          {formatTeacherName(teacher)}
+                          {teacher.lastName}, {teacher.firstName}
                         </p>
                         <p className="text-xs text-foreground mt-0.5 font-bold">
                           {teacher.email || "No email address"}
                         </p>
                       </div>
                     </div>
-                    {renderTeacherStatus(teacher)}
+                    {(() => {
+                      const s = teacher.serviceStatus;
+                      const cfg: Record<string, { label: string; pillClass: string }> = {
+                        ACTIVE: { label: "Active", pillClass: "bg-primary/10 text-primary border-primary/20" },
+                        ON_LEAVE: { label: "On Leave", pillClass: "bg-secondary text-secondary-foreground border-secondary/20" },
+                        TRANSFERRED: { label: "Transferred", pillClass: "bg-muted text-foreground border-border" },
+                        RETIRED_RESIGNED: { label: "Retired / Resigned", pillClass: "bg-muted text-foreground border-border" },
+                        DROPPED_FROM_ROLLS: { label: "Dropped from Rolls", pillClass: "bg-destructive/10 text-destructive border-destructive/20" },
+                      };
+                      const c = cfg[s] ?? cfg.ACTIVE;
+                      return (
+                        <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full shrink-0", c.pillClass)}>
+                          {c.label}
+                        </Badge>
+                      );
+                    })()}
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold text-[10px]">
                         Employee ID
                       </p>
-                      {teacher.employeeId ? (
-                        <p className="font-bold">{teacher.employeeId}</p>
-                      ) : (
-                        <p className="text-slate-400 italic font-bold">N/A</p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
-                        Learning Area
+                      <p className="font-bold text-foreground">
+                        {teacher.employeeId || "N/A"}
                       </p>
-                      {teacher.specialization ? (
-                        <p className="font-bold">{teacher.specialization}</p>
-                      ) : (
-                        <p className="text-slate-400 italic font-bold">
-                          Unassigned
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
-                        Contact
+                      <p className="text-[10px] text-foreground italic mt-0.5">
+                        {teacher.plantillaPosition || "UNRANKED"}
                       </p>
-                      {teacher.contactNumber ? (
-                        <p className="font-bold">{teacher.contactNumber}</p>
-                      ) : (
-                        <p className="text-slate-400 italic font-bold">N/A</p>
-                      )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold text-[10px]">
+                        Assignment & Major
+                      </p>
+                      <div className="mt-0.5">
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0 font-bold uppercase whitespace-nowrap">
+                          {teacher.department || "UNASSIGNED"}
+                        </Badge>
+                      </div>
+                      <p className="text-foreground text-[10px] mt-0.5 leading-tight">
+                        {teacher.specialization || "Generalist"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-foreground uppercase font-bold text-[10px]">
+                        Tenure Track
+                      </p>
+                      <p className="font-bold text-foreground">
+                        {(() => {
+                          const track = teacher.natureOfAppointment;
+                          if (!track) return "Regular Permanent";
+                          return track
+                            .split("_")
+                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                            .join(" ");
+                        })()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-foreground uppercase font-bold text-[10px]">
                         Designation
                       </p>
                       {teacher.designation?.isClassAdviser ? (
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[9px] font-black uppercase px-1.5 h-4 border-none whitespace-nowrap",
+                            "text-[10px] font-black uppercase px-1.5 h-4 border-none whitespace-nowrap mt-0.5",
                             getAcademicDesignationColorClasses("CLASS ADVISER"),
                           )}>
                           Class Adviser
                         </Badge>
                       ) : (
-                        <p className="text-slate-500 font-bold uppercase text-[10px]">
+                        <p className="text-foreground font-bold uppercase text-[10px] mt-0.5">
                           Subject Teacher
                         </p>
                       )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold text-[10px]">
                         Advisory
                       </p>
-                      {renderAdvisoryStatus(teacher)}
+                      <div className="mt-0.5">
+                        {renderAdvisoryStatus(teacher)}
+                      </div>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold text-[10px]">
                         Portal Access
                       </p>
-                      {(() => {
-                        const ua = teacher.userAccount;
-                        let accountLabel = "No Account";
-                        let accountColor =
-                          "text-foreground bg-muted border-muted-foreground/30";
+                      <div className="mt-0.5">
+                        {(() => {
+                          const ua = teacher.userAccount;
+                          let accountLabel = "No Account";
+                          let accountColor =
+                            "text-foreground bg-muted border-foreground/30";
 
-                        if (ua) {
-                          if (!ua.isActive) {
-                            accountLabel = "Suspended";
+                          if (ua) {
+                            if (!ua.isActive) {
+                              accountLabel = "Suspended";
+                              accountColor =
+                                "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
+                            } else if (ua.mustChangePassword && !ua.lastLoginAt) {
+                              accountLabel = "Provisioned";
+                              accountColor =
+                                "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
+                            } else {
+                              accountLabel = "SSO Active";
+                              accountColor =
+                                "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
+                            }
+                          } else if (teacher.isActive) {
+                            accountLabel = "No Account";
                             accountColor =
-                              "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
-                          } else if (ua.mustChangePassword && !ua.lastLoginAt) {
-                            accountLabel = "Provisioned";
-                            accountColor =
-                              "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
-                          } else {
-                            accountLabel = "SSO Active";
-                            accountColor =
-                              "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
+                              "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
                           }
-                        } else if (teacher.isActive) {
-                          accountLabel = "No Account";
-                          accountColor =
-                            "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
-                        }
 
-                        return (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[9px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
-                              accountColor,
-                            )}>
-                            {ua?.isActive && (
-                              <span className="text-[10px]">🌐</span>
-                            )}
-                            {accountLabel}
-                          </Badge>
-                        );
-                      })()}
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
+                                accountColor,
+                              )}>
+                              {ua?.isActive && (
+                                <span className="text-[10px]">🌐</span>
+                              )}
+                              {accountLabel}
+                            </Badge>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
 
@@ -754,25 +842,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               columns={columns}
               data={paginatedTeachers}
               tableClassName="min-w-full"
-              loading={loading}
-              forceEmptyState={isSearching}
+              loading={loading || isSearching}
+              forceEmptyState={false}
               virtualize={true}
               estimatedRowHeight={60}
               className="border-none rounded-none max-h-full h-auto"
               containerHeight="100%"
-              emptyStateContent={
-                <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
-                  <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-slate-500">
-                      Searching...
-                    </p>
-                    <p className="text-sm font-bold text-slate-400">
-                      Scanning DepEd faculty records...
-                    </p>
-                  </div>
-                </div>
-              }
               noResultsMessage={
                 hasActiveFilters
                   ? "No teachers match the current filter set."

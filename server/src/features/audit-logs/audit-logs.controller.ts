@@ -80,9 +80,8 @@ async function resolveSubjectNames(logs: any[]) {
           select: { id: true, yearLabel: true },
         });
         records.forEach((r) => (nameMap[type][r.id] = r.yearLabel));
-      } else if (type === "EarlyRegistrationApplication" || type === "EnrollmentApplication") {
-        const model = type === "EarlyRegistrationApplication" ? "earlyRegistrationApplication" : "enrollmentApplication";
-        const records = await (prisma as any)[model].findMany({
+      } else if (type === "EnrollmentApplication") {
+        const records = await prisma.enrollmentApplication.findMany({
           where: { id: { in: ids } },
           select: { id: true, learner: { select: { firstName: true, lastName: true } } },
         });

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import { getAuditContext } from "../lib/context.js";
 
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
 
@@ -92,6 +93,12 @@ async function performAuth(
     }
 
     req.user = decoded;
+
+    const auditCtx = getAuditContext();
+    if (auditCtx) {
+      auditCtx.userId = decoded.userId;
+    }
+
     next();
   } catch {
     res
@@ -100,7 +107,6 @@ async function performAuth(
   }
 }
 
-export const authenticateLearner = authenticate("learner_session");
 
 export function authenticateFromCookies(
   ...cookieNames: string[]
@@ -141,6 +147,12 @@ export function authenticateFromCookies(
         }
 
         req.user = decoded;
+
+        const auditCtx = getAuditContext();
+        if (auditCtx) {
+          auditCtx.userId = decoded.userId;
+        }
+
         next();
         return;
       } catch {

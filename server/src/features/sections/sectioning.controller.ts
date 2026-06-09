@@ -78,7 +78,7 @@ export async function getSectioningPool(req: Request, res: Response) {
 
     const where: any = {
       schoolYearId,
-      status: "READY_FOR_SECTIONING",
+      status: "VERIFIED",
       applicantType: "REGULAR", // SCP Guard: exclude STE, SPAS, SPS, SPIJ, SPFL, SPTVE
       enrollmentRecord: null, // Critical: Only students not yet assigned
     };
@@ -104,6 +104,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       genAve: app.learner.previousGenAve,
       gradeLevel: app.gradeLevel.name,
       gradeLevelId: app.gradeLevelId,
+      duplicateFlag: app.duplicateFlag,
     }));
 
     return res.json(pool);
@@ -174,7 +175,7 @@ export async function assignBulk(req: Request, res: Response) {
       }
 
       // Stage Gate: only section learners cleared by Stage 2
-      if (app.status !== "READY_FOR_SECTIONING") {
+      if (app.status !== "VERIFIED") {
         return res.status(409).json({
           message: `Application ${app.id} is not READY_FOR_SECTIONING.`,
         });
@@ -206,7 +207,7 @@ export async function assignBulk(req: Request, res: Response) {
         // Finalize Application Status
         await tx.enrollmentApplication.update({
           where: { id: app.id },
-          data: { status: "OFFICIALLY_ENROLLED" }
+          data: { status: "ENROLLED" }
         });
 
         records.push(record);

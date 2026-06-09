@@ -42,7 +42,7 @@ export async function getReadingAssessmentQueue(
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      status: { in: ["SUBMITTED_BEEF", "READY_FOR_ENROLLMENT"] },
+      status: { in: ["VERIFIED", "VERIFIED"] },
       readingProfileLevel: null,
       ...searchFilter,
     },
@@ -115,7 +115,7 @@ export async function getAdviserQueue(
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      status: { in: ["SUBMITTED_BEEF", "READY_FOR_ENROLLMENT"] },
+      status: { in: ["VERIFIED", "VERIFIED"] },
       ...searchFilter,
     },
     select: {
@@ -188,7 +188,7 @@ export async function getContinuingQueue(
     where: {
       schoolYearId,
       learnerType: "CONTINUING",
-      status: "PENDING_CONFIRMATION",
+      status: "VERIFIED",
       ...searchFilter,
     },
     select: {
@@ -268,8 +268,7 @@ export async function recordReadingLevel(
     return;
   }
   if (
-    existing.status !== "SUBMITTED_BEEF" &&
-    existing.status !== "READY_FOR_ENROLLMENT"
+    existing.status !== "VERIFIED"
   ) {
     res.status(422).json({
       message: `Application status '${existing.status}' is not eligible for Phil-IRI assessment.`,

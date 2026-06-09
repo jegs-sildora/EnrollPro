@@ -1,6 +1,5 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuthStore } from "@/store/auth.slice";
-import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import type { AuthRole } from "@/store/auth.slice";
 
 interface ProtectedRouteProps {
@@ -8,39 +7,28 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const isLearnerRoute =
-    allowedRoles?.length === 1 && allowedRoles[0] === "LEARNER";
-
   const staffAuth = useAuthStore();
-  const learnerAuth = useLearnerAuthStore();
-  const user = isLearnerRoute ? learnerAuth.user : staffAuth.user;
-  const hasSession = isLearnerRoute
-    ? Boolean(learnerAuth.user)
-    : Boolean(staffAuth.user);
+  const user = staffAuth.user;
+  const hasSession = Boolean(staffAuth.user);
 
-  // Crucial: If we are on a learner route but only have a staff token (or vice versa),
-  // we must treat it as unauthorized for this specific guard.
-  const hasCorrectRoleType = user
-    ? isLearnerRoute
-      ? user.role === "LEARNER"
-      : user.role !== "LEARNER"
-    : false;
-
-  if (!hasSession || !user || !hasCorrectRoleType) {
-    const loginPath = isLearnerRoute ? "/learner/login" : "/staff/login";
+  if (!hasSession || !user) {
     return (
       <Navigate
-        to={loginPath}
+        to={"/staff/login"}
         replace
       />
     );
+  }
+
+  if (user.mustChangePassword) {
+    return <Navigate to={"/change-password"} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to role-appropriate home rather than /login (avoids loops)
     return (
       <Navigate
-        to={user.role === "LEARNER" ? "/learner" : "/dashboard"}
+        to={"/dashboard"}
         replace
       />
     );

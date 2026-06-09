@@ -8,22 +8,16 @@ const optionalSecondaryContactText = z.preprocess((value) => {
   return value;
 }, z.string().optional().nullable());
 
-const optionalSecondaryEmail = z.preprocess((value) => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed === "" ? undefined : trimmed;
-  }
-  return value;
-}, z.string().email("Please provide a valid email address.").optional().nullable());
 
-const requiredSf9GeneralAverage = z.preprocess(
+
+const optionalSf9GeneralAverage = z.preprocess(
   (value) => {
     if (value == null || value === "") {
       return undefined;
     }
 
     if (typeof value === "number") {
-      return Number.isFinite(value) ? value : Number.NaN;
+      return Number.isFinite(value) ? value : undefined;
     }
 
     if (typeof value === "string") {
@@ -33,19 +27,18 @@ const requiredSf9GeneralAverage = z.preprocess(
       }
 
       const parsed = Number(trimmed.replace(",", "."));
-      return Number.isFinite(parsed) ? parsed : Number.NaN;
+      return Number.isFinite(parsed) ? parsed : undefined;
     }
 
     return value;
   },
   z
     .number()
-    .refine(
-      (value) => Number.isFinite(value),
-      "Final General Average (SF9) is required.",
-    )
-    .min(0, "General Average must be between 0 and 100.")
-    .max(100, "General Average must be between 0 and 100.")
+    .optional()
+    .refine((value) => {
+      if (value === undefined || value === null) return true;
+      return value >= 0 && value <= 100;
+    }, "General Average must be between 0 and 100.")
     .refine((value) => {
       if (value === undefined || value === null) return true;
       const stringValue = value.toString();
@@ -62,10 +55,10 @@ export const EnrollmentFormSchema = z
     }),
 
     // Internal Reference
-    earlyRegistrationId: z.number().optional().nullable(),
+    earlyRegistrationId: z.number({ message: "Invalid reference format." }).optional().nullable(),
 
     // Section 1: Tracking Numbers
-    schoolYear: z.string().min(1, "Academic year selection is required."),
+    schoolYear: z.string({ message: "Please select a valid academic year." }).min(1, "Academic year selection is required."),
     lrn: z
       .string()
       .regex(
@@ -78,7 +71,7 @@ export const EnrollmentFormSchema = z
     psaBirthCertNumber: z.string().optional(),
 
     // Section 2: Grade Level & Program
-    gradeLevel: z.enum(["7", "8", "9", "10"]),
+    gradeLevel: z.enum(["7", "8", "9", "10"], { message: "Please select a valid grade level." }),
     isScpApplication: z.boolean().default(false),
     scpType: z
       .enum([
@@ -97,14 +90,22 @@ export const EnrollmentFormSchema = z
     firstName: z.string().min(1, "Learner's first name is required."),
     middleName: z.string().optional(),
     extensionName: z.string().optional(),
-    birthdate: z.date(),
-    age: z.number().min(0),
-    sex: z.enum(["Male", "Female"]),
+    birthdate: z.date({ message: "Please provide a valid birthdate." }),
+    age: z.number({ message: "Please enter a valid numeric age." }).min(0, "Age must be at least 0"),
+    sex: z.enum(["Male", "Female"], { message: "Please select a valid gender." }),
     placeOfBirth: z
       .string()
       .min(1, "Place of birth as indicated in birth certificate is required."),
     motherTongue: z.string().optional(),
     religion: z.string().optional(),
+    intakeHeightCm: z
+      .number({ message: "Please enter a valid numeric height." })
+      .min(30, "Height must be at least 30 cm")
+      .max(250, "Height must not exceed 250 cm"),
+    intakeWeightKg: z
+      .number({ message: "Please enter a valid numeric weight." })
+      .min(10, "Weight must be at least 10 kg")
+      .max(200, "Weight must not exceed 200 kg"),
 
     // Section 4: Special Classifications
     isIpCommunity: z.boolean().default(false),
@@ -127,11 +128,12 @@ export const EnrollmentFormSchema = z
     currentAddress: z.object({
       houseNo: z.string().optional(),
       street: z.string().optional(),
-      barangay: z.string().min(1, "Current barangay is required."),
+      region: z.string({ message: "Please select a valid region." }).min(1, "Current region is required."),
+      province: z.string({ message: "Please select a valid province." }).min(1, "Current province is required."),
       cityMunicipality: z
-        .string()
+        .string({ message: "Please select a valid city/municipality." })
         .min(1, "Current city/municipality is required."),
-      province: z.string().min(1, "Current province is required."),
+      barangay: z.string({ message: "Please select a valid barangay." }).min(1, "Current barangay is required."),
       country: z.string().default("Philippines"),
       zipCode: z.string().optional(),
     }),
@@ -140,9 +142,10 @@ export const EnrollmentFormSchema = z
       .object({
         houseNo: z.string().optional(),
         street: z.string().optional(),
-        barangay: z.string().optional(),
-        cityMunicipality: z.string().optional(),
+        region: z.string().optional(),
         province: z.string().optional(),
+        cityMunicipality: z.string().optional(),
+        barangay: z.string().optional(),
         country: z.string().default("Philippines"),
         zipCode: z.string().optional(),
       })
@@ -156,7 +159,6 @@ export const EnrollmentFormSchema = z
       firstName: z.string().min(1, "Mother's first name is required."),
       middleName: z.string().optional().nullable(),
       contactNumber: optionalSecondaryContactText,
-      email: optionalSecondaryEmail,
       maidenName: z.string().optional().nullable(),
     }),
     father: z.object({
@@ -164,7 +166,6 @@ export const EnrollmentFormSchema = z
       firstName: z.string().min(1, "Father's first name is required."),
       middleName: z.string().optional().nullable(),
       contactNumber: optionalSecondaryContactText,
-      email: optionalSecondaryEmail,
     }),
     guardian: z
       .object({
@@ -172,23 +173,15 @@ export const EnrollmentFormSchema = z
         firstName: z.string().optional().nullable(),
         middleName: z.string().optional().nullable(),
         contactNumber: optionalSecondaryContactText,
-        email: optionalSecondaryEmail,
         relationship: z.string().optional().nullable(),
       })
       .optional()
       .nullable(),
-    primaryContact: z.enum(["MOTHER", "FATHER", "GUARDIAN"]),
+    primaryContact: z.enum(["MOTHER", "FATHER", "GUARDIAN"], { message: "Please select a valid primary contact." }),
     contactNumber: z
       .string()
       .regex(/^09\d{2}-\d{3}-\d{4}$/, "Please use the format 09XX-XXX-XXXX."),
-    isContactInfoConfirmed: z.boolean().refine((val) => val === true, {
-      message: "Confirmation of contact information accuracy is required.",
-    }),
     guardianRelationship: z.string().optional().nullable(),
-    email: z
-      .string()
-      .email("Please provide a valid email address.")
-      .min(1, "Email address is required for communication."),
 
     // Section 7: Previous School Information
     lastSchoolName: z
@@ -196,31 +189,25 @@ export const EnrollmentFormSchema = z
       .min(1, "Name of the last school attended is required."),
     lastSchoolId: z.string().optional(),
     lastGradeCompleted: z
-      .string()
+      .string({ message: "Please select a valid grade level." })
       .min(1, "Last grade level completed is required."),
     schoolYearLastAttended: z
-      .string()
+      .string({ message: "Please provide a valid school year." })
       .min(1, "School year of last attendance is required."),
     lastSchoolAddress: z.string().optional(),
-    lastSchoolType: z.enum(["Public", "Private", "International", "ALS"]),
-    generalAverage: requiredSf9GeneralAverage,
-    natScore: z.number().optional().nullable(),
-
-    // Section 7.1: DepEd Compliance (Temporary Enrollment)
-    isMissingSf9: z.boolean().default(false),
-    hasSf9CertificationLetter: z.boolean().default(false),
-    hasUnsettledPrivateAccount: z.boolean().default(false),
-    originatingSchoolName: z.string().optional().nullable(),
-    hasExecutedAffidavit: z.boolean().default(false),
-    temporaryStatusDeadline: z.date().optional().nullable(),
+    lastSchoolType: z.enum(["Public", "Private", "International", "ALS"], { message: "Please select a valid school type." }),
+    generalAverage: optionalSf9GeneralAverage,
+    hasSf9Deficiency: z.boolean().default(false),
+    natScore: z.number({ message: "Please enter a valid numeric NAT score." }).optional().nullable(),
 
     // Section 8: SCP Specifics
     artField: z.string().optional(),
     sportsList: z.array(z.string()).default([]),
     foreignLanguage: z.string().optional(),
+    hasScpFallbackConsent: z.boolean().default(false),
 
     // Section 9.2: Learner Type
-    learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"]),
+    learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"], { message: "Please select a valid learner type." }),
     learningModalities: z.array(z.string()).default([]),
 
     // Section 10: Certification
@@ -228,12 +215,24 @@ export const EnrollmentFormSchema = z
       message:
         "Verification and certification of the provided information is required.",
     }),
-    parentGuardianSignature: z
-      .string()
-      .min(1, "Full legal name of the signatory is required."),
-    dateAccomplished: z.date().default(new Date()),
   })
   .superRefine((data, ctx) => {
+    if (!data.hasSf9Deficiency && (data.generalAverage === undefined || data.generalAverage === null)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Final General Average (SF9) is required unless a temporary enrollment (D.O. 017) is declared.",
+        path: ["generalAverage"],
+      });
+    }
+
+    if (data.hasSf9Deficiency && data.generalAverage !== undefined && data.generalAverage !== null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "General Average must be empty if you are temporarily enrolling without an SF9.",
+        path: ["generalAverage"],
+      });
+    }
+
     const lrnValue = data.lrn?.trim() ?? "";
     const canDeclareNoLrn =
       data.learnerType === "TRANSFEREE" ||
@@ -283,6 +282,15 @@ export const EnrollmentFormSchema = z
           message:
             "A Special Curricular Program (SCP) track selection is required.",
           path: ["scpType"],
+        });
+      }
+
+      if (!data.hasScpFallbackConsent) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "You must acknowledge the SCP assessment and placement terms.",
+          path: ["hasScpFallbackConsent"],
         });
       }
 
@@ -381,14 +389,6 @@ export const EnrollmentFormSchema = z
       });
     }
 
-    if (data.hasUnsettledPrivateAccount && !data.hasExecutedAffidavit) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Confirmation of the physically executed Affidavit of Undertaking is required.",
-        path: ["hasExecutedAffidavit"],
-      });
-    }
   });
 
 export type EnrollmentFormData = z.infer<typeof EnrollmentFormSchema>;

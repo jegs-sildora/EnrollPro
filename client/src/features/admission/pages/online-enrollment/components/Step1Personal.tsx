@@ -49,6 +49,21 @@ export default function Step1Personal() {
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
   const hasNoLrn = watch("hasNoLrn");
+  const intakeHeightCm = watch("intakeHeightCm");
+  const intakeWeightKg = watch("intakeWeightKg");
+
+  let calculatedBmi = "";
+  if (intakeHeightCm && intakeWeightKg) {
+    const bmiValue = intakeWeightKg / Math.pow(intakeHeightCm / 100, 2);
+    let category = "";
+    if (bmiValue < 18.5) category = "Underweight";
+    else if (bmiValue < 25) category = "Normal";
+    else if (bmiValue < 30) category = "Overweight";
+    else category = "Obese";
+    
+    calculatedBmi = `${bmiValue.toFixed(2)} (${category})`;
+  }
+
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
     (learnerType === "NEW_ENROLLEE" && gradeLevel === "7");
@@ -65,13 +80,10 @@ export default function Step1Personal() {
     }
     return new Date();
   });
+  const [hasNoMiddleName, setHasNoMiddleName] = useState(false);
 
   const clearLinkedEarlyRegistration = useCallback(() => {
     setValue("earlyRegistrationId", undefined, {
-      shouldDirty: true,
-      shouldValidate: false,
-    });
-    setValue("isContactInfoConfirmed", false, {
       shouldDirty: true,
       shouldValidate: false,
     });
@@ -232,7 +244,7 @@ export default function Step1Personal() {
         </p>
 
         {canDeclareNoLrn && (
-          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-white p-3">
+          <div className="flex items-center gap-2 mt-2">
             <Checkbox
               id="hasNoLrn"
               checked={hasNoLrn}
@@ -253,8 +265,8 @@ export default function Step1Personal() {
             />
             <Label
               htmlFor="hasNoLrn"
-              className="text-xs font-bold leading-relaxed cursor-pointer">
-              I confirm the learner currently has no LRN.
+              className="text-xs font-bold cursor-pointer">
+              Learner has no LRN yet.
             </Label>
           </div>
         )}
@@ -310,7 +322,7 @@ export default function Step1Personal() {
         </div>
 
         {/* NAME FIELDS COLUMN */}
-        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label
               htmlFor="lastName"
@@ -369,9 +381,26 @@ export default function Step1Personal() {
               id="middleName"
               {...register("middleName")}
               autoComplete="off"
-              placeholder="Write N/A if none"
-              className="h-11 uppercase font-bold"
+              disabled={hasNoMiddleName}
+              placeholder="e.g. BAUTISTA"
+              className={cn("h-11 uppercase font-bold", hasNoMiddleName && "bg-muted cursor-not-allowed opacity-50")}
             />
+            <div className="flex items-center gap-2 mt-1">
+              <Checkbox
+                id="noMiddleName"
+                checked={hasNoMiddleName}
+                onCheckedChange={(checked) => {
+                  const isChecked = checked === true;
+                  setHasNoMiddleName(isChecked);
+                  if (isChecked) {
+                    setValue("middleName", "");
+                  }
+                }}
+              />
+              <Label htmlFor="noMiddleName" className="text-xs cursor-pointer">
+                No Middle Name.
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -381,13 +410,14 @@ export default function Step1Personal() {
               Suffix (Extension)
             </Label>
             <Select
-              onValueChange={(val) => setValue("extensionName", val)}
-              value={watch("extensionName") || "N/A"}>
+              onValueChange={(val) => setValue("extensionName", val === "NONE" ? "" : val)}
+              value={watch("extensionName") || "NONE"}>
               <SelectTrigger className="h-11 font-bold">
                 <SelectValue placeholder="Select Suffix" />
               </SelectTrigger>
               <SelectContent>
-                {["N/A", "Jr.", "Sr.", "II", "III", "IV", "V"].map((opt) => (
+                <SelectItem value="NONE">None</SelectItem>
+                {["Jr.", "Sr.", "II", "III", "IV", "V"].map((opt) => (
                   <SelectItem
                     key={opt}
                     value={opt}>
@@ -468,6 +498,8 @@ export default function Step1Personal() {
                       disabled={(date) =>
                         date > new Date() || date < new Date(1950, 0, 1)
                       }
+                      startMonth={new Date(1900, 0, 1)}
+                      endMonth={new Date(2100, 11, 31)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -492,8 +524,8 @@ export default function Step1Personal() {
             id="age"
             {...register("age", { valueAsNumber: true })}
             autoComplete="off"
-            readOnly
-            className="h-11 font-bold cursor-not-allowed "
+            disabled
+            className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
           />
         </div>
 
@@ -579,7 +611,7 @@ export default function Step1Personal() {
             id="motherTongue"
             {...register("motherTongue")}
             autoComplete="off"
-            placeholder="e.g. Tagalog, Bisaya, Ilocano"
+            placeholder="e.g. Hiligaynon, Cebuano, Tagalog"
             className="h-11 font-bold uppercase"
           />
         </div>
@@ -597,7 +629,7 @@ export default function Step1Personal() {
               id="religion"
               {...register("religion")}
               autoComplete="off"
-              placeholder="e.g. Roman Catholic"
+              placeholder="e.g. Roman Catholic, Iglesia ni Cristo, Islam"
               className="h-11 font-bold uppercase"
             />
           </div>
@@ -622,6 +654,72 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="PSA BC Number"
               className="h-11 font-bold uppercase"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Vital Statistics ─── */}
+      <div className="pt-6 border-t border-border/40">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="intakeHeightCm"
+              className="text-sm font-bold">
+              Height (in cm) <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="intakeHeightCm"
+              type="number"
+              {...register("intakeHeightCm", { valueAsNumber: true })}
+              autoComplete="off"
+              placeholder="e.g. 150"
+              className={cn(
+                "h-11 font-bold",
+                errors.intakeHeightCm && "border-destructive",
+              )}
+            />
+            {errors.intakeHeightCm && (
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.intakeHeightCm.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="intakeWeightKg"
+              className="text-sm font-bold">
+              Weight (in kg) <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="intakeWeightKg"
+              type="number"
+              {...register("intakeWeightKg", { valueAsNumber: true })}
+              autoComplete="off"
+              placeholder="e.g. 45"
+              className={cn(
+                "h-11 font-bold",
+                errors.intakeWeightKg && "border-destructive",
+              )}
+            />
+            {errors.intakeWeightKg && (
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.intakeWeightKg.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm font-bold">
+              Body Mass Index (BMI)
+            </Label>
+            <Input
+              value={calculatedBmi}
+              readOnly
+              disabled
+              placeholder="Auto-calculated"
+              className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
             />
           </div>
         </div>

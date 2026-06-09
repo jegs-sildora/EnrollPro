@@ -356,7 +356,7 @@ export function getApplicationStatusColorClasses(
   }
 
   // 3. Warning State (High-Visibility Amber)
-  if (s === "TEMPORARILY_ENROLLED" || s === "PENDING_CONFIRMATION") {
+  if (s === "TEMPORARILY_ENROLLED" || s === "PENDING_VERIFICATION") {
     return "bg-amber-100 text-amber-800 border-amber-400 font-bold";
   }
 

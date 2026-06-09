@@ -11,3 +11,6 @@ allowBuilds:
   msw: true
   prisma: true
   sharp: true
+
+overrides:
+  vite: "^8.0.0"

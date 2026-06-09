@@ -42,6 +42,7 @@ export interface DataTableProps<TData, TValue> {
   getRowClassName?: (row: TData) => string;
   renderRowAfter?: (row: TData, index: number) => ReactNode;
   dense?: boolean;
+  isRowClickable?: (row: TData) => boolean;
 }
 
 const MotionTableBody = motion.create(TableBody);
@@ -54,6 +55,7 @@ interface TableRowComponentProps<TData> {
   className?: string;
   getRowClassName?: (row: TData) => string;
   dense?: boolean;
+  isRowClickable?: (row: TData) => boolean;
 }
 
 function TableRowComponentInner<TData>(
@@ -65,10 +67,12 @@ function TableRowComponentInner<TData>(
     className,
     getRowClassName,
     dense,
+    isRowClickable,
   }: TableRowComponentProps<TData>,
   ref: React.ForwardedRef<HTMLTableRowElement>,
 ) {
   const customClassName = getRowClassName ? getRowClassName(row.original) : "";
+  const isClickable = isRowClickable ? isRowClickable(row.original) : !!onRowClick;
 
   return (
     <TableRow
@@ -76,10 +80,14 @@ function TableRowComponentInner<TData>(
       data-index={dataIndex}
       style={style}
       data-state={row.getIsSelected() && "selected"}
-      onClick={() => onRowClick?.(row.original)}
+      onClick={() => {
+        if (isClickable && onRowClick) {
+          onRowClick(row.original);
+        }
+      }}
       className={cn(
-        "text-center text-xs hover:bg-muted/50 transition-colors",
-        onRowClick ? "cursor-pointer" : "",
+        "text-center text-xs transition-colors",
+        isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
         row.getIsSelected() ? "bg-muted/80" : "",
         customClassName,
         className,
@@ -124,6 +132,7 @@ export function DataTable<TData, TValue>({
   getRowClassName,
   renderRowAfter,
   dense = false,
+  isRowClickable,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -165,7 +174,7 @@ export function DataTable<TData, TValue>({
       <div
         ref={containerRef}
         className="overflow-auto relative flex-1 min-h-0 w-full"
-        style={virtualize && containerHeight !== "100%" ? { maxHeight: containerHeight } : undefined}>
+        style={containerHeight !== "100%" ? { maxHeight: containerHeight } : undefined}>
         <Table className={cn("w-full", tableClassName)}>
           <TableHeader className="bg-[hsl(var(--primary))] border-none">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -188,9 +197,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   );
                 })}
@@ -212,19 +221,24 @@ export function DataTable<TData, TValue>({
                     {columns.map((column, index) => {
                       const meta = column.meta as
                         | {
-                            skeletonClassName?: string;
-                          }
+                          skeletonClassName?: string;
+                          customSkeleton?: React.ReactNode;
+                        }
                         | undefined;
                       return (
                         <TableCell
                           key={index}
                           className={dense ? "py-1.5 px-2" : "p-4"}>
-                          <Skeleton
-                            className={cn(
-                              "h-5 w-full",
-                              meta?.skeletonClassName,
-                            )}
-                          />
+                          {meta?.customSkeleton ? (
+                            meta.customSkeleton
+                          ) : (
+                            <Skeleton
+                              className={cn(
+                                "h-5 w-full",
+                                meta?.skeletonClassName,
+                              )}
+                            />
+                          )}
                         </TableCell>
                       );
                     })}
@@ -241,53 +255,55 @@ export function DataTable<TData, TValue>({
                 {prependBodyRow}
                 {virtualize
                   ? [
-                      virtualItems.length > 0 && (
-                        <TableRow
-                          key="virtual-padding-top"
-                          style={{ height: `${virtualItems[0].start}px` }}
-                          className="hover:bg-transparent border-none">
-                          <TableCell
-                            colSpan={columns.length}
-                            className="p-0"
-                          />
-                        </TableRow>
-                      ),
-                      ...virtualItems.map((virtualRow) => (
-                        <TableRowComponent
-                          key={rows[virtualRow.index].id}
-                          ref={rowVirtualizer.measureElement}
-                          data-index={virtualRow.index}
-                          row={rows[virtualRow.index]}
-                          onRowClick={onRowClick}
-                          getRowClassName={getRowClassName}
-                          dense={dense}
+                    virtualItems.length > 0 && (
+                      <TableRow
+                        key="virtual-padding-top"
+                        style={{ height: `${virtualItems[0].start}px` }}
+                        className="hover:bg-transparent border-none">
+                        <TableCell
+                          colSpan={columns.length}
+                          className="p-0"
                         />
-                      )),
-                      virtualItems.length > 0 && (
-                        <TableRow
-                          key="virtual-padding-bottom"
-                          style={{
-                            height: `${rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end}px`,
-                          }}
-                          className="hover:bg-transparent border-none">
-                          <TableCell
-                            colSpan={columns.length}
-                            className="p-0"
-                          />
-                        </TableRow>
-                      ),
-                    ]
+                      </TableRow>
+                    ),
+                    ...virtualItems.map((virtualRow) => (
+                      <TableRowComponent
+                        key={rows[virtualRow.index].id}
+                        ref={rowVirtualizer.measureElement}
+                        data-index={virtualRow.index}
+                        row={rows[virtualRow.index]}
+                        onRowClick={onRowClick}
+                        getRowClassName={getRowClassName}
+                        dense={dense}
+                        isRowClickable={isRowClickable}
+                      />
+                    )),
+                    virtualItems.length > 0 && (
+                      <TableRow
+                        key="virtual-padding-bottom"
+                        style={{
+                          height: `${rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end}px`,
+                        }}
+                        className="hover:bg-transparent border-none">
+                        <TableCell
+                          colSpan={columns.length}
+                          className="p-0"
+                        />
+                      </TableRow>
+                    ),
+                  ]
                   : rows.map((row) => (
-                      <React.Fragment key={row.id}>
-                        <TableRowComponent
-                          row={row}
-                          onRowClick={onRowClick}
-                          getRowClassName={getRowClassName}
-                          dense={dense}
-                        />
-                        {renderRowAfter?.(row.original, row.index)}
-                      </React.Fragment>
-                    ))}
+                    <React.Fragment key={row.id}>
+                      <TableRowComponent
+                        row={row}
+                        onRowClick={onRowClick}
+                        getRowClassName={getRowClassName}
+                        dense={dense}
+                        isRowClickable={isRowClickable}
+                      />
+                      {renderRowAfter?.(row.original, row.index)}
+                    </React.Fragment>
+                  ))}
               </MotionTableBody>
             ) : prependBodyRow ? (
               <MotionTableBody
