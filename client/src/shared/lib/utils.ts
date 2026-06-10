@@ -516,7 +516,9 @@ export function formatEosyStatus(status: string | null | undefined): string {
     case "RETAINED":
       return "Retained";
     case "IRREGULAR":
-      return "Cond. Promoted";
+      return "Conditionally Promoted";
+    case "CONDITIONALLY_PROMOTED":
+      return "Conditionally Promoted";
     case "TRANSFERRED_OUT":
       return "Transferred Out";
     case "DROPPED_OUT":

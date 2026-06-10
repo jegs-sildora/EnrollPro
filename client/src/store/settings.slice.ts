@@ -44,6 +44,7 @@ export interface SettingsState {
     | "CLOSED"
     | "OVERRIDE"
     | "BOSY_LOCKED";
+  systemPhase: "PRE_REGISTRATION" | "OFFICIAL_ENROLLMENT" | "CLASSES_ONGOING" | "EOSY_CLOSING" | null;
   systemStatus:
     | "DRAFT"
     | "UPCOMING"
@@ -105,6 +106,7 @@ export const useSettingsStore = create<SettingsState>()(
       spsEnabled: false,
       isBosyEnrollmentOpen: false,
       enrollmentPhase: "CLOSED",
+      systemPhase: null,
       systemStatus: "DRAFT",
       bosyLockedAt: null,
       viewingSchoolYearId: null,

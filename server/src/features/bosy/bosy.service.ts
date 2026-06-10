@@ -244,10 +244,11 @@ export async function getBOSYQueue(params: {
   gradeLevelId?: number;
   status?: string;
   search?: string;
+  previousSectionName?: string;
   page: number;
   limit: number;
 }): Promise<BOSYQueuePage> {
-  const { schoolYearId, gradeLevelId, status, search, page, limit } = params;
+  const { schoolYearId, gradeLevelId, status, search, previousSectionName, page, limit } = params;
   const skip = (page - 1) * limit;
 
   const where: any = {
@@ -287,6 +288,22 @@ export async function getBOSYQueue(params: {
               ]
             }))
           }
+        }
+      : {}),
+    ...(previousSectionName
+      ? {
+          learner: {
+            enrollmentRecords: {
+              some: {
+                schoolYear: {
+                  status: "ARCHIVED",
+                },
+                section: {
+                  name: previousSectionName,
+                },
+              },
+            },
+          },
         }
       : {}),
   };
@@ -395,6 +412,23 @@ export async function getBOSYQueue(params: {
   });
 
   return { items, total, page, limit };
+}
+
+export async function getPreviousSections(schoolYearId: number): Promise<string[]> {
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { clonedFromId: true },
+  });
+
+  if (!schoolYear?.clonedFromId) return [];
+
+  const sections = await prisma.section.findMany({
+    where: { schoolYearId: schoolYear.clonedFromId },
+    select: { name: true },
+    orderBy: { name: "asc" },
+  });
+
+  return sections.map((s) => s.name);
 }
 
 export async function syncBOSYQueue(
@@ -571,12 +605,15 @@ export async function confirmReturn(
     );
   }
 
+  const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
       status: "VERIFIED",
       confirmationConsent: true,
       encodedById: actingUserId,
+      isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
     },
     select: { id: true, status: true },
   });
@@ -625,6 +662,8 @@ export async function bulkConfirmReturn(
     confirmed.push(id);
   }
 
+  const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+
   if (confirmed.length > 0) {
     await prisma.enrollmentApplication.updateMany({
       where: { id: { in: confirmed } },
@@ -632,6 +671,7 @@ export async function bulkConfirmReturn(
         status: "VERIFIED",
         confirmationConsent: true,
         encodedById: actingUserId,
+        isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
       },
     });
   }

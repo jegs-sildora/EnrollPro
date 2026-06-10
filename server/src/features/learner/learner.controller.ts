@@ -23,6 +23,8 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
           take: 2, // Fetch two to handle source vs target year
           include: {
             gradeLevel: true,
+            familyMembers: true,
+            previousSchool: true,
             enrollmentRecord: {
               include: {
                 section: true,
@@ -69,11 +71,15 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       firstName: learner.firstName,
       lastName: learner.lastName,
       middleName: learner.middleName,
+      birthdate: learner.birthdate,
+      sex: learner.sex,
       gradeLevelToEnroll,
       previousSection: officialRecord?.enrollmentRecord?.section?.name ?? null,
       previousGenAve: learner.previousGenAve,
       promotionStatus: learner.promotionStatus,
       studentPhoto: learner.studentPhoto,
+      familyMembers: latestApp?.familyMembers ?? [],
+      previousSchool: latestApp?.previousSchool ?? null,
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);

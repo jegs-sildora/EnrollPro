@@ -8,7 +8,7 @@ import {
   getJHSCompleters,
   syncBOSYQueue,
   getPhase2Queue,
-  
+  getPreviousSections,
 } from "./bosy.service.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
@@ -100,6 +100,10 @@ export async function getBosyQueue(
       typeof req.query.search === "string" && req.query.search.length > 0
         ? req.query.search
         : undefined;
+    const previousSectionName =
+      typeof req.query.previousSectionName === "string" && req.query.previousSectionName.length > 0
+        ? req.query.previousSectionName
+        : undefined;
     const page = parsePositiveInt(req.query.page, 1);
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
 
@@ -108,6 +112,7 @@ export async function getBosyQueue(
       gradeLevelId,
       status,
       search,
+      previousSectionName,
       page,
       limit,
     });
@@ -244,7 +249,6 @@ export async function getPhase2QueueHandler(
       : typeof rawStatus === "string"
         ? rawStatus.split(",").map((s) => s.trim()).filter(Boolean)
         : [];
-
     const rawChannel = req.query.admissionChannel;
     const admissionChannel =
       rawChannel === "ONLINE" || rawChannel === "F2F" ? rawChannel : undefined;
@@ -263,3 +267,22 @@ export async function getPhase2QueueHandler(
   }
 }
 
+
+
+export async function getPreviousSectionsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
+    if (!schoolYearId) {
+      res.status(400).json({ message: "schoolYearId query param is required." });
+      return;
+    }
+    const sections = await getPreviousSections(schoolYearId);
+    res.json(sections);
+  } catch (error) {
+    next(error);
+  }
+}

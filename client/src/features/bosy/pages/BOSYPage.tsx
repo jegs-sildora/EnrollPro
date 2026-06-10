@@ -6,13 +6,11 @@ import {
   AlertCircle,
   CheckCircle2,
   LogOut,
-  UserPlus,
   RotateCcw,
   Trash2,
 } from "lucide-react";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useNavigate } from "react-router";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 
@@ -23,6 +21,7 @@ import {
   bulkConfirm,
   apiRevertToPendingBeef,
   apiFlushNoShows,
+  getPreviousSections,
 } from "../api/bosy.api";
 import type { BOSYReadiness, BOSYQueueItem } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -30,7 +29,13 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-// Select import removed
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -48,6 +53,7 @@ import { QueueTable } from "../components/QueueTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import {
   getReducedMotionProps,
   listVariants,
@@ -114,7 +120,6 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
-  const navigate = useNavigate();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
@@ -139,6 +144,8 @@ export default function BOSYPage() {
     isSearching,
   } = useDebouncedSearch();
 
+  const [previousSectionName, setPreviousSectionName] = useState<string>("ALL");
+  const [previousSections, setPreviousSections] = useState<string[]>([]);
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [queuePage, setQueuePage] = useState(1);
@@ -170,8 +177,10 @@ export default function BOSYPage() {
     if (!syId) return;
     setReadinessLoading(true);
     try {
-      const data = await getBOSYReadiness(syId);
-      setReadiness(data);
+      await Promise.all([
+        getBOSYReadiness(syId).then(setReadiness),
+        getPreviousSections(syId).then(setPreviousSections),
+      ]);
     } catch (e) {
       toastApiError(e as never);
     } finally {
@@ -189,6 +198,7 @@ export default function BOSYPage() {
         schoolYearId: syId,
         status: statusFilter,
         search: activeQueueSearch || undefined,
+        previousSectionName: previousSectionName !== "ALL" ? previousSectionName : undefined,
         page: queuePage,
         limit: queueLimit,
       });
@@ -199,7 +209,7 @@ export default function BOSYPage() {
     } finally {
       setQueueLoading(false);
     }
-  }, [syId, activeQueueSearch, queuePage, queueLimit, statusFilter]);
+  }, [syId, queuePage, queueLimit, statusFilter, activeQueueSearch, previousSectionName]);
 
   useEffect(() => {
     void fetchReadiness();
@@ -386,6 +396,7 @@ export default function BOSYPage() {
       variants={listVariants}
       transition={staggerTransition}
       {...motionState}>
+      <PhaseBanner />
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
           initial={{ opacity: 0, x: -10 }}
@@ -411,7 +422,7 @@ export default function BOSYPage() {
         <div>
           <h1 className="text-3xl font-bold">BOSY Confirmation</h1>
           <p className="text-sm font-bold">
-            Review and verify incoming and returning learners.
+            Fast-track enrollment confirmation for continuing Grade 8-10 learners.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
@@ -434,14 +445,7 @@ export default function BOSYPage() {
             />
             {isUserInteracting ? "Paused" : "Live Sync"}
           </div>
-          <Button
-            variant="outline"
-            className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
-            onClick={() => navigate("/monitoring/enrollment/walk-in")}
-            disabled={!canMutate}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            + Encode Paper Form
-          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -532,7 +536,33 @@ export default function BOSYPage() {
                 }}
               />
             </div>
-            {/* Select/Filter removed to rely entirely on card click toggles */}
+            {canMutate && statusFilter === "PENDING_VERIFICATION" && selectedIds.length > 0 ? (
+              <BulkConfirmBar
+                selectedCount={selectedIds.length}
+                loading={bulkLoading}
+                onConfirm={() => void handleBulkConfirm()}
+                onClear={() => setRowSelection({})}
+              />
+            ) : (
+              <Select
+                value={previousSectionName}
+                onValueChange={(val) => {
+                  setPreviousSectionName(val);
+                  startTransition(() => setQueuePage(1));
+                }}>
+                <SelectTrigger className="w-full md:w-[260px] h-11 bg-muted/30 border-2 border-transparent hover:border-primary/20 transition-all text-sm font-bold">
+                  <SelectValue placeholder="Filter by Previous Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Previous Sections</SelectItem>
+                  {previousSections.map((sec) => (
+                    <SelectItem key={sec} value={sec}>
+                      {sec}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0 flex flex-col min-h-0">
@@ -566,14 +596,6 @@ export default function BOSYPage() {
           />
         </CardContent>
       </Card>
-      {canMutate && statusFilter === "PENDING_VERIFICATION" && (
-        <BulkConfirmBar
-          selectedCount={selectedIds.length}
-          loading={bulkLoading}
-          onConfirm={() => void handleBulkConfirm()}
-          onClear={() => setRowSelection({})}
-        />
-      )}
 
       {/* Confirm Single Return Dialog */}
       <Dialog

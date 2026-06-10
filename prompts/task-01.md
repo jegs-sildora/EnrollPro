@@ -1,33 +1,28 @@
 Act as a Senior UI/UX Engineer.
 
-MISSION: Transform LRN Collision Error into an Interactive Recovery Module
-The current LRN validation throws a static red error banner that creates a UX dead-end for users trying to correct previous submissions. You must intercept this collision early and provide an actionable pathway to securely fetch and update their existing data, or bypass it as a flagged new submission.
+MISSION: Optimize Direct Encode Drawer for High-Speed Data Entry and Prevent Data Loss
+The Walk-In Direct Encode slide-over utilizes standard component behaviors that introduce friction and data-loss risks during rapid administrative encoding. You must lock the panel state, remove collapsible friction, and implement keyboard-first auto-fetching.
 
-Execute the following layout and logic mandates exactly:
+Execute the following layout and interaction mandates exactly:
 
-TASK 1: The onBlur LRN Check
+TASK 1: Prevent Accidental Data Loss (State Lock)
 
-Trigger a lightweight backend query when the user clicks out of the LRN input field (onBlur) to check if a pending application already exists for that 12-digit number.
+Disable the closeOnOverlayClick and closeOnEsc properties of the drawer component.
 
-If a collision is detected, remove the red error banner.
+If the user clicks the explicit [ CANCEL ] button or the [ X ] close icon, evaluate the form state. If the form is "dirty" (fields have been altered), trigger a browser confirmation alert: "Are you sure you want to discard this encoding session? Unsaved data will be lost."
 
-TASK 2: Render the Actionable Recovery Block
+TASK 2: Eliminate Accordion Friction
 
-If a collision is found, dynamically render a prominent Info Block (use a primary blue or neutral gray tint, NOT an error red) directly below the LRN input.
+If the section headers (1. LEARNER PROFILE, 2. PREVIOUS SCHOOL DATA, etc.) are functioning as collapsible accordions, force their default state to fully expanded.
 
-Header Text: "An active application was found for this LRN."
+Alternatively, remove the toggle functionality entirely so they function strictly as visual dividers.
 
-TASK 3: Implement Recovery Actions
-Inside this Info Block, provide two distinct user paths:
+TASK 3: Implement Keyboard-First LRN Fetching
 
-Path A (The Update Flow): * Display a text input: "To update your information, enter your original Tracking Number."
+Remove the requirement to manually click the magnifying glass icon to search the LRN.
 
-Provide a "Fetch Data" button next to it.
+Attach the fetch function to the onBlur event of the LRN input, or auto-trigger it when exactly 12 numeric characters are detected. This allows the registrar to seamlessly Tab to the next field while the system pre-fills the rest of the form in the background.
 
-Logic: If the tracking number matches, populate all form fields below with their existing database payload so the user only has to edit the specific fields they want to change.
+TASK 4: Enforce Tab-Indexing
 
-Path B (The Bypass Flow):
-
-Display a subtle text link or secondary button below Path A: "Lost your tracking number? Proceed with a new submission."
-
-Logic: Clicking this dismisses the Info Block, allowing the user to fill out a blank form normally (which the backend will later flag as a duplicate).
+Ensure strict sequential tabIndex ordering from top to bottom so the registrar can encode the entire physical form using only the keyboard, ending on the Enter key to trigger the Save action.

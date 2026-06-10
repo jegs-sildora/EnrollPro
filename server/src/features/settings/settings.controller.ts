@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { Prisma } from "../../generated/prisma/index.js";
+import { Prisma, SystemAcademicPhase } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   extractPalette,
@@ -87,6 +87,7 @@ export async function getPublicSettings(
       spsEnabled: settings.spsEnabled,
       enrollmentPhase,
       isBosyEnrollmentOpen,
+      systemPhase: settings.systemPhase,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);
@@ -130,6 +131,41 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
   });
 
   res.json(updated);
+}
+
+export async function updateSystemPhase(req: Request, res: Response): Promise<void> {
+  const { phase } = req.body;
+  if (!["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING", "EOSY_CLOSING"].includes(phase)) {
+    res.status(400).json({ message: "Invalid system phase" });
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.schoolSetting.updateMany({
+      data: { systemPhase: phase as SystemAcademicPhase },
+    });
+
+    if (phase === "EOSY_CLOSING") {
+      await tx.enrollmentApplication.updateMany({
+        where: { status: "PENDING_VERIFICATION" },
+        data: { status: "ARCHIVED_NO_SHOW" },
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        actionType: "PHASE_SHIFT",
+        description: `Admin updated system academic phase to ${phase}`,
+        ipAddress: req.ip || "0.0.0.0",
+        userAgent: req.headers["user-agent"] || "unknown",
+      },
+    });
+  });
+
+  const updated = await prisma.schoolSetting.findFirst();
+
+  res.json({ message: "System phase updated", updated });
 }
 
 export async function uploadLogo(req: Request, res: Response): Promise<void> {

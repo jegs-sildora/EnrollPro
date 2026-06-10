@@ -79,7 +79,10 @@ export async function getSectioningPool(req: Request, res: Response) {
     const where: any = {
       schoolYearId,
       status: "VERIFIED",
-      applicantType: "REGULAR", // SCP Guard: exclude STE, SPAS, SPS, SPIJ, SPFL, SPTVE
+      OR: [
+        { assignedProgram: "REGULAR" },
+        { assignedProgram: null, applicantType: "REGULAR" },
+      ], // SCP Guard: exclude STE, SPAS, SPS, SPIJ, SPFL, SPTVE
       enrollmentRecord: null, // Critical: Only students not yet assigned
     };
 
@@ -88,8 +91,27 @@ export async function getSectioningPool(req: Request, res: Response) {
     const applications = await prisma.enrollmentApplication.findMany({
       where,
       include: {
-        learner: { select: { lrn: true, firstName: true, lastName: true, middleName: true, sex: true, previousGenAve: true } },
+        learner: {
+          select: {
+            lrn: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            sex: true,
+            previousGenAve: true,
+            enrollmentRecords: {
+              where: {
+                schoolYearId: { not: schoolYearId },
+                finalAverage: { not: null },
+              },
+              orderBy: { schoolYearId: "desc" },
+              take: 1,
+              select: { finalAverage: true },
+            },
+          },
+        },
         gradeLevel: { select: { name: true, displayOrder: true } },
+        previousSchool: { select: { generalAverage: true } },
       },
       orderBy: { learner: { lastName: "asc" } },
     });
@@ -101,7 +123,11 @@ export async function getSectioningPool(req: Request, res: Response) {
       lastName: app.learner.lastName,
       middleName: app.learner.middleName,
       sex: app.learner.sex,
-      genAve: app.learner.previousGenAve,
+      genAve:
+        app.learner.enrollmentRecords?.[0]?.finalAverage ??
+        app.previousSchool?.generalAverage ??
+        app.learner.previousGenAve ??
+        null,
       gradeLevel: app.gradeLevel.name,
       gradeLevelId: app.gradeLevelId,
       duplicateFlag: app.duplicateFlag,
@@ -132,14 +158,17 @@ export async function assignBulk(req: Request, res: Response) {
     const userId = req.user!.userId; // Authenticated user (Registrar)
     const schoolYearId = req.schoolYearId;
 
-    // 1. Fetch Section Details
-    const section = await prisma.section.findUnique({
-      where: { id: sectionId },
-      include: { 
-        enrollmentRecords: { select: { id: true } },
-        gradeLevel: { select: { displayOrder: true } }
-      },
-    });
+    // 1. Fetch Section Details and System Setting
+    const [section, setting] = await Promise.all([
+      prisma.section.findUnique({
+        where: { id: sectionId },
+        include: { 
+          enrollmentRecords: { select: { id: true } },
+          gradeLevel: { select: { displayOrder: true } }
+        },
+      }),
+      prisma.schoolSetting.findFirst({ select: { systemPhase: true } })
+    ]);
 
     if (!section) return res.status(404).json({ message: "Section not found." });
 
@@ -201,13 +230,14 @@ export async function assignBulk(req: Request, res: Response) {
             schoolYearId: app.schoolYearId,
             enrolledById: userId,
             dateSectioned: new Date(),
+            isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
           }
         });
 
         // Finalize Application Status
         await tx.enrollmentApplication.update({
           where: { id: app.id },
-          data: { status: "ENROLLED" }
+          data: { status: app.isTemporarilyEnrolled ? "TEMPORARILY_ENROLLED" : "OFFICIALLY_ENROLLED" }
         });
 
         records.push(record);

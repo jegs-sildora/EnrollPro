@@ -110,6 +110,8 @@ export async function commitBatchSectioning(req: Request, res: Response) {
           where: { enrollmentApplicationId: { in: appIds } },
         });
 
+        const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
+
         const recordsToCreate = (
           assignments as Array<{ applicationId: number; sectionId: number }>
         ).map((assignment) => {
@@ -127,6 +129,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
             learnerId,
             dateSectioned: new Date(),
             sectioningMethod: SectioningMethod.BATCH_ALGORITHM,
+            isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
           };
         });
 
@@ -859,6 +862,7 @@ export async function getUnsectionedPool(
           },
         },
       },
+      previousSchool: { select: { generalAverage: true } },
     },
     orderBy: [
       { learner: { lastName: "asc" } },
@@ -878,6 +882,7 @@ export async function getUnsectionedPool(
       applicantType: app.applicantType,
       promotionGenAve:
         app.learner.enrollmentRecords[0]?.finalAverage ??
+        app.previousSchool?.generalAverage ??
         app.learner.previousGenAve ??
         null,
     })),
@@ -941,6 +946,8 @@ export async function inlineSlotLearner(
     return;
   }
 
+  const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+
   const record = await prisma.$transaction(async (tx) => {
     const application = await tx.enrollmentApplication.findUniqueOrThrow({
       where: { id: enrollmentApplicationId },
@@ -962,6 +969,7 @@ export async function inlineSlotLearner(
         sectioningMethod: SectioningMethod.INLINE_SLOTTING,
         enrolledAt: parsedEnrollmentDate,
         dateSectioned: parsedEnrollmentDate,
+        isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
       },
     });
 

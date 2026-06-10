@@ -24,12 +24,22 @@ export interface BOSYQueueParams {
   gradeLevelId?: number;
   status?: string;
   search?: string;
+  previousSectionName?: string;
 }
 
 export async function getBOSYQueue(
   params: BOSYQueueParams,
 ): Promise<BOSYQueuePage> {
   const res = await api.get<BOSYQueuePage>(`/bosy/queue`, { params });
+  return res.data;
+}
+
+export async function getPreviousSections(
+  schoolYearId: number,
+): Promise<string[]> {
+  const res = await api.get<string[]>(`/bosy/previous-sections`, {
+    params: { schoolYearId },
+  });
   return res.data;
 }
 

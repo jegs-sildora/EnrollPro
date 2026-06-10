@@ -9,6 +9,7 @@ import {
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
   getPhase2QueueHandler,
+  getPreviousSectionsHandler,
 } from "./bosy.controller.js";
 
 const router: Router = Router();
@@ -25,6 +26,13 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   getBosyQueue,
+);
+
+router.get(
+  "/previous-sections",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getPreviousSectionsHandler,
 );
 
 router.get(

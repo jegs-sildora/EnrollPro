@@ -94,9 +94,10 @@ model SchoolSetting {
   schoolHeadName     String?     @map("school_head_name")
   schoolHeadTitle    String?     @map("school_head_title")
   steEnabled         Boolean     @default(false) @map("ste_enabled")
-  spaEnabled         Boolean     @default(false) @map("spa_enabled")
-  spsEnabled         Boolean     @default(false) @map("sps_enabled")
-  activeSchoolYear   SchoolYear? @relation(fields: [activeSchoolYearId], references: [id])
+  spaEnabled         Boolean             @default(false) @map("spa_enabled")
+  spsEnabled         Boolean             @default(false) @map("sps_enabled")
+  systemPhase        SystemAcademicPhase @default(PRE_REGISTRATION) @map("system_phase")
+  activeSchoolYear   SchoolYear?         @relation(fields: [activeSchoolYearId], references: [id])
 
   @@map("school_settings")
 }
@@ -260,11 +261,13 @@ model EnrollmentApplication {
   schoolYearId               Int                       @map("school_year_id")
   gradeLevelId               Int                       @map("grade_level_id")
   applicantType              ApplicantType             @default(REGULAR) @map("applicant_type")
+  assignedProgram            ApplicantType?            @map("assigned_program")
   learnerType                LearnerType               @default(NEW_ENROLLEE) @map("learner_type")
   admissionChannel           AdmissionChannel          @default(ONLINE) @map("admission_channel")
   trackingNumber             String?                   @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
   learningModalities         String[]                  @map("learning_modalities")
   isTemporarilyEnrolled      Boolean                   @default(false) @map("is_temporarily_enrolled")
+  isLateEnrollee             Boolean                   @default(false) @map("is_late_enrollee")
   documentaryDeadlineAt      DateTime?                 @map("documentary_deadline_at") @db.Date
   complianceStatus           ComplianceStatus?         @map("compliance_status")
   rejectionReason            String?                   @map("rejection_reason")
@@ -378,6 +381,7 @@ model EnrollmentRecord {
   enrollmentApplicationId Int                   @unique(map: "uq_enroll_record_app_id") @map("enrollment_application_id")
   sectionId               Int                   @map("section_id")
   schoolYearId            Int                   @map("school_year_id")
+  isLateEnrollee          Boolean               @default(false) @map("is_late_enrollee")
   enrolledAt              DateTime              @default(now()) @map("enrolled_at") @db.Timestamptz(6)
   enrolledById            Int                   @map("enrolled_by_id")
   dropOutReason           String?               @map("drop_out_reason")
@@ -639,6 +643,7 @@ enum ApplicationStatus {
   TRANSFERRED_OUT
   DROPPED
   SECTIONED
+  ARCHIVED_NO_SHOW
 }
 
 enum ReadingProfileLevel {
@@ -648,6 +653,15 @@ enum ReadingProfileLevel {
   NON_READER
 
   @@map("reading_profile_level")
+}
+
+enum SystemAcademicPhase {
+  PRE_REGISTRATION
+  OFFICIAL_ENROLLMENT
+  CLASSES_ONGOING
+  EOSY_CLOSING
+
+  @@map("system_academic_phase")
 }
 
 enum SchoolYearStatus {

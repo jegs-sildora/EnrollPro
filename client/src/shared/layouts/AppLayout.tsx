@@ -441,10 +441,13 @@ function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
-  const { schoolName, logoUrl, systemStatus } = useSettingsStore();
+  const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  let activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  if (systemPhase === "CLASSES_ONGOING") {
+    activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide">CLASSES ONGOING</span>;
+  }
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isAdmin = useAuthStore((s) => s.user?.role === "SYSTEM_ADMIN");

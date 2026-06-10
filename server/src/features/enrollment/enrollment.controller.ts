@@ -335,11 +335,17 @@ export async function finalizeIntake(req: Request, res: Response) {
     heightCm,
     weightKg,
     checklistVerified,
+    isMissingSf9,
+    isMissingPsa,
+    assignedProgram,
   }: {
     applicationId: number;
     heightCm?: number;
     weightKg?: number;
     checklistVerified: boolean;
+    isMissingSf9?: boolean;
+    isMissingPsa?: boolean;
+    assignedProgram?: any;
   } = req.body;
 
   if (!applicationId) {
@@ -376,6 +382,8 @@ export async function finalizeIntake(req: Request, res: Response) {
     );
   }
 
+  const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+
   // Wrap in transaction: save BMI + update status
   await prisma.$transaction(async (tx) => {
     await tx.enrollmentApplication.update({
@@ -385,10 +393,24 @@ export async function finalizeIntake(req: Request, res: Response) {
         intakeHeightCm: heightCm ?? undefined,
         intakeWeightKg: weightKg ?? undefined,
         confirmationConsent: checklistVerified,
+        isMissingSf9: isMissingSf9 ?? false,
+        isTemporarilyEnrolled: !checklistVerified,
+        assignedProgram: assignedProgram ?? undefined,
+        isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
       },
     });
 
-
+    if (isMissingPsa) {
+       await tx.learner.update({
+          where: { id: application.learnerId },
+          data: { hasPsaBirthCertificate: false }
+       });
+    } else if (checklistVerified || isMissingPsa === false) {
+       await tx.learner.update({
+          where: { id: application.learnerId },
+          data: { hasPsaBirthCertificate: true }
+       });
+    }
   });
 
   await auditLog({
@@ -430,4 +452,185 @@ export async function finalizeIntake(req: Request, res: Response) {
     applicationId,
     newStatus: "VERIFIED",
   });
+}
+
+/**
+ * GET /api/enrollment/pending-verifications
+ * Fetches all applications with PENDING_VERIFICATION status for the active school year.
+ */
+export async function getPendingVerifications(req: Request, res: Response) {
+  const schoolYearId = req.query.schoolYearId
+    ? Number(req.query.schoolYearId)
+    : req.schoolYearId;
+
+  if (!schoolYearId) {
+    return res.status(400).json({ message: "Active school year not found." });
+  }
+
+  const applications = await prisma.enrollmentApplication.findMany({
+    where: {
+      schoolYearId,
+      status: "PENDING_VERIFICATION",
+    },
+    include: {
+      learner: {
+        select: {
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          lrn: true,
+          sex: true,
+          previousGenAve: true,
+        },
+      },
+      gradeLevel: { select: { name: true } },
+      previousSchool: true,
+      familyMembers: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return res.json(applications);
+}
+
+/**
+ * PATCH /api/enrollment/:applicationId/flag-deficient
+ * Flags an application as deficient (missing requirements), setting status to FOR_REVISION.
+ */
+export async function flagDeficient(req: Request, res: Response) {
+  const applicationId = Number(req.params.applicationId);
+  const userId = (req as any).user?.id ?? (req as any).user?.userId;
+
+  if (!applicationId || isNaN(applicationId)) {
+    throw new AppError(400, "Valid applicationId is required.");
+  }
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "FOR_REVISION",
+      rejectionReason: "Deficient requirements based on DO 017",
+    },
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "APPLICATION_FLAGGED_DEFICIENT",
+    description: `Application ${applicationId} flagged as deficient (DO 017)`,
+    subjectType: "EnrollmentApplication",
+    recordId: applicationId,
+    req,
+  });
+
+  return res.json({
+    success: true,
+    message: "Application flagged as deficient.",
+    applicationId,
+    newStatus: "FOR_REVISION",
+  });
+}
+
+
+export async function directEncodeWalkIn(req: Request, res: Response) {
+  try {
+    const payload = req.body;
+    const {
+      lrn, firstName, lastName, middleName, birthdate, sex,
+      gradeLevelId, assignedProgram,
+      previousSchoolName, previousGenAve,
+      guardianName, guardianContact,
+      hasSf9, hasPsa
+    } = payload;
+
+    if (!gradeLevelId || !firstName || !lastName || !birthdate || !sex) {
+      return res.status(400).json({ message: "Missing required basic fields." });
+    }
+
+    const { schoolYearId } = (req as any).currentSchoolYear;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Upsert Learner
+      let learner;
+      if (lrn) {
+        learner = await tx.learner.findUnique({ where: { lrn } });
+      }
+
+      if (learner) {
+        learner = await tx.learner.update({
+          where: { id: learner.id },
+          data: {
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            birthdate: new Date(birthdate),
+            sex: sex,
+          }
+        });
+      } else {
+        learner = await tx.learner.create({
+          data: {
+            lrn: lrn || null,
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            birthdate: new Date(birthdate),
+            sex: sex,
+            isIpCommunity: false,
+            isLearnerWithDisability: false,
+            is4PsBeneficiary: false,
+            hasPwdId: false,
+          }
+        });
+      }
+
+      // 2. Create Application
+      const applicationStatus = (hasSf9 && hasPsa) ? "OFFICIALLY_ENROLLED" : "TEMPORARILY_ENROLLED";
+
+      const application = await tx.enrollmentApplication.create({
+        data: {
+          learnerId: learner.id,
+          schoolYearId,
+          gradeLevelId,
+          applicantType: "REGULAR",
+          assignedProgram: assignedProgram || null,
+          admissionChannel: "F2F",
+          trackingNumber: null, // intentionally null for direct encode
+          isTemporarilyEnrolled: applicationStatus === "TEMPORARILY_ENROLLED",
+          encodedById: (req as any).user?.userId,
+          status: applicationStatus,
+          // create previous school if provided
+          previousSchool: previousSchoolName ? {
+            create: {
+              schoolName: previousSchoolName,
+              generalAverage: previousGenAve ? parseFloat(previousGenAve) : null,
+            }
+          } : undefined,
+          // create family member
+          familyMembers: {
+            create: {
+              relationship: "GUARDIAN",
+              firstName: guardianName,
+              lastName: "", // Assuming single field from frontend form for simplicity
+              contactNumber: guardianContact,
+            }
+          }
+        }
+      });
+
+      return application;
+    });
+
+    return res.status(201).json({ message: "Walk-in application directly encoded", application: result });
+  } catch (error) {
+    console.error("Error in directEncodeWalkIn:", error);
+    return res.status(500).json({ message: "Failed to process walk-in encoding", error: error instanceof Error ? error.message : "Unknown error" });
+  }
 }

@@ -137,7 +137,7 @@ type EnrollmentSubmitSuccessPayload = Pick<
   | "status"
   | "currentStep"
   | "assessmentData"
->;
+> & { learnerName?: string };
 
 export default function EnrollmentForm({
   onSuccess,
@@ -336,6 +336,7 @@ export default function EnrollmentForm({
           status: responseData.status,
           currentStep: responseData.currentStep,
           assessmentData: responseData.assessmentData,
+          learnerName: `${data.firstName} ${data.lastName}`,
         });
       }
 
@@ -522,6 +523,7 @@ export default function EnrollmentForm({
                           status: response.data.status,
                           currentStep: response.data.currentStep,
                           assessmentData: response.data.assessmentData,
+                          learnerName: `${data.firstName} ${data.lastName}`,
                         });
                       }
                       reset({ ...DEFAULT_VALUES });

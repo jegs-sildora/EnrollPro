@@ -345,7 +345,7 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 
 export default function SchoolYearTab() {
   const location = useLocation();
-  const { setSettings, activeSchoolYearId } = useSettingsStore();
+  const { setSettings, activeSchoolYearId, systemPhase } = useSettingsStore();
   const [years, setYears] = useState<SYItem[]>([]);
   const [defaults, setDefaults] = useState<Defaults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -363,6 +363,11 @@ export default function SchoolYearTab() {
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
   const pendingSuccessToastRef = useRef<(() => void) | null>(null);
+
+  // Phase Shift State
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
+  const [showPhaseModal, setShowPhaseModal] = useState(false);
+  const [isUpdatingPhase, setIsUpdatingPhase] = useState(false);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
@@ -1227,6 +1232,60 @@ export default function SchoolYearTab() {
             <CardContent className="p-6">
               {activeYear ? (
                 <div className="space-y-6">
+                  {/* System Academic Phase */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wider">
+                            System Academic Phase
+                          </h4>
+                        </div>
+                        <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                          Control the current phase of the academic year. This affects how late enrollments are processed.
+                        </p>
+                      </div>
+                    </div>
+                    <RadioGroup
+                      value={selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT"}
+                      onValueChange={(value) => setSelectedPhase(value)}
+                      className="flex flex-col space-y-4"
+                    >
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
+                        <div>
+                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-bold cursor-pointer text-foreground block">Official Enrollment</Label>
+                          <p className="text-xs text-muted-foreground mt-1">Opens the public intake forms and processes normal verify/confirm workflows.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
+                        <div>
+                          <Label htmlFor="CLASSES_ONGOING" className="font-bold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
+                          <p className="text-xs text-muted-foreground mt-1">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
+                        <div>
+                          <Label htmlFor="EOSY_CLOSING" className="font-bold cursor-pointer text-foreground block">EOSY Closing</Label>
+                          <p className="text-xs text-muted-foreground mt-1">Locks public intake forms and readies the database for end-of-year grade finalization.</p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+
+                    {selectedPhase && selectedPhase !== systemPhase && (
+                      <div className="mt-6 flex justify-end">
+                        <Button 
+                          onClick={() => setShowPhaseModal(true)}
+                          className="w-full sm:w-auto"
+                        >
+                          Apply Phase Change
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
@@ -1841,6 +1900,44 @@ export default function SchoolYearTab() {
                 <span>Waiting for EOSY Finalization.</span>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phase Shift Confirmation Modal */}
+      <Dialog open={showPhaseModal} onOpenChange={setShowPhaseModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Phase Shift</DialogTitle>
+            <DialogDescription>
+              {selectedPhase === "CLASSES_ONGOING" && "Are you sure? All new submissions from this point forward will be flagged as Late Enrollees."}
+              {selectedPhase === "EOSY_CLOSING" && "Are you sure? This will lock all public forms and prepare the database for the end of the school year. You cannot easily undo this."}
+              {selectedPhase === "OFFICIAL_ENROLLMENT" && "Are you sure you want to shift to Official Enrollment?"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setShowPhaseModal(false)} disabled={isUpdatingPhase}>Cancel</Button>
+            <Button 
+              disabled={isUpdatingPhase}
+              onClick={async () => {
+                if (!selectedPhase) return;
+                setIsUpdatingPhase(true);
+                try {
+                  await api.patch(`/settings/phase`, { phase: selectedPhase });
+                  sileo.success({ title: "System phase updated", description: "The system phase has been updated." });
+                  const pubRes = await api.get("/settings/public");
+                  setSettings({ systemPhase: pubRes.data.systemPhase });
+                  setShowPhaseModal(false);
+                  setSelectedPhase(null);
+                } catch (err) {
+                  toastApiError(err as never);
+                } finally {
+                  setIsUpdatingPhase(false);
+                }
+              }}
+            >
+              {isUpdatingPhase ? "Applying..." : "Confirm"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

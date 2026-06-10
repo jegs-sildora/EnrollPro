@@ -77,6 +77,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         enrollOpenDate: data.enrollOpenDate,
         enrollCloseDate: data.enrollCloseDate,
         enrollmentPhase: data.enrollmentPhase,
+        systemPhase: data.systemPhase,
         systemStatus: data.systemStatus,
         bosyLockedAt: data.bosyLockedAt,
         facebookPageUrl: data.facebookPageUrl,

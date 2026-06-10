@@ -23,7 +23,9 @@ type EnrollmentSubmitSuccessPayload = Pick<
   | "programType"
   | "status"
   | "currentStep"
->;
+> & {
+  learnerName?: string;
+};
 
 export default function Apply() {
   const [hasConsented, setHasConsented] = useState(() => {
@@ -366,6 +368,7 @@ export default function Apply() {
                         programType={submittedSuccessData.programType}
                         status={submittedSuccessData.status}
                         currentStep={submittedSuccessData.currentStep}
+                        learnerName={submittedSuccessData.learnerName}
                         onBackHome={handleBackHome}
                       />
                     </motion.div>

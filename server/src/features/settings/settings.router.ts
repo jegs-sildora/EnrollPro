@@ -12,6 +12,7 @@ import {
   updateIdentity,
   uploadLogo,
   updatePrograms,
+  updateSystemPhase,
 } from "./settings.controller.js";
 import { updateProgramsSchema } from "@enrollpro/shared";
 
@@ -50,6 +51,13 @@ router.patch(
   authorize("SYSTEM_ADMIN"),
   validate(updateProgramsSchema),
   updatePrograms,
+);
+
+router.patch(
+  "/phase",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  updateSystemPhase,
 );
 
 export default router;
