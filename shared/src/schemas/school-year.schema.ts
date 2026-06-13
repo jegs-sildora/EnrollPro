@@ -44,7 +44,4 @@ export const toggleOverrideSchema = z.object({
   portalControl: PortalControlEnum,
 });
 
-export const updateAssessmentConfigSchema = z.object({
-  requireReadingAssessmentNew: z.boolean(),
-  requireReadingAssessmentContinuing: z.boolean(),
-});
+

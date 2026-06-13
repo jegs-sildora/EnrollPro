@@ -17,14 +17,14 @@ export function DataTableColumnHeader<TData, TValue>({
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
     return (
-      <div className={cn("flex items-center justify-center", className)}>
+      <div className={cn("flex items-center justify-start", className)}>
         {title}
       </div>
     );
   }
 
   return (
-    <div className={cn("flex items-center justify-center space-x-2", className)}>
+    <div className={cn("flex items-center justify-start space-x-2", className)}>
       <Button
         variant="ghost"
         size="sm"

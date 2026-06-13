@@ -49,7 +49,7 @@ interface Document {
     id: number;
     firstName: string;
     lastName: string;
-    role: string;
+    roles: string[];
   } | null;
 }
 
@@ -62,7 +62,7 @@ interface Props {
     id: number;
     firstName: string;
     lastName: string;
-    role: string;
+    roles: string[];
   } | null;
   auditLogs?: AuditLog[];
   onRefresh: () => void;
@@ -79,7 +79,7 @@ interface AuditRow {
     id: number;
     firstName: string;
     lastName: string;
-    role: string;
+    roles: string[];
   } | null;
   action: "Added" | "Removed" | "Pending";
 }
@@ -352,9 +352,9 @@ export function DocumentManagement({
                   variant="outline"
                   className={cn(
                     "text-[0.5rem] h-4 px-1 uppercase border-none",
-                    getRoleColorClasses(auditRow.modifiedBy?.role),
+                    getRoleColorClasses(auditRow.modifiedBy?.roles?.[0]),
                   )}>
-                  {formatUserRole(auditRow.modifiedBy?.role) || "USER"}
+                  {formatUserRole(auditRow.modifiedBy?.roles?.[0]) || "USER"}
                 </Badge>
               </div>
             </div>

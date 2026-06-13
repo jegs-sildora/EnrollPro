@@ -1,7 +1,5 @@
 import React from "react";
-import { useState } from "react";
 import { format, differenceInYears } from "date-fns";
-import { motion, AnimatePresence } from "motion/react";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 
 import {
@@ -10,8 +8,6 @@ import {
   Users,
   GraduationCap,
   Tags,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
 
 import { Badge } from "@/shared/ui/badge";
@@ -22,43 +18,16 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
-function CollapsibleSection({ title, icon, children }: SectionProps) {
-  const [isOpen, setIsOpen] = useState(true);
-
+function DataSection({ title, icon, children }: SectionProps) {
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full p-3 font-bold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors text-left group">
-        <div className="flex items-center gap-2">
-          <span className="text-foreground group-hover:text-primary transition-colors">
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </span>
-          {icon && <span className="text-primary">{icon}</span>}
-          <span>{title}</span>
-        </div>
-        <span
-          className={`text-xs uppercase  text-foreground ${isOpen ? "opacity-60" : ""}`}>
-          {isOpen ? "Hide" : "Show"}
-        </span>
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}>
-            <div className="p-4 pt-4 text-sm border-t grid grid-cols-[140px_1fr] gap-x-2 gap-y-2 font-bold">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="p-3 font-bold text-sm bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+        {icon && <span className="text-primary">{icon}</span>}
+        <span className="uppercase">{title}</span>
+      </div>
+      <div className="p-4 text-sm grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
+        {children}
+      </div>
     </div>
   );
 }
@@ -91,9 +60,9 @@ function DataItem({
       <span className="text-foreground">{label}:</span>
       <span
         className={
-          !valid ? "text-foreground/50 italic font-bold" : "uppercase"
+          !valid ? "text-gray-300 font-bold" : "uppercase"
         }>
-        {valid ? String(value) : "Not provided"}
+        {valid ? String(value) : "—"}
       </span>
     </>
   );
@@ -125,7 +94,7 @@ export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection
+    <DataSection
       title="Personal Information"
       icon={<User className="h-4 w-4" />}>
       <DataItem
@@ -156,7 +125,7 @@ export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
         label="Mother Tongue"
         value={applicant.motherTongue}
       />
-    </CollapsibleSection>
+    </DataSection>
   );
 }
 
@@ -188,7 +157,7 @@ export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection
+    <DataSection
       title="Home Address"
       icon={<MapPin className="h-4 w-4" />}>
       <DataItem
@@ -211,7 +180,7 @@ export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
         label="Province"
         value={province}
       />
-    </CollapsibleSection>
+    </DataSection>
   );
 }
 
@@ -289,24 +258,25 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         </span>
         <div className="flex flex-col">
           {c.fullName ? (
-            <span className="uppercase">{c.fullName}</span>
+            <>
+              <span className="uppercase">{c.fullName}</span>
+              {c.details && (
+                <span className="text-xs font-bold text-foreground">
+                  {c.details}
+                  {c.relationship && ` (${c.relationship})`}
+                </span>
+              )}
+            </>
           ) : (
-            <span className="text-foreground/50 italic font-bold">
-              Not provided
-            </span>
+            <span className="text-gray-300 font-bold">—</span>
           )}
-          <span
-            className={`text-xs font-bold ${c.details ? "text-foreground" : "text-foreground/50 italic"}`}>
-            {c.details || "No contact info"}
-            {c.relationship && ` (${c.relationship})`}
-          </span>
         </div>
       </React.Fragment>
     );
   };
 
   return (
-    <CollapsibleSection
+    <DataSection
       title="Parents & Guardian (SF1)"
       icon={<Users className="h-4 w-4" />}>
       {renderContact(mother)}
@@ -317,7 +287,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         value={applicant.emailAddress}
         mutedIfInvalid
       />
-    </CollapsibleSection>
+    </DataSection>
   );
 }
 
@@ -343,7 +313,7 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection
+    <DataSection
       title="Previous School"
       icon={<GraduationCap className="h-4 w-4" />}>
       <DataItem
@@ -378,7 +348,7 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
         label="Reading Profile"
         value={readingProfile}
       />
-    </CollapsibleSection>
+    </DataSection>
   );
 }
 
@@ -390,8 +360,8 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
   const isBalikAral = Boolean(applicant.isBalikAral);
 
   return (
-    <CollapsibleSection
-      title="Classifications"
+    <DataSection
+      title="Special Demographics & Interventions"
       icon={<Tags className="h-4 w-4" />}>
       <DataItem
         label="Learner Type"
@@ -405,11 +375,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
             ✓ IP Member ({applicant.ipGroupName || "No Group"})
           </Badge>
         ) : (
-          <Badge
-            variant="outline"
-            className="text-foreground/50 border-muted">
-            ✕ Not an IP Member
-          </Badge>
+          <span className="text-foreground/60 uppercase">No</span>
         )}
       </div>
 
@@ -420,11 +386,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
             ✓ 4Ps Beneficiary ({applicant.householdId4Ps || "No ID"})
           </Badge>
         ) : (
-          <Badge
-            variant="outline"
-            className="text-foreground/50 border-muted">
-            ✕ Not a 4Ps Beneficiary
-          </Badge>
+          <span className="text-foreground/60 uppercase">No</span>
         )}
       </div>
 
@@ -449,11 +411,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
             )}
           </div>
         ) : (
-          <Badge
-            variant="outline"
-            className="text-foreground/50 border-muted">
-            ✕ No Disability
-          </Badge>
+          <span className="text-foreground/60 uppercase">None</span>
         )}
       </div>
 
@@ -464,13 +422,9 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
             ✓ Returning (Last: {applicant.lastYearEnrolled})
           </Badge>
         ) : (
-          <Badge
-            variant="outline"
-            className="text-foreground/50 border-muted">
-            ✕ No
-          </Badge>
+          <span className="text-foreground/60 uppercase">No</span>
         )}
       </div>
-    </CollapsibleSection>
+    </DataSection>
   );
 }

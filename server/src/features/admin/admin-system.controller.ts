@@ -205,11 +205,17 @@ export async function dashboardStats(req: Request, res: Response) {
     const activeUsersCount = await prisma.user.count({
       where: { isActive: true },
     });
-    const usersByRole = await prisma.user.groupBy({
-      by: ["role"],
+    const activeUsers = await prisma.user.findMany({
       where: { isActive: true },
-      _count: true,
+      select: { roles: true },
     });
+
+    const usersByRole: Record<string, number> = {};
+    for (const u of activeUsers) {
+      for (const r of u.roles) {
+        usersByRole[r] = (usersByRole[r] || 0) + 1;
+      }
+    }
 
     let dbStatus = "OK";
     try {
@@ -220,10 +226,7 @@ export async function dashboardStats(req: Request, res: Response) {
 
     res.json({
       activeUsers: activeUsersCount,
-      usersByRole: usersByRole.reduce((acc: any, item) => {
-        acc[item.role] = item._count;
-        return acc;
-      }, {}),
+      usersByRole,
       systemStatus: dbStatus,
     });
   } catch (error: any) {

@@ -68,6 +68,7 @@ export interface Teacher {
   firstName: string;
   lastName: string;
   middleName: string | null;
+  suffix: string | null;
   email: string | null;
   contactNumber: string | null;
   sex: "MALE" | "FEMALE";
@@ -87,6 +88,7 @@ export interface Teacher {
     isActive: boolean;
     lastLoginAt: string | null;
     mustChangePassword: boolean;
+    roles?: string[];
   } | null;
 }
 
@@ -94,6 +96,7 @@ export interface TeacherFormState {
   firstName: string;
   lastName: string;
   middleName: string;
+  suffix: string;
   email: string;
   employeeId: string;
   contactNumber: string;

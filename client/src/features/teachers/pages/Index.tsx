@@ -5,44 +5,24 @@ import {
   useState,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { sileo } from "sileo";
-import {
-  ChevronDown,
-  Plus,
-  RefreshCw,
-  Upload,
-} from "lucide-react";
-import { cn } from "@/shared/lib/utils";
 import api from "@/shared/api/axiosInstance";
-import { useSettingsStore } from "@/store/settings.slice";
-import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import type { AxiosError } from "axios";
+import { useSettingsStore } from "@/store/settings.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { Button } from "@/shared/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
 import { TeacherDirectoryCard } from "../components/TeacherDirectoryCard";
-import { TeacherProfilePanel } from "../components/TeacherProfilePanel";
 import { TeacherDetailPanel } from "../components/TeacherDetailPanel";
-import { UpdateStatusModal } from "../components/UpdateStatusModal";
+
 import type {
   Teacher,
   TeacherDesignationFilter,
   TeacherStatusFilter,
 } from "../types";
-import type { UpdateServiceStatusInput } from "@enrollpro/shared";
+
 import { formatTeacherName } from "../utils";
 
 
-const DESIGNATION_FILTER_SUBJECT_TEACHER = "subject_teacher";
-const DESIGNATION_FILTER_CLASS_ADVISER = "class_adviser";
-const DESIGNATION_FILTER_ANCILLARY_PREFIX = "ancillary::";
+
 
 interface DesignationFilterOption {
   value: string;
@@ -89,18 +69,14 @@ function buildTeacherSearchIndex(teacher: Teacher): string {
 export default function Teachers() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
-  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const canMutate = !isHistoricalReadOnly || hasOverride;
+
   const queryClient = useQueryClient();
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
-  const [updateStatusTeacher, setUpdateStatusTeacher] = useState<Teacher | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+
+
 
   const [activeFilter, setActiveFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
@@ -156,46 +132,38 @@ export default function Teachers() {
 
   const availableDesignationFilters = useMemo<DesignationFilterOption[]>(() => {
     const roles = new Set<string>();
-    let hasClassAdviser = false;
     let hasSubjectTeacher = false;
 
     for (const teacher of teachers) {
-      const designation = teacher.designation;
-      if (designation?.isClassAdviser) {
-        hasClassAdviser = true;
-      }
-
-      if (
-        !designation ||
-        (!designation.isClassAdviser &&
-          (!designation.ancillaryRoles || designation.ancillaryRoles.length === 0))
-      ) {
+      if (!teacher.userAccount?.roles || teacher.userAccount.roles.length === 0) {
         hasSubjectTeacher = true;
-      }
-
-      for (const role of designation?.ancillaryRoles || []) {
-        roles.add(role);
+      } else {
+        for (const role of teacher.userAccount.roles) {
+          roles.add(role);
+        }
       }
     }
+
+    const roleLabels: Record<string, string> = {
+      SYSTEM_ADMIN: "School Head",
+      HEAD_REGISTRAR: "Registrar",
+      TEACHER: "Teacher",
+      CLASS_ADVISER: "Class Adviser",
+      MRF: "MRF Staff",
+    };
 
     const options: DesignationFilterOption[] = [];
-    if (hasClassAdviser) {
-      options.push({
-        value: DESIGNATION_FILTER_CLASS_ADVISER,
-        label: "Class Adviser",
-      });
-    }
-
+    
     for (const role of Array.from(roles).sort((a, b) => a.localeCompare(b))) {
       options.push({
-        value: `${DESIGNATION_FILTER_ANCILLARY_PREFIX}${role}`,
-        label: role,
+        value: role,
+        label: roleLabels[role] || role,
       });
     }
 
     if (hasSubjectTeacher) {
       options.push({
-        value: DESIGNATION_FILTER_SUBJECT_TEACHER,
+        value: "SUBJECT_TEACHER",
         label: "Subject Teacher",
       });
     }
@@ -228,31 +196,17 @@ export default function Teachers() {
     }
   }, [teachersQuery.isError, teachersQuery.error]);
 
-  const startEditing = (teacher: Teacher) => {
-    setEditingTeacher(teacher);
-    setEditOpen(true);
-  };
-
-
-
-  const handleUpdateServiceStatus = async (input: UpdateServiceStatusInput) => {
-    if (!updateStatusTeacher) return;
-
-    setSubmitting(true);
-    try {
-      await api.patch(`/teachers/${updateStatusTeacher.id}/service-status`, input);
-      sileo.success({
-        title: "Service Status Updated",
-        description: "Teacher service status has been updated successfully.",
-      });
-      setUpdateStatusTeacher(null);
-      await invalidateTeacherQueries();
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setSubmitting(false);
+  useEffect(() => {
+    if (viewingTeacher && teachers.length > 0) {
+      const updated = teachers.find(t => t.id === viewingTeacher.id);
+      if (updated && updated !== viewingTeacher) {
+        setViewingTeacher(updated);
+      }
     }
-  };
+  }, [teachers, viewingTeacher]);
+
+
+
 
   const filteredTeachers = useMemo(() => {
     const normalizedSearch = normalizeSearchText(activeFilter);
@@ -268,22 +222,9 @@ export default function Teachers() {
 
       const matchesDesignation =
         designationFilter === "all" ||
-        (designationFilter === DESIGNATION_FILTER_CLASS_ADVISER
-          ? Boolean(teacher.designation?.isClassAdviser)
-          : designationFilter === DESIGNATION_FILTER_SUBJECT_TEACHER
-            ? !teacher.designation ||
-            (!teacher.designation.isClassAdviser &&
-              (!teacher.designation.ancillaryRoles ||
-                teacher.designation.ancillaryRoles.length === 0))
-            : designationFilter.startsWith(DESIGNATION_FILTER_ANCILLARY_PREFIX)
-              ? Boolean(
-                teacher.designation?.ancillaryRoles?.includes(
-                  designationFilter.slice(
-                    DESIGNATION_FILTER_ANCILLARY_PREFIX.length,
-                  ),
-                ),
-              )
-              : true);
+        (designationFilter === "SUBJECT_TEACHER"
+          ? !teacher.userAccount?.roles || teacher.userAccount.roles.length === 0
+          : teacher.userAccount?.roles?.includes(designationFilter));
 
       const matchesDepartment =
         departmentFilter === "all" ||
@@ -314,62 +255,9 @@ export default function Teachers() {
 
   // eSF7 profile validation is managed internally by the child panel component
 
-  const openCreateTeacherSheet = () => {
-    setCreateOpen(true);
-  };
-
-  const handleSyncAtlas = async () => {
-    setSubmitting(true);
-    try {
-      // Corrected endpoint path: /integration is mapped to integrationTriggerRoutes
-      const res = await api.post("/integration/atlas/sync-faculty");
-      sileo.success({
-        title: "ATLAS Sync Successful",
-        description:
-          res.data.message ||
-          "Faculty roster has been synchronized with the scheduling system.",
-      });
-      await invalidateTeacherQueries();
-    } catch (err: unknown) {
-      const error = err as { response?: { status?: number, data?: { code?: string } } };
-      // Professional Error Handling with Reasons
-      const status = error.response?.status;
-      const errorCode = error.response?.data?.code;
-
-      if (status === 404) {
-        sileo.error({
-          title: "Service Unavailable",
-          description:
-            "The ATLAS integration service endpoint could not be reached. This may be due to a server misconfiguration or the integration module being disabled.",
-        });
-      } else if (status === 503 || errorCode === "UPSTREAM_UNAVAILABLE") {
-        sileo.error({
-          title: "ATLAS Connection Failed",
-          description:
-            "EnrollPro was unable to establish a handshake with the ATLAS Scheduling System. Please ensure the ATLAS server is online and reachable via Tailscale.",
-        });
-      } else if (status === 401 || status === 403) {
-        sileo.error({
-          title: "Access Denied",
-          description:
-            "Integration credentials (API Key) for ATLAS are invalid or have expired. Please verify your system settings.",
-        });
-      } else {
-        toastApiError(err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleBulkImportPlaceholder = () => {
-    sileo.info({
-      title: "Bulk Import Coming Soon",
-      description:
-        "CSV bulk teacher import is queued for the next release. Use Add Teacher for now.",
-    });
-  };
-
+  
+  
+  
   const teacherDirectoryCardElement = useMemo(
     () => (
       <TeacherDirectoryCard
@@ -400,8 +288,6 @@ export default function Teachers() {
           setDepartmentFilter("all");
         }}
         onRefresh={invalidateTeacherQueries}
-        onEditTeacher={startEditing}
-        onUpdateServiceStatus={setUpdateStatusTeacher}
         onOpenDetail={setViewingTeacher}
       />
     ),
@@ -423,7 +309,6 @@ export default function Teachers() {
       page,
       limit,
       invalidateTeacherQueries,
-      setUpdateStatusTeacher,
     ],
   );
 
@@ -433,42 +318,10 @@ export default function Teachers() {
         open={Boolean(viewingTeacher)}
         teacher={viewingTeacher}
         onOpenChange={(open) => !open && setViewingTeacher(null)}
+        onSaveSuccess={invalidateTeacherQueries}
       />
     ),
-    [viewingTeacher],
-  );
-
-  const renderedTeacherCreateSheet = useMemo(
-    () => (
-      <TeacherProfilePanel
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        teacherId={null}
-        onSaveSuccess={async () => {
-          await invalidateTeacherQueries();
-        }}
-      />
-    ),
-    [createOpen, invalidateTeacherQueries],
-  );
-
-  const renderedTeacherEditSheet = useMemo(
-    () => (
-      <TeacherProfilePanel
-        open={editOpen}
-        onOpenChange={(open: boolean) => {
-          setEditOpen(open);
-          if (!open) {
-            setEditingTeacher(null);
-          }
-        }}
-        teacherId={editingTeacher ? editingTeacher.id : null}
-        onSaveSuccess={async () => {
-          await invalidateTeacherQueries();
-        }}
-      />
-    ),
-    [editOpen, editingTeacher, invalidateTeacherQueries],
+    [viewingTeacher, invalidateTeacherQueries],
   );
 
 
@@ -478,62 +331,11 @@ export default function Teachers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-balance text-foreground">
-            Teacher Profiling
+            Faculty & Personnel Roster
           </h1>
           <p className="text-sm text-foreground text-balance font-bold">
-            Manage teacher profiles, learning areas, and adviser assignments.
+            Manage official personnel records, account access, and school year assignments.
           </p>
-        </div>
-        <div className="flex justify-end gap-2 flex-wrap">
-          {canMutate && (
-            <>
-              <Button
-                variant="secondary"
-                onClick={handleSyncAtlas}
-                disabled={submitting}
-                className="font-black uppercase text-xs h-10 border-2 border-primary/20 shadow-sm hover:bg-primary/5 active:scale-95 transition-all">
-                <RefreshCw
-                  className={cn("mr-2 h-4 w-4", submitting && "animate-spin")}
-                />
-                Sync with ATLAS
-              </Button>
-
-              <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
-                <Button
-                  onClick={openCreateTeacherSheet}
-                  className="rounded-r-none h-10">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Teacher
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon-sm"
-                      className="rounded-l-none border-l border-primary-foreground/20 h-10"
-                      aria-label="Open add teacher options">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56">
-                    <DropdownMenuItem
-                      onClick={openCreateTeacherSheet}
-                      className="cursor-pointer">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Single Teacher
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleBulkImportPlaceholder}
-                      className="cursor-pointer">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Bulk Import (CSV)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </>
-          )}
         </div>
       </div>
 
@@ -545,17 +347,9 @@ export default function Teachers() {
 
       {teacherDirectoryCardElement}
 
-      {renderedTeacherCreateSheet}
-      {renderedTeacherEditSheet}
       {renderedTeacherDetailPanel}
 
-      <UpdateStatusModal
-        open={Boolean(updateStatusTeacher)}
-        onOpenChange={(open) => !open && setUpdateStatusTeacher(null)}
-        teacher={updateStatusTeacher}
-        onSave={handleUpdateServiceStatus}
-        saving={submitting}
-      />
+
     </div>
   );
 }

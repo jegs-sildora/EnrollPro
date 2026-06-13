@@ -33,7 +33,7 @@ export function useHistoricalReadOnly(): HistoricalReadOnlyState {
 
   const hasOverride = isHistoricalReadOnly && !!historicalCorrectionToken;
 
-  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
+  const isSystemAdmin = user?.roles?.includes("SYSTEM_ADMIN") ?? false;
 
   return {
     isHistoricalReadOnly,

@@ -192,7 +192,7 @@ export async function listIntegrationStaff(
   const skip = (page - 1) * limit;
 
   const where = {
-    role: { in: [...STAFF_ROLES] },
+    roles: { hasSome: [...STAFF_ROLES] },
     ...(includeInactive ? {} : { isActive: true }),
   };
 
@@ -208,7 +208,7 @@ export async function listIntegrationStaff(
         middleName: true,
         suffix: true,
         email: true,
-        role: true,
+        roles: true,
         isActive: true,
         employeeId: true,
         accountName: true,
@@ -217,7 +217,7 @@ export async function listIntegrationStaff(
         createdAt: true,
         updatedAt: true,
       },
-      orderBy: [{ role: "asc" }, { lastName: "asc" }, { firstName: "asc" }],
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       skip,
       take: limit,
     }),
@@ -234,7 +234,7 @@ export async function listIntegrationStaff(
       suffix: user.suffix,
       fullName: buildStaffName(user),
       email: user.email,
-      role: user.role,
+      roles: user.roles,
       designation: user.designation,
       mobileNumber: user.mobileNumber,
       isActive: user.isActive,

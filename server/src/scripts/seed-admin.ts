@@ -15,7 +15,7 @@ async function main() {
       accountName: employeeId,
       password: hashedPassword,
       isActive: true,
-      role: 'SYSTEM_ADMIN',
+      roles: ['SYSTEM_ADMIN'],
     },
     create: {
       employeeId,
@@ -24,7 +24,7 @@ async function main() {
       lastName: 'Administrator',
       email: 'admin@deped.gov.ph',
       password: hashedPassword,
-      role: 'SYSTEM_ADMIN',
+      roles: ['SYSTEM_ADMIN'],
       sex: 'FEMALE',
       isActive: true,
     },
@@ -34,7 +34,7 @@ async function main() {
   console.log(`   Employee ID: ${admin.employeeId}`);
   console.log(`   Name: ${admin.firstName} ${admin.lastName}`);
   console.log(`   Email: ${admin.email}`);
-  console.log(`   Role: ${admin.role}`);
+  console.log(`   Role: ${admin.roles.join(', ')}`);
 }
 
 main()

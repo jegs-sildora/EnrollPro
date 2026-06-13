@@ -746,6 +746,28 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
   { value: "SCHOOL PRINCIPAL IV", label: "School Principal IV" },
 ] as const;
 
+export const ADMIN_STAFF_POOL = ['ADMINISTRATIVE OFFICER II', 'ADMINISTRATIVE ASSISTANT II', 'ADMINISTRATIVE ASSISTANT III', 'REGISTRAR I'] as const;
+export const TEACHING_POOL = ['TEACHER I', 'TEACHER II', 'TEACHER III', 'MASTER TEACHER I', 'MASTER TEACHER II', 'MASTER TEACHER III', 'MASTER TEACHER IV', 'SPECIAL SCIENCE TEACHER I', 'HEAD TEACHER I', 'HEAD TEACHER II', 'HEAD TEACHER III', 'HEAD TEACHER IV', 'HEAD TEACHER V', 'HEAD TEACHER VI'] as const;
+export const EXECUTIVE_POOL = ['PRINCIPAL I', 'PRINCIPAL II', 'PRINCIPAL III', 'PRINCIPAL IV', 'HEAD TEACHER III', 'HEAD TEACHER IV', 'HEAD TEACHER V', 'HEAD TEACHER VI'] as const;
+export const MRF_POOL = ['MRF STAFF'] as const;
+
+export function getDesignationPool(roles: string[]): string[] {
+  const pool = new Set<string>();
+  if (roles.includes("SYSTEM_ADMIN")) {
+    EXECUTIVE_POOL.forEach(r => pool.add(r));
+  }
+  if (roles.includes("HEAD_REGISTRAR")) {
+    ADMIN_STAFF_POOL.forEach(r => pool.add(r));
+  }
+  if (roles.includes("TEACHER") || roles.includes("CLASS_ADVISER")) {
+    TEACHING_POOL.forEach(r => pool.add(r));
+  }
+  if (roles.includes("MRF")) {
+    MRF_POOL.forEach(r => pool.add(r));
+  }
+  return Array.from(pool).sort((a, b) => a.localeCompare(b));
+}
+
 export const DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS = [
   { value: "SUBJECT TEACHER", label: "Subject Teacher" },
   { value: "CLASS ADVISER", label: "Class Adviser" },

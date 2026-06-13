@@ -1,23 +1,15 @@
 import { memo, useEffect } from "react";
 import {
-  Eye,
   FilterX,
-  MoreHorizontal,
   RefreshCw,
   Search,
-  UserCog,
-  UserRoundPen,
-  Users,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+import { DEPED_TEACHER_DEPARTMENT_OPTIONS } from "@enrollpro/shared";
+
 import {
   Select,
   SelectContent,
@@ -35,14 +27,13 @@ import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import {
   cn,
   getAcademicDesignationColorClasses,
-  getAncillaryRoleColorClasses,
 } from "@/shared/lib/utils";
 import type {
   Teacher,
   TeacherDesignationFilter,
   TeacherStatusFilter,
 } from "../types";
-import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
+import { formatAdvisorySectionSummary } from "../utils";
 
 interface TeacherDirectoryCardProps {
   loading: boolean;
@@ -67,8 +58,7 @@ interface TeacherDirectoryCardProps {
   onDepartmentFilterChange: (value: string) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
-  onEditTeacher: (teacher: Teacher) => void;
-  onUpdateServiceStatus: (teacher: Teacher) => void;
+
   onOpenDetail: (teacher: Teacher) => void;
 }
 
@@ -95,8 +85,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onDepartmentFilterChange,
   onClearFilters,
   onRefresh,
-  onEditTeacher,
-  onUpdateServiceStatus,
+
   onOpenDetail,
 }: TeacherDirectoryCardProps) {
   const {
@@ -129,7 +118,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         variant="success"
         className="max-w-[220px] truncate text-xs font-bold"
         title={`Assigned to ${advisorySummary}`}>
-        Assigned: {advisorySummary}
+        {advisorySummary}
       </Badge>
     );
   };
@@ -137,42 +126,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
 
   const renderTeacherActions = (teacher: Teacher) => (
-    <div className="flex items-center justify-center gap-2 min-w-[180px]">
+    <div className="flex items-center justify-center gap-2 min-w-[180px] w-full">
       <Button
-        variant="secondary"
-        size="sm"
-        className="h-8 px-3 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground group-hover:text-foreground transition-colors"
         onClick={() => onOpenDetail(teacher)}>
-        <Eye className="h-3.5 w-3.5 mr-1.5" />
-        View
+        <ChevronRight className="h-5 w-5" />
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-8 w-8 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-            aria-label={`Open row actions for ${formatTeacherName(teacher)}`}>
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="w-56 font-bold">
-          <DropdownMenuItem
-            onClick={() => onEditTeacher(teacher)}
-            className="cursor-pointer font-bold">
-            <UserRoundPen className="mr-2 h-4 w-4" />
-            Quick Update Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => onUpdateServiceStatus(teacher)}
-            className="cursor-pointer text-primary focus:text-primary-foreground font-bold">
-            <UserCog className="mr-2 h-4 w-4" />
-            Update Service Status
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   );
 
@@ -217,14 +178,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="FACULTY IDENTITY"
-          className="justify-center pl-0 font-bold"
+          title="PERSONNEL & CONTACT"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => {
         const teacher = row.original;
         return (
-          <div className="flex flex-col text-left pl-2 py-1">
+          <div className="w-full flex flex-col text-left pl-2 py-1">
             <span className="font-semibold text-sm text-foreground">
               {teacher.lastName}, {teacher.firstName}
             </span>
@@ -251,20 +212,41 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="EMPLOYMENT METADATA"
-          className="font-bold"
+          title="PLANTILLA & ID"
+          className="font-bold justify-start text-left"
         />
       ),
       cell: ({ row }) => {
         const teacher = row.original;
+        const isTeachingStaff = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
+
+        if (!isTeachingStaff) {
+          return (
+            <div className="w-full flex flex-col text-left pl-2 py-1">
+              <span className="text-sm font-bold text-foreground">
+                {teacher.employeeId || <span className="text-gray-300">—</span>}
+              </span>
+              <span className="text-xs text-gray-300 italic leading-tight">
+                —
+              </span>
+            </div>
+          );
+        }
+
         return (
-          <div className="flex flex-col text-left pl-2 py-1">
+          <div className="w-full flex flex-col text-left pl-2 py-1">
             <span className="text-sm font-bold text-foreground">
-              {teacher.employeeId || "N/A"}
+              {teacher.employeeId}
             </span>
-            <span className="text-xs text-foreground italic leading-tight">
-              {teacher.plantillaPosition || "UNRANKED"}
-            </span>
+            {teacher.plantillaPosition ? (
+              <span className="text-xs text-foreground italic leading-tight">
+                {teacher.plantillaPosition}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-300 italic leading-tight">
+                —
+              </span>
+            )}
           </div>
         );
       },
@@ -285,20 +267,41 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="ASSIGNMENT & MAJOR"
-          className="font-bold"
+          title="DEPARTMENT ASSIGNMENT"
+          className="font-bold justify-start text-left"
         />
       ),
       cell: ({ row }) => {
         const teacher = row.original;
+        const isTeachingStaff = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
+
+        if (!isTeachingStaff) {
+          return (
+            <div className="w-full flex flex-col items-start text-left gap-1 pl-2 py-1">
+              <span className="text-sm font-bold text-gray-300 uppercase whitespace-nowrap">
+                —
+              </span>
+            </div>
+          );
+        }
+
+        const fullDept = DEPED_TEACHER_DEPARTMENT_OPTIONS.find((opt) => opt.value === teacher.department)?.label || teacher.department;
         return (
-          <div className="flex flex-col items-start text-left gap-1 pl-2 py-1">
-            <Badge variant="default" className="text-xs uppercase whitespace-nowrap">
-              {teacher.department || "UNASSIGNED"}
-            </Badge>
-            <span className="text-xs text-foreground leading-tight">
-              {teacher.specialization || "Generalist"}
-            </span>
+          <div className="w-full flex flex-col items-start text-left gap-1 pl-2 py-1">
+            {fullDept ? (
+              <span className="text-sm font-bold uppercase whitespace-nowrap">
+                {fullDept}
+              </span>
+            ) : (
+              <span className="text-sm font-bold text-gray-300 uppercase whitespace-nowrap">
+                —
+              </span>
+            )}
+            {teacher.specialization && (
+              <span className="text-xs text-foreground leading-tight">
+                {teacher.specialization}
+              </span>
+            )}
           </div>
         );
       },
@@ -310,7 +313,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       minSize: 120,
       meta: {
         customSkeleton: (
-          <div className="flex flex-col gap-1.5 items-start pl-2">
+          <div className="flex flex-col gap-1.5 items-center mx-auto">
             <Skeleton className="h-5 w-16 rounded-full animate-pulse" />
             <Skeleton className="h-4 w-28 animate-pulse" />
           </div>
@@ -319,8 +322,8 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="STATUS & TENURE"
-          className="font-bold"
+          title="ACCOUNT STATUS"
+          className="font-bold justify-center"
         />
       ),
       cell: ({ row }) => {
@@ -352,22 +355,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
         const config = statusConfig[status] ?? statusConfig.ACTIVE;
 
-        const formatAppointment = (track?: string | null) => {
-          if (!track) return "Regular Permanent";
-          return track
-            .split("_")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(" ");
-        };
-
         return (
-          <div className="flex flex-col items-start text-left gap-1 pl-2 py-1">
+          <div className="flex flex-col items-center justify-center gap-1 py-1">
             <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full", config.pillClass)}>
               {config.label}
             </Badge>
-            <span className="text-xs text-foreground leading-tight">
-              {formatAppointment(teacher.natureOfAppointment)}
-            </span>
           </div>
         );
       },
@@ -378,7 +370,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       minSize: 160,
       meta: {
         customSkeleton: (
-          <div className="flex flex-col gap-1.5 items-center mx-auto">
+          <div className="flex flex-col gap-1.5 items-start pl-2">
             <Skeleton className="h-5 w-24 rounded-full animate-pulse" />
             <Skeleton className="h-4 w-20 rounded-full animate-pulse" />
           </div>
@@ -387,16 +379,17 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="SYSTEM DESIGNATION"
-          className="font-bold"
+          title="SYSTEM ROLES"
+          className="font-bold justify-start text-left"
         />
       ),
       cell: ({ row }) => {
-        const designation = row.original.designation;
+        const teacher = row.original;
+        const roles = teacher.userAccount?.roles || [];
 
-        if (!designation) {
+        if (roles.length === 0) {
           return (
-            <div className="flex justify-center">
+            <div className="w-full flex justify-start pl-2">
               <span className="text-foreground font-bold uppercase text-xs whitespace-nowrap">
                 Subject Teacher
               </span>
@@ -404,40 +397,31 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           );
         }
 
-        const ancillaryRoles = designation.ancillaryRoles ?? [];
+        const roleLabels: Record<string, string> = {
+          SYSTEM_ADMIN: "School Head",
+          HEAD_REGISTRAR: "Registrar",
+          TEACHER: "Teacher",
+          CLASS_ADVISER: "Class Adviser",
+          MRF: "MRF Staff",
+        };
 
         return (
-          <div className="flex flex-col items-center gap-1.5 py-1">
-            {designation.isClassAdviser ? (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-xs font-black uppercase px-2 h-5 border-none whitespace-nowrap",
-                  getAcademicDesignationColorClasses("CLASS ADVISER"),
-                )}>
-                Class Adviser
-              </Badge>
-            ) : (
-              <span className="text-foreground font-bold uppercase text-xs whitespace-nowrap">
-                Subject Teacher
-              </span>
-            )}
-
-            {ancillaryRoles.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-1 max-w-[170px]">
-                {ancillaryRoles.map((role) => (
-                  <Badge
-                    key={`${row.original.id}-${role}`}
-                    variant="outline"
-                    className={cn(
-                      "text-xs font-bold uppercase px-1.5 h-4 border-none",
-                      getAncillaryRoleColorClasses(role),
-                    )}>
-                    {role}
-                  </Badge>
-                ))}
-              </div>
-            )}
+          <div className="w-full flex flex-col items-start gap-1.5 py-1 pl-2">
+            <div className="flex flex-wrap justify-start gap-1 max-w-[170px]">
+              {roles.map((role) => (
+                <Badge
+                  key={`${teacher.id}-${role}`}
+                  variant="outline"
+                  className={cn(
+                    "text-xs font-black uppercase px-2 h-5 border-none whitespace-nowrap",
+                    role === "CLASS_ADVISER" ? getAcademicDesignationColorClasses("CLASS ADVISER") :
+                      role === "TEACHER" ? "bg-slate-100 text-slate-600 border-slate-200" :
+                        "bg-slate-100 text-slate-700 border-slate-200"
+                  )}>
+                  {roleLabels[role] || role}
+                </Badge>
+              ))}
+            </div>
           </div>
         );
       },
@@ -448,21 +432,30 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       minSize: 180,
       meta: {
         customSkeleton: (
-          <Skeleton className="h-5 w-36 mx-auto animate-pulse" />
+          <Skeleton className="h-5 w-36 pl-2 animate-pulse" />
         ),
       },
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
           title="ADVISORY SECTION"
-          className="font-bold"
+          className="font-bold justify-start text-left"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {renderAdvisoryStatus(row.original)}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const teacher = row.original;
+        const isTeachingStaff = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
+
+        return (
+          <div className="w-full flex justify-start pl-2">
+            {!isTeachingStaff ? (
+              <span className="text-xs font-bold text-gray-300 italic">—</span>
+            ) : (
+              renderAdvisoryStatus(teacher)
+            )}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -480,7 +473,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="ACTIONS"
-          className="font-bold"
+          className="font-bold justify-center"
         />
       ),
       cell: ({ row }) => (
@@ -494,59 +487,50 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-xl border flex flex-col max-h-full min-h-0 rounded-xl">
       <CardHeader className="border-b bg-gradient-to-r from-muted/20 via-muted/10 to-transparent py-3 px-4 shrink-0">
-        <div className="flex flex-wrap items-center gap-4 pb-3 border-b border-dashed border-border mb-3">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-foreground" />
-            <span className="text-xs font-black uppercase text-foreground tracking-wider">
-              Total
-            </span>
-            <span className="text-base font-black text-primary tabular-nums">
-              {teachers.length}
-            </span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4 border-b border-dashed border-border mb-3">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <div className="flex flex-col gap-1 items-start m-0 p-0">
+              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+                TOTAL PERSONNEL
+              </span>
+              <span className="text-3xl font-black text-red-900 tabular-nums m-0 p-0 leading-none">
+                {teachers.length}
+              </span>
+            </div>
           </div>
-          <div className="h-4 w-px bg-border/50" />
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary ring-2 ring-primary/20" />
-            <span className="text-xs font-black uppercase text-foreground tracking-wider">
-              Active
-            </span>
-            <span className="text-base font-black text-primary tabular-nums">
-              {teachers.filter((t) => t.isActive).length}
-            </span>
+
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <div className="flex flex-col gap-1 items-start m-0 p-0">
+              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+                ACTIVE PERSONNEL
+              </span>
+              <span className="text-3xl font-black text-emerald-600 tabular-nums m-0 p-0 leading-none">
+                {teachers.filter((t) => t.isActive).length}
+              </span>
+            </div>
           </div>
-          <div className="h-4 w-px bg-border/50" />
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-muted-foreground ring-2 ring-muted-foreground/20" />
-            <span className="text-xs font-black uppercase text-foreground tracking-wider">
-              Inactive
-            </span>
-            <span className="text-base font-black text-foreground tabular-nums">
-              {teachers.filter((t) => !t.isActive).length}
-            </span>
+
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <div className="flex flex-col gap-1 items-start m-0 p-0">
+              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+                INACTIVE PERSONNEL
+              </span>
+              <span className="text-3xl font-black text-slate-400 tabular-nums m-0 p-0 leading-none">
+                {teachers.filter((t) => !t.isActive).length}
+              </span>
+            </div>
           </div>
-          <div className="h-4 w-px bg-border/50" />
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-foreground ring-2 ring-foreground/20" />
-            <span className="text-xs font-black uppercase text-foreground tracking-wider">
-              Class Advisers
-            </span>
-            <span className="text-base font-black text-foreground tabular-nums">
-              {teachers.filter((t) => t.designation?.isClassAdviser).length}
-            </span>
+
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <div className="flex flex-col gap-1 items-start m-0 p-0">
+              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+                CLASS ADVISERS
+              </span>
+              <span className="text-3xl font-black text-slate-800 tabular-nums m-0 p-0 leading-none">
+                {teachers.filter((t) => t.designation?.isClassAdviser).length}
+              </span>
+            </div>
           </div>
-          {hasActiveFilters && (
-            <>
-              <div className="h-4 w-px bg-border/50" />
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase text-primary tracking-wider">
-                  Showing
-                </span>
-                <span className="text-base font-black text-primary tabular-nums">
-                  {filteredTeachers.length}
-                </span>
-              </div>
-            </>
-          )}
         </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full mt-3">
           <div className="relative w-full md:w-[40%] shrink-0">
@@ -673,167 +657,195 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
                 {hasActiveFilters
                   ? "No teachers match the current filter set."
-                  : 'No teachers found. Click "Add Teacher" to create one.'}
+                  : 'No teachers found.'}
               </div>
             ) : (
-              paginatedTeachers.map((teacher) => (
-                <div
-                  key={teacher.id}
-                  className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
-                        {teacher.firstName.charAt(0)}
-                        {teacher.lastName.charAt(0)}
+              paginatedTeachers.map((teacher) => {
+                const isTeachingStaff = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
+                return (
+                  <div
+                    key={teacher.id}
+                    className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
+                          {teacher.firstName.charAt(0)}
+                          {teacher.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-black text-sm uppercase leading-tight">
+                            {teacher.lastName}, {teacher.firstName}
+                          </p>
+                          <p className="text-xs text-foreground mt-0.5 font-bold">
+                            {teacher.email || "No email address"}
+                          </p>
+                        </div>
+                      </div>
+                      {(() => {
+                        const s = teacher.serviceStatus;
+                        const cfg: Record<string, { label: string; pillClass: string }> = {
+                          ACTIVE: { label: "Active", pillClass: "bg-primary/10 text-primary border-primary/20" },
+                          ON_LEAVE: { label: "On Leave", pillClass: "bg-secondary text-secondary-foreground border-secondary/20" },
+                          TRANSFERRED: { label: "Transferred", pillClass: "bg-muted text-foreground border-border" },
+                          RETIRED_RESIGNED: { label: "Retired / Resigned", pillClass: "bg-muted text-foreground border-border" },
+                          DROPPED_FROM_ROLLS: { label: "Dropped from Rolls", pillClass: "bg-destructive/10 text-destructive border-destructive/20" },
+                        };
+                        const c = cfg[s] ?? cfg.ACTIVE;
+                        return (
+                          <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full shrink-0", c.pillClass)}>
+                            {c.label}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                      <div>
+                        <p className="text-foreground uppercase font-bold text-[10px]">
+                          Employee ID
+                        </p>
+                        <p className="font-bold text-foreground">
+                          {teacher.employeeId || <span className="text-gray-300">—</span>}
+                        </p>
+                        {!isTeachingStaff ? (
+                          <p className="text-[10px] text-gray-300 italic mt-0.5">—</p>
+                        ) : teacher.plantillaPosition ? (
+                          <p className="text-[10px] text-foreground italic mt-0.5">
+                            {teacher.plantillaPosition}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-gray-300 italic mt-0.5">—</p>
+                        )}
                       </div>
                       <div>
-                        <p className="font-black text-sm uppercase leading-tight">
-                          {teacher.lastName}, {teacher.firstName}
+                        <p className="text-foreground uppercase font-bold text-[10px]">
+                          Department Assignment
                         </p>
-                        <p className="text-xs text-foreground mt-0.5 font-bold">
-                          {teacher.email || "No email address"}
-                        </p>
-                      </div>
-                    </div>
-                    {(() => {
-                      const s = teacher.serviceStatus;
-                      const cfg: Record<string, { label: string; pillClass: string }> = {
-                        ACTIVE: { label: "Active", pillClass: "bg-primary/10 text-primary border-primary/20" },
-                        ON_LEAVE: { label: "On Leave", pillClass: "bg-secondary text-secondary-foreground border-secondary/20" },
-                        TRANSFERRED: { label: "Transferred", pillClass: "bg-muted text-foreground border-border" },
-                        RETIRED_RESIGNED: { label: "Retired / Resigned", pillClass: "bg-muted text-foreground border-border" },
-                        DROPPED_FROM_ROLLS: { label: "Dropped from Rolls", pillClass: "bg-destructive/10 text-destructive border-destructive/20" },
-                      };
-                      const c = cfg[s] ?? cfg.ACTIVE;
-                      return (
-                        <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full shrink-0", c.pillClass)}>
-                          {c.label}
-                        </Badge>
-                      );
-                    })()}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Employee ID
-                      </p>
-                      <p className="font-bold text-foreground">
-                        {teacher.employeeId || "N/A"}
-                      </p>
-                      <p className="text-[10px] text-foreground italic mt-0.5">
-                        {teacher.plantillaPosition || "UNRANKED"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Assignment & Major
-                      </p>
-                      <div className="mt-0.5">
-                        <Badge variant="default" className="text-[10px] px-1.5 py-0 font-bold uppercase whitespace-nowrap">
-                          {teacher.department || "UNASSIGNED"}
-                        </Badge>
-                      </div>
-                      <p className="text-foreground text-[10px] mt-0.5 leading-tight">
-                        {teacher.specialization || "Generalist"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Tenure Track
-                      </p>
-                      <p className="font-bold text-foreground">
-                        {(() => {
-                          const track = teacher.natureOfAppointment;
-                          if (!track) return "Regular Permanent";
-                          return track
-                            .split("_")
-                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                            .join(" ");
-                        })()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Designation
-                      </p>
-                      {teacher.designation?.isClassAdviser ? (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] font-black uppercase px-1.5 h-4 border-none whitespace-nowrap mt-0.5",
-                            getAcademicDesignationColorClasses("CLASS ADVISER"),
-                          )}>
-                          Class Adviser
-                        </Badge>
-                      ) : (
-                        <p className="text-foreground font-bold uppercase text-[10px] mt-0.5">
-                          Subject Teacher
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Advisory
-                      </p>
-                      <div className="mt-0.5">
-                        {renderAdvisoryStatus(teacher)}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-foreground uppercase font-bold text-[10px]">
-                        Portal Access
-                      </p>
-                      <div className="mt-0.5">
-                        {(() => {
-                          const ua = teacher.userAccount;
-                          let accountLabel = "No Account";
-                          let accountColor =
-                            "text-foreground bg-muted border-foreground/30";
-
-                          if (ua) {
-                            if (!ua.isActive) {
-                              accountLabel = "Suspended";
-                              accountColor =
-                                "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
-                            } else if (ua.mustChangePassword && !ua.lastLoginAt) {
-                              accountLabel = "Provisioned";
-                              accountColor =
-                                "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
-                            } else {
-                              accountLabel = "SSO Active";
-                              accountColor =
-                                "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
-                            }
-                          } else if (teacher.isActive) {
-                            accountLabel = "No Account";
-                            accountColor =
-                              "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
-                          }
-
-                          return (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
-                                accountColor,
-                              )}>
-                              {ua?.isActive && (
-                                <span className="text-[10px]">🌐</span>
+                        <div className="mt-0.5 flex flex-col items-start gap-1">
+                          {!isTeachingStaff ? (
+                            <span className="text-[10px] font-bold text-gray-300 uppercase whitespace-nowrap">—</span>
+                          ) : (
+                            <>
+                              {teacher.department ? (
+                                <Badge variant="default" className="text-[10px] px-1.5 py-0 font-bold uppercase whitespace-nowrap">
+                                  {teacher.department}
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px] font-bold text-gray-300 uppercase whitespace-nowrap">—</span>
                               )}
-                              {accountLabel}
-                            </Badge>
-                          );
-                        })()}
+                              {teacher.specialization && (
+                                <p className="text-foreground text-[10px] leading-tight">
+                                  {teacher.specialization}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-foreground uppercase font-bold text-[10px]">
+                          System Roles
+                        </p>
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {(() => {
+                            const roles = teacher.userAccount?.roles || [];
+                            if (roles.length === 0) {
+                              return (
+                                <p className="text-foreground font-bold uppercase text-[10px]">
+                                  Subject Teacher
+                                </p>
+                              );
+                            }
+                            const roleLabels: Record<string, string> = {
+                              SYSTEM_ADMIN: "School Head",
+                              HEAD_REGISTRAR: "Registrar",
+                              TEACHER: "Teacher",
+                              CLASS_ADVISER: "Class Adviser",
+                              MRF: "MRF Staff",
+                            };
+                            return roles.map((role) => (
+                              <Badge
+                                key={`${teacher.id}-${role}`}
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] font-black uppercase px-1.5 h-4 border-none whitespace-nowrap",
+                                  role === "CLASS_ADVISER" ? getAcademicDesignationColorClasses("CLASS ADVISER") :
+                                    role === "TEACHER" ? "bg-slate-100 text-slate-600 border-slate-200" :
+                                      "bg-slate-100 text-slate-700 border-slate-200"
+                                )}>
+                                {roleLabels[role] || role}
+                              </Badge>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-foreground uppercase font-bold text-[10px]">
+                          Advisory
+                        </p>
+                        <div className="mt-0.5">
+                          {!isTeachingStaff ? (
+                            <span className="text-[10px] font-bold text-gray-300 italic">—</span>
+                          ) : (
+                            renderAdvisoryStatus(teacher)
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-foreground uppercase font-bold text-[10px]">
+                          Portal Access
+                        </p>
+                        <div className="mt-0.5">
+                          {(() => {
+                            const ua = teacher.userAccount;
+                            let accountLabel = "No Account";
+                            let accountColor =
+                              "text-foreground bg-muted border-foreground/30";
+
+                            if (ua) {
+                              if (!ua.isActive) {
+                                accountLabel = "Suspended";
+                                accountColor =
+                                  "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
+                              } else if (ua.mustChangePassword && !ua.lastLoginAt) {
+                                accountLabel = "Provisioned";
+                                accountColor =
+                                  "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
+                              } else {
+                                accountLabel = "SSO Active";
+                                accountColor =
+                                  "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
+                              }
+                            } else if (teacher.isActive) {
+                              accountLabel = "No Account";
+                              accountColor =
+                                "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
+                            }
+
+                            return (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
+                                  accountColor,
+                                )}>
+                                {ua?.isActive && (
+                                  <span className="text-[10px]">🌐</span>
+                                )}
+                                {accountLabel}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t">
-                    {renderTeacherActions(teacher)}
+                    <div className="pt-2 border-t">
+                      {renderTeacherActions(teacher)}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -848,10 +860,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               estimatedRowHeight={60}
               className="border-none rounded-none max-h-full h-auto"
               containerHeight="100%"
+              onRowClick={onOpenDetail}
+              getRowClassName={() => "hover:bg-gray-50 cursor-pointer"}
               noResultsMessage={
                 hasActiveFilters
                   ? "No teachers match the current filter set."
-                  : 'No teachers found. Click "Add Teacher" to create one.'
+                  : 'No teachers found.'
               }
             />
           </div>
@@ -863,7 +877,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               limit={limit}
               onPageChange={onPageChange}
               onLimitChange={onLimitChange}
-              itemName="Teachers"
+              itemName="Personnel"
             />
           </div>
         </div>

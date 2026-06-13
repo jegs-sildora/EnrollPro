@@ -46,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import {
   LoaderCore,
@@ -521,7 +522,46 @@ export default function SchoolYearTab() {
     return undefined;
   }, [years, activeYear]);
 
-  const isRolloverReady = Boolean(activeYear?.isEosyFinalized);
+  // Unified Calendar State
+  const [localCalendarState, setLocalCalendarState] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (activeYear) {
+      setLocalCalendarState({
+        termFormat: activeYear.termFormat ?? "TRIMESTER",
+        term1Start: activeYear.term1Start ? activeYear.term1Start.split('T')[0] : "",
+        term1End: activeYear.term1End ? activeYear.term1End.split('T')[0] : "",
+        term2Start: activeYear.term2Start ? activeYear.term2Start.split('T')[0] : "",
+        term2End: activeYear.term2End ? activeYear.term2End.split('T')[0] : "",
+        term3Start: activeYear.term3Start ? activeYear.term3Start.split('T')[0] : "",
+        term3End: activeYear.term3End ? activeYear.term3End.split('T')[0] : "",
+        term4Start: (activeYear as any).term4Start ? (activeYear as any).term4Start.split('T')[0] : "",
+        term4End: (activeYear as any).term4End ? (activeYear as any).term4End.split('T')[0] : "",
+        enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : "",
+        enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
+      });
+    }
+  }, [activeYear]);
+
+  const isCalendarChanged = useMemo(() => {
+    if (!activeYear) return false;
+    const getVal = (val: any) => val ? val.split('T')[0] : "";
+    return (
+      localCalendarState.termFormat !== (activeYear.termFormat ?? "TRIMESTER") ||
+      localCalendarState.term1Start !== getVal(activeYear.term1Start) ||
+      localCalendarState.term1End !== getVal(activeYear.term1End) ||
+      localCalendarState.term2Start !== getVal(activeYear.term2Start) ||
+      localCalendarState.term2End !== getVal(activeYear.term2End) ||
+      localCalendarState.term3Start !== getVal(activeYear.term3Start) ||
+      localCalendarState.term3End !== getVal(activeYear.term3End) ||
+      localCalendarState.term4Start !== getVal((activeYear as any).term4Start) ||
+      localCalendarState.term4End !== getVal((activeYear as any).term4End) ||
+      localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
+      localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate)
+    );
+  }, [localCalendarState, activeYear]);
+
+  const isRolloverReady = Boolean(activeYear?.isEosyFinalized) || systemPhase === "EOSY_CLOSING";
 
   const nextRolloverYearLabel = useMemo(() => {
     if (!activeYear) {
@@ -893,129 +933,41 @@ export default function SchoolYearTab() {
     setShowNextForm(true);
   };
 
-  const handleAutoFillTerms = async () => {
-    if (!activeYear || !activeYear.classOpeningDate || !activeYear.classEndDate) {
-      sileo.error({ title: "Missing Dates", description: "BOSY and EOSY must be set first." });
-      return;
-    }
-    const start = new Date(activeYear.classOpeningDate);
-    const end = new Date(activeYear.classEndDate);
-    const totalDays = (end.getTime() - start.getTime()) / DAY_IN_MS;
-    if (totalDays < 28) {
-      sileo.error({ title: "Invalid duration", description: "School year is too short." });
-      return;
-    }
-    
-    const isTrimester = activeYear.termFormat === "TRIMESTER" || !activeYear.termFormat;
-    const termCount = isTrimester ? 3 : 4;
-    const termDays = Math.floor(totalDays / termCount);
-
-    setIsUpdatingTimeline(true);
-    try {
-      const startYear = start.getUTCFullYear();
-      const endYear = startYear + 1;
-      const payload: Record<string, string | null> = {};
-
-      if (termCount === 3) {
-        payload.term1Start = new Date(Date.UTC(startYear, 5, 8, 12, 0, 0)).toISOString();
-        payload.term1End = new Date(Date.UTC(startYear, 8, 15, 12, 0, 0)).toISOString();
-        payload.term2Start = new Date(Date.UTC(startYear, 8, 16, 12, 0, 0)).toISOString();
-        payload.term2End = new Date(Date.UTC(startYear, 11, 18, 12, 0, 0)).toISOString();
-        payload.term3Start = new Date(Date.UTC(endYear, 0, 4, 12, 0, 0)).toISOString();
-        payload.term3End = new Date(Date.UTC(endYear, 3, 8, 12, 0, 0)).toISOString();
-        payload.term4Start = null;
-        payload.term4End = null;
-      } else {
-        let currentStart = start;
-        for (let i = 1; i <= 4; i++) {
-          if (i <= termCount) {
-            const isLastTerm = i === termCount;
-            const currentEnd = isLastTerm ? end : addUtcDays(currentStart, termDays);
-            payload[`term${i}Start`] = currentStart.toISOString();
-            payload[`term${i}End`] = currentEnd.toISOString();
-            currentStart = addUtcDays(currentEnd, 1);
-          } else {
-            payload[`term${i}Start`] = null;
-            payload[`term${i}End`] = null;
-          }
-        }
-      }
-
-      await api.put(`/school-years/${activeYear.id}`, payload);
-      sileo.success({ title: "Terms auto-filled", description: `Standard duration distributed across ${termCount} terms.` });
-      await fetchData();
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsUpdatingTimeline(false);
-    }
-  };
-
-  const handleSaveTermDate = async (
-    field: "term1Start" | "term1End" | "term2Start" | "term2End" | "term3Start" | "term3End" | "term4Start" | "term4End",
-    date: Date,
-  ) => {
+  const handleSaveCalendarSettings = async () => {
     if (!activeYear) return;
     setIsUpdatingTimeline(true);
     try {
-      const payload: Record<string, string> = { 
-        [field]: date.toISOString() 
-      };
-
-      if (field === "term1Start") {
-        payload.classOpeningDate = date.toISOString();
+      const payload: Record<string, string> = { ...localCalendarState };
+      // Map back to classOpeningDate and classEndDate if needed, but our backend handles termDates now.
+      // Wait, we need to ensure classOpeningDate is term1Start, and classEndDate is the last term's end date.
+      if (payload.term1Start) {
+        payload.classOpeningDate = new Date(payload.term1Start).toISOString();
+        payload.term1Start = new Date(payload.term1Start).toISOString();
       }
-      if (field === "term1End") {
-        const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate() + 1);
-        payload.term2Start = nextDay.toISOString();
-      }
-      if (field === "term2End") {
-        const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate() + 1);
-        payload.term3Start = nextDay.toISOString();
-      }
-      if (field === "term3End") {
-        if (activeYear.termFormat === "TRIMESTER" || !activeYear.termFormat) {
-          payload.classEndDate = date.toISOString();
-        } else {
-          const nextDay = new Date(date);
-          nextDay.setDate(nextDay.getDate() + 1);
-          payload.term4Start = nextDay.toISOString();
+      if (payload.term1End) payload.term1End = new Date(payload.term1End).toISOString();
+      if (payload.term2Start) payload.term2Start = new Date(payload.term2Start).toISOString();
+      if (payload.term2End) payload.term2End = new Date(payload.term2End).toISOString();
+      if (payload.term3Start) payload.term3Start = new Date(payload.term3Start).toISOString();
+      if (payload.term3End) {
+        payload.term3End = new Date(payload.term3End).toISOString();
+        if (payload.termFormat === "TRIMESTER") {
+          payload.classEndDate = payload.term3End;
         }
       }
-      if (field === "term4End") {
-        payload.classEndDate = date.toISOString();
+      if (payload.term4Start) payload.term4Start = new Date(payload.term4Start).toISOString();
+      if (payload.term4End) {
+        payload.term4End = new Date(payload.term4End).toISOString();
+        if (payload.termFormat === "QUARTERS") {
+          payload.classEndDate = payload.term4End;
+        }
       }
+      if (payload.enrollOpenDate) payload.enrollOpenDate = new Date(payload.enrollOpenDate).toISOString();
+      if (payload.enrollCloseDate) payload.enrollCloseDate = new Date(payload.enrollCloseDate).toISOString();
 
       await api.put(`/school-years/${activeYear.id}`, payload);
       sileo.success({
-        title: "Date updated",
-        description: "The quarter date has been saved.",
-      });
-      await fetchData();
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsUpdatingTimeline(false);
-    }
-  };
-
-  const handleSaveEnrollmentDate = async (
-    field: "enrollOpenDate" | "enrollCloseDate",
-    date: Date,
-  ) => {
-    if (!activeYear) return;
-    setIsUpdatingTimeline(true);
-    try {
-      const payload: Record<string, any> = { 
-        [field]: date.toISOString() 
-      };
-
-      await api.patch(`/school-years/${activeYear.id}/dates`, payload);
-      sileo.success({
-        title: "Date updated",
-        description: "The enrollment date has been saved.",
+        title: "Calendar Settings Saved",
+        description: "The calendar settings have been successfully updated.",
       });
       await fetchData();
       const pubRes = await api.get("/settings/public");
@@ -1237,8 +1189,8 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wider">
-                            System Academic Phase
+                          <h4 className="font-bold text-sm text-foreground uppercase tracking-wider mb-4">
+                            School Year Phase
                           </h4>
                         </div>
                         <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
@@ -1251,62 +1203,71 @@ export default function SchoolYearTab() {
                       onValueChange={(value) => setSelectedPhase(value)}
                       className="flex flex-col space-y-4"
                     >
-                      <div className="flex items-start space-x-2">
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
                         <div>
-                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-bold cursor-pointer text-foreground block">Official Enrollment</Label>
-                          <p className="text-xs text-muted-foreground mt-1">Opens the public intake forms and processes normal verify/confirm workflows.</p>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="OFFICIAL_ENROLLMENT" className={cn("cursor-pointer text-foreground block", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "font-black text-green-900" : "font-bold")}>Official Enrollment</Label>
+                            {(systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" && (
+                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
+                              </Badge>
+                            )}
+                          </div>
+                          <p className={cn("text-xs mt-1", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Opens the public intake forms and processes normal verify/confirm workflows.</p>
                         </div>
                       </div>
-                      <div className="flex items-start space-x-2">
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "CLASSES_ONGOING" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
                         <div>
-                          <Label htmlFor="CLASSES_ONGOING" className="font-bold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
-                          <p className="text-xs text-muted-foreground mt-1">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="CLASSES_ONGOING" className={cn("cursor-pointer text-foreground block", systemPhase === "CLASSES_ONGOING" ? "font-black text-green-900" : "font-bold")}>Regular Classes (Late Enrollment Period)</Label>
+                            {systemPhase === "CLASSES_ONGOING" && (
+                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
+                              </Badge>
+                            )}
+                          </div>
+                          <p className={cn("text-xs mt-1", systemPhase === "CLASSES_ONGOING" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
                         </div>
                       </div>
-                      <div className="flex items-start space-x-2">
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "EOSY_CLOSING" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
                         <div>
-                          <Label htmlFor="EOSY_CLOSING" className="font-bold cursor-pointer text-foreground block">EOSY Closing</Label>
-                          <p className="text-xs text-muted-foreground mt-1">Locks public intake forms and readies the database for end-of-year grade finalization.</p>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="EOSY_CLOSING" className={cn("cursor-pointer text-foreground block", systemPhase === "EOSY_CLOSING" ? "font-black text-green-900" : "font-bold")}>EOSY Closing</Label>
+                            {systemPhase === "EOSY_CLOSING" && (
+                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
+                              </Badge>
+                            )}
+                          </div>
+                          <p className={cn("text-xs mt-1", systemPhase === "EOSY_CLOSING" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Locks public intake forms and readies the database for end-of-year grade finalization.</p>
                         </div>
                       </div>
                     </RadioGroup>
 
-                    {selectedPhase && selectedPhase !== systemPhase && (
-                      <div className="mt-6 flex justify-end">
-                        <Button 
-                          onClick={() => setShowPhaseModal(true)}
-                          className="w-full sm:w-auto"
-                        >
-                          Apply Phase Change
-                        </Button>
-                      </div>
-                    )}
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        onClick={() => setShowPhaseModal(true)}
+                        className="w-full sm:w-auto"
+                        disabled={!selectedPhase || selectedPhase === (systemPhase ?? "OFFICIAL_ENROLLMENT")}
+                      >
+                        Apply Phase Change
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
-                        DepEd Term Configuration
+                        Grading Period Format
                       </h4>
                     </div>
                     <RadioGroup
-                      value={activeYear.termFormat ?? "TRIMESTER"}
-                      onValueChange={async (value) => {
-                        setIsUpdatingTimeline(true);
-                        try {
-                          await api.put(`/school-years/${activeYear.id}`, { termFormat: value });
-                          sileo.success({ title: "Term format updated", description: "Term format has been updated." });
-                          await fetchData();
-                        } catch (err) {
-                          toastApiError(err as never);
-                        } finally {
-                          setIsUpdatingTimeline(false);
-                        }
-                      }}
+                      value={localCalendarState.termFormat ?? "TRIMESTER"}
+                      onValueChange={(value) => setLocalCalendarState(prev => ({ ...prev, termFormat: value }))}
                       className="flex flex-col space-y-2"
                     >
                       <div className="flex items-center space-x-2">
@@ -1324,69 +1285,58 @@ export default function SchoolYearTab() {
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
-                        Term Dates
+                        Grading Period Calendar
                       </h4>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleAutoFillTerms}
-                        className="font-bold text-xs"
-                      >
-                        Auto-Fill Standard Terms
-                      </Button>
                     </div>
                     {[
-                      { num: 1, label: activeYear.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: activeYear.term1Start, end: activeYear.term1End },
-                      { num: 2, label: activeYear.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: activeYear.term2Start, end: activeYear.term2End },
-                      { num: 3, label: activeYear.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: activeYear.term3Start, end: activeYear.term3End },
-                      ...(activeYear.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: (activeYear as any).term4Start, end: (activeYear as any).term4End }] : []),
+                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
+                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
+                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
+                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => (
-                        <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/40">
-                          <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
-                          <div className="flex items-center gap-3 flex-1 w-full">
-                              <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
-                                <div className="text-xs font-semibold text-foreground uppercase mb-0.5">Start Date</div>
-                                <HybridDatePicker
-                                  value={term.start ? term.start.split('T')[0] : ""}
-                                  onChange={(val) => {
-                                    if (val) {
-                                      const [y, m, d] = val.split('-');
-                                      const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
-                                      handleSaveTermDate(term.startField as Parameters<typeof handleSaveTermDate>[0], dateObj);
-                                    }
-                                  }}
-                                  className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
-                                  placeholder="Set date"
-                                />
-                              </div>
-                            <span className="text-foreground font-bold">to</span>
-                            <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
-                              <div className="text-xs font-semibold text-foreground uppercase mb-0.5">End Date</div>
-                              <HybridDatePicker
-                                value={term.end ? term.end.split('T')[0] : ""}
-                                onChange={(val) => {
-                                  if (val) {
-                                    const [y, m, d] = val.split('-');
-                                    const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
-                                    handleSaveTermDate(term.endField as Parameters<typeof handleSaveTermDate>[0], dateObj);
-                                  }
-                                }}
-                                className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
-                                placeholder="Set date"
-                              />
-                            </div>
+                      <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/40">
+                        <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
+                        <div className="flex items-center gap-3 flex-1 w-full">
+                          <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                            <div className="text-xs font-semibold text-foreground uppercase mb-0.5">Start Date</div>
+                            <HybridDatePicker
+                              value={term.start || ""}
+                              onChange={(val) => {
+                                setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
+                              }}
+                              className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                              placeholder="Set date"
+                            />
+                          </div>
+                          <span className="text-foreground font-bold">to</span>
+                          <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                            <div className="text-xs font-semibold text-foreground uppercase mb-0.5">End Date</div>
+                            <HybridDatePicker
+                              value={term.end || ""}
+                              onChange={(val) => {
+                                setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
+                              }}
+                              className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                              placeholder="Set date"
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                  </div>
 
-                  {/* Summary footer mapping to Total Academic Duration */}
                   <div className="mt-8 pt-4 border-t border-border/40 flex flex-col sm:flex-row sm:items-center justify-between text-muted-foreground bg-muted/10 rounded-lg p-4 mb-8">
                     <span className="text-xs font-bold uppercase tracking-wider text-foreground">First Day of Classes — Last Day of Classes</span>
                     <span className="text-sm font-bold text-foreground">
-                      {activeYear.classOpeningDate && activeYear.classEndDate 
-                        ? `${formatManilaDate(activeYear.classOpeningDate)} — ${formatManilaDate(activeYear.classEndDate)}`
-                        : "Dates not fully configured"}
+                      {(() => {
+                        const firstDay = localCalendarState.term1Start;
+                        const isQuarters = localCalendarState.termFormat === "QUARTERS";
+                        const lastDay = isQuarters ? localCalendarState.term4End : localCalendarState.term3End;
+
+                        return firstDay && lastDay
+                          ? `${formatManilaDate(firstDay)} — ${formatManilaDate(lastDay)}`
+                          : "Dates not fully configured";
+                      })()}
                     </span>
                   </div>
 
@@ -1396,7 +1346,7 @@ export default function SchoolYearTab() {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-lg text-foreground uppercase tracking-wider">
-                            BOSY Enrollment Period
+                            Official Intake Period (BOSY)
                           </h4>
                         </div>
                         <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
@@ -1416,13 +1366,9 @@ export default function SchoolYearTab() {
                             Opens On
                           </Label>
                           <HybridDatePicker
-                            value={activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : ""}
+                            value={localCalendarState.enrollOpenDate || ""}
                             onChange={(val) => {
-                              if (val) {
-                                const [y, m, d] = val.split('-');
-                                const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
-                                handleSaveEnrollmentDate("enrollOpenDate", dateObj);
-                              }
+                              setLocalCalendarState(prev => ({ ...prev, enrollOpenDate: val || "" }));
                             }}
                             placeholder="Set start date"
                           />
@@ -1432,22 +1378,18 @@ export default function SchoolYearTab() {
                             Closes On
                           </Label>
                           <HybridDatePicker
-                            value={activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : ""}
+                            value={localCalendarState.enrollCloseDate || ""}
                             onChange={(val) => {
-                              if (val) {
-                                const [y, m, d] = val.split('-');
-                                const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
-                                handleSaveEnrollmentDate("enrollCloseDate", dateObj);
-                              }
+                              setLocalCalendarState(prev => ({ ...prev, enrollCloseDate: val || "" }));
                             }}
                             placeholder="Set end date"
                           />
                         </div>
                       </div>
 
-                      {activeYear.enrollOpenDate !== null &&
-                        activeYear.enrollCloseDate !== null &&
-                        toManilaDateToken(activeYear.enrollCloseDate) < toManilaDateToken(activeYear.enrollOpenDate) && (
+                      {localCalendarState.enrollOpenDate !== "" &&
+                        localCalendarState.enrollCloseDate !== "" &&
+                        toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
                           <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                             <p>
@@ -1455,6 +1397,16 @@ export default function SchoolYearTab() {
                             </p>
                           </div>
                         )}
+                    </div>
+
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        onClick={handleSaveCalendarSettings}
+                        className="w-full sm:w-auto"
+                        disabled={!isCalendarChanged}
+                      >
+                        Save Calendar Settings
+                      </Button>
                     </div>
                   </div>
 
@@ -1850,7 +1802,7 @@ export default function SchoolYearTab() {
               </Button>
               {activeYear && (
                 <Button
-                  variant="secondary"
+                  variant="default"
                   className="font-bold"
                   onClick={handleUpdateRolloverDraft}
                   disabled={
@@ -1905,42 +1857,53 @@ export default function SchoolYearTab() {
       </Dialog>
 
       {/* Phase Shift Confirmation Modal */}
-      <Dialog open={showPhaseModal} onOpenChange={setShowPhaseModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Phase Shift</DialogTitle>
-            <DialogDescription>
-              {selectedPhase === "CLASSES_ONGOING" && "Are you sure? All new submissions from this point forward will be flagged as Late Enrollees."}
-              {selectedPhase === "EOSY_CLOSING" && "Are you sure? This will lock all public forms and prepare the database for the end of the school year. You cannot easily undo this."}
-              {selectedPhase === "OFFICIAL_ENROLLMENT" && "Are you sure you want to shift to Official Enrollment?"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowPhaseModal(false)} disabled={isUpdatingPhase}>Cancel</Button>
-            <Button 
-              disabled={isUpdatingPhase}
-              onClick={async () => {
-                if (!selectedPhase) return;
-                setIsUpdatingPhase(true);
-                try {
-                  await api.patch(`/settings/phase`, { phase: selectedPhase });
-                  sileo.success({ title: "System phase updated", description: "The system phase has been updated." });
-                  const pubRes = await api.get("/settings/public");
-                  setSettings({ systemPhase: pubRes.data.systemPhase });
-                  setShowPhaseModal(false);
-                  setSelectedPhase(null);
-                } catch (err) {
-                  toastApiError(err as never);
-                } finally {
-                  setIsUpdatingPhase(false);
-                }
-              }}
-            >
-              {isUpdatingPhase ? "Applying..." : "Confirm"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmationModal
+        open={showPhaseModal}
+        onOpenChange={setShowPhaseModal}
+        title="Confirm Phase Shift"
+        variant="primary"
+        confirmClassName="bg-primary text-primary-foreground"
+        description={
+          <span className="block text-left text-foreground">
+            {selectedPhase === "CLASSES_ONGOING" && (
+              <>Are you sure you want to transition the system to <strong>Regular Classes</strong>? This will permanently tag all subsequent applicants as Late Enrollees for LIS reporting. This action cannot be undone without Admin privileges.</>
+            )}
+            {selectedPhase === "EOSY_CLOSING" && (
+              <>Are you sure you want to transition the system to <strong>EOSY Closing</strong>? This will lock all public forms and prepare the database for the end of the school year. You cannot easily undo this.</>
+            )}
+            {selectedPhase === "OFFICIAL_ENROLLMENT" && (
+              <>Are you sure you want to shift to <strong>Official Enrollment</strong>? This opens the public intake forms and processes normal verify/confirm workflows.</>
+            )}
+          </span>
+        }
+        loading={isUpdatingPhase}
+        onConfirm={async () => {
+          if (!selectedPhase) return;
+
+          setIsUpdatingPhase(true);
+
+          // Optimistic UI Update
+          const previousPhase = systemPhase;
+          setSettings({ systemPhase: selectedPhase as any });
+          setShowPhaseModal(false);
+
+          try {
+            await api.patch(`/settings/phase`, { phase: selectedPhase });
+            sileo.success({ title: "System phase updated", description: "The system phase has been updated successfully." });
+            // Re-fetch to ensure sync with backend, but without blocking the initial UI update
+            const pubRes = await api.get("/settings/public");
+            setSettings({ systemPhase: pubRes.data.systemPhase });
+            setSelectedPhase(null);
+          } catch (err) {
+            // Revert optimistic update
+            setSettings({ systemPhase: previousPhase });
+            toastApiError(err as never);
+          } finally {
+            setIsUpdatingPhase(false);
+          }
+        }}
+        confirmText="Confirm"
+      />
     </div>
   );
 }

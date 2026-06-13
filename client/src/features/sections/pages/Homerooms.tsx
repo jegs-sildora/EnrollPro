@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Fragment, useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "motion/react"
 import { sileo } from "sileo"
@@ -12,7 +12,7 @@ import { Button } from "@/shared/ui/button"
 import { Badge } from "@/shared/ui/badge"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
+
 import { SectionFormSheet } from "../components/SectionFormSheet"
 import SectionRosterModal from "../components/SectionRosterModal"
 import { cn } from "@/shared/lib/utils"
@@ -24,15 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select"
 import type {
-  AdviserCandidate,
+
   SectionFormState,
   SectionItem,
   TeacherOption,
@@ -50,7 +43,7 @@ interface GradeLevelGroup {
 }
 
 const SCP_SHORT_LABELS: Record<string, string> = {
-  REGULAR: "Regular (BEC)",
+  REGULAR: "Regular Program",
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
   SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
   SPECIAL_PROGRAM_IN_SPORTS: "SPS",
@@ -62,7 +55,7 @@ const SCP_SHORT_LABELS: Record<string, string> = {
 
 
 export default function Homerooms() {
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore()
+  const { activeSchoolYearId, viewingSchoolYearId, enableHomogeneousSections } = useSettingsStore()
   const ayId = viewingSchoolYearId ?? activeSchoolYearId
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly()
   const canMutate = !isHistoricalReadOnly || hasOverride
@@ -81,15 +74,12 @@ export default function Homerooms() {
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
   })
-  const [pendingIsHomogeneous, setPendingIsHomogeneous] = useState(false)
   const [createGlId, setCreateGlId] = useState<number | null>(null)
   const [createGlName, setCreateGlName] = useState("")
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
 
 
-  // Delete state
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-  const [deleteName, setDeleteName] = useState("")
+
 
   // Roster modal state
   const [rosterSectionId, setRosterSectionId] = useState<number | null>(null)
@@ -106,12 +96,19 @@ export default function Homerooms() {
   const programOptionsQuery = useQuery({
     queryKey: ayId ? queryKeys.homeroomPrograms(ayId) : (["homerooms", "programs", null] as const),
     queryFn: async () => {
-      return [
-        { value: "REGULAR", label: "Basic Education Curriculum (BEC/Regular)" },
+      const opts = [
         { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" },
         { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" },
         { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in Sports (SPS)" },
       ]
+
+      if (enableHomogeneousSections) {
+        opts.unshift({ value: "REGULAR_HETERO", label: "Regular/BEC (Heterogeneous)" })
+        opts.unshift({ value: "REGULAR_HOMO", label: "Regular/BEC (Homogeneous)" })
+      } else {
+        opts.unshift({ value: "REGULAR_HETERO", label: "Regular/BEC (Heterogeneous)" })
+      }
+      return opts
     },
     enabled: Boolean(ayId),
   })
@@ -137,66 +134,26 @@ export default function Homerooms() {
     enabled: Boolean(ayId && isFormSheetOpen),
   })
 
-  const adviserCandidatesQuery = useQuery({
-    queryKey:
-      ayId ? queryKeys.homeroomAdviserCandidates(ayId) : (["homerooms", "adviser-candidates", null] as const),
-    queryFn: async () => {
-      const res = await api.get("/teachers", {
-        params: { schoolYearId: ayId },
-      })
-
-      return (res.data.teachers || [])
-        .filter(
-          (teacher: { isActive?: boolean }) => teacher.isActive
-        )
-        .map(
-          (teacher: {
-            id: number
-            firstName: string
-            lastName: string
-            middleName: string | null
-            employeeId: string | null
-            department: string | null
-            specialization: string | null
-            isActive: boolean
-            designationTitle: string | null
-            designation?: {
-              isClassAdviser?: boolean
-              advisorySection?: {
-                id: number
-                name: string
-                gradeLevelName: string
-              } | null
-            } | null
-          }) => ({
-            id: teacher.id,
-            name: `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`,
-            employeeId: teacher.employeeId,
-            department: teacher.department,
-            specialization: teacher.specialization,
-            isActive: teacher.isActive,
-            designationTitle: teacher.designationTitle,
-            assignedSection:
-              teacher.designation?.isClassAdviser && teacher.designation?.advisorySection
-                ? {
-                  id: teacher.designation.advisorySection.id,
-                  name: teacher.designation.advisorySection.name,
-                  gradeLevelName: teacher.designation.advisorySection.gradeLevelName,
-                }
-                : null,
-          }),
-        ) as AdviserCandidate[]
-    },
-    enabled: Boolean(ayId),
-  })
 
   const groups = sectionsQuery.data ?? []
   const loading = sectionsQuery.isPending || sectionsQuery.isFetching
   const showSkeleton = useDelayedLoading(loading)
-  const programOptions = programOptionsQuery.data ?? [{ value: "REGULAR", label: "Regular (BEC)" }]
-  const availableTeachers = availableTeachersQuery.data ?? []
+  const programOptions = programOptionsQuery.data ?? [{ value: "REGULAR_HETERO", label: "Regular/BEC (Hetero)" }]
+
+  const rawTeachers = availableTeachersQuery.data ?? []
+  const currentAdviser = formSheetMode === "edit" && editingSectionId
+    ? groups.flatMap(g => g.sections).find(s => s.id === editingSectionId)?.advisingTeacher
+    : null;
+
+  const availableTeachers = useMemo(() => {
+    const list = [...rawTeachers];
+    if (currentAdviser && !list.some(t => t.id === currentAdviser.id)) {
+      list.push({ id: currentAdviser.id, name: currentAdviser.name, employeeId: "" });
+    }
+    return list;
+  }, [rawTeachers, currentAdviser]);
+
   const loadingTeachers = availableTeachersQuery.isPending || availableTeachersQuery.isFetching
-  const adviserCandidates = adviserCandidatesQuery.data ?? []
 
   useEffect(() => {
     if (groups.length > 0) {
@@ -209,7 +166,6 @@ export default function Homerooms() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.homeroomSections(ayId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.homeroomPrograms(ayId) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomAdviserCandidates(ayId) }),
     ])
   }, [ayId, queryClient])
 
@@ -217,11 +173,11 @@ export default function Homerooms() {
     mutationFn: async () => {
       const payload = {
         name: sectionFormData.name.trim(),
-        programType: sectionFormData.curriculumProgram,
+        programType: (sectionFormData.curriculumProgram || "REGULAR").replace("_HOMO", "").replace("_HETERO", ""),
+        isHomogeneous: sectionFormData.curriculumProgram === "REGULAR_HOMO",
         advisingTeacherId:
           sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
-        isHomogeneous: pendingIsHomogeneous,
         tleProgramId: null,
       }
 
@@ -251,199 +207,36 @@ export default function Homerooms() {
     },
   })
 
-  const deleteSectionMutation = useMutation({
-    mutationFn: async () => api.delete(`/sections/${deleteId}`),
-    onSuccess: async () => {
-      sileo.success({ title: "Section removed", description: `${deleteName} was removed.` })
-      setDeleteId(null)
-      await invalidateHomeroomQueries()
-    },
-    onError: () => {
-      sileo.error({
-        title: "Section deletion failed",
-        description: "The section was not removed. Please try again.",
-      })
-    },
-  })
 
-  const updateAdviserMutation = useMutation({
-    mutationFn: async ({ sectionId, teacherId }: { sectionId: number; teacherId: number | null }) => {
-      return api.put(`/sections/${sectionId}`, { advisingTeacherId: teacherId })
-    },
-    onSuccess: async () => {
-      sileo.success({
-        title: "Class adviser updated",
-        description: "Advisory assignment updated successfully.",
-      })
-      await invalidateHomeroomQueries()
-    },
-    onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { message?: string } } }
-      sileo.error({
-        title: "Update failed",
-        description: apiErr.response?.data?.message ?? "Please try again.",
-      })
-    },
-  })
 
-  const handleInlineAdviserChange = useCallback((sectionId: number, value: string) => {
-    const teacherId = value === "unassigned" ? null : parseInt(value)
-    void updateAdviserMutation.mutateAsync({ sectionId, teacherId })
-  }, [updateAdviserMutation])
+  const handleOpenCreate = useCallback(() => {
+    const currentGroup = groups.find((g) => String(g.gradeLevelId) === activeGradeId)
+    if (!currentGroup) return
 
-  const renderSectionTable = (
-    sectionsToRender: SectionItem[],
-    gradeLevelName: string,
-  ) => {
-    if (sectionsToRender.length === 0) {
-      return (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm font-bold text-foreground italic bg-muted/10">
-          No sections in this group.
-        </div>
-      )
-    }
-
-    return (
-      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="font-bold text-xs uppercase text-foreground pl-6">Section Name</TableHead>
-              <TableHead className="font-bold text-xs uppercase text-foreground w-[280px]">Class Adviser</TableHead>
-              <TableHead className="font-bold text-xs uppercase text-foreground text-center w-[180px]">Enrolled / Capacity</TableHead>
-              {canMutate && <TableHead className="font-bold text-xs uppercase text-foreground text-right pr-6 w-[200px]">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sectionsToRender.map((s) => {
-              const pct = s.fillPercent ?? Math.round((s.enrolledCount / s.maxCapacity) * 100)
-              return (
-                <TableRow
-                  key={s.id}
-                  className="hover:bg-muted/30 cursor-pointer"
-                  onClick={() => setRosterSectionId(s.id)}
-                >
-                  <TableCell className="font-medium pl-6">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black uppercase text-sm text-foreground">{s.name}</span>
-                      {s.programType !== "REGULAR" && (
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase">
-                          {SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                        </Badge>
-                      )}
-                      {s.isHomogeneous && s.programType === "REGULAR" && (
-                        <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary uppercase">
-                          Pilot
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="w-[240px]">
-                      <Select
-                        disabled={!canMutate || updateAdviserMutation.isPending}
-                        value={s.advisingTeacher ? String(s.advisingTeacher.id) : "unassigned"}
-                        onValueChange={(val) => handleInlineAdviserChange(s.id, val)}
-                      >
-                        <SelectTrigger className={cn(
-                          "h-9 font-bold text-xs uppercase bg-background border transition-all",
-                          !s.advisingTeacher
-                            ? "text-muted-foreground border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
-                            : "border-input hover:bg-muted/20"
-                        )}>
-                          <SelectValue placeholder="Unassigned" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          <SelectItem value="unassigned" className="font-bold text-xs text-muted-foreground italic uppercase">
-                            Unassigned
-                          </SelectItem>
-                          {adviserCandidates.map((t) => {
-                            const isAssignedElsewhere = Boolean(t.assignedSection && t.assignedSection.id !== s.id)
-                            const labelSuffix = t.assignedSection && t.assignedSection.id !== s.id
-                              ? ` (Assigned: ${t.assignedSection.gradeLevelName} - ${t.assignedSection.name})`
-                              : ""
-                            return (
-                              <SelectItem
-                                key={t.id}
-                                value={String(t.id)}
-                                disabled={isAssignedElsewhere}
-                                className="font-bold text-xs uppercase"
-                              >
-                                {t.name}{labelSuffix}
-                              </SelectItem>
-                            )
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col gap-1 max-w-[140px] mx-auto">
-                      <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                        <span>{s.enrolledCount} / {s.maxCapacity}</span>
-                        <span>{pct}%</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${pct > 100
-                              ? "bg-red-500"
-                              : pct >= 90
-                                ? "bg-orange-400"
-                                : pct >= 75
-                                  ? "bg-yellow-400"
-                                  : "bg-green-500"
-                            }`}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </TableCell>
-                  {canMutate && (
-                    <TableCell onClick={(e) => e.stopPropagation()} className="text-right pr-6">
-                      <div className="flex justify-end gap-1.5">
-                        <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-bold" onClick={() => handleOpenEdit(s, gradeLevelName)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-bold text-destructive hover:text-destructive" onClick={() => { setDeleteId(s.id); setDeleteName(s.name) }}>
-                          Remove
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    )
-  }
-
-  const handleOpenCreate = useCallback((glId: number, glName: string, programType = "REGULAR", isHomogeneous = false) => {
     setFormSheetMode("create")
     setEditingSectionId(null)
-    setCreateGlId(glId)
-    setCreateGlName(glName)
-    setPendingIsHomogeneous(isHomogeneous)
+    setCreateGlId(currentGroup.gradeLevelId)
+    setCreateGlName(currentGroup.gradeLevelName)
     setSectionFormData({
       name: "",
-      curriculumProgram: programType,
+      curriculumProgram: enableHomogeneousSections ? "REGULAR_HOMO" : "REGULAR_HETERO",
       sectionType: "HOME_ROOM",
       adviserId: "none",
-      maxCapacity: programType === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP,
+      maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
       tleProgramId: null,
     })
     setIsFormSheetOpen(true)
-  }, [])
+  }, [activeGradeId, groups])
 
   const handleOpenEdit = useCallback((section: SectionItem, glName: string) => {
     setFormSheetMode("edit")
     setEditingSectionId(section.id)
     setCreateGlName(glName)
-    setPendingIsHomogeneous(section.isHomogeneous)
     setSectionFormData({
       name: section.name,
-      curriculumProgram: section.programType,
+      curriculumProgram: section.programType === "REGULAR"
+        ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO")
+        : section.programType,
       sectionType: "HOME_ROOM",
       adviserId: section.advisingTeacher ? String(section.advisingTeacher.id) : "none",
       maxCapacity: section.maxCapacity,
@@ -453,14 +246,14 @@ export default function Homerooms() {
   }, [])
 
   const handleFieldChange = useCallback(
-    (field: keyof SectionFormState, value: string | number | null) => {
+    (field: keyof SectionFormState, value: string | number | null | boolean) => {
       setSectionFormData((prev) => {
         const next = { ...prev, [field]: value }
         if (field === "curriculumProgram") {
           next.maxCapacity =
-            value === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP
+            String(value).startsWith("REGULAR") ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP
         }
-        return next
+        return next as SectionFormState
       })
     },
     [],
@@ -471,10 +264,7 @@ export default function Homerooms() {
     await saveSectionMutation.mutateAsync()
   }
 
-  const handleDelete = async () => {
-    if (!deleteId) return
-    await deleteSectionMutation.mutateAsync()
-  }
+
 
   // All sections are homeroom sections (TLE labs no longer exist)
   const homeroomGroups = groups
@@ -496,9 +286,17 @@ export default function Homerooms() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold">Homeroom Sections</h1>
-        <p className="text-sm text-foreground font-bold">Manage grade level sections and advising teachers</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Homeroom Sections</h1>
+          <p className="text-sm text-foreground font-bold">Manage grade level sections and advising teachers</p>
+        </div>
+        {canMutate && homeroomGroups.length > 0 && (
+          <Button onClick={handleOpenCreate} className="font-bold uppercase tracking-wide">
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Section
+          </Button>
+        )}
       </div>
 
       <Tabs value={activeGradeId} onValueChange={setActiveGradeId}>
@@ -531,8 +329,63 @@ export default function Homerooms() {
             transition={{ duration: 0.2 }}
             className="w-full">
             {homeroomGroups.map((g) => {
-              const homoBecSections = g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous)
-              const heteroBecSections = g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous)
+              const steSections = g.sections.filter((s) => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING")
+              const spsSections = g.sections.filter((s) => s.programType === "SPECIAL_PROGRAM_IN_SPORTS")
+              const spaSections = g.sections.filter((s) => s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS")
+              const otherScpSections = g.sections.filter((s) => s.programType !== "REGULAR" && !["SCIENCE_TECHNOLOGY_AND_ENGINEERING", "SPECIAL_PROGRAM_IN_SPORTS", "SPECIAL_PROGRAM_IN_THE_ARTS"].includes(s.programType))
+              const pilotSections = g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous)
+              const regularSections = g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous)
+
+              const hasSections = g.sections.length > 0
+
+              const renderSectionGroup = (sections: typeof g.sections, title: string, showScpBadge: boolean = false) => {
+                if (sections.length === 0) return null;
+                return (
+                  <Fragment>
+                    <TableRow className="bg-muted/10 hover:bg-muted/10">
+                      <TableCell colSpan={3} className="py-2 pl-6">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/60">{title}</span>
+                      </TableCell>
+                    </TableRow>
+                    {sections.map((s) => {
+                      const pct = s.fillPercent ?? Math.round((s.enrolledCount / s.maxCapacity) * 100)
+                      return (
+                        <TableRow key={s.id} className="hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => handleOpenEdit(s, g.gradeLevelName)}>
+                          <TableCell className="font-medium text-left pl-6">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black uppercase text-sm text-foreground">{s.name}</span>
+                              {showScpBadge && (
+                                <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                                  {SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                                </Badge>
+                              )}
+                              {s.programType === "REGULAR" && s.isHomogeneous && (
+                                <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary uppercase">Pilot</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-left">
+                            <span className={cn("text-xs font-bold uppercase", !s.advisingTeacher ? "text-amber-500 italic" : "text-foreground")}>
+                              {s.advisingTeacher ? s.advisingTeacher.name : "Unassigned"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center pr-6">
+                            <div className="flex flex-col gap-1 max-w-[140px] mx-auto">
+                              <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                                <span>{s.enrolledCount} / {s.maxCapacity}</span>
+                                <span>{pct}%</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${pct > 100 ? "bg-red-500" : pct >= 90 ? "bg-orange-400" : pct >= 75 ? "bg-yellow-400" : "bg-green-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </Fragment>
+                )
+              }
 
               return (
                 <TabsContent
@@ -540,125 +393,31 @@ export default function Homerooms() {
                   value={String(g.gradeLevelId)}
                   className="mt-0 focus-visible:outline-none ring-0 space-y-8">
 
-                  {/* SCP Section — derived from actual section data, not config */}
-                  {(() => {
-                    const SCP_TYPES = [
-                      "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-                      "SPECIAL_PROGRAM_IN_THE_ARTS",
-                      "SPECIAL_PROGRAM_IN_SPORTS",
-                      "SPECIAL_PROGRAM_IN_JOURNALISM",
-                      "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-                      "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
-                    ] as const
-                    const presentScpTypes = SCP_TYPES.filter(
-                      (pt) => g.sections.some((s) => s.programType === pt)
-                    )
-                    return (
-                      <section className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1" />
-                          <div className="flex items-center justify-center flex-1">
-                            <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Special Curricular Programs (SCP)</span>
-                          </div>
-                          <div className="flex-1 flex justify-end">
-                            {canMutate && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", true)}
-                                className="font-bold text-xs uppercase h-8"
-                              >
-                                <Plus className="size-4 mr-1.5" />
-                                Add SCP Section
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-6 pl-4 border-l-2 border-muted">
-                          {presentScpTypes.length === 0 && (
-                            <p className="py-8 text-center text-sm font-bold text-foreground">
-                              No sections in this group.
-                            </p>
-                          )}
-                          {presentScpTypes.map((programType) => {
-                            const label = SCP_SHORT_LABELS[programType] ?? programType
-                            const sections = g.sections.filter((s) => s.programType === programType)
-                            return (
-                              <div key={programType} className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
-                                  {canMutate && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
-                                      className="font-bold text-xs uppercase h-8"
-                                    >
-                                      <Plus className="size-4 mr-1.5" />
-                                      Add {label} Section
-                                    </Button>
-                                  )}
-                                </div>
-                                {renderSectionTable(sections, g.gradeLevelName)}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </section>
-                    )
-                  })()}
-
-                  {/* BEC Section */}
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Basic Education Curriculum (BEC)</span>
+                  {!hasSections ? (
+                    <div className="rounded-lg border border-dashed p-12 text-center text-sm font-bold text-foreground/50 uppercase italic bg-muted/10">
+                      No sections in this group.
                     </div>
-                    <div className="space-y-6 pl-4 border-l-2 border-muted">
-                      {/* Homogeneous / Pilot */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                            BEC <span className="font-bold normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
-                          </h3>
-                          {canMutate && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", true)}
-                              className="font-bold text-xs uppercase h-8"
-                            >
-                              <Plus className="size-4 mr-1.5" />
-                              Add Homogeneous Section
-                            </Button>
-                          )}
-                        </div>
-                        {renderSectionTable(homoBecSections, g.gradeLevelName)}
-                      </div>
-
-                      {/* Heterogeneous */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                            BEC <span className="font-bold normal-case text-foreground/60">(Heterogeneous Section)</span>
-                          </h3>
-                          {canMutate && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", false)}
-                              className="font-bold text-xs uppercase h-8"
-                            >
-                              <Plus className="size-4 mr-1.5" />
-                              Add Heterogeneous Section
-                            </Button>
-                          )}
-                        </div>
-                        {renderSectionTable(heteroBecSections, g.gradeLevelName)}
-                      </div>
-
-                      {homoBecSections.length === 0 && heteroBecSections.length === 0 && !canMutate && (
-                        <p className="py-8 text-center text-sm font-bold text-foreground">
-                          No homeroom sections for this grade level.
-                        </p>
-                      )}
+                  ) : (
+                    <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30">
+                            <TableHead className="font-bold text-xs uppercase text-foreground text-left pl-6">Section Name</TableHead>
+                            <TableHead className="font-bold text-xs uppercase text-foreground text-left w-[320px]">Class Adviser</TableHead>
+                            <TableHead className="font-bold text-xs uppercase text-foreground text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {renderSectionGroup(steSections, "STE", true)}
+                          {renderSectionGroup(spsSections, "SPS", true)}
+                          {renderSectionGroup(spaSections, "SPA", true)}
+                          {renderSectionGroup(otherScpSections, "Other Special Curricular Programs", true)}
+                          {renderSectionGroup(pilotSections, "BEC (Homogeneous - Top 5)")}
+                          {renderSectionGroup(regularSections, "BEC (Heterogeneous)")}
+                        </TableBody>
+                      </Table>
                     </div>
-                  </section>
+                  )}
                 </TabsContent>
               )
             })}
@@ -691,25 +450,13 @@ export default function Homerooms() {
         defaultMode="HOMEROOM"
       />
 
-      <ConfirmationModal
-        open={!!deleteId}
-        onOpenChange={(open) => {
-          if (!open) setDeleteId(null)
-        }}
-        title="Remove Section"
-        description={`Are you sure you want to remove "${deleteName}"? This cannot be undone.`}
-        confirmText={deleteSectionMutation.isPending ? "Removing..." : "Remove Section"}
-        onConfirm={handleDelete}
-        variant="danger"
-      />
+
 
       <SectionRosterModal
         sectionId={rosterSectionId}
         open={rosterSectionId !== null}
         onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
       />
-
-
     </div>
   )
 }

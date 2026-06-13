@@ -117,6 +117,7 @@ export async function index(req: Request, res: Response) {
             isActive: true,
             lastLoginAt: true,
             mustChangePassword: true,
+            roles: true,
           },
         },
         teacherDesignations: {
@@ -161,6 +162,7 @@ export async function index(req: Request, res: Response) {
                 ? teacher.user.lastLoginAt.toISOString()
                 : null,
               mustChangePassword: teacher.user.mustChangePassword,
+              roles: teacher.user.roles,
             }
           : null,
         designation: designation
@@ -246,6 +248,7 @@ interface TeacherUpsertPayload {
   firstName: string;
   lastName: string;
   middleName?: string | null;
+  suffix?: string | null;
   email: string;
   employeeId: string;
   contactNumber?: string | null;
@@ -261,6 +264,7 @@ export async function store(req: Request, res: Response) {
       firstName,
       lastName,
       middleName,
+      suffix,
       email,
       employeeId,
       contactNumber,
@@ -302,10 +306,10 @@ export async function store(req: Request, res: Response) {
       // 1. Create/Upsert the User record for system login
       const existingUser = await tx.user.findUnique({
         where: { employeeId: normalizedEmployeeId },
-        select: { id: true, role: true },
+        select: { id: true, roles: true },
       });
 
-      if (existingUser && existingUser.role === "SYSTEM_ADMIN") {
+      if (existingUser && existingUser.roles.includes("SYSTEM_ADMIN")) {
         throw new Error(
           "Conflict: This employee ID is already assigned to a System Administrator and cannot be automatically converted to a Teacher account.",
         );
@@ -317,6 +321,7 @@ export async function store(req: Request, res: Response) {
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
+          suffix: normalizeOptionalUpperText(suffix),
           email: normalizedEmail,
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           designation: "SUBJECT TEACHER",
@@ -330,7 +335,7 @@ export async function store(req: Request, res: Response) {
           employeeId: normalizedEmployeeId,
           accountName: normalizedEmployeeId,
           password: defaultPasswordHash,
-          role: "TEACHER",
+          roles: ["TEACHER"],
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           isActive: true,
           designation: "SUBJECT TEACHER",
@@ -399,6 +404,7 @@ export async function update(req: Request, res: Response) {
       firstName,
       lastName,
       middleName,
+      suffix,
       email,
       employeeId,
       contactNumber,
@@ -406,6 +412,10 @@ export async function update(req: Request, res: Response) {
       specialization,
       department,
       plantillaPosition,
+      roles,
+      serviceStatus,
+      serviceEffectiveDate,
+      serviceRemarks,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -447,9 +457,12 @@ export async function update(req: Request, res: Response) {
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
+          suffix: normalizeOptionalUpperText(suffix),
           email: normalizedEmail,
           sex: req.body.sex === "MALE" ? "MALE" : "FEMALE",
           employeeId: normalizedEmployeeId,
+          ...(roles ? { roles } : {}),
+          ...(serviceStatus ? { isActive: serviceStatus === "ACTIVE" } : {}),
         },
       });
 
@@ -460,6 +473,7 @@ export async function update(req: Request, res: Response) {
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
+          suffix: normalizeOptionalUpperText(suffix),
           email: normalizedEmail,
           employeeId: normalizedEmployeeId,
           contactNumber: normalizedContactNumber,
@@ -469,6 +483,7 @@ export async function update(req: Request, res: Response) {
             ? { connect: { code: deptCode } }
             : { disconnect: true },
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+          ...(serviceStatus ? { serviceStatus, isActive: serviceStatus === "ACTIVE" } : {}),
         },
       });
 
@@ -498,6 +513,17 @@ export async function update(req: Request, res: Response) {
       recordId: id,
       req,
     });
+
+    if (serviceStatus && serviceStatus !== existing.serviceStatus) {
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "TEACHER_SERVICE_STATUS_UPDATED",
+        description: `Updated service status for ${updatedTeacher.lastName}, ${updatedTeacher.firstName}: ${serviceStatus} (effective ${serviceEffectiveDate})${serviceRemarks ? ` — ${serviceRemarks}` : ""}`,
+        subjectType: "Teacher",
+        recordId: id,
+        req,
+      });
+    }
 
     res.json({
       teacher: {

@@ -864,7 +864,7 @@ export function createSchoolYearAdminController(
 
   async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, enrollOpenDate, enrollCloseDate } = req.body;
 
     const year = await deps.prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -893,6 +893,8 @@ export function createSchoolYearAdminController(
         ...(term4Start !== undefined ? { term4Start: term4Start ? deps.normalizeDateToUtcNoon(new Date(term4Start)) : null } : {}),
         ...(term4End !== undefined ? { term4End: term4End ? deps.normalizeDateToUtcNoon(new Date(term4End)) : null } : {}),
         ...(termFormat !== undefined ? { termFormat } : {}),
+        ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? deps.normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),
+        ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? deps.normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
       },
     });
 
@@ -909,35 +911,12 @@ export function createSchoolYearAdminController(
     res.json({ year: updated });
   }
 
-  async function updateAssessmentConfig(
-    req: Request,
-    res: Response,
-  ): Promise<void> {
-    const id = parseSchoolYearId(req);
-    const { requireReadingAssessmentNew, requireReadingAssessmentContinuing } =
-      req.body;
-
-    const year = await deps.prisma.schoolYear.findUnique({ where: { id } });
-    if (!year) {
-      res.status(404).json({ message: "School year not found" });
-      return;
-    }
-
-    const updated = await deps.prisma.schoolYear.update({
-      where: { id },
-      data: { requireReadingAssessmentNew, requireReadingAssessmentContinuing },
-    });
-
-    res.json({ year: updated });
-  }
-
   return {
     createSchoolYear,
     rolloverSchoolYear,
     updateRolloverDraft,
     updateDates,
     updateSchoolYear,
-    updateAssessmentConfig,
   };
 }
 
@@ -949,5 +928,4 @@ export const {
   updateRolloverDraft,
   updateDates,
   updateSchoolYear,
-  updateAssessmentConfig,
 } = schoolYearAdminController;

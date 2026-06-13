@@ -30,7 +30,7 @@ router.put(
 );
 router.get("/:id", teachersCtrl.show);
 router.post("/", validate(teacherSchema), teachersCtrl.store);
-router.put("/:id", validate(updateTeacherSchema), teachersCtrl.update);
+router.patch("/:id", validate(updateTeacherSchema), teachersCtrl.update);
 router.patch(
   "/:id/deactivate",
   validate(deactivateTeacherSchema),

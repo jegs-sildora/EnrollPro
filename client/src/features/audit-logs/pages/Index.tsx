@@ -37,7 +37,7 @@ interface AuditUser {
   id: number;
   firstName: string;
   lastName: string;
-  role: string;
+  roles: string[];
 }
 
 interface AuditLogRow {
@@ -59,7 +59,7 @@ interface AuditLogRow {
 
 interface FilterMetadata {
   actionTypes: string[];
-  actors: { id: number; name: string; role: string }[];
+  actors: { id: number; name: string; roles: string[] }[];
 }
 
 const PAGE_SIZE = 20;
@@ -178,7 +178,7 @@ function formatKeyName(key: string) {
  */
 export default function AuditLogs() {
   const { user } = useAuthStore();
-  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
+  const isSystemAdmin = user?.roles?.includes("SYSTEM_ADMIN");
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
@@ -290,9 +290,9 @@ export default function AuditLogs() {
                     variant="outline"
                     className={cn(
                       "text-[9px] font-black uppercase px-1.5 h-3.5 border-none",
-                      getRoleColorClasses(log.user.role),
+                      getRoleColorClasses(log.user.roles?.[0]),
                     )}>
-                    {formatUserRole(log.user.role)}
+                    {formatUserRole(log.user.roles?.[0])}
                   </Badge>
                 </div>
               )}
@@ -555,7 +555,7 @@ export default function AuditLogs() {
                         <SelectItem value="all" className="font-bold text-xs">All Staff Members</SelectItem>
                         {filterMeta.actors.map((actor) => (
                           <SelectItem key={actor.id} value={actor.id.toString()} className="font-bold text-xs">
-                            {actor.name} ({formatUserRole(actor.role)})
+                            {actor.name} ({formatUserRole(actor.roles?.[0])})
                           </SelectItem>
                         ))}
                       </SelectContent>

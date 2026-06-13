@@ -45,3 +45,9 @@ export const updateProgramsSchema = z.object({
   spaEnabled: z.boolean(),
   spsEnabled: z.boolean(),
 });
+
+export const updateAlgorithmSchema = z.object({
+  enableHomogeneousSections: z.boolean(),
+  homogeneousSectionCount: z.number().int().min(0),
+  heterogeneousRoundRobin: z.boolean(),
+});

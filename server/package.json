@@ -12,7 +12,9 @@
     "db:seed": "tsx prisma/seeds/seed.ts",
     "db:seed:psgc": "tsx src/scripts/seed-psgc.ts",
     "db:wipe": "tsx prisma/seeds/wipe-everything.ts",
-    "db:wipe:enrollment": "tsx prisma/seeds/wipe-enrollment.ts"
+    "db:wipe:enrollment": "tsx prisma/seeds/wipe-enrollment.ts",
+    "seed-info": "tsx prisma/seeds/task-01-seed.ts",
+    "wipe-info": "tsx prisma/seeds/task-01-wipe.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",
@@ -37,6 +39,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

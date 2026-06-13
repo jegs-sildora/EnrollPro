@@ -13,7 +13,6 @@ import {
   MoreHorizontal,
   BadgeAlert,
   FileBadge2,
-  UserRoundPen,
   Fingerprint,
   Mars,
   Venus,
@@ -30,7 +29,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
-import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
+
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -53,7 +52,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
@@ -127,25 +128,6 @@ interface Student {
   studentPhoto?: string | null;
 }
 
-interface StudentDetail extends Student {
-  rejectionReason: string | null;
-  schoolYear: string;
-  schoolYearId: number;
-  enrollment: {
-    id: number;
-    section: string;
-    sectionId: number;
-    eosyStatus: EosyStatus | null;
-    dropOutReason: string | null;
-    dropOutDate: string | null;
-    transferOutDate: string | null;
-    transferOutSchoolName: string | null;
-    transferOutReason: string | null;
-    advisingTeacher: string | null;
-    enrolledAt: string;
-    enrolledBy: string;
-  } | null;
-}
 
 interface GradeLevel {
   id: number;
@@ -203,7 +185,7 @@ const VALID_TABS = ["active", "completers", "inactive"] as const;
 type StudentTab = (typeof VALID_TABS)[number];
 
 const PROGRAM_FILTER_OPTIONS = [
-  { value: "REGULAR", label: "Regular (BEC)" },
+  { value: "REGULAR", label: "Regular" },
   { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
   { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
   { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
@@ -272,7 +254,7 @@ const formatLearningProgramLabel = (
     .toUpperCase();
 
   if (normalizedProgram === "REGULAR") {
-    return "Regular (BEC) Program";
+    return "Regular Program";
   }
 
   const displayName = formatScpType(normalizedProgram).replace(
@@ -296,10 +278,10 @@ export default function Students() {
     ? ((requestedTab as StudentTab) ?? "active")
     : "active";
 
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, viewingSchoolYearId, systemPhase } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const canMutate = !isHistoricalReadOnly || hasOverride;
+  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "EOSY_CLOSING";
   const queryClient = useQueryClient();
 
   const { panelPercentage, isDesktopViewport, startResizing } =
@@ -354,7 +336,6 @@ export default function Students() {
 
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showLrnDialog, setShowLrnDialog] = useState(false);
 
   const [actionStudent, setActionStudent] = useState<Student | null>(null);
@@ -368,23 +349,7 @@ export default function Students() {
   const [dropoutReasonDetails, setDropoutReasonDetails] = useState("");
   const [dropoutDate, setDropoutDate] = useState("");
 
-  const [profileForm, setProfileForm] = useState({
-    emailAddress: "",
-    contactNumber: "",
-    emergencyContactName: "",
-    emergencyContactNumber: "",
-    region: "",
-    barangay: "",
-    province: "",
-    cityMunicipality: "",
-    streetSitio: "",
-  });
 
-  const [baselineProfileForm, setBaselineProfileForm] = useState(profileForm);
-
-  const isProfileFormDirty = useMemo(() => {
-    return JSON.stringify(profileForm) !== JSON.stringify(baselineProfileForm);
-  }, [profileForm, baselineProfileForm]);
 
   const [lrnForm, setLrnForm] = useState({
     lrn: "",
@@ -465,7 +430,7 @@ export default function Students() {
       if (!ayId) return;
       try {
         const [glRes, secRes] = await Promise.all([
-          api.get(`/curriculum/${ayId}/grade-levels`),
+          api.get(`/school-years/grade-levels`),
           api.get(`/sections/${ayId}`),
         ]);
         setGradeLevels(glRes.data.gradeLevels || []);
@@ -507,6 +472,17 @@ export default function Students() {
     }
     setSectionFilter("all");
   }, [gradeLevelFilter, programFilter, sections]);
+
+  const availablePrograms = useMemo(() => {
+    const relevantSections =
+      gradeLevelFilter === "all"
+        ? sections
+        : sections.filter(
+            (s) => s.gradeLevelId === parseInt(gradeLevelFilter, 10)
+          );
+    const availableTypes = new Set(relevantSections.map((s) => s.programType));
+    return PROGRAM_FILTER_OPTIONS.filter((p) => availableTypes.has(p.value));
+  }, [sections, gradeLevelFilter]);
 
   useEffect(() => {
     void queryClient.invalidateQueries({
@@ -644,72 +620,7 @@ export default function Students() {
     [toDateInputValue],
   );
 
-  const openProfileQuickEditDialog = useCallback(
-    async (student: Student | PanelStudentDetail) => {
-      const s =
-        "learningProgram" in student
-          ? student
-          : mapPanelDetailToStudent(student);
-      setActionStudent(s);
 
-      try {
-        const res = await api.get(`/students/${s.id}`);
-        const detail = res.data.student as StudentDetail & {
-          currentAddress?: {
-            region?: string | null;
-            barangay?: string | null;
-            province?: string | null;
-            cityMunicipality?: string | null;
-            houseNoStreet?: string | null;
-            sitio?: string | null;
-          } | null;
-          guardianInfo?: {
-            firstName: string;
-            lastName: string;
-            contactNumber?: string | null;
-          } | null;
-        };
-
-        const initialForm = {
-          emailAddress: detail.emailAddress ?? s.emailAddress ?? "",
-          contactNumber:
-            detail.parentGuardianContact ?? s.parentGuardianContact ?? "",
-          emergencyContactName: detail.guardianInfo
-            ? `${detail.guardianInfo.firstName} ${detail.guardianInfo.lastName}`
-            : "",
-          emergencyContactNumber: detail.guardianInfo?.contactNumber ?? "",
-          region: detail.currentAddress?.region ?? "",
-          barangay: detail.currentAddress?.barangay ?? "",
-          province: detail.currentAddress?.province ?? "",
-          cityMunicipality: detail.currentAddress?.cityMunicipality ?? "",
-          streetSitio:
-            [detail.currentAddress?.houseNoStreet, detail.currentAddress?.sitio]
-              .filter(Boolean)
-              .join(", ") || "",
-        };
-
-        setProfileForm(initialForm);
-        setBaselineProfileForm(initialForm);
-      } catch {
-        const fallbackForm = {
-          emailAddress: s.emailAddress ?? "",
-          contactNumber: s.parentGuardianContact ?? "",
-          emergencyContactName: "",
-          emergencyContactNumber: "",
-          region: "",
-          barangay: "",
-          province: "",
-          cityMunicipality: "",
-          streetSitio: "",
-        };
-        setProfileForm(fallbackForm);
-        setBaselineProfileForm(fallbackForm);
-      }
-
-      setShowProfileDialog(true);
-    },
-    [],
-  );
 
   const openAssignLrnDialog = useCallback(
     (student: Student | PanelStudentDetail) => {
@@ -816,50 +727,7 @@ export default function Students() {
     refreshDetailIfOpen,
   ]);
 
-  const submitQuickProfileUpdate = useCallback(async () => {
-    if (!actionStudent) return;
 
-    setActionSubmitting(true);
-    try {
-      const payload: Record<string, unknown> = {
-        emailAddress: profileForm.emailAddress.trim() || null,
-        currentAddress: {
-          region: profileForm.region.trim() || null,
-          barangay: profileForm.barangay.trim() || null,
-          province: profileForm.province.trim() || null,
-          cityMunicipality: profileForm.cityMunicipality.trim() || null,
-          sitio: profileForm.streetSitio.trim() || null,
-        },
-      };
-
-      // Split emergency contact name into first and last
-      const nameParts = profileForm.emergencyContactName.trim().split(" ");
-      const lastName = nameParts.length > 1 ? nameParts.pop() : "";
-      const firstName = nameParts.join(" ") || profileForm.emergencyContactName;
-
-      if (firstName || lastName || profileForm.emergencyContactNumber) {
-        payload.guardianInfo = {
-          firstName: firstName || "Unknown",
-          lastName: lastName || "Unknown",
-          contactNumber: profileForm.emergencyContactNumber.trim() || null,
-        };
-      }
-
-      await api.put(`/students/${actionStudent.id}`, payload);
-
-      sileo.success({
-        title: "Profile updated",
-        description: "Learner demographic details were saved.",
-      });
-      setShowProfileDialog(false);
-      await refreshTables();
-      await refreshDetailIfOpen(actionStudent.id);
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setActionSubmitting(false);
-    }
-  }, [actionStudent, profileForm, refreshTables, refreshDetailIfOpen]);
 
   const submitAssignLrn = useCallback(async () => {
     if (!actionStudent) return;
@@ -907,16 +775,6 @@ export default function Students() {
   const columns = useMemo<ColumnDef<Student>[]>(
     () => [
       {
-        id: "rowNumber",
-        meta: { skeletonClassName: "w-[40px] mx-auto" },
-        header: () => <span className="text-xs font-bold">#</span>,
-        cell: ({ row }) => (
-          <span className="text-xs font-bold text-center block">
-            {(page - 1) * limit + row.index + 1}
-          </span>
-        ),
-      },
-      {
         id: "lastName",
         accessorKey: "lastName",
         meta: { skeletonClassName: "w-[200px]" },
@@ -947,25 +805,29 @@ export default function Students() {
       {
         id: "lrn",
         accessorKey: "lrn",
-        meta: { skeletonClassName: "w-[120px] mx-auto" },
+        meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title="LRN"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <span className="font-bold text-sm">{row.original.lrn}</span>
+          <div className="flex w-full justify-center">
+            <span className="font-bold text-sm text-center">{row.original.lrn}</span>
+          </div>
         ),
       },
       {
         id: "sex",
         accessorKey: "sex",
-        meta: { skeletonClassName: "w-[40px] mx-auto" },
+        meta: { skeletonClassName: "w-[40px] mx-auto", className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Gender"
+            title="Sex"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => {
@@ -977,49 +839,61 @@ export default function Students() {
                 ? "F"
                 : row.original.sex || "—";
 
-          return <span className="font-bold text-sm uppercase">{display}</span>;
+          return (
+            <div className="flex w-full justify-center">
+              <span className="font-bold text-sm uppercase text-center">{display}</span>
+            </div>
+          );
         },
       },
       {
         id: "gradeLevel",
         accessorKey: "gradeLevel",
-        meta: { skeletonClassName: "w-[80px] mx-auto" },
+        meta: { skeletonClassName: "w-[80px] mx-auto", className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title="Grade Level"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <span className="font-bold text-sm">{row.original.gradeLevel}</span>
+          <div className="flex w-full justify-center">
+            <span className="font-bold text-sm text-center">{row.original.gradeLevel}</span>
+          </div>
         ),
       },
       {
         id: "section",
         accessorKey: "section",
-        meta: { skeletonClassName: "w-[100px] mx-auto" },
+        meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title="Section"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <span className="font-bold text-sm">
-            {formatSectionLabel(row.original.section)}
-          </span>
+          <div className="flex w-full justify-center">
+            <span className="font-bold text-sm text-center">
+              {formatSectionLabel(row.original.section)}
+            </span>
+          </div>
         ),
       },
       {
         id: "status",
+        meta: { className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title="Status"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <div className="flex justify-center">
+          <div className="flex w-full justify-center">
             {renderLearnerStatus(row.original)}
           </div>
         ),
@@ -1027,104 +901,25 @@ export default function Students() {
       {
         id: "dateEnrolled",
         accessorKey: "dateEnrolled",
-        meta: { skeletonClassName: "w-[140px] mx-auto" },
+        meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title="Date Enrolled"
+            className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <span className="text-sm font-bold block text-center">
-            {formatDate(row.original.dateEnrolled || row.original.createdAt)}
-          </span>
-        ),
-      },
-      {
-        id: "actions",
-        header: "Actions",
-        meta: { skeletonClassName: "w-[100px] mx-auto rounded-full" },
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center gap-2 min-w-[180px]">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8 px-3 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-              onClick={() => handleViewDetails(row.original.id)}>
-              <Eye className="h-3.5 w-3.5 mr-1.5" />
-              View
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 w-8 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                  aria-label={`Open actions for ${row.original.fullName}`}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 font-bold">
-                <DropdownMenuItem
-                  onClick={() => handleOpenProfilePage(row.original.id)}
-                  className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Open Full Profile
-                </DropdownMenuItem>
-                {canMutate && (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      void openProfileQuickEditDialog(row.original)
-                    }
-                    className="cursor-pointer">
-                    <UserRoundPen className="mr-2 h-4 w-4" />
-                    Quick Update Demographics
-                  </DropdownMenuItem>
-                )}
-                {canMutate && (
-                  <DropdownMenuItem
-                    onClick={() => openAssignLrnDialog(row.original)}
-                    className="cursor-pointer">
-                    <Fingerprint className="mr-2 h-4 w-4" />
-                    Input Official LIS LRN
-                  </DropdownMenuItem>
-                )}
-                {canMutate && (
-                  <DropdownMenuItem
-                    onClick={() => openTransferOutDialog(row.original)}
-                    className="cursor-pointer text-amber-700 focus:text-amber-700">
-                    <FileBadge2 className="mr-2 h-4 w-4" />
-                    Mark as Transferred Out
-                  </DropdownMenuItem>
-                )}
-                {canMutate && (
-                  <DropdownMenuItem
-                    onClick={() => openDropoutDialog(row.original)}
-                    className="cursor-pointer text-rose-700 focus:text-rose-700">
-                    <BadgeAlert className="mr-2 h-4 w-4" />
-                    Mark as Dropped Out
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex w-full justify-center">
+            <span className="text-sm font-bold text-center block">
+              {formatDate(row.original.dateEnrolled || row.original.createdAt)}
+            </span>
           </div>
         ),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      handleViewDetails,
-      handleOpenProfilePage,
-      openProfileQuickEditDialog,
-      openAssignLrnDialog,
-      openTransferOutDialog,
-      openDropoutDialog,
-      canMutate,
-      page,
-      limit,
-    ],
+    [],
   );
 
   const renderContent = () => (
@@ -1203,7 +998,7 @@ export default function Students() {
                       className="text-sm font-bold">
                       All Programs
                     </SelectItem>
-                    {PROGRAM_FILTER_OPTIONS.map((option) => (
+                    {availablePrograms.map((option) => (
                       <SelectItem
                         key={option.value}
                         value={option.value}
@@ -1235,14 +1030,36 @@ export default function Students() {
                       className="text-sm font-bold">
                       All Sections
                     </SelectItem>
-                    {filteredSections.map((sec) => (
-                      <SelectItem
-                        key={sec.id}
-                        value={sec.id.toString()}
-                        className="text-sm font-bold">
-                        {formatSectionLabel(sec.name)}
-                      </SelectItem>
-                    ))}
+                    {gradeLevelFilter === "all" ? (
+                      gradeLevels.map((gl) => {
+                        const glSections = filteredSections.filter(
+                          (s) => s.gradeLevelId === gl.id
+                        );
+                        if (glSections.length === 0) return null;
+                        return (
+                          <SelectGroup key={gl.id}>
+                            <SelectLabel className="text-xs text-muted-foreground uppercase">{gl.name}</SelectLabel>
+                            {glSections.map((sec) => (
+                              <SelectItem
+                                key={sec.id}
+                                value={sec.id.toString()}
+                                className="text-sm font-bold">
+                                {formatSectionLabel(sec.name)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        );
+                      })
+                    ) : (
+                      filteredSections.map((sec) => (
+                        <SelectItem
+                          key={sec.id}
+                          value={sec.id.toString()}
+                          className="text-sm font-bold">
+                          {formatSectionLabel(sec.name)}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1366,6 +1183,7 @@ export default function Students() {
                     containerHeight="100%"
                     sorting={sorting}
                     onSortingChange={onSortingChange}
+                    onRowClick={(row) => handleViewDetails(row.id)}
                   />
                 </div>
               </motion.div>
@@ -1417,7 +1235,7 @@ export default function Students() {
                           </div>
                           <div>
                             <p className="text-xs uppercase  font-bold text-foreground">
-                              Gender
+                              Sex
                             </p>
                             <p className="font-bold uppercase">
                               {student.sex === "MALE" || student.sex === "M"
@@ -1481,22 +1299,13 @@ export default function Students() {
                                 <Eye className="mr-2 h-4 w-4" />
                                 Open Full Profile
                               </DropdownMenuItem>
-                              {canMutate && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    void openProfileQuickEditDialog(student)
-                                  }
-                                  className="cursor-pointer">
-                                  <UserRoundPen className="mr-2 h-4 w-4" />
-                                  Quick Update Demographics
-                                </DropdownMenuItem>
-                              )}
+
                               {canMutate && (
                                 <DropdownMenuItem
                                   onClick={() => openAssignLrnDialog(student)}
                                   className="cursor-pointer">
                                   <Fingerprint className="mr-2 h-4 w-4" />
-                                  Input Official LIS LRN
+                                  Update LIS LRN
                                 </DropdownMenuItem>
                               )}
                               {canMutate && (
@@ -1541,6 +1350,7 @@ export default function Students() {
                     noResultsMessage="No learners found for the selected filters."
                     sorting={sorting}
                     onSortingChange={onSortingChange}
+                    onRowClick={(row) => handleViewDetails(row.id)}
                   />
                 </div>
               </motion.div>
@@ -1630,7 +1440,7 @@ export default function Students() {
           <CardHeader className="pb-1">
             <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
               <PieChart className="h-3.5 w-3.5" />
-              Gender Breakdown
+              Sex Breakdown
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
@@ -1824,8 +1634,8 @@ export default function Students() {
               />
             )}
             <span className="relative z-20">
-              <span className="hidden sm:inline">Inactive / Out</span>
-              <span className="sm:hidden">Inactive</span>
+              <span className="hidden sm:inline">Transferred / Dropped Out</span>
+              <span className="sm:hidden">Transferred / Dropped</span>
             </span>
           </TabsTrigger>
         </TabsList>
@@ -1906,11 +1716,10 @@ export default function Students() {
               <StudentDetailPanel
                 id={selectedStudentId}
                 onClose={() => setSelectedStudentId(null)}
-                onOpenProfilePage={handleOpenProfilePage}
-                onQuickEdit={openProfileQuickEditDialog}
-                onAssignLrn={openAssignLrnDialog}
+                onRefreshData={refreshTables}
                 onTransferOut={openTransferOutDialog}
                 onDropout={openDropoutDialog}
+                canMutate={canMutate}
               />
             </div>
           )}
@@ -2073,177 +1882,7 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={showProfileDialog}
-        onOpenChange={setShowProfileDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Quick Update Demographics</DialogTitle>
-            <DialogDescription>
-              Apply quick demographic updates for {actionStudent?.fullName}.
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Group 1: Contact Information */}
-            <div className="space-y-3">
-              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
-                Contact Information
-              </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="profileContact"
-                    className="font-bold">
-                    Primary Contact No.
-                  </Label>
-                  <Input
-                    id="profileContact"
-                    value={profileForm.contactNumber}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        contactNumber: event.target.value,
-                      }))
-                    }
-                    placeholder="e.g., 0917 123 4567"
-                    className="font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="profileEmail"
-                    className="font-bold">
-                    Learner Email
-                  </Label>
-                  <Input
-                    id="profileEmail"
-                    type="email"
-                    value={profileForm.emailAddress}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        emailAddress: event.target.value,
-                      }))
-                    }
-                    placeholder="learner@email.com"
-                    className="font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Group 2: Emergency Contact */}
-            <div className="space-y-3">
-              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
-                Emergency Contact (Secondary)
-              </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="emergencyName"
-                    className="font-bold">
-                    Contact Person
-                  </Label>
-                  <Input
-                    id="emergencyName"
-                    value={profileForm.emergencyContactName}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        emergencyContactName: event.target.value,
-                      }))
-                    }
-                    placeholder="Full Name"
-                    className="font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="emergencyContact"
-                    className="font-bold">
-                    Contact Number
-                  </Label>
-                  <Input
-                    id="emergencyContact"
-                    value={profileForm.emergencyContactNumber}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        emergencyContactNumber: event.target.value,
-                      }))
-                    }
-                    placeholder="09XXXXXXXXX"
-                    className="font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Group 3: Current Location */}
-            <div className="space-y-3">
-              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
-                Current Location
-              </p>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="profileStreet"
-                  className="font-bold">
-                  Street / Sitio
-                </Label>
-                <Input
-                  id="profileStreet"
-                  value={profileForm.streetSitio}
-                  onChange={(event) =>
-                    setProfileForm((prev) => ({
-                      ...prev,
-                      streetSitio: event.target.value,
-                    }))
-                  }
-                  placeholder="e.g., Purok 1"
-                  className="font-bold"
-                />
-              </div>
-              <PhilippineAddressSelector
-                value={{
-                  region: profileForm.region,
-                  province: profileForm.province,
-                  cityMunicipality: profileForm.cityMunicipality,
-                  barangay: profileForm.barangay,
-                }}
-                onChange={(field, val) => {
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    [field]: val,
-                    ...(field === "region"
-                      ? { province: "", cityMunicipality: "", barangay: "" }
-                      : {}),
-                    ...(field === "province"
-                      ? { cityMunicipality: "", barangay: "" }
-                      : {}),
-                    ...(field === "cityMunicipality" ? { barangay: "" } : {}),
-                  }));
-                }}
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowProfileDialog(false)}
-              disabled={actionSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90 font-bold"
-              onClick={() => void submitQuickProfileUpdate()}
-              disabled={actionSubmitting || !isProfileFormDirty}>
-              {actionSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={showLrnDialog}

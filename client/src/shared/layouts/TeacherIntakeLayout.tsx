@@ -63,10 +63,10 @@ function TeacherUserNav() {
                   variant="outline"
                   className={cn(
                     "text-[8px] font-black uppercase px-1 h-3.5 border-none",
-                    getRoleColorClasses(user?.role),
+                    getRoleColorClasses(user?.roles?.[0]),
                   )}
                 >
-                  {formatUserRole(user?.role)}
+                  {formatUserRole(user?.roles?.[0])}
                 </Badge>
               </div>
             </div>

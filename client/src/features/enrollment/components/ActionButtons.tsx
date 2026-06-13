@@ -79,7 +79,7 @@ export function ActionButtons({
   ...handlers
 }: Props) {
   const { status, applicantType } = applicant;
-  const userRole = useAuthStore((state) => state.user?.role);
+  const userRole = useAuthStore((state) => state.user?.roles);
   const isPendingLrnCreation = applicant.isPendingLrnCreation === true;
   const isProfileLocked = applicant.isProfileLocked === true;
   const isRegular = applicantType === "REGULAR";
@@ -87,7 +87,7 @@ export function ActionButtons({
   const isEnrollmentVerificationMode = Boolean(handlers.onMarkVerified);
   const canToggleProfileLock =
     (status === "OFFICIALLY_ENROLLED" || status === "ENROLLED") &&
-    userRole === "SYSTEM_ADMIN" &&
+    userRole?.includes("SYSTEM_ADMIN") &&
     Boolean(handlers.onSetProfileLock);
 
   const [isConfirmLockOpen, setIsConfirmLockOpen] = useState(false);

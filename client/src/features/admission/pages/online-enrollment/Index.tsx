@@ -47,6 +47,7 @@ export default function Apply() {
     enrollCloseDate,
     activeSchoolYearLabel,
     systemStatus,
+    systemPhase,
     facebookPageUrl,
     schoolWebsite,
   } = useSettingsStore();
@@ -88,7 +89,9 @@ export default function Apply() {
   })();
 
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
-  const isClosed = isBosyLocked || !isWithinOfficialBosyEnrollmentWindow;
+  const isEosyClosing = systemPhase === "EOSY_CLOSING";
+  // The forms are closed if the school year is BOSY Locked or if we are in EOSY phase
+  const isClosed = isBosyLocked || isEosyClosing || (!isWithinOfficialBosyEnrollmentWindow && systemPhase !== "CLASSES_ONGOING");
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -202,6 +205,12 @@ export default function Apply() {
           title={`S.Y. ${activeSchoolYearLabel} ENROLLMENT FORM`}
         />
 
+        {!isClosed && systemPhase === "CLASSES_ONGOING" && (
+          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-sm font-bold text-center py-3 px-4 shadow-sm relative z-20">
+            Classes have officially started. Submissions will be marked for late processing.
+          </div>
+        )}
+
         <main
           className={cn(
             "px-4 sm:px-6 lg:px-8 flex flex-col flex-1",
@@ -235,11 +244,11 @@ export default function Apply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold  uppercase border border-destructive/20">
-                      {isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
+                      {isEosyClosing ? "EOSY Finalization Phase" : isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
                     </div>
                   </div>
 
-                  {isBosyLocked ? (
+                  {isBosyLocked || isEosyClosing ? (
                     <div className="space-y-6 max-w-lg mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">

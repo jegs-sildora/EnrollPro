@@ -19,8 +19,8 @@ import {
   UserPlus,
   School,
   ArrowRightLeft,
-  ClipboardCheck,
   Check,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -123,9 +123,9 @@ function UserNav() {
                   variant="outline"
                   className={cn(
                     "text-[8px] font-black uppercase px-1 h-3.5 border-none",
-                    getRoleColorClasses(user?.role),
+                    getRoleColorClasses(user?.roles?.[0]),
                   )}>
-                  {formatUserRole(user?.role)}
+                  {formatUserRole(user?.roles?.[0])}
                 </Badge>
               </div>
             </div>
@@ -442,22 +442,29 @@ function AppSidebar() {
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
   const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
-  const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  let activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
-  if (systemPhase === "CLASSES_ONGOING") {
-    activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide">CLASSES ONGOING</span>;
+  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  let officialEnrollmentBadge;
+  if (systemPhase === "OFFICIAL_ENROLLMENT") {
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  } else if (systemPhase === "CLASSES_ONGOING") {
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide">CLASSES ONGOING</span>;
+  }
+
+  let closingOperationsBadge;
+  if (systemPhase === "EOSY_CLOSING") {
+    closingOperationsBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
   }
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const isAdmin = useAuthStore((s) => s.user?.role === "SYSTEM_ADMIN");
+  const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
   const isHeadRegistrar = useAuthStore(
-    (s) => s.user?.role === "HEAD_REGISTRAR",
+    (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
   );
   const isRegistrar =
-    useAuthStore((s) => s.user?.role === "REGISTRAR") || isHeadRegistrar;
+    useAuthStore((s) => s.user?.roles?.includes("REGISTRAR")) || isHeadRegistrar;
   const isTeacher = useAuthStore(
-    (s) => s.user?.role === "TEACHER" || s.user?.role === "MRF",
+    (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
   const pathname = location.pathname;
 
@@ -531,7 +538,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Official Enrollment" badge={!isBosyLocked && !isEosyArchivedState ? activeBadge : undefined} />
+                    <NavDivider label="Official Enrollment" badge={!isEosyArchivedState ? officialEnrollmentBadge : undefined} />
                     <NavItem
                       to="/monitoring/enrollment"
                       icon={Calendar}
@@ -539,7 +546,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Closing Operations" badge={isBosyLocked && !isEosyArchivedState ? activeBadge : undefined} />
+                    <NavDivider label="Closing Operations" badge={!isEosyArchivedState ? closingOperationsBadge : undefined} />
                     <NavItem
                       to="/monitoring/enrollment/eosy"
                       icon={ArrowUpRightSquare}
@@ -558,7 +565,7 @@ function AppSidebar() {
                       <NavItem
                         to="/teachers"
                         icon={Presentation}
-                        label="Teacher Directory"
+                        label="Personnel Directory"
                         pathname={pathname}
                       />
                     )}
@@ -609,11 +616,31 @@ function AppSidebar() {
 
                 {isTeacher && (
                   <>
-                    <NavDivider label="Intake" />
+                    <NavDivider label="Operations" />
                     <NavItem
-                      to="/reading-assessment"
-                      icon={ClipboardCheck}
-                      label="Adviser Intake Hub"
+                      to="/dashboard"
+                      icon={LayoutDashboard}
+                      label="Dashboard"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/teacher/eosy"
+                      icon={ArrowUpRightSquare}
+                      label="EOSY Updating"
+                      pathname={pathname}
+                    />
+                    
+                    <NavDivider label="Management" />
+                    <NavItem
+                      to="/teacher/advisory"
+                      icon={Users}
+                      label="My Advisory Class"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/students"
+                      icon={BookOpen}
+                      label="Learner Directory"
                       pathname={pathname}
                     />
                   </>

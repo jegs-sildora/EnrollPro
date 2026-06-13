@@ -118,7 +118,7 @@ export default function Dashboard() {
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel, isViewingOverride, viewingStatus } = useSchoolYearContext();
-  const isAdmin = user?.role === "SYSTEM_ADMIN";
+  const isAdmin = user?.roles?.includes("SYSTEM_ADMIN");
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
   const [stats, setStats] = useState<Stats | null>(null);

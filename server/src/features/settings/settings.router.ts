@@ -13,8 +13,9 @@ import {
   uploadLogo,
   updatePrograms,
   updateSystemPhase,
+  updateAlgorithm,
 } from "./settings.controller.js";
-import { updateProgramsSchema } from "@enrollpro/shared";
+import { updateProgramsSchema, updateAlgorithmSchema } from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -58,6 +59,14 @@ router.patch(
   authenticate,
   authorize("SYSTEM_ADMIN"),
   updateSystemPhase,
+);
+
+router.patch(
+  "/algorithm",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  validate(updateAlgorithmSchema),
+  updateAlgorithm,
 );
 
 export default router;

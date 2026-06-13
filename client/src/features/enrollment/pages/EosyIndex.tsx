@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { motion, AnimatePresence } from "motion/react";
+import { PhaseBanner } from "@/shared/components/PhaseBanner";
+import { Card } from "@/shared/ui/card";
 import {
   Select,
   SelectContent,
@@ -23,60 +19,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { Checkbox } from "@/shared/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
-  TrendingUp,
-  Lock,
-  Unlock,
-  Building2,
-  Download,
-  RefreshCw,
-  AlertCircle,
-  Search,
   CheckCircle2,
-  GraduationCap,
-  ChevronDown,
-  ArrowRight,
+  Lock,
   Loader2,
-  HelpCircle,
-  X,
+  AlertTriangle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { useAuthStore } from "@/store/auth.slice";
-import { format } from "date-fns";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn } from "@/shared/lib/utils";
-import { motion, useReducedMotion } from "motion/react";
-import { Checkbox } from "@/shared/ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
-import { RemedialResolutionModal } from "../components/RemedialResolutionModal";
 import type { EosyStatus } from "@enrollpro/shared";
-import {
-  getReducedMotionProps,
-  panelTransition,
-  sectionVariants,
-  statusVariants,
-} from "@/shared/lib/motion";
 import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
-import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 
 interface EnrollmentRecord {
   id: number;
@@ -84,7 +44,10 @@ interface EnrollmentRecord {
   dropOutReason: string | null;
   transferOutDate: string | null;
   finalAverage: number | null;
-  remarks?: string | null;
+  section: {
+    name: string;
+    isEosyFinalized: boolean;
+  };
   enrollmentApplication: {
     id: number;
     trackingNumber: string;
@@ -98,6 +61,12 @@ interface EnrollmentRecord {
   };
 }
 
+interface GradeLevel {
+  id: number;
+  name: string;
+  displayOrder: number | null;
+}
+
 interface Section {
   id: number;
   name: string;
@@ -105,11 +74,8 @@ interface Section {
   programType: string;
   isHomogeneous: boolean;
   gradeLevelId: number;
-  gradeLevel: { name: string; displayOrder: number | null };
+  gradeLevel: GradeLevel;
   _count: { enrollmentRecords: number };
-  advisers?: Array<{
-    teacher: { firstName: string; lastName: string };
-  }>;
 }
 
 interface EosyExportLockState {
@@ -122,153 +88,74 @@ interface EosyExportLockState {
   lockReason: string | null;
 }
 
-const PROGRAM_TYPE_ORDER: string[] = [
-  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-  "SPECIAL_PROGRAM_IN_THE_ARTS",
-  "SPECIAL_PROGRAM_IN_SPORTS",
-  "SPECIAL_PROGRAM_IN_JOURNALISM",
-  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
-  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
-  "REGULAR",
-];
+const formatStatusLabel = (status: EosyStatus | null) => {
+  const normalized = status ?? "PROMOTED";
 
-const PROGRAM_TYPE_LABELS: Record<string, string> = {
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
-  SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
-  SPECIAL_PROGRAM_IN_SPORTS: "SPS",
-  SPECIAL_PROGRAM_IN_JOURNALISM: "SP Journalism",
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SP Foreign Language",
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SP TVE",
-  REGULAR: "Regular",
+  switch (normalized) {
+    case "PROMOTED":
+      return "Promoted";
+    case "RETAINED":
+      return "Retained";
+    case "CONDITIONALLY_PROMOTED":
+      return "Irregular";
+    case "TRANSFERRED_OUT":
+      return "Transferred Out";
+    case "DROPPED_OUT":
+      return "Dropped Out";
+    default:
+      return "Promoted";
+  }
 };
 
 export default function EosyUpdating() {
-  const navigate = useNavigate();
   const {
     activeSchoolYearId,
     viewingSchoolYearId,
-    activeSchoolYearLabel,
     systemStatus,
-    setSettings,
+    systemPhase,
   } = useSettingsStore();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const isBosyLocked = systemStatus === "BOSY_LOCKED";
+  const isEosyPhase = systemPhase === "EOSY_CLOSING";
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const user = useAuthStore((state) => state.user);
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
-  const isAdmin = user?.role === "SYSTEM_ADMIN";
-  const shouldReduceMotion = useReducedMotion() ?? false;
-  const motionState = getReducedMotionProps(shouldReduceMotion);
 
-  const [sections, setSections] = useState<Section[]>([]);
-  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("");
   const [records, setRecords] = useState<EnrollmentRecord[]>([]);
-  const [exportLock, setExportLock] = useState<EosyExportLockState | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(false);
+  const [exportLock, setExportLock] = useState<EosyExportLockState | null>(null);
+  
   const [loadingRecords, setLoadingRecords] = useState(false);
-  const [isDownloadingFinalExport, setIsDownloadingFinalExport] =
-    useState(false);
-  const {
-    inputValue: sectionSearch,
-    setInputValue: setSectionSearch,
-    activeFilter: activeSectionSearch,
-    isSearching: isSectionSearching,
-  } = useDebouncedSearch();
-  const [gradeFilter, setGradeFilter] = useState<string>("ALL");
-  const [incompleteOnly, setIncompleteOnly] = useState(false);
+  
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [isSyncingSmart, setIsSyncingSmart] = useState(false);
+  const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
+  const [batchUpdateLoading, setBatchUpdateLoading] = useState(false);
+  
+  const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+  const [finalizeLoading, setFinalizeLoading] = useState(false);
 
-  // Reset selection when section changes
-  useEffect(() => {
-    setRowSelection({});
-  }, [selectedSectionId]);
-
-  // Modals
-  const [dropoutModal, setDropoutModal] = useState<{
-    open: boolean;
-    recordId: number | null;
-    reason: string;
-  }>({
-    open: false,
-    recordId: null,
-    reason: "",
-  });
-  const [transferModal, setTransferModal] = useState<{
-    open: boolean;
-    recordId: number | null;
-    date: string;
-  }>({
-    open: false,
-    recordId: null,
-    date: format(new Date(), "yyyy-MM-dd"),
-  });
-  const [finalizeModal, setFinalizeModal] = useState<{
-    open: boolean;
-    section: Section | null;
-    confirmText: string;
-  }>({
-    open: false,
-    section: null,
-    confirmText: "",
-  });
-  const [schoolFinalizeConfirmOpen, setSchoolFinalizeConfirmOpen] =
-    useState(false);
-  const [showRolloverSuccess, setShowRolloverSuccess] = useState(false);
-  const [unlockModal, setUnlockModal] = useState({
-    open: false,
-    pin: "",
-    justification: "",
-    loading: false,
-  });
-  const [batchPromoteConfirmOpen, setBatchPromoteConfirmOpen] = useState(false);
-  const [showBanner, setShowBanner] = useState(true);
-  const [remedialModal, setRemedialModal] = useState<{
-    open: boolean;
-    recordId: number | null;
-    learnerName: string;
-    lrn: string | null;
-  }>({ open: false, recordId: null, learnerName: "", lrn: null });
-
-  const fetchSections = useCallback(async () => {
+  const fetchSectionsAndGrades = useCallback(async () => {
     if (!ayId) return;
-    setLoading(true);
     try {
       const res = await api.get(`/eosy/sections?schoolYearId=${ayId}`);
       const rawSections: Section[] = res.data.sections || [];
-
-      // Implement Institutional Hierarchy Sorting
-      const sorted = [...rawSections].sort((a, b) => {
-        // 1. Grade Level Priority (G7 -> G10)
-        const glA = a.gradeLevel.displayOrder ?? 99;
-        const glB = b.gradeLevel.displayOrder ?? 99;
-        if (glA !== glB) return glA - glB;
-
-        // 2. Program Type Priority: STE → SPA → SPS → other SCP → REGULAR
-        const getProgramPriority = (type: string) => {
-          if (type === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
-          if (type === "SPECIAL_PROGRAM_IN_THE_ARTS") return 2;
-          if (type === "SPECIAL_PROGRAM_IN_SPORTS") return 3;
-          if (type !== "REGULAR") return 4;
-          return 5;
-        };
-        const ppA = getProgramPriority(a.programType ?? "REGULAR");
-        const ppB = getProgramPriority(b.programType ?? "REGULAR");
-        if (ppA !== ppB) return ppA - ppB;
-
-        // 4. Alphabetical Name
-        return a.name.localeCompare(b.name);
+      
+      const glMap = new Map<number, GradeLevel>();
+      rawSections.forEach(s => {
+        if (!glMap.has(s.gradeLevelId)) {
+          glMap.set(s.gradeLevelId, s.gradeLevel);
+        }
       });
-
-      setSections(sorted);
+      
+      const grades = Array.from(glMap.values()).sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99));
+      setGradeLevels(grades);
+      
+      if (grades.length > 0 && !activeTab) {
+        setActiveTab(String(grades[0].id));
+      }
     } catch (err) {
       toastApiError(err as never);
-    } finally {
-      setLoading(false);
     }
-  }, [ayId]);
+  }, [ayId, activeTab]);
 
   const fetchExportLockState = useCallback(async () => {
     if (!ayId) {
@@ -285,80 +172,53 @@ export default function EosyUpdating() {
     }
   }, [ayId]);
 
-  const fetchRecords = useCallback(async (sectionId: string) => {
-    if (!sectionId) return;
+  const fetchGradeRecords = useCallback(async (gradeLevelId: string) => {
+    if (!gradeLevelId || !ayId) return;
     setLoadingRecords(true);
+    setRowSelection({});
     try {
-      const res = await api.get(`/eosy/sections/${sectionId}/records`);
+      const res = await api.get(`/eosy/grade/${gradeLevelId}/records?schoolYearId=${ayId}`);
       setRecords(res.data.records || []);
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setLoadingRecords(false);
     }
-  }, []);
+  }, [ayId]);
 
   useEffect(() => {
-    void fetchSections();
-  }, [fetchSections]);
-
-  useEffect(() => {
+    void fetchSectionsAndGrades();
     void fetchExportLockState();
-  }, [fetchExportLockState]);
+  }, [fetchSectionsAndGrades, fetchExportLockState]);
 
   useEffect(() => {
-    if (selectedSectionId) {
-      void fetchRecords(selectedSectionId);
-    } else {
-      setRecords([]);
+    if (activeTab) {
+      void fetchGradeRecords(activeTab);
     }
-  }, [selectedSectionId, fetchRecords]);
+  }, [activeTab, fetchGradeRecords]);
 
   const handleStatusChange = useCallback(
     async (recordId: number, status: string, finalAverage?: number | null) => {
       if (isHistoricalReadOnly && !hasOverride) {
-        lifecycleFeedback.error(
-          "Read-Only",
-          "This school year is archived. All records are read-only.",
-        );
+        lifecycleFeedback.error("Read-Only", "This school year is archived. All records are read-only.");
         return;
       }
       if (exportLock?.schoolYearFinalized) {
-        lifecycleFeedback.error(
-          "School Year Locked",
-          "School year EOSY is finalized. Updates are no longer allowed.",
-        );
+        lifecycleFeedback.error("School Year Locked", "School year EOSY is finalized. Updates are no longer allowed.");
         return;
       }
 
       const record = records.find((r) => r.id === recordId);
-      const effectiveAve =
-        finalAverage !== undefined ? finalAverage : record?.finalAverage;
+      const effectiveAve = finalAverage !== undefined ? finalAverage : record?.finalAverage;
 
-      if (
-        status === "PROMOTED" &&
-        effectiveAve !== null &&
-        effectiveAve !== undefined &&
-        effectiveAve < 75
-      ) {
-        lifecycleFeedback.error(
-          "Academic Policy Violation",
-          "Learner with General Average below 75.00 cannot be marked as PROMOTED.",
-        );
+      if (status === "PROMOTED" && effectiveAve !== null && effectiveAve !== undefined && effectiveAve < 75) {
+        lifecycleFeedback.error("Academic Policy Violation", "Learner with General Average below 75.00 cannot be marked as PROMOTED.");
         return;
       }
 
-      if (status === "DROPPED_OUT" && !finalAverage) {
-        setDropoutModal({ open: true, recordId, reason: "" });
-        return;
-      }
-      if (status === "TRANSFERRED_OUT" && !finalAverage) {
-        setTransferModal({
-          open: true,
-          recordId,
-          date: format(new Date(), "yyyy-MM-dd"),
-        });
-        return;
+      if (record?.section.isEosyFinalized) {
+         lifecycleFeedback.error("Section Locked", "This section is already finalized.");
+         return;
       }
 
       try {
@@ -373,473 +233,111 @@ export default function EosyUpdating() {
               ? {
                   ...r,
                   eosyStatus: status as EosyStatus,
-                  finalAverage:
-                    finalAverage !== undefined ? finalAverage : r.finalAverage,
+                  finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage,
                 }
               : r,
           ),
         );
 
         if (finalAverage === undefined) {
-          lifecycleFeedback.success(
-            "Status Updated",
-            "Learner status saved successfully.",
-          );
+          lifecycleFeedback.success("Status Updated", "Learner status saved successfully.");
         }
       } catch (err) {
         toastApiError(err as never);
       }
     },
-    [exportLock?.schoolYearFinalized, records],
+    [exportLock?.schoolYearFinalized, records, isHistoricalReadOnly, hasOverride],
   );
 
-  const submitDropoutReason = async () => {
-    if (!dropoutModal.recordId) return;
-    if (exportLock?.schoolYearFinalized) {
-      lifecycleFeedback.error(
-        "School Year Locked",
-        "School year EOSY is finalized. Status updates are no longer allowed.",
-      );
-      return;
-    }
-
-    try {
-      await api.patch(`/eosy/records/${dropoutModal.recordId}`, {
-        eosyStatus: "DROPPED_OUT",
-        dropOutReason: dropoutModal.reason,
-      });
-      setRecords((prev) =>
-        prev.map((r) =>
-          r.id === dropoutModal.recordId
-            ? {
-                ...r,
-                eosyStatus: "DROPPED_OUT",
-                dropOutReason: dropoutModal.reason,
-              }
-            : r,
-        ),
-      );
-      setDropoutModal({ open: false, recordId: null, reason: "" });
-      lifecycleFeedback.success(
-        "Status Updated",
-        "Learner status saved successfully.",
-      );
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
-  const submitTransferDate = async () => {
-    if (!transferModal.recordId) return;
-    if (exportLock?.schoolYearFinalized) {
-      lifecycleFeedback.error(
-        "School Year Locked",
-        "School year EOSY is finalized. Status updates are no longer allowed.",
-      );
-      return;
-    }
-
-    try {
-      await api.patch(`/eosy/records/${transferModal.recordId}`, {
-        eosyStatus: "TRANSFERRED_OUT",
-        transferOutDate: transferModal.date,
-      });
-      setRecords((prev) =>
-        prev.map((r) =>
-          r.id === transferModal.recordId
-            ? {
-                ...r,
-                eosyStatus: "TRANSFERRED_OUT",
-                transferOutDate: transferModal.date,
-              }
-            : r,
-        ),
-      );
-      setTransferModal({ open: false, recordId: null, date: "" });
-      lifecycleFeedback.success(
-        "Status Updated",
-        "Learner status saved successfully.",
-      );
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
-  const handleFinalizeClass = async () => {
-    if (exportLock?.schoolYearFinalized) {
-      lifecycleFeedback.error(
-        "School Year Locked",
-        "School year EOSY is finalized. Classes can no longer be modified.",
-      );
-      return;
-    }
-
-    const section = sections.find((s) => String(s.id) === selectedSectionId);
-    if (!section) return;
-    setFinalizeModal({ open: true, section, confirmText: "" });
-  };
-
-  const confirmFinalizeClass = async () => {
-    if (!finalizeModal.section) return;
-    try {
-      await api.post(`/eosy/sections/${finalizeModal.section.id}/finalize`);
-      setSections((prev) =>
-        prev.map((s) =>
-          s.id === finalizeModal.section?.id
-            ? { ...s, isEosyFinalized: true }
-            : s,
-        ),
-      );
-      setFinalizeModal({ open: false, section: null, confirmText: "" });
-      lifecycleFeedback.success(
-        "Class Finalized",
-        "Section has been locked for EOSY.",
-      );
-      await fetchExportLockState();
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
-  const handleReopenClass = async (sectionId: number) => {
-    if (exportLock?.schoolYearFinalized) {
-      lifecycleFeedback.error(
-        "School Year Locked",
-        "School year EOSY is finalized. Reopening classes is not allowed.",
-      );
-      return;
-    }
-
-    if (
-      !confirm(
-        "Are you sure you want to RE-OPEN this class for updating? This will allow further status changes.",
-      )
-    )
-      return;
-    try {
-      await api.post(`/eosy/sections/${sectionId}/reopen`);
-      setSections((prev) =>
-        prev.map((s) =>
-          s.id === sectionId ? { ...s, isEosyFinalized: false } : s,
-        ),
-      );
-      lifecycleFeedback.success(
-        "Class Re-opened",
-        "Section is now editable.",
-      );
-      await fetchExportLockState();
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
-  const selectedSection = sections.find(
-    (s) => String(s.id) === selectedSectionId,
-  );
-  const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
-  const shouldShowFinalizedView =
-    isEosyArchivedState || isSchoolYearFinalized || showRolloverSuccess;
-  const canFinalizeSchoolLevel =
-    (exportLock?.canFinalizeSchoolYear ?? false) && !isSchoolYearFinalized;
-  const isFinalized = Boolean(
-    selectedSection?.isEosyFinalized || isSchoolYearFinalized,
-  );
-  const missingCount = useMemo(
-    () => records.filter((r) => !r.eosyStatus).length,
-    [records],
-  );
-  const irregularCount = useMemo(
-    () =>
-      records.filter((r) => r.eosyStatus === "CONDITIONALLY_PROMOTED").length,
-    [records],
-  );
-
-  // TASK 2: Compliance Engine
-  // Rule: any PROMOTED record whose finalAverage < 75 is a policy violation.
-  const hasComplianceViolation = useMemo(
-    () =>
-      records.some(
-        (r) =>
-          r.eosyStatus === "PROMOTED" &&
-          r.finalAverage !== null &&
-          r.finalAverage !== undefined &&
-          r.finalAverage < 75,
-      ),
-    [records],
-  );
-
-  // Section is compliant when every record has a status AND no policy violation exists.
-  const isSectionCompliant = useMemo(
-    () => missingCount === 0 && !hasComplianceViolation,
-    [missingCount, hasComplianceViolation],
-  );
-
-  const handleMarkAllPromoted = async () => {
-    const targetRows = records.filter(
-      (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
-    );
-
-    if (targetRows.length === 0) {
-      setBatchPromoteConfirmOpen(false);
-      lifecycleFeedback.progress(
-        "No Eligible Records",
-        "No un-set learners with passing averages (75+) found.",
-      );
-      return;
-    }
-
-    try {
-      await Promise.all(
-        targetRows.map((r) =>
-          api.patch(`/eosy/records/${r.id}`, { eosyStatus: "PROMOTED" }),
-        ),
-      );
-
-      setRecords((prev) =>
-        prev.map((r) =>
-          !r.eosyStatus && r.finalAverage && r.finalAverage >= 75
-            ? { ...r, eosyStatus: "PROMOTED" }
-            : r,
-        ),
-      );
-      lifecycleFeedback.success(
-        "Batch Updated",
-        `${targetRows.length} learners with passing averages marked as PROMOTED.`,
-      );
-      setBatchPromoteConfirmOpen(false);
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
-  const handleSmartSync = async () => {
-    if (!selectedSection) return;
-    setIsSyncingSmart(true);
-    try {
-      lifecycleFeedback.progress(
-        "SMART Sync In Progress",
-        `Refreshing academic records for ${selectedSection.name} from the SMART system.`,
-      );
-      await api.post("/enrollment/sync-smart-grades", {
-        gradeLevelId: selectedSection.gradeLevelId, // We need to add this to the interface
-        schoolYearId: ayId,
-      });
-      lifecycleFeedback.success(
-        "SMART Sync Successful",
-        `Academic records for ${selectedSection.name} have been updated from the SMART system.`,
-      );
-      if (selectedSectionId) {
-        await fetchRecords(selectedSectionId);
-      }
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsSyncingSmart(false);
-    }
-  };
-
-  const handleBulkAction = async (status: EosyStatus) => {
+  const handleBatchUpdate = async () => {
+    if (!batchActionStatus) return;
+    
     const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedRecords = selectedIndexes.map((idx) => visibleRecords[idx]);
+    const selectedRecords = selectedIndexes.map((idx) => records[idx]);
 
-    if (selectedRecords.length === 0) return;
+    if (selectedRecords.length === 0) {
+      lifecycleFeedback.error("No Selection", "Please select at least one learner.");
+      return;
+    }
+    
+    // Filter out records from finalized sections
+    const editableRecords = selectedRecords.filter(r => !r.section.isEosyFinalized);
+    if (editableRecords.length === 0) {
+      lifecycleFeedback.error("Action Aborted", "All selected learners belong to finalized sections.");
+      return;
+    }
 
-    let targetRecords = selectedRecords;
-    let skippedCount = 0;
+    let targetRecords = editableRecords;
+    let skippedCount = selectedRecords.length - editableRecords.length;
 
-    if (status === "PROMOTED") {
-      targetRecords = selectedRecords.filter(
-        (r) => r.finalAverage && r.finalAverage >= 75,
-      );
-      skippedCount = selectedRecords.length - targetRecords.length;
+    if (batchActionStatus === "PROMOTED") {
+      targetRecords = editableRecords.filter((r) => r.finalAverage && r.finalAverage >= 75);
+      skippedCount += editableRecords.length - targetRecords.length;
     }
 
     if (targetRecords.length === 0) {
-      lifecycleFeedback.error(
-        "Action Aborted",
-        "None of the selected learners meet the criteria for this status.",
-      );
+      lifecycleFeedback.error("Action Aborted", "None of the selected learners meet the criteria for this status (e.g. >= 75 for Promoted).");
       return;
     }
 
+    setBatchUpdateLoading(true);
     try {
-      await Promise.all(
-        targetRecords.map((r) =>
-          api.patch(`/eosy/records/${r.id}`, { eosyStatus: status }),
-        ),
-      );
+      const payload = {
+        schoolYearId: ayId,
+        updates: targetRecords.map(r => ({ recordId: r.id, status: batchActionStatus }))
+      };
+      
+      await api.put(`/eosy/grade/${activeTab}/batch-status`, payload);
 
       setRecords((prev) =>
         prev.map((r) => {
           const match = targetRecords.find((tr) => tr.id === r.id);
-          return match ? { ...r, eosyStatus: status } : r;
+          return match ? { ...r, eosyStatus: batchActionStatus as EosyStatus } : r;
         }),
       );
 
       lifecycleFeedback.success(
-        "Bulk Action Complete",
-        `${targetRecords.length} learners marked as ${formatStatusLabel(status)}.${
-          skippedCount > 0
-            ? ` ${skippedCount} skipped due to academic policy (Gen Ave < 75).`
-            : ""
-        }`,
+        "Batch Updated",
+        `${targetRecords.length} learners updated.${skippedCount > 0 ? ` ${skippedCount} skipped due to policy or locked section.` : ""}`,
       );
-
       setRowSelection({});
+      setBatchActionStatus("");
     } catch (err) {
       toastApiError(err as never);
-    }
-  };
-
-  const handleSchoolFinalize = async () => {
-    if (isSchoolYearFinalized || !canFinalizeSchoolLevel) {
-      setSchoolFinalizeConfirmOpen(false);
-      return;
-    }
-
-    try {
-      lifecycleFeedback.progress(
-        "Finalizing School EOSY",
-        "Locking finalized sections and preparing the school-level EOSY export state.",
-      );
-      const response = await api.post("/eosy/school-year/finalize", {
-        schoolYearId: ayId,
-      });
-      if (response.data?.exportLock) {
-        setExportLock(response.data.exportLock as EosyExportLockState);
-      }
-      const pubRes = await api.get("/settings/public");
-      setSettings(pubRes.data);
-      setSchoolFinalizeConfirmOpen(false);
-      setShowRolloverSuccess(true);
-      lifecycleFeedback.success(
-        "School EOSY Finalized",
-        "School-year EOSY has been finalized and is ready for rollover steps.",
-      );
-      void fetchSections();
-    } catch (err) {
-      setSchoolFinalizeConfirmOpen(false);
-      toastApiError(err as never);
-    }
-  };
-
-  const handleUnlockSchoolYear = async () => {
-    setUnlockModal((p) => ({ ...p, loading: true }));
-    try {
-      lifecycleFeedback.progress(
-        "Emergency Unlock Requested",
-        "Verifying authorization and reopening the latest finalized school year for corrections.",
-      );
-      const response = await api.post("/eosy/school-year/unlock", {
-        schoolYearId: ayId,
-        pin: unlockModal.pin,
-        justification: unlockModal.justification,
-      });
-      if (response.data?.exportLock) {
-        setExportLock(response.data.exportLock as EosyExportLockState);
-      }
-      const pubRes = await api.get("/settings/public");
-      setSettings(pubRes.data);
-      setShowRolloverSuccess(false);
-      setUnlockModal({
-        open: false,
-        pin: "",
-        justification: "",
-        loading: false,
-      });
-      lifecycleFeedback.success(
-        "Emergency Unlock Successful",
-        "School year has been unlocked for corrections.",
-      );
-      void fetchSections();
-    } catch (err) {
-      toastApiError(err as never);
-      setUnlockModal((p) => ({ ...p, loading: false }));
-    }
-  };
-
-  const handleDownloadFinalExport = async () => {
-    if (!ayId) return;
-    setIsDownloadingFinalExport(true);
-    try {
-      lifecycleFeedback.progress(
-        "Preparing Final LIS Export",
-        "Generating the final school-year CSV for download.",
-      );
-      const response = await api.get(
-        `/eosy/school-year/${ayId}/final-lis-export`,
-        {
-          responseType: "blob",
-        },
-      );
-
-      const contentDisposition =
-        (response.headers?.["content-disposition"] as string | undefined) ?? "";
-      const fileNameMatch = contentDisposition.match(
-        /filename\*?=(?:UTF-8''|")?([^";]+)/i,
-      );
-      const fileName = fileNameMatch?.[1]
-        ? decodeURIComponent(fileNameMatch[1].replace(/"/g, ""))
-        : `final-lis-export-${ayId}.csv`;
-
-      const blob = new Blob([response.data], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-
-      lifecycleFeedback.success(
-        "Final LIS Export Ready",
-        "Final school-year LIS CSV downloaded successfully.",
-      );
-    } catch (err) {
-      const apiMessage = (err as { response?: { data?: { message?: string } } })
-        .response?.data?.message;
-
-      lifecycleFeedback.error(
-        "Export Error",
-        apiMessage ?? "Failed to download final LIS export.",
-      );
     } finally {
-      setIsDownloadingFinalExport(false);
+      setBatchUpdateLoading(false);
     }
   };
 
-  const stats = {
-    promoted: records.filter((r) => r.eosyStatus === "PROMOTED").length,
-    retained: records.filter((r) => r.eosyStatus === "RETAINED").length,
-    conditionallyPromoted: records.filter(
-      (r) => r.eosyStatus === "CONDITIONALLY_PROMOTED",
-    ).length,
-    dropped: records.filter((r) => r.eosyStatus === "DROPPED_OUT").length,
-    transferred: records.filter((r) => r.eosyStatus === "TRANSFERRED_OUT")
-      .length,
-  };
-
-  const formatStatusLabel = (status: EosyStatus | null) => {
-    const normalized = status ?? "PROMOTED";
-
-    switch (normalized) {
-      case "PROMOTED":
-        return "Promoted";
-      case "RETAINED":
-        return "Retained";
-      case "CONDITIONALLY_PROMOTED":
-        return "Irregular";
-      case "TRANSFERRED_OUT":
-        return "Transferred Out";
-      case "DROPPED_OUT":
-        return "Dropped Out";
-      default:
-        return "Promoted";
+  const handleFinalizeGrade = async () => {
+    setFinalizeLoading(true);
+    try {
+      await api.post(`/eosy/grade/${activeTab}/finalize`, {
+        schoolYearId: ayId
+      });
+      
+      lifecycleFeedback.success(
+        "Grade Level Finalized",
+        "Grade progression executed successfully and sections are now locked.",
+      );
+      
+      setFinalizeModalOpen(false);
+      void fetchExportLockState();
+      void fetchSectionsAndGrades();
+      void fetchGradeRecords(activeTab);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setFinalizeLoading(false);
     }
   };
+
+  const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
+  const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
+  
+  const activeGradeName = gradeLevels.find(g => String(g.id) === activeTab)?.name || "Grade Level";
+  const unfinalizedCount = records.filter(r => !r.eosyStatus).length;
+  const isGradeFinalized = records.length > 0 && records.every(r => r.section.isEosyFinalized);
 
   const columns = useMemo<ColumnDef<EnrollmentRecord>[]>(
     () => [
@@ -847,15 +345,11 @@ export default function EosyUpdating() {
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
-            className="translate-y-[2px] border-white data-[state=checked]:bg-white data-[state=checked]:text-primary"
+            disabled={isGradeFinalized}
+            className="translate-y-[2px]"
           />
         ),
         cell: ({ row }) => (
@@ -863,6 +357,7 @@ export default function EosyUpdating() {
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
+            disabled={row.original.section.isEosyFinalized}
             className="translate-y-[2px]"
           />
         ),
@@ -873,32 +368,22 @@ export default function EosyUpdating() {
       {
         id: "student",
         accessorKey: "enrollmentApplication.learner.lastName",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="LEARNER"
-          />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" />,
         cell: ({ row }) => {
           const sex = row.original.enrollmentApplication.learner.sex;
-          const genderLabel =
-            sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
+          const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
               <span className="font-bold uppercase truncate">
-                {row.original.enrollmentApplication.learner.lastName},{" "}
-                {row.original.enrollmentApplication.learner.firstName}
+                {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-foreground font-black uppercase">
-                  LRN:{" "}
-                  {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
+                  LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
                 {genderLabel && (
-                  <Badge
-                    variant="outline"
-                    className="h-3 px-1 text-[7px] font-black border-muted-foreground/20">
+                  <Badge variant="outline" className="h-3 px-1 text-[7px] font-black border-muted-foreground/20">
                     {genderLabel}
                   </Badge>
                 )}
@@ -908,25 +393,23 @@ export default function EosyUpdating() {
         },
       },
       {
+        id: "section",
+        accessorKey: "section.name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" />,
+        cell: ({ row }) => (
+          <span className="text-xs font-bold">{row.original.section.name}</span>
+        ),
+      },
+      {
         id: "finalAve",
         accessorKey: "finalAverage",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="General AVE"
-            className="justify-center"
-          />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const ave = row.original.finalAverage;
           const isFailing = ave !== null && ave < 75;
 
           return (
-            <span
-              className={cn(
-                "font-bold text-xs sm:text-sm tabular-nums block text-center",
-                isFailing ? "text-red-600" : "text-emerald-600",
-              )}>
+            <span className={cn("font-bold text-xs sm:text-sm tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
               {ave?.toFixed(2) || "0.00"}
             </span>
           );
@@ -934,126 +417,34 @@ export default function EosyUpdating() {
         size: 100,
       },
       {
-        id: "remarks",
-        accessorKey: "remarks",
-        header: () => (
-          <div className="text-center font-bold text-primary-foreground text-xs uppercase ">
-            Remarks
-          </div>
-        ),
-        cell: ({ row }) => {
-          const ave = row.original.finalAverage;
-          const status = row.original.eosyStatus;
-
-          if (status === "DROPPED_OUT")
-            return (
-              <div className="text-center">
-                <span className="text-xs font-bold text-amber-600 uppercase bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                  Dropped
-                </span>
-              </div>
-            );
-          if (status === "TRANSFERRED_OUT")
-            return (
-              <div className="text-center">
-                <span className="text-xs font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                  Transferred
-                </span>
-              </div>
-            );
-
-          const isSCP =
-            selectedSection?.programType != null &&
-            selectedSection.programType !== "REGULAR";
-          const isFallout =
-            isSCP && ave !== null && ave >= 75 && ave < 88;
-
-          if (ave !== null) {
-            const isPassed = ave >= 75;
-            if (isFallout) {
-              return (
-                <div className="text-center">
-                  <span className="text-xs font-bold text-amber-600">
-                    Failed SCP Maintaining Grade
-                  </span>
-                </div>
-              );
-            }
-            return (
-              <div className="text-center">
-                <span
-                  className={cn(
-                    "text-xs font-black uppercase ",
-                    isPassed ? "text-emerald-600" : "text-red-600",
-                  )}>
-                  {isPassed ? "PASSED" : "FAILED"}
-                </span>
-              </div>
-            );
-          }
-
-          return (
-            <div className="text-center">
-              <span className="text-xs font-bold text-foreground uppercase opacity-40">
-                —
-              </span>
-            </div>
-          );
-        },
-      },
-      {
         id: "status",
         accessorKey: "eosyStatus",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="EOSY STATUS"
-            className="justify-center"
-          />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const resolvedStatus =
-            r.eosyStatus ??
-            (r.finalAverage && r.finalAverage >= 75 ? "PROMOTED" : "RETAINED");
+          const resolvedStatus = r.eosyStatus ?? "PROMOTED";
           const statusLabel = formatStatusLabel(r.eosyStatus);
-          const isScpSection =
-            selectedSection?.programType != null &&
-            selectedSection.programType !== "REGULAR";
-          const isFalloutStatus =
-            isScpSection &&
-            r.finalAverage !== null &&
-            r.finalAverage !== undefined &&
-            r.finalAverage >= 75 &&
-            r.finalAverage < 88;
-          const isPromoted = resolvedStatus === "PROMOTED";
+          const isSectionFinalized = r.section.isEosyFinalized;
 
-          if (isFinalized) {
+          if (isSectionFinalized || isGradeFinalized) {
             return (
-              <div className="flex flex-col items-center">
-                <Badge
-                  variant="outline"
-                  className="h-6 w-24 text-xs font-bold bg-muted text-foreground flex items-center justify-center mx-auto uppercase">
+              <div className="flex justify-center">
+                <Badge variant="outline" className="h-6 w-24 text-[10px] font-bold bg-muted text-foreground flex items-center justify-center uppercase">
                   {statusLabel}
                 </Badge>
-                {isFalloutStatus && isPromoted && (
-                  <span className="block mt-1 text-[11px] font-bold leading-none text-amber-600">
-                    Shifted to Regular
-                  </span>
-                )}
               </div>
             );
           }
 
           return (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex justify-center">
               <Select
                 value={resolvedStatus}
                 onValueChange={(val) => handleStatusChange(r.id, val)}
-                disabled={isFinalized}>
+                disabled={isSectionFinalized}>
                 <SelectTrigger
                   className={cn(
-                    "h-7 w-32 font-black uppercase text-xs r",
+                    "h-7 w-32 font-black uppercase text-[10px]",
                     !r.eosyStatus || r.eosyStatus === "PROMOTED"
                       ? "text-emerald-700 bg-emerald-50 border-emerald-200"
                       : "text-amber-700 bg-amber-50 border-amber-200",
@@ -1064,110 +455,17 @@ export default function EosyUpdating() {
                   <SelectItem value="PROMOTED">Promoted</SelectItem>
                   <SelectItem value="RETAINED">Retained</SelectItem>
                   <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
-                  <SelectItem value="TRANSFERRED_OUT">
-                    Transferred Out
-                  </SelectItem>
-                  <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
+                  <SelectItem value="TRANSFERRED_OUT">Transferred</SelectItem>
+                  <SelectItem value="DROPPED_OUT">Dropped</SelectItem>
                 </SelectContent>
               </Select>
-              {r.eosyStatus === "CONDITIONALLY_PROMOTED" && !isFinalized && (
-                <button
-                  className="text-[10px] font-black uppercase text-orange-600 hover:underline cursor-pointer"
-                  onClick={() =>
-                    setRemedialModal({
-                      open: true,
-                      recordId: r.id,
-                      learnerName: `${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`,
-                      lrn: r.enrollmentApplication.learner.lrn,
-                    })
-                  }>
-                  Resolve Remedial
-                </button>
-              )}
-              {isFalloutStatus && isPromoted && (
-                <span className="block mt-1 text-[11px] font-bold leading-none text-amber-600">
-                  Shifted to Regular
-                </span>
-              )}
             </div>
           );
         },
       },
     ],
-    [isFinalized, handleStatusChange, setRemedialModal, selectedSection],
+    [isGradeFinalized, handleStatusChange],
   );
-
-  const groupedSections = useMemo(() => {
-    const groups: Record<string, Section[]> = {};
-    sections.forEach((s) => {
-      const gl = s.gradeLevel.name;
-      if (!groups[gl]) groups[gl] = [];
-      groups[gl].push(s);
-    });
-    return groups;
-  }, [sections]);
-
-  const gradeLevels = useMemo(() => {
-    const unique = Array.from(new Set(sections.map((s) => s.gradeLevel.name)));
-    return unique.sort((a, b) => {
-      const orderA =
-        sections.find((s) => s.gradeLevel.name === a)?.gradeLevel
-          .displayOrder ?? 99;
-      const orderB =
-        sections.find((s) => s.gradeLevel.name === b)?.gradeLevel
-          .displayOrder ?? 99;
-      return orderA - orderB;
-    });
-  }, [sections]);
-
-  const filteredGroups = useMemo(() => {
-    const search = activeSectionSearch.toLowerCase().trim();
-    const filtered: Record<string, { programType: string; sections: Section[] }[]> = {};
-
-    Object.entries(groupedSections).forEach(([gl, secs]) => {
-      if (gradeFilter !== "ALL" && gl !== gradeFilter) return;
-
-      const matching = secs.filter((s) => {
-        const adviser = s.advisers?.[0]?.teacher;
-        const adviserName = adviser
-          ? `${adviser.firstName} ${adviser.lastName}`
-          : "";
-        return (
-          s.name.toLowerCase().includes(search) ||
-          adviserName.toLowerCase().includes(search)
-        );
-      });
-
-      if (matching.length === 0) return;
-
-      // Sub-group by programType in defined order
-      const byProgramType = new Map<string, Section[]>();
-      matching.forEach((s) => {
-        const pt = s.programType ?? "REGULAR";
-        if (!byProgramType.has(pt)) byProgramType.set(pt, []);
-        byProgramType.get(pt)!.push(s);
-      });
-
-      const ordered = PROGRAM_TYPE_ORDER
-        .filter((pt) => byProgramType.has(pt))
-        .map((pt) => ({ programType: pt, sections: byProgramType.get(pt)! }));
-
-      // Append any programTypes not in PROGRAM_TYPE_ORDER
-      byProgramType.forEach((sections, pt) => {
-        if (!PROGRAM_TYPE_ORDER.includes(pt)) {
-          ordered.push({ programType: pt, sections });
-        }
-      });
-
-      filtered[gl] = ordered;
-    });
-    return filtered;
-  }, [groupedSections, activeSectionSearch, gradeFilter]);
-
-  const visibleRecords = useMemo(() => {
-    if (!incompleteOnly) return records;
-    return records.filter((r) => !r.eosyStatus);
-  }, [records, incompleteOnly]);
 
   if (shouldShowFinalizedView) {
     return (
@@ -1176,39 +474,25 @@ export default function EosyUpdating() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div className="text-center space-y-3 max-w-lg">
-          <h2 className="text-xl font-black uppercase text-emerald-700">
-            EOSY Successfully Finalized
-          </h2>
+          <h2 className="text-xl font-black uppercase text-emerald-700">EOSY Successfully Finalized</h2>
           <p className="text-sm font-bold text-foreground leading-relaxed">
             All academic records for this school year are sealed and locked.
-            Please proceed to System Settings to initiate the School Year Rollover
-            and prepare the next academic cycle.
           </p>
         </div>
-        <Button
-          onClick={() => navigate("/settings?tab=lifecycle")}
-          className="font-black uppercase px-6">
-          <ArrowRight className="mr-2 h-4 w-4" />
-          Go to School Year Rollover
-        </Button>
       </div>
     );
   }
 
-  if (!isBosyLocked) {
+  if (!isEosyPhase && !isHistoricalReadOnly) {
     return (
       <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
-        <div className="h-20 w-20 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
-          <Lock className="h-10 w-10 text-slate-400" />
+        <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center">
+          <Lock className="h-8 w-8 text-muted-foreground" />
         </div>
-        <div className="text-center space-y-3 max-w-lg">
-          <h2 className="text-xl font-black uppercase text-slate-600">
-            EOSY Updating is currently locked.
-          </h2>
-          <p className="text-sm font-bold text-slate-400 leading-relaxed">
-            End of School Year (EOSY) operations cannot begin until the Beginning
-            of School Year (BOSY) enrollment phase is officially finalized and
-            locked by the Administration.
+        <div className="text-center max-w-md space-y-2">
+          <h2 className="text-xl font-black uppercase">EOSY Phase Not Active</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            EOSY status updates are only available during the End of School Year phase.
           </p>
         </div>
       </div>
@@ -1216,1016 +500,169 @@ export default function EosyUpdating() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] space-y-4 px-2 sm:px-0 overflow-hidden">
-      {/* Global Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold ">EOSY Updating</h1>
-          <p className="text-sm font-bold text-foreground mt-1">
-            End of School Year status finalization for DepEd LIS compliance.
+    <>
+      <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
+      <PhaseBanner />
+      
+      {/* ── Top Header ── */}
+      <div className="flex items-center justify-between pb-6 flex-shrink-0">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-primary">
+            End of School Year (EOSY)
+          </h1>
+          <p className="text-sm font-bold text-foreground">
+            Manage grade progression and learner statuses
           </p>
-          {isHistoricalReadOnly && (
-            <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — status changes are disabled.</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {exportLock && (
-            <div className="flex flex-col items-end mr-2">
-              <span className="text-xs font-black uppercase  text-foreground mb-1">
-                Progression Tracker
-              </span>
-              <Badge
-                variant={isSchoolYearFinalized ? "default" : "outline"}
-                className={cn(
-                  "font-black text-xs px-3 h-7",
-                  isSchoolYearFinalized
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "border-primary/40 text-primary bg-primary/5",
-                )}>
-                {isSchoolYearFinalized ? (
-                  <div className="flex items-center gap-1.5">
-                    <Lock className="h-3 w-3" />
-                    SYSTEM LOCKED (100%)
-                  </div>
-                ) : (
-                  `${exportLock.finalizedSections}/${exportLock.totalSections} Classes Finalized`
-                )}
-              </Badge>
-            </div>
-          )}
-
-          {isSchoolYearFinalized ? (
-            <Button
-              className="h-10 px-6 font-black uppercase text-xs bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all active:scale-95"
-              disabled={isDownloadingFinalExport}
-              onClick={handleDownloadFinalExport}>
-              <Download className="h-4 w-4 mr-2" />
-              {isDownloadingFinalExport
-                ? "Exporting Master..."
-                : "Export Master LIS Data (SF5)"}
-            </Button>
-          ) : (
-            isAdmin && (
-              <Button
-                className={cn(
-                  "h-10 px-6 font-black uppercase text-xs shadow-md transition-all",
-                  canFinalizeSchoolLevel
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-foreground cursor-not-allowed opacity-50",
-                )}
-                disabled={!canFinalizeSchoolLevel}
-                onClick={() => setSchoolFinalizeConfirmOpen(true)}>
-                <Lock className="h-4 w-4 mr-2" />
-                Finalize School EOSY & Export
-              </Button>
-            )
-          )}
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 shrink-0 border-2"
-            onClick={() => {
-              void fetchSections();
-              void fetchExportLockState();
-            }}>
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-          </Button>
         </div>
       </div>
 
-      {exportLock?.lockReason && showBanner && (
-        <motion.div
-          variants={sectionVariants}
-          transition={panelTransition}
-          {...motionState}
-          className={cn(
-            "rounded-xl border-2 px-4 py-3 flex-shrink-0 shadow-sm transition-all",
-            isSchoolYearFinalized
-              ? "border-slate-200 bg-slate-50/50"
-              : "border-amber-200 bg-amber-50 text-amber-900",
-          )}>
-          {/* Section 1: The State */}
-          <div className="flex items-start gap-4">
-            <div className="flex-1">
-              <h3
-                className={cn(
-                  "text-base font-black uppercase tracking-tight",
-                  isSchoolYearFinalized ? "text-slate-900" : "text-amber-900",
-                )}>
-                {isSchoolYearFinalized
-                  ? `EOSY Permanently Finalized & Archived (S.Y. ${activeSchoolYearLabel})`
-                  : "Operational Status"}
-              </h3>
-              <p className="text-xs font-bold opacity-80 mt-0.5 leading-relaxed max-w-3xl">
-                {isSchoolYearFinalized
-                  ? `School year ${activeSchoolYearLabel} is globally locked. All class statuses and academic records are now read-only to preserve DepEd LIS integrity and audit readiness.`
-                  : exportLock.lockReason}
-              </p>
-            </div>
-            {!isSchoolYearFinalized && (
-              <button
-                onClick={() => setShowBanner(false)}
-                className="opacity-40 hover:opacity-100 transition-opacity shrink-0 p-1 -mt-0.5"
-                aria-label="Dismiss banner">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Section 2: The Actions */}
-          {isSchoolYearFinalized && (
-            <>
-              <div className="my-5 border-t border-slate-200/60" />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                {/* Left Side: The Golden Path */}
-                <div className="flex items-center gap-4">
-                  {isAdmin ? (
-                    <>
-                      <Button
-                        size="lg"
-                        className="h-11 px-6 font-black uppercase text-sm tracking-tight shadow-lg bg-primary hover:scale-[1.02] active:scale-95 transition-all"
-                        onClick={() =>
-                          navigate("/settings?tab=school-year", {
-                            state: { highlightUpcoming: true },
-                          })
-                        }>
-                        Initiate Next Academic Year Rollover
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      <p className="hidden md:block text-xs font-bold text-slate-500 max-w-[240px]">
-                        Begin preparing the system for the upcoming enrollment
-                        cycle and class assignments.
-                      </p>
-                    </>
-                  ) : user?.role === "HEAD_REGISTRAR" ? (
-                    <div className="flex items-center gap-3 py-1 bg-slate-100 px-4 rounded-full border border-slate-200">
-                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                      <p className="text-xs font-black uppercase text-slate-600 tracking-tight">
-                        EOSY Locked. Awaiting System Administrator to initiate
-                        rollover.
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                {/* Right Side: The Danger Zone */}
-                {isAdmin && (
-                  <button
-                    onClick={() =>
-                      setUnlockModal((p) => ({ ...p, open: true }))
-                    }
-                    className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 hover:text-amber-700 transition-colors group">
-                    <Lock className="h-3.5 w-3.5 group-hover:animate-bounce" />
-                    <span>Requires emergency unlock?</span>
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </motion.div>
-      )}
-
-      {irregularCount > 0 && !isSchoolYearFinalized && (
-        <motion.div
-          variants={statusVariants}
-          transition={panelTransition}
-          {...motionState}
-          className="flex items-start gap-3 rounded-xl border-2 border-orange-300 bg-orange-50 text-orange-800 px-4 py-3 shadow-sm flex-shrink-0">
-          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="font-black uppercase text-xs">
-              Remedial Processing Required
-            </p>
-            <p className="font-bold text-sm mt-0.5">
-              {irregularCount} learner{irregularCount !== 1 ? "s" : ""} in this
-              section {irregularCount !== 1 ? "have" : "has"} CONDITIONALLY
-              PROMOTED status. Resolve their remedial grades before initiating
-              year rollover.
-            </p>
-          </div>
-        </motion.div>
-      )}
-
-      <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
-        {/* LEFT SIDEBAR: Class Tracker */}
-        <Card className="w-full md:w-80 border-none shadow-sm flex flex-col h-full bg-card overflow-hidden shrink-0">
-          <CardHeader className="p-4 border-b bg-muted/20 flex-shrink-0">
-            <CardTitle className="text-sm font-black uppercase  flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-primary" />
-              Class Tracker
-            </CardTitle>
-            <div className="relative mt-3">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-foreground" />
-              <Input
-                placeholder="Search section or adviser..."
-                value={sectionSearch}
-                onChange={(e) => setSectionSearch(e.target.value)}
-                className="pl-8 h-9 text-xs font-bold bg-background border-2"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              <Button
-                variant={gradeFilter === "ALL" ? "default" : "outline"}
-                size="sm"
-                className="h-7 px-2 text-xs font-black uppercase"
-                onClick={() => setGradeFilter("ALL")}>
-                All
-              </Button>
-              {gradeLevels.map((gl) => (
-                <Button
-                  key={gl}
-                  variant={gradeFilter === gl ? "default" : "outline"}
-                  size="sm"
-                  className="h-7 px-2 text-xs font-black uppercase"
-                  onClick={() => setGradeFilter(gl)}>
-                  {gl.replace(/Grade\s*/i, "G")}
-                </Button>
-              ))}
-            </div>
-          </CardHeader>
-          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent min-h-0">
-            <div className="p-2 space-y-4">
-              {isSectionSearching ? (
-                <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-lg">
-                  <Search className="h-10 w-10 animate-pulse text-slate-400" />
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-slate-500">Searching...</p>
-                    <p className="text-sm font-bold text-slate-400">
-                      Scanning section records...
-                    </p>
-                  </div>
-                </div>
-              ) : Object.entries(filteredGroups).length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-center px-4">
-                  <p className="text-sm font-bold text-slate-500">
-                    No sections match the current search/filter.
-                  </p>
-                </div>
-              ) : (
-                Object.entries(filteredGroups).map(([gl, programGroups]) => (
-                <div key={gl}>
-                  {/* Grade-level header — sticky at the top of the scroll container */}
-                  <h3 className="sticky top-0 z-20 px-3 py-1 text-xs font-black uppercase text-foreground bg-card border-b border-border/40 mb-1">
-                    {gl}
-                  </h3>
-
-                  {programGroups.map(({ programType, sections: pgSecs }) => (
-                    <div key={programType} className="mb-2">
-                      {/* Program-type sub-header — sticky below the grade header (~28 px) */}
-                      <div className="sticky top-6 z-20 px-3 py-0.5 bg-muted border-y border-border/30">
-                        <span className="text-xs font-black uppercase tracking-widest text-foreground">
-                          {PROGRAM_TYPE_LABELS[programType] ?? programType}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1 pt-1">
-                        {pgSecs.map((s) => {
-                          const adviser = s.advisers?.[0]?.teacher;
-                          const adviserName = adviser
-                            ? `${adviser.lastName}, ${adviser.firstName}`
-                            : "No Adviser Assigned";
-
-                          return (
-                            <button
-                              key={s.id}
-                              onClick={() => setSelectedSectionId(String(s.id))}
-                              className={cn(
-                                "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-left group",
-                                selectedSectionId === String(s.id)
-                                  ? "bg-primary text-primary-foreground shadow-md"
-                                  : "hover:bg-muted",
-                              )}>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-black uppercase truncate">
-                                  {s.name}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "text-xs font-bold uppercase truncate",
-                                    selectedSectionId === String(s.id)
-                                      ? "text-primary-foreground"
-                                      : "text-foreground",
-                                  )}>
-                                  Adviser: {adviserName}
-                                </span>
-                              </div>
-                              <div className="shrink-0 ml-2">
-                                {s.isEosyFinalized ? (
-                                  <CheckCircle2
-                                    className={cn(
-                                      "h-4 w-4",
-                                      selectedSectionId === String(s.id)
-                                        ? "text-white"
-                                        : "text-emerald-500",
-                                    )}
-                                  />
-                                ) : (
-                                  <div
-                                    className={cn(
-                                      "h-2 w-2 rounded-full",
-                                      selectedSectionId === String(s.id)
-                                        ? "bg-white/50"
-                                        : "bg-red-400",
-                                    )}
-                                  />
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                ))
-              )}
-            </div>
-          </div>
-        </Card>
-
-        {/* RIGHT CONTENT: Status Grid */}
-        <Card className="flex-1 border-none shadow-sm flex flex-col overflow-hidden bg-card h-full">
-          {/* ROW 1: IDENTITY */}
-          <CardHeader className="p-3 border-b bg-muted/5 flex-shrink-0">
-            {/* Identity */}
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-xl shrink-0">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-base font-bold uppercase truncate">
-                    {selectedSection ? selectedSection.name : "Select Section"}
-                  </CardTitle>
-                  {selectedSection?.isEosyFinalized && (
-                    <Badge className="bg-emerald-600 text-white font-black uppercase text-xs h-5 shrink-0">
-                      <Lock className="h-3 w-3 mr-1" />
-                      Finalized
-                    </Badge>
-                  )}
-                </div>
-                <p className="font-black text-[10px] uppercase text-foreground/60 tracking-wide">
-                  {selectedSection
-                    ? `${selectedSection.gradeLevel.name} · END OF SCHOOL YEAR REPORTING`
-                    : "Choose a class from the tracker to start updating statuses"}
-                </p>
-                {selectedSection?.advisers?.[0] && (
-                  <p className="text-[10px] font-black uppercase text-primary/80">
-                    ADVISER: {selectedSection.advisers[0].teacher.lastName},{" "}
-                    {selectedSection.advisers[0].teacher.firstName}
-                  </p>
-                )}
-              </div>
-            </div>
-            {/* Controls */}
-            {selectedSection && (
-              <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-border/60">
-                <div className="flex items-center bg-muted/30 p-1 rounded-xl border w-fit gap-0.5">
-                  <button
-                    onClick={() => setIncompleteOnly(false)}
-                    className={cn(
-                      "h-8 px-4 text-xs font-black uppercase rounded-lg transition-all",
-                      !incompleteOnly
-                        ? "bg-white shadow-sm text-primary border border-border"
-                        : "text-foreground hover:text-primary",
-                    )}>
-                    ALL ({records.length})
-                  </button>
-                  <button
-                    onClick={() => setIncompleteOnly(true)}
-                    className={cn(
-                      "h-8 px-4 text-xs font-black uppercase rounded-lg transition-all flex items-center gap-1.5",
-                      incompleteOnly
-                        ? "bg-white shadow-sm text-amber-600 border border-amber-100"
-                        : "text-foreground hover:text-amber-600",
-                    )}>
-                    {missingCount > 0 && (
-                      <AlertCircle className="h-3 w-3 fill-amber-500 text-white" />
-                    )}
-                    MISSING ({missingCount})
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isSyncingSmart || isFinalized}
-                    className="h-8 px-3 font-black text-xs uppercase border-2 border-primary/20 text-primary hover:bg-primary/5"
-                    onClick={handleSmartSync}>
-                    {isSyncingSmart ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                        Sync SMART
-                      </>
-                    )}
-                  </Button>
-                  {!isFinalized && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 font-black text-xs uppercase border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-                        onClick={() =>
-                          navigate(
-                            `/monitoring/enrollment/eosy/workspace?sectionId=${selectedSectionId}`,
-                          )
-                        }>
-                        <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
-                        Rapid Entry Workspace
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="h-8 px-3 font-black text-xs uppercase bg-emerald-600 hover:bg-emerald-700 shadow-md"
-                            disabled={
-                              Object.keys(rowSelection).length === 0 ||
-                              isSchoolYearFinalized
-                            }>
-                            Actions
-                            {Object.keys(rowSelection).length > 0 && (
-                              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-white/20 text-white border-0">
-                                {Object.keys(rowSelection).length}
-                              </Badge>
-                            )}
-                            <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => handleBulkAction("PROMOTED")}
-                            className="font-bold text-emerald-600">
-                            Mark Promoted
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleBulkAction("RETAINED")}
-                            className="font-bold text-red-600">
-                            Mark Retained
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleBulkAction("CONDITIONALLY_PROMOTED")
-                            }
-                            className="font-bold text-amber-600">
-                            Mark Cond. Promoted
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col relative min-h-0">
-            <div className="flex-1 bg-muted/5 relative min-h-0 overflow-hidden">
-              <DataTable<EnrollmentRecord, unknown>
-                columns={columns}
-                data={visibleRecords}
-                loading={loadingRecords}
-                rowSelection={rowSelection}
-                onRowSelectionChange={setRowSelection}
-                getRowClassName={(row: EnrollmentRecord) =>
-                  !row.eosyStatus
-                    ? "bg-amber-50/40 hover:bg-amber-100/40 transition-colors"
-                    : ""
-                }
-                noResultsMessage={
-                  selectedSectionId
-                    ? incompleteOnly
-                      ? "No students missing EOSY status. Great job!"
-                      : "No students found."
-                    : "Please select a section from the Class Tracker sidebar."
-                }
-                className="border-none rounded-none absolute inset-0"
-                tableClassName="border-separate border-spacing-0 w-full"
-                containerHeight="100%"
-                virtualize={false}
-                dense={true}
-              />
-            </div>
-
-            {/* ROW 4: STICKY FOOTER — Dense action bar */}
-            {selectedSection && !isSchoolYearFinalized && (
-              <div className="px-4 py-2.5 border-t bg-white flex-shrink-0 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.04)] flex items-center justify-between gap-4">
-                {selectedSection.isEosyFinalized ? (
-                  <>
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs min-w-0">
-                      <div className="bg-emerald-100 p-1 rounded-full shrink-0">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="truncate">Section finalized and locked for SF5/SF6 reporting.</span>
-                      <span className="text-foreground/50 shrink-0">
-                        ({visibleRecords.length}/{records.length})
-                      </span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-4 font-black uppercase text-xs border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shrink-0"
-                      onClick={() => handleReopenClass(selectedSection.id)}>
-                      <Unlock className="h-3.5 w-3.5 mr-1.5" />
-                      Re-open Section
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 min-w-0">
-                      {missingCount > 0 ? (
-                        <div className="flex items-center gap-2 text-red-600 min-w-0">
-                          <AlertCircle className="h-4 w-4 shrink-0" />
-                          <span className="font-black text-xs uppercase truncate">
-                            {missingCount} LEARNERS MISSING EOSY STATUS
-                          </span>
-                        </div>
-                      ) : hasComplianceViolation ? (
-                        <div className="flex items-center gap-2 text-red-700 min-w-0">
-                          <AlertCircle className="h-4 w-4 shrink-0" />
-                          <span className="font-black text-xs uppercase truncate">
-                            Compliance Error: Cannot finalize. One or more learners with a failing average (&lt;75) are marked as Promoted.
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-emerald-600">
-                          <CheckCircle2 className="h-4 w-4 shrink-0" />
-                          <span className="font-black text-xs uppercase">Ready for Finalization</span>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3.5 w-3.5 text-emerald-600/60 cursor-help shrink-0" />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs text-xs font-bold">
-                                All {records.length} learners have been assigned an EOSY status. System Check: No learner with Gen Ave &lt; 75 is marked as PROMOTED.
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      )}
-                      <span className="text-xs text-foreground/40 font-bold shrink-0">
-                        {visibleRecords.length}/{records.length} learners
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      className={cn(
-                        "h-9 px-4 font-black uppercase text-xs transition-all shrink-0",
-                        !isSectionCompliant
-                          ? "bg-muted text-foreground cursor-not-allowed shadow-none border border-muted-foreground/20"
-                          : "bg-red-700 hover:bg-red-800 text-white shadow-md shadow-red-900/20",
-                      )}
-                      onClick={handleFinalizeClass}
-                      disabled={records.length === 0 || !isSectionCompliant}>
-                      <Lock
-                        className={cn(
-                          "h-3.5 w-3.5 mr-1.5 transition-all",
-                          isSectionCompliant && "animate-pulse",
-                        )}
-                      />
-                      Finalize & Lock Section
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modals & Dialogs */}
-      <Dialog
-        open={unlockModal.open}
-        onOpenChange={(open) =>
-          !open && setUnlockModal((p) => ({ ...p, open: false }))
-        }>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 font-bold uppercase  text-red-700">
-              <div className="bg-red-100 p-2 rounded-lg">
-                <Unlock className="h-5 w-5" />
-              </div>
-              Emergency Archive Unlock
-            </DialogTitle>
-            <DialogDescription className="font-bold text-sm">
-              This action will breach the terminal lock for the entire school
-              year. This is only permitted for critical record corrections.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6 space-y-4">
-            <div className="space-y-2">
-              <Label className="font-black text-xs uppercase  text-foreground">
-                Security PIN
-              </Label>
-              <Input
-                type="password"
-                placeholder="Enter Admin Security PIN"
-                value={unlockModal.pin}
-                onChange={(e) =>
-                  setUnlockModal((p) => ({ ...p, pin: e.target.value }))
-                }
-                className="h-11 font-bold border-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-black text-xs uppercase  text-foreground">
-                Justification (Min 10 chars)
-              </Label>
-              <textarea
-                placeholder="Describe the reason for unlocking this archive..."
-                value={unlockModal.justification}
-                onChange={(e) =>
-                  setUnlockModal((p) => ({
-                    ...p,
-                    justification: e.target.value,
-                  }))
-                }
-                className="w-full h-24 p-3 rounded-lg border-2 font-bold text-sm bg-background focus:ring-2 focus:ring-primary focus:outline-none"
-              />
-            </div>
-            <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-900">
-              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-              <p className="text-xs font-bold leading-relaxed">
-                All unlock events are recorded in the permanent system audit
-                logs. The system status will revert to BOSY_LOCKED.
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="ghost"
-              onClick={() => setUnlockModal((p) => ({ ...p, open: false }))}
-              className="font-bold">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUnlockSchoolYear}
-              disabled={
-                unlockModal.pin.length < 4 ||
-                unlockModal.justification.length < 10 ||
-                unlockModal.loading
-              }
-              className="bg-red-600 hover:bg-red-700 text-white font-black uppercase  px-8">
-              {unlockModal.loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Authorize Override"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={dropoutModal.open}
-        onOpenChange={(open) =>
-          !open && setDropoutModal({ ...dropoutModal, open: false })
-        }>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-bold uppercase ">
-              Reason for Drop Out
-            </DialogTitle>
-            <DialogDescription className="font-bold">
-              DepEd requires a specific reason for learners who dropped out.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="font-black text-xs uppercase  text-foreground">
-                Select Reason
-              </Label>
-              <Select
-                value={dropoutModal.reason}
-                onValueChange={(val) =>
-                  setDropoutModal({ ...dropoutModal, reason: val })
-                }>
-                <SelectTrigger className="h-11 font-bold border-2">
-                  <SelectValue placeholder="Select Reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ARMED_CONFLICT">Armed Conflict</SelectItem>
-                  <SelectItem value="ILLNESS">Illness</SelectItem>
-                  <SelectItem value="FINANCIAL_DIFFICULTY">
-                    Financial Difficulty
-                  </SelectItem>
-                  <SelectItem value="FAMILY_PROBLEM">Family Problem</SelectItem>
-                  <SelectItem value="LACK_OF_INTEREST">
-                    Lack of Interest
-                  </SelectItem>
-                  <SelectItem value="EMPLOYMENT">
-                    Employment / Working
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setDropoutModal({ open: false, recordId: null, reason: "" })
-              }
-              className="font-bold">
-              Cancel
-            </Button>
-            <Button
-              onClick={submitDropoutReason}
-              disabled={!dropoutModal.reason}
-              className="bg-primary font-bold px-8">
-              Save Status
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={transferModal.open}
-        onOpenChange={(open) =>
-          !open && setTransferModal({ ...transferModal, open: false })
-        }>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-bold uppercase ">
-              Effective Date of Transfer
-            </DialogTitle>
-            <DialogDescription className="font-bold">
-              Specify the date when the student officially transferred out.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="font-black text-xs uppercase  text-foreground">
-                Effective Date
-              </Label>
-              <Input
-                type="date"
-                value={transferModal.date}
-                onChange={(e) =>
-                  setTransferModal({ ...transferModal, date: e.target.value })
-                }
-                className="h-11 font-bold border-2"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setTransferModal({ open: false, recordId: null, date: "" })
-              }
-              className="font-bold">
-              Cancel
-            </Button>
-            <Button
-              onClick={submitTransferDate}
-              disabled={!transferModal.date}
-              className="bg-primary font-bold px-8">
-              Save Status
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={finalizeModal.open}
-        onOpenChange={(open) =>
-          !open &&
-          setFinalizeModal({ open: false, section: null, confirmText: "" })
-        }>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 font-bold uppercase ">
-              <div className="bg-amber-100 p-2 rounded-lg">
-                <Lock className="h-5 w-5 text-amber-600" />
-              </div>
-              Finalize Class: {finalizeModal.section?.name}
-            </DialogTitle>
-            <DialogDescription className="font-bold text-sm">
-              Are you sure you want to finalize{" "}
-              <strong>{finalizeModal.section?.name}</strong>? This will lock the
-              EOSY records and generate the SF5. This action cannot be easily
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {/* TASK 1: 3-column DepEd SF5 promotion summary */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
-                <p className="text-[10px] font-black uppercase text-emerald-800">
-                  Promoted
-                </p>
-                <p className="text-2xl font-black text-emerald-700">
-                  {stats.promoted}
-                </p>
-              </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-                <p className="text-[10px] font-black uppercase text-amber-700">
-                  Cond. Promoted
-                </p>
-                <p className="text-2xl font-black text-amber-600">
-                  {stats.conditionallyPromoted}
-                </p>
-              </div>
-              <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center">
-                <p className="text-[10px] font-black uppercase text-red-800">
-                  Retained
-                </p>
-                <p className="text-2xl font-black text-red-700">
-                  {stats.retained}
-                </p>
-              </div>
-            </div>
-            {/* TASK 2: Accurate SF4/SF5 terminal state labels */}
-            <div className="bg-muted/30 rounded-xl p-4 space-y-2 border-2 border-dashed">
-              <div className="flex justify-between items-center text-xs font-bold text-foreground uppercase">
-                <span>Transferred Out / Dropped Out (NLP)</span>
-                <span>{stats.transferred + stats.dropped}</span>
-              </div>
-              <div className="pt-2 border-t flex justify-between items-center">
-                <span className="text-sm font-black uppercase">
-                  Total Learners
-                </span>
-                <span className="text-lg font-black">{records.length}</span>
-              </div>
-            </div>
-            {/* TASK 3: High-friction safety lock — must type section name */}
-            <div className="space-y-1.5">
-              <p className="text-xs font-black uppercase text-foreground">
-                Type{" "}
-                <span className="text-red-700">
-                  {finalizeModal.section?.name}
-                </span>{" "}
-                to lock
-              </p>
-              <Input
-                placeholder={finalizeModal.section?.name ?? "Section name"}
-                value={finalizeModal.confirmText}
-                onChange={(e) =>
-                  setFinalizeModal((p) => ({
-                    ...p,
-                    confirmText: e.target.value,
-                  }))
-                }
-                className="h-10 font-bold border-2 uppercase"
-              />
-            </div>
-            {/* Warning banner */}
-            <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-amber-900">
-              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-amber-600" />
-              <p className="text-xs font-bold leading-relaxed">
-                Finalizing locks this section for all advisers. System Admins
-                must manually unlock it for corrections.
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setFinalizeModal({
-                  open: false,
-                  section: null,
-                  confirmText: "",
-                })
-              }
-              className="font-bold">
-              Cancel
-            </Button>
-            {/* TASK 3 + 4: disabled until confirmation text matches; TASK 4: updated label */}
-            <Button
-              onClick={confirmFinalizeClass}
-              disabled={
-                finalizeModal.confirmText.toUpperCase().trim() !==
-                (finalizeModal.section?.name ?? "").toUpperCase()
-              }
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
+        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
+          {gradeLevels.map((gl) => (
+            <TabsTrigger
+              key={gl.id}
+              value={String(gl.id)}
               className={cn(
-                "font-black uppercase px-8 transition-all",
-                finalizeModal.confirmText.toUpperCase().trim() ===
-                  (finalizeModal.section?.name ?? "").toUpperCase()
-                  ? "bg-red-700 hover:bg-red-800 text-white"
-                  : "bg-muted text-foreground cursor-not-allowed",
-              )}>
-              <Lock className="h-4 w-4 mr-1.5" />
-              Finalize & Lock Section
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              )}
+            >
+              {activeTab === String(gl.id) && (
+                <motion.div
+                  layoutId="enrollment-eosy-grade-pill"
+                  className="absolute inset-0 bg-primary rounded-md"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <span className={cn("relative z-20 text-xs font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                {gl.name.replace(/grade\s*/i, "Grade ")}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      <ConfirmationModal
-        open={batchPromoteConfirmOpen}
-        onOpenChange={setBatchPromoteConfirmOpen}
-        title="⚡ Smart Bulk Promotion"
-        description={`Apply 'PROMOTED' status to all ${
-          records.filter(
-            (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
-          ).length
-        } learner(s) with a passing average (75.00+) who currently have no status?`}
-        confirmText="Confirm Smart Bulk Promotion"
-        onConfirm={handleMarkAllPromoted}
-        variant="primary"
-      />
-
-      {/* MASTER EOSY FINALIZATION — custom professional dialog */}
-      <Dialog
-        open={schoolFinalizeConfirmOpen}
-        onOpenChange={setSchoolFinalizeConfirmOpen}>
-        <DialogContent className="sm:max-w-[480px] border-t-8 border-t-red-700 p-0 overflow-hidden bg-sidebar shadow-2xl">
-          <div className="px-8 pt-8 pb-0">
-            <DialogHeader className="items-center text-center gap-3">
-              <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center shadow-inner border-2 border-red-200 mb-1">
-                <Lock className="h-7 w-7 text-red-700" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-black uppercase tracking-tight text-foreground">
-                  Master EOSY Finalization
-                </DialogTitle>
-                <p className="text-[11px] font-black uppercase tracking-widest text-red-600 mt-1.5">
-                  S.Y. {activeSchoolYearLabel} — Irreversible Action
-                </p>
-              </div>
-              <DialogDescription className="text-sm font-bold text-foreground/80 leading-relaxed max-w-sm pt-1">
-                This will permanently lock all sections for the current school year. No further EOSY status changes will be permitted.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="mt-5 space-y-3">
-              {/* Numbered checklist */}
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2.5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-700 mb-2">
-                  What this action does
-                </p>
-                {[
-                  `Lock all ${exportLock?.totalSections ?? "--"} sections — no further status changes allowed`,
-                  `Mark S.Y. ${activeSchoolYearLabel} EOSY as permanently archived`,
-                  "Preserve all academic records for DepEd LIS audit readiness",
-                  "Enable master SF5 export and academic year rollover",
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 h-5 w-5 rounded-full bg-red-700 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm font-bold text-red-900 leading-snug">
-                      {item}
-                    </p>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="flex-1 w-full h-full min-h-0"
+          >
+            <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
+              <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-3 rounded-md border border-border flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={batchActionStatus}
+                      onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+                      disabled={isGradeFinalized || Object.keys(rowSelection).length === 0}
+                    >
+                      <SelectTrigger className="w-48 bg-background">
+                        <SelectValue placeholder="Batch Action..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PROMOTED">Promoted (Requires &gt;= 75)</SelectItem>
+                        <SelectItem value="RETAINED">Retained</SelectItem>
+                        <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
+                        <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
+                        <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleBatchUpdate}
+                      disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+                      variant="secondary"
+                    >
+                      {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Apply Selected
+                    </Button>
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {unfinalizedCount > 0 && !isGradeFinalized && (
+                      <Badge variant="destructive" className="animate-pulse">
+                        {unfinalizedCount} Missing Statuses
+                      </Badge>
+                    )}
+                    {isGradeFinalized ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1">
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Grade Finalized & Locked
+                      </Badge>
+                    ) : (
+                      <Button
+                        onClick={() => setFinalizeModalOpen(true)}
+                        disabled={unfinalizedCount > 0 || records.length === 0}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                      >
+                        <Lock className="h-4 w-4 mr-2" /> Finalize & Lock {activeGradeName}
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-              {/* Warning strip */}
-              <div className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5">
-                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-                <p className="text-xs font-bold text-amber-900">
-                  This action cannot be undone without emergency administrator access.
-                </p>
+                <div className="flex-1 min-h-0 bg-card rounded-md border flex flex-col">
+                  {loadingRecords ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <p className="text-sm font-medium">Loading {activeGradeName} records...</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 overflow-auto">
+                      <DataTable
+                        columns={columns}
+                        data={records}
+                        rowSelection={rowSelection}
+                        onRowSelectionChange={setRowSelection}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+      </Tabs>
+    </div>
+
+      <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
+        <DialogContent className="max-w-md border-red-200">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
+            <DialogTitle className="text-center text-xl text-red-700">Lock {activeGradeName} EOSY?</DialogTitle>
+            <DialogDescription className="text-center pt-2 font-medium">
+              This action will execute <strong className="text-foreground">Automated Grade Progression</strong> for all learners in this grade level.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-red-50 p-4 rounded-md text-sm text-red-800 space-y-2 my-2 border border-red-100">
+            <p>• Learner Active States will be updated to reflect their progression.</p>
+            <p>• All sections in this grade will be permanently locked for this school year.</p>
+            <p>• The records will be added to the immutable Historical Ledger.</p>
+            <p className="font-bold underline mt-3">This action cannot be undone.</p>
           </div>
-
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 px-8 py-6 mt-4">
+          <DialogFooter className="sm:justify-center flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              className="flex-1 h-11 font-bold border-2"
-              onClick={() => setSchoolFinalizeConfirmOpen(false)}>
+              onClick={() => setFinalizeModalOpen(false)}
+              disabled={finalizeLoading}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
-              className="flex-1 h-11 font-black uppercase tracking-tight bg-red-700 hover:bg-red-800 text-white shadow-md active:scale-[0.98] transition-transform"
-              onClick={handleSchoolFinalize}>
-              <Lock className="h-4 w-4 mr-2" />
-              Yes, Lock School Year
+              variant="destructive"
+              onClick={handleFinalizeGrade}
+              disabled={finalizeLoading}
+              className="w-full sm:w-auto font-bold"
+            >
+              {finalizeLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirm & Execute Progression
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <RemedialResolutionModal
-        open={remedialModal.open}
-        recordId={remedialModal.recordId}
-        learnerName={remedialModal.learnerName}
-        lrn={remedialModal.lrn}
-        onClose={() =>
-          setRemedialModal({
-            open: false,
-            recordId: null,
-            learnerName: "",
-            lrn: null,
-          })
-        }
-        onResolved={(recordId, newStatus) => {
-          setRecords((prev) =>
-            prev.map((r) =>
-              r.id === recordId ? { ...r, eosyStatus: newStatus } : r,
-            ),
-          );
-        }}
-      />
-
-    </div>
+    </>
   );
 }

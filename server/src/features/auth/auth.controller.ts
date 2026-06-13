@@ -12,7 +12,7 @@ type AuthUser = {
   email: string | null;
   employeeId: string | null;
   accountName: string | null;
-  role: string;
+  roles: string[];
   mustChangePassword: boolean;
   isActive: boolean;
   lastLoginAt: Date | null;
@@ -81,7 +81,7 @@ function toUserResponse(user: AuthUser) {
     email: user.email,
     employeeId: user.employeeId,
     accountName: user.accountName,
-    role: user.role,
+    roles: user.roles,
     mustChangePassword: user.mustChangePassword,
   };
 }
@@ -99,7 +99,7 @@ function createAuthToken(user: AuthUser): string {
   return jwt.sign(
     {
       userId: user.id,
-      role: user.role,
+      roles: user.roles,
       mustChangePassword: user.mustChangePassword,
     },
     jwtSecret,
@@ -169,7 +169,7 @@ export async function me(req: Request, res: Response): Promise<void> {
       email: true,
       employeeId: true,
       accountName: true,
-      role: true,
+      roles: true,
       mustChangePassword: true,
     },
   });
@@ -219,7 +219,7 @@ export async function changePassword(
       email: true,
       employeeId: true,
       accountName: true,
-      role: true,
+      roles: true,
       mustChangePassword: true,
       isActive: true,
       lastLoginAt: true,
@@ -258,7 +258,7 @@ export async function verifyCredentials(
     }
 
     // Check if learner is JHS_COMPLETER (since external subsystems AIMS, SMART, MRF should NOT allow access to alumni/JHS completers)
-    if (user.role === "LEARNER") {
+    if (user.roles.includes("LEARNER")) {
       const learner = await prisma.learner.findUnique({
         where: { userId: user.id },
         select: { status: true },

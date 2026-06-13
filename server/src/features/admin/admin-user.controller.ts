@@ -7,6 +7,7 @@ import {
   LearnerStatus,
   Role,
 } from "../../generated/prisma/index.js";
+import { getDesignationPool } from "@enrollpro/shared";
 
 function getUniqueConstraintFields(error: unknown): string[] {
   if (!error || typeof error !== "object") return [];
@@ -140,6 +141,7 @@ export async function index(req: Request, res: Response) {
           sex: l.sex,
           email: l.user?.email ?? "",
           role: "LEARNER",
+          roles: ["LEARNER"],
           isActive: l.user?.isActive ?? false,
           lastLoginAt: l.user?.lastLoginAt || null,
           createdAt: l.createdAt.toISOString(),
@@ -172,7 +174,7 @@ export async function index(req: Request, res: Response) {
       "lastName",
       "designation",
       "email",
-      "role",
+      "roles",
       "isActive",
       "lastLoginAt",
       "createdAt",
@@ -185,13 +187,15 @@ export async function index(req: Request, res: Response) {
     if (role && role !== "all") {
       const requestedRole = String(role).toUpperCase() as Role;
       if (requestedRole === "TEACHER") {
-        where.role = { in: ["TEACHER", "CLASS_ADVISER"] as Role[] };
+        where.roles = { hasSome: ["TEACHER", "CLASS_ADVISER"] };
       } else {
-        where.role = requestedRole;
+        where.roles = { has: requestedRole };
       }
     } else {
       // Exclude learners when fetching "all staff"
-      where.role = { not: "LEARNER" as Role };
+      where.roles = {
+        hasSome: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "CLASS_ADVISER", "TEACHER", "MRF"],
+      };
     }
 
     if (isActive !== undefined) where.isActive = String(isActive) === "true";
@@ -221,7 +225,7 @@ export async function index(req: Request, res: Response) {
           designation: true,
           mobileNumber: true,
           email: true,
-          role: true,
+          roles: true,
           isActive: true,
           lastLoginAt: true,
           createdAt: true,
@@ -262,9 +266,10 @@ export async function store(req: Request, res: Response) {
       mobileNumber,
       email,
       password,
-      role,
+      roles,
       mustChangePassword = true,
       department,
+      accountName,
     } = req.body;
 
     // Normalize empty strings to null for optional unique/nullable fields
@@ -277,6 +282,18 @@ export async function store(req: Request, res: Response) {
     const cleanDesignation = designation?.trim() || null;
     const cleanMobileNumber = mobileNumber?.trim() || null;
     const cleanEmail = email?.trim() || null;
+    const cleanAccountName = accountName?.trim() || null;
+
+    if (cleanDesignation && roles && Array.isArray(roles)) {
+      const allowedPool = getDesignationPool(roles);
+      if (allowedPool.length > 0 && !allowedPool.includes(cleanDesignation.toUpperCase())) {
+        return res.status(400).json({
+          message: "Invalid Plantilla position for the provided roles. Bypassed UI restriction detected.",
+          field: "designation",
+          code: "INVALID_DESIGNATION_FOR_ROLE",
+        });
+      }
+    }
 
     // Pre-check for unique conflicts before attempting the insert.
     // The users table has 3 unique constraints (email, employee_id, account_name).
@@ -286,7 +303,10 @@ export async function store(req: Request, res: Response) {
     if (cleanEmail) orClauses.push({ email: cleanEmail });
     if (cleanEmployeeId) {
       orClauses.push({ employeeId: cleanEmployeeId });
-      orClauses.push({ accountName: cleanEmployeeId });
+    }
+    const finalAccountName = cleanAccountName || cleanEmployeeId || null;
+    if (finalAccountName) {
+      orClauses.push({ accountName: finalAccountName });
     }
     if (orClauses.length > 0) {
       const existing = await prisma.user.findFirst({
@@ -311,7 +331,7 @@ export async function store(req: Request, res: Response) {
 
     const hashed = await bcrypt.hash(password, 12);
 
-    const isTeacherRole = role === "TEACHER" || role === "CLASS_ADVISER";
+
 
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
@@ -322,12 +342,12 @@ export async function store(req: Request, res: Response) {
           suffix: cleanSuffix,
           sex: (sex as "MALE" | "FEMALE") ?? "FEMALE",
           employeeId: cleanEmployeeId,
-          accountName: cleanEmployeeId || null,
+          accountName: finalAccountName,
           designation: cleanDesignation,
           mobileNumber: cleanMobileNumber,
           email: cleanEmail,
           password: hashed,
-          role,
+          roles,
           mustChangePassword,
           createdById: req.user!.userId,
         },
@@ -336,14 +356,16 @@ export async function store(req: Request, res: Response) {
           firstName: true,
           lastName: true,
           email: true,
-          role: true,
+          roles: true,
           isActive: true,
           mustChangePassword: true,
           sex: true,
         },
       });
 
-      if (isTeacherRole && cleanEmployeeId) {
+      const isStaffRole = roles && Array.isArray(roles) && !roles.includes("LEARNER");
+
+      if (isStaffRole && cleanEmployeeId) {
         const teacherEmail =
           cleanEmail || `${cleanEmployeeId}@noemail.deped.local`;
         await tx.teacher.upsert({
@@ -386,7 +408,7 @@ export async function store(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "ADMIN_USER_CREATED",
-      description: `Admin created account: ${lastName}, ${firstName} (${role})`,
+      description: `Admin created account: ${lastName}, ${firstName} (${roles.join(', ')})`,
       subjectType: "User",
       recordId: user.id,
       req,
@@ -435,8 +457,11 @@ export async function update(req: Request, res: Response) {
       designation,
       mobileNumber,
       email,
-      role,
+      roles,
       department,
+      accountName,
+      isActive,
+      password,
     } = req.body;
     const userId = parseInt(String(req.params.id));
 
@@ -447,9 +472,20 @@ export async function update(req: Request, res: Response) {
       ? String(department).trim().toUpperCase()
       : null;
 
-    const isTeacherRole =
-      (role || targetUser.role) === "TEACHER" ||
-      (role || targetUser.role) === "CLASS_ADVISER";
+    const effectiveRoles = roles || targetUser.roles;
+
+    if (designation && effectiveRoles && Array.isArray(effectiveRoles)) {
+      const allowedPool = getDesignationPool(effectiveRoles);
+      if (allowedPool.length > 0 && !allowedPool.includes(designation.trim().toUpperCase())) {
+        return res.status(400).json({
+          message: "Invalid Plantilla position for the provided roles. Bypassed UI restriction detected.",
+          field: "designation",
+          code: "INVALID_DESIGNATION_FOR_ROLE",
+        });
+      }
+    }
+
+    const hashed = password ? await bcrypt.hash(password, 12) : undefined;
 
     const user = await prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
@@ -462,39 +498,45 @@ export async function update(req: Request, res: Response) {
           ...(sex !== undefined &&
             sex !== null && { sex: sex as "MALE" | "FEMALE" }),
           employeeId,
-          accountName: employeeId || null,
+          accountName: accountName || employeeId || null,
           designation,
           mobileNumber,
           email,
-          ...(role ? { role } : {}),
+          ...(roles ? { roles } : {}),
+          ...(isActive !== undefined ? { isActive } : {}),
+          ...(hashed ? { password: hashed, mustChangePassword: true } : {}),
         },
         select: {
           id: true,
           firstName: true,
           lastName: true,
+          middleName: true,
           email: true,
-          role: true,
+          mobileNumber: true,
+          designation: true,
+          roles: true,
           isActive: true,
           sex: true,
         },
       });
 
+      const isStaffRole = effectiveRoles && Array.isArray(effectiveRoles) && !effectiveRoles.includes("LEARNER");
       const effectiveEmployeeId = employeeId || targetUser.employeeId;
-      if (isTeacherRole && effectiveEmployeeId) {
+
+      if (isStaffRole && effectiveEmployeeId) {
         const teacherEmail =
-          email || `${effectiveEmployeeId}@noemail.deped.local`;
+          updated.email || `${effectiveEmployeeId}@noemail.deped.local`;
         await tx.teacher.upsert({
           where: { employeeId: effectiveEmployeeId },
           create: {
             employeeId: effectiveEmployeeId,
-            firstName,
-            lastName,
-            middleName: middleName || null,
-            sex:
-              (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            firstName: updated.firstName,
+            lastName: updated.lastName,
+            middleName: updated.middleName,
+            sex: updated.sex as "MALE" | "FEMALE",
             email: teacherEmail,
-            contactNumber: mobileNumber || null,
-            designation: designation || null,
+            contactNumber: updated.mobileNumber,
+            designation: updated.designation,
             isActive: true,
             user: { connect: { id: updated.id } },
             ...(cleanDeptCode
@@ -502,14 +544,14 @@ export async function update(req: Request, res: Response) {
               : {}),
           },
           update: {
-            firstName,
-            lastName,
-            middleName: middleName || null,
-            sex:
-              (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            firstName: updated.firstName,
+            lastName: updated.lastName,
+            middleName: updated.middleName,
+            sex: updated.sex as "MALE" | "FEMALE",
             email: teacherEmail,
-            contactNumber: mobileNumber || null,
-            designation: designation || null,
+            contactNumber: updated.mobileNumber,
+            designation: updated.designation,
+            ...(isActive !== undefined ? { isActive } : {}),
             user: { connect: { id: updated.id } },
             ...(cleanDeptCode
               ? { department: { connect: { code: cleanDeptCode } } }
@@ -518,7 +560,7 @@ export async function update(req: Request, res: Response) {
         });
       }
 
-      if (targetUser.role === "LEARNER") {
+      if (targetUser.roles.includes("LEARNER")) {
         await tx.learner.updateMany({
           where: { userId: updated.id },
           data: {
@@ -577,7 +619,7 @@ export async function deactivate(req: Request, res: Response) {
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!targetUser) return res.status(404).json({ message: "User not found" });
 
-    if (targetUser.role === "SYSTEM_ADMIN") {
+    if (targetUser.roles.includes("SYSTEM_ADMIN")) {
       return res.status(400).json({
         message:
           "SYSTEM_ADMIN accounts cannot be deactivated to prevent system lockout.",
@@ -592,7 +634,7 @@ export async function deactivate(req: Request, res: Response) {
           id: true,
           firstName: true,
           lastName: true,
-          role: true,
+          roles: true,
           employeeId: true,
         },
       });
@@ -610,7 +652,7 @@ export async function deactivate(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "ADMIN_USER_DEACTIVATED",
-      description: `Admin deactivated account: ${user.lastName}, ${user.firstName} (${user.role})`,
+      description: `Admin deactivated account: ${user.lastName}, ${user.firstName} (${user.roles.join(', ')})`,
       subjectType: "User",
       recordId: userId,
       req,
@@ -635,7 +677,7 @@ export async function reactivate(req: Request, res: Response) {
           id: true,
           firstName: true,
           lastName: true,
-          role: true,
+          roles: true,
           employeeId: true,
         },
       });
@@ -653,7 +695,7 @@ export async function reactivate(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "ADMIN_USER_REACTIVATED",
-      description: `Admin reactivated account: ${user.lastName}, ${user.firstName} (${user.role})`,
+      description: `Admin reactivated account: ${user.lastName}, ${user.firstName} (${user.roles.join(', ')})`,
       subjectType: "User",
       recordId: userId,
       req,
@@ -702,19 +744,19 @@ export async function metrics(_req: Request, res: Response) {
         prisma.user.count({
           where: {
             isActive: true,
-            role: { not: "LEARNER" },
+            roles: { hasSome: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "CLASS_ADVISER", "TEACHER", "MRF"] },
           },
         }),
         prisma.user.count({
           where: {
-            role: { not: "LEARNER" },
+            roles: { hasSome: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "CLASS_ADVISER", "TEACHER", "MRF"] },
             OR: [{ mustChangePassword: true }, { lastLoginAt: null }],
           },
         }),
         prisma.user.count({
           where: {
             isActive: false,
-            role: { not: "LEARNER" },
+            roles: { hasSome: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "CLASS_ADVISER", "TEACHER", "MRF"] },
           },
         }),
       ]);

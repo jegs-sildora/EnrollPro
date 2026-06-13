@@ -27,7 +27,7 @@ router.post("/system/unlock-bosy", sysCtrl.unlockBosy);
 router.get("/users/metrics", userCtrl.metrics);
 router.get("/users", userCtrl.index);
 router.post("/users", validate(createUserSchema), userCtrl.store);
-router.put("/users/:id", validate(updateUserSchema), userCtrl.update);
+router.patch("/users/:id", validate(updateUserSchema), userCtrl.update);
 router.patch("/users/:id/deactivate", userCtrl.deactivate);
 router.patch("/users/:id/reactivate", userCtrl.reactivate);
 router.patch(

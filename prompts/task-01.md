@@ -1,28 +1,37 @@
-Act as a Senior UI/UX Engineer.
+# EnrollPro System: Teacher Workspace Refinement Directive
+**Version:** 2.0 (Polish & Validation)
+**Focus:** React Component Consistency & Express.js Payload Validation
 
-MISSION: Optimize Direct Encode Drawer for High-Speed Data Entry and Prevent Data Loss
-The Walk-In Direct Encode slide-over utilizes standard component behaviors that introduce friction and data-loss risks during rapid administrative encoding. You must lock the panel state, remove collapsible friction, and implement keyboard-first auto-fetching.
+## 1. Core Architectural Goal
+The Teacher's Role-Based Access Control (RBAC) sidebar is functionally correct. We must now strictly enforce UI component consistency across their workspace and lock down the data entry points to prevent accidental bad data from polluting the sectioning algorithm.
 
-Execute the following layout and interaction mandates exactly:
+## 2. Frontend Execution (React / Tailwind)
+**Assignee:** Jegrick
 
-TASK 1: Prevent Accidental Data Loss (State Lock)
+**TASK 1: Enforce DRY Table Architecture (`My Advisory Class`)**
+*   **Issue:** The current roster table is a bespoke, un-styled list.
+*   **Fix:** Unmount the custom table. Import and map the standard global `<Table/>` component (with the maroon header and F-pattern alignment) to display the enrolled learners. Ensure visual consistency across the entire platform. 
+*   **Enhancement:** Make the learner rows clickable, opening a read-only sidepanel with their basic DepEd profile (address, guardian contact) so the teacher has quick access to emergency info.
 
-Disable the closeOnOverlayClick and closeOnEsc properties of the drawer component.
+**TASK 2: Input Affordance & Validation (`EOSY Finalization`)**
+*   **Issue:** The `GEN AVE` inputs look disabled (gray background) and lack visible typing constraints.
+*   **Fix:** Update the input styling. Use a white background with a subtle border (e.g., `bg-white border border-gray-300 rounded-md shadow-sm`). Add a clear focus state (e.g., `focus:ring-2 focus:ring-maroon-500`).
+*   **Client-Side Validation:** Enforce strict number constraints on the input field. `min="60"`, `max="100"`, and `step="1"`. Do not allow alphabetical characters.
 
-If the user clicks the explicit [ CANCEL ] button or the [ X ] close icon, evaluate the form state. If the form is "dirty" (fields have been altered), trigger a browser confirmation alert: "Are you sure you want to discard this encoding session? Unsaved data will be lost."
+**TASK 3: The Submission UX & Lock-Out State**
+*   **Confirmation:** Clicking `[ Submit to Registrar ]` must trigger a modal: *"Warning: This action is final. Are you sure you want to lock these grades and forward them to the Head Registrar?"*
+*   **Optimistic Lock:** Upon successful API response, the page must immediately re-render in a "Locked" state. 
+    *   Disable all `GEN AVE` inputs.
+    *   Disable all `EOSY STATUS` dropdowns.
+    *   Replace the Submit button with a green badge: `✓ Submitted & Locked`.
 
-TASK 2: Eliminate Accordion Friction
+## 3. Backend Execution (Express.js / PostgreSQL)
+**Assignee:** Patrick
 
-If the section headers (1. LEARNER PROFILE, 2. PREVIOUS SCHOOL DATA, etc.) are functioning as collapsible accordions, force their default state to fully expanded.
+**TASK 1: Strict Payload Validation**
+*   When the Teacher submits the EOSY payload to the Express API, do not trust the client. 
+*   Execute backend validation iterating over the array of students. Ensure every `gen_ave` is a valid integer between 60 and 100. Reject the entire payload with a `400 Bad Request` if any outlier is detected.
 
-Alternatively, remove the toggle functionality entirely so they function strictly as visual dividers.
-
-TASK 3: Implement Keyboard-First LRN Fetching
-
-Remove the requirement to manually click the magnifying glass icon to search the LRN.
-
-Attach the fetch function to the onBlur event of the LRN input, or auto-trigger it when exactly 12 numeric characters are detected. This allows the registrar to seamlessly Tab to the next field while the system pre-fills the rest of the form in the background.
-
-TASK 4: Enforce Tab-Indexing
-
-Ensure strict sequential tabIndex ordering from top to bottom so the registrar can encode the entire physical form using only the keyboard, ending on the Enter key to trigger the Save action.
+**TASK 2: State Locking & Role Escrow**
+*   Upon successful validation, execute an `UPDATE` query that flags the section as `is_eosy_locked = true`.
+*   Once this flag is set to true, the backend must return a `403 Forbidden` if the teacher's token attempts to run a subsequent `PUT` or `PATCH` request to those students' records. Only a token with the `REGISTRAR` or `ADMIN` role should be able to bypass or reverse this lock.

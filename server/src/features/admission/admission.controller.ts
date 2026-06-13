@@ -139,6 +139,7 @@ export async function submitApplication(req: Request, res: Response) {
         duplicateFlag,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
+        isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
         
         addresses: {
           create: [
@@ -173,7 +174,6 @@ export async function submitApplication(req: Request, res: Response) {
               middleName: data.mother.middleName || null,
               contactNumber: data.mother.contactNumber || null,
               email: data.mother.email || null,
-              occupation: data.mother.occupation || null,
             },
             {
               relationship: "FATHER",
@@ -182,7 +182,6 @@ export async function submitApplication(req: Request, res: Response) {
               middleName: data.father.middleName || null,
               contactNumber: data.father.contactNumber || null,
               email: data.father.email || null,
-              occupation: data.father.occupation || null,
             },
             ...(data.guardian?.firstName
               ? [
@@ -193,7 +192,6 @@ export async function submitApplication(req: Request, res: Response) {
                     middleName: data.guardian.middleName || null,
                     contactNumber: data.guardian.contactNumber || null,
                     email: data.guardian.email || null,
-                    occupation: data.guardian.occupation || null,
                   },
                 ]
               : []),
@@ -202,9 +200,6 @@ export async function submitApplication(req: Request, res: Response) {
         previousSchool: {
           create: {
             schoolName: data.lastSchoolName,
-            schoolDepedId: data.lastSchoolId || null,
-            gradeCompleted: data.lastGradeCompleted,
-            schoolYearAttended: data.schoolYearLastAttended,
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,
@@ -321,6 +316,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
         intakeWeightKg: data.intakeWeightKg || null,
         hasNoMother: !data.mother?.firstName,
         hasNoFather: !data.father?.firstName,
+        isLateEnrollee: schoolSetting?.systemPhase === "CLASSES_ONGOING",
         addresses: {
           create: [
             {
@@ -354,7 +350,6 @@ export async function updateExistingApplication(req: Request, res: Response) {
               middleName: data.mother.middleName || null,
               contactNumber: data.mother.contactNumber || null,
               email: data.mother.email || null,
-              occupation: data.mother.occupation || null,
             },
             {
               relationship: "FATHER",
@@ -363,7 +358,6 @@ export async function updateExistingApplication(req: Request, res: Response) {
               middleName: data.father.middleName || null,
               contactNumber: data.father.contactNumber || null,
               email: data.father.email || null,
-              occupation: data.father.occupation || null,
             },
             ...(data.guardian?.firstName
               ? [
@@ -374,7 +368,6 @@ export async function updateExistingApplication(req: Request, res: Response) {
                     middleName: data.guardian.middleName || null,
                     contactNumber: data.guardian.contactNumber || null,
                     email: data.guardian.email || null,
-                    occupation: data.guardian.occupation || null,
                   },
                 ]
               : []),
@@ -383,9 +376,6 @@ export async function updateExistingApplication(req: Request, res: Response) {
         previousSchool: {
           create: {
             schoolName: data.lastSchoolName,
-            schoolDepedId: data.lastSchoolId || null,
-            gradeCompleted: data.lastGradeCompleted,
-            schoolYearAttended: data.schoolYearLastAttended,
             schoolAddress: data.lastSchoolAddress || null,
             schoolType: data.lastSchoolType,
             generalAverage: data.generalAverage || null,

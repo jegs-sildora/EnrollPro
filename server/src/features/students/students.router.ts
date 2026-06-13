@@ -12,6 +12,9 @@ import {
   resetPortalPin,
   clearDeficiency,
   verifyPsa,
+  updateLrn,
+  markDropout,
+  markTransferredOut,
 } from "./controllers/students.profile.controller.js";
 import {
   getHealthRecords as getStudentHealthRecords,
@@ -101,4 +104,25 @@ router.post(
   verifyPsa,
 );
 
+
+// Lifecycle & LRN Management
+router.post(
+  "/:id/lifecycle/dropout",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  markDropout
+);
+
+router.post(
+  "/:id/lifecycle/transfer-out",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  markTransferredOut
+);
+
+router.post(
+  "/:id/lrn",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  updateLrn
+);
+
 export default router;
+

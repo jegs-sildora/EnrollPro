@@ -1057,3 +1057,274 @@ export async function exportSF6(
     next(error);
   }
 }
+
+export async function getGradeRecords(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { gradeLevelId } = req.params;
+    const { schoolYearId } = req.query;
+
+    if (!schoolYearId) {
+      throw new AppError(400, "schoolYearId query parameter is required.");
+    }
+
+    const records = await prisma.enrollmentRecord.findMany({
+      where: {
+        schoolYearId: parseInt(String(schoolYearId), 10),
+        section: {
+          gradeLevelId: parseInt(String(gradeLevelId), 10),
+        },
+      },
+      include: {
+        section: {
+          select: { name: true, isEosyFinalized: true },
+        },
+        enrollmentApplication: {
+          include: {
+            learner: true,
+            gradeLevel: true,
+            previousSchool: true,
+          },
+        },
+      },
+      orderBy: [
+        {
+          enrollmentApplication: {
+            learner: { lastName: "asc" },
+          },
+        },
+        {
+          enrollmentApplication: {
+            learner: { firstName: "asc" },
+          },
+        },
+      ],
+    });
+
+    const mappedRecords = records.map((record) => {
+      return {
+        ...record,
+        finalAverage:
+          record.finalAverage !== null && record.finalAverage !== undefined
+            ? parseFloat(String(record.finalAverage))
+            : null,
+      };
+    });
+
+    res.json({ records: mappedRecords });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function batchUpdateGradeRecords(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { gradeLevelId } = req.params;
+    const { schoolYearId, updates } = req.body;
+
+    if (!schoolYearId || !Array.isArray(updates)) {
+      throw new AppError(
+        400,
+        "Invalid payload. schoolYearId and updates array required.",
+      );
+    }
+
+    // Check if any sections in this grade level are already finalized
+    const finalizedSections = await prisma.section.findMany({
+      where: {
+        gradeLevelId: parseInt(String(gradeLevelId), 10),
+        schoolYearId: parseInt(String(schoolYearId), 10),
+        isEosyFinalized: true,
+      },
+    });
+
+    if (finalizedSections.length > 0) {
+      throw new AppError(
+        422,
+        "Cannot update statuses. One or more sections in this grade level are already finalized.",
+      );
+    }
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: parseInt(String(schoolYearId), 10) },
+    });
+
+    if (schoolYear?.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Cannot update statuses. School year EOSY is finalized.",
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let count = 0;
+
+      for (const update of updates) {
+        const current = await tx.enrollmentRecord.findUnique({
+          where: { id: update.recordId },
+          select: {
+            eosyStatus: true,
+            learner: { select: { firstName: true, lastName: true } },
+          },
+        });
+
+        if (!current) continue;
+
+        await tx.enrollmentRecord.update({
+          where: { id: update.recordId },
+          data: { eosyStatus: update.status as EosyStatus },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: req.user!.userId,
+            actionType: "EOSY_STATUS_BATCH_UPDATE",
+            description: `Updated EOSY status for ${current.learner.lastName}, ${current.learner.firstName}`,
+            subjectType: "EnrollmentRecord",
+            recordId: update.recordId,
+            oldValue: current.eosyStatus || "PENDING",
+            newValue: update.status,
+            ipAddress: req.ip ?? "0.0.0.0",
+            userAgent: (req.headers["user-agent"] as string) ?? null,
+            metadata: { gradeLevelId },
+          },
+        });
+
+        count++;
+      }
+
+      return { count };
+    });
+
+    res.json({
+      message: `Successfully processed ${result.count} updates.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function finalizeGradeLevel(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { gradeLevelId } = req.params;
+    const { schoolYearId } = req.body;
+
+    const syId = parseInt(String(schoolYearId), 10);
+    const glId = parseInt(String(gradeLevelId), 10);
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: syId },
+    });
+
+    if (!schoolYear) throw new AppError(404, "School year not found.");
+    if (schoolYear.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Cannot finalize grade level. School year EOSY is already finalized.",
+      );
+    }
+
+    const gradeLevel = await prisma.gradeLevel.findUnique({
+      where: { id: glId },
+    });
+    if (!gradeLevel) throw new AppError(404, "Grade level not found.");
+
+    const sections = await prisma.section.findMany({
+      where: { schoolYearId: syId, gradeLevelId: glId },
+    });
+
+    if (sections.length === 0) {
+      throw new AppError(
+        422,
+        "No sections found for this grade level in the active school year.",
+      );
+    }
+
+    if (sections.every((s) => s.isEosyFinalized)) {
+      throw new AppError(422, "Grade level is already finalized.");
+    }
+
+    const records = await prisma.enrollmentRecord.findMany({
+      where: {
+        schoolYearId: syId,
+        section: { gradeLevelId: glId },
+      },
+      include: {
+        learner: true,
+      },
+    });
+
+    // Verify all records have eosyStatus
+    const unfinalized = records.filter((r) => !r.eosyStatus);
+    if (unfinalized.length > 0) {
+      throw new AppError(
+        422,
+        `Cannot finalize grade level. ${unfinalized.length} learners are missing an EOSY status.`,
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Automated Grade Progression - Update Learner records
+      for (const record of records) {
+        await tx.learner.update({
+          where: { id: record.learnerId },
+          data: {
+            lastGradeLevel: gradeLevel.name,
+            lastYearEnrolled: schoolYear.yearLabel,
+            previousGenAve:
+              record.finalAverage !== null
+                ? parseFloat(String(record.finalAverage))
+                : null,
+            promotionStatus: record.eosyStatus,
+          },
+        });
+
+        // Handle Completer Status for Grade 10
+        if (
+          record.eosyStatus === "PROMOTED" &&
+          (gradeLevel.displayOrder === 10 || gradeLevel.name.includes("10"))
+        ) {
+          await tx.learner.update({
+            where: { id: record.learnerId },
+            data: { status: "JHS_COMPLETER" },
+          });
+        }
+      }
+
+      // 2. Finalize all sections for this grade level
+      await tx.section.updateMany({
+        where: { schoolYearId: syId, gradeLevelId: glId },
+        data: { isEosyFinalized: true },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: req.user!.userId,
+          actionType: "GRADE_LEVEL_FINALIZED",
+          description: `Finalized EOSY and executed grade progression for ${gradeLevel.name}`,
+          subjectType: "GradeLevel",
+          recordId: glId,
+          oldValue: "false",
+          newValue: "true",
+          ipAddress: req.ip ?? "0.0.0.0",
+          userAgent: (req.headers["user-agent"] as string) ?? null,
+        },
+      });
+    });
+
+    res.json({ message: "Grade level finalized successfully." });
+  } catch (error) {
+    next(error);
+  }
+}

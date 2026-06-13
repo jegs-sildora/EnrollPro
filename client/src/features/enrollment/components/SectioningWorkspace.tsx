@@ -36,6 +36,8 @@ import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { SectionRosterModal } from "./SectionRosterModal";
 
 interface SectionSummary {
   id: number;
@@ -84,6 +86,8 @@ export function SectioningWorkspace() {
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [isAutoDistributeModalOpen, setIsAutoDistributeModalOpen] = useState(false);
+  const [rosterModalSectionId, setRosterModalSectionId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -232,6 +236,30 @@ export function SectioningWorkspace() {
       sileo.error({
         title: "Assignment Failed",
         description: err.response?.data?.message || "An error occurred while moving learners. Please try again.",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleAutoDistribute = async () => {
+    if (!activeGradeLevelId) return;
+    setProcessing(true);
+    try {
+      const res = await api.post("/sections/auto-distribute", {
+        gradeLevelId: activeGradeLevelId,
+      });
+      sileo.success({
+        title: "Auto-Distribute Successful",
+        description: res.data.message || `Successfully distributed learners.`,
+      });
+      setIsAutoDistributeModalOpen(false);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
+    } catch (err: any) {
+      sileo.error({
+        title: "Auto-Distribute Failed",
+        description: err.response?.data?.message || "An error occurred during auto-distribution.",
       });
     } finally {
       setProcessing(false);
@@ -409,11 +437,25 @@ export function SectioningWorkspace() {
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
           <Card className="flex-1 flex flex-col shadow-sm border border-border overflow-hidden bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
-              <CardTitle className="text-lg font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
-                <LayoutGrid className="h-5 w-5 text-primary" />
-                Available Sections
-              </CardTitle>
-              <CardDescription className="text-muted-foreground text-xs font-bold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
+                    <LayoutGrid className="h-5 w-5 text-primary" />
+                    Available Sections
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-xs font-bold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  disabled={currentGradePool.length === 0 || processing}
+                  onClick={() => setIsAutoDistributeModalOpen(true)}
+                  className="font-bold text-xs uppercase tracking-wide gap-1"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  Auto-Distribute
+                </Button>
+              </div>
             </CardHeader>
             <div className="flex-1 overflow-auto p-4 space-y-3 relative">
               {currentGradeSections.length === 0 ? (
@@ -444,8 +486,20 @@ export function SectioningWorkspace() {
                       )}
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className={cn("font-black text-lg uppercase transition-colors", isSelected ? "text-primary" : "text-foreground")}>
+                          <h4 className={cn("font-black text-lg uppercase transition-colors flex items-center gap-2", isSelected ? "text-primary" : "text-foreground")}>
                             {s.name}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRosterModalSectionId(s.id);
+                              }}
+                              title="View Section Roster"
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
                           </h4>
                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                             {s.adviser || "No Adviser Assigned"}
@@ -506,6 +560,23 @@ export function SectioningWorkspace() {
           </Card>
         </div>
       </div>
+
+      <ConfirmationModal
+        open={isAutoDistributeModalOpen}
+        onOpenChange={setIsAutoDistributeModalOpen}
+        title="Confirm Auto-Distribute"
+        description="WARNING: This will automatically distribute all currently unassigned learners into available sections. The algorithm will strictly balance Male/Female ratios and evenly distribute Final General Averages across all regular sections using a Serpentine distribution model. Are you sure you want to proceed?"
+        confirmText={processing ? "Distributing..." : "Execute Auto-Distribute"}
+        onConfirm={handleAutoDistribute}
+        variant="danger"
+      />
+
+      {rosterModalSectionId !== null && (
+        <SectionRosterModal
+          sectionId={rosterModalSectionId}
+          onClose={() => setRosterModalSectionId(null)}
+        />
+      )}
     </div>
   );
 }

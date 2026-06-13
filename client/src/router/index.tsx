@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate } from "react-router";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
-import TeacherIntakeLayout from "@/shared/layouts/TeacherIntakeLayout";
 import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
@@ -40,8 +39,8 @@ import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 
 
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
-import ReadingAssessmentPage from "@/features/reading-assessment/pages/ReadingAssessmentPage";
-
+import TeacherEosyDashboard from "@/features/teachers/pages/EosyDashboard";
+import AdvisoryClass from "@/features/teachers/pages/AdvisoryClass";
 import { lazy } from "react";
 
 const IntegrationHub = lazy(
@@ -207,26 +206,29 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 5. Reading Assessment (Teacher + Admin access)
+      // 5. Teacher Routes
       {
         element: (
           <ProtectedRoute
             allowedRoles={[
               "HEAD_REGISTRAR",
-              "REGISTRAR",
               "SYSTEM_ADMIN",
               "TEACHER",
-              "MRF",
+              "CLASS_ADVISER",
             ]}
           />
         ),
         children: [
           {
-            element: <TeacherIntakeLayout />,
+            element: <AppLayout />,
             children: [
               {
-                path: "/reading-assessment",
-                element: <ReadingAssessmentPage />,
+                path: "/teacher/eosy",
+                element: <TeacherEosyDashboard />,
+              },
+              {
+                path: "/teacher/advisory",
+                element: <AdvisoryClass />,
               },
             ],
           },

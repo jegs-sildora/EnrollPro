@@ -263,6 +263,15 @@ const activeEnrollmentFilter = {
   ],
 };
 
+function getSectionSortWeight(programType: string, isHomogeneous: boolean) {
+  if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
+  if (programType === "SPECIAL_PROGRAM_IN_SPORTS") return 2;
+  if (programType === "SPECIAL_PROGRAM_IN_THE_ARTS") return 3;
+  if (programType !== "REGULAR") return 4;
+  if (isHomogeneous) return 5;
+  return 6;
+}
+
 export async function listSections(req: Request, res: Response): Promise<void> {
   // Source of truth for SY: route param > global context (req.schoolYearId)
   const ayId = req.params.ayId
@@ -322,6 +331,11 @@ export async function listSections(req: Request, res: Response): Promise<void> {
               }
             : null,
         };
+      }).sort((a, b) => {
+        const weightA = getSectionSortWeight(a.programType, a.isHomogeneous);
+        const weightB = getSectionSortWeight(b.programType, b.isHomogeneous);
+        if (weightA !== weightB) return weightA - weightB;
+        return a.name.localeCompare(b.name);
       }),
     });
     return;
@@ -377,6 +391,11 @@ export async function listSections(req: Request, res: Response): Promise<void> {
               }
             : null,
         };
+      }).sort((a, b) => {
+        const weightA = getSectionSortWeight(a.programType, a.isHomogeneous);
+        const weightB = getSectionSortWeight(b.programType, b.isHomogeneous);
+        if (weightA !== weightB) return weightA - weightB;
+        return a.name.localeCompare(b.name);
       }),
     })),
   });
@@ -461,6 +480,23 @@ export async function createSection(
       typeof programType === "string" && programType.trim().length > 0
         ? programType
         : "REGULAR";
+
+    if (isHomogeneous && normalizedProgramType === "REGULAR") {
+      const settings = await prisma.schoolSetting.findFirst();
+      const limit = settings?.homogeneousSectionCount ?? 5;
+      const count = await prisma.section.count({
+        where: {
+          gradeLevelId: parseInt(String(gradeLevelId)),
+          schoolYearId: parseInt(String(schoolYearId)),
+          isHomogeneous: true,
+          programType: "REGULAR"
+        }
+      });
+      if (count >= limit) {
+        res.status(400).json({ message: `Cannot exceed the maximum limit of ${limit} homogeneous sections per grade level. Update settings in System Configuration.` });
+        return;
+      }
+    }
 
     const resolvedSortOrder =
       Number.isInteger(sortOrder) && Number(sortOrder) > 0
@@ -587,6 +623,26 @@ export async function updateSection(
     if (!existing) {
       res.status(404).json({ message: "Section not found" });
       return;
+    }
+
+    const newProgramType = programType !== undefined ? programType : existing.programType;
+    const newIsHomogeneous = isHomogeneous !== undefined ? Boolean(isHomogeneous) : existing.isHomogeneous;
+
+    if (newIsHomogeneous && newProgramType === "REGULAR" && (!existing.isHomogeneous || existing.programType !== "REGULAR")) {
+      const settings = await prisma.schoolSetting.findFirst();
+      const limit = settings?.homogeneousSectionCount ?? 5;
+      const count = await prisma.section.count({
+        where: {
+          gradeLevelId: existing.gradeLevelId,
+          schoolYearId: existing.schoolYearId,
+          isHomogeneous: true,
+          programType: "REGULAR"
+        }
+      });
+      if (count >= limit) {
+        res.status(400).json({ message: `Cannot exceed the maximum limit of ${limit} homogeneous sections per grade level. Update settings in System Configuration.` });
+        return;
+      }
     }
 
     const section = await prisma.$transaction(async (tx) => {
@@ -889,6 +945,180 @@ export async function getUnsectionedPool(
   });
 }
 
+export async function autoDistributeUnassigned(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const gradeLevelId = req.body.gradeLevelId;
+  const schoolYearId = req.body.schoolYearId
+    ? parseInt(String(req.body.schoolYearId))
+    : req.schoolYearId;
+
+  if (!gradeLevelId || !schoolYearId) {
+    res.status(400).json({ message: "gradeLevelId and schoolYearId required" });
+    return;
+  }
+
+  // Fetch all applications in unassigned pool
+  const applications = await prisma.enrollmentApplication.findMany({
+    where: {
+      gradeLevelId: parseInt(gradeLevelId as string),
+      schoolYearId: schoolYearId,
+      status: "VERIFIED",
+      enrollmentRecord: null,
+    },
+    include: {
+      learner: {
+        include: {
+          enrollmentRecords: {
+            where: {
+              schoolYearId: { not: schoolYearId },
+              finalAverage: { not: null },
+            },
+            orderBy: { schoolYearId: "desc" },
+            take: 1,
+            select: { finalAverage: true },
+          },
+        },
+      },
+      previousSchool: { select: { generalAverage: true } },
+    },
+  });
+
+  if (applications.length === 0) {
+    res.json({ message: "No unassigned learners to distribute", assignedCount: 0 });
+    return;
+  }
+
+  // Fetch active sections
+  const sections = await prisma.section.findMany({
+    where: {
+      gradeLevelId: parseInt(gradeLevelId as string),
+      schoolYearId: schoolYearId,
+    },
+    include: {
+      _count: {
+        select: {
+          enrollmentRecords: {
+            where: activeEnrollmentFilter,
+          },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  if (sections.length === 0) {
+    res.status(400).json({ message: "No active sections available for this grade level" });
+    return;
+  }
+
+  // Prepare learner data with final average
+  const unassignedPool = applications.map((app) => ({
+    appId: app.id,
+    learnerId: app.learner.id,
+    sex: app.learner.sex,
+    finalAverage:
+      app.learner.enrollmentRecords[0]?.finalAverage ??
+      app.previousSchool?.generalAverage ??
+      app.learner.previousGenAve ??
+      0,
+  }));
+
+  // Separate by sex and sort descending by average
+  const males = unassignedPool.filter((l) => l.sex === "MALE").sort((a, b) => b.finalAverage - a.finalAverage);
+  const females = unassignedPool.filter((l) => l.sex !== "MALE").sort((a, b) => b.finalAverage - a.finalAverage);
+
+  // State to track section capacities
+  const sectionCaps = sections.map((sec) => ({
+    id: sec.id,
+    capacity: sec.maxCapacity,
+    currentCount: sec._count.enrollmentRecords,
+  }));
+
+  const assignments: { appId: number; learnerId: number; sectionId: number }[] = [];
+
+  const distribute = (learners: typeof males) => {
+    let direction = 1;
+    let sectionIdx = 0;
+
+    for (const learner of learners) {
+      let attempts = 0;
+      let assigned = false;
+
+      while (attempts < sectionCaps.length && !assigned) {
+        const currentSec = sectionCaps[sectionIdx];
+        if (currentSec.currentCount < currentSec.capacity) {
+          assignments.push({
+            appId: learner.appId,
+            learnerId: learner.learnerId,
+            sectionId: currentSec.id,
+          });
+          currentSec.currentCount++;
+          assigned = true;
+        }
+
+        sectionIdx += direction;
+
+        if (sectionIdx >= sectionCaps.length) {
+          direction = -1;
+          sectionIdx = sectionCaps.length - 1;
+        } else if (sectionIdx < 0) {
+          direction = 1;
+          sectionIdx = 0;
+        }
+        attempts++;
+      }
+    }
+  };
+
+  distribute(males);
+  distribute(females);
+
+  if (assignments.length === 0) {
+    res.json({ message: "No learners could be assigned (sections might be full)", assignedCount: 0 });
+    return;
+  }
+
+  const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+  const parsedEnrollmentDate = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    const recordsData = assignments.map((a) => ({
+      enrollmentApplicationId: a.appId,
+      learnerId: a.learnerId,
+      sectionId: a.sectionId,
+      schoolYearId: schoolYearId,
+      enrolledById: req.user!.userId,
+      sectioningMethod: SectioningMethod.BATCH_ALGORITHM,
+      enrolledAt: parsedEnrollmentDate,
+      dateSectioned: parsedEnrollmentDate,
+      isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+    }));
+
+    await tx.enrollmentRecord.createMany({
+      data: recordsData,
+    });
+
+    const appIds = assignments.map((a) => a.appId);
+    await tx.enrollmentApplication.updateMany({
+      where: { id: { in: appIds } },
+      data: { status: "ENROLLED" },
+    });
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: "AUTO_DISTRIBUTE_SECTIONING",
+    description: `Auto-distributed ${assignments.length} learners for grade level ID ${gradeLevelId}`,
+    subjectType: "Section",
+    recordId: parseInt(gradeLevelId as string),
+    req,
+  });
+
+  res.json({ message: "Successfully auto-distributed learners", assignedCount: assignments.length });
+}
+
 export async function inlineSlotLearner(
   req: Request,
   res: Response,
@@ -1121,12 +1351,15 @@ export async function transferLearner(req: Request, res: Response) {
   const { enrollmentApplicationId, targetSectionId, reason } = req.body;
 
   try {
-    const targetSection = await prisma.section.findUnique({
-      where: { id: targetSectionId },
-    });
+    let targetSection = null;
+    if (targetSectionId !== null) {
+      targetSection = await prisma.section.findUnique({
+        where: { id: targetSectionId },
+      });
 
-    if (!targetSection) {
-      return res.status(404).json({ message: "Target section not found" });
+      if (!targetSection) {
+        return res.status(404).json({ message: "Target section not found" });
+      }
     }
 
     const application = await prisma.enrollmentApplication.findUnique({
@@ -1146,29 +1379,52 @@ export async function transferLearner(req: Request, res: Response) {
 
     const oldSectionName = application.enrollmentRecord.section.name;
 
-    const updatedRecord = await prisma.enrollmentRecord.update({
-      where: { id: application.enrollmentRecord.id },
-      data: {
-        sectionId: targetSectionId,
-        sectioningMethod: SectioningMethod.TRANSFER,
-      },
-    });
+    if (targetSectionId === null) {
+      // Unassign learner
+      await prisma.$transaction(async (tx) => {
+        await tx.enrollmentRecord.delete({
+          where: { id: application.enrollmentRecord!.id },
+        });
+        await tx.enrollmentApplication.update({
+          where: { id: enrollmentApplicationId },
+          data: { status: "VERIFIED" },
+        });
+      });
 
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "LEARNER_SECTION_TRANSFER",
-      description: `Transferred learner app ID ${enrollmentApplicationId} from ${oldSectionName} to ${targetSection.name}. Reason: ${reason || "Not specified"}`,
-      subjectType: "Section",
-      recordId: targetSectionId,
-      req,
-    });
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "LEARNER_UNASSIGNED",
+        description: `Unassigned learner app ID ${enrollmentApplicationId} from ${oldSectionName}. Reason: ${reason || "Not specified"}`,
+        subjectType: "Section",
+        recordId: application.enrollmentRecord.sectionId,
+        req,
+      });
 
-    // Immediate Delta Sync
+      res.json({ message: "Learner unassigned successfully" });
+    } else {
+      // Transfer learner
+      const updatedRecord = await prisma.enrollmentRecord.update({
+        where: { id: application.enrollmentRecord.id },
+        data: {
+          sectionId: targetSectionId,
+          sectioningMethod: SectioningMethod.TRANSFER,
+        },
+      });
 
-    res.json({
-      message: "Learner transferred successfully",
-      record: updatedRecord,
-    });
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "LEARNER_SECTION_TRANSFER",
+        description: `Transferred learner app ID ${enrollmentApplicationId} from ${oldSectionName} to ${targetSection!.name}. Reason: ${reason || "Not specified"}`,
+        subjectType: "Section",
+        recordId: targetSectionId,
+        req,
+      });
+
+      res.json({
+        message: "Learner transferred successfully",
+        record: updatedRecord,
+      });
+    }
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: err.message });

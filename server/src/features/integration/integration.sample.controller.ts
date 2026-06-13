@@ -178,8 +178,8 @@ export async function listSampleStaff(
 
   const staff = await prisma.user.findMany({
     where: {
-      role: {
-        in: ["SYSTEM_ADMIN", "HEAD_REGISTRAR"],
+      roles: {
+        hasSome: ["SYSTEM_ADMIN", "HEAD_REGISTRAR"],
       },
       email: {
         endsWith: SAMPLE_STAFF_EMAIL_SUFFIX,
@@ -193,7 +193,7 @@ export async function listSampleStaff(
       middleName: true,
       suffix: true,
       email: true,
-      role: true,
+      roles: true,
       isActive: true,
       employeeId: true,
       designation: true,
@@ -201,7 +201,7 @@ export async function listSampleStaff(
       createdAt: true,
       updatedAt: true,
     },
-    orderBy: [{ role: "asc" }, { lastName: "asc" }, { firstName: "asc" }],
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
   res.json({
@@ -214,7 +214,7 @@ export async function listSampleStaff(
       middleName: user.middleName,
       suffix: user.suffix,
       email: user.email,
-      role: user.role,
+      roles: user.roles,
       designation: user.designation,
       mobileNumber: user.mobileNumber,
       isActive: user.isActive,

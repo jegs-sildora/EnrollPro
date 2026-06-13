@@ -37,6 +37,9 @@ export interface SettingsState {
   steEnabled: boolean;
   spaEnabled: boolean;
   spsEnabled: boolean;
+  enableHomogeneousSections: boolean;
+  homogeneousSectionCount: number;
+  heterogeneousRoundRobin: boolean;
   isBosyEnrollmentOpen: boolean;
   enrollmentPhase:
     | "EARLY_REGISTRATION"
@@ -104,6 +107,9 @@ export const useSettingsStore = create<SettingsState>()(
       steEnabled: false,
       spaEnabled: false,
       spsEnabled: false,
+      enableHomogeneousSections: true,
+      homogeneousSectionCount: 5,
+      heterogeneousRoundRobin: true,
       isBosyEnrollmentOpen: false,
       enrollmentPhase: "CLOSED",
       systemPhase: null,

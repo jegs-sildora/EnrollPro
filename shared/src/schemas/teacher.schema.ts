@@ -59,6 +59,7 @@ export const teacherSchema = z
     firstName: requiredUpperText("First name is required"),
     lastName: requiredUpperText("Last name is required"),
     middleName: optionalUpperText.optional(),
+    suffix: optionalUpperText.optional(),
     sex: SexEnum.default("FEMALE"),
     email: z
       .string()
@@ -122,7 +123,26 @@ export const teacherSchema = z
   .strict();
 
 // PUT semantics: full profile replacement contract.
-export const updateTeacherSchema = teacherSchema;
+export const updateTeacherSchema = teacherSchema.extend({
+  serviceStatus: z.enum([
+    "ACTIVE",
+    "ON_LEAVE",
+    "TRANSFERRED",
+    "RETIRED_RESIGNED",
+    "DROPPED_FROM_ROLLS",
+  ]).optional(),
+  serviceEffectiveDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Effective date must be in YYYY-MM-DD format")
+    .optional()
+    .nullable(),
+  serviceRemarks: z
+    .string()
+    .max(500, "Remarks must not exceed 500 characters")
+    .optional()
+    .nullable(),
+  roles: z.array(z.string()).optional(),
+});
 
 const optionalDateOnly = z
   .string()

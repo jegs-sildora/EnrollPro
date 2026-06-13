@@ -14,7 +14,8 @@ import {
   commitBatchSectioning,
   handoverAdviser,
   transferLearner,
-  } from "./sections.controller.js";
+  autoDistributeUnassigned,
+} from "./sections.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { validate } from "../../middleware/validate.js";
@@ -55,6 +56,13 @@ router.post(
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchSectioningSchema),
   commitBatchSectioning,
+);
+
+router.post(
+  "/auto-distribute",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  autoDistributeUnassigned,
 );
 
 router.get(

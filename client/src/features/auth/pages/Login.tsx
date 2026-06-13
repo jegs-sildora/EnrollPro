@@ -43,7 +43,7 @@ type AuthResponseUser = {
   email: string | null;
   employeeId: string | null;
   accountName: string | null;
-  role: string;
+  roles: string[];
   mustChangePassword?: boolean;
 };
 
@@ -63,6 +63,15 @@ function getAcronym(value: string): string {
     return "EP";
   }
 
+  if (clean === "Hinigaran National High School") {
+    return "HNHS";
+  }
+
+  if (clean === "Enriqueta Montilla de Esteban Memorial High School") {
+    return "EMEMHS";
+  }
+
+  const stopWords = new Set(["de", "del", "dela", "of", "the", "and", "ng", "mga", "at"]);
   const parts = clean
     .split(/\s+/)
     .map((part) => part.trim())
@@ -73,7 +82,7 @@ function getAcronym(value: string): string {
   }
 
   return parts
-    .slice(0, 3)
+    .filter((part) => !stopWords.has(part.toLowerCase()))
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 }
@@ -181,7 +190,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
             )}
             {!schoolAddress && !schoolDivision && !schoolRegion && (
               <p className="text-white text-sm font-bold">
-                DepEd Public School Early Registration and Enrollment Portal
+                DepEd Public School Enrollment and Sectioning Portal
               </p>
             )}
           </div>
@@ -191,18 +200,18 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
           {[
             {
               icon: BookOpen,
-              title: "Phase 1 Automation",
-              desc: "Early registration intake with dynamic SCP screening",
+              title: "Automated Learner Intake",
+              desc: "Streamlined verification for incoming Grade 7 and transferees.",
             },
             {
               icon: BarChart3,
-              title: "Phase 2 Validation",
-              desc: "BEEF, SF9 checks, and enrollment finalization",
+              title: "Document Verification",
+              desc: "Digital tracking for SF9, PSA, and official enrollment forms.",
             },
             {
               icon: Shield,
-              title: "Priority Sectioning Engine",
-              desc: "SCP hard caps with BEC star and heterogeneous sorting",
+              title: "DepEd-Compliant Sectioning",
+              desc: "Automated heterogeneous sorting with balanced gender ratios.",
             },
           ].map((feature) => (
             <div
@@ -244,7 +253,7 @@ export default function Login() {
   const schoolDivision = normalizeOptionalText(settings.schoolDivision);
   const schoolRegion = normalizeOptionalText(settings.schoolRegion);
   const projectTagline =
-    "Digital Platform for Optimized Early Registration and Enrollment";
+    "Learner Enrollment and Sectioning System";
   const projectFullName = `${schoolName}: ${projectTagline}`;
   const jhsScopeLabel = "Junior High School (Grades 7-10)";
 
@@ -318,17 +327,6 @@ export default function Login() {
         window.clearTimeout(redirectTimeoutRef.current);
       }
 
-      const isTeacherRole =
-        payload.user.role === "TEACHER" || payload.user.role === "MRF";
-
-      if (isTeacherRole && !isBosyEnrollmentOpen) {
-        sileo.error({
-          title: "Access Restricted",
-          description: "BOSY Enrollment is not yet open.",
-        });
-        return;
-      }
-
       setAuth(payload.user);
 
       // Persistence logic
@@ -358,8 +356,8 @@ export default function Login() {
       }
 
       const destination =
-        payload.user.role === "TEACHER" || payload.user.role === "MRF"
-          ? "/reading-assessment"
+        payload.user.roles?.includes("TEACHER") || payload.user.roles?.includes("MRF")
+          ? "/teacher/eosy"
           : "/dashboard";
 
       redirectTimeoutRef.current = window.setTimeout(() => {
@@ -394,7 +392,7 @@ export default function Login() {
 
   if (user && !user.mustChangePassword) {
     const homeRoute =
-      user.role === "TEACHER" || user.role === "MRF" ? "/reading-assessment" : "/dashboard";
+      user.roles?.includes("TEACHER") || user.roles?.includes("MRF") ? "/teacher/eosy" : "/dashboard";
     return (
       <Navigate
         to={homeRoute}
@@ -680,11 +678,9 @@ export default function Login() {
                       Remember me
                     </span>
                   </label>
-                  <a
-                    href="#"
-                    className="font-bold text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
-                    Forgot password?
-                  </a>
+                  <span className="text-gray-400 text-xs font-bold text-right leading-tight">
+                    Forgot password?<br/>Contact the System Admin.
+                  </span>
                 </div>
 
                 <Button

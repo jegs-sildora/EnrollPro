@@ -85,6 +85,9 @@ export async function getPublicSettings(
       steEnabled: settings.steEnabled,
       spaEnabled: settings.spaEnabled,
       spsEnabled: settings.spsEnabled,
+      enableHomogeneousSections: settings.enableHomogeneousSections,
+      homogeneousSectionCount: settings.homogeneousSectionCount,
+      heterogeneousRoundRobin: settings.heterogeneousRoundRobin,
       enrollmentPhase,
       isBosyEnrollmentOpen,
       systemPhase: settings.systemPhase,
@@ -347,6 +350,30 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
     userId: req.user!.userId,
     actionType: "SETTINGS_UPDATED",
     description: `Admin updated active academic programs`,
+    req,
+  });
+
+  res.json(updated);
+}
+
+export async function updateAlgorithm(req: Request, res: Response): Promise<void> {
+  const { enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin } = req.body;
+
+  const settings = await getOrCreateSettings();
+
+  const updated = await prisma.schoolSetting.update({
+    where: { id: settings.id },
+    data: {
+      enableHomogeneousSections,
+      homogeneousSectionCount,
+      heterogeneousRoundRobin,
+    },
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: "SETTINGS_UPDATED",
+    description: `Admin updated sectioning and algorithmic rules`,
     req,
   });
 

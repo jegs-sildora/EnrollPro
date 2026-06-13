@@ -19,6 +19,7 @@ export function createEmptyTeacherForm(): TeacherFormState {
     firstName: "",
     lastName: "",
     middleName: "",
+    suffix: "",
     email: "",
     employeeId: "",
     contactNumber: "",
@@ -35,9 +36,10 @@ export function normalizeOptionalInput(value: string): string | null {
 }
 
 export function formatTeacherName(
-  teacher: Pick<Teacher, "firstName" | "lastName" | "middleName">,
+  teacher: Pick<Teacher, "firstName" | "lastName" | "middleName" | "suffix">,
 ): string {
-  return `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`;
+  const nameSuffix = teacher.suffix ? ` ${teacher.suffix}` : "";
+  return `${teacher.lastName}${nameSuffix}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`;
 }
 
 export function formatDateTime(value: string | null): string {

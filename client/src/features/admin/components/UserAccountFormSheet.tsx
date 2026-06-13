@@ -36,13 +36,12 @@ import {
   SheetContent,
 } from "@/shared/ui/sheet";
 import { Badge } from "@/shared/ui/badge";
+import { Checkbox } from "@/shared/ui/checkbox";
+
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/shared/ui/accordion";
-import { DEPED_TEACHER_DEPARTMENT_OPTIONS } from "@enrollpro/shared";
+  DEPED_TEACHER_DEPARTMENT_OPTIONS,
+  getDesignationPool,
+} from "@enrollpro/shared";
 
 interface User {
   id: number;
@@ -55,14 +54,18 @@ interface User {
   designation: string | null;
   mobileNumber: string | null;
   email: string;
-  role:
+  roles: (
   | "SYSTEM_ADMIN"
   | "HEAD_REGISTRAR"
   | "CLASS_ADVISER"
   | "TEACHER"
   | "LEARNER"
-  | "MRF";
+  | "MRF"
+  )[];
   isActive: boolean;
+  learnerProfile?: {
+    lrn?: string | null;
+  } | null;
 }
 
 interface UserAccountFormState {
@@ -75,10 +78,12 @@ interface UserAccountFormState {
   designation: string;
   mobileNumber: string;
   email: string;
-  role: User["role"];
+  roles: string[];
   department: string;
   password?: string;
   mustChangePassword?: boolean;
+  accountName?: string;
+  isActive?: boolean;
 }
 
 interface UserAccountFormSheetProps {
@@ -184,10 +189,31 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
 
   useEffect(() => {
     // When role is MRF, enforce a fixed designation and prevent editing.
-    if (formData.role === "MRF") {
-      onFieldChange("designation", "MRF Staff");
+    if (formData.roles.includes("MRF")) {
+      onFieldChange("designation", "MRF STAFF");
+    } else {
+      const allowedDesignations = getDesignationPool(formData.roles);
+      if (
+        formData.designation &&
+        allowedDesignations.length > 0 &&
+        !allowedDesignations.includes(formData.designation)
+      ) {
+        onFieldChange("designation", "");
+      }
     }
-  }, [formData.role, onFieldChange]);
+  }, [formData.roles, formData.designation, onFieldChange]);
+
+  useEffect(() => {
+    // When role is MRF, auto-generate accountName if empty.
+    if (formData.roles.includes("MRF") && !formData.accountName && formData.firstName && formData.lastName) {
+      const generated = `${formData.firstName.toLowerCase().replace(/\s+/g, "")}${formData.lastName.toLowerCase().replace(/\s+/g, "")}`;
+      onFieldChange("accountName", generated);
+    }
+  }, [formData.roles, formData.firstName, formData.lastName, formData.accountName, onFieldChange]);
+
+  const designationPool = useMemo(() => {
+    return getDesignationPool(formData.roles);
+  }, [formData.roles]);
 
   const canSubmit = useMemo(() => {
     const basic =
@@ -203,21 +229,17 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
 
   const needsEmployeeId = useMemo(() => {
     return (
-      formData.role === "SYSTEM_ADMIN" ||
-      formData.role === "HEAD_REGISTRAR" ||
-      formData.role === "TEACHER" ||
-      formData.role === "CLASS_ADVISER" ||
-      formData.role === "MRF"
+      formData.roles.some((r: string) => ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"].includes(r))
     );
-  }, [formData.role]);
+  }, [formData.roles]);
 
   const needsDepartment = useMemo(() => {
-    return formData.role === "TEACHER" || formData.role === "CLASS_ADVISER";
-  }, [formData.role]);
+    return formData.roles.some((r: string) => ["TEACHER", "CLASS_ADVISER"].includes(r));
+  }, [formData.roles]);
 
   const showEmploymentDetails = useMemo(() => {
-    return needsEmployeeId || needsDepartment || formData.role === "MRF";
-  }, [formData.role, needsDepartment, needsEmployeeId]);
+    return formData.roles.some((r: string) => ["TEACHER", "SYSTEM_ADMIN", "HEAD_REGISTRAR"].includes(r));
+  }, [formData.roles]);
 
   const displayName = useMemo(() => {
     if (formData.firstName || formData.lastName) {
@@ -259,10 +281,17 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                 <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
                   {displayName}
                 </h2>
-                <p className="text-sm font-black text-primary-foreground/80 uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
-                  <Fingerprint className="size-3" />
-                  Employee ID: {formData.employeeId || "PENDING"}
-                </p>
+                {user?.roles?.includes("LEARNER") ? (
+                  <p className="text-sm font-black text-primary-foreground/80 uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+                    <Fingerprint className="size-3" />
+                    LRN: {user.learnerProfile?.lrn || "NO LRN"}
+                  </p>
+                ) : (
+                  <p className="text-sm font-black text-primary-foreground/80 uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+                    <Fingerprint className="size-3" />
+                    Employee ID: {formData.employeeId || "PENDING"}
+                  </p>
+                )}
               </div>
             </div>
             {mode === "edit" && user && (
@@ -275,68 +304,74 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       : "bg-destructive/80 text-destructive-foreground border-destructive hover:bg-destructive"
                   )}
                 >
-                  {user.isActive ? "Active" : "Deactivated"}
+                  {user.isActive ? "Active" : "Access Blocked"}
                 </Badge>
               </div>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-muted/10">
-            <Accordion
-              type="multiple"
-              defaultValue={["personal", "access", "employment", "contact", "security"]}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               {/* 1. Access & Role Section */}
-              <AccordionItem
-                value="access"
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-              >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+              {!(mode === "edit" && user?.roles.includes("LEARNER")) && (
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     1. Access & Permissions
                   </span>
-                </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
+                </div>
+                <div className="px-5 pb-5 pt-4">
                   <p className="text-[11px] text-foreground/70 font-bold mb-4">
                     Select the staff member's system access level.
                   </p>
                   <div className="space-y-2">
                     <Label className="text-sm font-black uppercase text-foreground">
-                      System Access Role *
+                      SYSTEM ROLES & DESIGNATIONS *
                     </Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(v: User["role"]) => onFieldChange("role", v)}>
-                      <SelectTrigger className="h-10 font-bold text-sm bg-background text-foreground border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-sm uppercase">
-                        <SelectItem value="SYSTEM_ADMIN">{mode === "create" ? "School Head" : "Admin"}</SelectItem>
-                        <SelectItem value="HEAD_REGISTRAR">Registrar</SelectItem>
-                        <SelectItem value="TEACHER">Teacher</SelectItem>
-                        <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
-                        <SelectItem value="MRF">MRF Staff</SelectItem>
-                        {mode === "edit" && <SelectItem value="LEARNER">Learner</SelectItem>}
-                      </SelectContent>
-                    </Select>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                      {([
+                        { value: "SYSTEM_ADMIN", label: mode === "create" ? "School Head" : "SYSTEM ADMIN / ICT" },
+                        { value: "HEAD_REGISTRAR", label: "Registrar" },
+                        { value: "TEACHER", label: "Teacher" },
+                        { value: "CLASS_ADVISER", label: "Class Adviser" },
+                        { value: "MRF", label: "MRF Staff" },
+                      ] as const).map((roleOption) => (
+                        <div key={roleOption.value} className="flex items-center space-x-2 bg-background p-2 rounded border border-border">
+                          <Checkbox
+                            id={`role-${roleOption.value}`}
+                            checked={formData.roles.includes(roleOption.value)}
+                            onCheckedChange={(checked) => {
+                              const newRoles = checked
+                                ? [...formData.roles, roleOption.value]
+                                : formData.roles.filter((r) => r !== roleOption.value);
+                              onFieldChange("roles", newRoles);
+                            }}
+                          />
+                          <Label htmlFor={`role-${roleOption.value}`} className="text-xs font-bold uppercase cursor-pointer flex-1">
+                            {roleOption.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+
                   </div>
-                </AccordionContent>
-              </AccordionItem>
+                </div>
+              </div>
+              )}
 
               {/* 2. Personal Information Section */}
-              <AccordionItem
-                value="personal"
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-              >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+              {mode === "create" && (
+                <>
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-primary" />
                     2. Personal Information
                   </span>
-                </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
+                </div>
+                <div className="px-5 pb-5 pt-4">
                   <p className="text-[11px] text-foreground/70 font-bold mb-4">
                     Legal name and basic identity details.
                   </p>
@@ -425,22 +460,19 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       ))}
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
+                </div>
+              </div>
 
               {/* 3. Employment Details Section (Conditional) */}
               {showEmploymentDetails && (
-                <AccordionItem
-                  value="employment"
-                  className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-                >
-                  <AccordionTrigger className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                  <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <Briefcase className="h-4 w-4 text-primary" />
-                      3. Employment Details
+                      3. PLANTILLA & ACADEMIC ASSIGNMENT
                     </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
+                  </div>
+                  <div className="px-5 pb-5 pt-4">
                     <p className="text-[11px] text-foreground/70 font-bold mb-4">
                       Official DepEd credentials and department assignment.
                     </p>
@@ -492,36 +524,52 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       <Label className="text-sm font-black uppercase text-foreground">
                         DepEd Position
                       </Label>
-                      <Input
-                        value={formData.designation}
-                        onChange={(e) => onFieldChange("designation", e.target.value.toUpperCase())}
-                        placeholder="e.g. Master Teacher II"
-                        className="font-bold text-sm bg-background text-foreground border-border h-10"
-                        readOnly={formData.role === "MRF"}
-                        aria-readonly={formData.role === "MRF"}
-                      />
-                      {formData.role === "MRF" && (
+                      {formData.roles.includes("MRF") || designationPool.length === 0 ? (
+                        <Input
+                          value={formData.designation}
+                          onChange={(e) => onFieldChange("designation", e.target.value.toUpperCase())}
+                          placeholder="e.g. MASTER TEACHER II"
+                          className="font-bold text-sm bg-background text-foreground border-border h-10"
+                          readOnly={formData.roles.includes("MRF")}
+                          aria-readonly={formData.roles.includes("MRF")}
+                        />
+                      ) : (
+                        <Select
+                          value={formData.designation || "__NONE__"}
+                          onValueChange={(v) => onFieldChange("designation", v === "__NONE__" ? "" : v)}
+                        >
+                          <SelectTrigger className="font-bold text-sm bg-background text-foreground border-border h-10">
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-sm uppercase max-h-[300px]">
+                            <SelectItem value="__NONE__">Not set</SelectItem>
+                            {designationPool.map((opt) => (
+                              <SelectItem key={opt} value={opt}>
+                                {opt}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {formData.roles.includes("MRF") && (
                         <p className="text-[10px] text-foreground mt-1.5 leading-snug font-bold">
                           <strong className="text-foreground">Note:</strong> Designation is tied to the selected role for MRF accounts and cannot be edited here.
                         </p>
                       )}
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </div>
+                </div>
               )}
 
               {/* 4. Contact Information Section */}
-              <AccordionItem
-                value="contact"
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-              >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
                     4. Contact Information
                   </span>
-                </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
+                </div>
+                <div className="px-5 pb-5 pt-4">
                   <p className="text-[11px] text-foreground/70 font-bold mb-4">
                     Communication channels for notifications.
                   </p>
@@ -553,25 +601,101 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       />
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
+                </div>
+              </div>
+                </>
+              )}
+
+              {/* Security Management Section (Edit Mode) */}
+              {mode === "edit" && user && (
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                  <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                    <span className="flex items-center gap-2">
+                      <ShieldAlert className="h-4 w-4 text-primary" />
+                      2. Account Security
+                    </span>
+                  </div>
+                  <div className="px-5 pb-5 pt-4 space-y-6">
+                    {/* Active Status Switch */}
+                    <div className="flex items-center justify-between p-4 bg-background border rounded-lg">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-black uppercase">System Login Access</Label>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase">
+                          {formData.isActive ? "This account is currently active and can access the system." : "This account is blocked. The user cannot log in."}
+                        </p>
+                      </div>
+                      <Select
+                        value={formData.isActive ? "active" : "suspended"}
+                        onValueChange={(val) => onFieldChange("isActive", val === "active")}
+                      >
+                        <SelectTrigger className="w-[150px] font-bold uppercase h-9">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active" className="font-bold uppercase text-xs">Active</SelectItem>
+                          <SelectItem value="suspended" className="font-bold uppercase text-xs text-destructive">Access Blocked</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Manual Password Override */}
+                    <div className="space-y-3 p-4 bg-background border rounded-lg">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-black uppercase">Reset Account Password</Label>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase">
+                          Force a new temporary password for this user. They will be required to change it upon next login.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="New Password"
+                          value={formData.password || ""}
+                          onChange={(e) => onFieldChange("password", e.target.value)}
+                          className="font-bold text-sm bg-background h-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGenerate}
+                          className="w-10 h-10 px-0"
+                        >
+                          <RefreshCw className={cn("h-4 w-4", isGenerating && "animate-spin")} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 5. Security Section (Create Mode Only) */}
               {mode === "create" && (
-                <AccordionItem
-                  value="security"
-                  className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-                >
-                  <AccordionTrigger className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+                  <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <ShieldAlert className="h-4 w-4 text-primary" />
                       5. Security & Onboarding
                     </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
+                  </div>
+                  <div className="px-5 pb-5 pt-4">
                     <p className="text-[11px] text-foreground/70 font-bold mb-4">
                       Initial access credentials.
                     </p>
+
+                    {!needsEmployeeId && (
+                      <div className="space-y-1.5 mb-4">
+                        <Label className="text-sm font-black uppercase text-foreground">
+                          System Username *
+                        </Label>
+                        <Input
+                          value={formData.accountName || ""}
+                          onChange={(e) => onFieldChange("accountName", e.target.value.replace(/\s+/g, ""))}
+                          className="font-bold text-sm bg-background text-foreground border-border h-10"
+                        />
+                        <p className="text-[10px] text-foreground/70 font-bold leading-snug">
+                          Used for local portal authentication in lieu of a DepEd ID.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="space-y-1.5 mb-4">
                       <Label className="text-sm font-black uppercase text-foreground">
@@ -612,10 +736,10 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       </div>
                       Credential sharing should follow school policy. User must reset this password upon first access.
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </div>
+                </div>
               )}
-            </Accordion>
+            </div>
           </div>
 
           <div className="border-t border-border px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end shrink-0 bg-muted/5">

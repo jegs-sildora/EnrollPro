@@ -11,7 +11,7 @@ interface User {
   email: string | null;
   employeeId: string | null;
   accountName: string | null;
-  role: AuthRole;
+  roles: AuthRole[];
   mustChangePassword?: boolean;
 }
 

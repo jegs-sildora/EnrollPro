@@ -16,7 +16,7 @@ export const userResponseSchema = z.object({
   email: z.string().nullable(),
   employeeId: z.string().nullable(),
   accountName: z.string().nullable(),
-  role: z.string(),
+  roles: z.array(z.string()),
   mustChangePassword: z.boolean().optional(),
 });
 

@@ -16,12 +16,15 @@ export const createUserSchema = z.object({
   mobileNumber: z.string().optional().nullable(),
   email: z.string().email(),
   password: z.string().min(8),
-  role: RoleEnum,
+  roles: z.array(RoleEnum).min(1, "At least one role is required"),
   mustChangePassword: z.boolean().default(true),
 });
 
 export const updateUserSchema = createUserSchema
-  .omit({ password: true })
+  .extend({
+    isActive: z.boolean().optional(),
+    password: z.string().min(8).optional().nullable(),
+  })
   .partial();
 
 export const adminResetPasswordSchema = z.object({

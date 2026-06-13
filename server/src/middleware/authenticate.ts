@@ -7,7 +7,7 @@ const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
 
 export interface AuthPayload {
   userId: number;
-  role: string;
+  roles: string[];
   mustChangePassword?: boolean;
 }
 

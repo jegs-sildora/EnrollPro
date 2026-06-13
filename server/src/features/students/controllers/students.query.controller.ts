@@ -12,6 +12,8 @@ type FamilyMemberLike = {
   relationship: string;
   firstName: string;
   lastName: string;
+  middleName?: string | null;
+  maidenName?: string | null;
   contactNumber?: string | null;
 };
 
@@ -38,7 +40,7 @@ type StudentRecordHistoryRow = {
     id: number;
     firstName: string;
     lastName: string;
-    role: string;
+    roles: string[];
   } | null;
 };
 
@@ -378,6 +380,11 @@ export const createStudentsQueryController = (
         contactNumber: applicant.contactNumber,
         religion: applicant.learner?.religion,
         learnerStatus: applicant.learner?.status || "ACTIVE",
+        isIpCommunity: applicant.learner?.isIpCommunity,
+        is4PsBeneficiary: applicant.learner?.is4PsBeneficiary,
+        isLearnerWithDisability: applicant.learner?.isLearnerWithDisability,
+        disabilityTypes: applicant.learner?.disabilityTypes,
+        isBalikAral: applicant.learner?.isBalikAral,
         trackingNumber: applicant.trackingNumber,
         status: applicant.status,
         applicantType: applicant.applicantType,
@@ -480,7 +487,7 @@ export const createStudentsQueryController = (
                 id: true,
                 firstName: true,
                 lastName: true,
-                role: true,
+                roles: true,
               },
             },
           },
@@ -501,7 +508,7 @@ export const createStudentsQueryController = (
         performedBy: log.user
           ? `${log.user.firstName} ${log.user.lastName}`
           : "System / Guest",
-        performedByRole: log.user?.role ?? null,
+        performedByRole: log.user?.roles?.join(', ') ?? null,
       }));
 
       res.json({

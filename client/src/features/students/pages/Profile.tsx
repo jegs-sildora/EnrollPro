@@ -100,9 +100,9 @@ export default function StudentProfile() {
   const { user } = useAuthStore();
 
   const canViewRecordHistory =
-    user?.role === "SYSTEM_ADMIN" ||
-    user?.role === "HEAD_REGISTRAR" ||
-    user?.role === "REGISTRAR";
+    user?.roles?.includes("SYSTEM_ADMIN") ||
+    user?.roles?.includes("HEAD_REGISTRAR") ||
+    user?.roles?.includes("REGISTRAR");
 
   const handleApiError = (error: unknown, fallbackMessage: string) => {
     if (axios.isAxiosError(error)) {

@@ -92,14 +92,17 @@ function TableRowComponentInner<TData>(
         customClassName,
         className,
       )}>
-      {row.getVisibleCells().map((cell) => (
-        <TableCell
-          key={cell.id}
-          className={dense ? "py-1.5 px-2" : "p-3"}
-          style={{ width: cell.column.getSize() }}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
+      {row.getVisibleCells().map((cell) => {
+        const meta = cell.column.columnDef.meta as { className?: string } | undefined;
+        return (
+          <TableCell
+            key={cell.id}
+            className={cn(dense ? "py-1.5 px-2" : "p-3", meta?.className)}
+            style={{ width: cell.column.getSize() }}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        );
+      })}
     </TableRow>
   );
 }
@@ -182,12 +185,14 @@ export function DataTable<TData, TValue>({
                 key={headerGroup.id}
                 className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as { headerClassName?: string; className?: string } | undefined;
                   return (
                     <TableHead
                       key={header.id}
                       className={cn(
                         "text-center font-bold text-primary-foreground text-xs px-3 sticky top-0 z-20 shadow-sm bg-[hsl(var(--primary))]",
                         dense ? "h-8" : "h-11",
+                        meta?.headerClassName || meta?.className
                       )}
                       style={{
                         width: header.column.getSize(),

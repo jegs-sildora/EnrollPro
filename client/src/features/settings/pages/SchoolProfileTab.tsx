@@ -10,6 +10,7 @@ import {
   Check,
   Megaphone,
   BookOpen,
+  Workflow,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
@@ -38,27 +39,7 @@ import { Switch } from "@/shared/ui/switch";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
-/** Returns true if the HSL accent color is light (needs dark text) */
-function isAccentLight(hsl: string): boolean {
-  const parts = hsl.split(/\s+/);
-  const h = parseInt(parts[0]) || 0;
-  let s = parseInt(parts[1]) || 0;
-  let l = parseInt(parts[2]) || 0;
-  s /= 100;
-  l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-  };
-  const toLinear = (c: number) =>
-    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  const lum =
-    0.2126 * toLinear(f(0)) + 0.7152 * toLinear(f(8)) + 0.0722 * toLinear(f(4));
-  const contrastWhite = 1.05 / (lum + 0.05);
-  const contrastBlack = (lum + 0.05) / 0.05;
-  return contrastBlack >= contrastWhite;
-}
+
 
 export default function SchoolProfileTab() {
   const {
@@ -77,6 +58,9 @@ export default function SchoolProfileTab() {
     steEnabled,
     spaEnabled,
     spsEnabled,
+    enableHomogeneousSections,
+    homogeneousSectionCount,
+    heterogeneousRoundRobin,
     setSettings,
   } = useSettingsStore();
 
@@ -85,6 +69,7 @@ export default function SchoolProfileTab() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectingAccent, setSelectingAccent] = useState(false);
   const [togglingProgram, setTogglingProgram] = useState(false);
+  const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   type FormValues = z.infer<typeof updateIdentitySchema>;
@@ -267,6 +252,38 @@ export default function SchoolProfileTab() {
     }
   };
 
+  const handleUpdateAlgorithm = async (
+    updates: Partial<{
+      enableHomogeneousSections: boolean;
+      homogeneousSectionCount: number;
+      heterogeneousRoundRobin: boolean;
+    }>
+  ) => {
+    setUpdatingAlgorithm(true);
+    try {
+      const payload = {
+        enableHomogeneousSections,
+        homogeneousSectionCount,
+        heterogeneousRoundRobin,
+        ...updates,
+      };
+      const res = await api.patch("/settings/algorithm", payload);
+      setSettings({
+        enableHomogeneousSections: res.data.enableHomogeneousSections,
+        homogeneousSectionCount: res.data.homogeneousSectionCount,
+        heterogeneousRoundRobin: res.data.heterogeneousRoundRobin,
+      });
+      sileo.success({
+        title: "Algorithm Updated",
+        description: "Sectioning rules saved successfully.",
+      });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setUpdatingAlgorithm(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24 relative">
@@ -343,7 +360,7 @@ export default function SchoolProfileTab() {
                 name="schoolHeadName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>School Head / Principal Name</FormLabel>
+                    <FormLabel>School Head Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Juan Dela Cruz" {...field} value={field.value ?? ""} />
                     </FormControl>
@@ -357,7 +374,7 @@ export default function SchoolProfileTab() {
                 name="schoolHeadTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>School Head Title / Position</FormLabel>
+                    <FormLabel>Designation</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Principal IV" {...field} value={field.value ?? ""} />
                     </FormControl>
@@ -419,6 +436,71 @@ export default function SchoolProfileTab() {
                     checked={spsEnabled}
                     onCheckedChange={(checked) => handleToggleProgram("spsEnabled", checked)}
                     disabled={togglingProgram}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Automated Sectioning Rules */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                <Workflow className="h-5 w-5" />
+              </div>
+              Automated Sectioning Rules
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Enable Homogeneous Sections</FormLabel>
+                    <p className="text-sm text-muted-foreground">Automatically group highest-performing learners into top sections.</p>
+                  </div>
+                  <Switch
+                    checked={enableHomogeneousSections}
+                    onCheckedChange={(checked) => handleUpdateAlgorithm({ enableHomogeneousSections: checked })}
+                    disabled={updatingAlgorithm}
+                  />
+                </div>
+                {enableHomogeneousSections && (
+                  <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
+                    <div className="max-w-xs space-y-2">
+                      <FormLabel>Number of Homogeneous Sections</FormLabel>
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="5"
+                        className="h-10 py-2 px-3"
+                        value={homogeneousSectionCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val)) {
+                            setSettings({ homogeneousSectionCount: val });
+                          }
+                        }}
+                        onBlur={() => handleUpdateAlgorithm({ homogeneousSectionCount })}
+                        disabled={updatingAlgorithm}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Heterogeneous Distribution</FormLabel>
+                    <p className="text-sm text-muted-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
+                  </div>
+                  <Switch
+                    checked={heterogeneousRoundRobin}
+                    onCheckedChange={(checked) => handleUpdateAlgorithm({ heterogeneousRoundRobin: checked })}
+                    disabled={updatingAlgorithm}
                   />
                 </div>
               </div>
@@ -541,10 +623,9 @@ export default function SchoolProfileTab() {
             {/* Extracted Palette */}
             {palette.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-sm font-bold">Extracted Colors</h4>
+                <h4 className="text-sm font-bold">Official School Color</h4>
                 <p className="text-sm">
-                  Click a swatch to set it as the accent color. The system
-                  automatically adjusts text contrast for WCAG compliance.
+                  Select a color from your uploaded logo to apply to the system's buttons and menus.
                 </p>
                 <div className="flex flex-row flex-wrap items-start gap-6">
                   {palette.map((color, i) => {
@@ -570,7 +651,6 @@ export default function SchoolProfileTab() {
                             />
                           )}
                         </button>
-                        <span className="text-xs font-medium text-foreground/80 tracking-wide uppercase">{color.hex}</span>
                       </div>
                     );
                   })}
@@ -580,22 +660,15 @@ export default function SchoolProfileTab() {
 
             {/* Current Accent */}
             <div className="space-y-3">
-              <h4 className="text-sm font-bold">Current Accent Color</h4>
+              <h4 className="text-sm font-bold">Selected Theme Color</h4>
               <div className="flex items-center gap-4">
                 <div
                   className="h-10 w-10 rounded-lg shadow-sm border border-border"
                   style={{ backgroundColor: `hsl(${currentAccent})` }}
                 />
                 <div>
-                  <p className="text-sm ">{`hsl(${currentAccent})`}</p>
                   <p className="text-xs text-foreground">
                     {logoUrl ? "From extracted palette" : "Default blue"}
-                  </p>
-                  <p className="text-xs text-foreground mt-0.5">
-                    Text contrast:{" "}
-                    {isAccentLight(currentAccent)
-                      ? "Dark text (on light accent)"
-                      : "White text (on dark accent)"}
                   </p>
                 </div>
               </div>
@@ -603,27 +676,27 @@ export default function SchoolProfileTab() {
 
             {/* Live Preview */}
             <div className="rounded-lg border border-border p-4 space-y-3">
-              <p className="text-sm font-bold">Live Preview</p>
+              <p className="text-sm font-bold">System Appearance Preview</p>
               <div className="flex flex-wrap gap-3">
-                <Button type="button" size="sm">Primary Button</Button>
+                <Button type="button" size="sm">Save School Profile</Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline">
-                  Outline Button
+                  Cancel
                 </Button>
                 <a
                   href="#"
                   onClick={(e) => e.preventDefault()}
                   className="text-sm text-primary hover:underline pt-2">
-                  Accent Link
+                  View Learner Record
                 </a>
               </div>
               <div className="flex gap-2">
-                <Badge>Default Badge</Badge>
-                <Badge variant="success">Approved</Badge>
+                <Badge>Pending</Badge>
+                <Badge variant="success">Enrolled</Badge>
                 <Badge variant="warning">Pending</Badge>
-                <Badge variant="danger">Rejected</Badge>
+                <Badge variant="danger">Dropped</Badge>
               </div>
             </div>
           </CardContent>

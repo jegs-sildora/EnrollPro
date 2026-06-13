@@ -62,7 +62,7 @@ export default function Settings() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className="relative z-20">School Year</span>
+            <span className="relative z-20">School Year Management</span>
           </TabsTrigger>
         </TabsList>
 

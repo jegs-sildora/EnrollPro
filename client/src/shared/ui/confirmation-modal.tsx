@@ -32,6 +32,7 @@ interface ConfirmationModalProps {
   description: React.ReactNode;
   onConfirm: () => void;
   confirmText?: string;
+  cancelText?: string;
   loading?: boolean;
   confirmClassName?: string;
   variant?: ConfirmationModalVariant;
@@ -86,6 +87,7 @@ export function ConfirmationModal({
   description,
   onConfirm,
   confirmText = "Confirm",
+  cancelText = "Cancel",
   loading = false,
   confirmClassName,
   variant = "danger",
@@ -163,7 +165,7 @@ export function ConfirmationModal({
               "hover:bg-gray-50 active:bg-gray-100",
               "transition-all duration-150 active:scale-[0.97]",
             )}>
-            Cancel
+            {cancelText}
           </Button>
 
           {/* Confirm / primary action */}

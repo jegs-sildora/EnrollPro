@@ -33,6 +33,27 @@ router.post(
   ctrl.finalizeSection,
 );
 
+router.get(
+  "/grade/:gradeLevelId/records",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.getGradeRecords,
+);
+
+router.put(
+  "/grade/:gradeLevelId/batch-status",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.batchUpdateGradeRecords,
+);
+
+router.post(
+  "/grade/:gradeLevelId/finalize",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.finalizeGradeLevel,
+);
+
 router.post(
   "/batch-update",
   authenticate,

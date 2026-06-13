@@ -24,7 +24,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to={"/change-password"} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !user.roles?.some((r) => allowedRoles.includes(r))) {
     // Redirect to role-appropriate home rather than /login (avoids loops)
     return (
       <Navigate

@@ -8,8 +8,8 @@ import {
   Plus,
   Edit2,
   Key,
-  UserMinus,
-  UserCheck,
+  Ban,
+  CheckCircle,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -28,7 +28,6 @@ import {
 import api from "@/shared/api/axiosInstance";
 import {
   cn,
-  formatApplicationStatus,
   formatUserRole,
   getRoleColorClasses,
 } from "@/shared/lib/utils";
@@ -80,16 +79,18 @@ interface User {
   suffix: string | null;
   sex: "MALE" | "FEMALE";
   employeeId: string | null;
+  accountName: string | null;
   designation: string | null;
   mobileNumber: string | null;
   email: string;
-  role:
+  roles: (
   | "SYSTEM_ADMIN"
   | "HEAD_REGISTRAR"
   | "CLASS_ADVISER"
   | "TEACHER"
   | "MRF"
-  | "LEARNER";
+  | "LEARNER"
+  )[];
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -111,7 +112,7 @@ interface User {
 interface FetchUsersParams {
   page: number;
   limit: number;
-  role?: string;
+  roles?: string[];
   isActive?: boolean;
   search?: string;
   sortBy?: string;
@@ -119,7 +120,8 @@ interface FetchUsersParams {
   gradeLevelId?: string;
   sectionId?: string;
   learnerStatus?: string;
-  tab?: string;
+  tab?: "staff" | "learners";
+  program?: string;
 }
 
 interface GradeLevel {
@@ -364,10 +366,11 @@ export default function AdminUsers() {
     designation: "",
     mobileNumber: "",
     email: "",
-    role: "TEACHER" as User["role"],
+    roles: ["TEACHER"] as string[],
     password: "",
     mustChangePassword: true,
     department: "",
+    accountName: "",
   });
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -385,8 +388,11 @@ export default function AdminUsers() {
     designation: "",
     mobileNumber: "",
     email: "",
-    role: "TEACHER" as User["role"],
+    roles: ["TEACHER"] as string[],
     department: "",
+    accountName: "",
+    isActive: true,
+    password: "",
   });
 
   const validateCreateForm = () => {
@@ -401,11 +407,11 @@ export default function AdminUsers() {
       nextErrors.email = "Enter a valid email address.";
     }
     if (
-      (formData.role === "SYSTEM_ADMIN" ||
-        formData.role === "HEAD_REGISTRAR" ||
-        formData.role === "TEACHER" ||
-        formData.role === "CLASS_ADVISER" ||
-        formData.role === "MRF") &&
+      (formData.roles?.includes("SYSTEM_ADMIN") ||
+        formData.roles?.includes("HEAD_REGISTRAR") ||
+        formData.roles?.includes("TEACHER") ||
+        formData.roles?.includes("CLASS_ADVISER") ||
+        formData.roles?.includes("MRF")) &&
       !formData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
@@ -414,6 +420,12 @@ export default function AdminUsers() {
       !EMPLOYEE_ID_PATTERN.test(formData.employeeId.trim())
     ) {
       nextErrors.employeeId = "Employee ID must be exactly 7 numeric digits.";
+    }
+    if (
+      formData.roles?.includes("MRF") &&
+      !formData.accountName?.trim()
+    ) {
+      nextErrors.accountName = "System Username is required for MRF staff.";
     }
     if (!formData.mobileNumber.trim()) {
       nextErrors.mobileNumber = "Contact Number is required.";
@@ -431,33 +443,11 @@ export default function AdminUsers() {
 
   const validateProfileForm = () => {
     const nextErrors: Record<string, string> = {};
-    if (!profileFormData.firstName.trim())
-      nextErrors.firstName = "First name is required.";
-    if (!profileFormData.lastName.trim())
-      nextErrors.lastName = "Last name is required.";
-    if (!profileFormData.email.trim()) {
-      nextErrors.email = "Email address is required.";
-    } else if (!EMAIL_PATTERN.test(profileFormData.email.trim())) {
-      nextErrors.email = "Enter a valid email address.";
-    }
-    if (
-      (profileFormData.role === "SYSTEM_ADMIN" ||
-        profileFormData.role === "HEAD_REGISTRAR" ||
-        profileFormData.role === "MRF") &&
-      !profileFormData.employeeId.trim()
-    ) {
-      nextErrors.employeeId = "Employee ID is mandatory for this role.";
-    } else if (
-      profileFormData.employeeId.trim() &&
-      !EMPLOYEE_ID_PATTERN.test(profileFormData.employeeId.trim())
-    ) {
-      nextErrors.employeeId = "Employee ID must be exactly 7 numeric digits.";
-    }
-    if (
-      profileFormData.mobileNumber.trim() &&
-      !MOBILE_PATTERN.test(profileFormData.mobileNumber.trim())
-    ) {
-      nextErrors.mobileNumber = "Use 11-digit mobile format: 09XXXXXXXXX.";
+    if (profileFormData.password && profileFormData.password.trim()) {
+      if (!PASSWORD_PATTERN.test(profileFormData.password)) {
+        nextErrors.password =
+          "Password needs 8+ chars, 1 uppercase, 1 number, and 1 symbol.";
+      }
     }
     return nextErrors;
   };
@@ -492,19 +482,23 @@ export default function AdminUsers() {
       };
       if (debouncedSearch) params.search = debouncedSearch;
       if (activeTab === "learners") {
-        params.role = "LEARNER";
-        if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
-        if (sectionFilter !== "all") params.sectionId = sectionFilter;
-        if (learnerStatusFilter !== "all")
-          params.learnerStatus = learnerStatusFilter;
+        params.roles = ["LEARNER"];
+        const isLrnSearch = debouncedSearch && /^\d{12}$/.test(debouncedSearch.trim());
+        if (!isLrnSearch) {
+          if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
+          if (sectionFilter !== "all") params.sectionId = sectionFilter;
+          if (programFilter !== "all") params.program = programFilter;
+          if (learnerStatusFilter !== "all")
+            params.learnerStatus = learnerStatusFilter;
+        }
       } else {
-        if (roleFilter !== "all") params.role = roleFilter;
+        if (roleFilter !== "all") params.roles = [roleFilter];
         if (statusFilter !== "all") params.isActive = statusFilter === "active";
       }
       const res = await api.get("/admin/users", { params });
       let filteredUsers = res.data.users || [];
       if (activeTab === "staff" && roleFilter === "all") {
-        filteredUsers = filteredUsers.filter((u: User) => u.role !== "LEARNER");
+        filteredUsers = filteredUsers.filter((u: User) => !u.roles?.includes("LEARNER"));
       }
       setUsers(filteredUsers);
       setTotal(res.data.total ?? 0);
@@ -557,15 +551,16 @@ export default function AdminUsers() {
         mobileNumber: formData.mobileNumber.trim() || null,
         email: formData.email.trim() || null,
         password: formData.password,
-        role: formData.role,
+                roles: formData.roles,
         mustChangePassword: formData.mustChangePassword,
         department: formData.department || null,
+        accountName: formData.accountName?.trim() || null,
       };
       await api.post("/admin/users", payload);
       sileo.success({
         title: "Account Created",
         description:
-          formData.role === "MRF"
+          formData.roles?.includes("MRF")
             ? `${formData.lastName}, ${formData.firstName} added as MRF Staff.`
             : `${formData.lastName}, ${formData.firstName} added successfully.`,
       });
@@ -613,8 +608,11 @@ export default function AdminUsers() {
       designation: user.designation || "",
       mobileNumber: user.mobileNumber || "",
       email: user.email,
-      role: user.role,
+      roles: user.roles,
       department: "",
+      accountName: user.accountName || "",
+      isActive: user.isActive,
+      password: "",
     });
     setProfileOpen(true);
   }, []);
@@ -626,10 +624,21 @@ export default function AdminUsers() {
   const handleProfileSave = async () => {
     if (!profileUser) return;
     const nextErrors = validateProfileForm();
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      sileo.error({
+        title: "Validation Error",
+        description: Object.values(nextErrors)[0],
+      });
+      return;
+    }
     setSubmitting(true);
     try {
-      await api.put(`/admin/users/${profileUser.id}`, profileFormData);
+      const patchPayload = {
+        roles: profileFormData.roles,
+        isActive: profileFormData.isActive,
+        password: profileFormData.password || undefined,
+      };
+      await api.patch(`/admin/users/${profileUser.id}`, patchPayload);
       sileo.success({
         title: "Profile Updated",
         description: "Account updated successfully.",
@@ -647,7 +656,7 @@ export default function AdminUsers() {
     if (!selectedUser) return;
     setSubmitting(true);
     try {
-      const isLearner = selectedUser.role === "LEARNER";
+      const isLearner = selectedUser.roles?.includes("LEARNER");
       await api.patch(`/admin/users/${selectedUser.id}/reset-password`, {
         newPassword: isLearner ? "DepEd2026!" : formData.password,
         mustChangePassword: true,
@@ -733,7 +742,7 @@ export default function AdminUsers() {
           <button
             onClick={() => handleSort("lastName")}
             className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
-            {activeTab === "staff" ? "Name & Contact Details" : "Learner Identity"}
+            {activeTab === "staff" ? "Name & Contact Details" : "STUDENT & LRN"}
             {getSortIcon("lastName")}
           </button>
         ),
@@ -772,78 +781,11 @@ export default function AdminUsers() {
         },
       },
       {
-        id: "context",
-        header: () => (
-          <div className="flex h-11 w-full items-center justify-center text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50">
-            {activeTab === "staff" ? "Designation / Role" : "Class Context"}
-          </div>
-        ),
-        cell: ({ row }) => {
-          const user = row.original;
-          if (activeTab === "learners") {
-            const currentApp = user.learnerProfile?.enrollmentApplications?.[0];
-            return (
-              <div className="space-y-1.5 text-center min-w-[160px] py-1">
-                <div className="flex flex-col items-center">
-                  <div className="text-[11px] font-black text-primary uppercase leading-none">
-                    {currentApp?.gradeLevel?.name || "—"}
-                  </div>
-                  <div className="text-xs font-bold text-foreground uppercase">
-                    {currentApp?.enrollmentRecord?.section?.name ||
-                      "UNSECTIONED"}
-                  </div>
-                </div>
-
-                <div className="flex justify-center">
-                  {(() => {
-                    const s = user.learnerProfile?.status || "ACTIVE";
-                    const statusClasses = (() => {
-                      switch (s) {
-                        case "ACTIVE":
-                          return "bg-emerald-600 text-white font-bold shadow-sm border-none";
-                        case "JHS_COMPLETER":
-                          return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
-                        case "DROPPED":
-                          return "bg-red-800 text-white font-bold shadow-sm border-none";
-                        case "TRANSFERRED_OUT":
-                          return "bg-slate-100 text-slate-600 border-slate-300";
-                        default:
-                          return "bg-slate-100 text-slate-600 border-slate-200";
-                      }
-                    })();
-
-                    return (
-                      <Badge
-                        variant="outline"
-                        className={cn("text-[9px] font-black uppercase px-1.5 h-4", statusClasses)}>
-                        {formatApplicationStatus(s)}
-                      </Badge>
-                    );
-                  })()}
-                </div>
-              </div>
-            );
-          }
-          return (
-            <div className="flex justify-center min-w-[140px] py-1">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-[9px] font-black uppercase px-2 h-5 border-none",
-                  getRoleColorClasses(user.role),
-                )}>
-                {formatUserRole(user.role)}
-              </Badge>
-            </div>
-          );
-        },
-      },
-      {
         id: "status",
         header: () => (
           <button
             onClick={() => handleSort("isActive")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50">
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 border-r border-maroon-100">
             Account Status{getSortIcon("isActive")}
           </button>
         ),
@@ -862,7 +804,7 @@ export default function AdminUsers() {
                     className={cn(
                       "h-1.5 w-1.5 rounded-full ring-2 ring-offset-1",
                       isDropped || !user.isActive
-                        ? "bg-slate-400 ring-slate-100"
+                        ? "bg-red-500 ring-red-100"
                         : !isActivated
                           ? "bg-orange-500 ring-orange-100"
                           : "bg-green-500 ring-green-100",
@@ -870,7 +812,7 @@ export default function AdminUsers() {
                   />
                   <span className="text-xs font-extrabold uppercase ">
                     {isDropped || !user.isActive
-                      ? "Deactivated"
+                      ? "Access Blocked"
                       : !isActivated
                         ? "PENDING ACTIVATION"
                         : "ACTIVATED"}
@@ -887,16 +829,55 @@ export default function AdminUsers() {
                   className={cn(
                     "h-1.5 w-1.5 rounded-full ring-2 ring-offset-1",
                     !user.isActive
-                      ? "bg-slate-400 ring-slate-100"
+                      ? "bg-red-500 ring-red-100"
                       : "bg-green-500 ring-green-100",
                   )}
                 />
                 <span className="text-xs font-extrabold uppercase ">
                   {!user.isActive
-                    ? "Deactivated"
+                    ? "Access Blocked"
                     : "ACTIVE"}
                 </span>
               </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "context",
+        header: () => (
+          <div className="flex h-11 w-full items-center justify-start text-xs font-extrabold uppercase text-maroon-900 bg-maroon-50/50 px-4">
+            {activeTab === "staff" ? "System Roles" : "GRADE & SECTION"}
+          </div>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          if (activeTab === "learners") {
+            const currentApp = user.learnerProfile?.enrollmentApplications?.[0];
+            return (
+              <div className="space-y-1.5 text-left min-w-[160px] py-1 px-4">
+                <div className="flex flex-col items-start">
+                  <div className="text-[11px] font-black text-primary uppercase leading-none">
+                    {currentApp?.gradeLevel?.name || "—"}
+                  </div>
+                  <div className="text-xs font-bold text-foreground uppercase">
+                    {currentApp?.enrollmentRecord?.section?.name ||
+                      "UNSECTIONED"}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="flex justify-start px-4 min-w-[140px] py-1">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[9px] font-black uppercase px-2 h-5 border-none",
+                  getRoleColorClasses(user.roles?.[0]),
+                )}>
+                {formatUserRole(user.roles?.[0])}
+              </Badge>
             </div>
           );
         },
@@ -928,26 +909,12 @@ export default function AdminUsers() {
                   <DropdownMenuLabel className="text-xs font-extrabold uppercase  opacity-50">
                     Account Control
                   </DropdownMenuLabel>
-                  {user.role === "LEARNER" && (
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setFormData((p) => ({ ...p, password: "DepEd2026!" }));
-                        setResetOpen(true);
-                      }}
-                      className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
-                      <RefreshCw className="h-3.5 w-3.5 text-orange-600 group-focus:text-primary-foreground" />{" "}
-                      Reset to Default
-                    </DropdownMenuItem>
-                  )}
-                  {user.role !== "LEARNER" && (
-                    <DropdownMenuItem
-                      onClick={() => openProfileEditor(user)}
-                      className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
-                      <Edit2 className="h-3.5 w-3.5 text-primary group-focus:text-primary-foreground" /> Edit Account
-                    </DropdownMenuItem>
-                  )}
-                  {user.role !== "LEARNER" && (
+                  <DropdownMenuItem
+                    onClick={() => openProfileEditor(user)}
+                    className="gap-2 font-bold text-xs group focus:bg-primary focus:text-primary-foreground">
+                    <Edit2 className="h-3.5 w-3.5 text-primary group-focus:text-primary-foreground" /> {user.roles?.includes("LEARNER") ? "Manage Security" : "Edit Account"}
+                  </DropdownMenuItem>
+                  {!user.roles?.includes("LEARNER") && (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUser(user);
@@ -969,14 +936,14 @@ export default function AdminUsers() {
                     <DropdownMenuItem
                       disabled={currentUser?.id === user.id}
                       onClick={() => setDeactivateId(user.id)}
-                      className="gap-2 font-bold text-xs text-destructive focus:text-primary-foreground focus:bg-primary group">
-                      <UserMinus className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Deactivate User
+                      className="gap-2 font-bold text-xs text-destructive focus:bg-destructive focus:text-destructive-foreground">
+                      <Ban className="h-3.5 w-3.5" /> Block Access
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
                       onClick={() => setReactivateId(user.id)}
-                      className="gap-2 font-bold text-xs text-emerald-600 focus:text-primary-foreground focus:bg-primary group">
-                      <UserCheck className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Reactivate User
+                      className="gap-2 font-bold text-xs text-green-600 focus:bg-green-600 focus:text-white">
+                      <CheckCircle className="h-3.5 w-3.5" /> Reactivate Access
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
@@ -996,8 +963,8 @@ export default function AdminUsers() {
 
   const metricsElement = useMemo(
     () => {
-      const active = users.filter(u => u.isActive && u.role !== "LEARNER").length;
-      const Deactivated = users.filter(u => !u.isActive && u.role !== "LEARNER").length;
+      const active = users.filter(u => u.isActive && !u.roles?.includes("LEARNER")).length;
+      const Deactivated = users.filter(u => !u.isActive && !u.roles?.includes("LEARNER")).length;
       return (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           {[
@@ -1007,7 +974,7 @@ export default function AdminUsers() {
               color: "text-emerald-600",
             },
             {
-              label: "Total Deactivated Personnel",
+              label: "Total Inactive Personnel",
               val: Deactivated,
               color: "text-destructive",
             },
@@ -1138,16 +1105,16 @@ export default function AdminUsers() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs sm:text-sm uppercase  font-bold">
-                      Program
+                      Specialized Program
                     </Label>
                     <Select
                       value={programFilter}
                       onValueChange={setProgramFilter}>
                       <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
-                        <SelectValue placeholder="All Programs" />
+                        <SelectValue placeholder="All Specialized Programs" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="text-sm font-bold">All Programs</SelectItem>
+                        <SelectItem value="all" className="text-sm font-bold">All Specialized Programs</SelectItem>
                         {dynamicProgramOptions.map((option) => (
                           <SelectItem
                             key={option.value}
@@ -1287,12 +1254,12 @@ export default function AdminUsers() {
                       variant="outline"
                       className={cn(
                         "text-xs font-bold uppercase shrink-0 border-none",
-                        getRoleColorClasses(user.role),
+                        getRoleColorClasses(user.roles?.[0]),
                       )}>
                       {activeTab === "learners"
                         ? user.learnerProfile?.enrollmentApplications?.[0]
                           ?.gradeLevel?.name || "LEARNER"
-                        : formatUserRole(user.role)}
+                        : formatUserRole(user.roles?.[0])}
                     </Badge>
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-xs font-bold">
@@ -1314,12 +1281,13 @@ export default function AdminUsers() {
 
           <div className="hidden md:block w-full max-w-full overflow-x-hidden relative">
             <DataTable
-              columns={columns}
+              columns={columns.filter(c => c.id !== "actions")}
               data={users}
               loading={loading}
               virtualize={false}
               tableClassName="table-fixed w-full"
               noResultsMessage="No records found matching the selected criteria."
+              onRowClick={openProfileEditor}
             />
           </div>
 
@@ -1357,7 +1325,7 @@ export default function AdminUsers() {
             User Management
           </h1>
           <p className="text-sm font-bold text-foreground">
-            Manage authenticated user accounts for personnel and learners.
+            Manage learner portal access, login credentials, and account security.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -1474,6 +1442,11 @@ export default function AdminUsers() {
         onCancel={() => setProfileOpen(false)}
         submitting={submitting}
         user={profileUser}
+        onGeneratePassword={() =>
+          setProfileFormData((p) => ({ ...p, password: generatePassword() }))
+        }
+        onCopyPassword={copyToClipboard}
+        passwordCopied={copied}
       />
 
       {/* Reset Password Dialog */}
@@ -1486,17 +1459,17 @@ export default function AdminUsers() {
               <ShieldAlert
                 className={cn(
                   "h-5 w-5",
-                  selectedUser?.role === "LEARNER"
+                  selectedUser?.roles?.includes("LEARNER")
                     ? "text-primary"
                     : "text-orange-600",
                 )}
               />
-              {selectedUser?.role === "LEARNER"
+              {selectedUser?.roles?.includes("LEARNER")
                 ? "Reset to Default Credential"
                 : "Reset Staff Password"}
             </DialogTitle>
             <DialogDescription className="font-bold text-xs">
-              {selectedUser?.role === "LEARNER"
+              {selectedUser?.roles?.includes("LEARNER")
                 ? `Confirming reset for ${selectedUser.lastName}, ${selectedUser.firstName}.`
                 : "Generate a new temporary password for this staff member."}
             </DialogDescription>
@@ -1506,16 +1479,16 @@ export default function AdminUsers() {
             <div
               className={cn(
                 "p-3 rounded-lg border text-[11px] font-bold uppercase leading-relaxed",
-                selectedUser?.role === "LEARNER"
+                selectedUser?.roles?.includes("LEARNER")
                   ? "bg-primary/5 border-primary/10 text-primary"
                   : "bg-orange-50 border-orange-100 text-orange-800",
               )}>
-              {selectedUser?.role === "LEARNER"
+              {selectedUser?.roles?.includes("LEARNER")
                 ? "This will reset the student's portal access to the universal default: DepEd2026!"
                 : "They will be logged out immediately and required to change this password upon signing back in."}
             </div>
 
-            {selectedUser?.role !== "LEARNER" && (
+            {!selectedUser?.roles?.includes("LEARNER") && (
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase">
                   New Temporary Password *
@@ -1578,7 +1551,7 @@ export default function AdminUsers() {
               ) : (
                 <Key className="h-4 w-4 mr-2" />
               )}
-              {selectedUser?.role === "LEARNER"
+              {selectedUser?.roles?.includes("LEARNER")
                 ? "Confirm Default Reset"
                 : "Apply New Password"}
             </Button>
@@ -1589,9 +1562,9 @@ export default function AdminUsers() {
       <ConfirmationModal
         open={deactivateId !== null}
         onOpenChange={() => setDeactivateId(null)}
-        title="Deactivate Account"
-        description="Access will be revoked immediately."
-        confirmText="Yes, Deactivate"
+        title="Block Access"
+        description="System access will be revoked immediately."
+        confirmText="Yes, Block Access"
         onConfirm={() =>
           deactivateId && handleToggleStatus(deactivateId, "deactivate")
         }
@@ -1601,8 +1574,8 @@ export default function AdminUsers() {
       <ConfirmationModal
         open={reactivateId !== null}
         onOpenChange={() => setReactivateId(null)}
-        title="Reactivate Account"
-        description="Restoring system access."
+        title="Reactivate Access"
+        description="Restoring system login access."
         confirmText="Yes, Reactivate"
         onConfirm={() =>
           reactivateId && handleToggleStatus(reactivateId, "reactivate")

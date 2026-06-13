@@ -24,6 +24,12 @@ async function main() {
       classEndDate: new Date("2027-03-31T00:00:00Z"),
       enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
       enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
+      term1Start: new Date("2026-06-08T04:00:00Z"),
+      term1End: new Date("2026-09-15T04:00:00Z"),
+      term2Start: new Date("2026-09-16T04:00:00Z"),
+      term2End: new Date("2026-12-18T04:00:00Z"),
+      term3Start: new Date("2027-01-04T04:00:00Z"),
+      term3End: new Date("2027-04-08T04:00:00Z"),
     },
   });
 
@@ -58,7 +64,7 @@ async function main() {
       lastName: "Rizal",
       email: "jrizal.admin@deped.edu.ph",
       employeeId: "1234501", // 7-digit
-      role: "SYSTEM_ADMIN" as Role,
+      roles: ["SYSTEM_ADMIN"],
       designation: "School Head",
       sex: "MALE" as Sex,
       mobileNumber: "09171234501",
@@ -68,7 +74,7 @@ async function main() {
       lastName: "Silang",
       email: "gsilang.reg@deped.edu.ph",
       employeeId: "1234502",
-      role: "HEAD_REGISTRAR" as Role,
+      roles: ["HEAD_REGISTRAR"],
       designation: "Registrar",
       sex: "FEMALE" as Sex,
       mobileNumber: "09171234502",
@@ -78,7 +84,7 @@ async function main() {
       lastName: "Bonifacio",
       email: "abonifacio.mrf@deped.edu.ph",
       employeeId: "1234503",
-      role: "MRF" as Role,
+      roles: ["MRF"],
       designation: "MRF Staff",
       sex: "MALE" as Sex,
       mobileNumber: "09171234503",
@@ -89,12 +95,12 @@ async function main() {
   const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
   for (const u of usersToCreate) {
-    await prisma.user.upsert({
+    const createdUser = await prisma.user.upsert({
       where: { employeeId: u.employeeId },
       update: {
         password: hashedPassword, // Reset password to default
         mustChangePassword: true, // Force password change
-        role: u.role,
+        roles: u.roles,
         isActive: true,
       },
       create: {
@@ -104,7 +110,7 @@ async function main() {
         employeeId: u.employeeId,
         accountName: u.employeeId,
         password: hashedPassword,
-        role: u.role,
+        roles: u.roles,
         isActive: true,
         mustChangePassword: true,
         sex: u.sex,
@@ -112,7 +118,33 @@ async function main() {
         mobileNumber: u.mobileNumber,
       },
     });
-    console.log(`✅ Upserted User: ${u.firstName} ${u.lastName} (${u.role})`);
+
+    await prisma.teacher.upsert({
+      where: { employeeId: u.employeeId },
+      update: {
+        firstName: u.firstName,
+        lastName: u.lastName,
+        email: u.email,
+        contactNumber: u.mobileNumber,
+        designation: u.designation,
+        sex: u.sex,
+        isActive: true,
+        user: { connect: { id: createdUser.id } },
+      },
+      create: {
+        employeeId: u.employeeId,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        email: u.email,
+        contactNumber: u.mobileNumber,
+        designation: u.designation,
+        sex: u.sex,
+        isActive: true,
+        user: { connect: { id: createdUser.id } },
+      },
+    });
+
+    console.log(`✅ Upserted User & Teacher Profile: ${u.firstName} ${u.lastName} (${u.roles.join(", ")})`);
   }
 
   console.log("🌱 Seeding Grade Levels...");

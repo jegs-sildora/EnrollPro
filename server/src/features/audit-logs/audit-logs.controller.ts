@@ -135,7 +135,7 @@ export async function index(req: Request, res: Response) {
               id: true,
               firstName: true,
               lastName: true,
-              role: true,
+              roles: true,
             },
           },
         },
@@ -184,7 +184,7 @@ export async function getFilters(req: Request, res: Response) {
       }),
       prisma.user.findMany({
         where: { auditLogs: { some: {} } },
-        select: { id: true, firstName: true, lastName: true, role: true },
+        select: { id: true, firstName: true, lastName: true, roles: true },
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       }),
     ]);
@@ -194,7 +194,7 @@ export async function getFilters(req: Request, res: Response) {
       actors: actors.map((a) => ({
         id: a.id,
         name: `${a.lastName}, ${a.firstName}`,
-        role: a.role,
+        roles: a.roles,
       })),
     });
   } catch (error) {
@@ -204,7 +204,7 @@ export async function getFilters(req: Request, res: Response) {
 
 export async function exportCsv(req: Request, res: Response) {
   try {
-    if (req.user?.role !== "SYSTEM_ADMIN") {
+    if (!req.user?.roles?.includes("SYSTEM_ADMIN")) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -234,7 +234,7 @@ export async function exportCsv(req: Request, res: Response) {
           select: {
             firstName: true,
             lastName: true,
-            role: true,
+            roles: true,
           },
         },
       },
@@ -251,7 +251,7 @@ export async function exportCsv(req: Request, res: Response) {
         return [
           log.createdAt.toISOString(),
           userName,
-          log.user?.role || "",
+          log.user?.roles?.join("/") || "",
           log.actionType,
           subject,
           `"${log.description}"`,

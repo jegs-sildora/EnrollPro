@@ -12,8 +12,6 @@ export const DEPED_FIELD_MAP: Record<string, string> = {
   classEndDate: "Class End Date",
   enrollOpenDate: "Official Enrollment Open Date",
   enrollCloseDate: "Official Enrollment Close Date",
-  requireReadingAssessmentContinuing: "Require Reading Assessment (Continuing)",
-  requireReadingAssessmentNew: "Require Reading Assessment (New Enrollees)",
   isEosyFinalized: "Is EOSY Finalized",
   clonedFromId: "Cloned From ID",
   term1Start: "Term 1 Start Date",

@@ -106,7 +106,7 @@ export default function ChangePassword() {
   const user = staffAuth.user;
   const hasSession = Boolean(staffAuth.user);
 
-  const activeRole = user?.role ?? staffAuth.user?.role ?? null;
+  const activeRole = user?.roles?.[0] ?? staffAuth.user?.roles?.[0] ?? null;
   const homeRoute = activeRole === "TEACHER" || activeRole === "MRF" ? "/reading-assessment" : "/dashboard";
   const loginRoute = "/staff/login";
 
@@ -184,10 +184,10 @@ export default function ChangePassword() {
         description:
           "Your new password has been set. You can now access the system.",
       });
-      
+
       // Delay slightly for toast visibility, then hard-replace so the target portal
       // boots from its own cookie/session channel instead of reusing stale SPA state.
-      const finalHome = res.data.user?.role === "TEACHER" || res.data.user?.role === "MRF"
+      const finalHome = res.data.user?.roles?.includes("TEACHER") || res.data.user?.roles?.includes("MRF")
         ? "/reading-assessment"
         : "/dashboard";
       setTimeout(() => {
@@ -254,11 +254,10 @@ export default function ChangePassword() {
               <ShieldCheck className="h-8 w-8" />
             </div>
             <CardTitle className="text-3xl font-bold ">
-              Secure Your Account
+              Activate Official Account
             </CardTitle>
             <CardDescription className="text-base">
-              For your security, you are required to change your temporary
-              password before continuing.
+              Please replace the initial access key provided by the Registrar with your own private password.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -267,7 +266,7 @@ export default function ChangePassword() {
                 <Label
                   htmlFor="newPassword"
                   className="text-sm font-bold">
-                  New Password
+                  Official Password
                 </Label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
@@ -301,7 +300,7 @@ export default function ChangePassword() {
                 <Label
                   htmlFor="confirmPassword"
                   className="text-sm font-bold">
-                  Confirm New Password
+                  Confirm Official Password
                 </Label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
@@ -346,21 +345,11 @@ export default function ChangePassword() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Updating Security...
+                    Updating Official Password...
                   </>
                 ) : (
-                  "Update Password & Continue"
+                  "Activate Account & Enter System"
                 )}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-xs text-foreground hover:text-primary h-8"
-                onClick={() => {
-                  staffAuth.clearAuth();
-                  window.location.replace(loginRoute);
-                }}>
-                Cancel and Return to Login
               </Button>
             </CardFooter>
           </form>
