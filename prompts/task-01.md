@@ -1,37 +1,29 @@
-# EnrollPro System: Teacher Workspace Refinement Directive
-**Version:** 2.0 (Polish & Validation)
-**Focus:** React Component Consistency & Express.js Payload Validation
+# EnrollPro System: Bulk Selection & UI Affordance Fix
+**Version:** 3.2 (Critical UX Patch)
+**Focus:** Checkbox Visibility, Standard UI Affordance, and Action Bar Polish
 
-## 1. Core Architectural Goal
-The Teacher's Role-Based Access Control (RBAC) sidebar is functionally correct. We must now strictly enforce UI component consistency across their workspace and lock down the data entry points to prevent accidental bad data from polluting the sectioning algorithm.
+## 1. Core Evaluation
+The inclusion of DepEd grading logic `(Requires >= 75)` inside the status dropdown is an excellent addition for administrative clarity. However, the multi-select execution is currently violating standard UI principles. The master "Select All" toggle is completely invisible to the user in its default state, and the row selectors are still formatted as single-select radio buttons.
 
 ## 2. Frontend Execution (React / Tailwind)
 **Assignee:** Jegrick
 
-**TASK 1: Enforce DRY Table Architecture (`My Advisory Class`)**
-*   **Issue:** The current roster table is a bespoke, un-styled list.
-*   **Fix:** Unmount the custom table. Import and map the standard global `<Table/>` component (with the maroon header and F-pattern alignment) to display the enrolled learners. Ensure visual consistency across the entire platform. 
-*   **Enhancement:** Make the learner rows clickable, opening a read-only sidepanel with their basic DepEd profile (address, guardian contact) so the teacher has quick access to emergency info.
+**TASK 1: Fix the Invisible Master Checkbox (Table Header)**
+*   **The Issue:** In the unselected state, the header area next to `LEARNER` is completely blank. The user has no visual cue that a "Select All" function exists. In the selected state, it turns into a floating checkmark (`✓`) without a container.
+*   **The Fix:** You must render a highly visible, square checkbox in that header at all times. 
+*   **Tailwind Implementation:** Use a white or light-gray border against the maroon background to ensure it stands out. 
+    *   *Unselected state:* `<div className="w-5 h-5 border-2 border-white/70 rounded-sm bg-transparent"></div>`
+    *   *Selected state:* A white square filled with the maroon checkmark, or a solid white box with a colored checkmark.
 
-**TASK 2: Input Affordance & Validation (`EOSY Finalization`)**
-*   **Issue:** The `GEN AVE` inputs look disabled (gray background) and lack visible typing constraints.
-*   **Fix:** Update the input styling. Use a white background with a subtle border (e.g., `bg-white border border-gray-300 rounded-md shadow-sm`). Add a clear focus state (e.g., `focus:ring-2 focus:ring-maroon-500`).
-*   **Client-Side Validation:** Enforce strict number constraints on the input field. `min="60"`, `max="100"`, and `step="1"`. Do not allow alphabetical characters.
+**TASK 2: Enforce Square Affordance for Row Selectors**
+*   **The Issue:** The individual row selection icons are currently circles (`○`). In all universal UI design systems, circles mean "Radio Button" (you can only select one). 
+*   **The Fix:** We are doing *Batch Actions*, which means multi-select. These MUST be squares (`□`). 
+*   **Tailwind Implementation:** Locate the `<input type="checkbox">` or custom checkbox component in the table rows and change `rounded-full` to `rounded-sm` or `rounded-md`.
 
-**TASK 3: The Submission UX & Lock-Out State**
-*   **Confirmation:** Clicking `[ Submit to Registrar ]` must trigger a modal: *"Warning: This action is final. Are you sure you want to lock these grades and forward them to the Head Registrar?"*
-*   **Optimistic Lock:** Upon successful API response, the page must immediately re-render in a "Locked" state. 
-    *   Disable all `GEN AVE` inputs.
-    *   Disable all `EOSY STATUS` dropdowns.
-    *   Replace the Submit button with a green badge: `✓ Submitted & Locked`.
+**TASK 3: Polish the Action Bar Active State**
+*   **The Issue:** When an action is selected, the dropdown receives a heavy maroon outline. In standard UI forms, a thick colored outline (especially red/maroon) implies a validation error or invalid input, which might confuse the user.
+*   **The Fix:** Remove the red/maroon border from the dropdown's active state. Instead, use a standard subtle focus ring (`focus:ring-2 focus:ring-gray-300`). 
+*   **Button Emphasis:** To make the action clearer, when a status is selected from the dropdown, change the `[ Apply to Selected ]` button from its muted gray state to a solid, confident color (e.g., a solid dark gray or secondary brand color) so the user explicitly knows the button is now "live" and ready to be clicked.
 
-## 3. Backend Execution (Express.js / PostgreSQL)
-**Assignee:** Patrick
-
-**TASK 1: Strict Payload Validation**
-*   When the Teacher submits the EOSY payload to the Express API, do not trust the client. 
-*   Execute backend validation iterating over the array of students. Ensure every `gen_ave` is a valid integer between 60 and 100. Reject the entire payload with a `400 Bad Request` if any outlier is detected.
-
-**TASK 2: State Locking & Role Escrow**
-*   Upon successful validation, execute an `UPDATE` query that flags the section as `is_eosy_locked = true`.
-*   Once this flag is set to true, the backend must return a `403 Forbidden` if the teacher's token attempts to run a subsequent `PUT` or `PATCH` request to those students' records. Only a token with the `REGISTRAR` or `ADMIN` role should be able to bypass or reverse this lock.
+## 3. Backend Verification (Patrick)
+*   Ensure that the backend explicitly validates the `(Requires >= 75)` rule. If the Registrar attempts to force a "Promoted" mass update, the backend must cross-reference the `gen_ave` of the selected array and reject the promotion for any student with an average below 75, returning a clear error toast to the frontend.

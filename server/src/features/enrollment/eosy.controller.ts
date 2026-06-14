@@ -1171,11 +1171,19 @@ export async function batchUpdateGradeRecords(
           where: { id: update.recordId },
           select: {
             eosyStatus: true,
+            finalAverage: true,
             learner: { select: { firstName: true, lastName: true } },
           },
         });
 
         if (!current) continue;
+
+        if (update.status === "PROMOTED" && (current.finalAverage === null || current.finalAverage < 75)) {
+          throw new AppError(
+            400,
+            `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average (${current.finalAverage === null ? 'Pending' : current.finalAverage}) is below 75.`
+          );
+        }
 
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
@@ -1264,6 +1272,17 @@ export async function finalizeGradeLevel(
         learner: true,
       },
     });
+
+    // Verify all records have a locked, submitted GEN AVE from their Class Adviser
+    const pendingLearners = records.filter(
+      (r) => r.finalAverage === null || r.finalAverage === undefined
+    );
+    if (pendingLearners.length > 0) {
+      throw new AppError(
+        400,
+        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`
+      );
+    }
 
     // Verify all records have eosyStatus
     const unfinalized = records.filter((r) => !r.eosyStatus);

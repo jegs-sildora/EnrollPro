@@ -107,6 +107,15 @@ const formatStatusLabel = (status: EosyStatus | null) => {
   }
 };
 
+const getNextGradeName = (currentName: string) => {
+  const match = currentName.match(/\d+/);
+  if (match) {
+    const nextGrade = parseInt(match[0], 10) + 1;
+    return `Grade ${nextGrade}`;
+  }
+  return "the next grade level";
+};
+
 export default function EosyUpdating() {
   const {
     activeSchoolYearId,
@@ -123,13 +132,14 @@ export default function EosyUpdating() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [records, setRecords] = useState<EnrollmentRecord[]>([]);
   const [exportLock, setExportLock] = useState<EosyExportLockState | null>(null);
-  
+
   const [loadingRecords, setLoadingRecords] = useState(false);
-  
+
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
   const [batchUpdateLoading, setBatchUpdateLoading] = useState(false);
-  
+  const [sectionFilter, setSectionFilter] = useState<string>("ALL");
+
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const [finalizeLoading, setFinalizeLoading] = useState(false);
 
@@ -138,17 +148,17 @@ export default function EosyUpdating() {
     try {
       const res = await api.get(`/eosy/sections?schoolYearId=${ayId}`);
       const rawSections: Section[] = res.data.sections || [];
-      
+
       const glMap = new Map<number, GradeLevel>();
       rawSections.forEach(s => {
         if (!glMap.has(s.gradeLevelId)) {
           glMap.set(s.gradeLevelId, s.gradeLevel);
         }
       });
-      
+
       const grades = Array.from(glMap.values()).sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99));
       setGradeLevels(grades);
-      
+
       if (grades.length > 0 && !activeTab) {
         setActiveTab(String(grades[0].id));
       }
@@ -176,6 +186,7 @@ export default function EosyUpdating() {
     if (!gradeLevelId || !ayId) return;
     setLoadingRecords(true);
     setRowSelection({});
+    setSectionFilter("ALL");
     try {
       const res = await api.get(`/eosy/grade/${gradeLevelId}/records?schoolYearId=${ayId}`);
       setRecords(res.data.records || []);
@@ -217,8 +228,8 @@ export default function EosyUpdating() {
       }
 
       if (record?.section.isEosyFinalized) {
-         lifecycleFeedback.error("Section Locked", "This section is already finalized.");
-         return;
+        lifecycleFeedback.error("Section Locked", "This section is already finalized.");
+        return;
       }
 
       try {
@@ -231,10 +242,10 @@ export default function EosyUpdating() {
           prev.map((r) =>
             r.id === recordId
               ? {
-                  ...r,
-                  eosyStatus: status as EosyStatus,
-                  finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage,
-                }
+                ...r,
+                eosyStatus: status as EosyStatus,
+                finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage,
+              }
               : r,
           ),
         );
@@ -251,15 +262,15 @@ export default function EosyUpdating() {
 
   const handleBatchUpdate = async () => {
     if (!batchActionStatus) return;
-    
+
     const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedRecords = selectedIndexes.map((idx) => records[idx]);
+    const selectedRecords = selectedIndexes.map((idx) => filteredRecords[idx]);
 
     if (selectedRecords.length === 0) {
       lifecycleFeedback.error("No Selection", "Please select at least one learner.");
       return;
     }
-    
+
     // Filter out records from finalized sections
     const editableRecords = selectedRecords.filter(r => !r.section.isEosyFinalized);
     if (editableRecords.length === 0) {
@@ -286,7 +297,7 @@ export default function EosyUpdating() {
         schoolYearId: ayId,
         updates: targetRecords.map(r => ({ recordId: r.id, status: batchActionStatus }))
       };
-      
+
       await api.put(`/eosy/grade/${activeTab}/batch-status`, payload);
 
       setRecords((prev) =>
@@ -315,12 +326,12 @@ export default function EosyUpdating() {
       await api.post(`/eosy/grade/${activeTab}/finalize`, {
         schoolYearId: ayId
       });
-      
+
       lifecycleFeedback.success(
         "Grade Level Finalized",
         "Grade progression executed successfully and sections are now locked.",
       );
-      
+
       setFinalizeModalOpen(false);
       void fetchExportLockState();
       void fetchSectionsAndGrades();
@@ -334,10 +345,21 @@ export default function EosyUpdating() {
 
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
   const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
-  
+
   const activeGradeName = gradeLevels.find(g => String(g.id) === activeTab)?.name || "Grade Level";
-  const unfinalizedCount = records.filter(r => !r.eosyStatus).length;
+  const pendingCount = records.filter(r => r.finalAverage === null || r.finalAverage === undefined).length;
   const isGradeFinalized = records.length > 0 && records.every(r => r.section.isEosyFinalized);
+
+  const sectionOptions = useMemo(() => {
+    const sectionsSet = new Set<string>();
+    records.forEach(r => sectionsSet.add(r.section.name));
+    return Array.from(sectionsSet).sort();
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    if (sectionFilter === "ALL") return records;
+    return records.filter(r => r.section.name === sectionFilter);
+  }, [records, sectionFilter]);
 
   const columns = useMemo<ColumnDef<EnrollmentRecord>[]>(
     () => [
@@ -349,7 +371,7 @@ export default function EosyUpdating() {
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             disabled={isGradeFinalized}
-            className="translate-y-[2px]"
+            className="translate-y-[2px] w-5 h-5 border-2 border-white/70 bg-transparent rounded-sm data-[state=checked]:bg-white data-[state=checked]:text-primary"
           />
         ),
         cell: ({ row }) => (
@@ -358,7 +380,7 @@ export default function EosyUpdating() {
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
             disabled={row.original.section.isEosyFinalized}
-            className="translate-y-[2px]"
+            className="translate-y-[2px] w-5 h-5 rounded-sm"
           />
         ),
         enableSorting: false,
@@ -406,11 +428,18 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const ave = row.original.finalAverage;
-          const isFailing = ave !== null && ave < 75;
+          if (ave === null || ave === undefined) {
+            return (
+              <span className="font-bold text-xs sm:text-sm block text-center text-muted-foreground opacity-60">
+                --
+              </span>
+            );
+          }
+          const isFailing = ave < 75;
 
           return (
             <span className={cn("font-bold text-xs sm:text-sm tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
-              {ave?.toFixed(2) || "0.00"}
+              {ave.toFixed(2)}
             </span>
           );
         },
@@ -502,128 +531,146 @@ export default function EosyUpdating() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
-      <PhaseBanner />
-      
-      {/* ── Top Header ── */}
-      <div className="flex items-center justify-between pb-6 flex-shrink-0">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-primary">
-            End of School Year (EOSY)
-          </h1>
-          <p className="text-sm font-bold text-foreground">
-            Manage grade progression and learner statuses
-          </p>
+        <PhaseBanner />
+
+        {/* ── Top Header ── */}
+        <div className="flex items-center justify-between pb-6 flex-shrink-0">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              End of School Year (EOSY)
+            </h1>
+            <p className="text-sm font-bold text-foreground">
+              Manage grade progression and learner statuses
+            </p>
+          </div>
         </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
-          {gradeLevels.map((gl) => (
-            <TabsTrigger
-              key={gl.id}
-              value={String(gl.id)}
-              className={cn(
-                "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-              )}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
+          <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
+            {gradeLevels.map((gl) => (
+              <TabsTrigger
+                key={gl.id}
+                value={String(gl.id)}
+                className={cn(
+                  "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                )}
+              >
+                {activeTab === String(gl.id) && (
+                  <motion.div
+                    layoutId="enrollment-eosy-grade-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span className={cn("relative z-20 text-xs font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                  {gl.name.replace(/grade\s*/i, "Grade ")}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 w-full h-full min-h-0"
             >
-              {activeTab === String(gl.id) && (
-                <motion.div
-                  layoutId="enrollment-eosy-grade-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-              <span className={cn("relative z-20 text-xs font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
-                {gl.name.replace(/grade\s*/i, "Grade ")}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex-1 w-full h-full min-h-0"
-          >
-            <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
-              <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-3 rounded-md border border-border flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={batchActionStatus}
-                      onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
-                      disabled={isGradeFinalized || Object.keys(rowSelection).length === 0}
-                    >
-                      <SelectTrigger className="w-48 bg-background">
-                        <SelectValue placeholder="Batch Action..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PROMOTED">Promoted (Requires &gt;= 75)</SelectItem>
-                        <SelectItem value="RETAINED">Retained</SelectItem>
-                        <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
-                        <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
-                        <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={handleBatchUpdate}
-                      disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
-                      variant="secondary"
-                    >
-                      {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Apply Selected
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    {unfinalizedCount > 0 && !isGradeFinalized && (
-                      <Badge variant="destructive" className="animate-pulse">
-                        {unfinalizedCount} Missing Statuses
-                      </Badge>
-                    )}
-                    {isGradeFinalized ? (
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1">
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Grade Finalized & Locked
-                      </Badge>
-                    ) : (
-                      <Button
-                        onClick={() => setFinalizeModalOpen(true)}
-                        disabled={unfinalizedCount > 0 || records.length === 0}
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
+                <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-muted/30 p-3 rounded-md border border-border flex-shrink-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        value={sectionFilter}
+                        onValueChange={setSectionFilter}
                       >
-                        <Lock className="h-4 w-4 mr-2" /> Finalize & Lock {activeGradeName}
+                        <SelectTrigger className="w-48 bg-background">
+                          <SelectValue placeholder="Filter by Section / Adviser" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ALL">All Sections</SelectItem>
+                          {sectionOptions.map(sec => (
+                            <SelectItem key={sec} value={sec}>{sec}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="w-px h-6 bg-border mx-1 hidden sm:block"></div>
+                      <Select
+                        value={batchActionStatus}
+                        onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+                        disabled={isGradeFinalized || Object.keys(rowSelection).length === 0}
+                      >
+                        <SelectTrigger className="w-56 bg-background focus:ring-2 focus:ring-gray-300">
+                          <SelectValue placeholder="Change Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PROMOTED">Promoted (Requires &gt;= 75)</SelectItem>
+                          <SelectItem value="RETAINED">Retained</SelectItem>
+                          <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
+                          <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
+                          <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleBatchUpdate}
+                        disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+                        variant={batchActionStatus ? "default" : "secondary"}
+                        className={cn(batchActionStatus ? "bg-primary hover:bg-primary/80 text-white" : "")}
+                      >
+                        {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Apply to Selected
                       </Button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {pendingCount > 0 && !isGradeFinalized && (
+                        <Badge variant="default">
+                          {pendingCount} Pending Teacher Submissions
+                        </Badge>
+                      )}
+                      {isGradeFinalized ? (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Grade Finalized & Locked
+                        </Badge>
+                      ) : (
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            onClick={() => setFinalizeModalOpen(true)}
+                            disabled={pendingCount > 0 || records.length === 0}
+                            className="bg-primary hover:bg-primary/80 text-white font-bold"
+                          >
+                            <Lock className="h-4 w-4 mr-2" /> Finalize & Lock {activeGradeName}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0 bg-card rounded-md border flex flex-col">
+                    {loadingRecords ? (
+                      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="text-sm font-medium">Loading {activeGradeName} records...</p>
+                      </div>
+                    ) : (
+                      <div className="flex-1 overflow-auto">
+                        <DataTable
+                          columns={columns}
+                          data={filteredRecords}
+                          rowSelection={rowSelection}
+                          onRowSelectionChange={setRowSelection}
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
-
-                <div className="flex-1 min-h-0 bg-card rounded-md border flex flex-col">
-                  {loadingRecords ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                      <p className="text-sm font-medium">Loading {activeGradeName} records...</p>
-                    </div>
-                  ) : (
-                    <div className="flex-1 overflow-auto">
-                      <DataTable
-                        columns={columns}
-                        data={records}
-                        rowSelection={rowSelection}
-                        onRowSelectionChange={setRowSelection}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        </AnimatePresence>
-      </Tabs>
-    </div>
+              </Card>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
+      </div>
 
       <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
         <DialogContent className="max-w-md border-red-200">
@@ -633,7 +680,9 @@ export default function EosyUpdating() {
             </div>
             <DialogTitle className="text-center text-xl text-red-700">Lock {activeGradeName} EOSY?</DialogTitle>
             <DialogDescription className="text-center pt-2 font-medium">
-              This action will execute <strong className="text-foreground">Automated Grade Progression</strong> for all learners in this grade level.
+              {activeGradeName.includes("10")
+                ? `Are you sure you want to finalize ${activeGradeName}? This will archive current year data and finalize Junior High School completion records.`
+                : `Are you sure you want to finalize ${activeGradeName}? This will archive current year data and officially promote eligible learners to ${getNextGradeName(activeGradeName)}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="bg-red-50 p-4 rounded-md text-sm text-red-800 space-y-2 my-2 border border-red-100">
