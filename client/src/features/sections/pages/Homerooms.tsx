@@ -288,8 +288,8 @@ export default function Homerooms() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">Homeroom Sections</h1>
-          <p className="text-sm text-foreground font-bold">Manage grade level sections and advising teachers</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Class Advisership & Section Management</h1>
+          <p className="text-sm text-foreground font-bold">Define grade level capacities and assign official class advisers to homeroom sections.</p>
         </div>
         {canMutate && homeroomGroups.length > 0 && (
           <Button onClick={handleOpenCreate} className="font-bold uppercase tracking-wide">

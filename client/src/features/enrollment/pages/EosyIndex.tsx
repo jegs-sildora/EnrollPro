@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
+import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
+import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
 import { Card } from "@/shared/ui/card";
 import {
   Select,
@@ -26,6 +28,7 @@ import {
   Lock,
   Loader2,
   AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -36,21 +39,26 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
 
 interface EnrollmentRecord {
   id: number;
   eosyStatus: EosyStatus | null;
   dropOutReason: string | null;
-  transferOutDate: string | null;
   finalAverage: number | null;
+  nextYearCurriculum: string | null;
   section: {
+    id: number;
     name: string;
     isEosyFinalized: boolean;
+    programType?: string;
+    isHomogeneous?: boolean;
   };
   enrollmentApplication: {
     id: number;
     trackingNumber: string;
+    applicantType: string;
     learner: {
       id: number;
       lrn: string | null;
@@ -141,7 +149,13 @@ export default function EosyUpdating() {
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
 
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+  const [preFlightModalOpen, setPreFlightModalOpen] = useState(false);
   const [finalizeLoading, setFinalizeLoading] = useState(false);
+
+  useEffect(() => {
+    if (!ayId) return;
+    getBOSYReadiness(ayId).catch(() => { });
+  }, [ayId]);
 
   const fetchSectionsAndGrades = useCallback(async () => {
     if (!ayId) return;
@@ -323,13 +337,18 @@ export default function EosyUpdating() {
   const handleFinalizeGrade = async () => {
     setFinalizeLoading(true);
     try {
+      const sectionIdPayload = sectionFilter === "ALL"
+        ? "all"
+        : records.find(r => r.section.name === sectionFilter)?.section?.id ?? "all";
+
       await api.post(`/eosy/grade/${activeTab}/finalize`, {
-        schoolYearId: ayId
+        schoolYearId: ayId,
+        section_id: sectionIdPayload
       });
 
       lifecycleFeedback.success(
-        "Grade Level Finalized",
-        "Grade progression executed successfully and sections are now locked.",
+        sectionFilter === "ALL" ? "Grade Level Finalized" : "Section Finalized",
+        "Grade progression executed successfully and section(s) are now locked.",
       );
 
       setFinalizeModalOpen(false);
@@ -346,9 +365,9 @@ export default function EosyUpdating() {
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
   const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
 
+  const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
+
   const activeGradeName = gradeLevels.find(g => String(g.id) === activeTab)?.name || "Grade Level";
-  const pendingCount = records.filter(r => r.finalAverage === null || r.finalAverage === undefined).length;
-  const isGradeFinalized = records.length > 0 && records.every(r => r.section.isEosyFinalized);
 
   const sectionOptions = useMemo(() => {
     const sectionsSet = new Set<string>();
@@ -357,9 +376,75 @@ export default function EosyUpdating() {
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    if (sectionFilter === "ALL") return records;
-    return records.filter(r => r.section.name === sectionFilter);
+    let list = records;
+    if (sectionFilter !== "ALL") {
+      list = records.filter(r => r.section.name === sectionFilter);
+    }
+
+    return [...list].sort((a, b) => {
+      // 1. STE
+      // 2. SPA
+      // 3. SPS
+      // 4. PILOT/HOMOGENEOUS
+      // 5. HETEROGENEOUS
+      const getRank = (r: EnrollmentRecord) => {
+        if (r.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
+        if (r.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") return 2;
+        if (r.section.programType === "SPECIAL_PROGRAM_IN_SPORTS") return 3;
+        if (r.section.isHomogeneous) return 4;
+        return 5;
+      };
+
+      const rankA = getRank(a);
+      const rankB = getRank(b);
+
+      if (rankA !== rankB) return rankA - rankB;
+
+      // Keep section alphabetical order as secondary sort
+      const sectionCompare = a.section.name.localeCompare(b.section.name);
+      if (sectionCompare !== 0) return sectionCompare;
+
+      // Finally, student last name
+      return a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName);
+    });
   }, [records, sectionFilter]);
+
+  const pendingCount = filteredRecords.filter(r =>
+    (r.finalAverage === null || r.finalAverage === undefined) &&
+    r.eosyStatus !== "TRANSFERRED_OUT" &&
+    r.eosyStatus !== "DROPPED_OUT"
+  ).length;
+
+  const isScopeFinalized = filteredRecords.length > 0 && filteredRecords.every(r => r.section.isEosyFinalized);
+
+  const pendingClassesList = useMemo(() => {
+    const sets = new Set<string>();
+    filteredRecords.forEach((r) => {
+      if (
+        (r.finalAverage === null || r.finalAverage === undefined) &&
+        r.eosyStatus !== "TRANSFERRED_OUT" &&
+        r.eosyStatus !== "DROPPED_OUT"
+      ) {
+        sets.add(r.section.name);
+      }
+    });
+    return Array.from(sets);
+  }, [filteredRecords]);
+
+  const pendingIrregularCount = useMemo(() => {
+    return filteredRecords.filter((r) => !r.eosyStatus).length;
+  }, [filteredRecords]);
+
+  const scopedUnlockedClassesCount = pendingClassesList.length;
+  const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
+  const scopedIrregularBlockerCount = pendingIrregularCount;
+  const hasIrregularBlockers = scopedIrregularBlockerCount > 0;
+  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0);
+
+  const targetScopeName = sectionFilter === "ALL" ? `All ${activeGradeName}` : `Section: ${sectionFilter}`;
+  const descriptionTarget = sectionFilter === "ALL"
+    ? `all ${activeGradeName} learners`
+    : `the ${activeGradeName} - ${sectionFilter} section`;
 
   const columns = useMemo<ColumnDef<EnrollmentRecord>[]>(
     () => [
@@ -370,8 +455,8 @@ export default function EosyUpdating() {
             checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
-            disabled={isGradeFinalized}
-            className="translate-y-[2px] w-5 h-5 border-2 border-white/70 bg-transparent rounded-sm data-[state=checked]:bg-white data-[state=checked]:text-primary"
+            disabled={isScopeFinalized}
+            className="translate-y-[2px] w-5 h-5 border-2 border-white/70 bg-transparent !rounded-sm data-[state=checked]:bg-white data-[state=checked]:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           />
         ),
         cell: ({ row }) => (
@@ -380,17 +465,18 @@ export default function EosyUpdating() {
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
             disabled={row.original.section.isEosyFinalized}
-            className="translate-y-[2px] w-5 h-5 rounded-sm"
+            className="translate-y-[2px] w-5 h-5 !rounded-sm disabled:cursor-not-allowed disabled:opacity-50"
           />
         ),
         enableSorting: false,
         enableHiding: false,
         size: 40,
+        meta: { className: "w-12 text-center" }
       },
       {
         id: "student",
         accessorKey: "enrollmentApplication.learner.lastName",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" className="justify-start pl-0" />,
         cell: ({ row }) => {
           const sex = row.original.enrollmentApplication.learner.sex;
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
@@ -400,7 +486,7 @@ export default function EosyUpdating() {
               <span className="font-bold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs text-foreground font-black uppercase">
                   LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
@@ -409,25 +495,35 @@ export default function EosyUpdating() {
                     {genderLabel}
                   </Badge>
                 )}
+                {row.original.nextYearCurriculum === "REGULAR" &&
+                  row.original.enrollmentApplication.applicantType !== "REGULAR" &&
+                  row.original.enrollmentApplication.applicantType !== "LATE_ENROLLEE" && (
+                    <Badge variant="outline" className="h-4 px-1.5 text-[8px] font-black border-amber-400 bg-amber-50 text-amber-700 ml-1">
+                      BEC REASSIGNMENT
+                    </Badge>
+                  )}
               </div>
             </div>
           );
         },
+        meta: { className: "w-2/5 min-w-[250px] text-left" }
       },
       {
         id: "section",
         accessorKey: "section.name",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-start" />,
         cell: ({ row }) => (
           <span className="text-xs font-bold">{row.original.section.name}</span>
         ),
+        meta: { className: "w-1/5 text-left" }
       },
       {
         id: "finalAve",
         accessorKey: "finalAverage",
         header: ({ column }) => <DataTableColumnHeader column={column} title="GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
-          const ave = row.original.finalAverage;
+          const r = row.original;
+          const ave = r.finalAverage;
           if (ave === null || ave === undefined) {
             return (
               <span className="font-bold text-xs sm:text-sm block text-center text-muted-foreground opacity-60">
@@ -436,14 +532,38 @@ export default function EosyUpdating() {
             );
           }
           const isFailing = ave < 75;
+          const isScpDemoted = (r.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" || r.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" || r.section.programType === "SPECIAL_PROGRAM_IN_SPORTS") && ave >= 75 && ave < 85;
+
+          const gradeColor = isScpDemoted ? "text-amber-600 font-black border-b border-dotted border-amber-600 cursor-help" : "text-gray-900 font-black";
 
           return (
-            <span className={cn("font-bold text-xs sm:text-sm tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
-              {ave.toFixed(2)}
-            </span>
+            <div className="flex justify-center items-center gap-1">
+              {isScpDemoted ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={cn("text-xs sm:text-sm tabular-nums block text-center", gradeColor)}>
+                        {ave.toFixed(2)}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-primary text-primary-foreground border-none p-3 shadow-lg rounded-md text-sm max-w-xs">
+                      <p className="font-bold mb-1">SCP Retention Policy Warning:</p>
+                      <p>Learner did not meet the 85% final grade requirement for the Special Curricular Program (STE/SPA). They will be promoted, but laterally transferred to the regular Basic Education Curriculum (BEC) next school year.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <span className={cn("text-xs sm:text-sm tabular-nums block text-center",
+                  isFailing ? "text-red-600 font-bold" : gradeColor
+                )}>
+                  {ave.toFixed(2)}
+                </span>
+              )}
+            </div>
           );
         },
         size: 100,
+        meta: { className: "w-[100px] text-center" }
       },
       {
         id: "status",
@@ -451,16 +571,28 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
+          const ave = r.finalAverage;
+          const isScpDemoted = ave !== null && ave !== undefined && (r.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" || r.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" || r.section.programType === "SPECIAL_PROGRAM_IN_SPORTS") && ave >= 75 && ave < 85;
+
           const resolvedStatus = r.eosyStatus ?? "PROMOTED";
           const statusLabel = formatStatusLabel(r.eosyStatus);
           const isSectionFinalized = r.section.isEosyFinalized;
 
-          if (isSectionFinalized || isGradeFinalized) {
+          if (isSectionFinalized || isScopeFinalized) {
             return (
               <div className="flex justify-center">
-                <Badge variant="outline" className="h-6 w-24 text-[10px] font-bold bg-muted text-foreground flex items-center justify-center uppercase">
-                  {statusLabel}
-                </Badge>
+                <div
+                  title={isScpDemoted && resolvedStatus === "PROMOTED" ? "Did not meet 85% SCP requirement. Laterally transferred to Regular BEC track for the next school year." : undefined}
+                  className={cn(
+                    "flex h-7 w-auto px-3 min-w-[8rem] items-center justify-between rounded-md border text-[10px] font-black uppercase ring-offset-background",
+                    isScpDemoted && resolvedStatus === "PROMOTED"
+                      ? "text-amber-800 bg-amber-50 border-amber-200 cursor-help"
+                      : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200"
+                  )}>
+                  <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (To BEC)" : statusLabel}</span>
+                </div>
               </div>
             );
           }
@@ -468,20 +600,27 @@ export default function EosyUpdating() {
           return (
             <div className="flex justify-center">
               <Select
-                value={resolvedStatus}
+                value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus}
                 onValueChange={(val) => handleStatusChange(r.id, val)}
                 disabled={isSectionFinalized}>
                 <SelectTrigger
+                  title={isScpDemoted && resolvedStatus === "PROMOTED" ? "Did not meet 85% SCP requirement. Laterally transferred to Regular BEC track for the next school year." : undefined}
                   className={cn(
-                    "h-7 w-32 font-black uppercase text-[10px]",
-                    !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                      : "text-amber-700 bg-amber-50 border-amber-200",
+                    "h-7 w-auto px-2 min-w-[8rem] font-black uppercase text-[10px]",
+                    isScpDemoted && resolvedStatus === "PROMOTED"
+                      ? "text-amber-800 bg-amber-50 border-amber-200 cursor-help"
+                      : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200",
                   )}>
-                  <SelectValue />
+                  {isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (To BEC)" : <SelectValue />}
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PROMOTED">Promoted</SelectItem>
+                  {isScpDemoted ? (
+                    <SelectItem value="PROMOTED_TO_BEC">Promoted (To BEC)</SelectItem>
+                  ) : (
+                    <SelectItem value="PROMOTED">Promoted</SelectItem>
+                  )}
                   <SelectItem value="RETAINED">Retained</SelectItem>
                   <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
                   <SelectItem value="TRANSFERRED_OUT">Transferred</SelectItem>
@@ -491,9 +630,10 @@ export default function EosyUpdating() {
             </div>
           );
         },
+        meta: { className: "w-[150px] text-center" }
       },
     ],
-    [isGradeFinalized, handleStatusChange],
+    [isScopeFinalized, handleStatusChange],
   );
 
   if (shouldShowFinalizedView) {
@@ -533,14 +673,29 @@ export default function EosyUpdating() {
       <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
         <PhaseBanner />
 
+        {isAllFinalized && !shouldShowFinalizedView && (
+          <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 p-4 shadow-sm flex items-center justify-between">
+            <div className="space-y-1 text-emerald-800">
+              <h3 className="font-black flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                All Grade Levels Finalized
+              </h3>
+              <p className="text-sm">The end of school year records for all sections have been locked. The system is ready for the global EOSY Rollover.</p>
+            </div>
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-sm text-white">
+              <a href="/admin/settings">Go to System Configuration &rarr;</a>
+            </Button>
+          </div>
+        )}
+
         {/* ── Top Header ── */}
         <div className="flex items-center justify-between pb-6 flex-shrink-0">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold">
-              End of School Year (EOSY)
+              End of School Year (EOSY) Finalization
             </h1>
             <p className="text-sm font-bold text-foreground">
-              Manage grade progression and learner statuses
+              Review faculty submissions, enforce SCP/BEC retention policies, and lock final learner statuses.
             </p>
           </div>
         </div>
@@ -597,51 +752,100 @@ export default function EosyUpdating() {
                         </SelectContent>
                       </Select>
                       <div className="w-px h-6 bg-border mx-1 hidden sm:block"></div>
-                      <Select
-                        value={batchActionStatus}
-                        onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
-                        disabled={isGradeFinalized || Object.keys(rowSelection).length === 0}
-                      >
-                        <SelectTrigger className="w-56 bg-background focus:ring-2 focus:ring-gray-300">
-                          <SelectValue placeholder="Change Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PROMOTED">Promoted (Requires &gt;= 75)</SelectItem>
-                          <SelectItem value="RETAINED">Retained</SelectItem>
-                          <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
-                          <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
-                          <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={handleBatchUpdate}
-                        disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
-                        variant={batchActionStatus ? "default" : "secondary"}
-                        className={cn(batchActionStatus ? "bg-primary hover:bg-primary/80 text-white" : "")}
-                      >
-                        {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        Apply to Selected
-                      </Button>
+                      {isScopeFinalized ? (
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="font-bold border border-gray-200" onClick={() => lifecycleFeedback.success("Download", "Downloading SF5 (Section)...")}>
+                            📥 Download SF5 (Section)
+                          </Button>
+                          <Button variant="secondary" className="font-bold border border-gray-200" onClick={() => lifecycleFeedback.success("Download", "Downloading SF6 (Grade Level Summary)...")}>
+                            📥 Download SF6 (Grade Level Summary)
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <Select
+                            value={batchActionStatus}
+                            onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+                            disabled={Object.keys(rowSelection).length === 0}
+                          >
+                            <SelectTrigger className="w-56 bg-background focus:ring-2 focus:ring-gray-300">
+                              <SelectValue placeholder="Select New Status..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PROMOTED">Promoted</SelectItem>
+                              <SelectItem value="RETAINED">Retained</SelectItem>
+                              <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
+                              <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
+                              <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            onClick={handleBatchUpdate}
+                            disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+                            variant={batchActionStatus ? "default" : "secondary"}
+                            className={cn(
+                              "transition-all font-bold",
+                              batchActionStatus
+                                ? "bg-primary hover:bg-primary/90 text-white shadow-md"
+                                : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed hover:bg-gray-100 hover:text-gray-400 disabled:opacity-100"
+                            )}
+                          >
+                            {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Apply to Selected
+                          </Button>
+                        </>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {pendingCount > 0 && !isGradeFinalized && (
+                      {pendingCount > 0 && !isScopeFinalized && (
                         <Badge variant="default">
                           {pendingCount} Pending Teacher Submissions
                         </Badge>
                       )}
-                      {isGradeFinalized ? (
-                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Grade Finalized & Locked
-                        </Badge>
+                      {isScopeFinalized ? (
+                        <Button
+                          disabled
+                          variant="outline"
+                          className="bg-gray-100 text-gray-500 border border-gray-300 cursor-not-allowed px-4 font-bold"
+                        >
+                          {sectionFilter === "ALL" ? "Grade Level Locked (EOSY)" : "Section Locked (EOSY)"}
+                        </Button>
                       ) : (
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1">
+                          {blockersCount > 0 && (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-sm font-bold text-amber-600 mr-4 flex items-center cursor-help">
+                                    <AlertCircle className="w-4 h-4 mr-1" /> {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-primary text-primary-foreground border-none p-3 shadow-lg rounded-md text-sm">
+                                  <p className="font-bold mb-1">Pending Requirements:</p>
+                                  {hasUnlockedClasses && <p className="ml-2">• {scopedUnlockedClassesCount} sections missing School Form 5 (SF5).</p>}
+                                  {hasIrregularBlockers && <p className="ml-2">• {scopedIrregularBlockerCount ?? 0} learners require encoded EOSY (Summer) classes.</p>}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           <Button
-                            onClick={() => setFinalizeModalOpen(true)}
-                            disabled={pendingCount > 0 || records.length === 0}
-                            className="bg-primary hover:bg-primary/80 text-white font-bold"
+                            onClick={() => {
+                              if (blockersCount > 0) {
+                                setPreFlightModalOpen(true);
+                              } else {
+                                setFinalizeModalOpen(true);
+                              }
+                            }}
+                            disabled={records.length === 0}
+                            className={cn(
+                              "font-bold text-white",
+                              blockersCount > 0
+                                ? "bg-amber-600 hover:bg-amber-700"
+                                : "bg-primary hover:bg-primary/80"
+                            )}
                           >
-                            <Lock className="h-4 w-4 mr-2" /> Finalize & Lock {activeGradeName}
+                            Finalize & Lock {targetScopeName}
                           </Button>
                         </div>
                       )}
@@ -673,45 +877,75 @@ export default function EosyUpdating() {
       </div>
 
       <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
-        <DialogContent className="max-w-md border-red-200">
-          <DialogHeader>
-            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
+        <DialogContent className={cn("w-[calc(100%-2rem)] sm:max-w-xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
+          <DialogHeader className="space-y-2 text-center items-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
+              <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <DialogTitle className="text-center text-xl text-red-700">Lock {activeGradeName} EOSY?</DialogTitle>
-            <DialogDescription className="text-center pt-2 font-medium">
-              {activeGradeName.includes("10")
-                ? `Are you sure you want to finalize ${activeGradeName}? This will archive current year data and finalize Junior High School completion records.`
-                : `Are you sure you want to finalize ${activeGradeName}? This will archive current year data and officially promote eligible learners to ${getNextGradeName(activeGradeName)}.`}
+            <DialogTitle className="text-center text-xl font-bold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
+            <DialogDescription className="text-center pt-2 font-semibold text-md">
+              {activeGradeName.includes("10") ? (
+                `Are you sure you want to finalize ${descriptionTarget}? This will officially close the school year and generate their Junior High School completion records.`
+              ) : (
+                <>
+                  Are you sure you want to finalize {descriptionTarget}? This will officially close the school year and determine their promotion to{' '}
+                  <span className="font-bold">{getNextGradeName(activeGradeName)}</span>.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-red-50 p-4 rounded-md text-sm text-red-800 space-y-2 my-2 border border-red-100">
-            <p>• Learner Active States will be updated to reflect their progression.</p>
-            <p>• All sections in this grade will be permanently locked for this school year.</p>
-            <p>• The records will be added to the immutable Historical Ledger.</p>
-            <p className="font-bold underline mt-3">This action cannot be undone.</p>
+          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground space-y-2 my-2 border border-[hsl(var(--primary)/0.2)]">
+            <p>• Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</p>
+            <p>• The School Form 5 (SF5) for {descriptionTarget} will be locked. Class advisers can no longer change the grades.</p>
+            <p>• This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</p>
+            <p className="font-bold text-[hsl(var(--primary))] underline mt-3">This action is final and cannot be undone.</p>
           </div>
-          <DialogFooter className="sm:justify-center flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
             <Button
               variant="outline"
               onClick={() => setFinalizeModalOpen(false)}
               disabled={finalizeLoading}
-              className="w-full sm:w-auto"
+              className={cn(
+                "flex-1 h-12 rounded-lg font-bold text-md",
+                "border border-gray-200 bg-white text-foreground",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
             >
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="default"
               onClick={handleFinalizeGrade}
               disabled={finalizeLoading}
-              className="w-full sm:w-auto font-bold"
+              className={cn(
+                "flex-1 h-12 rounded-lg font-bold text-md",
+                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
+                "hover:bg-[hsl(var(--primary)/0.9)]",
+                "shadow-md",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
             >
-              {finalizeLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Confirm & Execute Progression
+              {finalizeLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Processing...
+                </span>
+              ) : (
+                `Finalize & Lock ${targetScopeName}`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PreFlightBlockerModal
+        open={preFlightModalOpen}
+        onOpenChange={setPreFlightModalOpen}
+        unlockedClassesCount={scopedUnlockedClassesCount}
+        irregularBlockerCount={scopedIrregularBlockerCount ?? 0}
+        targetScopeName={targetScopeName}
+      />
     </>
   );
 }

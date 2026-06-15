@@ -16,10 +16,10 @@ export default function EnrollmentManagement() {
       <div className="flex items-center justify-between pb-6 flex-shrink-0">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold">
-            Enrollment Management
+            Sectioning & School Form 1 (SF1) Preparation
           </h1>
           <p className="text-sm font-bold text-foreground">
-            Verify submitted documents and assign learners to sections.
+            Validate submitted credentials and execute batch sectioning to generate official class registers.
           </p>
         </div>
       </div>

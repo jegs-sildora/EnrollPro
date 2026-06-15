@@ -14,13 +14,15 @@ import {
   Calendar,
   Presentation,
   UserCog,
-  Activity,
   ArrowUpRightSquare,
   UserPlus,
   School,
-  ArrowRightLeft,
   Check,
   BookOpen,
+  Database,
+  CheckCircle2,
+  CalendarClock,
+  Wrench,
 } from "lucide-react";
 
 import {
@@ -404,11 +406,13 @@ const NavItem = memo(function NavItem({
   to,
   icon: Icon,
   label,
+  subtext,
   pathname,
 }: {
   to: string;
   icon: React.ElementType;
   label: string;
+  subtext?: string;
   pathname: string;
 }) {
   let isActive =
@@ -429,8 +433,11 @@ const NavItem = memo(function NavItem({
         isActive={isActive}
         tooltip={label}>
         <Link to={to}>
-          <Icon className="size-4" />
-          <span>{label}</span>
+          <Icon className="size-4 shrink-0" />
+          <div className="flex flex-col items-start justify-center overflow-hidden w-full">
+            <span className="truncate w-full text-left leading-tight">{label}</span>
+            {subtext && <span className="text-[9px] font-normal opacity-70 truncate w-full text-left leading-tight">{subtext}</span>}
+          </div>
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -523,26 +530,25 @@ function AppSidebar() {
                 {/* Items 1–7: shared between registrar role and SYSTEM_ADMIN */}
                 {(isRegistrar || isAdmin) && (
                   <>
-                    <NavDivider label="Operations" />
+                    <NavDivider label="Enrollment & LIS" badge={!isEosyArchivedState ? officialEnrollmentBadge : undefined} />
                     <NavItem
                       to="/dashboard"
                       icon={LayoutDashboard}
-                      label="Dashboard"
+                      label="Master Dashboard"
                       pathname={pathname}
                     />
 
                     <NavItem
                       to="/bosy"
                       icon={UserPlus}
-                      label="BOSY Confirmation"
+                      label="Early Registration"
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Official Enrollment" badge={!isEosyArchivedState ? officialEnrollmentBadge : undefined} />
                     <NavItem
                       to="/monitoring/enrollment"
                       icon={Calendar}
-                      label="Verification & Sectioning"
+                      label="Sectioning & SF1 Prep"
                       pathname={pathname}
                     />
 
@@ -550,29 +556,29 @@ function AppSidebar() {
                     <NavItem
                       to="/monitoring/enrollment/eosy"
                       icon={ArrowUpRightSquare}
-                      label="EOSY Updating"
+                      label="EOSY Grade Finalization"
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Management" />
+                    <NavDivider label="School Records" />
                     <NavItem
                       to="/students"
                       icon={Users}
-                      label="Learner Directory"
+                      label="Learner Registry"
                       pathname={pathname}
                     />
                     {isAdmin && (
                       <NavItem
                         to="/teachers"
                         icon={Presentation}
-                        label="Personnel Directory"
+                        label="Faculty & Staff"
                         pathname={pathname}
                       />
                     )}
                     <NavItem
                       to="/sections/homerooms"
                       icon={Layers}
-                      label="Homeroom Sections"
+                      label="Adviser Assignments"
                       pathname={pathname}
                     />
                   </>
@@ -580,35 +586,53 @@ function AppSidebar() {
 
                 {isAdmin && (
                   <>
-                    <NavDivider label="System" badge={isEosyArchivedState ? activeBadge : undefined} />
+                    <NavDivider label="Integrated Systems" />
+                    <NavItem
+                      to="/admin/integration?tab=aims"
+                      icon={Database}
+                      label="AIMS"
+                      subtext="Academic Info"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/admin/integration?tab=smart"
+                      icon={CheckCircle2}
+                      label="SMART"
+                      subtext="Simplified Master Records and Tracking"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/admin/integration?tab=atlas"
+                      icon={CalendarClock}
+                      label="ATLAS"
+                      subtext="Automated Teaching and Learning Assessment System"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/admin/integration?tab=mrf"
+                      icon={Wrench}
+                      label="MRF"
+                      subtext="Maintenance Requests"
+                      pathname={pathname}
+                    />
+
+                    <NavDivider label="System Administration" badge={isEosyArchivedState ? activeBadge : undefined} />
                     <NavItem
                       to="/admin/users"
                       icon={UserCog}
-                      label="User Management"
+                      label="Account Access"
                       pathname={pathname}
                     />
                     <NavItem
                       to="/audit-logs"
                       icon={History}
-                      label="Audit Logs"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/system"
-                      icon={Activity}
-                      label="System Health"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration"
-                      icon={ArrowRightLeft}
-                      label="Ecosystem Hub"
+                      label="Activity Logs"
                       pathname={pathname}
                     />
                     <NavItem
                       to="/settings"
                       icon={Settings}
-                      label="Settings"
+                      label="System Configuration"
                       pathname={pathname}
                     />
                   </>

@@ -167,52 +167,49 @@ export async function submitTeacherAdvisory(
 
         if (!record) continue;
 
+        // DepEd Cutoff Enforcer for Special Programs
+        const finalAverage = update.finalAverage;
+        const applicantType = record.enrollmentApplication.applicantType;
+
+        let eosyStatus = update.eosyStatus as EosyStatus;
+        let nextYearCurriculum: any = null;
+
+        if (finalAverage !== null && finalAverage !== undefined) {
+          if (finalAverage < 75) {
+            eosyStatus = "RETAINED";
+            // Retained SCP students automatically drop to BEC (REGULAR)
+            nextYearCurriculum = "REGULAR";
+          } else if (finalAverage >= 75 && finalAverage < 85 && applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE") {
+            // SCP Lateral Demotion
+            eosyStatus = "PROMOTED";
+            nextYearCurriculum = "REGULAR";
+
+            await tx.auditLog.create({
+              data: {
+                userId,
+                actionType: "STE_CUTOFF_ENFORCED",
+                description: `Learner laterally demoted to BEC for next year due to final average ${finalAverage} < 85`,
+                subjectType: "EnrollmentApplication",
+                recordId: record.enrollmentApplicationId,
+                ipAddress: req.ip ?? "0.0.0.0",
+                userAgent: (req.headers["user-agent"] as string) ?? null,
+              },
+            });
+          }
+        }
+
         // Update the EnrollmentRecord
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
           data: {
-            eosyStatus: update.eosyStatus as EosyStatus,
+            eosyStatus,
+            nextYearCurriculum,
             finalAverage:
               update.finalAverage !== undefined && update.finalAverage !== null
                 ? parseFloat(String(update.finalAverage))
                 : undefined,
           },
         });
-
-        // DepEd Cutoff Enforcer for Special Programs
-        const finalAverage = update.finalAverage;
-        const applicantType = record.enrollmentApplication.applicantType;
-
-        if (
-          update.eosyStatus === "PROMOTED" &&
-          finalAverage !== null &&
-          finalAverage !== undefined &&
-          finalAverage < 85 &&
-          applicantType !== "REGULAR" &&
-          applicantType !== "LATE_ENROLLEE"
-        ) {
-          // They missed the cutoff for their special program (e.g. STE)
-          // Strip the program assignment so they forward as REGULAR.
-          await tx.enrollmentApplication.update({
-            where: { id: record.enrollmentApplicationId },
-            data: {
-              applicantType: "REGULAR",
-              assignedProgram: "REGULAR", // If using this field
-            },
-          });
-
-          await tx.auditLog.create({
-            data: {
-              userId,
-              actionType: "STE_CUTOFF_ENFORCED",
-              description: `Learner dropped from special program due to final average ${finalAverage} < 85`,
-              subjectType: "EnrollmentApplication",
-              recordId: record.enrollmentApplicationId,
-              ipAddress: req.ip ?? "0.0.0.0",
-              userAgent: (req.headers["user-agent"] as string) ?? null,
-            },
-          });
-        }
       }
 
       // Lock the section

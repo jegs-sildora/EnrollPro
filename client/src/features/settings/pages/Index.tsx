@@ -5,6 +5,10 @@ import SchoolYearTab from "./SchoolYearTab";
 
 import { motion, AnimatePresence } from "motion/react";
 
+import { useSettingsStore } from "@/store/settings.slice";
+import { useEffect } from "react";
+import api from "@/shared/api/axiosInstance";
+
 const VALID_TABS = [
   "profile",
   "school-year",
@@ -24,15 +28,30 @@ export default function Settings() {
     setSearchParams({ tab: value }, { replace: true });
   };
 
+  const { activeSchoolYearId } = useSettingsStore();
+  useEffect(() => {
+    async function checkStatus() {
+      if (!activeSchoolYearId) return;
+      try {
+        await api.get("/school-years");
+      } catch (err) {
+        // silent
+      }
+    }
+    checkStatus();
+  }, [activeSchoolYearId]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground ">
-          System Configuration
-        </h1>
-        <p className="text-sm font-bold">
-          Manage school identity and school year
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground ">
+            Global System Configuration
+          </h1>
+          <p className="text-sm font-bold">
+            Define the school profile, manage academic calendars, and execute BOSY/EOSY phase shifts.
+          </p>
+        </div>
       </div>
 
       <Tabs

@@ -72,6 +72,7 @@ model Teacher {
   teacherDesignations TeacherDesignation[]
   department          Department?          @relation("DepartmentTeachers", fields: [departmentId], references: [id])
   user                User?                @relation("UserTeacherProfile", fields: [userId], references: [id])
+  historicalAdvisories EnrollmentHistory[]
 
   @@map("teachers")
 }
@@ -140,6 +141,7 @@ model SchoolYear {
   sectionAdvisers        SectionAdviser[]
   sections               Section[]
   teacherDesignations    TeacherDesignation[]
+  enrollmentHistories    EnrollmentHistory[]
 
   @@map("school_years")
 }
@@ -152,6 +154,7 @@ model GradeLevel {
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   enrollmentApplications EnrollmentApplication[]
   sections               Section[]
+  enrollmentHistories    EnrollmentHistory[]
 
   @@map("grade_levels")
 }
@@ -177,6 +180,7 @@ model Section {
   gradeLevel          GradeLevel           @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
   schoolYear          SchoolYear           @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
+  enrollmentHistories EnrollmentHistory[]
 
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
@@ -248,6 +252,7 @@ model Learner {
   enrollmentApplications       EnrollmentApplication[]
   enrollmentRecords            EnrollmentRecord[]
   healthRecords                HealthRecord[]
+  enrollmentHistories          EnrollmentHistory[]
   user                         User?                   @relation("UserLearnerProfile", fields: [userId], references: [id])
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
@@ -392,6 +397,7 @@ model EnrollmentRecord {
   sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
   sf1Remarks              String?               @map("sf1_remarks")
   finalAverage            Float?                @map("final_average")
+  nextYearCurriculum      ApplicantType?        @map("next_year_curriculum")
   learnerId               Int                   @map("learner_id")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
   enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
@@ -645,6 +651,7 @@ enum ReadingProfileLevel {
 
 enum SystemAcademicPhase {
   PRE_REGISTRATION
+  BOSY_ENROLLMENT
   OFFICIAL_ENROLLMENT
   CLASSES_ONGOING
   EOSY_CLOSING
@@ -813,3 +820,26 @@ enum TermFormat {
 
   @@map("term_format")
 }
+
+/// Historical ledger of end-of-school-year data
+model EnrollmentHistory {
+  id             Int         @id @default(autoincrement())
+  learnerId      Int         @map("learner_id")
+  schoolYearId   Int         @map("school_year_id")
+  gradeLevelId   Int         @map("grade_level_id")
+  sectionId      Int?        @map("section_id")
+  adviserId      Int?        @map("adviser_id")
+  genAve         Float?      @map("gen_ave")
+  eosyStatus     EosyStatus? @map("eosy_status")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  learner        Learner     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  schoolYear     SchoolYear  @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  gradeLevel     GradeLevel  @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  section        Section?    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  adviser        Teacher?    @relation(fields: [adviserId], references: [id], onDelete: Cascade)
+
+  @@index([learnerId, schoolYearId], map: "idx_enrollment_history_learner_sy")
+  @@map("enrollment_history")
+}
+

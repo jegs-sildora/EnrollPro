@@ -496,7 +496,7 @@ export function createSchoolYearAdminController(
 
     if (irregularBlockerCount > 0) {
       res.status(422).json({
-        message: `Cannot roll over: ${irregularBlockerCount} learner(s) remain CONDITIONALLY_PROMOTED. Resolve their remedial results in the EOSY module first.`,
+        message: `EOSY FINALIZATION BLOCKED: ${irregularBlockerCount} learner(s) remain CONDITIONALLY PROMOTED. Encode their End-of-School-Year (EOSY) Class grades to finalize their statuses before closing the academic year.`,
       });
       return;
     }

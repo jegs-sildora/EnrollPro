@@ -829,9 +829,6 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                                   "text-[10px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
                                   accountColor,
                                 )}>
-                                {ua?.isActive && (
-                                  <span className="text-[10px]">🌐</span>
-                                )}
                                 {accountLabel}
                               </Badge>
                             );

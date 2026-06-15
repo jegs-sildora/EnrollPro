@@ -40,6 +40,7 @@ interface Learner {
 
 interface EnrollmentApplication {
   id: number;
+  applicantType: string;
   learner: Learner;
 }
 
@@ -188,6 +189,8 @@ export default function TeacherEosyDashboard() {
           const r = row.original;
           const ave = r.finalAverage;
           const isFailing = ave !== null && ave < 75;
+          const applicantType = r.enrollmentApplication.applicantType;
+          const isScpWarning = applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE" && ave !== null && ave >= 75 && ave < 85;
 
           if (isFinalized) {
             return (
@@ -206,7 +209,8 @@ export default function TeacherEosyDashboard() {
                 max="100"
                 className={cn(
                   "h-8 w-24 text-center font-bold text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
-                  isFailing ? "text-red-600 border-red-300 focus:ring-red-500" : "text-emerald-600"
+                  isFailing ? "text-red-600 border-red-300 focus:ring-red-500" : 
+                  isScpWarning ? "text-amber-600 border-amber-500 focus:ring-amber-500" : "text-emerald-600"
                 )}
                 value={ave ?? ""}
                 onChange={(e) => handleAverageChange(r.id, e.target.value)}
@@ -230,6 +234,10 @@ export default function TeacherEosyDashboard() {
           const r = row.original;
           const resolvedStatus = r.eosyStatus ?? "PROMOTED";
           const statusLabel = formatStatusLabel(r.eosyStatus);
+          
+          const ave = r.finalAverage;
+          const applicantType = r.enrollmentApplication.applicantType;
+          const isScpWarning = applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE" && ave !== null && ave >= 75 && ave < 85;
 
           if (isFinalized) {
             return (
@@ -242,19 +250,21 @@ export default function TeacherEosyDashboard() {
           }
 
           return (
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center gap-2">
               <Select
                 value={resolvedStatus}
                 onValueChange={(val) => handleStatusChange(r.id, val)}
               >
                 <SelectTrigger
                   className={cn(
-                    "h-8 w-32 font-black uppercase text-[10px]",
-                    resolvedStatus === "PROMOTED"
+                    "h-8 w-40 font-black uppercase text-[10px]",
+                    isScpWarning
+                      ? "text-amber-700 bg-amber-50 border-amber-400"
+                      : resolvedStatus === "PROMOTED"
                       ? "text-emerald-700 bg-emerald-50 border-emerald-200"
                       : "text-amber-700 bg-amber-50 border-amber-200",
                   )}>
-                  <SelectValue />
+                  {isScpWarning ? "PROMOTED (BEC)" : <SelectValue />}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PROMOTED">Promoted</SelectItem>
@@ -262,6 +272,11 @@ export default function TeacherEosyDashboard() {
                   <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
                 </SelectContent>
               </Select>
+              {isScpWarning && (
+                <div title="Learner did not meet the 85 SCP requirement. They will be promoted to the next grade but transferred to Regular classes.">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
+                </div>
+              )}
             </div>
           );
         },

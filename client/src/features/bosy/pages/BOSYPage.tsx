@@ -397,32 +397,14 @@ export default function BOSYPage() {
       transition={staggerTransition}
       {...motionState}>
       <PhaseBanner />
-      {readiness && readiness.irregularBlockerCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-start gap-3 rounded-xl border-2 border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 shadow-sm">
-          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-          <div>
-            <p className="font-black uppercase text-xs">Rollover Blocked</p>
-            <p className="font-bold text-sm mt-0.5">
-              {readiness.irregularBlockerCount} learner
-              {readiness.irregularBlockerCount !== 1 ? "s" : ""} remain
-              CONDITIONALLY PROMOTED in EOSY. Resolve their remedial results
-              before initiating year rollover.
-            </p>
-          </div>
-        </motion.div>
-      )}
-
       <motion.div
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
         variants={sectionVariants}
         transition={panelTransition}>
         <div>
-          <h1 className="text-3xl font-bold">BOSY Confirmation</h1>
+          <h1 className="text-3xl font-bold">Early Registration (BOSY)</h1>
           <p className="text-sm font-bold">
-            Fast-track enrollment confirmation for continuing Grade 8-10 learners.
+            Fast-track LRN verification and intent-to-enroll confirmation for continuing Grade 8–10 learners.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>

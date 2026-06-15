@@ -243,7 +243,7 @@ function fillEmoji(pct: number): string {
   if (pct >= 90) return "🔴";
   if (pct >= 75) return "🟠";
   if (pct >= 50) return "🟡";
-  return "🟢";
+  return "";
 }
 
 const isPilotSection = (s: SectionItem): boolean => {
@@ -629,8 +629,8 @@ export default function Sections() {
       heatmapGradeFilter === "all"
         ? groups
         : groups.filter(
-            (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
-          ),
+          (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
+        ),
     [groups, heatmapGradeFilter],
   );
 
@@ -804,7 +804,7 @@ export default function Sections() {
         programType: section.programType,
         sectionType:
           TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) &&
-          section.tleProgramId
+            section.tleProgramId
             ? "TLE_LABORATORY"
             : "HOME_ROOM",
         adviserId: section.advisingTeacher
@@ -1006,9 +1006,9 @@ export default function Sections() {
                       {isTleSection(s)
                         ? resolveTleProgramName(s.tleProgramId) || "TLE"
                         : formatProgramType(
-                            s.programType,
-                            offeredScpTypeLabels,
-                          )}
+                          s.programType,
+                          offeredScpTypeLabels,
+                        )}
                     </Badge>
                     {s.isHomogeneous && s.programType === "REGULAR" && (
                       <Badge
@@ -1376,7 +1376,7 @@ export default function Sections() {
               </Tabs>
             </div>
             <CardDescription>
-              Visual overview of section fill rates. 🟢 &lt;50% · 🟡 50-74% · 🟠
+              Visual overview of section fill rates.  &lt;50% · 🟡 50-74% · 🟠
               75-89% · 🔴 90%+
             </CardDescription>
           </CardHeader>
@@ -1708,14 +1708,14 @@ export default function Sections() {
                     </TooltipTrigger>
                     {(viewRosterSection?.enrolledCount ?? 0) >=
                       (viewRosterSection?.maxCapacity ?? 0) && (
-                      <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase  p-3 shadow-xl">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-400" />
-                          Maximum capacity reached. Override requires
-                          Principal's PIN.
-                        </div>
-                      </TooltipContent>
-                    )}
+                        <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase  p-3 shadow-xl">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-400" />
+                            Maximum capacity reached. Override requires
+                            Principal's PIN.
+                          </div>
+                        </TooltipContent>
+                      )}
                   </Tooltip>
                 </TooltipProvider>
 

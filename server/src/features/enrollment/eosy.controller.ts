@@ -1080,7 +1080,7 @@ export async function getGradeRecords(
       },
       include: {
         section: {
-          select: { name: true, isEosyFinalized: true },
+          select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
         },
         enrollmentApplication: {
           include: {
@@ -1105,8 +1105,12 @@ export async function getGradeRecords(
     });
 
     const mappedRecords = records.map((record) => {
+      const applicantType = record.enrollmentApplication.applicantType;
+      const isScpDemoted = record.nextYearCurriculum === "REGULAR" && applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE";
       return {
         ...record,
+        nextYearCurriculum: record.nextYearCurriculum,
+        isScpDemoted,
         finalAverage:
           record.finalAverage !== null && record.finalAverage !== undefined
             ? parseFloat(String(record.finalAverage))
@@ -1173,21 +1177,45 @@ export async function batchUpdateGradeRecords(
             eosyStatus: true,
             finalAverage: true,
             learner: { select: { firstName: true, lastName: true } },
+            section: { select: { programType: true } },
           },
         });
 
         if (!current) continue;
 
-        if (update.status === "PROMOTED" && (current.finalAverage === null || current.finalAverage < 75)) {
+        const isScp = current.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ||
+                      current.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ||
+                      current.section.programType === "SPECIAL_PROGRAM_IN_SPORTS";
+        const ave = current.finalAverage !== null ? parseFloat(String(current.finalAverage)) : null;
+
+        let targetStatus = update.status;
+        let dataToUpdate: any = {};
+
+        if (targetStatus === "PROMOTED_TO_BEC") {
+          targetStatus = "PROMOTED";
+          dataToUpdate.eosyStatus = "PROMOTED";
+          dataToUpdate.nextYearCurriculum = "REGULAR";
+        } else {
+          dataToUpdate.eosyStatus = targetStatus as EosyStatus;
+        }
+
+        if (update.status === "PROMOTED" && isScp && ave !== null && ave < 85) {
           throw new AppError(
             400,
-            `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average (${current.finalAverage === null ? 'Pending' : current.finalAverage}) is below 75.`
+            "Cannot assign standard Promoted status. SCP learners with an average below 85 must be assigned 'Promoted (To BEC)'."
+          );
+        }
+
+        if (targetStatus === "PROMOTED" && (ave === null || ave < 75)) {
+          throw new AppError(
+            400,
+            `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average (${ave === null ? 'Pending' : ave}) is below 75.`
           );
         }
 
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
-          data: { eosyStatus: update.status as EosyStatus },
+          data: dataToUpdate,
         });
 
         await tx.auditLog.create({
@@ -1226,10 +1254,12 @@ export async function finalizeGradeLevel(
 ) {
   try {
     const { gradeLevelId } = req.params;
-    const { schoolYearId } = req.body;
+    const { schoolYearId, section_id } = req.body;
 
     const syId = parseInt(String(schoolYearId), 10);
     const glId = parseInt(String(gradeLevelId), 10);
+    const isGlobal = !section_id || section_id === "all";
+    const targetSectionId = isGlobal ? null : parseInt(String(section_id), 10);
 
     const schoolYear = await prisma.schoolYear.findUnique({
       where: { id: syId },
@@ -1248,25 +1278,38 @@ export async function finalizeGradeLevel(
     });
     if (!gradeLevel) throw new AppError(404, "Grade level not found.");
 
+    const sectionWhere = {
+      schoolYearId: syId,
+      gradeLevelId: glId,
+      ...(targetSectionId ? { id: targetSectionId } : {}),
+    };
+
     const sections = await prisma.section.findMany({
-      where: { schoolYearId: syId, gradeLevelId: glId },
+      where: sectionWhere,
     });
 
     if (sections.length === 0) {
       throw new AppError(
         422,
-        "No sections found for this grade level in the active school year.",
+        targetSectionId
+          ? "Target section not found."
+          : "No sections found for this grade level in the active school year.",
       );
     }
 
     if (sections.every((s) => s.isEosyFinalized)) {
-      throw new AppError(422, "Grade level is already finalized.");
+      throw new AppError(
+        422,
+        targetSectionId
+          ? "Section is already finalized."
+          : "Grade level is already finalized.",
+      );
     }
 
     const records = await prisma.enrollmentRecord.findMany({
       where: {
         schoolYearId: syId,
-        section: { gradeLevelId: glId },
+        section: sectionWhere,
       },
       include: {
         learner: true,
@@ -1275,12 +1318,15 @@ export async function finalizeGradeLevel(
 
     // Verify all records have a locked, submitted GEN AVE from their Class Adviser
     const pendingLearners = records.filter(
-      (r) => r.finalAverage === null || r.finalAverage === undefined
+      (r) =>
+        (r.finalAverage === null || r.finalAverage === undefined) &&
+        r.eosyStatus !== "TRANSFERRED_OUT" &&
+        r.eosyStatus !== "DROPPED_OUT",
     );
     if (pendingLearners.length > 0) {
       throw new AppError(
         400,
-        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`
+        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`,
       );
     }
 
@@ -1289,7 +1335,7 @@ export async function finalizeGradeLevel(
     if (unfinalized.length > 0) {
       throw new AppError(
         422,
-        `Cannot finalize grade level. ${unfinalized.length} learners are missing an EOSY status.`,
+        `Cannot finalize. ${unfinalized.length} learners are missing an EOSY status.`,
       );
     }
 
@@ -1321,19 +1367,21 @@ export async function finalizeGradeLevel(
         }
       }
 
-      // 2. Finalize all sections for this grade level
+      // 2. Finalize section(s)
       await tx.section.updateMany({
-        where: { schoolYearId: syId, gradeLevelId: glId },
+        where: sectionWhere,
         data: { isEosyFinalized: true },
       });
 
       await tx.auditLog.create({
         data: {
           userId: req.user!.userId,
-          actionType: "GRADE_LEVEL_FINALIZED",
-          description: `Finalized EOSY and executed grade progression for ${gradeLevel.name}`,
-          subjectType: "GradeLevel",
-          recordId: glId,
+          actionType: isGlobal ? "GRADE_LEVEL_FINALIZED" : "SECTION_FINALIZED",
+          description: isGlobal
+            ? `Finalized EOSY and executed grade progression for ${gradeLevel.name}`
+            : `Finalized EOSY and executed grade progression for section ID ${targetSectionId}`,
+          subjectType: isGlobal ? "GradeLevel" : "Section",
+          recordId: isGlobal ? glId : targetSectionId!,
           oldValue: "false",
           newValue: "true",
           ipAddress: req.ip ?? "0.0.0.0",
@@ -1342,7 +1390,11 @@ export async function finalizeGradeLevel(
       });
     });
 
-    res.json({ message: "Grade level finalized successfully." });
+    res.json({
+      message: isGlobal
+        ? "Grade level finalized successfully."
+        : "Section finalized successfully.",
+    });
   } catch (error) {
     next(error);
   }

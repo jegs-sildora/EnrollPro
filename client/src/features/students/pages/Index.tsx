@@ -1398,11 +1398,10 @@ export default function Students() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold">
-          Learner Directory
+          Master Learner Registry (LIS)
         </h1>
         <p className="text-sm font-bold text-foreground">
-          Manage officially enrolled learner records for the selected school
-          year.
+          Manage officially enrolled demographic data, enrollment histories, and permanent records.
         </p>
       </div>
 

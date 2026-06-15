@@ -14,7 +14,9 @@
     "db:wipe": "tsx prisma/seeds/wipe-everything.ts",
     "db:wipe:enrollment": "tsx prisma/seeds/wipe-enrollment.ts",
     "seed-info": "tsx prisma/seeds/task-01-seed.ts",
-    "wipe-info": "tsx prisma/seeds/task-01-wipe.ts"
+    "wipe-info": "tsx prisma/seeds/task-01-wipe.ts",
+    "seed-eosy": "tsx prisma/seeds/seed_eosy_mock.ts",
+    "wipe-eosy": "tsx prisma/seeds/wipe_eosy_mock.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

@@ -1,29 +1,33 @@
-# EnrollPro System: Bulk Selection & UI Affordance Fix
-**Version:** 3.2 (Critical UX Patch)
-**Focus:** Checkbox Visibility, Standard UI Affordance, and Action Bar Polish
+# EnrollPro System: Temporal Logic & Phase-Aware Rendering
+**Version:** 7.1 (Calendar Synchronization & Readiness UI)
+**Assignee:** Jegrick (Frontend) & Patrick (Backend)
+**Focus:** Phase-Dependent Database Queries & Conditional UI Rendering
 
-## 1. Core Evaluation
-The inclusion of DepEd grading logic `(Requires >= 75)` inside the status dropdown is an excellent addition for administrative clarity. However, the multi-select execution is currently violating standard UI principles. The master "Select All" toggle is completely invisible to the user in its default state, and the row selectors are still formatted as single-select radio buttons.
+## 1. Core Architectural Goal
+The Global System Configuration page (`image_f0e11f.jpg`) is incorrectly displaying End-of-School-Year (EOSY) blockers when the school year has just started (289 days remaining). We must implement strict Phase-Aware Logic. The system should not evaluate or display EOSY blockers until the academic calendar explicitly enters the EOSY phase.
 
-## 2. Frontend Execution (React / Tailwind)
-**Assignee:** Jegrick
+## 2. Backend Execution (Patrick)
 
-**TASK 1: Fix the Invisible Master Checkbox (Table Header)**
-*   **The Issue:** In the unselected state, the header area next to `LEARNER` is completely blank. The user has no visual cue that a "Select All" function exists. In the selected state, it turns into a floating checkmark (`✓`) without a container.
-*   **The Fix:** You must render a highly visible, square checkbox in that header at all times. 
-*   **Tailwind Implementation:** Use a white or light-gray border against the maroon background to ensure it stands out. 
-    *   *Unselected state:* `<div className="w-5 h-5 border-2 border-white/70 rounded-sm bg-transparent"></div>`
-    *   *Selected state:* A white square filled with the maroon checkmark, or a solid white box with a colored checkmark.
+### TASK 1: Phase-Gated Readiness Endpoint
+*   **The Issue:** Polling for missing SF5s across the entire school during the mid-year `ACTIVE` phase wastes compute.
+*   **The Fix:** Update the `GET /api/system/rollover-readiness` endpoint. 
+*   **Logic:**
+    *   Check the current `school_year_phase` in the database.
+    *   If `phase === 'BOSY'` or `phase === 'ACTIVE'`, immediately return a bypass payload: `{ isEosyPhase: false, blockers: [] }`. Do not run the heavy SQL counts.
+    *   If `phase === 'EOSY'`, run the full diagnostic queries and return the actual blocker counts: `{ isEosyPhase: true, blockers: [...] }`.
 
-**TASK 2: Enforce Square Affordance for Row Selectors**
-*   **The Issue:** The individual row selection icons are currently circles (`○`). In all universal UI design systems, circles mean "Radio Button" (you can only select one). 
-*   **The Fix:** We are doing *Batch Actions*, which means multi-select. These MUST be squares (`□`). 
-*   **Tailwind Implementation:** Locate the `<input type="checkbox">` or custom checkbox component in the table rows and change `rounded-full` to `rounded-sm` or `rounded-md`.
+## 3. Frontend Execution (Jegrick)
 
-**TASK 3: Polish the Action Bar Active State**
-*   **The Issue:** When an action is selected, the dropdown receives a heavy maroon outline. In standard UI forms, a thick colored outline (especially red/maroon) implies a validation error or invalid input, which might confuse the user.
-*   **The Fix:** Remove the red/maroon border from the dropdown's active state. Instead, use a standard subtle focus ring (`focus:ring-2 focus:ring-gray-300`). 
-*   **Button Emphasis:** To make the action clearer, when a status is selected from the dropdown, change the `[ Apply to Selected ]` button from its muted gray state to a solid, confident color (e.g., a solid dark gray or secondary brand color) so the user explicitly knows the button is now "live" and ready to be clicked.
+### TASK 1: Conditional Rendering (The Time Paradox Fix)
+Tie the rendering of the `PENDING FINALIZATION TASKS` component directly to Patrick's new payload logic.
 
-## 3. Backend Verification (Patrick)
-*   Ensure that the backend explicitly validates the `(Requires >= 75)` rule. If the Registrar attempts to force a "Promoted" mass update, the backend must cross-reference the `gen_ave` of the selected array and reject the promotion for any student with an average below 75, returning a clear error toast to the frontend.
+*   **State A (Normal Year Operation):** If `isEosyPhase` is false (e.g., 289 days remaining), **do not render the amber warning box at all**. Instead, render a muted, informational state below the button:
+    *   *UI:* `<div className="text-sm text-gray-500 mt-4 border-t pt-4">System is in active operation. EOSY rollover diagnostics will become available during the closing phase.</div>`
+*   **State B (EOSY Phase Active):** If `isEosyPhase` is true, render the blockers.
+
+### TASK 2: Component De-cluttering
+If State B is active, do not use the giant, full-width amber box. Use a clean, modern checklist component.
+*   *Container:* `bg-white border border-gray-200 rounded-lg p-6 shadow-sm`
+*   *Header:* `text-gray-900 font-semibold text-lg border-b pb-3 mb-4` ("Rollover Readiness Checklist")
+*   *Items:* Render blockers as list items with the `⚠️` icon. 
+*   *Button Logic:* Keep the `[ Finalize EOSY & Open New School Year ]` button strictly disabled (`cursor-not-allowed opacity-50`) until the blocker array length is exactly `0`.

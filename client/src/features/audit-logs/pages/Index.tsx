@@ -470,10 +470,10 @@ export default function AuditLogs() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold text-foreground">
-            Audit Logs
+            System Activity Logs
           </h1>
           <p className="text-sm font-bold text-foreground ">
-            Track system changes and staff activity.
+            Track institutional data modifications, grading overrides, and staff login activity.
           </p>
         </div>
         <div className="flex gap-2">

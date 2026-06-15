@@ -62,6 +62,10 @@ export function createSchoolYearQueryController(
             enrollmentRecords: true,
           },
         },
+        sections: {
+          where: { isEosyFinalized: false },
+          select: { id: true },
+        },
       },
     });
 

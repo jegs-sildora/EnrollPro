@@ -1322,10 +1322,10 @@ export default function AdminUsers() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-maroon-900">
-            User Management
+            System Credentials & Security
           </h1>
           <p className="text-sm font-bold text-foreground">
-            Manage learner portal access, login credentials, and account security.
+            Manage portal access, reset login credentials, and configure administrative permissions.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">

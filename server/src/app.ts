@@ -32,6 +32,7 @@ import integrationTriggerRoutes from "./features/integration/integration-trigger
 import integrationRoutes from "./features/integration/integration.router.js";
 import addressRoutes from "./features/address/address.router.js";
 import { geographyRouter } from "./features/geography/geography.router.js";
+import systemRoutes from "./features/system/system.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
@@ -162,6 +163,7 @@ apiRouter.get("/ping", (_req, res) => {
   res.send("pong");
 });
 apiRouter.use("/auth", authRoutes);
+apiRouter.use("/system", systemRoutes);
 apiRouter.use("/settings", settingsRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
 apiRouter.use("/school-years", schoolYearRoutes);

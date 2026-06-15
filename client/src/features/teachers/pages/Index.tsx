@@ -331,10 +331,10 @@ export default function Teachers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-balance text-foreground">
-            Faculty & Personnel Roster
+            Faculty & Staff Roster
           </h1>
           <p className="text-sm text-foreground text-balance font-bold">
-            Manage official personnel records, account access, and school year assignments.
+            Manage official DepEd personnel profiles, department heads, and system access levels.
           </p>
         </div>
       </div>

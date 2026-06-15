@@ -252,12 +252,12 @@ export default function Dashboard() {
       {/* ── Header ── */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground">School Operations Dashboard</h1>
           <p className="text-sm text-foreground font-bold">
             Welcome back,{" "}
             <span className="font-bold text-primary">
               {user?.firstName} {user?.lastName}
-            </span>
+            </span>. Here is your academic system overview.
           </p>
         </div>
 

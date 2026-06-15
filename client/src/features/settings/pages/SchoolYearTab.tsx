@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
-  Pencil,
   AlertTriangle,
   Lock,
   Plus,
@@ -24,7 +23,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -53,9 +51,9 @@ import {
   type LoadingState as MultiStepLoadingState,
 } from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
-import ExecuteRolloverModal from "../components/ExecuteRolloverModal";
-import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
-import { CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import SystemRolloverModal from "../components/SystemRolloverModal";
+import { EosyFinalizationMetrics } from "../components/EosyFinalizationMetrics";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -234,7 +232,7 @@ function getDateWindowStatus(
 
   const daysLeft = diffTokenDays(endToken, todayToken);
   return {
-    label: `🟢 ACTIVE · Closes in ${daysLeft} day(s)`,
+    label: ` ACTIVE · Closes in ${daysLeft} day(s)`,
     color: "bg-green-100 text-green-700 font-bold",
   };
 }
@@ -265,7 +263,7 @@ function getEnrollmentWindowStatus(
 
   const daysLeft = diffTokenDays(endToken, todayToken);
   return {
-    label: `🟢 ENROLLMENT OPEN · Closes in ${daysLeft} day(s)`,
+    label: ` ENROLLMENT OPEN · Closes in ${daysLeft} day(s)`,
     color: "bg-green-100 text-green-700 font-bold",
   };
 }
@@ -294,6 +292,7 @@ interface SYItem {
     enrollmentApplications: number;
     enrollmentRecords: number;
   };
+  sections?: { id: number }[];
 }
 
 interface Defaults {
@@ -355,12 +354,11 @@ export default function SchoolYearTab() {
   // Create state
   const [creating, setCreating] = useState(false);
   const [updatingDraft, setUpdatingDraft] = useState(false);
+  const [showNextForm, setShowNextForm] = useState(false);
   const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
   const [rolloverLoaderStep, setRolloverLoaderStep] = useState(0);
   const [isRolloverFinishing, setIsRolloverFinishing] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [showNextForm, setShowNextForm] = useState(false);
-  const [isExecuteRolloverOpen, setIsExecuteRolloverOpen] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
   const pendingSuccessToastRef = useRef<(() => void) | null>(null);
@@ -657,39 +655,6 @@ export default function SchoolYearTab() {
     );
   };
 
-  const handleOpenActivationConfirmFromDraft = (draft: SYItem) => {
-    setYearLabel(draft.yearLabel);
-    setClassOpening(
-      draft.classOpeningDate
-        ? normalizeDateToManila(new Date(draft.classOpeningDate))
-        : undefined,
-    );
-    setClassEnd(
-      draft.classEndDate
-        ? normalizeDateToManila(new Date(draft.classEndDate))
-        : undefined,
-    );
-    setIsAgreedToActivation(false);
-    setShowNextForm(true);
-  };
-
-  const handleEditDraft = (draft: SYItem) => {
-    setYearLabel(draft.yearLabel);
-    const opening = draft.classOpeningDate
-      ? normalizeDateToManila(new Date(draft.classOpeningDate))
-      : undefined;
-    const end = draft.classEndDate
-      ? normalizeDateToManila(new Date(draft.classEndDate))
-      : undefined;
-    setClassOpening(opening);
-    setClassEnd(end);
-    setRolloverDraftBaseline({
-      yearLabel: draft.yearLabel,
-      classOpeningDate: opening?.toISOString() ?? "",
-      classEndDate: end?.toISOString() ?? "",
-    });
-    setShowNextForm(true);
-  };
 
   const handleUpdateRolloverDraft = () => {
     if (!editClassOpening || !editClassEnd) {
@@ -1108,7 +1073,7 @@ export default function SchoolYearTab() {
 
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
-          <CalendarDays className="h-6 w-6" />
+          <CalendarDays className="text-maroon-700 w-6 h-6" />
         </div>
         <div>
           <h2 className="text-xl font-bold ">
@@ -1148,37 +1113,40 @@ export default function SchoolYearTab() {
               activeYear ? "border-green-500/20" : "border-amber-500/30",
             )}>
             <CardHeader
-              className={cn(
-                "border-b pb-4 rounded-t-lg flex flex-row items-center justify-between",
-                activeYear
-                  ? "bg-green-500/5 border-green-500/10"
-                  : "bg-amber-500/5 border-amber-500/20",
-              )}>
-              <CardTitle
-                className={cn(
-                  "text-sm font-bold flex items-center gap-2 uppercase",
-                  activeYear ? "text-green-700" : "text-amber-700",
-                )}>
-                {activeYear ? (
-                  <>
-                    <span className="relative flex h-3 w-3 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              className="bg-white border-b border-gray-200 pb-6 mb-6 rounded-t-lg flex flex-col justify-between items-start gap-4"
+            >
+              <div className="flex flex-col lg:flex-row w-full justify-between lg:items-start gap-4">
+                <div className="flex flex-col gap-2">
+                  <CardTitle
+                    className="text-xl font-bold flex items-center gap-2 text-gray-800"
+                  >
+                    {activeYear ? (
+                      <>
+                        School Year {activeYear.yearLabel} Configuration
+                      </>
+                    ) : (
+                      <>
+                        No Active School Year
+                      </>
+                    )}
+                  </CardTitle>
+                  {activeYear && (
+                    <span
+                      className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
+                      {activeCalendarStatus.label}
                     </span>
-                    School Year {activeYear.yearLabel} Configuration
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4" />
-                    No Active School Year
-                  </>
+                  )}
+                </div>
+
+                {activeYear && (
+                  <div className="flex flex-col items-end w-full lg:w-auto mt-2 lg:mt-0">
+                    <SystemRolloverModal disabled={!(activeYear.isEosyFinalized || (activeYear.sections?.length === 0))} activeYearLabel={activeYear.yearLabel} />
+                  </div>
                 )}
-              </CardTitle>
+              </div>
+
               {activeYear && (
-                <span
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
-                  {activeCalendarStatus.label}
-                </span>
+                <EosyFinalizationMetrics />
               )}
             </CardHeader>
             <CardContent className="p-6">
@@ -1194,7 +1162,7 @@ export default function SchoolYearTab() {
                           </h4>
                         </div>
                         <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
-                          Control the current phase of the academic year. This affects how late enrollments are processed.
+                          Select the active operational state for the school year. Changing this phase dynamically configures public intake portals and enrollment categorization.
                         </p>
                       </div>
                     </div>
@@ -1203,46 +1171,46 @@ export default function SchoolYearTab() {
                       onValueChange={(value) => setSelectedPhase(value)}
                       className="flex flex-col space-y-4"
                     >
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
                         <div>
                           <div className="flex items-center gap-2">
-                            <Label htmlFor="OFFICIAL_ENROLLMENT" className={cn("cursor-pointer text-foreground block", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "font-black text-green-900" : "font-bold")}>Official Enrollment</Label>
+                            <Label htmlFor="OFFICIAL_ENROLLMENT" className={cn("cursor-pointer text-foreground block", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "font-black text-primary" : "font-bold")}>Beginning of School Year (BOSY) - Regular Enrollment</Label>
                             {(systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" && (
-                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
                                 <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
                               </Badge>
                             )}
                           </div>
-                          <p className={cn("text-xs mt-1", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Opens the public intake forms and processes normal verify/confirm workflows.</p>
+                          <p className={cn("text-xs mt-1", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Opens public registration portals for incoming Grade 7 and transferee learners. Fast-track confirmation is enabled for returning students.</p>
                         </div>
                       </div>
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "CLASSES_ONGOING" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "CLASSES_ONGOING" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
                         <div>
                           <div className="flex items-center gap-2">
-                            <Label htmlFor="CLASSES_ONGOING" className={cn("cursor-pointer text-foreground block", systemPhase === "CLASSES_ONGOING" ? "font-black text-green-900" : "font-bold")}>Regular Classes (Late Enrollment Period)</Label>
+                            <Label htmlFor="CLASSES_ONGOING" className={cn("cursor-pointer text-foreground block", systemPhase === "CLASSES_ONGOING" ? "font-black text-primary" : "font-bold")}>Active Instructional Period - Late Registration</Label>
                             {systemPhase === "CLASSES_ONGOING" && (
-                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
                                 <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
                               </Badge>
                             )}
                           </div>
-                          <p className={cn("text-xs mt-1", systemPhase === "CLASSES_ONGOING" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
+                          <p className={cn("text-xs mt-1", systemPhase === "CLASSES_ONGOING" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Classes have officially commenced. Public portals remain open, but incoming submissions are automatically tagged as Late Enrollees for DepEd LIS tracking.</p>
                         </div>
                       </div>
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "EOSY_CLOSING" ? "border-green-500 bg-green-50/50 shadow-sm" : "border-transparent")}>
+                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "EOSY_CLOSING" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
                         <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
                         <div>
                           <div className="flex items-center gap-2">
-                            <Label htmlFor="EOSY_CLOSING" className={cn("cursor-pointer text-foreground block", systemPhase === "EOSY_CLOSING" ? "font-black text-green-900" : "font-bold")}>EOSY Closing</Label>
+                            <Label htmlFor="EOSY_CLOSING" className={cn("cursor-pointer text-foreground block", systemPhase === "EOSY_CLOSING" ? "font-black text-primary" : "font-bold")}>End of School Year (EOSY) - Grade Finalization & Closing Operations</Label>
                             {systemPhase === "EOSY_CLOSING" && (
-                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-[10px] font-black tracking-wider uppercase">
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
                                 <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
                               </Badge>
                             )}
                           </div>
-                          <p className={cn("text-xs mt-1", systemPhase === "EOSY_CLOSING" ? "text-green-800/80 font-medium" : "text-muted-foreground")}>Locks public intake forms and readies the database for end-of-year grade finalization.</p>
+                          <p className={cn("text-xs mt-1", systemPhase === "EOSY_CLOSING" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Locks all public registration forms. Unlocks advisor portals for final grading, promotion status profiling, and data roll-over staging.</p>
                         </div>
                       </div>
                     </RadioGroup>
@@ -1422,73 +1390,7 @@ export default function SchoolYearTab() {
             </CardContent>
           </Card>
 
-          <Card className="border-blue-500/20 shadow-sm">
-            <CardHeader className="bg-blue-500/5 border-b border-blue-500/10 pb-4 rounded-t-lg">
-              <CardTitle className="text-sm font-bold  flex items-center gap-2 text-blue-700 uppercase">
-                Upcoming / Draft School Year
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {draftYear ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-left">
-                      <span className="text-2xl font-black text-foreground">
-                        S.Y. {draftYear.yearLabel}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="bg-blue-50 text-blue-700 border-blue-200 uppercase font-black  text-xs">
-                        Draft
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 text-left">
-                      <p className="text-sm font-bold text-foreground">
-                        Start of Classes:{" "}
-                        <span className="text-foreground font-bold">
-                          {formatManilaDate(draftYear.classOpeningDate)}
-                        </span>
-                      </p>
-                      <p className="text-sm font-bold text-foreground">
-                        End of School Year:{" "}
-                        <span className="text-foreground font-bold">
-                          {formatManilaDate(draftYear.classEndDate)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-3 min-w-[260px]">
-                    <Button
-                      variant="outline"
-                      className="font-bold w-full justify-center shadow-sm"
-                      onClick={() => handleEditDraft(draftYear)}>
-                      <Pencil className="mr-2 h-4 w-4" /> Edit Draft Dates
-                    </Button>
-                    <Button
-                      className="font-bold w-full shadow-sm"
-                      onClick={() =>
-                        handleOpenActivationConfirmFromDraft(draftYear)
-                      }>
-                      {activeYear ? "Execute Rollover" : "Activate School Year"}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center space-y-5">
-                  <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
-                    No upcoming school year has been drafted yet. Prepare the
-                    next academic year.
-                  </p>
-                  <Button
-                    className="font-bold shadow-sm"
-                    onClick={handlePrepareRollover}>
-                    Prepare {activeYear ? "Next" : "First"} School Year (S.Y.{" "}
-                    {nextRolloverYearLabel})
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
 
           {archivedYears.length > 0 && (
             <Card>
@@ -1540,96 +1442,7 @@ export default function SchoolYearTab() {
             </Card>
           )}
 
-          {activeYear && (
-            <Card
-              className={cn(
-                "shadow-sm mt-8 border-red-200",
-                isRolloverReady ? "bg-white" : "bg-slate-50/50",
-              )}>
-              <CardHeader className="border-b border-red-100 bg-red-50/30">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle
-                      className={cn(
-                        "text-xl flex items-center gap-2",
-                        !isRolloverReady ? "text-slate-500" : "text-red-700",
-                      )}>
-                      <RotateCcw
-                        className={cn(
-                          "h-5 w-5",
-                          isRolloverReady ? "text-red-600" : "text-slate-400",
-                        )}
-                      />
-                      Danger Zone: School Year Rollover
-                    </CardTitle>
-                    <CardDescription>
-                      Irreversible actions for active school year:{" "}
-                      <span className="font-bold text-foreground">
-                        {activeYear.yearLabel}
-                      </span>
-                    </CardDescription>
-                  </div>
-                  <div
-                    className={cn(
-                      "px-4 py-1.5 rounded-full text-xs font-black uppercase border",
-                      isRolloverReady
-                        ? "bg-red-100 text-red-700 border-red-200"
-                        : "bg-slate-100 text-slate-500 border-slate-200",
-                    )}>
-                    {isRolloverReady ? "READY" : "LOCKED"}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                {isRolloverReady ? (
-                  <Alert className="bg-red-50 border-red-200 text-red-900">
-                    <CheckCircle2 className="h-4 w-4 text-red-600" />
-                    <AlertTitle className="font-bold">
-                      EOSY Finalized — Ready for Rollover
-                    </AlertTitle>
-                    <AlertDescription className="text-sm font-bold">
-                      All sections have been finalized and EOSY is complete. Initiating rollover will archive
-                      the current school year and create the next one with the carried-over learner population.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <Alert className="bg-amber-50 border-amber-200 text-amber-900">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
-                    <AlertTitle className="font-bold">Rollover Locked</AlertTitle>
-                    <AlertDescription className="text-sm font-bold">
-                      All class sections must complete End of School Year (EOSY) finalization before
-                      rollover can be initiated.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-              <CardFooter
-                className={cn(
-                  "border-t p-6",
-                  isRolloverReady ? "bg-white" : "bg-slate-50/50",
-                )}>
-                {isRolloverReady && (
-                  <Button
-                    className="font-black uppercase bg-red-600 hover:bg-red-700 text-white border-b-4 border-red-800 active:border-b-0 active:translate-y-1 shadow-lg"
-                    onClick={() => setIsExecuteRolloverOpen(true)}>
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Initiate School Year Rollover
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          )}
 
-          <ExecuteRolloverModal
-            open={isExecuteRolloverOpen}
-            activeSchoolYearLabel={activeYear?.yearLabel ?? null}
-            onOpenChange={setIsExecuteRolloverOpen}
-            onSuccess={async () => {
-              const pubRes = await api.get("/settings/public");
-              setSettings(pubRes.data);
-              await fetchData();
-            }}
-          />
 
 
         </>
