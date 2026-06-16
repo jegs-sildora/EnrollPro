@@ -300,14 +300,14 @@ export default function RegistrarEOSYWorkspace() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader>
                 <TableRow className="border-b-2">
-                  <TableHead className="w-16 text-center font-black">NO.</TableHead>
-                  <TableHead className="font-black text-slate-700">LRN</TableHead>
-                  <TableHead className="font-black text-slate-700">FULL NAME</TableHead>
-                  <TableHead className="w-24 text-center font-black text-slate-700">SEX</TableHead>
-                  <TableHead className="w-64 font-black text-slate-700">EOSY STATUS</TableHead>
-                  <TableHead className="w-24 text-center font-black text-slate-700">INDICATOR</TableHead>
+                  <TableHead className="w-16 text-center">NO.</TableHead>
+                  <TableHead>LRN</TableHead>
+                  <TableHead>FULL NAME</TableHead>
+                  <TableHead className="w-24 text-center">SEX</TableHead>
+                  <TableHead className="w-64">EOSY STATUS</TableHead>
+                  <TableHead className="w-24 text-center">INDICATOR</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -6,10 +6,13 @@ import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
 import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
+import LearnerAuthLayout from "@/shared/layouts/LearnerAuthLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 
 import Login from "@/features/auth/pages/Login";
 import Dashboard from "@/features/dashboard/pages/Index";
+import LearnerLogin from "@/features/learner/pages/Login";
+import LearnerDashboard from "@/features/learner/pages/Dashboard";
 
 import Enrollment from "@/features/enrollment/pages/Index";
 import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
@@ -53,6 +56,29 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
 
+
+      // 1. Learner Portal routes (public - no staff auth required)
+      {
+        element: <LearnerAuthLayout />,
+        children: [
+          {
+            path: "/learner/login",
+            element: <LearnerLogin />,
+          },
+          {
+            path: "/learner/change-password",
+            element: <ChangePassword />,
+          },
+          {
+            path: "/learner/setup-password",
+            element: <ChangePassword />,
+          },
+          {
+            path: "/learner/portal",
+            element: <LearnerDashboard />,
+          },
+        ],
+      },
 
       // 2. Public routes (other than learner portal)
       {

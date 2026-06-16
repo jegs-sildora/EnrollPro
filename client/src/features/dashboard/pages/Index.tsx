@@ -263,110 +263,171 @@ export default function Dashboard() {
 
       </div>
 
-      {/* ── KPI Header (Top Row) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: PENDING VERIFICATIONS */}
-        <Card
-          onClick={() => navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION")}
-          className="border-2 border-amber-200/60 bg-gradient-to-br from-white to-amber-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-black uppercase text-amber-900/60 flex items-center justify-between">
-              Pending Verifications
-              <div className="bg-amber-100 rounded-lg p-2">
-                <ClipboardList className="h-4 w-4 text-amber-600" />
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showSkeleton ? (
-              <Skeleton className="h-10 w-32" />
-            ) : (
-              <>
-                <AnimatedNumber
-                  value={stats?.kpiHeader?.pendingTotal ?? 0}
-                  className="text-5xl font-black text-amber-700 tabular-nums"
-                />
-                <div className="flex items-center gap-2 pt-1 border-t border-amber-100">
-                  <Badge variant="outline" className="bg-white border-amber-200 text-amber-700 text-[10px] uppercase font-bold">
-                    {stats?.kpiHeader?.pendingIncomingG7 ?? 0} Incoming G7
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-amber-200 text-amber-700 text-[10px] uppercase font-bold">
-                    {stats?.kpiHeader?.pendingTransferees ?? 0} Transferees
-                  </Badge>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* ── Row 1: Urgent Action Board ── */}
+      <section className="space-y-4" aria-label="Urgent action board">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-black uppercase text-foreground">
+            Urgent Action Board
+          </h2>
+          <div className="h-px flex-1 bg-slate-200"></div>
+        </div>
 
-        {/* Card 2: OFFICIALLY ENROLLED */}
-        <Card
-          onClick={() => navigate("/students")}
-          className="border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-black uppercase text-emerald-900/60 flex items-center justify-between">
-              Officially Enrolled
-              <div className="bg-emerald-100 rounded-lg p-2">
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showSkeleton ? (
-              <Skeleton className="h-10 w-32" />
-            ) : (
-              <>
-                <AnimatedNumber
-                  value={stats?.kpiHeader?.enrolledTotal ?? 0}
-                  className="text-5xl font-black text-emerald-700 tabular-nums"
-                />
-                <div className="flex items-center gap-2 pt-1 border-t border-emerald-100">
-                  <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] uppercase font-bold">
-                    {stats?.kpiHeader?.enrolledNew ?? 0} New
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] uppercase font-bold">
-                    {stats?.kpiHeader?.enrolledContinuing ?? 0} Continuing
-                  </Badge>
-                </div>
-              </>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1: PENDING ENROLLMENT APPROVALS */}
+          <Card
+            className={cn(
+              "shadow-sm card-hover hover:shadow-md border-2 flex flex-col",
+              pendingReviewAlert
+                ? "border-amber-400 bg-amber-50/30"
+                : "border-slate-200/50 bg-white"
             )}
-          </CardContent>
-        </Card>
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
+                  Pending Enrollment Approvals
+                </CardTitle>
+                <div className={cn("rounded-lg p-2", pendingReviewAlert ? "bg-amber-100" : "bg-white")}>
+                  <ClipboardList className={cn("h-4 w-4", pendingReviewAlert ? "text-amber-700" : "text-foreground")} />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 flex-1 flex flex-col">
+              {showSkeleton ? (
+                <div className="flex-1"><Skeleton className="h-10 w-32" /></div>
+              ) : (
+                <div className="flex-1 space-y-4">
+                  <AnimatedNumber
+                    value={pendingReviewCount}
+                    className="text-5xl font-black tabular-nums"
+                  />
+                  <div className="flex items-center gap-2 pt-1 border-t border-amber-100">
+                    <Badge className="bg-orange-100 text-orange-900 border border-orange-300 text-[10px] uppercase font-bold hover:bg-orange-200">
+                      {stats?.kpiHeader?.pendingIncomingG7 ?? 0} Incoming G7
+                    </Badge>
+                    <Badge className="bg-orange-100 text-orange-900 border border-orange-300 text-[10px] uppercase font-bold hover:bg-orange-200">
+                      {stats?.kpiHeader?.pendingTransferees ?? 0} Transferees
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              <Button
+                type="button"
+                className="w-full font-black uppercase text-xs h-10 mt-auto"
+                variant={pendingReviewAlert ? "default" : "outline"}
+                onClick={() => navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION")}
+              >
+                {pendingReviewCount > 0
+                  ? `Review ${formatMetric(pendingReviewCount)} Applications`
+                  : "Open Verification Queue"}
+              </Button>
+            </CardContent>
+          </Card>
 
-        {/* Card 3: UNASSIGNED LEARNERS */}
-        <Card
-          onClick={() => navigate("/monitoring/enrollment")}
-          className="border-2 border-blue-200/60 bg-gradient-to-br from-white to-blue-50/30 shadow-md card-hover hover:shadow-lg cursor-pointer transition-all hover:-translate-y-0.5"
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-black uppercase text-blue-900/60 flex items-center justify-between">
-              Unassigned Learners
-              <div className="bg-blue-100 rounded-lg p-2">
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showSkeleton ? (
-              <Skeleton className="h-10 w-32" />
-            ) : (
-              <>
-                <AnimatedNumber
-                  value={stats?.kpiHeader?.unassignedTotal ?? 0}
-                  className="text-5xl font-black text-blue-700 tabular-nums"
-                />
-                <div className="flex items-center gap-2 pt-1 border-t border-blue-100">
-                  <Badge variant="outline" className="bg-white border-blue-200 text-blue-700 text-[10px] uppercase font-bold">
-                    {stats?.kpiHeader?.unassignedCriticalG7 ?? 0} Critical (Grade 7)
-                  </Badge>
+          {/* Card 2: LEARNERS AWAITING SECTIONING */}
+          <Card
+            className="border-2 border-blue-200/60 bg-gradient-to-br from-white to-blue-50/30 shadow-md card-hover hover:shadow-lg flex flex-col"
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-black uppercase text-blue-900/60">
+                  Learners Awaiting Sectioning
+                </CardTitle>
+                <div className="bg-blue-100 rounded-lg p-2">
+                  <Users className="h-4 w-4 text-blue-600" />
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 flex-1 flex flex-col">
+              {showSkeleton ? (
+                <div className="flex-1"><Skeleton className="h-10 w-32" /></div>
+              ) : (
+                <div className="flex-1 space-y-4">
+                  <AnimatedNumber
+                    value={stats?.kpiHeader?.unassignedTotal ?? 0}
+                    className="text-5xl font-black text-blue-700 tabular-nums"
+                  />
+                  <div className="flex items-center gap-2 pt-1 border-t border-blue-100">
+                    <Badge variant="outline" className="bg-blue-100 text-blue-900 border-blue-300 text-[10px] uppercase font-bold">
+                      {stats?.kpiHeader?.unassignedCriticalG7 ?? 0} Critical (Grade 7)
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              <Button
+                type="button"
+                className="w-full font-black uppercase text-xs h-10 mt-auto"
+                variant="outline"
+                onClick={() => navigate("/sections/homerooms")}
+              >
+                Manage Sections
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: OVERCROWDED SECTIONS */}
+          {(() => {
+            const sectionsAtMax = stats?.sectionsAtCapacity ?? 0;
+            const warningCount = stats?.capacityAlerts?.filter((a) => a.severity === "WARNING").length ?? 0;
+            const hasCapacityPressure = sectionsAtMax > 0;
+
+            return (
+              <Card
+                className={cn(
+                  "shadow-sm card-hover hover:shadow-md border-2 flex flex-col",
+                  hasCapacityPressure
+                    ? "border-amber-300 bg-amber-50/50"
+                    : "border-slate-200/50 bg-white"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-black uppercase text-foreground">
+                      Overcrowded Sections
+                    </CardTitle>
+                    <div className={cn("rounded-lg p-2", hasCapacityPressure ? "bg-amber-100" : "bg-white")}>
+                      <AlertTriangle className={cn("h-4 w-4", hasCapacityPressure ? "text-amber-600" : "text-foreground")} />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 flex-1 flex flex-col">
+                  {showSkeleton ? (
+                    <div className="flex-1"><Skeleton className="h-10 w-32" /></div>
+                  ) : (
+                    <div className="flex-1 space-y-4">
+                      <AnimatedNumber
+                        value={sectionsAtMax}
+                        className={cn("text-5xl font-black tabular-nums", hasCapacityPressure ? "text-amber-600" : "text-foreground")}
+                      />
+                      <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
+                        {hasCapacityPressure ? (
+                          <span className="text-amber-700">
+                            {sectionsAtMax} section{sectionsAtMax !== 1 ? "s" : ""} at maximum capacity.
+                            {warningCount > 0 ? ` ${warningCount} approaching limit.` : ""}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-emerald-600">
+                            <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                            All sections have available seats.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    className="w-full font-black uppercase text-xs h-10 mt-auto"
+                    variant="outline"
+                    onClick={() => navigate("/sections/homerooms")}
+                  >
+                    Review Class Sizes
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })()}
+        </div>
+      </section>
 
       {/* ── EOSY Progress (when BOSY locked) ── */}
       {isBosyLocked && viewingStatus !== 'ARCHIVED' && (
@@ -535,13 +596,13 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* ── Enrollment Progress (Top Priority) ── */}
+      {/* ── Row 2: Official Enrollment Tally ── */}
       <section
         className="space-y-4"
-        aria-label="Enrollment progress">
+        aria-label="Official enrollment tally">
         <div className="flex items-center gap-2">
           <h2 className="text-xs font-black uppercase  text-emerald-600">
-            Enrollment Progress ({ayLabel})
+            Official Enrollment Tally (S.Y. {ayLabel})
           </h2>
           <div className="h-px flex-1 bg-emerald-100/50"></div>
         </div>
@@ -553,7 +614,7 @@ export default function Dashboard() {
                     <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
                       Total Enrolled
                     </CardTitle>
-                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
+                    <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 h-5 px-1.5 text-xs font-black uppercase">
                       School-Wide
                     </Badge>
                   </div>
@@ -673,276 +734,32 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── Action Queues ── */}
-      <section
-        className="space-y-4"
-        aria-label="Action queues">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase text-foreground">
-            Action Queues
-          </h2>
-          <div className="h-px flex-1 bg-white"></div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          {/* Card 1 — Pending Verifications (always visible) */}
-          <Card
-            className={cn(
-              "shadow-sm card-hover hover:shadow-md border-2",
-              pendingReviewAlert
-                ? "border-amber-400 bg-amber-50/30"
-                : "border-slate-200/50 bg-white",
-            )}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black text-foreground">
-                  Pending Verifications
-                </CardTitle>
-                <div
-                  className={cn(
-                    "rounded-lg p-2",
-                    pendingReviewAlert ? "bg-amber-100" : "bg-white",
-                  )}>
-                  <ClipboardList
-                    className={cn(
-                      "h-4 w-4",
-                      pendingReviewAlert ? "text-amber-700" : "text-foreground",
-                    )}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {showSkeleton ? (
-                <>
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-4 w-44" />
-                </>
-              ) : (
-                <>
-                  <AnimatedNumber
-                    value={pendingReviewCount}
-                    className="text-5xl font-black tabular-nums"
-                  />
-                  <p className="text-xs font-bold text-foreground min-h-[2rem] leading-relaxed">
-                    There are {formatMetric(pendingReviewCount)} applications waiting for registrar approval.
-                  </p>
-                </>
-              )}
-
-              <Button
-                type="button"
-                className="w-full font-black uppercase text-xs h-10"
-                variant={pendingReviewAlert ? "default" : "outline"}
-                onClick={() =>
-                  navigate(
-                    "/monitoring/enrollment?workflow=PENDING_VERIFICATION",
-                  )
-                }>
-                {pendingReviewCount > 0
-                  ? `Review ${formatMetric(pendingReviewCount)} Applications`
-                  : "Open Verification Queue"}
-              </Button>
-            </CardContent>
-          </Card>
 
 
-              {/* Card 2 — Section Capacity Index */}
-              {(() => {
-                const sectionsAtMax = stats?.sectionsAtCapacity ?? 0;
-                const warningCount =
-                  stats?.capacityAlerts?.filter(
-                    (a) => a.severity === "WARNING",
-                  ).length ?? 0;
-                const hasCapacityPressure = sectionsAtMax > 0;
 
-                return (
-                  <Card
-                    className={cn(
-                      "shadow-sm card-hover hover:shadow-md border-2",
-                      hasCapacityPressure
-                        ? "border-amber-300 bg-amber-50/50"
-                        : "border-slate-200/50 bg-white",
-                    )}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xs font-black text-foreground">
-                          Overcrowded Sections
-                        </CardTitle>
-                        <div
-                          className={cn(
-                            "rounded-lg p-2",
-                            hasCapacityPressure
-                              ? "bg-amber-100"
-                              : "bg-white",
-                          )}>
-                          <AlertTriangle
-                            className={cn(
-                              "h-4 w-4",
-                              hasCapacityPressure
-                                ? "text-amber-600"
-                                : "text-foreground",
-                            )}
-                          />
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      {showSkeleton ? (
-                        <>
-                          <Skeleton className="h-8 w-24" />
-                          <Skeleton className="h-4 w-44" />
-                        </>
-                      ) : (
-                        <>
-                          <AnimatedNumber
-                            value={sectionsAtMax}
-                            className={cn(
-                              "text-5xl font-black tabular-nums",
-                              hasCapacityPressure
-                                ? "text-amber-600"
-                                : "text-foreground",
-                            )}
-                          />
-                          <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
-                            {hasCapacityPressure ? (
-                              <span className="text-amber-700">
-                                {sectionsAtMax} section
-                                {sectionsAtMax !== 1 ? "s" : ""} at maximum
-                                capacity.
-                                {warningCount > 0
-                                  ? ` ${warningCount} approaching limit.`
-                                  : ""}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5 text-emerald-600">
-                                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                                All sections have available seats.
-                              </span>
-                            )}
-                          </p>
-                        </>
-                      )}
-
-                      {hasCapacityPressure && (
-                        <Button
-                          type="button"
-                          className="w-full font-black uppercase text-xs h-10"
-                          variant="outline"
-                          onClick={() => navigate("/sections/homerooms")}>
-                          Manage Section Capacity
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })()}
-
-              {/* Card 3 — Unsectioned Learners */}
-              {(() => {
-                const unsectioned = stats?.unsectionedCount ?? 0;
-                const hasUnsectioned = unsectioned > 0;
-                return (
-                  <Card
-                    className={cn(
-                      "shadow-sm card-hover hover:shadow-md border-2",
-                      hasUnsectioned
-                        ? "border-amber-400 bg-amber-50/30"
-                        : "border-slate-200/50 bg-white",
-                    )}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xs font-black text-foreground">
-                          Unsectioned Learners
-                        </CardTitle>
-                        <div
-                          className={cn(
-                            "rounded-lg p-2",
-                            hasUnsectioned ? "bg-amber-100" : "bg-white",
-                          )}>
-                          <Users
-                            className={cn(
-                              "h-4 w-4",
-                              hasUnsectioned
-                                ? "text-amber-700"
-                                : "text-foreground",
-                            )}
-                          />
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      {showSkeleton ? (
-                        <>
-                          <Skeleton className="h-8 w-24" />
-                          <Skeleton className="h-4 w-44" />
-                        </>
-                      ) : (
-                        <>
-                          <AnimatedNumber
-                            value={unsectioned}
-                            className="text-5xl font-black tabular-nums"
-                          />
-                          <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
-                            {hasUnsectioned ? (
-                              <span className="text-amber-700">
-                                Verified learners with no homeroom assignment.
-                                Assign before BOSY closes.
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5 text-emerald-600">
-                                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                                All verified learners are sectioned.
-                              </span>
-                            )}
-                          </p>
-                        </>
-                      )}
-
-                      <Button
-                        type="button"
-                        className="w-full font-black uppercase text-xs h-10"
-                        variant={hasUnsectioned ? "default" : "outline"}
-                        onClick={() => navigate("/sections/homerooms")}>
-                        {hasUnsectioned
-                          ? `Assign Homerooms (${formatMetric(unsectioned)})`
-                          : "Homerooms Up To Date"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
-        </div>
-      </section>
-
-
-      {/* ── System Analytics (Admin Footer) ── */}
+      {/* ── Row 3: School Demographics & Staff ── */}
       {isAdmin && (
         <section
           className="space-y-4 pt-8"
-          aria-label="System analytics">
+          aria-label="School demographics and staff">
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-black uppercase text-foreground">
-              System Analytics
+              SCHOOL DEMOGRAPHICS & STAFF
             </h2>
-            <div className="h-px flex-1 bg-white"></div>
+            <div className="h-px flex-1 bg-slate-200"></div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
-
-            {/* ── Card 2: Active ERP Personnel ── */}
-            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
+            {/* ── Card: Active Personnel ── */}
+            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
-                  Active Personnel
+                  TEACHING & NON-TEACHING STAFF
                 </CardTitle>
                 <Users className="h-3.5 w-3.5 text-foreground" />
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 flex-1">
                 {showSkeleton ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
@@ -953,87 +770,36 @@ export default function Dashboard() {
                         className="text-2xl font-black"
                       />
                       <span className="text-xs font-bold text-foreground uppercase">
-                        Staff Accounts
+                        Total Registered Personnel
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-foreground uppercase">
-                      <AnimatedNumber value={registrarCount} /> Registrar
-                      {registrarCount !== 1 ? "s" : ""}
+                    <p className="text-xs font-bold text-foreground uppercase mt-2">
+                      <AnimatedNumber value={registrarCount} /> Registrar{registrarCount !== 1 ? "s" : ""}
                       &nbsp;&middot;&nbsp;
                       <AnimatedNumber value={teacherCount} /> Teachers
                     </p>
-
                   </>
                 )}
               </CardContent>
             </Card>
 
-            {/* ── Card 3: Enrollment Pipeline Snapshot ── */}
-            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md">
+            {/* ── Card: Latest Activities ── */}
+            <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
-                  Enrollment Pipeline
+                  LATEST ACTIVITIES
                 </CardTitle>
                 <ClipboardList className="h-3.5 w-3.5 text-foreground" />
               </CardHeader>
-              <CardContent>
-                {showSkeleton ? (
-                  <div className="space-y-3 pt-1">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-5 w-full" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3 pt-1">
-                    {([
-                      {
-                        label: "Pre-Registered",
-                        value: stats?.totalPreRegistered ?? 0,
-                        bar: "bg-amber-400",
-                      },
-                      {
-                        label: "Pending Review",
-                        value: pendingReviewCount,
-                        bar: "bg-blue-400",
-                      },
-                      {
-                        label: "Enrolled",
-                        value: enrollmentCurrent,
-                        bar: "bg-emerald-500",
-                      },
-                    ] as const).map(({ label, value, bar }) => {
-                      const peak = Math.max(
-                        stats?.totalPreRegistered ?? 0,
-                        pendingReviewCount,
-                        enrollmentCurrent,
-                        1,
-                      );
-                      return (
-                        <div key={label} className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground uppercase">
-                              {label}
-                            </span>
-                            <span className="text-xs font-black tabular-nums text-foreground">
-                              <AnimatedNumber value={value} />
-                            </span>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-white overflow-hidden">
-                            <div
-                              className={cn(
-                                "h-full rounded-full transition-all",
-                                bar,
-                              )}
-                              style={{
-                                width: `${Math.round((value / peak) * 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+              <CardContent className="flex-1 flex flex-col justify-center">
+                <div className="space-y-3 pt-1">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Audit logs feed has been relocated. View full access logs in the administrative settings.
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full text-xs font-black uppercase mt-2" onClick={() => navigate("/settings/audit-logs")}>
+                    View Access Logs
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

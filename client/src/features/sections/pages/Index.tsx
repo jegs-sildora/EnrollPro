@@ -1800,19 +1800,19 @@ export default function Sections() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  w-[50px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 w-[50px] border-b border-border">
                           #
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  w-[140px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 w-[140px] border-b border-border">
                           LRN
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 border-b border-border">
                           Learner Name (Last, First)
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground  w-[70px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 text-center w-[70px] border-b border-border">
                           Age
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground  w-[160px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 text-center w-[160px] border-b border-border">
                           Remarks
                         </TableHead>
                       </TableRow>

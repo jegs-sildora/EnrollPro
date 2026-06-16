@@ -35,6 +35,7 @@ router.patch(
   validate(adminResetPasswordSchema),
   userCtrl.resetPassword,
 );
+router.post("/learners/:id/reset-password", userCtrl.learnerResetPassword);
 
 // Historical Correction Override
 router.post(

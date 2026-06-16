@@ -465,8 +465,50 @@ export async function update(req: Request, res: Response) {
     } = req.body;
     const userId = parseInt(String(req.params.id));
 
-    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!targetUser) return res.status(404).json({ message: "User not found" });
+    let targetUser = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!targetUser && userId < 0) {
+      const learnerId = Math.abs(userId);
+      const learner = await prisma.learner.findUnique({
+        where: { id: learnerId },
+        select: {
+          id: true, firstName: true, lastName: true,
+          middleName: true, extensionName: true, sex: true, lrn: true,
+        },
+      });
+      if (!learner) return res.status(404).json({ message: "Learner not found" });
+
+      const generatedPassword = password || "DepEd2026!";
+      const hashedPw = await bcrypt.hash(generatedPassword, 12);
+
+      targetUser = await prisma.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            firstName: firstName || learner.firstName,
+            lastName: lastName || learner.lastName,
+            middleName: middleName || learner.middleName,
+            suffix: suffix || learner.extensionName,
+            sex: sex || learner.sex,
+            password: hashedPw,
+            roles: roles || ["LEARNER"],
+            isActive: isActive !== undefined ? isActive : false,
+            mustChangePassword: true,
+            createdById: req.user!.userId,
+          },
+        });
+
+        await tx.learner.update({
+          where: { id: learnerId },
+          data: { userId: created.id },
+        });
+
+        return created;
+      });
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const cleanDeptCode = department
       ? String(department).trim().toUpperCase()
@@ -489,7 +531,7 @@ export async function update(req: Request, res: Response) {
 
     const user = await prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
-        where: { id: userId },
+        where: { id: targetUser.id },
         data: {
           firstName,
           lastName,
@@ -579,9 +621,9 @@ export async function update(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "ADMIN_USER_UPDATED",
-      description: `Admin updated account: ${lastName}, ${firstName}`,
+      description: `Admin updated account: ${targetUser.lastName}, ${targetUser.firstName}`,
       subjectType: "User",
-      recordId: userId,
+      recordId: targetUser.id,
       req,
     });
 
@@ -708,17 +750,66 @@ export async function reactivate(req: Request, res: Response) {
   }
 }
 
+export async function learnerResetPassword(req: Request, res: Response) {
+  try {
+    const { new_password_string } = req.body;
+    const userId = parseInt(String(req.params.id));
+
+    if (!new_password_string || typeof new_password_string !== "string" || new_password_string.length < 1) {
+      res.status(400).json({ message: "new_password_string is required" });
+      return;
+    }
+
+    const learner = await prisma.learner.findUnique({
+      where: { userId },
+      select: { id: true, firstName: true, lastName: true, lrn: true },
+    });
+
+    if (!learner) {
+      res.status(404).json({ message: "Learner not found for this user" });
+      return;
+    }
+
+    const hashed = await bcrypt.hash(new_password_string, 12);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { password: hashed, mustChangePassword: true },
+      }),
+      prisma.schoolSetting.updateMany({
+        data: { globalDefaultPassword: new_password_string },
+      }),
+    ]);
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "ADMIN_PASSWORD_RESET",
+      description: `Admin reset password for learner: ${learner.lastName}, ${learner.firstName} (LRN: ${learner.lrn}) and updated global default password`,
+      subjectType: "Learner",
+      recordId: learner.id,
+      req,
+    });
+
+    res.json({ message: "Learner password reset and global default updated successfully" });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function resetPassword(req: Request, res: Response) {
   try {
     const { newPassword, mustChangePassword = true } = req.body;
     const userId = parseInt(String(req.params.id));
 
-    const hashed = await bcrypt.hash(newPassword, 12);
+    const password = newPassword || "DepEd2026!";
+    const hashed = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { password: hashed, mustChangePassword },
-      select: { id: true, firstName: true, lastName: true },
+      data: { password: hashed, mustChangePassword: true },
+      select: { id: true, firstName: true, lastName: true, roles: true },
     });
 
     await auditLog({

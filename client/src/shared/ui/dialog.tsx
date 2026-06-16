@@ -35,7 +35,6 @@ const DialogContent = React.forwardRef<
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg h-fit max-h-[95vh] overflow-y-auto gap-4 border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg data-[state=open]:animate-modal-in data-[state=closed]:animate-modal-out rounded-lg",
         className,
       )}
-      aria-describedby={undefined}
       {...props}>
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--accent))] data-[state=open]:text-[hsl(var(--primary-foreground))]">

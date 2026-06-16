@@ -949,39 +949,39 @@ export function BatchSectioningWizard({
                             className="overflow-auto relative"
                             style={{ maxHeight: "65vh" }}>
                             <Table>
-                              <TableHeader className="bg-primary hover:bg-primary sticky top-0 z-20 shadow-sm">
+                              <TableHeader className="hover: sticky top-0 z-20 shadow-sm">
                                 <TableRow className="hover:bg-transparent border-none">
-                                  <TableHead className="text-primary-foreground h-12 px-4 text-left">
+                                  <TableHead className="h-12 px-4 text-left">
                                     <button
                                       onClick={() => toggleSort("learnerName")}
                                       className="flex items-center font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Learner {getSortIcon("learnerName")}
                                     </button>
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                                  <TableHead className="h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("gender")}
                                       className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Gender {getSortIcon("gender")}
                                     </button>
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
+                                  <TableHead className="text-xs uppercase h-12 px-4 text-center">
                                     Program
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
+                                  <TableHead className="text-xs uppercase h-12 px-4 text-center">
                                     Ranking
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                                  <TableHead className="h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("genAve")}
                                       className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Gen Ave {getSortIcon("genAve")}
                                     </button>
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
+                                  <TableHead className="text-xs uppercase h-12 px-4 text-center">
                                     Reading
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                                  <TableHead className="h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("sectionName")}
                                       className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
@@ -1245,18 +1245,18 @@ export function BatchSectioningWizard({
               </DialogHeader>
               <div className="max-h-[50vh] overflow-auto border rounded-lg">
                 <Table>
-                  <TableHeader className="bg-muted sticky top-0 z-10">
+                  <TableHeader className="sticky top-0 z-10">
                     <TableRow>
-                      <TableHead className="font-black text-xs uppercase">
+                      <TableHead className="text-xs uppercase">
                         Learner Name
                       </TableHead>
-                      <TableHead className="font-black text-xs uppercase text-center">
+                      <TableHead className="text-xs uppercase text-center">
                         Gender
                       </TableHead>
-                      <TableHead className="font-black text-xs uppercase text-center">
+                      <TableHead className="text-xs uppercase text-center">
                         Gen Ave
                       </TableHead>
-                      <TableHead className="font-black text-xs uppercase text-center">
+                      <TableHead className="text-xs uppercase text-center">
                         Status
                       </TableHead>
                     </TableRow>

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -40,6 +41,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
+export function getLearnerApi(token: string) {
+  return axios.create({
+    baseURL: import.meta.env.VITE_API_URL || "/api",
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 
 
 api.interceptors.request.use((config) => {
@@ -65,6 +74,11 @@ api.interceptors.request.use((config) => {
       config.headers["x-historical-correction-token"] =
         historicalCorrectionToken;
     }
+  }
+
+  const learnerToken = useLearnerAuthStore.getState().token;
+  if (learnerToken) {
+    config.headers.Authorization = `Bearer ${learnerToken}`;
   }
   return config;
 });
@@ -108,6 +122,32 @@ api.interceptors.response.use(
         } else {
           if (window.location.pathname !== "/staff/login") {
             window.location.replace("/staff/login");
+          }
+        }
+      }
+
+      // Learner API 401 — only clear if a learner token was sent
+      const hadLearnerSession = !!useLearnerAuthStore.getState().token;
+      if (hadLearnerSession && !hadStaffSession) {
+        useLearnerAuthStore.getState().clearAuth();
+        if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
+          _sessionExpiredHandled = true;
+          useLearnerAuthStore.getState().setSessionExpired(true);
+
+          sileo.error({
+            title: "Session Expired",
+            description: "Your session has expired. Please sign in again.",
+          });
+
+          setTimeout(() => {
+            _sessionExpiredHandled = false;
+            if (!window.location.pathname.startsWith("/learner/")) {
+              window.location.replace("/learner/login");
+            }
+          }, 1500);
+        } else {
+          if (!window.location.pathname.startsWith("/learner/")) {
+            window.location.replace("/learner/login");
           }
         }
       }

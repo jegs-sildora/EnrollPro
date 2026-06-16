@@ -179,7 +179,7 @@ export function DataTable<TData, TValue>({
         className="overflow-auto relative flex-1 min-h-0 w-full"
         style={containerHeight !== "100%" ? { maxHeight: containerHeight } : undefined}>
         <Table className={cn("w-full", tableClassName)}>
-          <TableHeader className="bg-[hsl(var(--primary))] border-none">
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}

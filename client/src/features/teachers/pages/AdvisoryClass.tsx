@@ -62,12 +62,12 @@ export default function AdvisoryClass() {
           </div>
           <div className="p-0 sm:p-2">
             <Table>
-              <TableHeader className="bg-primary">
+              <TableHeader>
                 <TableRow className="hover:bg-primary/90 border-b-0">
-                  <TableHead className="text-left font-bold text-primary-foreground w-12">#</TableHead>
-                  <TableHead className="text-left font-bold text-primary-foreground">Learner Name</TableHead>
-                  <TableHead className="text-left font-bold text-primary-foreground w-24">Sex</TableHead>
-                  <TableHead className="text-left font-bold text-primary-foreground w-48">LRN</TableHead>
+                  <TableHead className="text-left w-12">#</TableHead>
+                  <TableHead className="text-left">Learner Name</TableHead>
+                  <TableHead className="text-left w-24">Sex</TableHead>
+                  <TableHead className="text-left w-48">LRN</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

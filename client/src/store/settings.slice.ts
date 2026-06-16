@@ -57,6 +57,7 @@ export interface SettingsState {
     | "EOSY_PROCESSING"
     | "ACTIVE"
     | "ARCHIVED";
+  globalDefaultPassword: string;
   bosyLockedAt: string | null;
   /** Session-level override for browsing a different SY */
   viewingSchoolYearId: number | null;
@@ -115,6 +116,7 @@ export const useSettingsStore = create<SettingsState>()(
       systemPhase: null,
       systemStatus: "DRAFT",
       bosyLockedAt: null,
+      globalDefaultPassword: "DepEd2026!",
       viewingSchoolYearId: null,
       viewingSchoolYearStatus: null,
       viewingSchoolYearLabel: null,

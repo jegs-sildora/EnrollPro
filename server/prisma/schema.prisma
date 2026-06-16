@@ -101,6 +101,7 @@ model SchoolSetting {
   homogeneousSectionCount Int                 @default(5) @map("homogeneous_section_count")
   heterogeneousRoundRobin Boolean             @default(true) @map("heterogeneous_round_robin")
   systemPhase             SystemAcademicPhase @default(PRE_REGISTRATION) @map("system_phase")
+  globalDefaultPassword   String              @default("DepEd2026!") @map("global_default_password")
   activeSchoolYear   SchoolYear?         @relation(fields: [activeSchoolYearId], references: [id])
 
   @@map("school_settings")
@@ -799,6 +800,8 @@ enum SectioningMethod {
 
 enum LearnerStatus {
   ACTIVE
+  INACTIVE
+  RESTRICTED
   JHS_COMPLETER
   DROPPED
   TRANSFERRED_OUT

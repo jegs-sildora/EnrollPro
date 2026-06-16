@@ -228,6 +228,8 @@ export const SchoolYearStatusEnum = z.enum([
 
 export const LearnerStatusEnum = z.enum([
   "ACTIVE",
+  "INACTIVE",
+  "RESTRICTED",
   "JHS_COMPLETER",
   "DROPPED",
   "TRANSFERRED_OUT",

@@ -174,7 +174,7 @@ function generatePassword() {
 export default function AdminUsers() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuthStore();
-  const { activeSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, globalDefaultPassword } = useSettingsStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const activeTab = requestedTab === "learners" ? "learners" : "staff";
@@ -652,6 +652,25 @@ export default function AdminUsers() {
     }
   };
 
+  const handleResetToDefault = useCallback(async (password: string) => {
+    if (!profileUser) return;
+    setSubmitting(true);
+    try {
+      await api.post(`/admin/learners/${profileUser.id}/reset-password`, {
+        new_password_string: password,
+      });
+      sileo.success({
+        title: "Password Reset",
+        description: "Learner password reset and global default updated.",
+      });
+      fetchUsers();
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [profileUser, fetchUsers]);
+
   const handleResetPassword = async () => {
     if (!selectedUser) return;
     setSubmitting(true);
@@ -742,7 +761,7 @@ export default function AdminUsers() {
           <button
             onClick={() => handleSort("lastName")}
             className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
-            {activeTab === "staff" ? "Name & Contact Details" : "STUDENT & LRN"}
+            {activeTab === "staff" ? "Name & Contact Details" : "LEARNER & LRN"}
             {getSortIcon("lastName")}
           </button>
         ),
@@ -793,9 +812,7 @@ export default function AdminUsers() {
           const user = row.original;
 
           if (activeTab === "learners") {
-            const isDropped = user.learnerProfile?.status === "DROPPED";
-            const app = user.learnerProfile?.enrollmentApplications?.[0];
-            const isActivated = app?.isPinPersonalized;
+            const isRestricted = !user.isActive || user.learnerProfile?.status === "DROPPED" || user.learnerProfile?.status === "TRANSFERRED_OUT";
 
             return (
               <div className="flex flex-col items-center justify-center gap-1 min-w-[110px]">
@@ -803,19 +820,13 @@ export default function AdminUsers() {
                   <div
                     className={cn(
                       "h-1.5 w-1.5 rounded-full ring-2 ring-offset-1",
-                      isDropped || !user.isActive
+                      isRestricted
                         ? "bg-red-500 ring-red-100"
-                        : !isActivated
-                          ? "bg-orange-500 ring-orange-100"
-                          : "bg-green-500 ring-green-100",
+                        : "bg-green-500 ring-green-100",
                     )}
                   />
                   <span className="text-xs font-extrabold uppercase ">
-                    {isDropped || !user.isActive
-                      ? "Access Blocked"
-                      : !isActivated
-                        ? "PENDING ACTIVATION"
-                        : "ACTIVATED"}
+                    {isRestricted ? "RESTRICTED" : "ACTIVE"}
                   </span>
                 </div>
               </div>
@@ -835,7 +846,7 @@ export default function AdminUsers() {
                 />
                 <span className="text-xs font-extrabold uppercase ">
                   {!user.isActive
-                    ? "Access Blocked"
+                    ? "RESTRICTED"
                     : "ACTIVE"}
                 </span>
               </div>
@@ -937,7 +948,7 @@ export default function AdminUsers() {
                       disabled={currentUser?.id === user.id}
                       onClick={() => setDeactivateId(user.id)}
                       className="gap-2 font-bold text-xs text-destructive focus:bg-destructive focus:text-destructive-foreground">
-                      <Ban className="h-3.5 w-3.5" /> Block Access
+                      <Ban className="h-3.5 w-3.5" /> Restrict Access
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
@@ -1073,7 +1084,7 @@ export default function AdminUsers() {
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Deactivated</SelectItem>
+                        <SelectItem value="inactive">Restricted</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1322,10 +1333,10 @@ export default function AdminUsers() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-maroon-900">
-            System Credentials & Security
+            Learner Account Management
           </h1>
           <p className="text-sm font-bold text-foreground">
-            Manage portal access, reset login credentials, and configure administrative permissions.
+            Manage portal access, monitor account statuses, and reset learner passwords.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -1366,7 +1377,7 @@ export default function AdminUsers() {
                 )}
               />
               <span className={cn(activeTab === "staff" && "text-white")}>
-                Staff & Faculty
+                Personnel
               </span>
             </div>
           </TabsTrigger>
@@ -1447,6 +1458,8 @@ export default function AdminUsers() {
         }
         onCopyPassword={copyToClipboard}
         passwordCopied={copied}
+        defaultPassword={globalDefaultPassword}
+        onResetToDefault={handleResetToDefault}
       />
 
       {/* Reset Password Dialog */}
@@ -1465,7 +1478,7 @@ export default function AdminUsers() {
                 )}
               />
               {selectedUser?.roles?.includes("LEARNER")
-                ? "Reset to Default Credential"
+                ? "Reset to Default Password"
                 : "Reset Staff Password"}
             </DialogTitle>
             <DialogDescription className="font-bold text-xs">
@@ -1562,9 +1575,9 @@ export default function AdminUsers() {
       <ConfirmationModal
         open={deactivateId !== null}
         onOpenChange={() => setDeactivateId(null)}
-        title="Block Access"
+        title="Restrict Access"
         description="System access will be revoked immediately."
-        confirmText="Yes, Block Access"
+        confirmText="Yes, Restrict Access"
         onConfirm={() =>
           deactivateId && handleToggleStatus(deactivateId, "deactivate")
         }

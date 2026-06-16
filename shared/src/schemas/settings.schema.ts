@@ -30,6 +30,7 @@ export const updateIdentitySchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
+  globalDefaultPassword: z.string().optional(),
 });
 
 export const toggleEnrollmentSchema = z.object({

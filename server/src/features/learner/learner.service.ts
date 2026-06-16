@@ -57,7 +57,7 @@ export async function ensureLearnerUserAccount(
       accountName: desiredAccountName,
       password: defaultPasswordHash,
       role: "LEARNER",
-      mustChangePassword: false, 
+      mustChangePassword: false,
       sex: (learner.sex as "MALE" | "FEMALE") || "FEMALE",
       isActive: true,
     },

@@ -28,6 +28,6 @@ export const updateUserSchema = createUserSchema
   .partial();
 
 export const adminResetPasswordSchema = z.object({
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(8).optional(),
   mustChangePassword: z.boolean().default(true),
 });

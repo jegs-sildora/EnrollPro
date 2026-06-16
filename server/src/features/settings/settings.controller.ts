@@ -88,9 +88,10 @@ export async function getPublicSettings(
       enableHomogeneousSections: settings.enableHomogeneousSections,
       homogeneousSectionCount: settings.homogeneousSectionCount,
       heterogeneousRoundRobin: settings.heterogeneousRoundRobin,
-      enrollmentPhase,
+          enrollmentPhase,
       isBosyEnrollmentOpen,
       systemPhase: settings.systemPhase,
+      globalDefaultPassword: settings.globalDefaultPassword,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);
@@ -110,6 +111,7 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
     division,
     schoolHeadName,
     schoolHeadTitle,
+    globalDefaultPassword,
   } = req.body;
 
   const updated = await prisma.schoolSetting.updateMany({
@@ -123,13 +125,14 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
       division,
       schoolHeadName,
       schoolHeadTitle,
+      ...(globalDefaultPassword !== undefined ? { globalDefaultPassword } : {}),
     },
   });
 
   await auditLog({
     userId: req.user!.userId,
     actionType: "SETTINGS_UPDATED",
-    description: `Admin updated school identity and communication channels`,
+    description: `Admin updated school identity, communication channels, and default password`,
     req,
   });
 

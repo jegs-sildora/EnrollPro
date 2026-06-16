@@ -61,6 +61,7 @@ export default function SchoolProfileTab() {
     enableHomogeneousSections,
     homogeneousSectionCount,
     heterogeneousRoundRobin,
+    globalDefaultPassword,
     setSettings,
   } = useSettingsStore();
 
@@ -86,6 +87,7 @@ export default function SchoolProfileTab() {
       facebookPageUrl: facebookPageUrl || "",
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
+      globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
     },
   });
 
@@ -102,6 +104,7 @@ export default function SchoolProfileTab() {
       facebookPageUrl: facebookPageUrl || "",
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
+      globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
     });
   }, [
     schoolName,
@@ -113,6 +116,7 @@ export default function SchoolProfileTab() {
     facebookPageUrl,
     depedEmail,
     schoolWebsite,
+    globalDefaultPassword,
     form.reset,
   ]);
 

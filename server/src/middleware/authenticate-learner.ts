@@ -3,8 +3,9 @@ import jwt from "jsonwebtoken";
 
 export interface LearnerAuthPayload {
   learnerId: number;
-  enrollmentApplicationId: number;
-  role: "LEARNER";
+  lrn: string;
+  role: "learner";
+  requiresPasswordReset: boolean;
 }
 
 declare global {
@@ -16,7 +17,7 @@ declare global {
 }
 
 /**
- * Verifies learner-issued JWTs (issued by POST /api/auth/learner-login).
+ * Verifies learner-issued JWTs (issued by POST /api/learner/auth).
  * Does NOT perform a database lookup — learner sessions are stateless.
  * Use this middleware on learner-facing self-service routes only.
  */
@@ -39,7 +40,7 @@ export async function authenticateLearner(
       process.env.JWT_SECRET!,
     ) as LearnerAuthPayload;
 
-    if (decoded.role !== "LEARNER") {
+    if (decoded.role !== "learner") {
       res.status(403).json({ code: "FORBIDDEN", message: "Forbidden" });
       return;
     }

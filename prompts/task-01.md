@@ -1,33 +1,22 @@
-# EnrollPro System: Temporal Logic & Phase-Aware Rendering
-**Version:** 7.1 (Calendar Synchronization & Readiness UI)
-**Assignee:** Jegrick (Frontend) & Patrick (Backend)
-**Focus:** Phase-Dependent Database Queries & Conditional UI Rendering
+# Admin Dashboard: UI Standardization & "Quick Links" Injection
+**Version:** 33.0 (CSS Polish & DepEd Form Generation)
+**Assignee:** Frontend Engineer (React/Tailwind)
+**Reference UIs:** `image_ce8de2.jpg`, `image_ce8dca.jpg`
+**Focus:** Fixing the broken colored shadow, refining administrative button labels, and replacing the useless activity log with a high-value "Quick Links" forms panel.
 
 ## 1. Core Architectural Goal
-The Global System Configuration page (`image_f0e11f.jpg`) is incorrectly displaying End-of-School-Year (EOSY) blockers when the school year has just started (289 days remaining). We must implement strict Phase-Aware Logic. The system should not evaluate or display EOSY blockers until the academic calendar explicitly enters the EOSY phase.
+We need to standardize the card elevations to remove the "glitchy" neon shadows and introduce a dedicated "Generate Official Forms" quick-link section to serve the actual daily needs of DepEd Registrars.
 
-## 2. Backend Execution (Patrick)
+## 2. Frontend Execution (Jegrick/Frontend Team)
 
-### TASK 1: Phase-Gated Readiness Endpoint
-*   **The Issue:** Polling for missing SF5s across the entire school during the mid-year `ACTIVE` phase wastes compute.
-*   **The Fix:** Update the `GET /api/system/rollover-readiness` endpoint. 
-*   **Logic:**
-    *   Check the current `school_year_phase` in the database.
-    *   If `phase === 'BOSY'` or `phase === 'ACTIVE'`, immediately return a bypass payload: `{ isEosyPhase: false, blockers: [] }`. Do not run the heavy SQL counts.
-    *   If `phase === 'EOSY'`, run the full diagnostic queries and return the actual blocker counts: `{ isEosyPhase: true, blockers: [...] }`.
+### TASK 1: Standardize Card Elevations (Fix the Glow)
+Eradicate the glowing blue shadow on the middle action card.
+*   **Action:** Audit the `LEARNERS AWAITING SECTIONING` card wrapper. 
+*   **Implementation:** Remove any custom `shadow-blue-500/50`, `ring-blue`, or similar utility classes. Ensure all three cards in the top row share the exact same baseline styling: `bg-white border border-gray-200 shadow-sm rounded-lg`. Consistency builds trust with older users.
 
-## 3. Frontend Execution (Jegrick)
-
-### TASK 1: Conditional Rendering (The Time Paradox Fix)
-Tie the rendering of the `PENDING FINALIZATION TASKS` component directly to Patrick's new payload logic.
-
-*   **State A (Normal Year Operation):** If `isEosyPhase` is false (e.g., 289 days remaining), **do not render the amber warning box at all**. Instead, render a muted, informational state below the button:
-    *   *UI:* `<div className="text-sm text-gray-500 mt-4 border-t pt-4">System is in active operation. EOSY rollover diagnostics will become available during the closing phase.</div>`
-*   **State B (EOSY Phase Active):** If `isEosyPhase` is true, render the blockers.
-
-### TASK 2: Component De-cluttering
-If State B is active, do not use the giant, full-width amber box. Use a clean, modern checklist component.
-*   *Container:* `bg-white border border-gray-200 rounded-lg p-6 shadow-sm`
-*   *Header:* `text-gray-900 font-semibold text-lg border-b pb-3 mb-4` ("Rollover Readiness Checklist")
-*   *Items:* Render blockers as list items with the `⚠️` icon. 
-*   *Button Logic:* Keep the `[ Finalize EOSY & Open New School Year ]` button strictly disabled (`cursor-not-allowed opacity-50`) until the blocker array length is exactly `0`.
+### TASK 2: Refine Action Button Verbiage
+Change the button labels to reflect clear, administrative actions rather than software functions.
+*   **Card 1 Button:** Change `OPEN VERIFICATION QUEUE` to `REVIEW PENDING ENROLLEES`
+*   **Card 2 Button:** Change `MANAGE SECTIONS` to `ASSIGN LEARNERS TO SECTIONS`
+*   **Card 3 Button:** Change `REVIEW CLASS SIZES` to `MONITOR SECTION CAPACITIES`
+*   **Section Header:** Change `URGENT ACTION BOARD` to `PENDING ADMINISTRATIVE TASKS`.

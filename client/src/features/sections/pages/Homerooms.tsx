@@ -9,7 +9,6 @@ import { useSettingsStore } from "@/store/settings.slice"
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly"
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading"
 import { Button } from "@/shared/ui/button"
-import { Badge } from "@/shared/ui/badge"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 
@@ -40,16 +39,6 @@ interface GradeLevelGroup {
   gradeLevelName: string
   displayOrder: number
   sections: SectionItem[]
-}
-
-const SCP_SHORT_LABELS: Record<string, string> = {
-  REGULAR: "Regular Program",
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
-  SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
-  SPECIAL_PROGRAM_IN_SPORTS: "SPS",
-  SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
 }
 
 
@@ -338,7 +327,7 @@ export default function Homerooms() {
 
               const hasSections = g.sections.length > 0
 
-              const renderSectionGroup = (sections: typeof g.sections, title: string, showScpBadge: boolean = false) => {
+              const renderSectionGroup = (sections: typeof g.sections, title: string) => {
                 if (sections.length === 0) return null;
                 return (
                   <Fragment>
@@ -354,14 +343,7 @@ export default function Homerooms() {
                           <TableCell className="font-medium text-left pl-6">
                             <div className="flex items-center gap-2">
                               <span className="font-black uppercase text-sm text-foreground">{s.name}</span>
-                              {showScpBadge && (
-                                <Badge variant="outline" className="text-[10px] font-bold uppercase">
-                                  {SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                                </Badge>
-                              )}
-                              {s.programType === "REGULAR" && s.isHomogeneous && (
-                                <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary uppercase">Pilot</Badge>
-                              )}
+
                             </div>
                           </TableCell>
                           <TableCell className="text-left">
@@ -402,16 +384,16 @@ export default function Homerooms() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/30">
-                            <TableHead className="font-bold text-xs uppercase text-foreground text-left pl-6">Section Name</TableHead>
-                            <TableHead className="font-bold text-xs uppercase text-foreground text-left w-[320px]">Class Adviser</TableHead>
-                            <TableHead className="font-bold text-xs uppercase text-foreground text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
+                            <TableHead className="text-xs uppercase text-left pl-6">Section Name</TableHead>
+                            <TableHead className="text-xs uppercase text-left w-[320px]">Class Adviser</TableHead>
+                            <TableHead className="text-xs uppercase text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {renderSectionGroup(steSections, "STE", true)}
-                          {renderSectionGroup(spsSections, "SPS", true)}
-                          {renderSectionGroup(spaSections, "SPA", true)}
-                          {renderSectionGroup(otherScpSections, "Other Special Curricular Programs", true)}
+                          {renderSectionGroup(steSections, "STE")}
+                          {renderSectionGroup(spsSections, "SPS")}
+                          {renderSectionGroup(spaSections, "SPA")}
+                          {renderSectionGroup(otherScpSections, "Other Special Curricular Programs")}
                           {renderSectionGroup(pilotSections, "BEC (Homogeneous - Top 5)")}
                           {renderSectionGroup(regularSections, "BEC (Heterogeneous)")}
                         </TableBody>

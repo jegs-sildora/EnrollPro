@@ -14,10 +14,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { sileo } from "sileo";
-import api from "@/shared/api/axiosInstance";
+import api, { getLearnerApi } from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 
 import { useSettingsStore } from "@/store/settings.slice";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -27,7 +28,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/shared/ui/card";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -46,11 +46,149 @@ const schema = z
     path: ["confirmPassword"],
   });
 
-type FormData = z.infer<typeof schema>;
+export { schema as changePasswordSchema };
+
+// --- Shared Reusable Form Component ---
+
+interface ChangePasswordFormProps {
+  onSubmit: (newPassword: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+  setError: (err: string | null) => void;
+  passwordLabel?: string;
+  confirmLabel?: string;
+  submitLabel?: string;
+  loadingLabel?: string;
+  children?: React.ReactNode;
+}
+
+export function ChangePasswordForm({
+  onSubmit,
+  loading,
+  error,
+  setError,
+  passwordLabel = "New Password",
+  confirmLabel = "Confirm New Password",
+  submitLabel = "Set Password & Enter Portal",
+  loadingLabel = "Updating Password...",
+  children,
+}: ChangePasswordFormProps) {
+  const [showPw, setShowPw] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+  });
+
+  const newPasswordValue = useWatch({ control, name: "newPassword", defaultValue: "" });
+  const confirmPasswordValue = useWatch({ control, name: "confirmPassword", defaultValue: "" });
+
+  useEffect(() => {
+    const sub = watch(() => { if (error) setError(null); });
+    return () => sub.unsubscribe();
+  }, [watch, error, setError]);
+
+  const newPasswordInvalid = useMemo(
+    () => newPasswordValue.length > 0 && (
+      newPasswordValue.length < 8 ||
+      !/[A-Z]/.test(newPasswordValue) ||
+      !/[0-9]/.test(newPasswordValue) ||
+      !/[^A-Za-z0-9]/.test(newPasswordValue)
+    ),
+    [newPasswordValue],
+  );
+
+  const confirmPasswordInvalid = useMemo(
+    () => confirmPasswordValue.length > 0 && newPasswordValue !== confirmPasswordValue,
+    [newPasswordValue, confirmPasswordValue],
+  );
+
+  const handleFormSubmit = async (data: z.infer<typeof schema>) => {
+    await onSubmit(data.newPassword);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(handleFormSubmit)}>
+      {children}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="newPassword" className="text-sm font-bold">{passwordLabel}</Label>
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              id="newPassword"
+              type={showPw ? "text" : "password"}
+              placeholder="••••••••••••"
+              className={`font-bold h-12 pl-10 pr-10 bg-muted/30 border-border focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl ${newPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+              {...register("newPassword")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}>
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.newPassword && (
+            <p className="text-xs font-bold text-destructive ml-1">{errors.newPassword.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-sm font-bold">{confirmLabel}</Label>
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              id="confirmPassword"
+              type={showPw ? "text" : "password"}
+              placeholder="••••••••••••"
+              className={`font-bold h-12 pl-10 bg-muted/30 border-border focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl ${confirmPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+              {...register("confirmPassword")}
+            />
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs font-bold text-destructive ml-1">{errors.confirmPassword.message}</p>
+          )}
+        </div>
+
+        <SecurityRequirements newPassword={newPasswordValue} confirmPassword={confirmPasswordValue} />
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="w-full p-3 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-destructive shadow-sm">
+              <AlertCircle className="size-4 shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <Button
+          type="submit"
+          className="w-full h-12 font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+          disabled={loading}>
+          {loading ? (
+            <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{loadingLabel}</>
+          ) : submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 // --- Sub-components for Optimization ---
 
-const SecurityRequirements = memo(function SecurityRequirements({
+export const SecurityRequirements = memo(function SecurityRequirements({
   newPassword,
   confirmPassword,
 }: {
@@ -96,103 +234,92 @@ const SecurityRequirements = memo(function SecurityRequirements({
 
 export default function ChangePassword() {
   const staffAuth = useAuthStore();
+  const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
 
-
-  const [loading, setLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const user = staffAuth.user;
-  const hasSession = Boolean(staffAuth.user);
-
-  const activeRole = user?.roles?.[0] ?? staffAuth.user?.roles?.[0] ?? null;
-  const homeRoute = activeRole === "TEACHER" || activeRole === "MRF" ? "/reading-assessment" : "/dashboard";
-  const loginRoute = "/staff/login";
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-  });
-
-  const newPasswordValue = useWatch({
-    control,
-    name: "newPassword",
-    defaultValue: "",
-  });
-  const confirmPasswordValue = useWatch({
-    control,
-    name: "confirmPassword",
-    defaultValue: "",
-  });
-
-  // Clear error when typing
-  useEffect(() => {
-    const subscription = watch(() => {
-      if (error) setError(null);
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, error]);
+  const isLearner = Boolean(learnerAuth.user);
+  const auth = isLearner ? learnerAuth : staffAuth;
 
   const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
 
-  // Computed state for error highlighting
-  const newPasswordInvalid = useMemo(
-    () =>
-      newPasswordValue.length > 0 &&
-      (newPasswordValue.length < 8 ||
-        !/[A-Z]/.test(newPasswordValue) ||
-        !/[0-9]/.test(newPasswordValue) ||
-        !/[^A-Za-z0-9]/.test(newPasswordValue)),
-    [newPasswordValue],
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const confirmPasswordInvalid = useMemo(
-    () =>
-      confirmPasswordValue.length > 0 &&
-      newPasswordValue !== confirmPasswordValue,
-    [newPasswordValue, confirmPasswordValue],
-  );
+  const user = auth.user;
+  const hasSession = Boolean(auth.user);
 
-  // Guard redirects
   if (!hasSession || !user) {
-    return <Navigate to={loginRoute} replace />;
+    return <Navigate to={isLearner ? "/learner/login" : "/staff/login"} replace />;
   }
 
-  // If already changed, go home
-  if (!user.mustChangePassword) {
-    return <Navigate to={homeRoute} replace />;
+  // Learner must have a token to make authenticated requests
+  if (isLearner && !learnerAuth.token) {
+    return <Navigate to="/learner/login" replace />;
   }
 
-  const onSubmit = async (data: FormData) => {
+  if (!isLearner && !(user as { mustChangePassword?: boolean }).mustChangePassword) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (isLearner && !learnerAuth.requiresPasswordReset) {
+    return <Navigate to="/learner/portal" replace />;
+  }
+
+  const handleSubmit = async (newPassword: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.patch("/auth/change-password", {
-        newPassword: data.newPassword,
-      });
+      if (isLearner) {
+        const token = useLearnerAuthStore.getState().token;
+        if (!token) {
+          setError("Session not found. Please log in again.");
+          setLoading(false);
+          return;
+        }
+        const learnerApi = getLearnerApi(token);
+        await learnerApi.post("/learner/change-password", { newPassword });
 
-      staffAuth.setAuth(res.data.user);
-      sileo.success({
-        title: "Password Updated",
-        description:
-          "Your new password has been set. You can now access the system.",
-      });
+        const lu = user as { lrn: string; middleName: string | null; schoolName: string; schoolAcronym: string; gradeLevelName: string | null; sectionName: string | null };
+        learnerAuth.setAuth(
+          {
+            id: user.id,
+            lrn: lu.lrn,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleName: lu.middleName ?? null,
+            schoolName: lu.schoolName,
+            schoolAcronym: lu.schoolAcronym,
+            gradeLevelName: lu.gradeLevelName ?? null,
+            sectionName: lu.sectionName ?? null,
+          },
+          token,
+        );
 
-      // Delay slightly for toast visibility, then hard-replace so the target portal
-      // boots from its own cookie/session channel instead of reusing stale SPA state.
-      const finalHome = res.data.user?.roles?.includes("TEACHER") || res.data.user?.roles?.includes("MRF")
-        ? "/reading-assessment"
-        : "/dashboard";
-      setTimeout(() => {
-        window.location.replace(finalHome);
-      }, 500);
+        sileo.success({
+          title: "Password Updated",
+          description: "Your new password has been set. You can now access the Learner Portal.",
+        });
+
+        setTimeout(() => {
+          window.location.replace("/learner/portal");
+        }, 500);
+      } else {
+        const res = await api.patch("/auth/change-password", { newPassword });
+
+        staffAuth.setAuth(res.data.user);
+        sileo.success({
+          title: "Password Updated",
+          description: "Your new password has been set. You can now access the system.",
+        });
+
+        const roles = res.data.user?.roles ?? [];
+        const finalHome = roles.some((r: string) => r === "TEACHER" || r === "MRF")
+          ? "/reading-assessment"
+          : "/dashboard";
+        setTimeout(() => {
+          window.location.replace(finalHome);
+        }, 500);
+      }
     } catch (err: unknown) {
       const axiosError = err as {
         response?: { status?: number; data?: { message?: string } };
@@ -216,14 +343,13 @@ export default function ChangePassword() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden font-['Instrument_Sans',sans-serif] px-4">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
-        
+
         :root {
           --brand: hsl(var(--accent));
           --brand-foreground: hsl(var(--accent-foreground));
         }
       `}</style>
 
-      {/* Pixel grid pattern bg */}
       <div
         className="absolute inset-0 z-0"
         style={{ background: "var(--brand)" }}>
@@ -260,99 +386,18 @@ export default function ChangePassword() {
               Please replace the initial access key provided by the Registrar with your own private password.
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4 px-8">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="newPassword"
-                  className="text-sm font-bold">
-                  Official Password
-                </Label>
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="newPassword"
-                    type={showPw ? "text" : "password"}
-                    placeholder="••••••••••••"
-                    className={`font-bold h-12 pl-10 pr-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${newPasswordInvalid ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    {...register("newPassword")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}>
-                    {showPw ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {errors.newPassword && (
-                  <p className="text-xs font-bold text-destructive uppercase ml-1">
-                    {errors.newPassword.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-bold">
-                  Confirm Official Password
-                </Label>
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="confirmPassword"
-                    type={showPw ? "text" : "password"}
-                    placeholder="••••••••••••"
-                    className={`font-bold h-12 pl-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${confirmPasswordInvalid ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    {...register("confirmPassword")}
-                  />
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-xs font-bold text-destructive uppercase ml-1">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
-
-              <SecurityRequirements
-                newPassword={newPasswordValue}
-                confirmPassword={confirmPasswordValue}
-              />
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4 px-8 pb-8 mt-2">
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="w-full p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 text-red-600 shadow-sm mb-2">
-                    <AlertCircle className="size-4 shrink-0" />
-                    <p className="text-sm font-bold ">{error}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Button
-                type="submit"
-                className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20"
-                disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Updating Official Password...
-                  </>
-                ) : (
-                  "Activate Account & Enter System"
-                )}
-              </Button>
-            </CardFooter>
-          </form>
+          <CardContent className="space-y-4 px-8">
+            <ChangePasswordForm
+              onSubmit={handleSubmit}
+              loading={loading}
+              error={error}
+              setError={setError}
+              passwordLabel="Official Password"
+              confirmLabel="Confirm Official Password"
+              submitLabel="Activate Account & Enter System"
+              loadingLabel="Updating Official Password..."
+            />
+          </CardContent>
         </Card>
       </motion.div>
     </div>
