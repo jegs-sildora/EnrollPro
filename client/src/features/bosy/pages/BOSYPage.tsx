@@ -61,7 +61,7 @@ import {
   sectionVariants,
   staggerTransition,
 } from "@/shared/lib/motion";
-import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+import { sileo } from "sileo";
 
 function formatNoShowStatus(status: string): string {
   const map: Record<string, string> = {
@@ -257,18 +257,18 @@ export default function BOSYPage() {
   const executeConfirmSingle = async () => {
     if (!confirmSingleTarget) return;
     const { applicationId } = confirmSingleTarget;
-    lifecycleFeedback.progress(
-      "Confirming Learner Return",
-      "Submitting the learner record for BOSY sectioning readiness.",
-    );
+    sileo.info({
+      title: "Confirming Learner Return",
+      description: "Submitting the learner record for BOSY sectioning readiness.",
+    });
     setConfirmSingleBusy(true);
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
       await confirmReturn(applicationId);
-      lifecycleFeedback.success(
-        "Learner Return Confirmed",
-        "Application confirmed for sectioning.",
-      );
+      sileo.success({
+        title: "Learner Return Confirmed",
+        description: "Application confirmed for sectioning.",
+      });
       setQueueItems((prev) =>
         prev.filter((item) => item.applicationId !== applicationId),
       );
@@ -295,10 +295,10 @@ export default function BOSYPage() {
 
   const handleBulkConfirm = async () => {
     if (!syId || selectedIds.length === 0) return;
-    lifecycleFeedback.progress(
-      "Processing Bulk Confirmation",
-      "Applying BOSY confirmation to selected learner records.",
-    );
+    sileo.info({
+      title: "Processing Bulk Confirmation",
+      description: "Applying BOSY confirmation to selected learner records.",
+    });
     setBulkLoading(true);
     try {
       const result = await bulkConfirm({
@@ -306,20 +306,20 @@ export default function BOSYPage() {
         schoolYearId: syId,
       });
       if (result.confirmed.length > 0) {
-        lifecycleFeedback.success(
-          "Bulk Confirmation Completed",
-          `${result.confirmed.length} learner(s) confirmed for sectioning.`,
-        );
+        sileo.success({
+          title: "Bulk Confirmation Completed",
+          description: `${result.confirmed.length} learner(s) confirmed for sectioning.`,
+        });
         setQueueItems((prev) =>
           prev.filter((item) => !result.confirmed.includes(item.applicationId)),
         );
         setQueueTotal((prev) => Math.max(0, prev - result.confirmed.length));
       }
       if (result.failed.length > 0) {
-        lifecycleFeedback.warning(
-          "Partial Confirmation Result",
-          `${result.failed.length} application(s) could not be confirmed.`,
-        );
+        sileo.warning({
+          title: "Partial Confirmation Result",
+          description: `${result.failed.length} application(s) could not be confirmed.`,
+        });
       }
       setRowSelection({});
       void fetchReadiness();
@@ -335,10 +335,10 @@ export default function BOSYPage() {
     setRevertBusy(true);
     try {
       await apiRevertToPendingBeef(revertTargetId, revertReason.trim());
-      lifecycleFeedback.success(
-        "Flagged for Review",
-        "Learner has been moved back to the BEEF intake queue.",
-      );
+      sileo.success({
+        title: "Flagged for Review",
+        description: "Learner has been moved back to the BEEF intake queue.",
+      });
       setRevertTargetId(null);
       setRevertReason("");
       void fetchQueue();
@@ -369,17 +369,17 @@ export default function BOSYPage() {
     if (!syId) return;
     const ids = noShowItems.map((i) => i.applicationId);
     if (ids.length === 0) {
-      lifecycleFeedback.success("No No-Shows", "No eligible records to flush.");
+      sileo.success({ title: "No No-Shows", description: "No eligible records to flush." });
       setFlushDialogOpen(false);
       return;
     }
     setFlushBusy(true);
     try {
       const result = await apiFlushNoShows(ids, "Admin flush of no-show SCP applicants");
-      lifecycleFeedback.success(
-        "No-Shows Flushed",
-        `${result.flushed} record(s) withdrawn. ${result.skipped} skipped.`,
-      );
+      sileo.success({
+        title: "No-Shows Flushed",
+        description: `${result.flushed} record(s) withdrawn. ${result.skipped} skipped.`,
+      });
       setNoShowItems([]);
       setFlushDialogOpen(false);
       void fetchReadiness();

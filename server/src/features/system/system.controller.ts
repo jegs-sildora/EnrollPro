@@ -87,6 +87,11 @@ export async function getRolloverReadiness(
       throw new AppError(400, "Active school year record not found.");
     }
 
+    if (activeYear.isEosyFinalized) {
+      res.json({ isEosyPhase: true, blockers: [] });
+      return;
+    }
+
     const blockers: string[] = [];
 
     const pendingSectionsCount = activeYear.sections.filter(s => !s.isEosyFinalized).length;
@@ -94,15 +99,15 @@ export async function getRolloverReadiness(
       blockers.push(`${pendingSectionsCount} Sections pending School Form 5 (SF5) submission.`);
     }
 
-    const irregularBlockerCount = await prisma.enrollmentRecord.count({
+    const pendingLearnerCount = await prisma.enrollmentRecord.count({
       where: {
         schoolYearId: activeSyId,
-        eosyStatus: "CONDITIONALLY_PROMOTED",
+        eosyStatus: null,
       },
     });
 
-    if (irregularBlockerCount > 0) {
-      blockers.push(`${irregularBlockerCount} Learners require End-of-School-Year (EOSY) Class grades.`);
+    if (pendingLearnerCount > 0) {
+      blockers.push(`${pendingLearnerCount} Learners require End-of-School-Year (EOSY) Class grades.`);
     }
 
     res.json({ isEosyPhase: true, blockers });

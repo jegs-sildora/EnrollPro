@@ -10,6 +10,7 @@ import {
   Plus,
   School,
   CalendarDays,
+  Workflow,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -26,9 +27,10 @@ import {
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Switch } from "@/shared/ui/switch";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
-import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+
 import {
   Dialog,
   DialogContent,
@@ -51,7 +53,7 @@ import {
   type LoadingState as MultiStepLoadingState,
 } from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
-import { CheckCircle2 } from "lucide-react";
+
 import SystemRolloverModal from "../components/SystemRolloverModal";
 import { EosyFinalizationMetrics } from "../components/EosyFinalizationMetrics";
 
@@ -345,7 +347,14 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 
 export default function SchoolYearTab() {
   const location = useLocation();
-  const { setSettings, activeSchoolYearId, systemPhase } = useSettingsStore();
+  const { 
+    setSettings, 
+    activeSchoolYearId, 
+    systemPhase,
+    enableHomogeneousSections,
+    homogeneousSectionCount,
+    heterogeneousRoundRobin
+  } = useSettingsStore();
   const [years, setYears] = useState<SYItem[]>([]);
   const [defaults, setDefaults] = useState<Defaults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -353,6 +362,7 @@ export default function SchoolYearTab() {
 
   // Create state
   const [creating, setCreating] = useState(false);
+  const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
   const [updatingDraft, setUpdatingDraft] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
   const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
@@ -451,6 +461,39 @@ export default function SchoolYearTab() {
     mediaQuery.addEventListener("change", syncPreference);
     return () => mediaQuery.removeEventListener("change", syncPreference);
   }, []);
+
+  const handleUpdateAlgorithm = async (
+    updates: Partial<{
+      enableHomogeneousSections: boolean;
+      homogeneousSectionCount: number;
+      heterogeneousRoundRobin: boolean;
+    }>
+  ) => {
+    setUpdatingAlgorithm(true);
+    try {
+      const payload = {
+        enableHomogeneousSections,
+        homogeneousSectionCount,
+        heterogeneousRoundRobin,
+        ...updates,
+      };
+      const res = await api.patch("/settings/algorithm", payload);
+      setSettings({
+        enableHomogeneousSections: res.data.enableHomogeneousSections,
+        homogeneousSectionCount: res.data.homogeneousSectionCount,
+        heterogeneousRoundRobin: res.data.heterogeneousRoundRobin,
+      });
+      sileo.success({
+        title: "Algorithm Updated",
+        description: "Sectioning rules saved successfully.",
+      });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setUpdatingAlgorithm(false);
+    }
+  };
+
 
   useEffect(() => {
     // Check for bridge state
@@ -1122,7 +1165,7 @@ export default function SchoolYearTab() {
                   >
                     {activeYear ? (
                       <>
-                        School Year {activeYear.yearLabel} Configuration
+                        School Year {activeYear.yearLabel} Setup & Configuration
                       </>
                     ) : (
                       <>
@@ -1132,8 +1175,8 @@ export default function SchoolYearTab() {
                   </CardTitle>
                   {activeYear && (
                     <span
-                      className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
-                      {activeCalendarStatus.label}
+                      className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeYear.sections?.length === 0 ? "bg-blue-100 text-blue-700" : activeCalendarStatus.color}`}>
+                      {activeYear.sections?.length === 0 ? "INITIALIZATION PHASE - Awaiting Configuration" : activeCalendarStatus.label}
                     </span>
                   )}
                 </div>
@@ -1166,62 +1209,34 @@ export default function SchoolYearTab() {
                         </p>
                       </div>
                     </div>
-                    <RadioGroup
-                      value={selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT"}
-                      onValueChange={(value) => setSelectedPhase(value)}
-                      className="flex flex-col space-y-4"
-                    >
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
-                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="OFFICIAL_ENROLLMENT" className={cn("cursor-pointer text-foreground block", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "font-black text-primary" : "font-bold")}>Beginning of School Year (BOSY) - Regular Enrollment</Label>
-                            {(systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" && (
-                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
-                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
-                              </Badge>
-                            )}
+                    <div className="flex flex-col sm:flex-row rounded-xl border border-border/40 overflow-hidden bg-muted/10 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+                      {[
+                        { id: 'OFFICIAL_ENROLLMENT', label: 'Early Registration & BOSY', step: 1 },
+                        { id: 'REGULAR_ENROLLMENT', label: 'Regular Enrollment', step: 2 },
+                        { id: 'CLASSES_ONGOING', label: 'Active Class Days', step: 3 },
+                        { id: 'EOSY_CLOSING', label: 'EOSY Finalization', step: 4 }
+                      ].map((phase) => {
+                        const currentPhaseId = selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT";
+                        const isActive = currentPhaseId === phase.id || (currentPhaseId === "OFFICIAL_ENROLLMENT" && phase.step === 1); // Handle mapping if needed
+                        return (
+                          <div key={phase.id} className={cn("flex-1 p-4 flex flex-col items-center justify-center text-center gap-2 transition-colors cursor-pointer", isActive ? "bg-primary/5 border-b-2 sm:border-b-0 sm:border-b-primary" : "hover:bg-muted/20")} onClick={() => setSelectedPhase(phase.id)}>
+                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-black text-sm", isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                              {phase.step}
+                            </div>
+                            <span className={cn("text-xs font-bold uppercase", isActive ? "text-primary" : "text-muted-foreground")}>{phase.label}</span>
                           </div>
-                          <p className={cn("text-xs mt-1", (systemPhase ?? "OFFICIAL_ENROLLMENT") === "OFFICIAL_ENROLLMENT" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Opens public registration portals for incoming Grade 7 and transferee learners. Fast-track confirmation is enabled for returning students.</p>
-                        </div>
-                      </div>
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "CLASSES_ONGOING" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
-                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="CLASSES_ONGOING" className={cn("cursor-pointer text-foreground block", systemPhase === "CLASSES_ONGOING" ? "font-black text-primary" : "font-bold")}>Active Instructional Period - Late Registration</Label>
-                            {systemPhase === "CLASSES_ONGOING" && (
-                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
-                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
-                              </Badge>
-                            )}
-                          </div>
-                          <p className={cn("text-xs mt-1", systemPhase === "CLASSES_ONGOING" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Classes have officially commenced. Public portals remain open, but incoming submissions are automatically tagged as Late Enrollees for DepEd LIS tracking.</p>
-                        </div>
-                      </div>
-                      <div className={cn("flex items-start space-x-3 p-4 rounded-xl border-2 transition-all", systemPhase === "EOSY_CLOSING" ? "border-primary bg-primary/5 shadow-sm" : "border-transparent")}>
-                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="EOSY_CLOSING" className={cn("cursor-pointer text-foreground block", systemPhase === "EOSY_CLOSING" ? "font-black text-primary" : "font-bold")}>End of School Year (EOSY) - Grade Finalization & Closing Operations</Label>
-                            {systemPhase === "EOSY_CLOSING" && (
-                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-black tracking-wider uppercase">
-                                <CheckCircle2 className="mr-1 h-3 w-3" /> Current Phase
-                              </Badge>
-                            )}
-                          </div>
-                          <p className={cn("text-xs mt-1", systemPhase === "EOSY_CLOSING" ? "text-primary/80 font-medium" : "text-muted-foreground")}>Locks all public registration forms. Unlocks advisor portals for final grading, promotion status profiling, and data roll-over staging.</p>
-                        </div>
-                      </div>
-                    </RadioGroup>
+                        )
+                      })}
+                    </div>
 
-                    <div className="mt-6 flex justify-end">
+                    <div className="mt-6 flex justify-center">
                       <Button
                         onClick={() => setShowPhaseModal(true)}
-                        className="w-full sm:w-auto"
+                        size="lg"
+                        className="font-bold w-full sm:w-auto px-8"
                         disabled={!selectedPhase || selectedPhase === (systemPhase ?? "OFFICIAL_ENROLLMENT")}
                       >
-                        Apply Phase Change
+                        Advance to Next Phase
                       </Button>
                     </div>
                   </div>
@@ -1230,37 +1245,15 @@ export default function SchoolYearTab() {
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
-                        Grading Period Format
+                        Official DepEd 4-Quarter Calendar
                       </h4>
                     </div>
-                    <RadioGroup
-                      value={localCalendarState.termFormat ?? "TRIMESTER"}
-                      onValueChange={(value) => setLocalCalendarState(prev => ({ ...prev, termFormat: value }))}
-                      className="flex flex-col space-y-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" />
-                        <Label htmlFor="TRIMESTER" className="font-bold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="QUARTERS" id="QUARTERS" />
-                        <Label htmlFor="QUARTERS" className="font-bold cursor-pointer text-foreground">4-Quarter System</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
 
-                  {/* Term Date rows */}
-                  <div className="space-y-4 pt-6 border-t border-border/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
-                        Grading Period Calendar
-                      </h4>
-                    </div>
                     {[
-                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
-                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
-                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
-                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
+                      { num: 1, label: "Quarter 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
+                      { num: 2, label: "Quarter 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
+                      { num: 3, label: "Quarter 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
+                      { num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End },
                     ].map((term) => (
                       <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/40">
                         <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
@@ -1272,6 +1265,7 @@ export default function SchoolYearTab() {
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
                               }}
+                              minDate={new Date()}
                               className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
                               placeholder="Set date"
                             />
@@ -1284,6 +1278,7 @@ export default function SchoolYearTab() {
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
                               }}
+                              minDate={new Date()}
                               className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
                               placeholder="Set date"
                             />
@@ -1338,6 +1333,7 @@ export default function SchoolYearTab() {
                             onChange={(val) => {
                               setLocalCalendarState(prev => ({ ...prev, enrollOpenDate: val || "" }));
                             }}
+                            minDate={new Date()}
                             placeholder="Set start date"
                           />
                         </div>
@@ -1350,10 +1346,21 @@ export default function SchoolYearTab() {
                             onChange={(val) => {
                               setLocalCalendarState(prev => ({ ...prev, enrollCloseDate: val || "" }));
                             }}
+                            minDate={new Date()}
                             placeholder="Set end date"
                           />
                         </div>
                       </div>
+
+                      {localCalendarState.enrollOpenDate !== "" &&
+                        toManilaDateToken(localCalendarState.enrollOpenDate) < toManilaDateToken(new Date()) && (
+                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p>
+                              Error: Date cannot precede current system time.
+                            </p>
+                          </div>
+                        )}
 
                       {localCalendarState.enrollOpenDate !== "" &&
                         localCalendarState.enrollCloseDate !== "" &&
@@ -1391,6 +1398,71 @@ export default function SchoolYearTab() {
           </Card>
 
 
+
+          {/* Automated Sectioning Rules */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                  <Workflow className="h-5 w-5" />
+                </div>
+                Automated Sectioning Rules
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Pilot / Star Sectioning (Homogeneous)</Label>
+                      <p className="text-sm text-muted-foreground">Automatically group highest-performing learners into top sections.</p>
+                    </div>
+                    <Switch
+                      checked={enableHomogeneousSections}
+                      onCheckedChange={(checked) => handleUpdateAlgorithm({ enableHomogeneousSections: checked })}
+                      disabled={updatingAlgorithm}
+                    />
+                  </div>
+                  {enableHomogeneousSections && (
+                    <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
+                      <div className="max-w-xs space-y-2">
+                        <Label>Number of Homogeneous Sections</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="5"
+                          className="h-10 py-2 px-3"
+                          value={homogeneousSectionCount}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val)) {
+                              setSettings({ homogeneousSectionCount: val });
+                            }
+                          }}
+                          onBlur={() => handleUpdateAlgorithm({ homogeneousSectionCount })}
+                          disabled={updatingAlgorithm}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Standard Sectioning (Heterogeneous)</Label>
+                      <p className="text-sm text-muted-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
+                    </div>
+                    <Switch
+                      checked={heterogeneousRoundRobin}
+                      onCheckedChange={(checked) => handleUpdateAlgorithm({ heterogeneousRoundRobin: checked })}
+                      disabled={updatingAlgorithm}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {archivedYears.length > 0 && (
             <Card>

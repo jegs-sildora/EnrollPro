@@ -11,6 +11,7 @@ export interface HybridDatePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  minDate?: Date;
 }
 
 export function HybridDatePicker({
@@ -18,6 +19,7 @@ export function HybridDatePicker({
   onChange,
   placeholder = "MM/DD/YYYY",
   className,
+  minDate,
 }: HybridDatePickerProps) {
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -116,8 +118,17 @@ export function HybridDatePicker({
       const mm = parts[0];
       const dd = parts[1];
       const yyyy = parts[2];
-      const isDateValid = !isNaN(Date.parse(`${yyyy}-${mm}-${dd}`));
-      if (isDateValid && Number(mm) >= 1 && Number(mm) <= 12 && Number(dd) >= 1 && Number(dd) <= 31) {
+      const typedDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      const isDateValid = !isNaN(typedDate.getTime());
+      let failsMinDate = false;
+      if (isDateValid && minDate) {
+        // Strip time from minDate for comparison
+        const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+        if (typedDate < minDateOnly) {
+          failsMinDate = true;
+        }
+      }
+      if (!failsMinDate && isDateValid && Number(mm) >= 1 && Number(mm) <= 12 && Number(dd) >= 1 && Number(dd) <= 31) {
         onChange(`${yyyy}-${mm}-${dd}`);
       } else {
         onChange("");
@@ -186,6 +197,11 @@ export function HybridDatePicker({
             captionLayout="dropdown"
             startMonth={new Date(1900, 0, 1)}
             endMonth={new Date(2100, 11, 31)}
+            disabled={minDate ? (date) => {
+              const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+              const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+              return dateOnly < minDateOnly;
+            } : undefined}
             initialFocus
           />
         </PopoverContent>

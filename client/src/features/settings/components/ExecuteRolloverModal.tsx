@@ -24,7 +24,7 @@ import {
   sectionVariants,
   staggerTransition,
 } from "@/shared/lib/motion";
-import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+import { sileo } from "sileo";
 import {
   LoaderCore,
   type LoadingState as MultiStepLoadingState,
@@ -105,10 +105,10 @@ export default function ExecuteRolloverModal({
     setRolloverLoaderStep(0);
     setIsRolloverFinishing(false);
     setIsRolloverLoaderOpen(true);
-    lifecycleFeedback.progress(
-      "Executing Academic Rollover",
-      "Creating the next academic cycle and applying lifecycle updates.",
-    );
+    sileo.info({
+      title: "Executing Academic Rollover",
+      description: "Creating the next academic cycle and applying lifecycle updates.",
+    });
     setIsSubmitting(true);
     try {
       await waitForStepProgression();
@@ -134,10 +134,10 @@ export default function ExecuteRolloverModal({
         setTimeout(resolve, ROLLOVER_CLOSE_COUNTDOWN_SECONDS * 1000),
       );
 
-      lifecycleFeedback.success(
-        "Academic Rollover Completed",
-        `${nextYearLabel} has been created and activated successfully.`,
-      );
+      sileo.success({
+        title: "Academic Rollover Completed",
+        description: `${nextYearLabel} has been created and activated successfully.`,
+      });
       handleClose(false);
     } catch (err: unknown) {
       const message =
@@ -148,10 +148,10 @@ export default function ExecuteRolloverModal({
           : err instanceof Error
             ? err.message
             : "Failed to initiate school year rollover.";
-      lifecycleFeedback.error(
-        "Academic Rollover Failed",
-        message || "An unexpected error occurred.",
-      );
+      sileo.error({
+        title: "Academic Rollover Failed",
+        description: message || "An unexpected error occurred.",
+      });
     } finally {
       setIsRolloverLoaderOpen(false);
       setIsRolloverFinishing(false);

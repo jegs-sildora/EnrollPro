@@ -18,11 +18,14 @@ type SettingsTab = (typeof VALID_TABS)[number];
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
+  const wizard = searchParams.get("wizard");
+  const defaultTab = wizard === "new-school-year" ? "school-year" : "profile";
+
   const activeTab: SettingsTab = VALID_TABS.includes(
     (requestedTab ?? "") as SettingsTab,
   )
-    ? ((requestedTab as SettingsTab) ?? "profile")
-    : "profile";
+    ? ((requestedTab as SettingsTab) ?? defaultTab)
+    : defaultTab;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -49,7 +52,7 @@ export default function Settings() {
             Global System Configuration
           </h1>
           <p className="text-sm font-bold">
-            Define the school profile, manage academic calendars, and execute BOSY/EOSY phase shifts.
+            Define institutional branding, manage academic calendars, and execute official school year rollovers.
           </p>
         </div>
       </div>

@@ -10,7 +10,6 @@ import {
   Check,
   Megaphone,
   BookOpen,
-  Workflow,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
@@ -58,9 +57,6 @@ export default function SchoolProfileTab() {
     steEnabled,
     spaEnabled,
     spsEnabled,
-    enableHomogeneousSections,
-    homogeneousSectionCount,
-    heterogeneousRoundRobin,
     globalDefaultPassword,
     setSettings,
   } = useSettingsStore();
@@ -70,7 +66,6 @@ export default function SchoolProfileTab() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectingAccent, setSelectingAccent] = useState(false);
   const [togglingProgram, setTogglingProgram] = useState(false);
-  const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   type FormValues = z.infer<typeof updateIdentitySchema>;
@@ -256,37 +251,6 @@ export default function SchoolProfileTab() {
     }
   };
 
-  const handleUpdateAlgorithm = async (
-    updates: Partial<{
-      enableHomogeneousSections: boolean;
-      homogeneousSectionCount: number;
-      heterogeneousRoundRobin: boolean;
-    }>
-  ) => {
-    setUpdatingAlgorithm(true);
-    try {
-      const payload = {
-        enableHomogeneousSections,
-        homogeneousSectionCount,
-        heterogeneousRoundRobin,
-        ...updates,
-      };
-      const res = await api.patch("/settings/algorithm", payload);
-      setSettings({
-        enableHomogeneousSections: res.data.enableHomogeneousSections,
-        homogeneousSectionCount: res.data.homogeneousSectionCount,
-        heterogeneousRoundRobin: res.data.heterogeneousRoundRobin,
-      });
-      sileo.success({
-        title: "Algorithm Updated",
-        description: "Sectioning rules saved successfully.",
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setUpdatingAlgorithm(false);
-    }
-  };
 
   return (
     <Form {...form}>
@@ -324,7 +288,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School ID (6-digit format)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 123456" {...field} value={field.value ?? ""} />
+                      <Input placeholder="e.g. 123456" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -338,7 +302,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Region</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="bg-muted text-foreground cursor-not-allowed" />
+                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -352,7 +316,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Division</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="bg-muted text-foreground cursor-not-allowed" />
+                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -447,70 +411,6 @@ export default function SchoolProfileTab() {
           </CardContent>
         </Card>
 
-        {/* Automated Sectioning Rules */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
-                <Workflow className="h-5 w-5" />
-              </div>
-              Automated Sectioning Rules
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-              <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Enable Homogeneous Sections</FormLabel>
-                    <p className="text-sm text-muted-foreground">Automatically group highest-performing learners into top sections.</p>
-                  </div>
-                  <Switch
-                    checked={enableHomogeneousSections}
-                    onCheckedChange={(checked) => handleUpdateAlgorithm({ enableHomogeneousSections: checked })}
-                    disabled={updatingAlgorithm}
-                  />
-                </div>
-                {enableHomogeneousSections && (
-                  <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
-                    <div className="max-w-xs space-y-2">
-                      <FormLabel>Number of Homogeneous Sections</FormLabel>
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="5"
-                        className="h-10 py-2 px-3"
-                        value={homogeneousSectionCount}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          if (!isNaN(val)) {
-                            setSettings({ homogeneousSectionCount: val });
-                          }
-                        }}
-                        onBlur={() => handleUpdateAlgorithm({ homogeneousSectionCount })}
-                        disabled={updatingAlgorithm}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Heterogeneous Distribution</FormLabel>
-                    <p className="text-sm text-muted-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
-                  </div>
-                  <Switch
-                    checked={heterogeneousRoundRobin}
-                    onCheckedChange={(checked) => handleUpdateAlgorithm({ heterogeneousRoundRobin: checked })}
-                    disabled={updatingAlgorithm}
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Channels & Branding */}
         <Card>

@@ -4,7 +4,7 @@ import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { fireIntakeReceiptNotification } from "../../lib/notificationService.js";
+
 
 /**
  * POST /api/enrollment/confirm-slip
@@ -421,30 +421,6 @@ export async function finalizeIntake(req: Request, res: Response) {
     recordId: applicationId,
     req,
   });
-
-  // Resolve guardian contact info for notification
-  const guardian = application.familyMembers.find(
-    (m) =>
-      m.relationship === "GUARDIAN" ||
-      m.relationship === "MOTHER" ||
-      m.relationship === "FATHER",
-  );
-
-  // Fire-and-forget: Notification Event A
-  fireIntakeReceiptNotification({
-    applicationId,
-    learnerName: `${application.learner.firstName} ${application.learner.lastName}`,
-    lrn: application.learner.lrn ?? null,
-    guardianName: guardian
-      ? `${guardian.firstName} ${guardian.lastName}`
-      : (application.guardianName ?? null),
-    contactNumber: guardian?.contactNumber ?? application.contactNumber ?? null,
-    email: guardian?.email ?? null,
-    schoolYearLabel: application.schoolYear.yearLabel,
-    finalizedAt: new Date().toISOString(),
-  }).catch((err: unknown) =>
-    console.error("[Notification Event A Error]:", err),
-  );
 
   return res.json({
     success: true,

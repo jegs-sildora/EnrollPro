@@ -11,6 +11,7 @@ import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { getLearnerApi } from "@/shared/api/axiosInstance";
 
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 
 
 interface LearnerDashboardResponse {
@@ -111,15 +112,15 @@ function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, is
         <div className="border-x border-b border-gray-200 rounded-b-sm overflow-x-auto dark:border-border">
           <div className="w-full overflow-x-auto whitespace-nowrap">
             <table className="w-full border-collapse border border-border text-sm">
-              <thead className="bg-muted border-b border-border">
+              <thead className="bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider py-3">
                 <tr>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Learning Areas</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Quarter 1</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Quarter 2</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Quarter 3</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Quarter 4</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Final Rating</th>
-                  <th className="border border-border px-4 py-2 text-center font-bold text-muted-foreground uppercase">Remarks</th>
+                  <th className="px-4 py-2 text-center">Learning Areas</th>
+                  <th className="px-4 py-2 text-center">Quarter 1</th>
+                  <th className="px-4 py-2 text-center">Quarter 2</th>
+                  <th className="px-4 py-2 text-center">Quarter 3</th>
+                  <th className="px-4 py-2 text-center">Quarter 4</th>
+                  <th className="px-4 py-2 text-center">Final Rating</th>
+                  <th className="px-4 py-2 text-center">Remarks</th>
                 </tr>
               </thead>
               <tbody>
@@ -240,15 +241,21 @@ export default function LearnerDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <Badge variant="outline" className="hidden sm:inline-flex bg-emerald-50 text-emerald-700 border-emerald-200 uppercase text-[10px] font-black h-5">
+              2026-2027 [ACTIVE]
+            </Badge>
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">
                 <span className="text-xs font-bold text-gray-700">
                   {user.firstName[0]}{user.lastName[0]}
                 </span>
               </div>
-              <span className="text-sm font-bold text-muted-foreground hidden sm:inline">
-                {user.firstName} {user.lastName}
-              </span>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-sm font-bold text-muted-foreground leading-tight">
+                  {user.firstName} {user.lastName}
+                </span>
+                <Badge className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] uppercase w-fit h-4 px-1 py-0 border-0 leading-none mt-[2px]">LEARNER</Badge>
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -273,38 +280,35 @@ export default function LearnerDashboard() {
         {data && (
           <>
             {/* Left Pane (Fixed Identity Sidebar) */}
-            <aside className="w-full md:w-[40%] lg:w-[30%] flex-shrink-0 h-auto md:h-full md:overflow-y-auto bg-muted/50 border-b md:border-b-0 md:border-r border-border p-6 shadow-sm print:w-full print:border-none print:shadow-none">
-              <div className="flex flex-col items-center pt-12 px-6">
-                <div className="w-40 h-40 bg-gray-400 shadow-sm border border-border overflow-hidden rounded-md flex items-center justify-center shrink-0">
-                  {data.sf1.studentPhoto ? (
-                    <img src={data.sf1.studentPhoto} alt="Learner Photo" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-5xl font-black text-white/50 tracking-tighter uppercase">
-                      {data.identity.firstName.charAt(0)}{data.identity.lastName.charAt(0)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-6 flex flex-col items-center w-full">
-                  <h2 className="text-xl font-black text-foreground uppercase text-center leading-tight">
-                    {data.identity.lastName}, {data.identity.firstName}
-                  </h2>
-                  <p className="text-sm font-semibold text-muted-foreground text-center mt-1">
-                    LRN: {data.identity.lrn}
-                  </p>
-                  <p className="text-base font-bold text-primary text-center mt-4">
-                    {data.enrollment.gradeLevel ? `${data.enrollment.gradeLevel} - ` : ""}
-                    {data.enrollment.section || "TBA"}
-                  </p>
-                </div>
+            <aside className="w-[30%] bg-muted/30 border-r border-border h-full flex flex-col items-center pt-12 px-6">
+              
+              <div className="w-40 h-40 object-cover bg-gray-300 shadow-sm border border-border rounded-md mb-6 flex items-center justify-center overflow-hidden shrink-0">
+                {data.sf1.studentPhoto ? (
+                  <img src={data.sf1.studentPhoto} alt="Learner Photo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl font-black text-white/50 tracking-tighter uppercase">
+                    {data.identity.firstName.charAt(0)}{data.identity.lastName.charAt(0)}
+                  </span>
+                )}
               </div>
+              
+              
+              <h2 className="text-xl font-black text-foreground uppercase text-center">{data.identity.lastName}, {data.identity.firstName}</h2>
+              <p className="text-sm font-semibold text-muted-foreground text-center mt-1">LRN: {data.identity.lrn}</p>
+              <p className="text-base font-bold text-primary text-center mt-4">Grade {data.enrollment.gradeLevel} - {data.enrollment.section}</p>
             </aside>
 
             {/* Right Pane (Flat Document Canvas) */}
-            <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-auto md:h-full md:overflow-y-auto bg-white px-4 py-6 lg:px-12 lg:py-8 space-y-12 dark:bg-background">
+            <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-full overflow-y-auto bg-[url('/pixel-grid.svg')] px-4 py-6 lg:px-12 lg:py-8 space-y-12">
+              <div className="mb-6 mt-4">
+                <h1 className="text-3xl font-black text-foreground tracking-tight">Learner Dashboard</h1>
+                <p className="text-sm font-semibold text-muted-foreground mt-1">
+                  Review official academic records, verify current enrollment status, and validate permanent profile data.
+                </p>
+              </div>
 
               {/* Section 3: The Digital SF9 */}
-              <div className="print:break-inside-avoid space-y-5">
+              <div className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
                 <div className="bg-transparent pb-0 print:bg-transparent">
                   <div className="mb-8 mt-0 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
@@ -334,10 +338,8 @@ export default function LearnerDashboard() {
                 </div>
               </div>
 
-              <hr className="border-gray-200 dark:border-border" />
-
               {/* Section 4: The Learner Profile (SF1) */}
-              <div className="print:break-inside-avoid space-y-5">
+              <div className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
                 <div className="bg-transparent pb-0 print:bg-transparent">
                   <div className="mb-8 mt-12 flex items-center gap-3">
                     <h3 className="text-2xl font-black text-gray-900 uppercase dark:text-foreground">
@@ -349,26 +351,46 @@ export default function LearnerDashboard() {
                   {/* Sub-Section 1: Learner Demographics */}
                   <div className="mb-8">
                     <h3 className="text-lg font-black text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
-                    <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                      <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
-                        <SectionItem label="Full Name" value={`${data.identity.lastName}, ${data.identity.firstName} ${data.identity.middleName || ""} ${data.identity.extensionName || ""}`.trim().replace(/\s+/g, ' ')} />
-                        <SectionItem label="LRN" value={data.identity.lrn} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Full Name</span>
+                        <span className="text-sm font-bold">{`${data.identity.lastName}, ${data.identity.firstName} ${data.identity.middleName || ""} ${data.identity.extensionName || ""}`.trim().replace(/\s+/g, ' ')}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
-                        <SectionItem label="Sex" value={data.sf1.sex === "MALE" ? "Male" : "Female"} />
-                        <SectionItem label="Date of Birth" value={formatDate(data.sf1.birthdate)} />
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">LRN</span>
+                        <span className="text-sm font-bold">{data.identity.lrn}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
-                        <SectionItem label="Place of Birth" value={data.sf1.placeOfBirth} />
-                        <SectionItem label="Age" value={`${Math.floor((Date.now() - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`} />
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Sex</span>
+                        <span className="text-sm font-bold">{data.sf1.sex === "MALE" ? "Male" : "Female"}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
-                        <SectionItem label="Religion" value={data.sf1.religion} />
-                        <SectionItem label="Mother Tongue" value={data.sf1.motherTongue} />
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Date of Birth</span>
+                        <span className="text-sm font-bold">{formatDate(data.sf1.birthdate)}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
-                        <SectionItem label="IP Group Status" value={data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"} />
-                        <SectionItem label="4Ps Beneficiary" value={data.sf1.is4PsBeneficiary ? "Yes" : "No"} />
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Place of Birth</span>
+                        <span className="text-sm font-bold">{data.sf1.placeOfBirth || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                      </div>
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Age</span>
+                        <span className="text-sm font-bold">{`${Math.floor((Date.now() - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`}</span>
+                      </div>
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Religion</span>
+                        <span className="text-sm font-bold">{data.sf1.religion || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                      </div>
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">Mother Tongue</span>
+                        <span className="text-sm font-bold">{data.sf1.motherTongue || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                      </div>
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">IP Group Status</span>
+                        <span className="text-sm font-bold">{data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"}</span>
+                      </div>
+                      <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
+                        <span className="text-xs uppercase">4Ps Beneficiary</span>
+                        <span className="text-sm font-bold">{data.sf1.is4PsBeneficiary ? "Yes" : "No"}</span>
                       </div>
                     </div>
                   </div>

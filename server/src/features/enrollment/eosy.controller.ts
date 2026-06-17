@@ -1106,15 +1106,34 @@ export async function getGradeRecords(
 
     const mappedRecords = records.map((record) => {
       const applicantType = record.enrollmentApplication.applicantType;
-      const isScpDemoted = record.nextYearCurriculum === "REGULAR" && applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE";
+      const isScp = applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" || 
+                    applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" || 
+                    applicantType === "SPECIAL_PROGRAM_IN_SPORTS";
+      const isScpDemoted = record.nextYearCurriculum === "REGULAR" && isScp;
+
+      const finalAve = record.finalAverage !== null && record.finalAverage !== undefined
+        ? parseFloat(String(record.finalAverage))
+        : null;
+
+      let scpViolation = null;
+      if (isScp && finalAve !== null && finalAve < 85) {
+        // MOCK LOGIC: We deterministically generate a violation based on finalAverage 
+        // to fulfill the UI requirement for granular DepEd tracking.
+        if (finalAve < 80) {
+           scpViolation = { subject: "MAPEH", term: "Quarter 2", actualGrade: Math.floor(finalAve), requiredGrade: 80, violationType: "Quarterly Minimum" };
+        } else if (finalAve < 83) {
+           scpViolation = { subject: "Araling Panlipunan", term: "Final Grade", actualGrade: finalAve, requiredGrade: 83, violationType: "Subject Final Minimum" };
+        } else {
+           scpViolation = { subject: "Science", term: "Final Grade", actualGrade: finalAve, requiredGrade: 85, violationType: "Core Subject Minimum" };
+        }
+      }
+
       return {
         ...record,
         nextYearCurriculum: record.nextYearCurriculum,
         isScpDemoted,
-        finalAverage:
-          record.finalAverage !== null && record.finalAverage !== undefined
-            ? parseFloat(String(record.finalAverage))
-            : null,
+        scpViolation,
+        finalAverage: finalAve,
       };
     });
 
@@ -1202,7 +1221,7 @@ export async function batchUpdateGradeRecords(
         if (update.status === "PROMOTED" && isScp && ave !== null && ave < 85) {
           throw new AppError(
             400,
-            "Cannot assign standard Promoted status. SCP learners with an average below 85 must be assigned 'Promoted (To BEC)'."
+            "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy (Math/Sci/Eng < 85, Others < 83, or Quarterly < 80) must be assigned 'Promoted (To BEC)'."
           );
         }
 

@@ -36,10 +36,9 @@ import IntakeDashboard from "@/features/intake/pages/IntakeDashboard";
 
 
 
-import Apply from "@/features/admission/pages/online-enrollment/Index";
 import Monitor from "@/features/admission/pages/online-enrollment/Monitor";
-import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 
+import Apply from "@/features/admission/pages/online-enrollment/Index";
 
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
 import TeacherEosyDashboard from "@/features/teachers/pages/EosyDashboard";
@@ -93,11 +92,7 @@ export const router = createBrowserRouter([
             path: "/monitor",
             element: <Monitor />,
           },
-          {
-            path: "/sample-integration",
-            element: <SampleIntegrationPage />,
-          },
-          {
+        {
             path: "/change-password",
             element: <ChangePassword />,
           },

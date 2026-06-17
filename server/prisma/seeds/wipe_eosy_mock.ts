@@ -27,7 +27,22 @@ async function main() {
     },
   });
 
+  const sectionsResult = await prisma.section.updateMany({
+    where: { schoolYearId: activeSchoolYear.id },
+    data: {
+      isEosyFinalized: false,
+    },
+  });
+
+  await prisma.schoolYear.update({
+    where: { id: activeSchoolYear.id },
+    data: {
+      isEosyFinalized: false,
+    },
+  });
+
   console.log(`✅ Reset ${result.count} enrollment records for SY ${activeSchoolYear.yearLabel}.`);
+  console.log(`✅ Reset finalization status for ${sectionsResult.count} sections and the school year.`);
 }
 
 main()

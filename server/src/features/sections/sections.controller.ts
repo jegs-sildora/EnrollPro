@@ -13,7 +13,7 @@ import { SectioningEngine } from "../enrollment/services/sectioning-engine.servi
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
-import { fireOfficialEnrollmentNotification } from "../../lib/notificationService.js";
+
 
 const sectioningEngine = new SectioningEngine(prisma as any);
 
@@ -177,50 +177,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
       count: results.length,
     });
 
-    // Fire Event B — Official Enrollment notifications (fire-and-forget)
-    prisma.enrollmentRecord
-      .findMany({
-        where: { enrollmentApplicationId: { in: appIds } },
-        include: {
-          section: { select: { name: true } },
-          schoolYear: { select: { yearLabel: true } },
-          enrollmentApplication: {
-            select: {
-              id: true,
-              guardianName: true,
-              contactNumber: true,
-              learner: { select: { firstName: true, lastName: true, lrn: true } },
-              gradeLevel: { select: { name: true } },
-              familyMembers: {
-                select: { relationship: true, firstName: true, lastName: true, contactNumber: true, email: true },
-              },
-            },
-          },
-        },
-      })
-      .then((records) => {
-        for (const record of records) {
-          const app = record.enrollmentApplication;
-          const guardian = app.familyMembers?.find(
-            (m) => m.relationship === "GUARDIAN" || m.relationship === "MOTHER" || m.relationship === "FATHER",
-          );
-          fireOfficialEnrollmentNotification({
-            applicationId: record.enrollmentApplicationId,
-            learnerName: `${app.learner.firstName} ${app.learner.lastName}`,
-            lrn: app.learner.lrn ?? null,
-            guardianName: guardian ? `${guardian.firstName} ${guardian.lastName}` : app.guardianName ?? null,
-            contactNumber: guardian?.contactNumber ?? app.contactNumber ?? null,
-            email: guardian?.email ?? null,
-            sectionName: record.section.name,
-            adviserName: null,
-            schoolYearLabel: record.schoolYear.yearLabel,
-            gradeLevelName: app.gradeLevel.name,
-            assignmentSlipUrl: null,
-            enrolledAt: record.enrolledAt.toISOString(),
-          }).catch((err: unknown) => console.error("[Notification Event B Error]:", err));
-        }
-      })
-      .catch((err) => console.error("[Notification Event B Fetch Error]:", err));
+
   } catch (error: unknown) {
     console.error("[commitBatchSectioning Error]:", error);
     const isPrismaConflict =

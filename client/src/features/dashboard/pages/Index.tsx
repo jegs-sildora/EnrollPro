@@ -183,7 +183,6 @@ export default function Dashboard() {
 
   const pendingReviewCount =
     stats?.actions?.pendingReview ?? stats?.totalPending ?? 0;
-  const pendingReviewAlert = pendingReviewCount > 0;
   const enrollmentCurrent = stats?.totalEnrolled ?? 0;
 
   // System Analytics — admin footer row
@@ -263,11 +262,11 @@ export default function Dashboard() {
 
       </div>
 
-      {/* ── Row 1: Urgent Action Board ── */}
-      <section className="space-y-4" aria-label="Urgent action board">
+      {/* ── Row 1: Pending Administrative Tasks ── */}
+      <section className="space-y-4" aria-label="Pending administrative tasks">
         <div className="flex items-center gap-2">
           <h2 className="text-xs font-black uppercase text-foreground">
-            Urgent Action Board
+            PENDING ADMINISTRATIVE TASKS
           </h2>
           <div className="h-px flex-1 bg-slate-200"></div>
         </div>
@@ -275,20 +274,15 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card 1: PENDING ENROLLMENT APPROVALS */}
           <Card
-            className={cn(
-              "shadow-sm card-hover hover:shadow-md border-2 flex flex-col",
-              pendingReviewAlert
-                ? "border-amber-400 bg-amber-50/30"
-                : "border-slate-200/50 bg-white"
-            )}
+            className="bg-background border border-border shadow-sm rounded-lg flex flex-col"
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
                   Pending Enrollment Approvals
                 </CardTitle>
-                <div className={cn("rounded-lg p-2", pendingReviewAlert ? "bg-amber-100" : "bg-white")}>
-                  <ClipboardList className={cn("h-4 w-4", pendingReviewAlert ? "text-amber-700" : "text-foreground")} />
+                <div className="rounded-lg p-2 bg-white">
+                  <ClipboardList className="h-4 w-4 text-foreground" />
                 </div>
               </div>
             </CardHeader>
@@ -314,27 +308,27 @@ export default function Dashboard() {
               <Button
                 type="button"
                 className="w-full font-black uppercase text-xs h-10 mt-auto"
-                variant={pendingReviewAlert ? "default" : "outline"}
+                variant="outline"
                 onClick={() => navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION")}
               >
                 {pendingReviewCount > 0
                   ? `Review ${formatMetric(pendingReviewCount)} Applications`
-                  : "Open Verification Queue"}
+                  : "REVIEW PENDING ENROLLEES"}
               </Button>
             </CardContent>
           </Card>
 
           {/* Card 2: LEARNERS AWAITING SECTIONING */}
           <Card
-            className="border-2 border-blue-200/60 bg-gradient-to-br from-white to-blue-50/30 shadow-md card-hover hover:shadow-lg flex flex-col"
+            className="bg-background border border-border shadow-sm rounded-lg flex flex-col"
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black uppercase text-blue-900/60">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
                   Learners Awaiting Sectioning
                 </CardTitle>
-                <div className="bg-blue-100 rounded-lg p-2">
-                  <Users className="h-4 w-4 text-blue-600" />
+                <div className="bg-white rounded-lg p-2">
+                  <Users className="h-4 w-4 text-foreground" />
                 </div>
               </div>
             </CardHeader>
@@ -360,7 +354,7 @@ export default function Dashboard() {
                 variant="outline"
                 onClick={() => navigate("/sections/homerooms")}
               >
-                Manage Sections
+                ASSIGN LEARNERS TO SECTIONS
               </Button>
             </CardContent>
           </Card>
@@ -373,20 +367,15 @@ export default function Dashboard() {
 
             return (
               <Card
-                className={cn(
-                  "shadow-sm card-hover hover:shadow-md border-2 flex flex-col",
-                  hasCapacityPressure
-                    ? "border-amber-300 bg-amber-50/50"
-                    : "border-slate-200/50 bg-white"
-                )}
+                className="bg-background border border-border shadow-sm rounded-lg flex flex-col"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase text-foreground">
                       Overcrowded Sections
                     </CardTitle>
-                    <div className={cn("rounded-lg p-2", hasCapacityPressure ? "bg-amber-100" : "bg-white")}>
-                      <AlertTriangle className={cn("h-4 w-4", hasCapacityPressure ? "text-amber-600" : "text-foreground")} />
+                    <div className="rounded-lg p-2 bg-white">
+                      <AlertTriangle className="h-4 w-4 text-foreground" />
                     </div>
                   </div>
                 </CardHeader>
@@ -420,7 +409,7 @@ export default function Dashboard() {
                     variant="outline"
                     onClick={() => navigate("/sections/homerooms")}
                   >
-                    Review Class Sizes
+                    MONITOR SECTION CAPACITIES
                   </Button>
                 </CardContent>
               </Card>
@@ -787,18 +776,21 @@ export default function Dashboard() {
             <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-black uppercase text-foreground">
-                  LATEST ACTIVITIES
+                  GENERATE OFFICIAL REPORTS (QUICK LINKS)
                 </CardTitle>
                 <ClipboardList className="h-3.5 w-3.5 text-foreground" />
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-center">
-                <div className="space-y-3 pt-1">
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Audit logs feed has been relocated. View full access logs in the administrative settings.
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full text-xs font-black uppercase mt-2" onClick={() => navigate("/settings/audit-logs")}>
-                    View Access Logs
-                  </Button>
+                <div className="flex flex-col gap-2 pt-2">
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                    <Archive className="h-4 w-4 text-primary" /> Download School Form 1 (SF1) - School Register
+                  </button>
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                    <Archive className="h-4 w-4 text-primary" /> Download School Form 5 (SF5) - Report on Promotion
+                  </button>
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                    <Archive className="h-4 w-4 text-primary" /> Download School Form 6 (SF6) - Summarized Report
+                  </button>
                 </div>
               </CardContent>
             </Card>

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+import { sileo } from "sileo";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -135,10 +135,10 @@ export default function TeacherEosyDashboard() {
 
       await api.post("/teacher-eosy/advisory/submit", payload);
       
-      lifecycleFeedback.success(
-        "Advisory Finalized",
-        "Your section's EOSY grades and statuses have been submitted to the Registrar."
-      );
+      sileo.success({
+        title: "Advisory Finalized",
+        description: "Your section's EOSY grades and statuses have been submitted to the Registrar."
+      });
       
       setConfirmModalOpen(false);
       void fetchAdvisory();
