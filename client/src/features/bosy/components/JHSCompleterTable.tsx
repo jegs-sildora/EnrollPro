@@ -29,12 +29,12 @@ export function JHSCompleterTable({
         cell: ({ row }) => {
           const r = row.original;
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
               <span className="font-bold uppercase truncate">
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
               </span>
-              <span className="text-xs text-foreground font-bold">
+              <span className="text-base text-foreground font-bold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -73,7 +73,7 @@ export function JHSCompleterTable({
           />
         ),
         cell: ({ row }) => (
-          <div className="text-center text-xs text-foreground font-bold">
+          <div className="text-center text-base text-foreground font-bold">
             {row.original.lastYearEnrolled ?? "—"}
           </div>
         ),
@@ -86,7 +86,7 @@ export function JHSCompleterTable({
           <DataTableColumnHeader column={column} title="LAST SECTION" />
         ),
         cell: ({ row }) => (
-          <div className="text-xs font-bold">
+          <div className="text-base font-bold">
             {row.original.lastSectionName ?? (
               <span className="text-foreground">—</span>
             )}
@@ -96,7 +96,7 @@ export function JHSCompleterTable({
       {
         id: "status",
         header: () => (
-          <div className="text-center font-bold text-xs uppercase">Status</div>
+          <div className="text-center font-bold text-base uppercase">Status</div>
         ),
         cell: () => (
           <div className="flex justify-center">

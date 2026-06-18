@@ -107,7 +107,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       return (
         <Badge
           variant="outline"
-          className="text-xs text-foreground">
+          className="text-base text-foreground">
           None
         </Badge>
       );
@@ -116,7 +116,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
     return (
       <Badge
         variant="success"
-        className="max-w-[220px] truncate text-xs font-bold"
+        className="max-w-[220px] truncate text-base font-bold"
         title={`Assigned to ${advisorySummary}`}>
         {advisorySummary}
       </Badge>
@@ -155,7 +155,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           `${teacher.firstName.charAt(0)}${teacher.lastName.charAt(0)}`.toUpperCase();
         return (
           <div className="flex justify-center ml-6">
-            <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
+            <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-base shrink-0 uppercase">
               {initials}
             </div>
           </div>
@@ -186,10 +186,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         const teacher = row.original;
         return (
           <div className="w-full flex flex-col text-left pl-2 py-1">
-            <span className="font-semibold text-sm text-foreground">
+            <span className="font-semibold text-base leading-tight text-foreground">
               {teacher.lastName}, {teacher.firstName}
             </span>
-            <span className="text-xs text-foreground leading-tight">
+            <span className="text-base text-foreground leading-tight">
               {teacher.email || "No email address"}
             </span>
           </div>
@@ -223,10 +223,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         if (!isTeachingStaff) {
           return (
             <div className="w-full flex flex-col text-left pl-2 py-1">
-              <span className="text-sm font-bold text-foreground">
+              <span className="text-base leading-tight font-bold text-foreground">
                 {teacher.employeeId || <span className="text-gray-300">—</span>}
               </span>
-              <span className="text-xs text-gray-300 italic leading-tight">
+              <span className="text-base text-gray-300 italic leading-tight">
                 —
               </span>
             </div>
@@ -235,15 +235,15 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
         return (
           <div className="w-full flex flex-col text-left pl-2 py-1">
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-base leading-tight font-bold text-foreground">
               {teacher.employeeId}
             </span>
             {teacher.plantillaPosition ? (
-              <span className="text-xs text-foreground italic leading-tight">
+              <span className="text-base text-foreground italic leading-tight">
                 {teacher.plantillaPosition}
               </span>
             ) : (
-              <span className="text-xs text-gray-300 italic leading-tight">
+              <span className="text-base text-gray-300 italic leading-tight">
                 —
               </span>
             )}
@@ -278,7 +278,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         if (!isTeachingStaff) {
           return (
             <div className="w-full flex flex-col items-start text-left gap-1 pl-2 py-1">
-              <span className="text-sm font-bold text-gray-300 uppercase whitespace-nowrap">
+              <span className="text-base leading-tight font-bold text-gray-300 uppercase whitespace-nowrap">
                 —
               </span>
             </div>
@@ -289,16 +289,16 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         return (
           <div className="w-full flex flex-col items-start text-left gap-1 pl-2 py-1">
             {fullDept ? (
-              <span className="text-sm font-bold uppercase whitespace-nowrap">
+              <span className="text-base leading-tight font-bold uppercase whitespace-nowrap">
                 {fullDept}
               </span>
             ) : (
-              <span className="text-sm font-bold text-gray-300 uppercase whitespace-nowrap">
+              <span className="text-base leading-tight font-bold text-gray-300 uppercase whitespace-nowrap">
                 —
               </span>
             )}
             {teacher.specialization && (
-              <span className="text-xs text-foreground leading-tight">
+              <span className="text-base text-foreground leading-tight">
                 {teacher.specialization}
               </span>
             )}
@@ -357,7 +357,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
         return (
           <div className="flex flex-col items-center justify-center gap-1 py-1">
-            <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full", config.pillClass)}>
+            <Badge variant="outline" className={cn("text-base font-bold px-2.5 py-0.5 border rounded-full", config.pillClass)}>
               {config.label}
             </Badge>
           </div>
@@ -390,7 +390,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         if (roles.length === 0) {
           return (
             <div className="w-full flex justify-start pl-2">
-              <span className="text-foreground font-bold uppercase text-xs whitespace-nowrap">
+              <span className="text-foreground font-bold uppercase text-base whitespace-nowrap">
                 Subject Teacher
               </span>
             </div>
@@ -413,7 +413,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   key={`${teacher.id}-${role}`}
                   variant="outline"
                   className={cn(
-                    "text-xs font-black uppercase px-2 h-5 border-none whitespace-nowrap",
+                    "text-base font-black uppercase px-2 h-5 border-none whitespace-nowrap",
                     role === "CLASS_ADVISER" ? getAcademicDesignationColorClasses("CLASS ADVISER") :
                       role === "TEACHER" ? "bg-slate-100 text-slate-600 border-slate-200" :
                         "bg-slate-100 text-slate-700 border-slate-200"
@@ -449,7 +449,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         return (
           <div className="w-full flex justify-start pl-2">
             {!isTeachingStaff ? (
-              <span className="text-xs font-bold text-gray-300 italic">—</span>
+              <span className="text-base font-bold text-gray-300 italic">—</span>
             ) : (
               renderAdvisoryStatus(teacher)
             )}
@@ -490,7 +490,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4 border-b border-dashed border-border mb-3">
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <div className="flex flex-col gap-1 items-start m-0 p-0">
-              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+              <span className="text-base font-black uppercase tracking-wide m-0 p-0">
                 TOTAL PERSONNEL
               </span>
               <span className="text-3xl font-black text-red-900 tabular-nums m-0 p-0 leading-none">
@@ -501,7 +501,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <div className="flex flex-col gap-1 items-start m-0 p-0">
-              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+              <span className="text-base font-black uppercase tracking-wide m-0 p-0">
                 ACTIVE PERSONNEL
               </span>
               <span className="text-3xl font-black text-emerald-600 tabular-nums m-0 p-0 leading-none">
@@ -512,7 +512,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <div className="flex flex-col gap-1 items-start m-0 p-0">
-              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+              <span className="text-base font-black uppercase tracking-wide m-0 p-0">
                 INACTIVE PERSONNEL
               </span>
               <span className="text-3xl font-black text-slate-400 tabular-nums m-0 p-0 leading-none">
@@ -523,7 +523,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <div className="flex flex-col gap-1 items-start m-0 p-0">
-              <span className="text-xs font-black uppercase tracking-wider m-0 p-0">
+              <span className="text-base font-black uppercase tracking-wide m-0 p-0">
                 CLASS ADVISERS
               </span>
               <span className="text-3xl font-black text-slate-800 tabular-nums m-0 p-0 leading-none">
@@ -540,7 +540,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               onChange={(event) => setSearchInputValue(event.target.value)}
               placeholder="Search name, ID, learning area, section..."
               autoComplete="off"
-              className="h-9 pl-9 font-bold text-xs"
+              className="h-9 pl-9 font-bold text-base"
             />
           </div>
           <div className="flex flex-wrap items-center justify-end gap-3 flex-1 min-w-0">
@@ -549,7 +549,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               onValueChange={(value) =>
                 onStatusFilterChange(value as TeacherStatusFilter)
               }>
-              <SelectTrigger className="h-9 w-auto min-w-[130px] font-bold uppercase text-xs">
+              <SelectTrigger className="h-9 w-auto min-w-[130px] font-bold uppercase text-base">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -563,13 +563,13 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               onValueChange={(value) =>
                 onDesignationFilterChange(value as TeacherDesignationFilter)
               }>
-              <SelectTrigger className="h-9 w-auto min-w-[150px] font-bold uppercase text-xs">
+              <SelectTrigger className="h-9 w-auto min-w-[150px] font-bold uppercase text-base">
                 <SelectValue placeholder="Designation" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="font-bold">All Designations</SelectItem>
                 {availableDesignationFilters.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="font-bold text-xs uppercase">
+                  <SelectItem key={option.value} value={option.value} className="font-bold text-base uppercase">
                     {option.label}
                   </SelectItem>
                 ))}
@@ -578,13 +578,13 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             <Select
               value={departmentFilter}
               onValueChange={onDepartmentFilterChange}>
-              <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-xs">
+              <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-base">
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 <SelectItem value="all" className="font-bold">All Departments</SelectItem>
                 {availableDepartments.map((department) => (
-                  <SelectItem key={department} value={department} className="font-bold text-xs uppercase">
+                  <SelectItem key={department} value={department} className="font-bold text-base uppercase">
                     {department}
                   </SelectItem>
                 ))}
@@ -592,7 +592,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             </Select>
             <Button
               variant="ghost"
-              className="h-9 font-bold uppercase text-xs px-3"
+              className="h-9 font-bold uppercase text-base px-3"
               disabled={!hasActiveFilters}
               onClick={() => {
                 clearSearch();
@@ -604,7 +604,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 gap-1.5 font-bold uppercase text-xs"
+              className="h-9 gap-1.5 font-bold uppercase text-base"
               onClick={onRefresh}>
               <RefreshCw
                 className={cn("h-3.5 w-3.5", loading && "animate-spin")}
@@ -654,7 +654,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 </div>
               ))
             ) : paginatedTeachers.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
+              <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-base leading-tight text-foreground italic font-bold">
                 {hasActiveFilters
                   ? "No teachers match the current filter set."
                   : 'No teachers found.'}
@@ -668,15 +668,15 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
+                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-base shrink-0 uppercase">
                           {teacher.firstName.charAt(0)}
                           {teacher.lastName.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-black text-sm uppercase leading-tight">
+                          <p className="font-black text-base uppercase leading-tight">
                             {teacher.lastName}, {teacher.firstName}
                           </p>
-                          <p className="text-xs text-foreground mt-0.5 font-bold">
+                          <p className="text-base text-foreground mt-0.5 font-bold">
                             {teacher.email || "No email address"}
                           </p>
                         </div>
@@ -692,14 +692,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                         };
                         const c = cfg[s] ?? cfg.ACTIVE;
                         return (
-                          <Badge variant="outline" className={cn("text-xs font-bold px-2.5 py-0.5 border rounded-full shrink-0", c.pillClass)}>
+                          <Badge variant="outline" className={cn("text-base font-bold px-2.5 py-0.5 border rounded-full shrink-0", c.pillClass)}>
                             {c.label}
                           </Badge>
                         );
                       })()}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-base">
                       <div>
                         <p className="text-foreground uppercase font-bold text-[10px]">
                           Employee ID

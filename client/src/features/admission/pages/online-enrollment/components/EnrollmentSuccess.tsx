@@ -85,7 +85,7 @@ export default function EnrollmentSuccess({
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
             <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm font-semibold leading-relaxed text-left">
+            <p className="text-base font-semibold leading-relaxed text-left">
               Important tip: Please take a screenshot of this page or write down your tracking number before closing this window. You will need to show this to the guard and registrar.
             </p>
           </div>
@@ -98,7 +98,7 @@ export default function EnrollmentSuccess({
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
             )}>
-            <p className="text-xs text-foreground uppercase font-black">
+            <p className="text-base text-foreground uppercase font-black">
               Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
@@ -107,13 +107,13 @@ export default function EnrollmentSuccess({
               </p>
             </div>
             {learnerName && (
-              <p className="text-sm font-black text-foreground mt-2 uppercase">
+              <p className="text-base leading-tight font-black text-foreground mt-2 uppercase">
                 Learner: {learnerName}
               </p>
             )}
             <p
               className={cn(
-                "text-xs font-black transition-all duration-200 mt-2 print:hidden",
+                "text-base font-black transition-all duration-200 mt-2 print:hidden",
                 copied ? "text-primary scale-110" : "text-foreground",
               )}>
               {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}

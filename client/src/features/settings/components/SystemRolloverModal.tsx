@@ -81,7 +81,7 @@ export default function SystemRolloverModal({ disabled, activeYearLabel }: Syste
                 Warning: You are about to finalize the End of School Year (EOSY) data for SY {activeYearLabel || "Current"}. This will permanently archive current scholastic records and open the system for BOSY Enrollment.
               </AlertDescription>
             </Alert>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base leading-tight text-muted-foreground">
               This process will:
               <br />• Archive current enrollment records into the immutable ledger
               <br />• Erase operational data from the current school year

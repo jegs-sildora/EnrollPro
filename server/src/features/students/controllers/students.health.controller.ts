@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
-import {
-  createStudentsControllerDeps,
-  StudentsControllerDeps,
-} from "../services/students-controller.deps.js";
+import { prisma } from "../../../lib/prisma.js";
+import { generatePortalPin } from "../../learner/portal-pin.service.js";
+import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
+import { findStudents, getStudentsSummary } from "../students.service.js";
 
 const getRequestUserId = (req: Request): number | null => {
   const userId = (req as any).user?.userId;
   return typeof userId === "number" ? userId : null;
 };
 
-export const createStudentsHealthController = (
-  deps: StudentsControllerDeps = createStudentsControllerDeps(),
-) => {
-  const getHealthRecords = async (req: Request, res: Response) => {
+
+  export const getHealthRecords = async (req: Request, res: Response) => {
     try {
       const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
       if (Number.isNaN(parsedId)) {
@@ -20,7 +18,7 @@ export const createStudentsHealthController = (
       }
 
       // Resolve learnerId from enrollment application
-      const app = await deps.prisma.enrollmentApplication.findUnique({
+      const app = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         select: { learnerId: true },
       });
@@ -28,7 +26,7 @@ export const createStudentsHealthController = (
         return res.status(404).json({ message: "Student not found" });
       }
 
-      const records = await deps.prisma.healthRecord.findMany({
+      const records = await prisma.healthRecord.findMany({
         where: { learnerId: app.learnerId },
         include: {
           schoolYear: {
@@ -48,7 +46,7 @@ export const createStudentsHealthController = (
     }
   };
 
-  const addHealthRecord = async (req: Request, res: Response) => {
+  export const addHealthRecord = async (req: Request, res: Response) => {
     try {
       const userId = getRequestUserId(req);
       if (!userId) {
@@ -74,7 +72,7 @@ export const createStudentsHealthController = (
       }
 
       // Resolve learnerId from enrollment application
-      const app = await deps.prisma.enrollmentApplication.findUnique({
+      const app = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         select: { learnerId: true },
       });
@@ -82,7 +80,7 @@ export const createStudentsHealthController = (
         return res.status(404).json({ message: "Student not found" });
       }
 
-      const existingRecord = await deps.prisma.healthRecord.findFirst({
+      const existingRecord = await prisma.healthRecord.findFirst({
         where: {
           learnerId: app.learnerId,
           schoolYearId: parsedSchoolYearId,
@@ -101,12 +99,12 @@ export const createStudentsHealthController = (
         });
       }
 
-      const record = await deps.prisma.healthRecord.create({
+      const record = await prisma.healthRecord.create({
         data: {
           learnerId: app.learnerId,
           schoolYearId: parsedSchoolYearId,
           assessmentPeriod,
-          assessmentDate: deps.normalizeDateToUtcNoon(new Date(assessmentDate)),
+          assessmentDate: normalizeDateToUtcNoon(new Date(assessmentDate)),
           weightKg: parseFloat(weightKg as string),
           heightCm: parseFloat(heightCm as string),
           notes,
@@ -126,7 +124,7 @@ export const createStudentsHealthController = (
       const yearLabel = record.schoolYear.yearLabel;
       const periodLabel = assessmentPeriod === "BOSY" ? "BoSY" : "EoSY";
 
-      await deps.prisma.auditLog.create({
+      await prisma.auditLog.create({
         data: {
           userId,
           actionType: "HEALTH_RECORD_ADDED",
@@ -147,7 +145,7 @@ export const createStudentsHealthController = (
     }
   };
 
-  const updateHealthRecord = async (req: Request, res: Response) => {
+  export const updateHealthRecord = async (req: Request, res: Response) => {
     try {
       const userId = getRequestUserId(req);
       if (!userId) {
@@ -165,12 +163,12 @@ export const createStudentsHealthController = (
       const { assessmentPeriod, assessmentDate, weightKg, heightCm, notes } =
         req.body;
 
-      const record = await deps.prisma.healthRecord.update({
+      const record = await prisma.healthRecord.update({
         where: { id: parsedRecordId },
         data: {
           assessmentPeriod,
           assessmentDate: assessmentDate
-            ? deps.normalizeDateToUtcNoon(new Date(assessmentDate))
+            ? normalizeDateToUtcNoon(new Date(assessmentDate))
             : undefined,
           weightKg: weightKg ? parseFloat(weightKg as string) : undefined,
           heightCm: heightCm ? parseFloat(heightCm as string) : undefined,
@@ -181,7 +179,7 @@ export const createStudentsHealthController = (
         },
       });
 
-      const user = await deps.prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { firstName: true, lastName: true },
       });
@@ -199,7 +197,7 @@ export const createStudentsHealthController = (
       const changedStr =
         changedFields.length > 0 ? changedFields.join(", ") : "details";
 
-      await deps.prisma.auditLog.create({
+      await prisma.auditLog.create({
         data: {
           userId,
           actionType: "HEALTH_RECORD_UPDATED",
@@ -218,14 +216,4 @@ export const createStudentsHealthController = (
     }
   };
 
-  return {
-    getHealthRecords,
-    addHealthRecord,
-    updateHealthRecord,
-  };
-};
-
-const studentsHealthController = createStudentsHealthController();
-
-export const { getHealthRecords, addHealthRecord, updateHealthRecord } =
-  studentsHealthController;
+  

@@ -21,11 +21,11 @@ interface SectionProps {
 function DataSection({ title, icon, children }: SectionProps) {
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-      <div className="p-3 font-bold text-sm bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
         {icon && <span className="text-primary">{icon}</span>}
         <span className="uppercase">{title}</span>
       </div>
-      <div className="p-4 text-sm grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
+      <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
         {children}
       </div>
     </div>
@@ -251,7 +251,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         <span className="text-foreground flex items-center gap-1.5">
           {c.label}:
           {c.isPrimary && (
-            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
+            <span className="text-base bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
               PRIMARY
             </span>
           )}
@@ -261,7 +261,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
             <>
               <span className="uppercase">{c.fullName}</span>
               {c.details && (
-                <span className="text-xs font-bold text-foreground">
+                <span className="text-base font-bold text-foreground">
                   {c.details}
                   {c.relationship && ` (${c.relationship})`}
                 </span>
@@ -403,7 +403,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
                   <Badge
                     key={t}
                     variant="outline"
-                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-xs">
+                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-base">
                     {t}
                   </Badge>
                 ))}

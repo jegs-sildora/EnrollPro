@@ -116,7 +116,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
               <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
                 {title}
               </h2>
-              <p className="text-xs font-black text-primary-foreground/80 uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+              <p className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 <Library className="size-3" />
                 {description}
               </p>
@@ -136,7 +136,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 value="identity"
                 className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
               >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-xs tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+                <AccordionTrigger className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground hover:no-underline hover:bg-muted/10">
                   <span className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-primary" />
                     1. Section Identity
@@ -146,7 +146,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   <div className="space-y-4 pt-2">
                     {showSectionTypeRadio && (
                       <div className="space-y-2">
-                        <Label className="font-bold text-xs uppercase">Section Type</Label>
+                        <Label className="font-bold text-base uppercase">Section Type</Label>
                         <RadioGroup
                           value={formData.sectionType}
                           onValueChange={(value) =>
@@ -161,7 +161,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                             />
                             <Label
                               htmlFor="section-type-home-room"
-                              className="font-bold text-xs uppercase cursor-pointer"
+                              className="font-bold text-base uppercase cursor-pointer"
                             >
                               Home Room
                             </Label>
@@ -173,7 +173,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                             />
                             <Label
                               htmlFor="section-type-tle-laboratory"
-                              className="font-bold text-xs uppercase cursor-pointer"
+                              className="font-bold text-base uppercase cursor-pointer"
                             >
                               TLE Laboratory
                             </Label>
@@ -184,7 +184,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label className="font-bold text-xs uppercase">
+                        <Label className="font-bold text-base uppercase">
                           Grade Level
                         </Label>
                         <Input
@@ -196,7 +196,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
                       {!isTleLaboratory && (
                         <div className="space-y-2">
-                          <Label className="font-bold text-xs uppercase">Curriculum Program</Label>
+                          <Label className="font-bold text-base uppercase">Curriculum Program</Label>
                           <Select
                             value={formData.curriculumProgram}
                             onValueChange={(value) =>
@@ -210,7 +210,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
-                                  className="font-bold uppercase text-xs">
+                                  className="font-bold uppercase text-base">
                                   {option.label}
                                 </SelectItem>
                               ))}
@@ -222,7 +222,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
                     {isTleLaboratory && (
                       <div className="space-y-2">
-                        <Label className="font-bold text-xs uppercase">TLE Specialization *</Label>
+                        <Label className="font-bold text-base uppercase">TLE Specialization *</Label>
                         <Select
                           value={
                             formData.tleProgramId != null
@@ -240,7 +240,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                               <SelectItem
                                 key={p.id}
                                 value={String(p.id)}
-                                className="font-bold text-xs">
+                                className="font-bold text-base">
                                 {p.name}
                               </SelectItem>
                             ))}
@@ -250,7 +250,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     )}
 
                     <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase">Section Name *</Label>
+                      <Label className="font-bold text-base uppercase">Section Name *</Label>
                       <Input
                         placeholder={
                           isTleLaboratory
@@ -280,7 +280,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 value="advisory"
                 className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
               >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-xs tracking-wider text-foreground hover:no-underline hover:bg-muted/10">
+                <AccordionTrigger className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground hover:no-underline hover:bg-muted/10">
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
                     2. Advisory & Capacity
@@ -289,7 +289,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
                   <div className="space-y-4 pt-2">
                     <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase">{isTleLaboratory ? "TLE Instructor" : "Class Adviser"}</Label>
+                      <Label className="font-bold text-base uppercase">{isTleLaboratory ? "TLE Instructor" : "Class Adviser"}</Label>
                       <Select
                         value={formData.adviserId}
                         onValueChange={(value) => onFieldChange("adviserId", value)}
@@ -317,7 +317,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase">Maximum Capacity *</Label>
+                      <Label className="font-bold text-base uppercase">Maximum Capacity *</Label>
                       <div className="flex items-center max-w-[600px]">
                         <Button
                           type="button"

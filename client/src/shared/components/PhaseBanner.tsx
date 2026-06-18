@@ -35,7 +35,7 @@ export function PhaseBanner() {
         <Alert className="bg-amber-50 border-amber-200 text-amber-900 relative">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertTitle className="font-bold">Late Enrollment Phase Active</AlertTitle>
-          <AlertDescription className="text-sm font-semibold mt-1">
+          <AlertDescription className="text-base font-semibold mt-1">
             Classes are currently ongoing. Any new enrollments processed will be automatically flagged as Late Enrollee.
           </AlertDescription>
           <Button

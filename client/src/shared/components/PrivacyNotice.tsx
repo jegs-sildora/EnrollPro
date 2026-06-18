@@ -48,13 +48,13 @@ export default function PrivacyNotice({
             <CardTitle className="text-2xl font-bold ">
               Data Privacy Notice
             </CardTitle>
-            <p className="text-sm text-foreground font-bold">
+            <p className="text-base text-foreground font-bold">
               Republic Act No. 10173
             </p>
           </div>
         </CardHeader>
         <CardContent className="pt-6 px-6 md:px-10">
-          <div className="space-y-4 text-sm leading-relaxed">
+          <div className="space-y-4 text-base leading-relaxed">
             <div
               ref={scrollContainerRef}
               onScroll={handleNoticeScroll}
@@ -64,7 +64,7 @@ export default function PrivacyNotice({
                 <h3 className="font-bold text-foreground mb-1 text-base uppercase">
                   {schoolName} - DATA PRIVACY NOTICE ({variant})
                 </h3>
-                <p className="text-foreground text-sm mb-2">
+                <p className="text-foreground text-base mb-2">
                   {isBeerf ? (
                     <>
                       The Department of Education (DepEd) and {schoolName}{" "}
@@ -93,7 +93,7 @@ export default function PrivacyNotice({
                 <h4 className="font-bold text-foreground mb-2">
                   Why we collect your information
                 </h4>
-                <ul className="list-disc pl-5 space-y-2 text-foreground text-sm">
+                <ul className="list-disc pl-5 space-y-2 text-foreground text-base">
                   {isBeerf ? (
                     <>
                       <li>
@@ -145,7 +145,7 @@ export default function PrivacyNotice({
                 <h4 className="font-bold text-foreground mb-2">
                   What information we collect
                 </h4>
-                <div className="space-y-3 text-sm text-foreground">
+                <div className="space-y-3 text-base text-foreground">
                   <p>
                     <strong>Personal Information:</strong> Full name, birthdate,
                     sex at birth, address, LRN, and PSA Birth Certificate
@@ -165,7 +165,7 @@ export default function PrivacyNotice({
                 <h4 className="font-bold text-foreground mb-2">
                   How we protect your information
                 </h4>
-                <p className="text-foreground text-sm">
+                <p className="text-foreground text-base">
                   Data is stored securely in the LIS and the school's local
                   database. Access is strictly restricted to authorized
                   personnel only. Physical forms are kept in secure filing
@@ -178,13 +178,13 @@ export default function PrivacyNotice({
                 <h4 className="font-bold text-foreground mb-2">
                   Your rights under RA 10173
                 </h4>
-                <p className="text-foreground text-sm">
+                <p className="text-foreground text-base">
                   You have the right to be informed, access, rectify, object, or
                   file a complaint with the National Privacy Commission.
                 </p>
               </section>
 
-              <div className="pt-2 text-center text-xs text-foreground italic">
+              <div className="pt-2 text-center text-sm text-foreground italic">
                 End of Privacy Notice.
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function PrivacyNotice({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-sm font-bold leading-relaxed cursor-pointer select-none">
+              className="text-base font-bold leading-relaxed cursor-pointer select-none">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}

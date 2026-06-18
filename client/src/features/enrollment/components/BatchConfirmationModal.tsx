@@ -271,7 +271,7 @@ export function BatchConfirmationModal({
               <DialogTitle className="text-2xl font-black uppercase  text-foreground leading-none">
                 Batch Confirmation Pipeline
               </DialogTitle>
-              <div className="flex items-center gap-3 text-xs font-bold uppercase  text-foreground">
+              <div className="flex items-center gap-3 text-base font-bold uppercase  text-foreground">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                   DO 017, s. 2025 Compliant
@@ -292,7 +292,7 @@ export function BatchConfirmationModal({
             <TabsList className="bg-muted/50 h-auto p-1.5 gap-1.5 justify-start border border-border/60 relative rounded-xl w-full sm:w-auto">
               <TabsTrigger
                 value="scan"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-xs  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-base  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
                 {activeTab === "scan" && (
                   <motion.div
                     layoutId="batch-tab-pill"
@@ -312,7 +312,7 @@ export function BatchConfirmationModal({
               </TabsTrigger>
               <TabsTrigger
                 value="csv"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-xs  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-base  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
                 {activeTab === "csv" && (
                   <motion.div
                     layoutId="batch-tab-pill"
@@ -338,7 +338,7 @@ export function BatchConfirmationModal({
               value="scan"
               className="m-0 space-y-6">
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase  text-foreground flex justify-between items-center ml-1">
+                <Label className="text-base font-black uppercase  text-foreground flex justify-between items-center ml-1">
                   <span>1. Scan or Type LRN & Hit Enter</span>
                   {loading && (
                     <div className="flex items-center gap-2 text-primary animate-pulse">
@@ -386,13 +386,13 @@ export function BatchConfirmationModal({
                   <p className="font-black uppercase  text-xl text-foreground">
                     Drop CSV Enrollment List
                   </p>
-                  <p className="text-xs font-bold text-foreground uppercase ">
+                  <p className="text-base font-bold text-foreground uppercase ">
                     Required: LRN, GUARDIAN, CONTACT, CONSENT
                   </p>
                 </div>
                 <Button
                   variant="outline"
-                  className="font-black uppercase text-xs  px-8 shadow-sm">
+                  className="font-black uppercase text-base  px-8 shadow-sm">
                   Browse Files
                 </Button>
               </div>
@@ -401,7 +401,7 @@ export function BatchConfirmationModal({
             {/* Staging Queue Table (SF1 Style) */}
             <div className="space-y-4 mt-6">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-black uppercase  text-foreground flex items-center gap-3">
+                <h3 className="text-base font-black uppercase  text-foreground flex items-center gap-3">
                   Staging Queue
                   <div className="h-5 px-2 bg-primary/10 text-primary rounded border border-primary/20 flex items-center justify-center font-black">
                     {stagingList.length}
@@ -412,7 +412,7 @@ export function BatchConfirmationModal({
                     variant="ghost"
                     size="sm"
                     onClick={() => setStagingList([])}
-                    className="h-7 px-3 text-xs font-black uppercase  text-foreground hover:text-destructive hover:bg-destructive/5">
+                    className="h-7 px-3 text-base font-black uppercase  text-foreground hover:text-destructive hover:bg-destructive/5">
                     <Trash2 className="h-3.5 w-3.5 mr-2" /> Clear Queue
                   </Button>
                 )}
@@ -426,10 +426,10 @@ export function BatchConfirmationModal({
                         <Keyboard className="h-10 w-10 text-foreground/30" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-black uppercase  text-foreground">
+                        <p className="text-base leading-tight font-black uppercase  text-foreground">
                           Pipeline is Clear
                         </p>
-                        <p className="text-xs text-foreground/50 font-bold uppercase ">
+                        <p className="text-base text-foreground/50 font-bold uppercase ">
                           Ready for multi-scan or file ingestion
                         </p>
                       </div>
@@ -438,16 +438,16 @@ export function BatchConfirmationModal({
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-md border-b border-border">
                         <tr>
-                          <th className="px-5 py-4 text-xs font-black uppercase  text-foreground">
+                          <th className="px-5 py-4 text-base font-black uppercase  text-foreground">
                             Learner / Profile
                           </th>
-                          <th className="px-5 py-4 text-xs font-black uppercase  text-foreground">
+                          <th className="px-5 py-4 text-base font-black uppercase  text-foreground">
                             Guardian Name
                           </th>
-                          <th className="px-5 py-4 text-xs font-black uppercase  text-foreground">
+                          <th className="px-5 py-4 text-base font-black uppercase  text-foreground">
                             Contact
                           </th>
-                          <th className="px-5 py-4 text-center text-xs font-black uppercase  text-foreground w-[100px]">
+                          <th className="px-5 py-4 text-center text-base font-black uppercase  text-foreground w-[100px]">
                             Consent
                           </th>
                           <th className="px-5 py-4 w-[60px]"></th>
@@ -465,11 +465,11 @@ export function BatchConfirmationModal({
                             )}>
                             <td className="px-5 py-4">
                               <div className="flex flex-col gap-0.5">
-                                <span className="font-black text-sm uppercase text-foreground group-hover:text-primary transition-colors">
+                                <span className="font-black text-base leading-tight uppercase text-foreground group-hover:text-primary transition-colors">
                                   {s.lastName}, {s.firstName}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-black text-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
+                                  <span className="text-base font-black text-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
                                     {s.lrn}
                                   </span>
                                   <Badge
@@ -489,7 +489,7 @@ export function BatchConfirmationModal({
                                   })
                                 }
                                 placeholder="NAME OF GUARDIAN"
-                                className="h-10 font-black text-xs uppercase bg-background border-border/60 focus:border-primary/40 focus:ring-primary/10 shadow-sm"
+                                className="h-10 font-black text-base uppercase bg-background border-border/60 focus:border-primary/40 focus:ring-primary/10 shadow-sm"
                               />
                             </td>
                             <td className="px-5 py-4">
@@ -504,7 +504,7 @@ export function BatchConfirmationModal({
                                   })
                                 }
                                 placeholder="09XXXXXXXXX"
-                                className="h-10 font-black text-xs bg-background border-border/60 focus:border-primary/40 focus:ring-primary/10 shadow-sm"
+                                className="h-10 font-black text-base bg-background border-border/60 focus:border-primary/40 focus:ring-primary/10 shadow-sm"
                               />
                             </td>
                             <td className="px-5 py-4">
@@ -551,19 +551,19 @@ export function BatchConfirmationModal({
 
         <DialogFooter className="px-8 py-6 bg-muted/20 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0">
           <div className="flex flex-col sm:items-start items-center">
-            <p className="text-xs font-black text-foreground uppercase  mb-2">
+            <p className="text-base font-black text-foreground uppercase  mb-2">
               Deployment Dashboard
             </p>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-black uppercase text-emerald-800 ">
+                <span className="text-base font-black uppercase text-emerald-800 ">
                   Confirmed: {stagingList.filter((s) => s.isEnrolling).length}
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border/50">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-xs font-black uppercase text-foreground ">
+                <span className="text-base font-black uppercase text-foreground ">
                   Transfers: {stagingList.filter((s) => !s.isEnrolling).length}
                 </span>
               </div>
@@ -574,13 +574,13 @@ export function BatchConfirmationModal({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none font-black uppercase text-xs  h-12 px-8 hover:bg-muted/50">
+              className="flex-1 sm:flex-none font-black uppercase text-base  h-12 px-8 hover:bg-muted/50">
               Cancel
             </Button>
             <Button
               disabled={stagingList.length === 0 || isProcessing}
               onClick={handleProcessBatch}
-              className="flex-1 sm:flex-none h-12 px-10 font-black uppercase text-xs  shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group">
+              className="flex-1 sm:flex-none h-12 px-10 font-black uppercase text-base  shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group">
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (

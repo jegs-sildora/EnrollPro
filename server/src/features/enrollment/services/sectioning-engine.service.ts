@@ -1,4 +1,5 @@
 import {
+  Prisma,
   PrismaClient,
   ApplicantType,
   Sex,
@@ -43,29 +44,13 @@ interface SectionWithCount {
   };
 }
 
-interface ApplicantWithRelations {
-  id: number;
-  status: string;
-  applicantType: ApplicantType;
-  readingProfileLevel: ReadingProfileLevel | null;
-  learner: {
-    firstName: string;
-    lastName: string;
-    lrn: string | null;
-    sex: Sex;
-    promotionStatus?: string | null;
-    previousGenAve?: number | null;
-    enrollmentRecords: { finalAverage: number | null }[];
+type ApplicantWithRelations = Prisma.EnrollmentApplicationGetPayload<{
+  include: {
+    learner: { include: { enrollmentRecords: true } };
+    gradeLevel: true;
+    previousSchool: true;
   };
-  gradeLevel: {
-    name: string;
-    displayOrder: number | null;
-  };
-  previousSchool?: {
-    generalAverage: number | null;
-  } | null;
-  
-}
+}>;
 
 export class SectioningEngine {
   constructor(private prisma: PrismaClient) {}

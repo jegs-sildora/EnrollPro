@@ -42,11 +42,11 @@ export function PreFlightBlockerModal({
         <div className="flex flex-col gap-4 py-4">
           {hasUnlockedClasses && (
             <div className="bg-amber-50 border border-amber-200 rounded p-3">
-              <div className="flex items-start text-amber-900 font-semibold text-sm">
+              <div className="flex items-start text-amber-900 font-semibold text-base leading-tight">
                 <span className="mr-2">⚠️</span>
                 <span>{unlockedClassesCount} Sections pending School Form 5 (SF5) submission.</span>
               </div>
-              <span className="text-amber-700 block text-xs ml-6 mt-0.5">
+              <span className="text-amber-700 block text-base ml-6 mt-0.5">
                 Remind class advisers to lock their final grades.
               </span>
             </div>
@@ -54,11 +54,11 @@ export function PreFlightBlockerModal({
 
           {hasIrregularBlockers && (
             <div className="bg-amber-50 border border-amber-200 rounded p-3">
-              <div className="flex items-start text-amber-900 font-semibold text-sm">
+              <div className="flex items-start text-amber-900 font-semibold text-base leading-tight">
                 <span className="mr-2">⚠️</span>
                 <span>{irregularBlockerCount} Learners require End-of-School-Year (EOSY) Class grades.</span>
               </div>
-              <span className="text-amber-700 block text-xs ml-6 mt-0.5">
+              <span className="text-amber-700 block text-base ml-6 mt-0.5">
                 Encode their remedial results to finalize promotion status.
               </span>
             </div>

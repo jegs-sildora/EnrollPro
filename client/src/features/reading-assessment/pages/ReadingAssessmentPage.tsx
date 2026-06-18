@@ -374,7 +374,7 @@ export default function ReadingAssessmentPage() {
       >
         <div>
           <h1 className="text-3xl font-bold">Adviser Intake Hub</h1>
-          <p className="text-sm font-bold">
+          <p className="text-base leading-tight font-bold">
             Phil-IRI Assessment &amp; Enrollment Confirmation
             {activeSchoolYearLabel ? ` · ${activeSchoolYearLabel}` : ""}
           </p>
@@ -465,12 +465,12 @@ export default function ReadingAssessmentPage() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className="relative z-20 inline-flex items-center gap-2 text-xs sm:text-sm">
+              <span className="relative z-20 inline-flex items-center gap-2 text-base sm:text-base leading-tight">
                 {tab.label}
                 {tab.count > 0 && (
                   <Badge
                     variant={activeTab === tab.key ? "secondary" : "outline"}
-                    className="h-5 px-1.5 text-xs font-bold"
+                    className="h-5 px-1.5 text-base font-bold"
                   >
                     {tab.count}
                   </Badge>
@@ -558,7 +558,7 @@ export default function ReadingAssessmentPage() {
                   <span className="block font-bold text-foreground text-base">
                     {selectedFullName}
                   </span>
-                  <span className="block text-xs font-bold text-foreground">
+                  <span className="block text-base font-bold text-foreground">
                     LRN: {selected.learner.lrn ?? "None"} &middot;{" "}
                     {selected.gradeLevel.name}
                   </span>
@@ -578,7 +578,7 @@ export default function ReadingAssessmentPage() {
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "size-6 rounded-full flex items-center justify-center text-xs font-black shrink-0",
+                  "size-6 rounded-full flex items-center justify-center text-base font-black shrink-0",
                   step1Done
                     ? "bg-emerald-500 text-white"
                     : "bg-primary text-primary-foreground",
@@ -586,23 +586,23 @@ export default function ReadingAssessmentPage() {
               >
                 {step1Done ? <CheckCircle2 className="size-3.5" /> : "1"}
               </div>
-              <p className="font-bold text-sm">Phil-IRI Reading Assessment</p>
+              <p className="font-bold text-base leading-tight">Phil-IRI Reading Assessment</p>
             </div>
 
             {step1Done ? (
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5">
                 <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-800">
+                  <p className="text-base leading-tight font-bold text-emerald-800">
                     {getReadingLevelMeta(effectiveLevel as ReadingLevel)?.label ??
                       effectiveLevel}
                   </p>
-                  <p className="text-xs text-emerald-600">Reading level recorded</p>
+                  <p className="text-base text-emerald-600">Reading level recorded</p>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
-                <p className="text-sm text-foreground">
+                <p className="text-base leading-tight text-foreground">
                   Select the learner&apos;s Phil-IRI reading proficiency level.
                 </p>
                 {READING_LEVELS.map((level) => (
@@ -618,13 +618,13 @@ export default function ReadingAssessmentPage() {
                     )}
                   >
                     <span>{level.label}</span>
-                    <span className="text-sm font-normal opacity-90">
+                    <span className="text-base leading-tight font-normal opacity-90">
                       {level.description}
                     </span>
                   </button>
                 ))}
                 {philIriSaving && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-foreground">
+                  <div className="flex items-center justify-center gap-2 text-base leading-tight text-foreground">
                     <Loader2 className="size-4 animate-spin" />
                     <span>Saving…</span>
                   </div>
@@ -643,12 +643,12 @@ export default function ReadingAssessmentPage() {
             <Separator className="my-4" />
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-black shrink-0">
+                <div className="size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-base font-black shrink-0">
                   2
                 </div>
-                <p className="font-bold text-sm">Document Verification</p>
+                <p className="font-bold text-base leading-tight">Document Verification</p>
               </div>
-              <p className="text-sm text-foreground">
+              <p className="text-base leading-tight text-foreground">
                 Physically verify the following DepEd-required documents before confirming
                 enrollment.
               </p>
@@ -680,13 +680,13 @@ export default function ReadingAssessmentPage() {
                       <div className="flex-1 min-w-0">
                         <p
                           className={cn(
-                            "text-sm font-bold",
+                            "text-base leading-tight font-bold",
                             checked ? "text-emerald-700" : "text-foreground",
                           )}
                         >
                           {doc.label}
                         </p>
-                        <p className="text-xs text-foreground mt-0.5">{doc.note}</p>
+                        <p className="text-base text-foreground mt-0.5">{doc.note}</p>
                       </div>
                       <doc.Icon
                         className={cn(
@@ -700,7 +700,7 @@ export default function ReadingAssessmentPage() {
               </div>
 
               <Button
-                className="w-full h-12 text-sm font-bold"
+                className="w-full h-12 text-base leading-tight font-bold"
                 disabled={!allDocsChecked || confirmSaving}
                 onClick={() => void handleConfirmEnrollment()}
               >
@@ -718,7 +718,7 @@ export default function ReadingAssessmentPage() {
               </Button>
 
               {!allDocsChecked && (
-                <p className="text-xs text-foreground text-center">
+                <p className="text-base text-foreground text-center">
                   Check off all documents above to enable confirmation.
                 </p>
               )}
@@ -732,10 +732,10 @@ export default function ReadingAssessmentPage() {
               <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/40 px-4 py-3">
                 <Lock className="size-4 text-foreground shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-base leading-tight font-bold text-foreground">
                     Document Verification (Step 2)
                   </p>
-                  <p className="text-xs text-foreground">
+                  <p className="text-base text-foreground">
                     Complete Phil-IRI assessment above to unlock.
                   </p>
                 </div>
@@ -796,7 +796,7 @@ function QueueCard({
           const a = row.original;
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight">
-              <span className="font-bold uppercase text-xs">
+              <span className="font-bold uppercase text-base">
                 {a.learner.lastName}, {a.learner.firstName}
                 {a.learner.middleName ? ` ${a.learner.middleName[0]}.` : ""}
               </span>
@@ -868,7 +868,7 @@ function QueueCard({
               {levelMeta ? (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                    "inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border",
                     levelMeta.badgeClass,
                   )}
                 >
@@ -876,7 +876,7 @@ function QueueCard({
                   {levelMeta.label}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                   <BookOpen className="size-2.5" />
                   Pending
                 </span>
@@ -889,7 +889,7 @@ function QueueCard({
       {
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-xs uppercase">
+          <div className="text-center font-bold text-primary-foreground text-base uppercase">
             Action
           </div>
         ),
@@ -898,7 +898,7 @@ function QueueCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs font-bold text-primary hover:text-primary hover:bg-primary/10"
+              className="h-8 text-base font-bold text-primary hover:text-primary hover:bg-primary/10"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(row.original);
@@ -924,7 +924,7 @@ function QueueCard({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search LRN, First Name, Last Name…"
-            className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+            className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
             value={searchInput}
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
@@ -953,7 +953,7 @@ function QueueCard({
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <CheckCircle2 className="size-10 text-emerald-500" />
                   <p className="font-bold text-base">{emptyTitle}</p>
-                  <p className="text-sm text-foreground max-w-xs">{emptyDescription}</p>
+                  <p className="text-base leading-tight text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined
             }
@@ -1025,7 +1025,7 @@ function ContinuingQueueCard({
           const a = row.original;
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight">
-              <span className="font-bold uppercase text-xs">
+              <span className="font-bold uppercase text-base">
                 {a.lastName}, {a.firstName}
                 {a.middleName ? ` ${a.middleName[0]}.` : ""}
               </span>
@@ -1070,12 +1070,12 @@ function ContinuingQueueCard({
           return (
             <div className="flex justify-center">
               {isConfirmed ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
                   <CheckCircle2 className="size-2.5" />
                   Confirmed
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                   Pending
                 </span>
               )}
@@ -1087,7 +1087,7 @@ function ContinuingQueueCard({
       {
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-xs uppercase">
+          <div className="text-center font-bold text-primary-foreground text-base uppercase">
             Action
           </div>
         ),
@@ -1101,7 +1101,7 @@ function ContinuingQueueCard({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-8 text-xs font-bold transition-opacity",
+                  "h-8 text-base font-bold transition-opacity",
                   isConfirmed
                     ? "text-foreground cursor-not-allowed opacity-50"
                     : "text-primary hover:text-primary hover:bg-primary/10",
@@ -1142,7 +1142,7 @@ function ContinuingQueueCard({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search LRN, First Name, Last Name…"
-            className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+            className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
             value={searchInput}
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
@@ -1171,7 +1171,7 @@ function ContinuingQueueCard({
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <UserCheck className="size-10 text-emerald-500" />
                   <p className="font-bold text-base">{emptyTitle}</p>
-                  <p className="text-sm text-foreground max-w-xs">{emptyDescription}</p>
+                  <p className="text-base leading-tight text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined
             }

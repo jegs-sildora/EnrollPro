@@ -120,7 +120,7 @@ function UserNav() {
             variant="ghost"
             className="relative h-9 w-fit gap-2 px-2.5 rounded-xl border border-border/45 hover:border-border/80 bg-card/60 hover:bg-card transition-all shadow-xs hover:shadow-sm">
             <Avatar className="h-7 w-7 border shadow-sm">
-              <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -148,17 +148,17 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-bold leading-none">
+              <p className="text-base font-bold leading-none">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs leading-none text-foreground">
+              <p className="text-sm leading-none text-foreground">
                 {user?.email}
               </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-xs"
+            className="cursor-pointer font-bold text-sm"
             asChild>
             <Link to="/admin/users">
               <Settings className="mr-2 h-4 w-4" />
@@ -167,7 +167,7 @@ function UserNav() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-xs text-destructive focus:text-primary-foreground"
+            className="cursor-pointer font-bold text-sm text-destructive focus:text-primary-foreground"
             onClick={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -299,7 +299,7 @@ function SYSwitcher() {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-2 text-xs font-bold transition-all duration-300 border rounded-xl hover:-translate-y-0.5 shadow-xs hover:shadow-sm",
+                "h-8 gap-2 text-sm font-bold transition-all duration-300 border rounded-xl hover:-translate-y-0.5 shadow-xs hover:shadow-sm",
                 currentYear?.status === "ARCHIVED"
                   ? "border-slate-300 bg-slate-50/80 hover:bg-slate-50"
                   : "border-border/60 hover:border-border bg-card/60 hover:bg-card",
@@ -338,7 +338,7 @@ function SYSwitcher() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
             <div className="py-2">
-              <div className="text-xs font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
                 Current School Year
               </div>
               {currentAcademicYear ? (
@@ -346,7 +346,7 @@ function SYSwitcher() {
                   key={currentAcademicYear.id}
                   onClick={() => handleSelectYear(currentAcademicYear)}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
+                    "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
                     currentAcademicYear.id === currentId
                       ? "bg-slate-100 font-bold text-slate-900"
                       : "hover:bg-slate-50 text-slate-700",
@@ -360,12 +360,12 @@ function SYSwitcher() {
                   {renderStatusBadge(currentAcademicYear.status)}
                 </button>
               ) : (
-                <div className="px-3 py-2 text-xs text-slate-500">No active academic year found.</div>
+                <div className="px-3 py-2 text-sm text-slate-500">No active academic year found.</div>
               )}
 
               <div className="border-b border-slate-100 my-2" />
 
-              <div className="text-xs font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
                 Archived Records
               </div>
               {archivedYears.length > 0 ? (
@@ -374,7 +374,7 @@ function SYSwitcher() {
                     key={y.id}
                     onClick={() => handleSelectYear(y)}
                     className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
+                      "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
                       y.id === currentId
                         ? "bg-slate-50 font-bold text-slate-900"
                         : "hover:bg-slate-50 text-slate-700",
@@ -387,7 +387,7 @@ function SYSwitcher() {
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-xs text-slate-500">No archived records available.</div>
+                <div className="px-3 py-2 text-sm text-slate-500">No archived records available.</div>
               )}
             </div>
           </motion.div>
@@ -429,7 +429,7 @@ const NavItem = memo(function NavItem({
   // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
   if (
     to === "/monitoring/enrollment" &&
-    pathname.startsWith("/monitoring/enrollment/eosy")
+    pathname.startsWith("/eosy")
   ) {
     isActive = false;
   }
@@ -514,7 +514,7 @@ function AppSidebar() {
                     <School className="size-5 text-primary" />
                   </div>
                 )}
-                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <div className="grid flex-1 text-left text-base leading-tight group-data-[collapsible=icon]:hidden">
                   {schoolName ? (
                     <span className="font-black leading-[1.1] uppercase  break-words text-primary">
                       {schoolName}
@@ -562,7 +562,7 @@ function AppSidebar() {
 
                     <NavDivider label="Closing Operations" badge={!isEosyArchivedState ? closingOperationsBadge : undefined} />
                     <NavItem
-                      to="/monitoring/enrollment/eosy"
+                      to="/eosy"
                       icon={ArrowUpRightSquare}
                       label="EOSY Grade Finalization"
                       pathname={pathname}

@@ -1027,7 +1027,7 @@ export default function WalkInEncoder() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Button
           variant="default"
-          className="h-9 text-xs font-bold"
+          className="h-9 text-base font-bold"
           onClick={() => navigate("/monitoring/enrollment")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Enrollment
@@ -1053,7 +1053,7 @@ export default function WalkInEncoder() {
               ? "Late Enrollee Intake (BEEF)"
               : "Direct Intake: Basic Education Enrollment Form"}
           </CardTitle>
-          <p className="text-xs font-bold text-foreground">
+          <p className="text-base font-bold text-foreground">
             {isBosyLocked
               ? "BOSY is locked. New students will be processed as Late Enrollees and routed directly to Inline Slotting."
               : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."}
@@ -1069,12 +1069,12 @@ export default function WalkInEncoder() {
                   ? "Pending Queue Record"
                   : "Early Registrant"}
               </Badge>
-              <p className="text-xs font-bold uppercase  text-emerald-800">
+              <p className="text-base font-bold uppercase  text-emerald-800">
                 Status: {hydrationContext.status.replace(/_/g, " ")}
               </p>
               {hydratedApplicantLabel &&
                 hydratedApplicantType !== "REGULAR" && (
-                  <p className="text-sm font-black text-emerald-900">
+                  <p className="text-base leading-tight font-black text-emerald-900">
                     Curriculum: {hydratedApplicantLabel}{" "}
                     {hydrationContext.status === "PENDING_BEEF"
                       ? "- PASSER"
@@ -1110,7 +1110,7 @@ export default function WalkInEncoder() {
               />
               <Label
                 htmlFor="hasFilledEarlyRegWalkIn"
-                className="text-xs font-bold leading-relaxed cursor-pointer">
+                className="text-base font-bold leading-relaxed cursor-pointer">
                 The learner has already filled out the Basic Education Early Registration Form.
               </Label>
             </div>
@@ -1139,7 +1139,7 @@ export default function WalkInEncoder() {
                 <div>
                   <p
                     className={cn(
-                      "text-xs font-bold uppercase",
+                      "text-base font-bold uppercase",
                       hasFilledEarlyReg ? "text-primary" : "text-foreground",
                     )}>
                     {hasFilledEarlyReg ? "Quick Fill via LRN" : "Learner Reference Number (LRN)"}
@@ -1198,7 +1198,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
+            <p className="text-base font-bold uppercase  text-primary">
               1. Learner Information
             </p>
 
@@ -1311,7 +1311,7 @@ export default function WalkInEncoder() {
               <div className="space-y-1">
                 <Label
                   htmlFor="walkInNoLrn"
-                  className="text-xs font-bold">
+                  className="text-base font-bold">
                   Learner has no LRN yet
                 </Label>
                 <p className="text-[11px] font-bold text-foreground">
@@ -1321,7 +1321,7 @@ export default function WalkInEncoder() {
             </div>
 
             {formData.hasNoLrn && !isNoLrnAllowed && (
-              <p className="text-xs font-bold text-destructive">
+              <p className="text-base font-bold text-destructive">
                 No-LRN path currently not allowed for selected learner type and
                 grade level.
               </p>
@@ -1494,7 +1494,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-4 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
+            <p className="text-base font-bold uppercase  text-primary">
               2. Previous School Information
             </p>
 
@@ -1657,7 +1657,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
+            <p className="text-base font-bold uppercase  text-primary">
               3. Address
             </p>
             <div className="grid gap-4 md:grid-cols-3">
@@ -1733,7 +1733,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
+            <p className="text-base font-bold uppercase  text-primary">
               4. Parents / Guardian Information
             </p>
 
@@ -1962,7 +1962,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
+            <p className="text-base font-bold uppercase  text-primary">
               5. Physical Requirements Submitted
             </p>
 
@@ -2001,7 +2001,7 @@ export default function WalkInEncoder() {
                 />
                 <Label
                   htmlFor="isSf9Submitted"
-                  className="text-xs font-bold ">
+                  className="text-base font-bold ">
                   Original SF9 (Report Card)
                 </Label>
               </div>
@@ -2016,7 +2016,7 @@ export default function WalkInEncoder() {
                 />
                 <Label
                   htmlFor="isPsaBirthCertPresented"
-                  className="text-xs font-bold ">
+                  className="text-base font-bold ">
                   Original PSA Birth Certificate (Matches Phase 1 Copy)
                 </Label>
               </div>
@@ -2027,7 +2027,7 @@ export default function WalkInEncoder() {
           {isBosyLocked ? (
             <section className="space-y-3 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-4">
               <div className="flex items-center gap-2">
-                <p className="text-xs font-bold uppercase text-amber-700">
+                <p className="text-base font-bold uppercase text-amber-700">
                   7. Late Enrollment Assignment
                 </p>
                 <Badge className="bg-amber-500 text-white border-none text-[9px] font-black uppercase px-2">
@@ -2096,7 +2096,7 @@ export default function WalkInEncoder() {
             </section>
           ) : (
             <section className="space-y-3 rounded-lg border border-border p-4">
-              <p className="text-xs font-bold uppercase  text-primary">
+              <p className="text-base font-bold uppercase  text-primary">
                 6. Registrar Processing Outcome
               </p>
               <div className="grid gap-3 md:grid-cols-2">
@@ -2109,10 +2109,10 @@ export default function WalkInEncoder() {
                       : "border-border",
                   )}
                   onClick={() => setProcessOutcome("ENCODE_ONLY")}>
-                  <p className="text-xs font-black uppercase ">
+                  <p className="text-base font-black uppercase ">
                     Encode Only
                   </p>
-                  <p className="text-xs font-bold text-foreground">
+                  <p className="text-base font-bold text-foreground">
                     Save BEEF then return learner to Awaiting Verification.
                   </p>
                 </button>
@@ -2125,10 +2125,10 @@ export default function WalkInEncoder() {
                       : "border-border",
                   )}
                   onClick={() => setProcessOutcome("ENCODE_AND_VERIFY")}>
-                  <p className="text-xs font-black uppercase ">
+                  <p className="text-base font-black uppercase ">
                     Encode + Verify
                   </p>
-                  <p className="text-xs font-bold text-foreground">
+                  <p className="text-base font-bold text-foreground">
                     Save BEEF and immediately progress to verification outcome.
                   </p>
                 </button>
@@ -2140,7 +2140,7 @@ export default function WalkInEncoder() {
             <Button
               type="button"
               variant="outline"
-              className="h-10 text-xs font-bold"
+              className="h-10 text-base font-bold"
               onClick={() => navigate("/monitoring/enrollment")}
               disabled={submitting}>
               Cancel
@@ -2148,7 +2148,7 @@ export default function WalkInEncoder() {
             <Button
               type="button"
               className={cn(
-                "h-10 px-6 text-xs font-bold",
+                "h-10 px-6 text-base font-bold",
                 isBosyLocked && "bg-amber-600 hover:bg-amber-700",
               )}
               disabled={submitting}
@@ -2186,17 +2186,17 @@ export default function WalkInEncoder() {
             </div>
           </DialogHeader>
           <div className="px-6 py-5 bg-background space-y-3">
-            <p className="text-sm font-bold text-foreground">
+            <p className="text-base leading-tight font-bold text-foreground">
               The selected section has reached its maximum DepEd capacity. Are you sure you want to proceed with this assignment?
             </p>
-            <p className="text-xs text-amber-700 font-bold">
+            <p className="text-base text-amber-700 font-bold">
               This action will create an over-capacity record. Ensure administrative approval has been obtained.
             </p>
           </div>
           <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2">
             <Button
               variant="outline"
-              className="font-bold uppercase text-xs"
+              className="font-bold uppercase text-base"
               onClick={() => {
                 setIsCapacityOverrideOpen(false);
                 setPendingOverrideContext(null);
@@ -2204,7 +2204,7 @@ export default function WalkInEncoder() {
               Cancel
             </Button>
             <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-xs px-6"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-base px-6"
               onClick={() => {
                 if (!pendingOverrideContext) return;
                 setIsCapacityOverrideOpen(false);

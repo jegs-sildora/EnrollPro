@@ -76,7 +76,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     accessorKey: "lrn",
     header: ({ column }) => <DataTableColumnHeader column={column} title="LRN" />,
     cell: ({ row }) => (
-      <span className="font-mono font-bold text-xs text-foreground">
+      <span className="font-mono font-bold text-base text-foreground">
         {row.original.lrn ?? <em className="opacity-50 not-italic">No LRN</em>}
       </span>
     ),
@@ -88,7 +88,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     cell: ({ row }) => {
       const { lastName, firstName } = row.original;
       return (
-        <span className="font-bold text-sm">
+        <span className="font-bold text-base leading-tight">
           {[lastName, firstName].filter(Boolean).join(", ")}
         </span>
       );
@@ -98,7 +98,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     accessorKey: "gradeLevelName",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Grade" />,
     cell: ({ row }) => (
-      <Badge variant="secondary" className="text-xs font-bold">
+      <Badge variant="secondary" className="text-base font-bold">
         {row.original.gradeLevelName}
       </Badge>
     ),
@@ -110,7 +110,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     cell: ({ row }) => (
       <Badge
         variant="outline"
-        className="text-xs font-bold border-amber-300 text-amber-700 bg-amber-50"
+        className="text-base font-bold border-amber-300 text-amber-700 bg-amber-50"
       >
         {formatNoShowStatus(row.original.status)}
       </Badge>
@@ -403,11 +403,11 @@ export default function BOSYPage() {
         transition={panelTransition}>
         <div>
           <h1 className="text-3xl font-bold">Early Registration (BOSY)</h1>
-          <p className="text-sm font-bold">
+          <p className="text-base leading-tight font-bold">
             Fast-track LRN verification and intent-to-enroll confirmation for continuing Grade 8–10 learners.
           </p>
           {isHistoricalReadOnly && (
-            <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
+            <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}
         </div>
         <div className="flex items-center w-full md:w-auto gap-2">
@@ -431,7 +431,7 @@ export default function BOSYPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-10 px-3 text-sm font-bold text-muted-foreground hover:text-foreground shrink-0"
+            className="h-10 px-3 text-base leading-tight font-bold text-muted-foreground hover:text-foreground shrink-0"
             onClick={handleRefresh}
             disabled={readinessLoading || queueLoading}>
             <RefreshCw
@@ -506,7 +506,7 @@ export default function BOSYPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
               <Input
                 placeholder="Search LRN, First Name, Last Name..."
-                className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+                className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
                 value={queueSearch}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
@@ -532,7 +532,7 @@ export default function BOSYPage() {
                   setPreviousSectionName(val);
                   startTransition(() => setQueuePage(1));
                 }}>
-                <SelectTrigger className="w-full md:w-[260px] h-11 bg-muted/30 border-2 border-transparent hover:border-primary/20 transition-all text-sm font-bold">
+                <SelectTrigger className="w-full md:w-[260px] h-11 bg-muted/30 border-2 border-transparent hover:border-primary/20 transition-all text-base leading-tight font-bold">
                   <SelectValue placeholder="Filter by Previous Section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -598,13 +598,13 @@ export default function BOSYPage() {
           </DialogHeader>
           {confirmSingleTarget && (
             <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5">
-              <p className="text-sm font-bold uppercase">
+              <p className="text-base leading-tight font-bold uppercase">
                 {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
                 {confirmSingleTarget.middleName
                   ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
                   : ""}
               </p>
-              <p className="text-xs text-foreground font-bold">
+              <p className="text-base text-foreground font-bold">
                 LRN: {confirmSingleTarget.lrn ?? "No LRN"}
               </p>
               <Badge
@@ -657,10 +657,10 @@ export default function BOSYPage() {
               value={revertReason}
               onChange={(e) => setRevertReason(e.target.value)}
               rows={3}
-              className="resize-none font-bold text-sm"
+              className="resize-none font-bold text-base leading-tight"
             />
             {revertReason.length > 0 && revertReason.trim().length < 5 && (
-              <p className="text-xs text-destructive font-bold">
+              <p className="text-base text-destructive font-bold">
                 Reason must be at least 5 characters.
               </p>
             )}
@@ -728,13 +728,13 @@ export default function BOSYPage() {
                   containerHeight="14rem"
                   estimatedRowHeight={32}
                 />
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive font-bold">
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-bold">
                   This is a destructive bulk operation. Only proceed if these
                   learners have confirmed they will not be attending.
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-16 text-sm text-foreground font-bold gap-2">
+              <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-bold gap-2">
                 <CheckCircle2 className="h-4 w-4 opacity-50" />
                 No no-show applicants found.
               </div>

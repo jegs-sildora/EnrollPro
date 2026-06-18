@@ -98,7 +98,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
               </Badge>
             )}
           </DialogTitle>
-          <DialogDescription className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
+          <DialogDescription className="text-base font-bold text-muted-foreground uppercase tracking-widest mt-1">
             {section?.gradeLevel} • {section?.programType}
           </DialogDescription>
         </DialogHeader>
@@ -107,12 +107,12 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
           {isLoading ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Roster...</span>
+              <span className="text-base leading-tight font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Roster...</span>
             </div>
           ) : learners.length === 0 ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3 text-muted-foreground">
               <ShieldAlert className="h-10 w-10 opacity-50" />
-              <span className="font-bold text-sm">No learners assigned to this section yet.</span>
+              <span className="font-bold text-base leading-tight">No learners assigned to this section yet.</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -123,7 +123,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
                 return (
                   <div key={l.id} className="flex items-center justify-between p-3 border border-border rounded-lg bg-background hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">
-                      <span className="font-black text-sm uppercase text-foreground">
+                      <span className="font-black text-base leading-tight uppercase text-foreground">
                         {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                       </span>
                       <div className="flex items-center gap-2 mt-1">
@@ -139,12 +139,12 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
                           onValueChange={(val) => setTargetSectionMap(prev => ({ ...prev, [l.enrollmentApplicationId]: val }))}
                           disabled={isProcessing}
                         >
-                          <SelectTrigger className="w-[180px] h-8 text-xs font-bold bg-background">
+                          <SelectTrigger className="w-[180px] h-8 text-base font-bold bg-background">
                             <SelectValue placeholder="Select destination..." />
                           </SelectTrigger>
                           <SelectContent>
                             {compatibleSections.map((s: any) => (
-                              <SelectItem key={s.id} value={String(s.id)} className="text-xs font-bold uppercase">
+                              <SelectItem key={s.id} value={String(s.id)} className="text-base font-bold uppercase">
                                 {s.name} ({s.currentCount}/{s.maxCapacity})
                               </SelectItem>
                             ))}
@@ -154,7 +154,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
                         <Button 
                           size="sm" 
                           variant="secondary" 
-                          className="h-8 text-xs font-bold uppercase"
+                          className="h-8 text-base font-bold uppercase"
                           disabled={!selectedTarget || isProcessing}
                           onClick={() => handleTransfer(l.enrollmentApplicationId, selectedTarget)}
                         >
@@ -168,7 +168,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
                       <Button 
                         size="sm" 
                         variant="destructive" 
-                        className="h-8 text-xs font-bold uppercase"
+                        className="h-8 text-base font-bold uppercase"
                         disabled={isProcessing}
                         onClick={() => handleUnassign(l.enrollmentApplicationId)}
                         title="Return to Unassigned Pool"

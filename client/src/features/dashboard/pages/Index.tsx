@@ -214,10 +214,10 @@ export default function Dashboard() {
               <Lock className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-black uppercase  leading-none">
+              <p className="text-base font-black uppercase  leading-none">
                 BOSY Locked ({ayLabel})
               </p>
-              <p className="text-xs font-bold text-emerald-100 mt-1">
+              <p className="text-base font-bold text-emerald-100 mt-1">
                 System is currently processing Late Enrollees only via Inline
                 Slotting.
               </p>
@@ -236,7 +236,7 @@ export default function Dashboard() {
           className="bg-white border-2 border-slate-300 text-foreground px-4 py-3 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Archive className="h-5 w-5 text-foreground" />
-            <p className="text-sm font-black uppercase">
+            <p className="text-base leading-tight font-black uppercase">
               Viewing Historical Data &middot; S.Y. {ayLabel}
             </p>
           </div>
@@ -252,7 +252,7 @@ export default function Dashboard() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">School Operations Dashboard</h1>
-          <p className="text-sm text-foreground font-bold">
+          <p className="text-base leading-tight text-foreground font-bold">
             Welcome back,{" "}
             <span className="font-bold text-primary">
               {user?.firstName} {user?.lastName}
@@ -265,7 +265,7 @@ export default function Dashboard() {
       {/* ── Row 1: Pending Administrative Tasks ── */}
       <section className="space-y-4" aria-label="Pending administrative tasks">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase text-foreground">
+          <h2 className="text-base font-black uppercase text-foreground">
             PENDING ADMINISTRATIVE TASKS
           </h2>
           <div className="h-px flex-1 bg-slate-200"></div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
+                <CardTitle className="text-base font-black uppercase text-foreground">
                   Pending Enrollment Approvals
                 </CardTitle>
                 <div className="rounded-lg p-2 bg-white">
@@ -307,7 +307,7 @@ export default function Dashboard() {
               )}
               <Button
                 type="button"
-                className="w-full font-black uppercase text-xs h-10 mt-auto"
+                className="w-full font-black uppercase text-base h-10 mt-auto"
                 variant="outline"
                 onClick={() => navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION")}
               >
@@ -324,7 +324,7 @@ export default function Dashboard() {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
+                <CardTitle className="text-base font-black uppercase text-foreground">
                   Learners Awaiting Sectioning
                 </CardTitle>
                 <div className="bg-white rounded-lg p-2">
@@ -350,7 +350,7 @@ export default function Dashboard() {
               )}
               <Button
                 type="button"
-                className="w-full font-black uppercase text-xs h-10 mt-auto"
+                className="w-full font-black uppercase text-base h-10 mt-auto"
                 variant="outline"
                 onClick={() => navigate("/sections/homerooms")}
               >
@@ -371,7 +371,7 @@ export default function Dashboard() {
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-black uppercase text-foreground">
+                    <CardTitle className="text-base font-black uppercase text-foreground">
                       Overcrowded Sections
                     </CardTitle>
                     <div className="rounded-lg p-2 bg-white">
@@ -388,7 +388,7 @@ export default function Dashboard() {
                         value={sectionsAtMax}
                         className={cn("text-5xl font-black tabular-nums", hasCapacityPressure ? "text-amber-600" : "text-foreground")}
                       />
-                      <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
+                      <p className="text-base font-bold min-h-[2rem] leading-relaxed">
                         {hasCapacityPressure ? (
                           <span className="text-amber-700">
                             {sectionsAtMax} section{sectionsAtMax !== 1 ? "s" : ""} at maximum capacity.
@@ -405,7 +405,7 @@ export default function Dashboard() {
                   )}
                   <Button
                     type="button"
-                    className="w-full font-black uppercase text-xs h-10 mt-auto"
+                    className="w-full font-black uppercase text-base h-10 mt-auto"
                     variant="outline"
                     onClick={() => navigate("/sections/homerooms")}
                   >
@@ -422,7 +422,7 @@ export default function Dashboard() {
       {isBosyLocked && viewingStatus !== 'ARCHIVED' && (
         <section className="space-y-4" aria-label="EOSY progress">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-black uppercase text-slate-600">
+            <h2 className="text-base font-black uppercase text-slate-600">
               End of School Year Progress · {ayLabel}
             </h2>
             <div className="h-px flex-1 bg-slate-200" />
@@ -433,7 +433,7 @@ export default function Dashboard() {
             <Card className="border border-slate-200/50 shadow-sm card-hover hover:shadow-md bg-white">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-black uppercase text-foreground">
+                  <CardTitle className="text-base font-black uppercase text-foreground">
                     Classes Finalized
                   </CardTitle>
                   <div className="bg-slate-100 rounded-lg p-2">
@@ -473,7 +473,7 @@ export default function Dashboard() {
                         className="h-full rounded-full bg-slate-700"
                       />
                     </div>
-                    <p className="text-xs font-bold text-foreground uppercase">
+                    <p className="text-base font-bold text-foreground uppercase">
                       <AnimatedNumber value={eosyProgress} suffix="%" />{" "}
                       of classes have submitted EOSY reports
                     </p>
@@ -481,9 +481,9 @@ export default function Dashboard() {
                 )}
                 <Button
                   type="button"
-                  className="w-full font-black uppercase text-xs h-10"
+                  className="w-full font-black uppercase text-base h-10"
                   variant="outline"
-                  onClick={() => navigate("/monitoring/enrollment/eosy")}>
+                  onClick={() => navigate("/eosy")}>
                   Open EOSY Tracker
                 </Button>
               </CardContent>
@@ -493,11 +493,11 @@ export default function Dashboard() {
             <Card className="border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/20 shadow-md card-hover hover:shadow-lg">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
+                  <CardTitle className="text-base font-black uppercase text-emerald-900/40">
                     Final Enrollment
                   </CardTitle>
                   {eosyLockState?.schoolYearFinalized && (
-                    <Badge className="bg-slate-800 text-white font-black uppercase text-xs h-5">
+                    <Badge className="bg-slate-800 text-white font-black uppercase text-base h-5">
                       <Lock className="h-3 w-3 mr-1" />
                       Locked
                     </Badge>
@@ -513,7 +513,7 @@ export default function Dashboard() {
                       value={enrollmentCurrent}
                       className="text-5xl font-black text-emerald-700 tabular-nums"
                     />
-                    <p className="text-xs font-bold text-emerald-900/50 uppercase">
+                    <p className="text-base font-bold text-emerald-900/50 uppercase">
                       Total Enrolled · SY {ayLabel}
                     </p>
                     {stats?.previousYearTotal && stats.previousYearTotal > 0 && (() => {
@@ -522,7 +522,7 @@ export default function Dashboard() {
                       return (
                         <div
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-sm",
+                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-base leading-tight",
                             positive
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-red-100 text-red-700",
@@ -547,7 +547,7 @@ export default function Dashboard() {
             {/* Grade Level Summary */}
             <Card className="border border-slate-200/50 shadow-sm card-hover hover:shadow-md bg-white">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
+                <CardTitle className="text-base font-black uppercase text-foreground">
                   Grade Level Summary
                 </CardTitle>
               </CardHeader>
@@ -564,16 +564,16 @@ export default function Dashboard() {
                       <div
                         key={gl.id}
                         className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-bold uppercase text-foreground truncate">
+                        <span className="text-base font-bold uppercase text-foreground truncate">
                           {gl.name}
                         </span>
-                        <span className="text-xs font-black tabular-nums text-emerald-600 shrink-0">
+                        <span className="text-base font-black tabular-nums text-emerald-600 shrink-0">
                           <AnimatedNumber value={gl.current} />
                         </span>
                       </div>
                     ))}
                     {glBreakdown.length === 0 && (
-                      <p className="text-xs font-bold text-foreground uppercase">
+                      <p className="text-base font-bold text-foreground uppercase">
                         No data available
                       </p>
                     )}
@@ -590,7 +590,7 @@ export default function Dashboard() {
         className="space-y-4"
         aria-label="Official enrollment tally">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase  text-emerald-600">
+          <h2 className="text-base font-black uppercase  text-emerald-600">
             Official Enrollment Tally (S.Y. {ayLabel})
           </h2>
           <div className="h-px flex-1 bg-emerald-100/50"></div>
@@ -600,10 +600,10 @@ export default function Dashboard() {
               <Card className="lg:col-span-4 border-2 border-emerald-200/60 bg-gradient-to-br from-white to-emerald-50/20 shadow-md card-hover hover:shadow-lg">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
+                    <CardTitle className="text-base font-black uppercase text-emerald-900/40">
                       Total Enrolled
                     </CardTitle>
-                    <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 h-5 px-1.5 text-xs font-black uppercase">
+                    <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 h-5 px-1.5 text-base font-black uppercase">
                       School-Wide
                     </Badge>
                   </div>
@@ -625,7 +625,7 @@ export default function Dashboard() {
                             className="text-5xl font-black text-emerald-700 tabular-nums"
                           />
                         </div>
-                        <p className="text-xs font-bold text-emerald-900/50 uppercase">
+                        <p className="text-base font-bold text-emerald-900/50 uppercase">
                           Total Enrolled · SY {ayLabel}
                         </p>
                       </div>
@@ -635,7 +635,7 @@ export default function Dashboard() {
                         const prev = stats?.previousYearTotal ?? null;
                         if (!prev || prev === 0) {
                           return (
-                            <p className="text-xs font-bold text-foreground uppercase">
+                            <p className="text-base font-bold text-foreground uppercase">
                               No prior SY data
                             </p>
                           );
@@ -646,7 +646,7 @@ export default function Dashboard() {
                         return (
                           <div
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-sm",
+                              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-base leading-tight",
                               positive
                                 ? "bg-emerald-100 text-emerald-700"
                                 : "bg-red-100 text-red-700",
@@ -670,7 +670,7 @@ export default function Dashboard() {
 
               <Card className="lg:col-span-8 border border-slate-200/50 bg-white shadow-sm flex flex-col card-hover hover:shadow-md">
                 <CardHeader className="pb-3 border-b border-slate-50">
-                  <CardTitle className="text-xs font-black uppercase text-foreground">
+                  <CardTitle className="text-base font-black uppercase text-foreground">
                     Enrollment per Grade Level
                   </CardTitle>
                 </CardHeader>
@@ -698,10 +698,10 @@ export default function Dashboard() {
                           key={gl.id}
                           className="space-y-3">
                           <div className="flex justify-between items-end">
-                            <span className="text-xs font-black uppercase text-foreground">
+                            <span className="text-base font-black uppercase text-foreground">
                               {gl.name}
                             </span>
-                            <span className="text-xs font-black text-emerald-700 tabular-nums">
+                            <span className="text-base font-black text-emerald-700 tabular-nums">
                               <AnimatedNumber value={gl.current} /> Enrolled
                             </span>
                           </div>
@@ -711,7 +711,7 @@ export default function Dashboard() {
                       {(!stats?.gradeLevelBreakdown ||
                         stats.gradeLevelBreakdown.length === 0) && (
                         <div className="col-span-full py-8 text-center">
-                          <p className="text-xs font-bold text-foreground uppercase ">
+                          <p className="text-base font-bold text-foreground uppercase ">
                             No Grade Level Data Available
                           </p>
                         </div>
@@ -732,7 +732,7 @@ export default function Dashboard() {
           className="space-y-4 pt-8"
           aria-label="School demographics and staff">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-black uppercase text-foreground">
+            <h2 className="text-base font-black uppercase text-foreground">
               SCHOOL DEMOGRAPHICS & STAFF
             </h2>
             <div className="h-px flex-1 bg-slate-200"></div>
@@ -743,7 +743,7 @@ export default function Dashboard() {
             {/* ── Card: Active Personnel ── */}
             <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
+                <CardTitle className="text-base font-black uppercase text-foreground">
                   TEACHING & NON-TEACHING STAFF
                 </CardTitle>
                 <Users className="h-3.5 w-3.5 text-foreground" />
@@ -758,11 +758,11 @@ export default function Dashboard() {
                         value={totalPersonnel}
                         className="text-2xl font-black"
                       />
-                      <span className="text-xs font-bold text-foreground uppercase">
+                      <span className="text-base font-bold text-foreground uppercase">
                         Total Registered Personnel
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-foreground uppercase mt-2">
+                    <p className="text-base font-bold text-foreground uppercase mt-2">
                       <AnimatedNumber value={registrarCount} /> Registrar{registrarCount !== 1 ? "s" : ""}
                       &nbsp;&middot;&nbsp;
                       <AnimatedNumber value={teacherCount} /> Teachers
@@ -775,20 +775,20 @@ export default function Dashboard() {
             {/* ── Card: Latest Activities ── */}
             <Card className="bg-white border border-slate-200/50 shadow-sm card-hover hover:shadow-md flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-black uppercase text-foreground">
+                <CardTitle className="text-base font-black uppercase text-foreground">
                   GENERATE OFFICIAL REPORTS (QUICK LINKS)
                 </CardTitle>
                 <ClipboardList className="h-3.5 w-3.5 text-foreground" />
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-center">
                 <div className="flex flex-col gap-2 pt-2">
-                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-base leading-tight font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
                     <Archive className="h-4 w-4 text-primary" /> Download School Form 1 (SF1) - School Register
                   </button>
-                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-base leading-tight font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
                     <Archive className="h-4 w-4 text-primary" /> Download School Form 5 (SF5) - Report on Promotion
                   </button>
-                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-sm font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
+                  <button className="w-full text-left px-4 py-3 bg-muted/20 hover:bg-muted text-base leading-tight font-semibold text-foreground rounded-md flex items-center gap-3 transition-colors">
                     <Archive className="h-4 w-4 text-primary" /> Download School Form 6 (SF6) - Summarized Report
                   </button>
                 </div>
@@ -801,7 +801,7 @@ export default function Dashboard() {
       {/* ── Visual Overlap / Analytics Placeholder (Cleaned up) ── */}
       {!isAdmin && (
         <div className="pt-8 border-t border-slate-50">
-          <p className="text-center text-xs font-black text-foreground uppercase ">
+          <p className="text-center text-base font-black text-foreground uppercase ">
             EnrollPro Operational Command Center • {new Date().getFullYear()}
           </p>
         </div>

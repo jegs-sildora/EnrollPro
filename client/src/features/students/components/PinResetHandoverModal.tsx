@@ -105,7 +105,7 @@ export function PinResetHandoverModal({
 
             <div className="py-4">
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm font-bold text-red-800 leading-relaxed">
+                <p className="text-base font-bold text-red-800 leading-relaxed">
                   WARNING: Generating a new PIN will immediately invalidate the current one. 
                   The learner will be locked out until you provide them with the new credential.
                 </p>
@@ -149,7 +149,7 @@ export function PinResetHandoverModal({
 
             <div className="space-y-6 py-4">
               <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-                <p className="text-xs font-black uppercase text-foreground ">
+                <p className="text-base font-black uppercase text-foreground ">
                   New Portal PIN:
                 </p>
                 
@@ -170,7 +170,7 @@ export function PinResetHandoverModal({
                   variant="link" 
                   size="sm" 
                   onClick={handleCopy}
-                  className="text-xs font-bold uppercase text-foreground hover:text-emerald-600"
+                  className="text-base font-bold uppercase text-foreground hover:text-emerald-600"
                 >
                   {copied ? "PIN Copied!" : "📋 Copy to Clipboard"}
                 </Button>
@@ -178,7 +178,7 @@ export function PinResetHandoverModal({
 
               <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-sm font-bold text-amber-900 leading-relaxed">
+                <p className="text-base font-bold text-amber-900 leading-relaxed">
                   IMPORTANT: For security reasons, this PIN will not be shown again. 
                   Please ensure you have securely transmitted this to the guardian.
                 </p>
@@ -193,7 +193,7 @@ export function PinResetHandoverModal({
                 />
                 <Label
                   htmlFor="pin-transmitted"
-                  className="text-sm font-black uppercase text-foreground leading-snug cursor-pointer select-none"
+                  className="text-base font-black uppercase text-foreground leading-snug cursor-pointer select-none"
                 >
                   I have copied and securely forwarded this new PIN.
                 </Label>

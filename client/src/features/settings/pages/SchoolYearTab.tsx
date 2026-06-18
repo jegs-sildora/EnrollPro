@@ -55,10 +55,10 @@ import {
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
 import SystemRolloverModal from "../components/SystemRolloverModal";
-import { EosyFinalizationMetrics } from "../components/EosyFinalizationMetrics";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 
 const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
   { text: "Validating EOSY completion and confirming the approved school calendar." },
@@ -195,56 +195,15 @@ function toManilaDateToken(value: string | Date): number {
   return year * 10000 + month * 100 + day;
 }
 
-function dateTokenToUtcMillis(token: number): number {
-  const year = Math.floor(token / 10000);
-  const month = Math.floor((token % 10000) / 100);
-  const day = token % 100;
-  return Date.UTC(year, month - 1, day, 0, 0, 0, 0);
-}
 
-function diffTokenDays(laterToken: number, earlierToken: number): number {
-  const diffMs =
-    dateTokenToUtcMillis(laterToken) - dateTokenToUtcMillis(earlierToken);
-  return Math.max(0, Math.round(diffMs / DAY_IN_MS));
-}
 
-function getDateWindowStatus(
-  openDate: string | null | undefined,
-  closeDate: string | null | undefined,
-) {
-  if (!openDate || !closeDate) {
-    return { label: "⚫ UNSCHEDULED", color: "bg-gray-100 text-gray-700" };
-  }
-
-  const todayToken = toManilaDateToken(new Date());
-  const startToken = toManilaDateToken(openDate);
-  const endToken = toManilaDateToken(closeDate);
-
-  if (todayToken < startToken) {
-    const days = diffTokenDays(startToken, todayToken);
-    return {
-      label: `🔵 SCHEDULED (Opens in ${days} day(s))`,
-      color: "bg-blue-100 text-blue-700",
-    };
-  }
-
-  if (todayToken > endToken) {
-    return { label: "⚫ CONCLUDED", color: "bg-slate-100 text-slate-500" };
-  }
-
-  const daysLeft = diffTokenDays(endToken, todayToken);
-  return {
-    label: ` ACTIVE · Closes in ${daysLeft} day(s)`,
-    color: "bg-green-100 text-green-700 font-bold",
-  };
-}
 
 function getEnrollmentWindowStatus(
   openDate: string | null | undefined,
   closeDate: string | null | undefined,
 ) {
   if (!openDate || !closeDate) {
-    return { label: "⚫ UNSCHEDULED", color: "bg-gray-100 text-gray-700" };
+    return { label: "⚫ UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
 
   const todayToken = toManilaDateToken(new Date());
@@ -252,21 +211,19 @@ function getEnrollmentWindowStatus(
   const endToken = toManilaDateToken(closeDate);
 
   if (todayToken < startToken) {
-    const days = diffTokenDays(startToken, todayToken);
     return {
-      label: `🔵 SCHEDULED (Opens in ${days} day(s))`,
+      label: `🔵 SCHEDULED`,
       color: "bg-blue-100 text-blue-700",
     };
   }
 
   if (todayToken > endToken) {
-    return { label: "⚫ ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-500 font-bold" };
+    return { label: "⚫ ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-800" };
   }
 
-  const daysLeft = diffTokenDays(endToken, todayToken);
   return {
-    label: ` ENROLLMENT OPEN · Closes in ${daysLeft} day(s)`,
-    color: "bg-green-100 text-green-700 font-bold",
+    label: ` ENROLLMENT OPEN`,
+    color: "bg-green-100 text-green-800",
   };
 }
 
@@ -289,6 +246,7 @@ interface SYItem {
   enrollCloseDate: string | null;
   termFormat: "TRIMESTER" | "QUARTERS" | null;
   _count: {
+    sections: number;
     gradeLevels: number;
     earlyRegistrationApplications: number;
     enrollmentApplications: number;
@@ -347,9 +305,9 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 
 export default function SchoolYearTab() {
   const location = useLocation();
-  const { 
-    setSettings, 
-    activeSchoolYearId, 
+  const {
+    setSettings,
+    activeSchoolYearId,
     systemPhase,
     enableHomogeneousSections,
     homogeneousSectionCount,
@@ -631,14 +589,7 @@ export default function SchoolYearTab() {
     );
   }, [editYearLabel, years]);
 
-  const activeCalendarStatus = useMemo(
-    () =>
-      getDateWindowStatus(
-        activeYear?.classOpeningDate ?? null,
-        activeYear?.classEndDate ?? null,
-      ),
-    [activeYear?.classEndDate, activeYear?.classOpeningDate],
-  );
+
 
   const enrollmentPhaseStatus = useMemo(
     () =>
@@ -991,7 +942,7 @@ export default function SchoolYearTab() {
     return (
       <div className="space-y-6 mx-auto">
         <Card className="shadow-sm">
-          <CardHeader className="bg-muted border-b border-border rounded-t-lg">
+          <CardHeader className="bg border-b border-border rounded-t-lg">
             <div className="flex items-center gap-2">
               <Skeleton className="h-6 w-6" />
               <Skeleton className="h-6 w-48" />
@@ -1159,38 +1110,45 @@ export default function SchoolYearTab() {
               className="bg-white border-b border-gray-200 pb-6 mb-6 rounded-t-lg flex flex-col justify-between items-start gap-4"
             >
               <div className="flex flex-col lg:flex-row w-full justify-between lg:items-start gap-4">
-                <div className="flex flex-col gap-2">
-                  <CardTitle
-                    className="text-xl font-bold flex items-center gap-2 text-gray-800"
-                  >
-                    {activeYear ? (
-                      <>
-                        School Year {activeYear.yearLabel} Setup & Configuration
-                      </>
-                    ) : (
-                      <>
-                        No Active School Year
-                      </>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <CardTitle
+                      className="text-xl font-black text-foreground"
+                    >
+                      {activeYear ? (
+                        <>School Year {activeYear.yearLabel}</>
+                      ) : (
+                        <>No Active School Year</>
+                      )}
+                    </CardTitle>
+                    {activeYear && (
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">
+                        {activeYear.sections?.length === 0 ? "Initialization Phase" : "Current SY"}
+                      </span>
                     )}
-                  </CardTitle>
+                  </div>
                   {activeYear && (
-                    <span
-                      className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeYear.sections?.length === 0 ? "bg-blue-100 text-blue-700" : activeCalendarStatus.color}`}>
-                      {activeYear.sections?.length === 0 ? "INITIALIZATION PHASE - Awaiting Configuration" : activeCalendarStatus.label}
-                    </span>
+                    <p className="font-bold text-foreground">
+                      {(() => {
+                        const firstDay = localCalendarState.term1Start;
+                        const isQuarters = localCalendarState.termFormat === "QUARTERS";
+                        const lastDay = isQuarters ? localCalendarState.term4End : localCalendarState.term3End;
+
+                        return firstDay && lastDay
+                          ? `Official Academic Calendar: ${formatManilaDate(firstDay)} – ${formatManilaDate(lastDay)}`
+                          : "Official Academic Calendar: Dates not fully configured";
+                      })()}
+                    </p>
                   )}
                 </div>
 
-                {activeYear && (
+                {activeYear && activeYear._count?.sections > 0 && activeYear.sections?.length === 0 && (
                   <div className="flex flex-col items-end w-full lg:w-auto mt-2 lg:mt-0">
-                    <SystemRolloverModal disabled={!(activeYear.isEosyFinalized || (activeYear.sections?.length === 0))} activeYearLabel={activeYear.yearLabel} />
+                    <SystemRolloverModal disabled={false} activeYearLabel={activeYear.yearLabel} />
                   </div>
                 )}
               </div>
 
-              {activeYear && (
-                <EosyFinalizationMetrics />
-              )}
             </CardHeader>
             <CardContent className="p-6">
               {activeYear ? (
@@ -1200,86 +1158,117 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-foreground uppercase tracking-wider mb-4">
-                            School Year Phase
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
+                            System Academic Phase
                           </h4>
                         </div>
-                        <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
-                          Select the active operational state for the school year. Changing this phase dynamically configures public intake portals and enrollment categorization.
+                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                          Control the current phase of the academic year. This affects how late enrollments are processed.
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row rounded-xl border border-border/40 overflow-hidden bg-muted/10 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
-                      {[
-                        { id: 'OFFICIAL_ENROLLMENT', label: 'Early Registration & BOSY', step: 1 },
-                        { id: 'REGULAR_ENROLLMENT', label: 'Regular Enrollment', step: 2 },
-                        { id: 'CLASSES_ONGOING', label: 'Active Class Days', step: 3 },
-                        { id: 'EOSY_CLOSING', label: 'EOSY Finalization', step: 4 }
-                      ].map((phase) => {
-                        const currentPhaseId = selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT";
-                        const isActive = currentPhaseId === phase.id || (currentPhaseId === "OFFICIAL_ENROLLMENT" && phase.step === 1); // Handle mapping if needed
-                        return (
-                          <div key={phase.id} className={cn("flex-1 p-4 flex flex-col items-center justify-center text-center gap-2 transition-colors cursor-pointer", isActive ? "bg-primary/5 border-b-2 sm:border-b-0 sm:border-b-primary" : "hover:bg-muted/20")} onClick={() => setSelectedPhase(phase.id)}>
-                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-black text-sm", isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
-                              {phase.step}
-                            </div>
-                            <span className={cn("text-xs font-bold uppercase", isActive ? "text-primary" : "text-muted-foreground")}>{phase.label}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
+                    <RadioGroup
+                      value={selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT"}
+                      onValueChange={(value: string) => setSelectedPhase(value)}
+                      className="flex flex-col space-y-4"
+                    >
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
+                        <div>
+                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-bold cursor-pointer text-foreground block">Official Enrollment</Label>
+                          <p className="text-sm text-foreground mt-1">Opens the public intake forms and processes normal verify/confirm workflows.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
+                        <div>
+                          <Label htmlFor="CLASSES_ONGOING" className="font-bold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
+                          <p className="text-sm text-foreground mt-1">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
+                        <div>
+                          <Label htmlFor="EOSY_CLOSING" className="font-bold cursor-pointer text-foreground block">EOSY Closing</Label>
+                          <p className="text-sm text-foreground mt-1">Locks public intake forms and readies the database for end-of-year grade finalization.</p>
+                        </div>
+                      </div>
+                    </RadioGroup>
 
-                    <div className="mt-6 flex justify-center">
-                      <Button
-                        onClick={() => setShowPhaseModal(true)}
-                        size="lg"
-                        className="font-bold w-full sm:w-auto px-8"
-                        disabled={!selectedPhase || selectedPhase === (systemPhase ?? "OFFICIAL_ENROLLMENT")}
-                      >
-                        Advance to Next Phase
-                      </Button>
-                    </div>
+                    {selectedPhase && selectedPhase !== systemPhase && (
+                      <div className="mt-6 flex justify-end">
+                        <Button
+                          onClick={() => setShowPhaseModal(true)}
+                          className="w-full sm:w-auto"
+                        >
+                          Apply Phase Change
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">
-                        Official DepEd 4-Quarter Calendar
+                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                        DepEd Term Configuration
+                      </h4>
+                    </div>
+                    <RadioGroup
+                      value={localCalendarState.termFormat ?? activeYear.termFormat ?? "TRIMESTER"}
+                      onValueChange={(value: string) => {
+                        setLocalCalendarState(prev => ({ ...prev, termFormat: value }));
+                      }}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" />
+                        <Label htmlFor="TRIMESTER" className="font-bold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="QUARTERS" id="QUARTERS" />
+                        <Label htmlFor="QUARTERS" className="font-bold cursor-pointer text-foreground">4-Quarter System</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Term Date rows */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                        Term Dates
                       </h4>
                     </div>
 
                     {[
-                      { num: 1, label: "Quarter 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
-                      { num: 2, label: "Quarter 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
-                      { num: 3, label: "Quarter 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
-                      { num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End },
+                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
+                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
+                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
+                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => (
-                      <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/40">
+                      <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
                         <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
                         <div className="flex items-center gap-3 flex-1 w-full">
                           <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
-                            <div className="text-xs font-semibold text-foreground uppercase mb-0.5">Start Date</div>
+                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
                             <HybridDatePicker
                               value={term.start || ""}
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
                               }}
-                              minDate={new Date()}
-                              className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
                               placeholder="Set date"
                             />
                           </div>
                           <span className="text-foreground font-bold">to</span>
                           <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
-                            <div className="text-xs font-semibold text-foreground uppercase mb-0.5">End Date</div>
+                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
                             <HybridDatePicker
                               value={term.end || ""}
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
                               }}
-                              minDate={new Date()}
-                              className="border-none shadow-none p-0 h-auto font-bold text-sm bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
                               placeholder="Set date"
                             />
                           </div>
@@ -1288,44 +1277,30 @@ export default function SchoolYearTab() {
                     ))}
                   </div>
 
-                  <div className="mt-8 pt-4 border-t border-border/40 flex flex-col sm:flex-row sm:items-center justify-between text-muted-foreground bg-muted/10 rounded-lg p-4 mb-8">
-                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">First Day of Classes — Last Day of Classes</span>
-                    <span className="text-sm font-bold text-foreground">
-                      {(() => {
-                        const firstDay = localCalendarState.term1Start;
-                        const isQuarters = localCalendarState.termFormat === "QUARTERS";
-                        const lastDay = isQuarters ? localCalendarState.term4End : localCalendarState.term3End;
-
-                        return firstDay && lastDay
-                          ? `${formatManilaDate(firstDay)} — ${formatManilaDate(lastDay)}`
-                          : "Dates not fully configured";
-                      })()}
-                    </span>
-                  </div>
 
                   {/* BOSY Enrollment Period */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wider">
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
                             Official Intake Period (BOSY)
                           </h4>
                         </div>
-                        <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
                           Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
                         </p>
                       </div>
                       <span
-                        className={`text-sm font-bold px-3 py-1.5 rounded-full border shadow-sm ${enrollmentPhaseStatus.color}`}>
+                        className={`inline-flex items-center px-3 py-1 text-sm font-semibold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
                         {enrollmentPhaseStatus.label}
                       </span>
                     </div>
 
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                         <div className="space-y-2 relative">
-                          <Label className="text-sm font-bold uppercase text-foreground">
+                          <Label className="text-base font-bold uppercase text-foreground">
                             Opens On
                           </Label>
                           <HybridDatePicker
@@ -1338,7 +1313,7 @@ export default function SchoolYearTab() {
                           />
                         </div>
                         <div className="space-y-2 relative">
-                          <Label className="text-sm font-bold uppercase text-foreground">
+                          <Label className="text-base font-bold uppercase text-foreground">
                             Closes On
                           </Label>
                           <HybridDatePicker
@@ -1352,20 +1327,12 @@ export default function SchoolYearTab() {
                         </div>
                       </div>
 
-                      {localCalendarState.enrollOpenDate !== "" &&
-                        toManilaDateToken(localCalendarState.enrollOpenDate) < toManilaDateToken(new Date()) && (
-                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <p>
-                              Error: Date cannot precede current system time.
-                            </p>
-                          </div>
-                        )}
+
 
                       {localCalendarState.enrollOpenDate !== "" &&
                         localCalendarState.enrollCloseDate !== "" &&
                         toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
-                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-bold text-destructive">
+                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                             <p>
                               Closes On date cannot be earlier than Opens On.
@@ -1374,15 +1341,16 @@ export default function SchoolYearTab() {
                         )}
                     </div>
 
-                    <div className="mt-6 flex justify-end">
-                      <Button
-                        onClick={handleSaveCalendarSettings}
-                        className="w-full sm:w-auto"
-                        disabled={!isCalendarChanged}
-                      >
-                        Save Calendar Settings
-                      </Button>
-                    </div>
+                    {isCalendarChanged && (
+                      <div className="mt-6 flex justify-end">
+                        <Button
+                          onClick={handleSaveCalendarSettings}
+                          className="w-full sm:w-auto"
+                        >
+                          Save Calendar Settings
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                 </div>
@@ -1414,8 +1382,8 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Pilot / Star Sectioning (Homogeneous)</Label>
-                      <p className="text-sm text-muted-foreground">Automatically group highest-performing learners into top sections.</p>
+                      <Label className="text-base">Pilot Sectioning (Homogeneous)</Label>
+                      <p className="text-base text-foreground">Automatically group highest-performing learners into top sections.</p>
                     </div>
                     <Switch
                       checked={enableHomogeneousSections}
@@ -1451,7 +1419,7 @@ export default function SchoolYearTab() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Standard Sectioning (Heterogeneous)</Label>
-                      <p className="text-sm text-muted-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
+                      <p className="text-base text-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
                     </div>
                     <Switch
                       checked={heterogeneousRoundRobin}
@@ -1556,11 +1524,11 @@ export default function SchoolYearTab() {
                     id="rolloverYearLabel"
                     value={editYearLabel ? `S.Y. ${editYearLabel}` : ""}
                     readOnly
-                    className="font-bold bg-muted/50 cursor-not-allowed pl-9"
+                    className="font-bold bg/50 cursor-not-allowed pl-9"
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-xs text-foreground font-bold">
+                <p className="text-sm text-foreground font-bold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
@@ -1596,10 +1564,10 @@ export default function SchoolYearTab() {
 
             {activeYear && (
               <div className="p-4 border rounded-lg space-y-3">
-                <p className="text-sm font-bold">
+                <p className="text-base font-bold">
                   Rollover options from {activeYear.yearLabel}
                 </p>
-                <p className="text-xs text-foreground">
+                <p className="text-sm text-foreground">
                   EOSY finalization must be completed before rollover can run.
                 </p>
                 <div className="space-y-2 pt-1">
@@ -1616,7 +1584,7 @@ export default function SchoolYearTab() {
                     />
                     <label
                       htmlFor="c1"
-                      className="text-sm cursor-pointer select-none">
+                      className="text-base cursor-pointer select-none">
                       Clone grade levels, sections, and SCPs (Adviser
                       assignments will be wiped clean)
                     </label>
@@ -1634,7 +1602,7 @@ export default function SchoolYearTab() {
                     />
                     <label
                       htmlFor="c3"
-                      className="text-sm cursor-pointer select-none">
+                      className="text-base cursor-pointer select-none">
                       Carry over eligible enrolled learners as continuing status
                     </label>
                   </div>
@@ -1643,11 +1611,11 @@ export default function SchoolYearTab() {
             )}
 
             <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 space-y-4">
-              <div className="flex items-center gap-2 text-destructive font-black text-xs  uppercase">
+              <div className="flex items-center gap-2 text-destructive font-black text-sm  uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>
-              <p className="text-sm font-bold leading-relaxed">
+              <p className="text-base font-bold leading-relaxed">
                 {activeYear
                   ? "Executing rollover will archive the current academic cycle. This action cannot be reversed."
                   : "Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database."}
@@ -1663,7 +1631,7 @@ export default function SchoolYearTab() {
                 />
                 <label
                   htmlFor="agreed-to-activation"
-                  className="text-sm font-bold leading-tight cursor-pointer select-none">
+                  className="text-base font-bold leading-tight cursor-pointer select-none">
                   I confirm that these dates align with the official DepEd
                   School Calendar Memorandum and I am authorized to activate the
                   system.
@@ -1709,7 +1677,7 @@ export default function SchoolYearTab() {
                   "font-bold transition-all shadow-md border-none",
                   isAgreedToActivation
                     ? "bg-[#800000] hover:bg-[#600000] text-white"
-                    : "bg-muted text-foreground grayscale",
+                    : "bg text-foreground grayscale",
                 )}
                 disabled={
                   creating ||
@@ -1732,7 +1700,7 @@ export default function SchoolYearTab() {
               </Button>
             </div>
             {activeYear && !isRolloverReady && (
-              <div className="flex items-center justify-end gap-1 text-xs font-bold text-amber-700">
+              <div className="flex items-center justify-end gap-1 text-sm font-bold text-amber-700">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Waiting for EOSY Finalization.</span>
               </div>

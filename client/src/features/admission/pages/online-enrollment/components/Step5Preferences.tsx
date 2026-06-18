@@ -235,7 +235,7 @@ export default function Step5Enrollment() {
   return (
     <div className="space-y-12">
       <div className="space-y-4">
-        <Label className="text-sm font-bold uppercase  text-primary">
+        <Label className="text-base leading-tight font-bold uppercase  text-primary">
           Learner Category <span className="text-destructive">*</span>
         </Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -255,21 +255,21 @@ export default function Step5Enrollment() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-bold text-sm leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 {typeOption.label}
               </span>
             </button>
           ))}
         </div>
         {errors.learnerType?.message && (
-          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
+          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.learnerType.message}
           </p>
         )}
       </div>
 
       <div className="space-y-6">
-        <Label className="text-sm font-bold uppercase  text-primary">
+        <Label className="text-base leading-tight font-bold uppercase  text-primary">
           Grade Level to Apply for <span className="text-destructive">*</span>
         </Label>
         <div
@@ -295,14 +295,14 @@ export default function Step5Enrollment() {
                   ? "border-primary bg-primary text-white shadow-sm ring-1 ring-primary"
                   : "border-border bg-white hover:border-primary/50 hover:bg-primary/5",
               )}>
-              <span className="text-sm font-bold leading-tight">
+              <span className="text-base font-bold leading-tight">
                 {gradeOption.label}
               </span>
             </button>
           ))}
         </div>
         {errors.gradeLevel?.message && (
-          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
+          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.gradeLevel.message}
           </p>
         )}
@@ -311,7 +311,7 @@ export default function Step5Enrollment() {
       <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
         <Label
           htmlFor="generalAverage"
-          className="text-sm font-bold uppercase  text-primary">
+          className="text-base leading-tight font-bold uppercase  text-primary">
           Final General Average {!watch("hasSf9Deficiency") && <span className="text-destructive">*</span>}
         </Label>
         
@@ -327,7 +327,7 @@ export default function Step5Enrollment() {
               }
             }}
           />
-          <Label htmlFor="sf9-deficiency" className="text-xs font-bold leading-tight cursor-pointer text-blue-900">
+          <Label htmlFor="sf9-deficiency" className="text-base font-bold leading-tight cursor-pointer text-blue-900">
             I do not have my SF9 / Report Card yet. I am applying for Temporary Enrollment per DepEd Order 017.
           </Label>
         </div>
@@ -362,7 +362,7 @@ export default function Step5Enrollment() {
                 }
               }}
             />
-            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
+            <p className="font-bold text-base italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               {watch("learnerType") === "NEW_ENROLLEE" 
                 ? "Final general average from Grade 6." 
@@ -373,7 +373,7 @@ export default function Step5Enrollment() {
           </div>
         </div>
         {errors.generalAverage?.message && (
-          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
+          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-1">
             <AlertCircle className="w-3 h-3" /> {errors.generalAverage.message}
           </p>
         )}
@@ -418,14 +418,14 @@ export default function Step5Enrollment() {
           </Select>
 
           {!isScpEligible && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
+            <p className="font-bold text-base italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               SCP is available only for New Enrollees applying for Grade 7.
             </p>
           )}
 
           {isProgramSelectionLocked && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
+            <p className="font-bold text-base italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               Learning Program and SCP selection are locked because this form is linked to an existing Early Registration.
             </p>
@@ -440,7 +440,7 @@ export default function Step5Enrollment() {
                 className="overflow-hidden space-y-6 pt-2"
               >
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 space-y-4">
-                  <p className="text-sm font-bold flex items-start gap-2">
+                  <p className="text-base leading-tight font-bold flex items-start gap-2">
                     <Info className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
                     Note: Enrollment in Special Curricular Programs is strictly for learners who have passed the pre-enrollment screening. The Registrar's Office will manually cross-reference this submission with the official master list of passers.
                   </p>
@@ -453,12 +453,12 @@ export default function Step5Enrollment() {
                       }
                       className="mt-0.5 border-yellow-500 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600"
                     />
-                    <Label htmlFor="scp-consent" className="text-xs font-bold leading-tight cursor-pointer">
+                    <Label htmlFor="scp-consent" className="text-base font-bold leading-tight cursor-pointer">
                       I confirm that the learner is on the official published list of passers for this program. I understand that submitting a false claim will result in enrollment delays and automatic placement in the Regular curriculum. <span className="text-destructive">*</span>
                     </Label>
                   </div>
                   {errors.hasScpFallbackConsent?.message && (
-                    <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
+                    <p className="text-base text-destructive font-bold flex items-center gap-1 mt-2">
                       <AlertCircle className="w-3 h-3" />{" "}
                       {errors.hasScpFallbackConsent.message}
                     </p>
@@ -467,7 +467,7 @@ export default function Step5Enrollment() {
 
                 {scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-primary">
+                    <Label className="text-base font-bold uppercase text-primary">
                       Preferred Art Field <span className="text-destructive">*</span>
                     </Label>
                     <Select
@@ -497,7 +497,7 @@ export default function Step5Enrollment() {
 
                 {scpType === "SPECIAL_PROGRAM_IN_SPORTS" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-primary">
+                    <Label className="text-base font-bold uppercase text-primary">
                       Primary Sport <span className="text-destructive">*</span>
                     </Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -523,7 +523,7 @@ export default function Step5Enrollment() {
                           />
                           <Label
                             htmlFor={`sport-${sport}`}
-                            className="text-xs font-bold cursor-pointer">
+                            className="text-base font-bold cursor-pointer">
                             {sport}
                           </Label>
                         </div>

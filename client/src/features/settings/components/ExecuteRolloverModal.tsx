@@ -286,7 +286,7 @@ export default function ExecuteRolloverModal({
             {/* TASK 1: 2-col DatePicker grid */}
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase text-primary">
+                <Label className="text-base font-black uppercase text-primary">
                   Beginning of School Year (BOSY)
                 </Label>
                 <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
@@ -301,7 +301,7 @@ export default function ExecuteRolloverModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase text-primary">
+                <Label className="text-base font-black uppercase text-primary">
                   End of School Year (EOSY)
                 </Label>
                 <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
@@ -319,7 +319,7 @@ export default function ExecuteRolloverModal({
 
             {/* TASK 2: Softened payload card with generous spacing */}
             <div className="rounded-lg bg-slate-50 p-6 space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wide text-foreground mb-3">
+              <p className="text-base font-bold uppercase tracking-normal text-foreground mb-3">
                 Rollover Payload from {activeSchoolYearLabel ?? "—"}
               </p>
               <ul className="space-y-4 font-bold text-foreground">
@@ -330,7 +330,7 @@ export default function ExecuteRolloverModal({
                 ].map((action) => (
                   <li key={action} className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm text-slate-600">{action}</span>
+                    <span className="text-base leading-tight text-slate-600">{action}</span>
                   </li>
                 ))}
               </ul>
@@ -342,7 +342,7 @@ export default function ExecuteRolloverModal({
                 <AlertTitle className="font-black text-red-800 uppercase">
                   Irreversible System Activation
                 </AlertTitle>
-                <AlertDescription className="text-sm font-bold text-red-700">
+                <AlertDescription className="text-base leading-tight font-bold text-red-700">
                   Once executed, this action cannot be undone. The current school year will be permanently archived.
                 </AlertDescription>
               </Alert>
@@ -359,7 +359,7 @@ export default function ExecuteRolloverModal({
                 />
                 <Label
                   htmlFor="depd-compliance"
-                  className="text-sm font-bold text-red-800 leading-snug cursor-pointer">
+                  className="text-base font-bold text-red-800 leading-snug cursor-pointer">
                   I confirm that the selected BOSY and EOSY dates align with the
                   official DepEd School Calendar Memorandum, and I authorize
                   system activation.
@@ -370,7 +370,7 @@ export default function ExecuteRolloverModal({
 
           {/* TASK 4: PIN section — outside the space-y group, mt-8 for clear visual break */}
           <div className="flex flex-col items-center gap-3 mt-8 pb-4">
-            <Label className="text-xs font-black uppercase text-primary tracking-widest text-center">
+            <Label className="text-base font-black uppercase text-primary tracking-widest text-center">
               Enter 6-Digit Admin PIN to Execute:
             </Label>
             <AdminPinInput
@@ -383,7 +383,7 @@ export default function ExecuteRolloverModal({
               ariaLabel="Rollover execution admin PIN"
             />
             {pinTouched && !isPinValid && (
-              <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+              <p className="text-base text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                 Valid 6-digit administrative PIN required
               </p>
             )}

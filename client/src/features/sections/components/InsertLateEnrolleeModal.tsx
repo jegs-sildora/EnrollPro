@@ -173,7 +173,7 @@ export function InsertLateEnrolleeModal({
                 <DialogTitle className="text-lg font-black uppercase ">
                   Insert Late Enrollee
                 </DialogTitle>
-                <p className="text-xs font-bold text-foreground uppercase  mt-0.5">
+                <p className="text-base font-bold text-foreground uppercase  mt-0.5">
                   Target: {gradeLevelName} - {sectionName}
                 </p>
               </div>
@@ -181,7 +181,7 @@ export function InsertLateEnrolleeModal({
             {classOpeningDate && (
               <Badge
                 variant="outline"
-                className="bg-white font-bold text-xs uppercase border-border px-2">
+                className="bg-white font-bold text-base uppercase border-border px-2">
                 Classes Started:{" "}
                 {format(new Date(classOpeningDate), "MMM d, yyyy")}
               </Badge>
@@ -207,7 +207,7 @@ export function InsertLateEnrolleeModal({
                 {loading ? (
                   <div className="py-20 flex flex-col items-center justify-center space-y-3">
                     <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-                    <p className="text-xs font-black uppercase  text-foreground animate-pulse">
+                    <p className="text-base font-black uppercase  text-foreground animate-pulse">
                       Scanning LIS Pool...
                     </p>
                   </div>
@@ -218,7 +218,7 @@ export function InsertLateEnrolleeModal({
                       <p className="text-lg font-bold text-slate-500">
                         Searching...
                       </p>
-                      <p className="text-sm font-bold text-slate-400">
+                      <p className="text-base leading-tight font-bold text-slate-400">
                         Scanning unsectioned records...
                       </p>
                     </div>
@@ -226,10 +226,10 @@ export function InsertLateEnrolleeModal({
                 ) : filteredPool.length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center px-6">
                     <AlertCircle className="h-8 w-8 text-foreground/30 mb-2" />
-                    <p className="text-sm font-bold text-foreground">
+                    <p className="text-base leading-tight font-bold text-foreground">
                       No unsectioned learners found
                     </p>
-                    <p className="text-xs text-foreground/60 mt-1 max-w-[240px]">
+                    <p className="text-base text-foreground/60 mt-1 max-w-[240px]">
                       Ensure learners have passed verification and are marked
                       "Ready for Sectioning".
                     </p>
@@ -252,10 +252,10 @@ export function InsertLateEnrolleeModal({
                               : "hover:bg-muted/50 cursor-pointer",
                           )}>
                           <div className="flex flex-col">
-                            <span className="font-black text-sm uppercase group-hover:text-primary transition-colors">
+                            <span className="font-black text-base leading-tight uppercase group-hover:text-primary transition-colors">
                               {learner.lastName}, {learner.firstName}
                             </span>
-                            <span className="text-xs font-bold text-foreground ">
+                            <span className="text-base font-bold text-foreground ">
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
@@ -305,7 +305,7 @@ export function InsertLateEnrolleeModal({
                     <h3 className="font-black text-lg uppercase leading-none">
                       {selectedLearner.lastName}, {selectedLearner.firstName}
                     </h3>
-                    <p className="text-xs font-bold text-foreground uppercase  mt-1">
+                    <p className="text-base font-bold text-foreground uppercase  mt-1">
                       LRN: {selectedLearner.lrn || "PENDING LRN"}
                     </p>
                   </div>
@@ -314,29 +314,29 @@ export function InsertLateEnrolleeModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedLearner(null)}
-                  className="text-xs font-bold uppercase text-foreground hover:text-foreground">
+                  className="text-base font-bold uppercase text-foreground hover:text-foreground">
                   Change
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-xs font-black text-foreground uppercase  mb-1">
+                  <p className="text-base font-black text-foreground uppercase  mb-1">
                     Target Section
                   </p>
-                  <p className="font-black text-sm uppercase">{sectionName}</p>
-                  <p className="text-xs font-bold text-foreground mt-0.5">
+                  <p className="font-black text-base leading-tight uppercase">{sectionName}</p>
+                  <p className="text-base font-bold text-foreground mt-0.5">
                     {gradeLevelName}
                   </p>
                 </div>
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-xs font-black text-foreground uppercase  mb-1">
+                  <p className="text-base font-black text-foreground uppercase  mb-1">
                     Section Status
                   </p>
-                  <p className="font-black text-sm uppercase">
+                  <p className="font-black text-base leading-tight uppercase">
                     {enrolledCount} / {maxCapacity}
                   </p>
-                  <p className="text-xs font-bold text-emerald-600 mt-0.5">
+                  <p className="text-base font-bold text-emerald-600 mt-0.5">
                     Available Slots: {maxCapacity - enrolledCount}
                   </p>
                 </div>
@@ -346,7 +346,7 @@ export function InsertLateEnrolleeModal({
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
                   <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="text-xs font-black text-red-900 uppercase">
+                    <p className="text-base font-black text-red-900 uppercase">
                       Attendance Risk
                     </p>
                     <p className="text-[11px] leading-relaxed text-red-800 font-bold">
@@ -361,7 +361,7 @@ export function InsertLateEnrolleeModal({
               <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-xs font-black text-amber-900 uppercase">
+                  <p className="text-base font-black text-amber-900 uppercase">
                     Inline Slotting Protection
                   </p>
                   <p className="text-[11px] leading-relaxed text-amber-800 font-bold">
@@ -382,7 +382,7 @@ export function InsertLateEnrolleeModal({
                   value={officialEnrollmentDate}
                   max={format(new Date(), "yyyy-MM-dd")}
                   onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base leading-tight font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <p className="text-[10px] text-amber-700 font-bold">
                   Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
@@ -393,20 +393,20 @@ export function InsertLateEnrolleeModal({
         </div>
 
         <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between sm:justify-between">
-          <p className="text-xs font-black text-foreground uppercase ">
+          <p className="text-base font-black text-foreground uppercase ">
             S.M.A.R.T. Integration Active
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="font-bold uppercase text-xs">
+              className="font-bold uppercase text-base">
               Cancel
             </Button>
             <Button
               disabled={!selectedLearner || isSubmitting}
               onClick={handleSlotting}
-              className="font-bold uppercase text-xs px-6">
+              className="font-bold uppercase text-base px-6">
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (

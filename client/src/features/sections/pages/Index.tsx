@@ -469,7 +469,7 @@ export default function Sections() {
         <Badge
           key="temp"
           variant="outline"
-          className="text-[9px] font-black uppercase border-amber-300 bg-amber-50 text-amber-700 shadow-none px-2 py-0.5">
+          className="text-[9px] font-black uppercase border-amber-300 bg-amber-50 text-amber-700 shadow-none px-2.5 py-1">
           Temporary
         </Badge>,
       );
@@ -488,7 +488,7 @@ export default function Sections() {
         <Badge
           key="late"
           variant="warning"
-          className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 border-amber-200 shadow-none px-2 py-0.5 whitespace-nowrap inline-flex items-center gap-1">
+          className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 border-amber-200 shadow-none px-2.5 py-1 whitespace-nowrap inline-flex items-center gap-1">
           🕒 Late Enrollee
         </Badge>,
       );
@@ -508,7 +508,7 @@ export default function Sections() {
       remarks.push(
         <span
           key="transferee"
-          className="text-xs font-bold text-foreground uppercase  ml-1">
+          className="text-base font-bold text-foreground uppercase  ml-1">
           [ Transferee ]
         </span>,
       );
@@ -518,7 +518,7 @@ export default function Sections() {
       remarks.push(
         <span
           key="returning"
-          className="text-xs font-bold text-foreground uppercase  ml-1">
+          className="text-base font-bold text-foreground uppercase  ml-1">
           [ Balik-Aral ]
         </span>,
       );
@@ -1018,7 +1018,7 @@ export default function Sections() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
+                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-base">
                     <div className="flex items-center gap-1.5">
                       <span className="text-foreground font-bold">
                         Adviser:
@@ -1143,7 +1143,7 @@ export default function Sections() {
 
     return (
       <div className="space-y-3 mt-6 first:mt-0">
-        <h3 className="text-sm font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
+        <h3 className="text-base leading-tight font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
           {title}
         </h3>
         {renderSectionCards(
@@ -1175,7 +1175,7 @@ export default function Sections() {
 
     return (
       <div className="space-y-4 mt-6 first:mt-0">
-        <h3 className="text-sm font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
+        <h3 className="text-base leading-tight font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
           Special Curricular Programs (SCP)
         </h3>
         <div className="space-y-6">
@@ -1191,7 +1191,7 @@ export default function Sections() {
               <div
                 key={scpType}
                 className="space-y-3">
-                <h4 className="text-xs font-black uppercase text-foreground/70 border-b border-border/40 pb-1 text-center">
+                <h4 className="text-base font-black uppercase text-foreground/70 border-b border-border/40 pb-1 text-center">
                   {scpLabel}
                 </h4>
                 {renderSectionCards(
@@ -1220,7 +1220,7 @@ export default function Sections() {
               <p className="font-bold text-foreground">
                 No School Year Selected
               </p>
-              <p className="text-sm text-foreground leading-relaxed px-4">
+              <p className="text-base text-foreground leading-relaxed px-4">
                 Please set an active year or choose one from the header switcher
                 to manage records for this period.
               </p>
@@ -1236,7 +1236,7 @@ export default function Sections() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold ">Sections</h1>
-          <p className="text-sm text-foreground font-bold">
+          <p className="text-base leading-tight text-foreground font-bold">
             Manage grade level sections and advising teachers
           </p>
         </div>
@@ -1248,7 +1248,7 @@ export default function Sections() {
             size="sm"
             onClick={() => setViewMode("heatmap")}
             className={cn(
-              "h-8 px-4 font-bold text-xs relative z-10 transition-colors",
+              "h-8 px-4 font-bold text-base relative z-10 transition-colors",
               viewMode === "heatmap"
                 ? "text-primary-foreground hover:text-primary-foreground"
                 : "text-foreground hover:bg-transparent",
@@ -1269,7 +1269,7 @@ export default function Sections() {
             size="sm"
             onClick={() => setViewMode("list")}
             className={cn(
-              "h-8 px-4 font-bold text-xs relative z-10 transition-colors",
+              "h-8 px-4 font-bold text-base relative z-10 transition-colors",
               viewMode === "list"
                 ? "text-primary-foreground hover:text-primary-foreground"
                 : "text-foreground hover:bg-transparent",
@@ -1323,7 +1323,7 @@ export default function Sections() {
                 <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/40 lg:w-auto lg:justify-end gap-1 p-1 relative border border-border/50">
                   <TabsTrigger
                     value="all"
-                    className="py-1.5 px-4 text-xs font-bold relative z-10 transition-all data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                    className="py-1.5 px-4 text-base font-bold relative z-10 transition-all data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                     {heatmapGradeFilter === "all" && (
                       <motion.div
                         layoutId="heatmap-grade-pill"
@@ -1349,7 +1349,7 @@ export default function Sections() {
                     <TabsTrigger
                       key={option.value}
                       value={option.value}
-                      className="py-1.5 px-4 text-xs font-bold relative z-10 transition-all data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                      className="py-1.5 px-4 text-base font-bold relative z-10 transition-all data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                       {heatmapGradeFilter === option.value && (
                         <motion.div
                           layoutId="heatmap-grade-pill"
@@ -1382,7 +1382,7 @@ export default function Sections() {
           </CardHeader>
           <CardContent>
             {groups.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-4">
+              <p className="text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
                 No grade levels found for this School Year.
               </p>
             ) : (
@@ -1424,7 +1424,7 @@ export default function Sections() {
                         {fillEmoji(fillPercent)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">
+                        <p className="text-base leading-tight font-bold truncate group-hover:text-primary transition-colors">
                           {formatHeatmapLabel(
                             group.gradeLevelName,
                             buildSectionDisplayName(
@@ -1448,7 +1448,7 @@ export default function Sections() {
                       </div>
                       <span
                         className={cn(
-                          "text-xs font-bold whitespace-nowrap",
+                          "text-base font-bold whitespace-nowrap",
                           isOverCapacity
                             ? "text-red-700 font-black"
                             : "text-foreground",
@@ -1460,12 +1460,12 @@ export default function Sections() {
                 })}
                 {heatmapItems.length === 0 &&
                   (groups.every((group) => group.sections.length === 0) ? (
-                    <p className="col-span-full text-sm text-[hsl(var(--muted-foreground))] text-center py-4">
+                    <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
                       No sections created yet. Add sections to grade levels
                       below.
                     </p>
                   ) : (
-                    <p className="col-span-full text-sm text-[hsl(var(--muted-foreground))] text-center py-4">
+                    <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
                       No sections found for {selectedHeatmapGradeLabel}.
                     </p>
                   ))}
@@ -1494,7 +1494,7 @@ export default function Sections() {
                 )}
                 <span
                   className={cn(
-                    "relative z-20 uppercase  text-xs",
+                    "relative z-20 uppercase  text-base",
                     activeGradeId === String(g.gradeLevelId)
                       ? "text-primary-foreground"
                       : "text-foreground",
@@ -1526,7 +1526,7 @@ export default function Sections() {
                           <CardTitle className="text-xl font-black uppercase">
                             {g.gradeLevelName}
                           </CardTitle>
-                          <CardDescription className="font-bold text-xs mt-1">
+                          <CardDescription className="font-bold text-base mt-1">
                             {g.sections.length} total sections configured for
                             this level.
                           </CardDescription>
@@ -1551,10 +1551,10 @@ export default function Sections() {
                         {g.sections.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
                             <Grid3X3 className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm font-bold uppercase ">
+                            <p className="text-base leading-tight font-bold uppercase ">
                               No Sections Configured
                             </p>
-                            <p className="text-xs mt-1 font-bold">
+                            <p className="text-base mt-1 font-bold">
                               Click the "Add Section" button to begin
                               structuring this grade level.
                             </p>
@@ -1669,7 +1669,7 @@ export default function Sections() {
                         S.Y. {ayLabel || "2026-2027"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase ">
+                    <div className="flex items-center gap-2 text-base font-bold text-foreground uppercase ">
                       <span>Class Adviser:</span>
                       {viewRosterSection?.adviserName ? (
                         <span className="text-foreground">
@@ -1708,7 +1708,7 @@ export default function Sections() {
                     </TooltipTrigger>
                     {(viewRosterSection?.enrolledCount ?? 0) >=
                       (viewRosterSection?.maxCapacity ?? 0) && (
-                        <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase  p-3 shadow-xl">
+                        <TooltipContent className="bg-slate-900 text-white border-none text-base font-bold uppercase  p-3 shadow-xl">
                           <div className="flex items-center gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-400" />
                             Maximum capacity reached. Override requires
@@ -1747,7 +1747,7 @@ export default function Sections() {
           {!loadingRoster && roster.length > 0 && (
             <div className="bg-muted/10 border-b border-border/60 px-8 py-2.5 flex items-center justify-center gap-12 select-none">
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-foreground uppercase ">
+                <p className="text-base font-black text-foreground uppercase ">
                   Total Learners
                 </p>
                 <p className="text-base font-black text-foreground">
@@ -1756,7 +1756,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-blue-400 uppercase  flex items-center gap-1.5">
+                <p className="text-base font-black text-blue-400 uppercase  flex items-center gap-1.5">
                   <Mars className="h-4 w-4" /> Male
                 </p>
                 <p className="text-base font-black text-blue-700">
@@ -1765,7 +1765,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-pink-400 uppercase  flex items-center gap-1.5">
+                <p className="text-base font-black text-pink-400 uppercase  flex items-center gap-1.5">
                   <Venus className="h-4 w-4" /> Female
                 </p>
                 <p className="text-base font-black text-pink-700">
@@ -1779,7 +1779,7 @@ export default function Sections() {
             {loadingRoster ? (
               <div className="flex flex-col items-center justify-center py-24 space-y-4">
                 <Loader2 className="h-10 w-10 animate-spin text-foreground" />
-                <p className="text-xs font-bold uppercase  text-foreground animate-pulse">
+                <p className="text-base font-bold uppercase  text-foreground animate-pulse">
                   Aggregating LIS Data...
                 </p>
               </div>
@@ -1789,7 +1789,7 @@ export default function Sections() {
                 <p className="text-base font-bold text-foreground">
                   No Official Enrollees Yet
                 </p>
-                <p className="text-xs font-bold text-foreground max-w-sm leading-relaxed">
+                <p className="text-base font-bold text-foreground max-w-sm leading-relaxed">
                   Learners routed to this section will automatically populate
                   this School Form 1 register once the batch is finalized.
                 </p>
@@ -1800,19 +1800,19 @@ export default function Sections() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 w-[50px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-base uppercase h-11 px-5 w-[50px] border-b border-border">
                           #
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 w-[140px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-base uppercase h-11 px-5 w-[140px] border-b border-border">
                           LRN
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-base uppercase h-11 px-5 border-b border-border">
                           Learner Name (Last, First)
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 text-center w-[70px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-base uppercase h-11 px-5 text-center w-[70px] border-b border-border">
                           Age
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs uppercase h-11 px-5 text-center w-[160px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-base uppercase h-11 px-5 text-center w-[160px] border-b border-border">
                           Remarks
                         </TableHead>
                       </TableRow>
@@ -1842,7 +1842,7 @@ export default function Sections() {
                               <TableCell className="text-[11px] font-bold  text-foreground group-hover:text-foreground transition-colors px-5">
                                 {learner.lrn || "NO LRN"}
                               </TableCell>
-                              <TableCell className="text-sm font-black uppercase py-4 px-5 text-left">
+                              <TableCell className="text-base leading-tight font-black uppercase py-4 px-5 text-left">
                                 <Link
                                   to={`/students/${learner.id}`}
                                   target="_blank"
@@ -1852,7 +1852,7 @@ export default function Sections() {
                                 </Link>
                               </TableCell>
                               <TableCell className="text-center px-5">
-                                <span className="text-sm font-bold text-foreground">
+                                <span className="text-base leading-tight font-bold text-foreground">
                                   {calculateAge(learner.birthdate)}
                                 </span>
                               </TableCell>
@@ -1888,7 +1888,7 @@ export default function Sections() {
                               <TableCell className="text-[11px] font-bold  text-foreground group-hover:text-foreground transition-colors px-5">
                                 {learner.lrn || "NO LRN"}
                               </TableCell>
-                              <TableCell className="text-sm font-black uppercase py-4 px-5 text-left">
+                              <TableCell className="text-base leading-tight font-black uppercase py-4 px-5 text-left">
                                 <Link
                                   to={`/students/${learner.id}`}
                                   target="_blank"
@@ -1898,7 +1898,7 @@ export default function Sections() {
                                 </Link>
                               </TableCell>
                               <TableCell className="text-center px-5">
-                                <span className="text-sm font-bold text-foreground">
+                                <span className="text-base leading-tight font-bold text-foreground">
                                   {calculateAge(learner.birthdate)}
                                 </span>
                               </TableCell>
@@ -1918,14 +1918,14 @@ export default function Sections() {
 
           <DialogFooter className="bg-muted/20 border-t border-border px-8 py-5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <p className="text-xs font-black text-foreground uppercase ">
+              <p className="text-base font-black text-foreground uppercase ">
                 DepEd Order No. 017, s. 2025 Compliant
               </p>
             </div>
             <Button
               onClick={() => setViewRosterSection(null)}
               variant="outline"
-              className="font-bold uppercase text-xs  h-10 px-8 bg-background border-border text-foreground hover:bg-muted hover:text-foreground">
+              className="font-bold uppercase text-base  h-10 px-8 bg-background border-border text-foreground hover:bg-muted hover:text-foreground">
               Close
             </Button>
           </DialogFooter>

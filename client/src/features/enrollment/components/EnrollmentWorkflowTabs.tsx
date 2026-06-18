@@ -34,7 +34,7 @@ export function EnrollmentWorkflowTabs({
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className="relative z-20 text-xs sm:text-sm">
+            <span className="relative z-20 text-base sm:text-base leading-tight">
               {option.label}
             </span>
           </TabsTrigger>

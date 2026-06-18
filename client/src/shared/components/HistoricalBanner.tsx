@@ -48,7 +48,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b px-4 py-2 text-xs font-bold",
+        "flex items-center gap-3 border-b px-4 py-2 text-sm font-bold",
         hasOverride
           ? "bg-amber-50 border-amber-200 text-amber-900"
           : "bg-muted border-border text-foreground",

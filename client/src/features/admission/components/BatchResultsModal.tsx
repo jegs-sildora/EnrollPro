@@ -60,7 +60,7 @@ export default function BatchResultsModal({ results, onClose }: Props) {
                 <p className="text-xl font-bold text-green-700">
                   {succeeded.length}
                 </p>
-                <p className="text-xs font-bold text-green-600">Succeeded</p>
+                <p className="text-base font-bold text-green-600">Succeeded</p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2 flex-1">
@@ -69,13 +69,13 @@ export default function BatchResultsModal({ results, onClose }: Props) {
                 <p className="text-xl font-bold text-red-700">
                   {failed.length}
                 </p>
-                <p className="text-xs font-bold text-red-600">Failed</p>
+                <p className="text-base font-bold text-red-600">Failed</p>
               </div>
             </div>
           </div>
 
           <div className="max-h-64 overflow-y-auto pr-1">
-            <h4 className="text-sm font-bold text-red-700 mb-2">
+            <h4 className="text-base leading-tight font-bold text-red-700 mb-2">
               Action Required for Failed Applicants
             </h4>
             <div className="space-y-1.5">
@@ -83,15 +83,15 @@ export default function BatchResultsModal({ results, onClose }: Props) {
                 <div
                   key={item.id}
                   className="rounded border border-red-200 bg-red-50/50 px-3 py-2">
-                  <p className="text-sm font-bold">
+                  <p className="text-base leading-tight font-bold">
                     {item.name}
                     {item.trackingNumber && (
-                      <span className="ml-1 text-xs font-bold text-foreground">
+                      <span className="ml-1 text-base font-bold text-foreground">
                         (#{item.trackingNumber})
                       </span>
                     )}
                   </p>
-                  <p className="text-xs font-bold text-red-700">
+                  <p className="text-base font-bold text-red-700">
                     Error: {item.reason}
                   </p>
                 </div>

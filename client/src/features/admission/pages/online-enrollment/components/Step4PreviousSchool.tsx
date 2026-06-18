@@ -82,7 +82,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-school"
-              className="text-sm font-bold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               Last School Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -106,7 +106,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-school-id"
-              className="text-sm font-bold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               School ID (Optional)
             </Label>
             <Input
@@ -124,7 +124,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-grade"
-              className="text-sm font-bold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               {isAls ? "ALS Qualification" : "Last Grade Completed"}{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -196,7 +196,7 @@ export default function Step4PreviousSchool() {
             )}
 
             {errors.lastGradeCompleted && (
-              <p className="text-xs font-bold text-destructive">
+              <p className="text-base font-bold text-destructive">
                 {errors.lastGradeCompleted.message}
               </p>
             )}
@@ -205,7 +205,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-sy"
-              className="text-sm font-bold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               School Year Last Attended{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -236,7 +236,7 @@ export default function Step4PreviousSchool() {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-sm font-bold text-foreground">
+          <Label className="text-base leading-tight font-bold text-foreground">
             School Type <span className="text-destructive">*</span>
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -251,7 +251,7 @@ export default function Step4PreviousSchool() {
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
-                <span className="font-bold text-sm leading-tight ">
+                <span className="font-bold text-base leading-tight ">
                   {lt.label}
                 </span>
               </button>
@@ -262,7 +262,7 @@ export default function Step4PreviousSchool() {
         <div className="space-y-2 pt-2">
           <Label
             htmlFor="prev-addr"
-            className="text-sm font-bold text-foreground">
+            className="text-base leading-tight font-bold text-foreground">
             School Address / Division (Optional)
           </Label>
           <Input

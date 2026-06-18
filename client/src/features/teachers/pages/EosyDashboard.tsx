@@ -163,12 +163,12 @@ export default function TeacherEosyDashboard() {
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
               <span className="font-bold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-foreground font-black uppercase">
+                <span className="text-base text-foreground font-black uppercase">
                   LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
                 {genderLabel && (
@@ -194,7 +194,7 @@ export default function TeacherEosyDashboard() {
 
           if (isFinalized) {
             return (
-              <span className={cn("font-bold text-xs sm:text-sm tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
+              <span className={cn("font-bold text-base sm:text-base leading-tight tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
                 {ave?.toFixed(0) || "0"}
               </span>
             );
@@ -208,7 +208,7 @@ export default function TeacherEosyDashboard() {
                 min="60"
                 max="100"
                 className={cn(
-                  "h-8 w-24 text-center font-bold text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                  "h-8 w-24 text-center font-bold text-base leading-tight bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
                   isFailing ? "text-red-600 border-red-300 focus:ring-red-500" : 
                   isScpWarning ? "text-amber-600 border-amber-500 focus:ring-amber-500" : "text-emerald-600"
                 )}
@@ -294,7 +294,7 @@ export default function TeacherEosyDashboard() {
         </div>
         <div className="text-center max-w-md space-y-2">
           <h2 className="text-xl font-black uppercase">EOSY Phase Not Active</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             EOSY status updates are only available during the End of School Year phase.
           </p>
         </div>
@@ -306,7 +306,7 @@ export default function TeacherEosyDashboard() {
     return (
       <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-sm font-medium">Loading Advisory Records...</p>
+        <p className="text-base leading-tight font-medium">Loading Advisory Records...</p>
       </div>
     );
   }
@@ -319,7 +319,7 @@ export default function TeacherEosyDashboard() {
         </div>
         <div className="text-center max-w-md space-y-2">
           <h2 className="text-xl font-black uppercase">No Advisory Assigned</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             You do not have an active advisory section assigned for this school year.
           </p>
         </div>
@@ -338,7 +338,7 @@ export default function TeacherEosyDashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-primary">
               EOSY Finalization
             </h1>
-            <p className="text-sm font-bold text-foreground">
+            <p className="text-base leading-tight font-bold text-foreground">
               {section.gradeLevel.name} - {section.name}
             </p>
           </div>
@@ -351,11 +351,11 @@ export default function TeacherEosyDashboard() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-3 rounded-md border border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 {isFinalized ? (
-                  <Badge variant="outline" className="bg-emerald-600 text-white border-emerald-700 px-3 py-1.5 shadow-sm text-xs uppercase font-black">
+                  <Badge variant="outline" className="bg-emerald-600 text-white border-emerald-700 px-3 py-1.5 shadow-sm text-base uppercase font-black">
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> ✓ Submitted & Locked
                   </Badge>
                 ) : (
-                  <span className="text-sm font-bold text-muted-foreground">
+                  <span className="text-base leading-tight font-bold text-muted-foreground">
                     Please review grades and statuses before submitting.
                   </span>
                 )}
@@ -375,7 +375,7 @@ export default function TeacherEosyDashboard() {
             </div>
 
             {isFinalized && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 text-emerald-800 text-sm font-medium">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 text-emerald-800 text-base leading-tight font-medium">
                 Your section's records have been submitted and locked. They are now read-only and await Registrar's batch sectioning algorithm.
               </div>
             )}
@@ -405,7 +405,7 @@ export default function TeacherEosyDashboard() {
               Warning: This action is final. Are you sure you want to lock these grades and forward them to the Head Registrar?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-amber-50 p-4 rounded-md text-sm text-amber-800 space-y-2 my-2 border border-amber-100">
+          <div className="bg-amber-50 p-4 rounded-md text-base leading-tight text-amber-800 space-y-2 my-2 border border-amber-100">
             <p>• All entered grades and statuses will be forwarded to the Registrar.</p>
             <p>• Your section's records will be locked and become read-only.</p>
             <p className="font-bold underline mt-3">This action cannot be undone by a teacher.</p>

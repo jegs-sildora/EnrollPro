@@ -227,7 +227,7 @@ export function VerificationWorkspace() {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+          <p className="text-base leading-tight font-bold text-slate-500 uppercase tracking-widest animate-pulse">
             Loading Verifications...
           </p>
         </div>
@@ -259,7 +259,7 @@ export function VerificationWorkspace() {
         <Card className="w-[30%] flex flex-col shadow-sm border border-border overflow-hidden bg-card shrink-0">
           <CardHeader className="border-b border-border bg-muted/20 py-4 px-5">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
+              <CardTitle className="text-base leading-tight font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
                 <FileText className="h-4 w-4 text-primary" />
                 Pending Verification
               </CardTitle>
@@ -272,7 +272,7 @@ export function VerificationWorkspace() {
             {filteredVerifications.length === 0 ? (
               <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground p-8 text-center">
                 <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
-                <span className="font-bold text-sm">No pending verifications found.</span>
+                <span className="font-bold text-base leading-tight">No pending verifications found.</span>
               </div>
             ) : (
               filteredVerifications.map((app) => (
@@ -287,7 +287,7 @@ export function VerificationWorkspace() {
                   )}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <h4 className={cn("font-bold text-sm uppercase tracking-tight", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")}>
+                    <h4 className={cn("font-bold text-base leading-tight uppercase tracking-tight", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")}>
                       {app.learner.lastName}, {app.learner.firstName}
                     </h4>
                   </div>
@@ -317,12 +317,12 @@ export function VerificationWorkspace() {
                       {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                     </h2>
                     {selectedApp.learner.sex === "MALE" ? (
-                      <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-black text-xs">MALE</Badge>
+                      <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-black text-base">MALE</Badge>
                     ) : (
-                      <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-black text-xs">FEMALE</Badge>
+                      <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-black text-base">FEMALE</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-sm font-bold text-muted-foreground">
+                  <div className="flex items-center gap-4 text-base leading-tight font-bold text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <FileText className="w-4 h-4" /> TRK: <span className="text-foreground">{selectedApp.trackingNumber || "N/A"}</span>
                     </div>
@@ -330,7 +330,7 @@ export function VerificationWorkspace() {
                       <UserIcon className="w-4 h-4" /> LRN: <span className="text-foreground">{selectedApp.learner.lrn || "NO LRN"}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <School className="w-4 h-4" /> Incoming <Badge variant="outline" className={cn("font-black uppercase ml-1 text-xs", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
+                      <School className="w-4 h-4" /> Incoming <Badge variant="outline" className={cn("font-black uppercase ml-1 text-base", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
                     </div>
                   </div>
                   
@@ -348,7 +348,7 @@ export function VerificationWorkspace() {
                         <div className="mt-4 flex items-center justify-between bg-muted/20 border border-border/50 rounded-lg p-3">
                           <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Primary Contact</span>
-                            <span className="text-sm font-bold text-foreground">
+                            <span className="text-base leading-tight font-bold text-foreground">
                               {primaryContact.lastName}, {primaryContact.firstName}
                             </span>
                           </div>
@@ -359,7 +359,7 @@ export function VerificationWorkspace() {
                             </div>
                             <div className="flex flex-col text-right">
                               <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Contact Number</span>
-                              <span className="text-sm font-bold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
+                              <span className="text-base leading-tight font-bold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
                             </div>
                           </div>
                         </div>
@@ -371,31 +371,31 @@ export function VerificationWorkspace() {
 
                 {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
                   <div className="space-y-4 mb-8">
-                    <h3 className="text-xs font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                    <h3 className="text-base font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                       <School className="w-4 h-4" /> Academic History
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
-                        <p className="text-sm font-bold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
+                        <p className="text-base leading-tight font-bold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
                       </div>
                       <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
-                        <p className="text-sm font-bold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
+                        <p className="text-base leading-tight font-bold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
                       </div>
                     </div>
                   </div>
                 )}
                 
                 <div className="space-y-4 mb-8">
-                  <h3 className="text-xs font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                  <h3 className="text-base font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                     <School className="w-4 h-4" /> Curriculum Assignment
                   </h3>
                   <div className="bg-muted/10 border border-border/50 rounded-xl p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
-                        <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-sm text-muted-foreground font-semibold">
+                        <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-base leading-tight text-muted-foreground font-semibold">
                           {selectedApp.applicantType.replace(/_/g, " ")}
                         </div>
                       </div>
@@ -427,14 +427,14 @@ export function VerificationWorkspace() {
                     {assignedProgram !== "REGULAR" && (
                       <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200/50 mt-2">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span className="text-xs font-bold">Requires manual verification against the official SCP passers list.</span>
+                        <span className="text-base font-bold">Requires manual verification against the official SCP passers list.</span>
                       </div>
                     )}
                   </div>
                 </div>
                 
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                  <h3 className="text-base font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Required Documents
                   </h3>
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-6">
@@ -446,7 +446,7 @@ export function VerificationWorkspace() {
                       />
                       <div className="space-y-1">
                         <p className="text-base font-bold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
-                        <p className="text-xs font-semibold text-muted-foreground">Original report card signed by previous school principal.</p>
+                        <p className="text-base font-semibold text-muted-foreground">Original report card signed by previous school principal.</p>
                       </div>
                     </label>
 
@@ -458,7 +458,7 @@ export function VerificationWorkspace() {
                       />
                       <div className="space-y-1">
                         <p className="text-base font-bold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
-                        <p className="text-xs font-semibold text-muted-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
+                        <p className="text-base font-semibold text-muted-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
                       </div>
                     </label>
                   </div>
@@ -472,7 +472,7 @@ export function VerificationWorkspace() {
                     onClick={enrollTemporary}
                     disabled={processing || isHistoricalReadOnly}
                     variant="outline"
-                    className="h-14 px-8 text-sm font-black uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
+                    className="h-14 px-8 text-base leading-tight font-black uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
                   >
                     <AlertTriangle className="w-4 h-4 mr-2" />
                     Enroll as Temporary (Missing Docs)
@@ -483,7 +483,7 @@ export function VerificationWorkspace() {
                   onClick={approveLearner}
                   disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly}
                   className={cn(
-                    "flex-1 h-14 text-sm font-black uppercase tracking-widest transition-all shadow-none",
+                    "flex-1 h-14 text-base leading-tight font-black uppercase tracking-widest transition-all shadow-none",
                     sf9Verified && psaVerified
                       ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                       : "bg-muted text-muted-foreground hover:bg-muted opacity-50"
@@ -509,7 +509,7 @@ export function VerificationWorkspace() {
                 <Search className="h-10 w-10 text-muted-foreground/40" />
               </div>
               <h3 className="font-black text-xl text-foreground">No Learner Selected</h3>
-              <p className="font-bold text-sm max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
+              <p className="font-bold text-base leading-tight max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
             </div>
           )}
         </Card>

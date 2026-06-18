@@ -180,7 +180,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
           <h2 className="text-lg font-bold">
             Nutritional Status Assessment (SF8)
           </h2>
-          <p className="text-sm text-foreground">
+          <p className="text-base leading-tight text-foreground">
             Monitor student BMI and Height-for-Age (HFA) records for BoSY and
             EoSY.
           </p>
@@ -213,7 +213,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
                 <Scale className="h-4 w-4 text-primary" />
                 Latest Weight & Height
               </CardTitle>
@@ -222,7 +222,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
               <div className="text-2xl font-bold">
                 {latestRecord.weightKg} kg / {latestRecord.heightCm} cm
               </div>
-              <p className="text-xs text-foreground mt-1">
+              <p className="text-base text-foreground mt-1">
                 Recorded on{" "}
                 {format(new Date(latestRecord.assessmentDate), "MMM d, yyyy")}
               </p>
@@ -231,7 +231,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
 
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary" />
                 BMI Status
               </CardTitle>
@@ -274,7 +274,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
 
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
                 <Ruler className="h-4 w-4 text-primary" />
                 Height-for-Age (HFA)
               </CardTitle>
@@ -289,7 +289,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
                 return (
                   <>
                     <div className="text-2xl font-bold">{category}</div>
-                    <p className="text-xs text-foreground mt-1">
+                    <p className="text-base text-foreground mt-1">
                       Nutritional classification based on WHO 2007
                     </p>
                   </>

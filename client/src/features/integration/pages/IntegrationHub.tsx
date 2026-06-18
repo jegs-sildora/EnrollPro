@@ -258,21 +258,21 @@ function IntegrationHub() {
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-8 max-w-7xl">
       <header className="flex flex-col gap-1 px-1">
-        <div className="flex items-center gap-2 text-primary font-black uppercase text-xs tracking-[0.2em]">
+        <div className="flex items-center gap-2 text-primary font-black uppercase text-base tracking-[0.2em]">
           <ArrowRightLeft className="h-4 w-4" />
           Ecosystem Hub
         </div>
         <h1 className="text-4xl font-black uppercase tracking-tight text-foreground">
           Integration <span className="text-primary">Command Center</span>
         </h1>
-        <p className="text-foreground font-bold text-sm">
+        <p className="text-foreground font-bold text-base leading-tight">
           Real-time visibility and synchronization control for connected DepEd modules.
         </p>
       </header>
 
       {/* Health Matrix */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-xs font-black uppercase text-foreground/70 px-1">
+        <div className="flex items-center gap-2 text-base font-black uppercase text-foreground/70 px-1">
           <Activity className="h-4 w-4 text-primary" />
           Ecosystem Health Matrix
         </div>
@@ -294,13 +294,13 @@ function IntegrationHub() {
               </div>
               <div>
                 <CardTitle className="text-lg font-black uppercase tracking-tight">Phase 1 Broadcast</CardTitle>
-                <CardDescription className="text-xs font-bold uppercase text-primary/70 italic">Early Registration Pipeline</CardDescription>
+                <CardDescription className="text-base font-bold uppercase text-primary/70 italic">Early Registration Pipeline</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="py-6 space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-bold text-foreground leading-relaxed">Push verified Early Registration applicants to preparation systems.</p>
+              <p className="text-base font-bold text-foreground leading-relaxed">Push verified Early Registration applicants to preparation systems.</p>
               <ul className="space-y-2">
                 {[
                   { target: "AIMS", action: "Baseline Assessment Provisioning" },
@@ -333,13 +333,13 @@ function IntegrationHub() {
               </div>
               <div>
                 <CardTitle className="text-lg font-black uppercase tracking-tight">Phase 2 Broadcast</CardTitle>
-                <CardDescription className="text-xs font-bold uppercase text-primary/70 italic">BOSY Finalization Pipeline</CardDescription>
+                <CardDescription className="text-base font-bold uppercase text-primary/70 italic">BOSY Finalization Pipeline</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="py-6 space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-bold text-foreground leading-relaxed">Deploy official class rosters to grading and LMS environments.</p>
+              <p className="text-base font-bold text-foreground leading-relaxed">Deploy official class rosters to grading and LMS environments.</p>
               <ul className="space-y-2">
                 {[
                   { target: "SMART", action: "Official Grading Sheet Distribution" },

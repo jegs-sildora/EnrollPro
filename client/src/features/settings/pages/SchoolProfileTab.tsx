@@ -370,7 +370,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">STE</FormLabel>
-                    <p className="text-sm text-muted-foreground">Science, Technology, and Engineering</p>
+                    <p className="text-base leading-tight text-muted-foreground">Science, Technology, and Engineering</p>
                   </div>
                   <Switch
                     checked={steEnabled}
@@ -384,7 +384,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">SPA</FormLabel>
-                    <p className="text-sm text-muted-foreground">Special Program in the Arts</p>
+                    <p className="text-base leading-tight text-muted-foreground">Special Program in the Arts</p>
                   </div>
                   <Switch
                     checked={spaEnabled}
@@ -398,7 +398,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">SPS</FormLabel>
-                    <p className="text-sm text-muted-foreground">Special Program in Sports</p>
+                    <p className="text-base leading-tight text-muted-foreground">Special Program in Sports</p>
                   </div>
                   <Switch
                     checked={spsEnabled}
@@ -518,7 +518,7 @@ export default function SchoolProfileTab() {
                     </Button>
                   )}
                 </div>
-                <p className="text-sm">Accepted: .png, .jpg, .webp — Max 2MB</p>
+                <p className="text-base leading-tight">Accepted: .png, .jpg, .webp — Max 2MB</p>
               </div>
             </div>
 
@@ -527,8 +527,8 @@ export default function SchoolProfileTab() {
             {/* Extracted Palette */}
             {palette.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-sm font-bold">Official School Color</h4>
-                <p className="text-sm">
+                <h4 className="text-base leading-tight font-bold">Official School Color</h4>
+                <p className="text-base leading-tight">
                   Select a color from your uploaded logo to apply to the system's buttons and menus.
                 </p>
                 <div className="flex flex-row flex-wrap items-start gap-6">
@@ -564,14 +564,14 @@ export default function SchoolProfileTab() {
 
             {/* Current Accent */}
             <div className="space-y-3">
-              <h4 className="text-sm font-bold">Selected Theme Color</h4>
+              <h4 className="text-base leading-tight font-bold">Selected Theme Color</h4>
               <div className="flex items-center gap-4">
                 <div
                   className="h-10 w-10 rounded-lg shadow-sm border border-border"
                   style={{ backgroundColor: `hsl(${currentAccent})` }}
                 />
                 <div>
-                  <p className="text-xs text-foreground">
+                  <p className="text-base text-foreground">
                     {logoUrl ? "From extracted palette" : "Default blue"}
                   </p>
                 </div>
@@ -580,7 +580,7 @@ export default function SchoolProfileTab() {
 
             {/* Live Preview */}
             <div className="rounded-lg border border-border p-4 space-y-3">
-              <p className="text-sm font-bold">System Appearance Preview</p>
+              <p className="text-base leading-tight font-bold">System Appearance Preview</p>
               <div className="flex flex-wrap gap-3">
                 <Button type="button" size="sm">Save School Profile</Button>
                 <Button
@@ -592,7 +592,7 @@ export default function SchoolProfileTab() {
                 <a
                   href="#"
                   onClick={(e) => e.preventDefault()}
-                  className="text-sm text-primary hover:underline pt-2">
+                  className="text-base leading-tight text-primary hover:underline pt-2">
                   View Learner Record
                 </a>
               </div>
@@ -609,7 +609,7 @@ export default function SchoolProfileTab() {
         {/* Global Sticky Footer */}
         {isDirty && (
           <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-4 shadow-lg flex items-center justify-end gap-3 px-6 md:px-8">
-            <span className="text-sm text-foreground mr-auto hidden sm:inline-block">You have unsaved changes.</span>
+            <span className="text-base leading-tight text-foreground mr-auto hidden sm:inline-block">You have unsaved changes.</span>
             <Button type="button" variant="outline" onClick={handleDiscard} disabled={isSubmitting}>
               Discard Changes
             </Button>

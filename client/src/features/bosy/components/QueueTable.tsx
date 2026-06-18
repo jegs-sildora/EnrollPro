@@ -108,12 +108,12 @@ export function QueueTable({
         cell: ({ row }) => {
           const r = row.original;
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
               <span className="font-bold uppercase truncate">
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
               </span>
-              <span className="text-xs text-foreground font-bold">
+              <span className="text-base text-foreground font-bold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -151,7 +151,7 @@ export function QueueTable({
           />
         ),
         cell: ({ row }) => (
-          <div className="text-xs">
+          <div className="text-base">
             <span className="font-bold">
               {row.original.priorSectionName ?? "—"}
             </span>
@@ -177,7 +177,7 @@ export function QueueTable({
           const s = row.original.academicStatus;
           if (!s)
             return (
-              <div className="text-center text-foreground text-xs">—</div>
+              <div className="text-center text-foreground text-base">—</div>
             );
           return (
             <div className="text-center">
@@ -215,7 +215,7 @@ export function QueueTable({
       base.push({
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-xs uppercase">
+          <div className="text-center font-bold text-primary-foreground text-base uppercase">
             Action
           </div>
         ),
@@ -250,7 +250,7 @@ export function QueueTable({
       base.push({
         id: "revert",
         header: () => (
-          <div className="text-center font-bold text-xs uppercase">Flag</div>
+          <div className="text-center font-bold text-base uppercase">Flag</div>
         ),
         cell: ({ row }) => {
           const r = row.original;

@@ -66,7 +66,7 @@ export function DocumentAuthModal({
         <div className="space-y-6 py-4">
           <div className="flex gap-3 p-4 bg-primary-50 border border-primary-100 rounded-lg">
             <InfoIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-xs font-bold text-primary leading-relaxed">
+            <p className="text-base font-bold text-primary leading-relaxed">
               DepEd D.O. 017, s. 2025 mandates that a learner only submits their 
               Birth Certificate <span className="font-black underline">ONCE</span> during their basic education. 
               Verifying an original PSA document permanently satisfies this requirement.
@@ -74,7 +74,7 @@ export function DocumentAuthModal({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-xs font-black uppercase text-foreground ">
+            <Label className="text-base font-black uppercase text-foreground ">
               Select Document Presented:
             </Label>
             
@@ -92,8 +92,8 @@ export function DocumentAuthModal({
               >
                 <RadioGroupItem value="PSA" id="psa" className="mt-1" />
                 <Label htmlFor="psa" className="cursor-pointer">
-                  <span className="block font-black text-sm uppercase text-foreground">Original PSA / NSO Birth Certificate</span>
-                  <span className="block text-xs font-bold text-foreground mt-0.5">Satisfies requirement. This will permanently lock the identity vault for this learner.</span>
+                  <span className="block font-black text-base leading-tight uppercase text-foreground">Original PSA / NSO Birth Certificate</span>
+                  <span className="block text-base font-bold text-foreground mt-0.5">Satisfies requirement. This will permanently lock the identity vault for this learner.</span>
                 </Label>
               </div>
 
@@ -106,8 +106,8 @@ export function DocumentAuthModal({
               >
                 <RadioGroupItem value="SECONDARY" id="secondary" className="mt-1" />
                 <Label htmlFor="secondary" className="cursor-pointer">
-                  <span className="block font-black text-sm uppercase text-foreground">Recognized Secondary Document</span>
-                  <span className="block text-xs font-bold text-foreground mt-0.5 text-balance">e.g., Local Civil Registry, Baptismal, Barangay Cert. Grants temporary clearance. PSA still required by Oct 31, 2026.</span>
+                  <span className="block font-black text-base leading-tight uppercase text-foreground">Recognized Secondary Document</span>
+                  <span className="block text-base font-bold text-foreground mt-0.5 text-balance">e.g., Local Civil Registry, Baptismal, Barangay Cert. Grants temporary clearance. PSA still required by Oct 31, 2026.</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -122,7 +122,7 @@ export function DocumentAuthModal({
             />
             <Label
               htmlFor="certify"
-              className="text-sm font-bold text-foreground leading-snug cursor-pointer select-none"
+              className="text-base font-bold text-foreground leading-snug cursor-pointer select-none"
             >
               I certify that I have physically inspected and verified the 
               authenticity of the selected document.

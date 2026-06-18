@@ -23,7 +23,7 @@ export function BulkConfirmBar({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2 border border-border">
-          <span className="text-xs font-black uppercase text-foreground">
+          <span className="text-base font-black uppercase text-foreground">
             {selectedCount} selected
           </span>
           <Button

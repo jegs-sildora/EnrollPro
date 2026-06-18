@@ -135,14 +135,14 @@ export function ActionButtons({
                 Mark as Verified
               </Button>
               {!isMandatoryDocumentsMet && (
-                <p className="text-xs text-center text-amber-700 font-bold">
+                <p className="text-base text-center text-amber-700 font-bold">
                   Complete all mandatory physical document checks before marking
                   as verified.
                 </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-foreground text-center py-2">
+            <p className="text-base leading-tight text-foreground text-center py-2">
               No verification action available for this application status.
             </p>
           )}
@@ -161,7 +161,7 @@ export function ActionButtons({
                   ? "Unlock Profile (Admin Override)"
                   : "Lock Profile (Admin Override)"}
               </Button>
-              <p className="text-xs text-center text-foreground">
+              <p className="text-base text-center text-foreground">
                 Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
               </p>
             </>
@@ -171,7 +171,7 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-sm text-foreground text-center py-2">
+            <p className="text-base leading-tight text-foreground text-center py-2">
               No further actions available for this application.
             </p>
           )}
@@ -350,7 +350,7 @@ export function ActionButtons({
                   ? "Unlock Profile (Admin Override)"
                   : "Lock Profile (Admin Override)"}
               </Button>
-              <p className="text-xs text-center text-foreground">
+              <p className="text-base text-center text-foreground">
                 Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
               </p>
             </>
@@ -360,7 +360,7 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-sm text-foreground text-center py-2">
+            <p className="text-base leading-tight text-foreground text-center py-2">
               No further actions available for this application.
             </p>
           )}

@@ -127,7 +127,7 @@ export function Sf10Tracking({
             <FileText className="h-5 w-5 text-primary" />
             Permanent Record (SF10) Tracking
           </h3>
-          <p className="text-sm text-foreground">
+          <p className="text-base leading-tight text-foreground">
             Manage requests for transcript of records from Senior High Schools.
           </p>
         </div>
@@ -147,7 +147,7 @@ export function Sf10Tracking({
                 <School className="h-8 w-8 text-foreground" />
               </div>
               <h4 className="font-bold">No requests logged yet</h4>
-              <p className="text-sm text-foreground max-w-xs mt-1">
+              <p className="text-base leading-tight text-foreground max-w-xs mt-1">
                 When a Senior High School requests this learner's permanent
                 records, log it here to track the release.
               </p>
@@ -204,7 +204,7 @@ export function Sf10Tracking({
                         {req.status}
                       </Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-base leading-tight text-foreground">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
                         Requested:{" "}
@@ -224,7 +224,7 @@ export function Sf10Tracking({
                       )}
                     </div>
                     {req.notes && (
-                      <p className="mt-2 text-sm italic bg-muted/30 p-2 rounded border-l-2 border-primary/20">
+                      <p className="mt-2 text-base leading-tight italic bg-muted/30 p-2 rounded border-l-2 border-primary/20">
                         "{req.notes}"
                       </p>
                     )}

@@ -20,10 +20,10 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-sm font-bold">Art Fields</Label>
+        <Label className="text-base leading-tight font-bold">Art Fields</Label>
         <Input
           placeholder="Visual Arts, Music, Theatre Arts, Creative Writing..."
-          className="h-9 text-sm"
+          className="h-9 text-base leading-tight"
           value={scp.artFields.join(", ")}
           onChange={(event) =>
             onUpdateScpField(
@@ -33,7 +33,7 @@ export function ProgramSpecificFieldsSection({
             )
           }
         />
-        <p className="text-sm /60">Separate multiple fields with commas</p>
+        <p className="text-base leading-tight /60">Separate multiple fields with commas</p>
       </div>
     );
   }
@@ -41,10 +41,10 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_SPORTS") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-sm font-bold ">Sports Offered</Label>
+        <Label className="text-base leading-tight font-bold ">Sports Offered</Label>
         <Input
           placeholder="Basketball, Volleyball, Archery, Swimming..."
-          className="h-9 text-sm"
+          className="h-9 text-base leading-tight"
           value={scp.sportsList.join(", ")}
           onChange={(event) =>
             onUpdateScpField(
@@ -54,7 +54,7 @@ export function ProgramSpecificFieldsSection({
             )
           }
         />
-        <p className="text-sm /60">Separate multiple sports with commas</p>
+        <p className="text-base leading-tight /60">Separate multiple sports with commas</p>
       </div>
     );
   }
@@ -62,10 +62,10 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-sm font-bold ">Languages Offered</Label>
+        <Label className="text-base leading-tight font-bold ">Languages Offered</Label>
         <Input
           placeholder="Spanish, Japanese, French, Mandarin..."
-          className="h-9 text-sm"
+          className="h-9 text-base leading-tight"
           value={scp.languages.join(", ")}
           onChange={(event) =>
             onUpdateScpField(
@@ -75,7 +75,7 @@ export function ProgramSpecificFieldsSection({
             )
           }
         />
-        <p className="text-sm /60">Separate multiple languages with commas</p>
+        <p className="text-base leading-tight /60">Separate multiple languages with commas</p>
       </div>
     );
   }

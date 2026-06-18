@@ -120,7 +120,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2 text-xs font-black uppercase text-foreground/70">
+        <div className="flex items-center gap-2 text-base font-black uppercase text-foreground/70">
           <History className="h-4 w-4 text-primary" />
           Integration Audit & Resolution
         </div>

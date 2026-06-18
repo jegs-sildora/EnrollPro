@@ -179,7 +179,7 @@ export function SpecialEnrollmentDialog({
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="lrn" className="text-xs font-bold uppercase">
+              <Label htmlFor="lrn" className="text-base font-bold uppercase">
                 LRN (12 Digits - Optional)
               </Label>
               <Input
@@ -195,7 +195,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="learnerType"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Enrollment Type
               </Label>
               <Select
@@ -226,7 +226,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-0">
               <Label
                 htmlFor="originSchoolName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Origin School Name *
               </Label>
               <Input
@@ -250,7 +250,7 @@ export function SpecialEnrollmentDialog({
               <div className="space-y-2">
                 <Label
                   htmlFor="peptCertificateNumber"
-                  className="text-xs font-bold uppercase">
+                  className="text-base font-bold uppercase">
                   PEPT Cert No. *
                 </Label>
                 <Input
@@ -270,7 +270,7 @@ export function SpecialEnrollmentDialog({
               <div className="space-y-2">
                 <Label
                   htmlFor="peptPassingDate"
-                  className="text-xs font-bold uppercase">
+                  className="text-base font-bold uppercase">
                   Passing Date *
                 </Label>
                 <Input
@@ -294,7 +294,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="firstName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 First Name *
               </Label>
               <Input
@@ -312,7 +312,7 @@ export function SpecialEnrollmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-xs font-bold uppercase">
+              <Label htmlFor="lastName" className="text-base font-bold uppercase">
                 Last Name *
               </Label>
               <Input
@@ -335,7 +335,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="birthdate"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Birthdate *
               </Label>
               <Input
@@ -350,7 +350,7 @@ export function SpecialEnrollmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sex" className="text-xs font-bold uppercase">
+              <Label htmlFor="sex" className="text-base font-bold uppercase">
                 Sex *
               </Label>
               <Select
@@ -368,7 +368,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="gradeLevel"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Grade to Enroll *
               </Label>
               <Select
@@ -391,7 +391,7 @@ export function SpecialEnrollmentDialog({
           </div>
 
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-            <p className="text-xs text-blue-700 italic">
+            <p className="text-base text-blue-700 italic">
               Note: This student will be created as a{" "}
               <strong>Regular (BEC)</strong> applicant and will appear
               immediately in the Pending Verification tab for document checking.

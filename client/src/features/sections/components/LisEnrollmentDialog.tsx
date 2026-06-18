@@ -282,7 +282,7 @@ export function LisEnrollmentDialog({
               <DialogTitle className="text-lg font-black uppercase text-slate-800 tracking-wide">
                 LIS Learner Enrollment
               </DialogTitle>
-              <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">
+              <p className="text-base font-bold text-slate-500 uppercase mt-0.5">
                 Class: <span className="text-emerald-700 font-extrabold">{sectionName}</span>
               </p>
             </div>
@@ -295,13 +295,13 @@ export function LisEnrollmentDialog({
             <TabsList className="bg-slate-100 p-0.5 rounded-lg border border-slate-200">
               <TabsTrigger
                 value="prospective"
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-bold text-xs uppercase px-4"
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-bold text-base uppercase px-4"
               >
                 Prospective List
               </TabsTrigger>
               <TabsTrigger
                 value="search"
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-bold text-xs uppercase px-4"
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-bold text-base uppercase px-4"
               >
                 Search & Enrol Transferees
               </TabsTrigger>
@@ -314,22 +314,22 @@ export function LisEnrollmentDialog({
               {loading && prospectiveList.length === 0 ? (
                 <div className="py-20 flex flex-col items-center justify-center space-y-3">
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-500 animate-pulse">
+                  <p className="text-base font-black uppercase tracking-widest text-slate-500 animate-pulse">
                     Scanning LIS prospective pool...
                   </p>
                 </div>
               ) : prospectiveList.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center">
                   <AlertCircle className="h-10 w-10 text-slate-300 mb-3" />
-                  <p className="text-sm font-bold text-slate-700">No prospective enrolees found</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  <p className="text-base leading-tight font-bold text-slate-700">No prospective enrolees found</p>
+                  <p className="text-base text-slate-500 mt-1 max-w-sm">
                     No unsectioned rolled-over or pre-registered continuing students match this grade level's program type in this school year.
                   </p>
                 </div>
               ) : (
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-wider text-slate-600 border-b border-slate-200">
+                  <table className="w-full text-left border-collapse text-base leading-tight">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-wide text-slate-600 border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-4 w-12 text-center">
                           <Checkbox
@@ -362,16 +362,16 @@ export function LisEnrollmentDialog({
                             {app.lastName.toUpperCase()}, {app.firstName}
                             {app.middleName ? ` ${app.middleName.charAt(0)}.` : ""}
                           </td>
-                          <td className="py-2 px-3 font-mono text-xs">{app.lrn || "PENDING"}</td>
-                          <td className="py-2 px-3 text-center text-xs font-bold">
+                          <td className="py-2 px-3 font-mono text-base">{app.lrn || "PENDING"}</td>
+                          <td className="py-2 px-3 text-center text-base font-bold">
                             {app.sex === "MALE" ? "M" : "F"}
                           </td>
-                          <td className="py-2 px-3 text-xs">
+                          <td className="py-2 px-3 text-base">
                             <Badge variant="secondary" className="text-[10px] font-bold">
                               {app.learnerType}
                             </Badge>
                           </td>
-                          <td className="py-2 px-3 text-xs">
+                          <td className="py-2 px-3 text-base">
                             {app.isTemporarilyEnrolled ? (
                               <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
                                 Temporary
@@ -409,7 +409,7 @@ export function LisEnrollmentDialog({
                 </div>
                 <Button
                   onClick={() => void handleSearch(searchQuery)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 uppercase text-xs"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 uppercase text-base"
                 >
                   Search
                 </Button>
@@ -418,7 +418,7 @@ export function LisEnrollmentDialog({
               {loading ? (
                 <div className="py-12 flex flex-col items-center justify-center space-y-2">
                   <Loader2 className="h-7 w-7 animate-spin text-emerald-600" />
-                  <p className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">
+                  <p className="text-[11px] font-bold uppercase text-slate-400 tracking-wide">
                     Querying LIS Database...
                   </p>
                 </div>
@@ -428,12 +428,12 @@ export function LisEnrollmentDialog({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-emerald-600/10 flex items-center justify-center text-emerald-700 border-2 border-emerald-600/20">
-                        <span className="text-sm font-black uppercase">
+                        <span className="text-base leading-tight font-black uppercase">
                           {selectedSearchLearner.lastName[0]}
                         </span>
                       </div>
                       <div>
-                        <h4 className="font-black text-sm uppercase text-slate-800 leading-none">
+                        <h4 className="font-black text-base uppercase text-slate-800 leading-none">
                           {selectedSearchLearner.lastName}, {selectedSearchLearner.firstName}
                         </h4>
                         <p className="text-[10px] font-black text-slate-500 uppercase mt-1">
@@ -445,7 +445,7 @@ export function LisEnrollmentDialog({
                       variant="ghost"
                       size="sm"
                       onClick={() => setSelectedSearchLearner(null)}
-                      className="text-xs font-bold uppercase text-slate-500 hover:text-slate-800"
+                      className="text-base font-bold uppercase text-slate-500 hover:text-slate-800"
                     >
                       Clear Selection
                     </Button>
@@ -464,21 +464,21 @@ export function LisEnrollmentDialog({
                 searchQuery.trim() ? (
                   <div className="py-12 flex flex-col items-center justify-center text-center">
                     <AlertCircle className="h-8 w-8 text-slate-300 mb-2" />
-                    <p className="text-sm font-bold text-slate-700">No unsectioned matches found</p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-base leading-tight font-bold text-slate-700">No unsectioned matches found</p>
+                    <p className="text-base text-slate-500 mt-1">
                       Try adjusting your query or verify if this learner is already enrolled in another section.
                     </p>
                   </div>
                 ) : (
                   <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
                     <Search className="h-8 w-8 opacity-40 mb-2" />
-                    <p className="text-xs font-bold">Enter LRN or student last name to search LIS</p>
+                    <p className="text-base font-bold">Enter LRN or student last name to search LIS</p>
                   </div>
                 )
               ) : (
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white max-h-[220px] overflow-y-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-wider text-slate-600 border-b border-slate-200 sticky top-0">
+                  <table className="w-full text-left border-collapse text-base leading-tight">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-wide text-slate-600 border-b border-slate-200 sticky top-0">
                       <tr>
                         <th className="py-2 px-3">Name</th>
                         <th className="py-2 px-3">LRN</th>
@@ -493,8 +493,8 @@ export function LisEnrollmentDialog({
                             {l.lastName.toUpperCase()}, {l.firstName}
                             {l.middleName ? ` ${l.middleName.charAt(0)}.` : ""}
                           </td>
-                          <td className="py-2 px-3 font-mono text-xs">{l.lrn || "PENDING"}</td>
-                          <td className="py-2 px-3 text-center text-xs font-bold">
+                          <td className="py-2 px-3 font-mono text-base">{l.lrn || "PENDING"}</td>
+                          <td className="py-2 px-3 text-center text-base font-bold">
                             {l.sex === "MALE" ? "M" : "F"}
                           </td>
                           <td className="py-2 px-3 text-right">
@@ -528,7 +528,7 @@ export function LisEnrollmentDialog({
               value={officialEnrollmentDate}
               max={format(new Date(), "yyyy-MM-dd")}
               onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-800 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-base font-bold text-slate-800 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
@@ -563,7 +563,7 @@ export function LisEnrollmentDialog({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="font-bold uppercase text-xs border-slate-200"
+              className="font-bold uppercase text-base border-slate-200"
             >
               Cancel
             </Button>
@@ -571,7 +571,7 @@ export function LisEnrollmentDialog({
               <Button
                 disabled={selectedAppIds.length === 0 || isSubmitting}
                 onClick={handleEnrollSelected}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase px-6"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase px-6"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -584,7 +584,7 @@ export function LisEnrollmentDialog({
               <Button
                 disabled={!selectedSearchLearner || isSubmitting}
                 onClick={handleEnrollSingle}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase px-6"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase px-6"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

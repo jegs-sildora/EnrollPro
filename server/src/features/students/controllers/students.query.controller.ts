@@ -3,10 +3,10 @@ import {
   ApplicationStatus,
   type Prisma,
 } from "../../../generated/prisma/index.js";
-import {
-  createStudentsControllerDeps,
-  StudentsControllerDeps,
-} from "../services/students-controller.deps.js";
+import { prisma } from "../../../lib/prisma.js";
+import { generatePortalPin } from "../../learner/portal-pin.service.js";
+import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
+import { findStudents, getStudentsSummary as fetchStudentsSummary } from "../students.service.js";
 
 type FamilyMemberLike = {
   relationship: string;
@@ -25,7 +25,7 @@ type AddressLike = {
 };
 
 type StudentSearchResult = Awaited<
-  ReturnType<StudentsControllerDeps["searchStudents"]>
+  ReturnType<typeof findStudents>
 >;
 type StudentSearchItem = StudentSearchResult["applications"][number];
 
@@ -181,10 +181,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
   return undefined;
 };
 
-export const createStudentsQueryController = (
-  deps: StudentsControllerDeps = createStudentsControllerDeps(),
-) => {
-  const getStudents = async (req: Request, res: Response) => {
+
+  export const getStudents = async (req: Request, res: Response) => {
     try {
       // Prioritize query param, but fallback to the global SY context (req.schoolYearId)
       const schoolYearId = parsePositiveInt(req.query.schoolYearId) ?? req.schoolYearId;
@@ -201,7 +199,7 @@ export const createStudentsQueryController = (
         total,
         page: pageNum,
         limit: limitNum,
-      } = await deps.searchStudents({
+      } = await findStudents({
         schoolYearId,
         search: parseQueryString(req.query.search),
         gradeLevelId: parseQueryString(req.query.gradeLevelId),
@@ -272,14 +270,14 @@ export const createStudentsQueryController = (
     }
   };
 
-  const getStudentsSummary = async (req: Request, res: Response) => {
+  export const getStudentsSummary = async (req: Request, res: Response) => {
     try {
       const schoolYearId = parsePositiveInt(req.query.schoolYearId);
       if (!schoolYearId) {
         return res.status(400).json({ message: "schoolYearId is required" });
       }
 
-      const summary = await deps.fetchStudentsSummary({
+      const summary = await fetchStudentsSummary({
         schoolYearId,
         status: normalizeStatus(req.query.status),
       });
@@ -291,14 +289,14 @@ export const createStudentsQueryController = (
     }
   };
 
-  const getStudentById = async (req: Request, res: Response) => {
+  export const getStudentById = async (req: Request, res: Response) => {
     try {
       const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
       if (Number.isNaN(parsedId)) {
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      const applicant = await deps.prisma.enrollmentApplication.findUnique({
+      const applicant = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: {
           learner: true,
@@ -420,14 +418,14 @@ export const createStudentsQueryController = (
     }
   };
 
-  const getStudentRecordHistory = async (req: Request, res: Response) => {
+  export const getStudentRecordHistory = async (req: Request, res: Response) => {
     try {
       const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
       if (Number.isNaN(parsedId)) {
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      const applicant = await deps.prisma.enrollmentApplication.findUnique({
+      const applicant = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         select: {
           learnerId: true,
@@ -473,7 +471,7 @@ export const createStudentsQueryController = (
       };
 
       const [logs, total] = await Promise.all([
-        deps.prisma.auditLog.findMany({
+        prisma.auditLog.findMany({
           where,
           select: {
             id: true,
@@ -495,7 +493,7 @@ export const createStudentsQueryController = (
           skip,
           take: limit,
         }),
-        deps.prisma.auditLog.count({ where }),
+        prisma.auditLog.count({ where }),
       ]);
 
       const recordHistory = (logs as StudentRecordHistoryRow[]).map((log) => ({
@@ -528,7 +526,7 @@ export const createStudentsQueryController = (
     }
   };
 
-  const getStudentApplicationIdBySY = async (req: Request, res: Response) => {
+  export const getStudentApplicationIdBySY = async (req: Request, res: Response) => {
     try {
       const learnerId = parsePositiveInt(req.params.learnerId);
       const schoolYearId = parsePositiveInt(req.query.schoolYearId);
@@ -540,7 +538,7 @@ export const createStudentsQueryController = (
       }
 
       // Try enrollment application first
-      const enrollmentApp = await deps.prisma.enrollmentApplication.findFirst({
+      const enrollmentApp = await prisma.enrollmentApplication.findFirst({
         where: { learnerId, schoolYearId },
         select: { id: true },
         orderBy: { createdAt: "desc" },
@@ -562,21 +560,4 @@ export const createStudentsQueryController = (
     }
   };
 
-  return {
-    getStudents,
-    getStudentsSummary,
-    getStudentById,
-    getStudentRecordHistory,
-    getStudentApplicationIdBySY,
-  };
-};
-
-const studentsQueryController = createStudentsQueryController();
-
-export const {
-  getStudents,
-  getStudentsSummary,
-  getStudentById,
-  getStudentRecordHistory,
-  getStudentApplicationIdBySY,
-} = studentsQueryController;
+  

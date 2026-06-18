@@ -263,7 +263,7 @@ export default function AuditLogs() {
         header: "Timestamp",
         cell: ({ row }) => (
           <div className="text-center">
-            <span className="whitespace-nowrap text-xs font-bold text-foreground">
+            <span className="whitespace-nowrap text-base font-bold text-foreground">
               {formatTimestamp(row.original.createdAt)}
             </span>
           </div>
@@ -276,14 +276,14 @@ export default function AuditLogs() {
           const log = row.original;
           return (
             <div className="space-y-0.5 text-left">
-              <p className="text-sm font-bold  text-foreground">
+              <p className="text-base leading-tight font-bold  text-foreground">
                 {log.user
                   ? `${log.user.lastName}, ${log.user.firstName}`
                   : "System / Guest"}
               </p>
               {log.user && (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-foreground opacity-70">
+                  <span className="text-base font-bold text-foreground opacity-70">
                     ID: {log.user.id}
                   </span>
                   <Badge
@@ -309,14 +309,13 @@ export default function AuditLogs() {
 
           return (
             <div className="text-center">
-              <Badge
-                variant={isDestructive ? "destructive" : "secondary"}
+              <span
                 className={cn(
-                  "font-bold text-xs px-2 py-0.5 border-none",
-                  !isDestructive && "bg-slate-100 text-foreground"
+                  "inline-flex px-3 py-1 text-sm font-medium whitespace-nowrap bg-muted text-muted-foreground rounded-full",
+                  isDestructive && "bg-destructive/10 text-destructive border border-destructive/20"
                 )}>
                 {actionLabel(action)}
-              </Badge>
+              </span>
             </div>
           );
         },
@@ -334,15 +333,15 @@ export default function AuditLogs() {
 
           return (
             <div className="text-left space-y-0.5 flex justify-center items-center flex-col">
-              <span className="text-xs font-bold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
+              <span className="text-base font-bold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
                 {displayType}
               </span>
               {log.resolvedSubject ? (
-                <p className="text-sm font-bold text-foreground">
+                <p className="text-base leading-tight font-bold text-foreground">
                   {log.resolvedSubject.replace(/Schoolyear/ig, "S.Y.").replace(/Schoolsetting Record #\d+/ig, "School Profile Settings")}
                 </p>
               ) : log.recordId ? (
-                <p className="text-xs font-bold text-foreground">
+                <p className="text-base font-bold text-foreground">
                   Record #{log.recordId}
                 </p>
               ) : null}
@@ -354,7 +353,7 @@ export default function AuditLogs() {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => (
-          <span className="text-sm font-normal text-foreground max-w-[400px] break-words block text-left leading-relaxed">
+          <span className="text-base font-normal text-foreground max-w-[400px] break-words block text-left leading-relaxed">
             {row.original.description}
           </span>
         ),
@@ -472,14 +471,14 @@ export default function AuditLogs() {
           <h1 className="text-3xl font-bold text-foreground">
             System Activity Logs
           </h1>
-          <p className="text-sm font-bold text-foreground ">
+          <p className="text-base leading-tight font-bold text-foreground ">
             Track institutional data modifications, grading overrides, and staff login activity.
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
-            className="font-bold text-xs"
+            className="font-bold text-base"
             onClick={() => fetchLogs(page)}
             disabled={loading}>
             <RefreshCw
@@ -489,7 +488,7 @@ export default function AuditLogs() {
           </Button>
           {isSystemAdmin && (
             <Button
-              className="font-bold text-xs"
+              className="font-bold text-base"
               onClick={handleExport}
               disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
@@ -507,7 +506,7 @@ export default function AuditLogs() {
                 <ShieldAlert className="h-6 w-6" />
               </div>
               <p className="font-bold">Access Restricted</p>
-              <p className="text-sm text-foreground font-bold">
+              <p className="text-base leading-tight text-foreground font-bold">
                 Your role cannot access full audit logs. Contact a system
                 administrator if this access is required.
               </p>
@@ -518,24 +517,24 @@ export default function AuditLogs() {
         <>
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-bold uppercase text-foreground">
+              <CardTitle className="text-base font-bold uppercase text-foreground">
                 Search Filters
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase st text-foreground">
+                  <Label className="text-base font-bold uppercase st text-foreground">
                     Action Category
                   </Label>
                   <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
-                    <SelectTrigger className="font-bold text-xs">
+                    <SelectTrigger className="font-bold text-base">
                       <SelectValue placeholder="All Actions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all" className="font-bold text-xs">All Actions</SelectItem>
+                      <SelectItem value="all" className="font-bold text-base">All Actions</SelectItem>
                       {filterMeta.actionTypes.map((at) => (
-                        <SelectItem key={at} value={at} className="font-bold text-xs">
+                        <SelectItem key={at} value={at} className="font-bold text-base">
                           {actionLabel(at)}
                         </SelectItem>
                       ))}
@@ -544,17 +543,17 @@ export default function AuditLogs() {
                 </div>
                 {isSystemAdmin && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase st text-foreground">
+                    <Label className="text-base font-bold uppercase st text-foreground">
                       Actor Filter
                     </Label>
                     <Select value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
-                      <SelectTrigger className="font-bold text-xs">
+                      <SelectTrigger className="font-bold text-base">
                         <SelectValue placeholder="All Staff Members" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="font-bold text-xs">All Staff Members</SelectItem>
+                        <SelectItem value="all" className="font-bold text-base">All Staff Members</SelectItem>
                         {filterMeta.actors.map((actor) => (
-                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-bold text-xs">
+                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-bold text-base">
                             {actor.name} ({formatUserRole(actor.roles?.[0])})
                           </SelectItem>
                         ))}
@@ -563,7 +562,7 @@ export default function AuditLogs() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase st text-foreground">
+                  <Label className="text-base font-bold uppercase st text-foreground">
                     Date From
                   </Label>
                   <HybridDatePicker
@@ -575,7 +574,7 @@ export default function AuditLogs() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase st text-foreground">
+                  <Label className="text-base font-bold uppercase st text-foreground">
                     Date To
                   </Label>
                   <HybridDatePicker
@@ -589,14 +588,14 @@ export default function AuditLogs() {
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase text-foreground/70 mr-2">Quick Presets:</span>
-                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(0)}>Today</Button>
-                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
-                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold" onClick={() => handlePresetDate(null)}>This Month</Button>
+                  <span className="text-base font-bold uppercase text-foreground/70 mr-2">Quick Presets:</span>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(0)}>Today</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(null)}>This Month</Button>
                 </div>
                 <Button
                   variant="ghost"
-                  className="font-bold text-xs h-8"
+                  className="font-bold text-base h-8"
                   onClick={() => {
                     setActionType("all");
                     setActorId("all");
@@ -615,7 +614,7 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-foreground" />
-                  <p className="text-xs font-bold uppercase st text-foreground">
+                  <p className="text-base font-bold uppercase st text-foreground">
                     Total Events
                   </p>
                 </div>
@@ -628,7 +627,7 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <p className="text-xs font-bold uppercase st text-foreground">
+                  <p className="text-base font-bold uppercase st text-foreground">
                     Critical Alerts
                   </p>
                 </div>
@@ -641,7 +640,7 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-bold uppercase st text-primary">
+                  <p className="text-base font-bold uppercase st text-primary">
                     Active Actors
                   </p>
                 </div>
@@ -685,12 +684,12 @@ export default function AuditLogs() {
                         className="overflow-hidden"
                       >
                         <div className="p-6 border-l-4 border-l-primary/50 mx-4 my-2 rounded-r-lg bg-card shadow-sm border border-border/50">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+                          <h4 className="text-base font-bold uppercase tracking-wide text-foreground mb-4 flex items-center gap-2">
                             <Activity className="h-4 w-4 text-primary" />
                             Detailed Changes
                           </h4>
                           <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
-                            <table className="w-full text-sm text-left">
+                            <table className="w-full text-base leading-tight text-left">
                               <thead className="bg-muted/50 border-b">
                                 <tr>
                                   <th className="px-4 py-3 font-bold text-foreground">Modified Field</th>

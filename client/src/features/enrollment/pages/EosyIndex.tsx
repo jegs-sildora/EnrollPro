@@ -490,16 +490,16 @@ export default function EosyUpdating() {
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
               <span className="font-bold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-foreground font-black uppercase">
+                <span className="text-base text-foreground font-black uppercase">
                   LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
                 {genderLabel && (
-                  <Badge variant="outline" className="h-3 px-1 text-[7px] font-black border-muted-foreground/20">
+                  <Badge variant="outline" className="h-6 px-1 text-sm font-black border-muted-foreground/20">
                     {genderLabel}
                   </Badge>
                 )}
@@ -521,7 +521,7 @@ export default function EosyUpdating() {
         accessorKey: "section.name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-start" />,
         cell: ({ row }) => (
-          <span className="text-xs font-bold">{row.original.section.name}</span>
+          <span className="text-base font-bold">{row.original.section.name}</span>
         ),
         meta: { className: "w-1/5 text-left" }
       },
@@ -534,7 +534,7 @@ export default function EosyUpdating() {
           const ave = r.finalAverage;
           if (ave === null || ave === undefined) {
             return (
-              <span className="font-bold text-xs sm:text-sm block text-center text-muted-foreground opacity-60">
+              <span className="font-bold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
                 --
               </span>
             );
@@ -543,7 +543,7 @@ export default function EosyUpdating() {
 
           return (
             <div className="flex justify-center items-center gap-1">
-              <span className={cn("text-xs sm:text-sm tabular-nums block text-center",
+              <span className={cn("text-base sm:text-base leading-tight tabular-nums block text-center",
                 isFailing ? "text-red-600 font-bold" : "text-gray-900 font-black"
               )}>
                 {ave.toFixed(2)}
@@ -570,11 +570,11 @@ export default function EosyUpdating() {
           const renderStatusContent = () => (
             <div
               className={cn(
-                "flex h-7 w-auto px-3 min-w-[8rem] items-center justify-between rounded-md border text-[10px] font-black uppercase ring-offset-background transition-colors",
+                "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-bold whitespace-nowrap rounded-md border transition-colors",
                 isScpDemoted && resolvedStatus === "PROMOTED"
-                  ? "text-amber-800 bg-amber-50 border-amber-200"
+                  ? "text-amber-700 bg-amber-50 border-amber-200"
                   : !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                    ? "text-green-700 bg-green-50 border-green-200"
                     : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
               <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (To BEC)" : statusLabel}</span>
@@ -591,18 +591,18 @@ export default function EosyUpdating() {
                   {trigger}
                 </TooltipTrigger>
                 <TooltipContent className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-80 text-left">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-800 border-b border-amber-200 pb-2 mb-2">
+                  <h4 className="text-base font-black uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
                     Special Program Retention Alert
                   </h4>
-                  <p className="text-sm font-medium leading-snug">
+                  <p className="text-base font-medium leading-snug">
                     Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
                   </p>
                   {scpViolation && (
-                    <div className="mt-3 bg-amber-100/50 rounded p-2 text-sm border border-amber-200/50">
+                    <div className="mt-3 bg-amber-100/50 rounded p-2 text-base leading-tight border border-amber-200/50">
                       <p><span className="font-semibold text-amber-900">Subject:</span> {scpViolation.subject}</p>
                       <p><span className="font-semibold text-amber-900">Term:</span> {scpViolation.term}</p>
                       <p className="mt-1 text-red-700 font-bold">
-                        Grade: {scpViolation.actualGrade} <span className="text-amber-700 font-medium text-xs">(Required: {scpViolation.requiredGrade})</span>
+                        Grade: {scpViolation.actualGrade} <span className="text-amber-700 font-medium text-base">(Required: {scpViolation.requiredGrade})</span>
                       </p>
                     </div>
                   )}
@@ -629,8 +629,8 @@ export default function EosyUpdating() {
                   renderTooltip(
                     <SelectTrigger
                       className={cn(
-                        "h-7 w-auto px-2 min-w-[8rem] font-black uppercase text-[10px]",
-                        "text-amber-800 bg-amber-50 border-amber-200 cursor-help"
+                        "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-bold whitespace-nowrap rounded-md border",
+                        "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (To BEC)</span>
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-1" />
@@ -639,9 +639,9 @@ export default function EosyUpdating() {
                 ) : (
                   <SelectTrigger
                     className={cn(
-                      "h-7 w-auto px-2 min-w-[8rem] font-black uppercase text-[10px]",
+                      "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-bold whitespace-nowrap rounded-md border",
                       !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        ? "text-green-700 bg-green-50 border-green-200"
                         : "text-amber-700 bg-amber-50 border-amber-200",
                     )}>
                     <SelectValue />
@@ -680,7 +680,7 @@ export default function EosyUpdating() {
         </div>
         <div className="text-center space-y-3 max-w-lg">
           <h2 className="text-xl font-black uppercase text-emerald-700">EOSY Successfully Finalized</h2>
-          <p className="text-sm font-bold text-foreground leading-relaxed">
+          <p className="text-base font-bold text-foreground leading-relaxed">
             All academic records for this school year are sealed and locked.
           </p>
         </div>
@@ -696,7 +696,7 @@ export default function EosyUpdating() {
         </div>
         <div className="text-center max-w-md space-y-2">
           <h2 className="text-xl font-black uppercase">EOSY Phase Not Active</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             EOSY status updates are only available during the End of School Year phase.
           </p>
         </div>
@@ -716,7 +716,7 @@ export default function EosyUpdating() {
             <h1 className="text-2xl sm:text-3xl font-bold">
               End of School Year (EOSY) Finalization
             </h1>
-            <p className="text-sm font-bold text-foreground">
+            <p className="text-base leading-tight font-bold text-foreground">
               Review submitted grades, verify promotion or retention status, and officially lock records for the End of School Year.
             </p>
           </div>
@@ -729,7 +729,7 @@ export default function EosyUpdating() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 School Year Finalization Complete
               </h3>
-              <p className="text-sm">All grade levels are officially locked. You may now advance the system to the next School Year.</p>
+              <p className="text-base leading-tight">All grade levels are officially locked. You may now advance the system to the next School Year.</p>
             </div>
             <Button asChild className="bg-green-700 hover:bg-green-800 text-white font-bold shadow-sm">
               <a href="/settings">Proceed to School Year Setup &rarr;</a>
@@ -754,7 +754,7 @@ export default function EosyUpdating() {
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
-                <span className={cn("relative z-20 text-xs font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                <span className={cn("relative z-20 text-base font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
                   {gl.name.replace(/grade\s*/i, "Grade ")}
                 </span>
               </TabsTrigger>
@@ -779,7 +779,7 @@ export default function EosyUpdating() {
                         value={sectionFilter}
                         onValueChange={setSectionFilter}
                       >
-                        <SelectTrigger className="w-56 bg-background border-border hover:bg-accent transition-colors font-medium">
+                        <SelectTrigger className="w-56 bg-background border-border hover:bg-accent hover:text-accent-foreground transition-colors font-bold">
                           <SelectValue placeholder="Filter by Section / Adviser" />
                         </SelectTrigger>
                         <SelectContent>
@@ -808,7 +808,7 @@ export default function EosyUpdating() {
                             onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
                             disabled={Object.keys(rowSelection).length === 0}
                           >
-                            <SelectTrigger className="w-48 bg-background border-border hover:bg-accent transition-colors font-medium">
+                            <SelectTrigger className="w-48 bg-background border-border hover:bg-accent hover:text-accent-foreground transition-colors font-bold">
                               <SelectValue placeholder="Select New Status..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -842,7 +842,7 @@ export default function EosyUpdating() {
                       {/* Status Indicators */}
                       <div className="flex items-center gap-3">
                         {pendingCount > 0 && !isScopeFinalized && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-xs font-bold shadow-sm border border-border">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-base font-bold shadow-sm border border-border">
                             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                             {pendingCount} Pending Submissions
                           </div>
@@ -852,12 +852,12 @@ export default function EosyUpdating() {
                           <TooltipProvider delayDuration={200}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-xs font-bold cursor-help transition-colors hover:bg-destructive/20">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-base font-bold cursor-help transition-colors hover:bg-destructive/20">
                                   <AlertCircle className="w-3.5 h-3.5" />
                                   {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-sm max-w-xs">
+                              <TooltipContent className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
                                 <p className="font-bold mb-2 flex items-center gap-2">
                                   <AlertCircle className="w-4 h-4" />
                                   Pending Requirements
@@ -889,7 +889,7 @@ export default function EosyUpdating() {
                   {isScopeFinalized && (
                     <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 mb-4 shrink-0">
                       <Lock className="text-amber-700 w-5 h-5 mr-2" />
-                      <span className="text-sm font-black text-amber-900 uppercase tracking-widest">
+                      <span className="text-base leading-tight font-black text-amber-900 uppercase tracking-widest">
                         EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER EDITS ALLOWED.
                       </span>
                     </div>
@@ -899,7 +899,7 @@ export default function EosyUpdating() {
                     {loadingRecords ? (
                       <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
                         <Loader2 className="h-8 w-8 animate-spin" />
-                        <p className="text-sm font-medium">Loading {activeGradeName} records...</p>
+                        <p className="text-base leading-tight font-medium">Loading {activeGradeName} records...</p>
                       </div>
                     ) : (
                       <div className="flex-1 overflow-auto">

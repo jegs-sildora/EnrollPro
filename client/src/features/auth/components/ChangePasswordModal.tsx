@@ -118,7 +118,7 @@ export function ChangePasswordForm({
       {children}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-sm font-bold">{passwordLabel}</Label>
+          <Label htmlFor="newPassword" className="text-base leading-tight font-bold">{passwordLabel}</Label>
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
@@ -137,12 +137,12 @@ export function ChangePasswordForm({
             </button>
           </div>
           {errors.newPassword && (
-            <p className="text-xs font-bold text-destructive ml-1">{errors.newPassword.message}</p>
+            <p className="text-base font-bold text-destructive ml-1">{errors.newPassword.message}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-bold">{confirmLabel}</Label>
+          <Label htmlFor="confirmPassword" className="text-base leading-tight font-bold">{confirmLabel}</Label>
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
@@ -154,7 +154,7 @@ export function ChangePasswordForm({
             />
           </div>
           {errors.confirmPassword && (
-            <p className="text-xs font-bold text-destructive ml-1">{errors.confirmPassword.message}</p>
+            <p className="text-base font-bold text-destructive ml-1">{errors.confirmPassword.message}</p>
           )}
         </div>
 
@@ -168,14 +168,14 @@ export function ChangePasswordForm({
               exit={{ opacity: 0, y: -10 }}
               className="w-full p-3 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-destructive shadow-sm">
               <AlertCircle className="size-4 shrink-0" />
-              <p className="text-sm font-bold">{error}</p>
+              <p className="text-base leading-tight font-bold">{error}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
         <Button
           type="submit"
-          className="w-full h-12 font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+          className="w-full h-12 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
           disabled={loading}>
           {loading ? (
             <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{loadingLabel}</>
@@ -211,14 +211,14 @@ export const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-bold uppercase  text-foreground/70 text-xs">
+      <p className="font-bold uppercase  text-foreground/70 text-base">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
         {rules.map((r) => (
           <li
             key={r.label}
-            className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-foreground"}`}>
+            className={`flex items-center gap-2 text-base leading-tight font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-foreground"}`}>
             {r.pass ? (
               <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
             ) : (

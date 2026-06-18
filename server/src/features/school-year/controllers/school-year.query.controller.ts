@@ -1,8 +1,9 @@
+import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveSchoolYear, cloneSchoolYearStructure, getCurrentManilaYear, parseDateInput } from "../services/school-year-controller-shared.service.js";
+
+import { normalizeDateToUtcNoon, deriveNextSchoolYear } from "../school-year.service.js";
+import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
-import {
-  createSchoolYearControllerDeps,
-  SchoolYearControllerDeps,
-} from "../services/school-year-controller.deps.js";
+
 
 function parseSchoolYearId(req: Request): number {
   return Number.parseInt(String(req.params.id ?? ""), 10);
@@ -16,21 +17,19 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-export function createSchoolYearQueryController(
-  deps: SchoolYearControllerDeps = createSchoolYearControllerDeps(),
-) {
-  async function listGradeLevels(req: Request, res: Response): Promise<void> {
+
+  export async function listGradeLevels(req: Request, res: Response): Promise<void> {
     let schoolYearId = parseSchoolYearIdFromQuery(req);
 
     if (!schoolYearId) {
-      const setting = await deps.prisma.schoolSetting.findFirst({
+      const setting = await prisma.schoolSetting.findFirst({
         select: { activeSchoolYearId: true },
       });
       schoolYearId = setting?.activeSchoolYearId ?? null;
     }
 
     if (!schoolYearId) {
-      const activeYear = await deps.prisma.schoolYear.findFirst({
+      const activeYear = await prisma.schoolYear.findFirst({
         where: { status: "ACTIVE" },
         orderBy: { createdAt: "desc" },
         select: { id: true },
@@ -43,7 +42,7 @@ export function createSchoolYearQueryController(
       return;
     }
 
-    const gradeLevels = await deps.prisma.gradeLevel.findMany({
+    const gradeLevels = await prisma.gradeLevel.findMany({
       orderBy: { displayOrder: "asc" },
       select: { id: true, name: true, displayOrder: true },
     });
@@ -51,8 +50,8 @@ export function createSchoolYearQueryController(
     res.json({ gradeLevels, schoolYearId });
   }
 
-  async function listSchoolYears(_req: Request, res: Response): Promise<void> {
-    const years = await deps.prisma.schoolYear.findMany({
+  export async function listSchoolYears(_req: Request, res: Response): Promise<void> {
+    const years = await prisma.schoolYear.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         _count: {
@@ -72,14 +71,14 @@ export function createSchoolYearQueryController(
     res.json({ years });
   }
 
-  async function getNextDefaults(req: Request, res: Response): Promise<void> {
-    const defaults = deps.deriveNextSchoolYear(new Date());
+  export async function getNextDefaults(req: Request, res: Response): Promise<void> {
+    const defaults = deriveNextSchoolYear(new Date());
     res.json(defaults);
   }
 
-  async function getSchoolYear(req: Request, res: Response): Promise<void> {
+  export async function getSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const year = await deps.prisma.schoolYear.findUnique({
+    const year = await prisma.schoolYear.findUnique({
       where: { id },
       include: {
         sections: {
@@ -106,19 +105,3 @@ export function createSchoolYearQueryController(
     res.json({ year });
   }
 
-  return {
-    listGradeLevels,
-    listSchoolYears,
-    getNextDefaults,
-    getSchoolYear,
-  };
-}
-
-const schoolYearQueryController = createSchoolYearQueryController();
-
-export const {
-  listGradeLevels,
-  listSchoolYears,
-  getNextDefaults,
-  getSchoolYear,
-} = schoolYearQueryController;

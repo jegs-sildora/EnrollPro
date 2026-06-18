@@ -58,7 +58,7 @@ export default function DocumentaryRequirements() {
         accessorKey: "feature",
         header: "",
         cell: ({ row }) => (
-          <span className="font-bold text-sm bg-muted/20 block p-1">
+          <span className="font-bold text-base leading-tight bg-muted/20 block p-1">
             {row.original.feature}
           </span>
         ),
@@ -71,7 +71,7 @@ export default function DocumentaryRequirements() {
           </div>
         ),
         cell: ({ row }) => (
-          <span className={`text-sm ${row.original.phase1Class ?? ""}`}>
+          <span className={`text-base leading-tight ${row.original.phase1Class ?? ""}`}>
             {row.original.phase1}
           </span>
         ),
@@ -84,7 +84,7 @@ export default function DocumentaryRequirements() {
           </div>
         ),
         cell: ({ row }) => (
-          <span className={`text-sm ${row.original.phase2Class ?? ""}`}>
+          <span className={`text-base leading-tight ${row.original.phase2Class ?? ""}`}>
             {row.original.phase2}
           </span>
         ),
@@ -148,7 +148,7 @@ export default function DocumentaryRequirements() {
           </div>
         ),
         cell: ({ row }) => (
-          <span className={`text-xs ${row.original.phase1Class ?? ""}`}>
+          <span className={`text-base ${row.original.phase1Class ?? ""}`}>
             {row.original.phase1}
           </span>
         ),
@@ -159,7 +159,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-bold">{row.original.phase2}</span>
+          <span className="text-base font-bold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -215,7 +215,7 @@ export default function DocumentaryRequirements() {
           </div>
         ),
         cell: ({ row }) => (
-          <span className="text-xs">{row.original.phase1}</span>
+          <span className="text-base">{row.original.phase1}</span>
         ),
       },
       {
@@ -224,7 +224,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-bold">{row.original.phase2}</span>
+          <span className="text-base font-bold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -279,7 +279,7 @@ export default function DocumentaryRequirements() {
         <AlertTitle className="font-bold text-primary">
           Policy Update: DO 017, s. 2025
         </AlertTitle>
-        <AlertDescription className="text-sm">
+        <AlertDescription className="text-base leading-tight">
           This system follows the Revised Basic Education Enrollment Policy. PSA
           Birth Certificates are submitted <strong>once</strong> for the entire
           K-12 stay. No learner shall be refused enrollment due to missing
@@ -301,49 +301,49 @@ export default function DocumentaryRequirements() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     1
                   </span>
                   Once-Only PSA Submission
                 </h4>
-                <p className="text-xs text-foreground leading-relaxed">
+                <p className="text-base text-foreground leading-relaxed">
                   Birth Certificates are submitted only ONCE throughout K-12 (RA
                   11909). If already on file, do not request again.
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     2
                   </span>
                   Verification vs Collection
                 </h4>
-                <p className="text-xs text-foreground leading-relaxed">
+                <p className="text-base text-foreground leading-relaxed">
                   Phase 1 (Early Reg): Verify only. Phase 2 (Actual Enrollment):
                   Collect and file original documents.
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     3
                   </span>
                   No Refusal Policy
                 </h4>
-                <p className="text-xs text-foreground leading-relaxed">
+                <p className="text-base text-foreground leading-relaxed">
                   Missing documents are NOT grounds for rejection. Enroll on a{" "}
                   <strong>temporary basis</strong> until Aug 31.
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     4
                   </span>
                   SF10 Post-Enrollment
                 </h4>
-                <p className="text-xs text-foreground leading-relaxed">
+                <p className="text-base text-foreground leading-relaxed">
                   SF10 is NOT an initial requirement. It is transmitted
                   school-to-school via LIS after enrollment is complete.
                 </p>
@@ -363,7 +363,7 @@ export default function DocumentaryRequirements() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2.5 text-base leading-tight">
               <li className="flex items-start gap-2 text-destructive font-bold">
                 <span className="mt-0.5">✕</span>
                 <span>Enrollment or Processing Fees</span>
@@ -462,7 +462,7 @@ export default function DocumentaryRequirements() {
             <div className="space-y-4">
               <Alert className="bg-amber-50 border-amber-200">
                 <Info className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-xs text-amber-800">
+                <AlertDescription className="text-base text-amber-800">
                   Learners using secondary documents are{" "}
                   <strong>temporarily enrolled</strong>. The original PSA Birth
                   Certificate must be submitted by <strong>October 31</strong>.
@@ -480,7 +480,7 @@ export default function DocumentaryRequirements() {
                 ].map((doc) => (
                   <div
                     key={doc}
-                    className="flex items-center gap-2 text-xs p-2.5 rounded border bg-muted/20">
+                    className="flex items-center gap-2 text-base p-2.5 rounded border bg-muted/20">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                     <span className="font-bold">{doc}</span>
                   </div>
@@ -520,11 +520,11 @@ export default function DocumentaryRequirements() {
                   key={form.name}
                   className="flex flex-col gap-1 p-3 rounded-lg border bg-card hover:bg-muted/10 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                    <span className="text-base font-bold text-primary bg-primary/10 px-2.5 py-1 rounded">
                       {form.name}
                     </span>
                   </div>
-                  <p className="text-xs text-foreground leading-relaxed">
+                  <p className="text-base text-foreground leading-relaxed">
                     {form.desc}
                   </p>
                 </div>
@@ -542,7 +542,7 @@ export default function DocumentaryRequirements() {
             Temporary Enrollment (DepEd Order No. 3, s. 2018)
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm space-y-3 text-blue-900/80">
+        <CardContent className="text-base leading-tight space-y-3 text-blue-900/80">
           <p>
             Learners with incomplete documentary requirements are{" "}
             <strong>not refused entry</strong>. They are marked as "Temporarily

@@ -94,7 +94,7 @@ export function AddressCombobox({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-sm font-bold"
+            className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-base font-bold"
             autoFocus
           />
         </div>
@@ -102,7 +102,7 @@ export function AddressCombobox({
         {/* List */}
         <ul className="max-h-60 overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <li className="px-3 py-4 text-sm text-foreground text-center">
+            <li className="px-3 py-4 text-base text-foreground text-center">
               No results found
             </li>
           ) : (
@@ -112,7 +112,7 @@ export function AddressCombobox({
                   type="button"
                   onClick={() => handleSelect(item)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-2 text-base font-bold text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                     item.name === value && "bg-accent text-accent-foreground",
                   )}
                 >

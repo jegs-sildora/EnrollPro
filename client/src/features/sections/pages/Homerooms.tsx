@@ -278,7 +278,7 @@ export default function Homerooms() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold">Class Advisership & Section Management</h1>
-          <p className="text-sm text-foreground font-bold">Define grade level capacities and assign official class advisers to homeroom sections.</p>
+          <p className="text-base leading-tight text-foreground font-bold">Define grade level capacities and assign official class advisers to homeroom sections.</p>
         </div>
         {canMutate && homeroomGroups.length > 0 && (
           <Button onClick={handleOpenCreate} className="font-bold uppercase tracking-wide">
@@ -302,7 +302,7 @@ export default function Homerooms() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className={cn("relative z-20 text-xs uppercase", activeGradeId === String(g.gradeLevelId) ? "text-primary-foreground" : "text-foreground")}>
+              <span className={cn("relative z-20 text-base uppercase", activeGradeId === String(g.gradeLevelId) ? "text-primary-foreground" : "text-foreground")}>
                 {g.gradeLevelName}
               </span>
             </TabsTrigger>
@@ -342,18 +342,18 @@ export default function Homerooms() {
                         <TableRow key={s.id} className="hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => handleOpenEdit(s, g.gradeLevelName)}>
                           <TableCell className="font-medium text-left pl-6">
                             <div className="flex items-center gap-2">
-                              <span className="font-black uppercase text-sm text-foreground">{s.name}</span>
+                              <span className="font-black uppercase text-base leading-tight text-foreground">{s.name}</span>
 
                             </div>
                           </TableCell>
                           <TableCell className="text-left">
-                            <span className={cn("text-xs font-bold uppercase", !s.advisingTeacher ? "text-amber-500 italic" : "text-foreground")}>
+                            <span className={cn("text-base font-bold uppercase", !s.advisingTeacher ? "text-amber-500 italic" : "text-foreground")}>
                               {s.advisingTeacher ? s.advisingTeacher.name : "Unassigned"}
                             </span>
                           </TableCell>
                           <TableCell className="text-center pr-6">
                             <div className="flex flex-col gap-1 max-w-[140px] mx-auto">
-                              <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                              <div className="flex items-center justify-between text-base font-bold text-foreground">
                                 <span>{s.enrolledCount} / {s.maxCapacity}</span>
                                 <span>{pct}%</span>
                               </div>
@@ -376,7 +376,7 @@ export default function Homerooms() {
                   className="mt-0 focus-visible:outline-none ring-0 space-y-8">
 
                   {!hasSections ? (
-                    <div className="rounded-lg border border-dashed p-12 text-center text-sm font-bold text-foreground/50 uppercase italic bg-muted/10">
+                    <div className="rounded-lg border border-dashed p-12 text-center text-base leading-tight font-bold text-foreground/50 uppercase italic bg-muted/10">
                       No sections in this group.
                     </div>
                   ) : (
@@ -384,9 +384,9 @@ export default function Homerooms() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/30">
-                            <TableHead className="text-xs uppercase text-left pl-6">Section Name</TableHead>
-                            <TableHead className="text-xs uppercase text-left w-[320px]">Class Adviser</TableHead>
-                            <TableHead className="text-xs uppercase text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
+                            <TableHead className="text-base uppercase text-left pl-6">Section Name</TableHead>
+                            <TableHead className="text-base uppercase text-left w-[320px]">Class Adviser</TableHead>
+                            <TableHead className="text-base uppercase text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

@@ -71,7 +71,7 @@ function ParamField({
       )}>
       <Label
         htmlFor={id}
-        className="text-xs font-black uppercase  text-foreground">
+        className="text-base font-black uppercase  text-foreground">
         {label}
       </Label>
       <Input
@@ -83,11 +83,11 @@ function ParamField({
         onChange={(e) =>
           onChange(Math.max(min ?? 1, parseInt(e.target.value) || 0))
         }
-        className="h-10 w-28 font-bold text-sm tabular-nums border-2 focus-visible:ring-primary"
+        className="h-10 w-28 font-bold text-base leading-tight tabular-nums border-2 focus-visible:ring-primary"
         disabled={disabled}
       />
       {hint && (
-        <p className="text-xs text-foreground font-bold leading-tight">
+        <p className="text-base text-foreground font-bold leading-tight">
           {hint}
         </p>
       )}
@@ -207,7 +207,7 @@ export function BatchSectioningParamsModal({
               <DialogTitle className="text-lg font-black uppercase ">
                 Configure Batch Sectioning Parameters
               </DialogTitle>
-              <DialogDescription className="text-xs font-black uppercase  text-foreground mt-0.5">
+              <DialogDescription className="text-base font-black uppercase  text-foreground mt-0.5">
                 S.Y. {schoolYearId} • {gradeLevelName}
               </DialogDescription>
             </div>
@@ -228,7 +228,7 @@ export function BatchSectioningParamsModal({
                   <p className="text-2xl font-black text-primary leading-none">
                     {prereqs?.unassignedCount ?? "–"}
                   </p>
-                  <p className="text-xs font-black uppercase  text-foreground mt-0.5">
+                  <p className="text-base font-black uppercase  text-foreground mt-0.5">
                     Unassigned Learners in Pool
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export function BatchSectioningParamsModal({
               {prereqs && !prereqs.isSteReady && isGrade7 && (
                 <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/20 bg-primary/5 text-primary">
                   <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                  <p className="text-xs font-bold">
+                  <p className="text-base font-bold">
                     {prereqs.steSectionsCount} of {params.steSections} STE
                     section(s) found. The system will automatically create the
                     remaining sections when you run the algorithm.
@@ -248,7 +248,7 @@ export function BatchSectioningParamsModal({
               {prereqs && !prereqs.isPilotReady && isGrade7 && (
                 <div className="flex items-start gap-2 p-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-400">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <p className="text-xs font-bold">
+                  <p className="text-base font-bold">
                     Only {prereqs.regularSectionsCount} REGULAR section(s)
                     found. At least {params.pilotSectionCount} are required for
                     Pilot slicing.
@@ -259,7 +259,7 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 1: STE ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-xs font-black uppercase  text-foreground">
+                  <span className="text-base font-black uppercase  text-foreground">
                     Tier 1 — Special Curricular Program (STE)
                   </span>
                   {!isGrade7 && (
@@ -333,7 +333,7 @@ export function BatchSectioningParamsModal({
                               {perSectionCapacities.map((cap, i) => (
                                 <span
                                   key={i}
-                                  className="inline-flex items-center gap-1 text-xs font-black bg-primary/10 text-primary rounded px-2 py-0.5">
+                                  className="inline-flex items-center gap-1 text-base font-black bg-primary/10 text-primary rounded px-2.5 py-1">
                                   {generatedSteNames[i]}: {cap}
                                 </span>
                               ))}
@@ -349,7 +349,7 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 2: BEC PILOT ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-xs font-black uppercase  text-foreground">
+                  <span className="text-base font-black uppercase  text-foreground">
                     Tier 2 — BEC Pilot Slicing
                   </span>
                   {!isGrade7 && (
@@ -393,7 +393,7 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 3: HETERO ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-xs font-black uppercase  text-foreground">
+                  <span className="text-base font-black uppercase  text-foreground">
                     Tier 3 — Heterogeneous Snake Draft
                   </span>
                 </div>
@@ -414,7 +414,7 @@ export function BatchSectioningParamsModal({
               {overAllocated && (
                 <div className="flex items-start gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <p className="text-xs font-black">
+                  <p className="text-base font-black">
                     Your STE + Pilot allocation ({allocatedCount}) exceeds the
                     total number of unassigned learners (
                     {prereqs?.unassignedCount}). Reduce your quotas.
@@ -429,13 +429,13 @@ export function BatchSectioningParamsModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="font-bold text-xs uppercase  border-2">
+            className="font-bold text-base uppercase  border-2">
             Cancel
           </Button>
           <Button
             onClick={() => onRun(params)}
             disabled={!canRun}
-            className="font-black text-xs uppercase  bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 gap-2">
+            className="font-black text-base uppercase  bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 gap-2">
             <Zap className="h-4 w-4" />
             Run Algorithm
           </Button>

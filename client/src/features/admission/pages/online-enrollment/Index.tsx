@@ -206,7 +206,7 @@ export default function Apply() {
         />
 
         {!isClosed && systemPhase === "CLASSES_ONGOING" && (
-          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-sm font-bold text-center py-3 px-4 shadow-sm relative z-20">
+          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-base leading-tight font-bold text-center py-3 px-4 shadow-sm relative z-20">
             Classes have officially started. Submissions will be marked for late processing.
           </div>
         )}
@@ -243,7 +243,7 @@ export default function Apply() {
                     <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold  uppercase border border-destructive/20">
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-base font-bold  uppercase border border-destructive/20">
                       {isEosyClosing ? "EOSY Finalization Phase" : isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export default function Apply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
                           ONLINE ENROLLMENT IS NOW CLOSED
                         </h3>
-                        <p className="text-sm font-bold text-foreground uppercase  leading-relaxed">
+                        <p className="text-base font-bold text-foreground uppercase  leading-relaxed">
                           The standard online enrollment period for S.Y.{" "}
                           {activeSchoolYearLabel} has officially ended, and
                           class rosters have been finalized.
@@ -262,20 +262,20 @@ export default function Apply() {
                       </div>
 
                       <div className="p-6 rounded-xl bg-red-50 border-2 border-red-200 text-left space-y-4 shadow-inner">
-                        <div className="flex items-center gap-2 text-red-900 font-black uppercase  text-sm">
+                        <div className="flex items-center gap-2 text-red-900 font-black uppercase  text-base leading-tight">
                           LATE ENROLLMENT INSTRUCTIONS:
                         </div>
-                        <p className="text-sm text-red-900 font-bold leading-relaxed">
+                        <p className="text-base text-red-900 font-bold leading-relaxed">
                           If you still need to enroll a learner, you must now
                           process this manually. Please proceed to the School
                           Registrar's Office during working hours (8:00 AM -
                           5:00 PM) and bring the following:
                         </p>
                         <ul className="grid grid-cols-1 gap-1.5 mt-2 pl-4">
-                          <li className="flex items-center gap-2 text-sm font-bold text-red-950 list-disc">
+                          <li className="flex items-center gap-2 text-base leading-tight font-bold text-red-950 list-disc">
                             Original SF9 (Report Card)
                           </li>
-                          <li className="flex items-center gap-2 text-sm font-bold text-red-950 list-disc">
+                          <li className="flex items-center gap-2 text-base leading-tight font-bold text-red-950 list-disc">
                             PSA Birth Certificate
                           </li>
                         </ul>
@@ -285,7 +285,7 @@ export default function Apply() {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase  text-xs transition-all border-2"
+                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase  text-base transition-all border-2"
                           onClick={() => {
                             if (schoolWebsite) {
                               window.location.href = schoolWebsite;
@@ -299,7 +299,7 @@ export default function Apply() {
 
                       {facebookPageUrl && (
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <p className="text-xs font-bold text-slate-500 uppercase  text-center">
+                          <p className="text-base font-bold text-slate-500 uppercase  text-center">
                             For real-time updates and official memorandums,
                             please follow our page:
                           </p>
@@ -307,7 +307,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -324,7 +324,7 @@ export default function Apply() {
                         S.Y. {activeSchoolYearLabel || "Admissions"} Portal is
                         Currently Closed
                       </h3>
-                      <p className="text-sm sm:text-base text-black leading-relaxed">
+                      <p className="text-base sm:text-base text-black leading-relaxed">
                         The online portal for{" "}
                         {activeSchoolYearLabel || "Admissions"} is not currently
                         accepting applications. Registration periods are
@@ -332,7 +332,7 @@ export default function Apply() {
                       </p>
                       {facebookPageUrl ? (
                         <div className="pt-6 border-t border-border/50 space-y-4">
-                          <p className="text-xs font-bold text-slate-500 uppercase  text-center leading-relaxed">
+                          <p className="text-base font-bold text-slate-500 uppercase  text-center leading-relaxed">
                             Please stay tuned to our official school social
                             media pages for announcements regarding the next
                             registration schedule.
@@ -341,7 +341,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -351,7 +351,7 @@ export default function Apply() {
                           </a>
                         </div>
                       ) : (
-                        <p className="text-sm text-black font-bold pt-4 border-t border-border/50">
+                        <p className="text-base leading-tight text-black font-bold pt-4 border-t border-border/50">
                           Please stay tuned to our official school social media
                           pages or visit the school campus for announcements
                           regarding the next registration schedule.

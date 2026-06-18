@@ -172,11 +172,11 @@ export default function SystemHealth() {
           <h1 className="text-3xl font-bold">
             System Health
           </h1>
-          <p className="text-sm font-bold text-foreground">
+          <p className="text-base leading-tight font-bold text-foreground">
             Monitor runtime status, resource usage, and key operational counts.
           </p>
           {lastUpdated && (
-            <p className="text-xs text-foreground">
+            <p className="text-base text-foreground">
               Last updated: {lastUpdated.toLocaleString("en-US")}
             </p>
           )}
@@ -195,7 +195,7 @@ export default function SystemHealth() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase ">
+            <CardDescription className="text-base font-bold uppercase ">
               Database
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -207,7 +207,7 @@ export default function SystemHealth() {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-2 text-base leading-tight">
             {showSkeleton ? (
               <Skeleton className="h-4 w-40" />
             ) : (
@@ -227,7 +227,7 @@ export default function SystemHealth() {
 
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase ">
+            <CardDescription className="text-base font-bold uppercase ">
               Users
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -239,7 +239,7 @@ export default function SystemHealth() {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-2 text-base leading-tight">
             {showSkeleton ? (
               <Skeleton className="h-4 w-36" />
             ) : (
@@ -256,7 +256,7 @@ export default function SystemHealth() {
 
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase ">
+            <CardDescription className="text-base font-bold uppercase ">
               Server
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -268,7 +268,7 @@ export default function SystemHealth() {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-2 text-base leading-tight">
             {showSkeleton ? (
               <Skeleton className="h-4 w-44" />
             ) : (
@@ -333,7 +333,7 @@ export default function SystemHealth() {
                 ))}
               </div>
             ) : health ? (
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-base leading-tight">
                 <div className="flex items-center justify-between">
                   <span className="text-foreground flex items-center gap-1">
                     <Clock3 className="h-4 w-4" /> Uptime
@@ -391,7 +391,7 @@ export default function SystemHealth() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-foreground">
+              <p className="text-base leading-tight text-foreground">
                 No health data available.
               </p>
             )}

@@ -272,7 +272,7 @@ export default function StudentProfile() {
             {student.status === "TEMPORARILY_ENROLLED" && (
               <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 animate-in fade-in slide-in-from-left-2 duration-500">
                 <ShieldCheck className="h-3 w-3 text-amber-600" />
-                <p className="text-xs font-black uppercase  text-amber-700">
+                <p className="text-base font-black uppercase  text-amber-700">
                   Deficiency:{" "}
                   {student.isMissingSf9 && "Missing SF9 (Report Card)"}
                   {student.isMissingSf9 &&
@@ -284,7 +284,7 @@ export default function StudentProfile() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 mt-1 text-foreground text-sm font-bold">
+            <div className="flex items-center gap-4 mt-1 text-foreground text-base leading-tight font-bold">
               <span className="flex items-center gap-1">
                 <Fingerprint className="h-3.5 w-3.5" />{" "}
                 {student.lrn || "NO LRN"}
@@ -300,7 +300,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="hidden md:block text-right">
-          <p className="text-xs text-foreground uppercase font-bold ">
+          <p className="text-base text-foreground uppercase font-bold ">
             Tracking Number
           </p>
           <p className="text-lg  font-bold">{student.trackingNumber}</p>
@@ -461,7 +461,7 @@ export default function StudentProfile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-base leading-tight">
                     <div className="space-y-1">
                       <Label className="text-foreground">Birth Date</Label>
                       <p className="font-bold flex items-center gap-2">
@@ -493,7 +493,7 @@ export default function StudentProfile() {
 
                   <Separator />
 
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-3 text-base leading-tight">
                     <div className="space-y-1">
                       <Label className="text-foreground flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5" /> Current Address
@@ -540,10 +540,10 @@ export default function StudentProfile() {
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase  text-foreground font-bold">
+                      <Label className="text-base uppercase  text-foreground font-bold">
                         Mother's Maiden Name
                       </Label>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2 text-base leading-tight">
                         {student.motherName?.firstName ||
                         student.motherName?.lastName ? (
                           <p className="font-bold">
@@ -568,10 +568,10 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase  text-foreground font-bold">
+                      <Label className="text-base uppercase  text-foreground font-bold">
                         Father's Name
                       </Label>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2 text-base leading-tight">
                         {student.fatherName?.firstName ||
                         student.fatherName?.lastName ? (
                           <p className="font-bold">
@@ -596,10 +596,10 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase  text-foreground font-bold">
+                      <Label className="text-base uppercase  text-foreground font-bold">
                         Guardian's Name & Relationship
                       </Label>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2 text-base leading-tight">
                         {student.guardianInfo?.firstName ||
                         student.guardianInfo?.lastName ? (
                           <p className="font-bold">
@@ -628,7 +628,7 @@ export default function StudentProfile() {
 
                   <Separator />
 
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-base leading-tight">
                     <Label className="text-foreground flex items-center gap-2">
                       <Mail className="h-3.5 w-3.5" /> Learner Email Address
                     </Label>
@@ -654,8 +654,8 @@ export default function StudentProfile() {
                   <CardContent>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-bold">Reset Portal PIN</p>
-                        <p className="text-xs text-foreground mt-1">
+                        <p className="text-base leading-tight font-bold">Reset Portal PIN</p>
+                        <p className="text-base text-foreground mt-1">
                           Generate a new 6-digit PIN for the learner portal. The
                           current PIN will be invalidated.
                         </p>
@@ -687,7 +687,7 @@ export default function StudentProfile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-base leading-tight">
                     <div className="space-y-4">
                       <div className="space-y-1">
                         <Label className="text-foreground">
@@ -781,7 +781,7 @@ export default function StudentProfile() {
                           <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">
                             Deficiency Resolution
                           </CardTitle>
-                          <p className="text-xs font-bold text-amber-700/70 mt-1 uppercase ">
+                          <p className="text-base font-bold text-amber-700/70 mt-1 uppercase ">
                             DepEd Order 017, s. 2025 Compliance
                           </p>
                         </div>
@@ -789,7 +789,7 @@ export default function StudentProfile() {
                     </CardHeader>
                     <CardContent className="pt-6 space-y-4">
                       <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
-                        <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
+                        <p className="text-base font-bold text-slate-600 leading-relaxed italic">
                           "Learners lacking transfer credentials or with private
                           school debt must be admitted temporarily but
                           restricted from official clearance generation."
@@ -890,7 +890,7 @@ export default function StudentProfile() {
                     Application Metadata
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 text-sm font-bold">
+                <CardContent className="space-y-4 text-base leading-tight font-bold">
                   <div className="flex justify-between items-center">
                     <span className="text-foreground flex items-center gap-2">
                       <Fingerprint className="h-3.5 w-3.5" /> Tracking No:
@@ -953,7 +953,7 @@ export default function StudentProfile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-base leading-tight">
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <Label className="text-foreground block mb-2">
@@ -1107,7 +1107,7 @@ export default function StudentProfile() {
                             </h3>
                             <p
                               className={cn(
-                                "text-xs font-bold mt-1 uppercase ",
+                                "text-base font-bold mt-1 uppercase ",
                                 student.hasPsaBirthCertificate ||
                                   student.birthCertificateType === "PSA"
                                   ? "text-emerald-600"
@@ -1131,7 +1131,7 @@ export default function StudentProfile() {
                           )}>
                           <p
                             className={cn(
-                              "text-xs font-black uppercase ",
+                              "text-base font-black uppercase ",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground/60"
@@ -1141,7 +1141,7 @@ export default function StudentProfile() {
                           </p>
                           <p
                             className={cn(
-                              "text-xs font-bold",
+                              "text-base font-bold",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground"
@@ -1157,7 +1157,7 @@ export default function StudentProfile() {
                           </p>
                           <p
                             className={cn(
-                              "text-xs font-bold",
+                              "text-base font-bold",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground"
@@ -1171,7 +1171,7 @@ export default function StudentProfile() {
                           </p>
                           <p
                             className={cn(
-                              "text-xs font-bold",
+                              "text-base font-bold",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground"
@@ -1193,19 +1193,19 @@ export default function StudentProfile() {
                         student.birthCertificateType === "PSA" ? (
                           <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border border-primary/20 mt-2">
                             <Lock className="h-4 w-4 text-primary" />
-                            <p className="text-xs font-black uppercase  text-primary">
+                            <p className="text-base font-black uppercase  text-primary">
                               Vault Locked - DepEd "Once Only" Rule Satisfied
                             </p>
                           </div>
                         ) : (
                           <div className="bg-white/50 p-3 rounded-lg border border-amber-200">
-                            <p className="text-xs font-bold text-amber-900">
+                            <p className="text-base font-bold text-amber-900">
                               PSA Deadline:{" "}
                               <span className="text-rose-600 font-black underline">
                                 October 31, 2026
                               </span>
                             </p>
-                            <p className="text-xs font-bold text-amber-700 mt-1 leading-tight">
+                            <p className="text-base font-bold text-amber-700 mt-1 leading-tight">
                               Secondary proof accepted. PSA must be submitted by
                               the deadline to finalize the permanent record.
                             </p>
@@ -1222,7 +1222,7 @@ export default function StudentProfile() {
                           )}>
                           <p
                             className={cn(
-                              "text-xs font-bold leading-relaxed italic",
+                              "text-base font-bold leading-relaxed italic",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-emerald-800"
@@ -1241,7 +1241,7 @@ export default function StudentProfile() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-xs  h-8 mt-2"
+                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-base  h-8 mt-2"
                             onClick={() => setIsAuthModalOpen(true)}>
                             Update to PSA Original
                           </Button>
@@ -1257,14 +1257,14 @@ export default function StudentProfile() {
                             <h3 className="font-black text-rose-900 uppercase leading-none">
                               PSA Birth Certificate
                             </h3>
-                            <p className="text-xs font-bold mt-1 uppercase  text-rose-600">
+                            <p className="text-base font-bold mt-1 uppercase  text-rose-600">
                               Missing from Vault
                             </p>
                           </div>
                         </div>
 
                         <div className="bg-white/50 p-3 rounded-lg border border-rose-100">
-                          <p className="text-xs font-bold text-rose-900 leading-relaxed">
+                          <p className="text-base font-bold text-rose-900 leading-relaxed">
                             Requirement Deadline:{" "}
                             <span className="text-rose-600">
                               October 31, 2026
@@ -1290,12 +1290,12 @@ export default function StudentProfile() {
                           <h3 className="font-black text-slate-900 uppercase leading-none">
                             SF10 (Permanent Record)
                           </h3>
-                          <p className="text-xs font-bold text-slate-500 mt-1 uppercase ">
+                          <p className="text-base font-bold text-slate-500 mt-1 uppercase ">
                             Awaiting Graduation / Transfer
                           </p>
                         </div>
                       </div>
-                      <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
+                      <p className="text-base font-bold text-slate-500 leading-relaxed italic">
                         "Original SF10 is held by the school until formal
                         transfer out or completion of JHS."
                       </p>
@@ -1343,26 +1343,26 @@ export default function StudentProfile() {
                   </CardHeader>
                   <CardContent>
                     {recordHistoryLoading ? (
-                      <p className="text-sm text-foreground">
+                      <p className="text-base leading-tight text-foreground">
                         Loading learner transaction history...
                       </p>
                     ) : recordHistory.length === 0 ? (
-                      <p className="text-sm text-foreground">
+                      <p className="text-base leading-tight text-foreground">
                         No student transaction entries are recorded for this
                         learner yet.
                       </p>
                     ) : (
                       <div className="overflow-x-auto border rounded-lg">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-base leading-tight">
                           <thead className="bg-muted/40">
                             <tr>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-base  text-foreground">
                                 Date / Time
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-base  text-foreground">
                                 Action
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-base  text-foreground">
                                 Performed By
                               </th>
                             </tr>
@@ -1383,7 +1383,7 @@ export default function StudentProfile() {
                                       entry.actionType,
                                     )}
                                   </p>
-                                  <p className="text-xs text-foreground mt-1">
+                                  <p className="text-base text-foreground mt-1">
                                     {entry.description}
                                   </p>
                                 </td>
@@ -1392,7 +1392,7 @@ export default function StudentProfile() {
                                     {entry.performedBy}
                                   </p>
                                   {entry.performedByRole && (
-                                    <p className="text-xs text-foreground mt-1">
+                                    <p className="text-base text-foreground mt-1">
                                       {entry.performedByRole.replaceAll(
                                         "_",
                                         " ",

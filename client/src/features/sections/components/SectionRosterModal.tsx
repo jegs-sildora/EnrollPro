@@ -311,7 +311,7 @@ export default function SectionRosterModal({
                 {loading || !section ? (
                   <Skeleton className="h-3.5 w-64 mt-1.5" />
                 ) : (
-                  <p className="text-xs text--foreground mt-1 font-bold">
+                  <p className="text-base text--foreground mt-1 font-bold">
                     {section.gradeLevel}
                     {programTrack ? ` — ${programTrack}` : ""}
                     {section.advisingTeacher
@@ -322,7 +322,7 @@ export default function SectionRosterModal({
               </div>
 
               {!loading && section && (
-                <div className="flex items-center gap-1 text-xs text--foreground font-bold shrink-0">
+                <div className="flex items-center gap-1 text-base text--foreground font-bold shrink-0">
                   <Users className="size-3.5" />
                   <span>{totalLearners}/{section.maxCapacity}</span>
                 </div>
@@ -344,8 +344,8 @@ export default function SectionRosterModal({
               emptyStateContent={
                 <div className="flex flex-col items-center justify-center py-16 text--foreground">
                   <Users className="size-10 opacity-30 mb-3" />
-                  <p className="text-sm font-bold">No enrolled learners</p>
-                  <p className="text-xs mt-1">This section has no active enrollment records.</p>
+                  <p className="text-base leading-tight font-bold">No enrolled learners</p>
+                  <p className="text-base mt-1">This section has no active enrollment records.</p>
                 </div>
               }
               className="h-auto rounded-none border-0"
@@ -364,7 +364,7 @@ export default function SectionRosterModal({
                 variant="outline"
                 size="sm"
                 onClick={() => onOpenChange(false)}
-                className="text-xs font-bold">
+                className="text-base font-bold">
                 Close
               </Button>
               {!isHistoricalReadOnly && (
@@ -372,7 +372,7 @@ export default function SectionRosterModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEnrollOpen(true)}
-                  className="text-xs font-bold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800">
+                  className="text-base font-bold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800">
                   + Enrol Learner
                 </Button>
               )}
@@ -380,7 +380,7 @@ export default function SectionRosterModal({
                 size="sm"
                 disabled={loading || totalLearners === 0 || generatingSf1}
                 onClick={() => void handleGenerateSf1()}
-                className="text-xs font-bold gap-1.5">
+                className="text-base font-bold gap-1.5">
                 {generatingSf1 ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (

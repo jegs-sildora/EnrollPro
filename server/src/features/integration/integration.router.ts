@@ -13,18 +13,11 @@ import {
   listDefaultSmartStudents,
   listIntegrationStaff,
 } from "./integration.default.controller.js";
-import {
-  listSampleStaff,
-  listSampleStudents,
-  listSampleTeachers,
-} from "./integration.sample.controller.js";
+
 
 const router: Router = Router();
 
 // Integration feeds are public for teammate testing and ingestion.
-router.get("/sample/teachers", listSampleTeachers);
-router.get("/sample/staff", listSampleStaff);
-router.get("/sample/students", listSampleStudents);
 
 router.get("/health", integrationHealth);
 router.get("/school-year", getActiveSchoolYear);

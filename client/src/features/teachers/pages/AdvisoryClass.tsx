@@ -56,7 +56,7 @@ export default function AdvisoryClass() {
             <h2 className="text-lg font-medium">
               Grade {section.gradeLevel.displayOrder} - {section.name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base leading-tight text-muted-foreground">
               {records?.length || 0} Learners Enrolled
             </p>
           </div>
@@ -120,22 +120,22 @@ export default function AdvisoryClass() {
                   <h3 className="text-lg font-black uppercase text-foreground leading-tight">
                     {selectedLearner.lastName}, {selectedLearner.firstName} {selectedLearner.middleName}
                   </h3>
-                  <p className="text-sm font-bold text-muted-foreground mt-1">
+                  <p className="text-base leading-tight font-bold text-muted-foreground mt-1">
                     LRN: {selectedLearner.lrn || "Not Assigned"}
                   </p>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h4 className="font-black text-sm uppercase text-primary/80 tracking-wider">Contact & Address</h4>
+                <h4 className="font-black text-base leading-tight uppercase text-primary/80 tracking-wide">Contact & Address</h4>
                 <div className="bg-card border border-border rounded-xl p-4 space-y-4 shadow-sm">
-                  <div className="flex items-start gap-3 text-sm">
+                  <div className="flex items-start gap-3 text-base leading-tight">
                     <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <span className="font-medium text-foreground leading-relaxed">
                       {selectedLearner.streetAddress || "No street address"}, {selectedLearner.barangay}, {selectedLearner.cityMunicipality}, {selectedLearner.province}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-base leading-tight">
                     <Phone className="h-4 w-4 text-primary shrink-0" />
                     <span className="font-bold text-foreground">
                       {selectedLearner.contactNumber || "No contact number"}
@@ -145,19 +145,19 @@ export default function AdvisoryClass() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-black text-sm uppercase text-primary/80 tracking-wider">Guardian Info</h4>
+                <h4 className="font-black text-base leading-tight uppercase text-primary/80 tracking-wide">Guardian Info</h4>
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm">
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">Name</p>
+                    <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Name</p>
                     <p className="font-bold text-foreground">{selectedLearner.guardianName || "No guardian listed"}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">Contact</p>
+                    <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Contact</p>
                     <p className="font-bold text-foreground">{selectedLearner.guardianContact || "No contact provided"}</p>
                   </div>
                   {selectedLearner.guardianRelationship && (
                     <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">Relationship</p>
+                      <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Relationship</p>
                       <p className="font-bold text-foreground capitalize">{selectedLearner.guardianRelationship}</p>
                     </div>
                   )}

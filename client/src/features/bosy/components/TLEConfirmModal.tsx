@@ -56,11 +56,11 @@ export function TLEConfirmModal({
       onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-black uppercase text-sm">
+          <DialogTitle className="font-black uppercase text-base leading-tight">
             Confirm Return — TLE Selection Required
           </DialogTitle>
           {item && (
-            <DialogDescription className="text-sm">
+            <DialogDescription className="text-base leading-tight">
               <span className="font-bold">
                 {item.lastName}, {item.firstName}
               </span>{" "}
@@ -71,13 +71,13 @@ export function TLEConfirmModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-2 py-2">
-          <p className="text-xs font-bold uppercase text-foreground">
+          <p className="text-base font-bold uppercase text-foreground">
             TLE Specialization
           </p>
           <Select
             value={selectedTleProgramId}
             onValueChange={setSelectedTleProgramId}>
-            <SelectTrigger className="text-sm">
+            <SelectTrigger className="text-base leading-tight">
               <SelectValue placeholder="Select a TLE program..." />
             </SelectTrigger>
             <SelectContent>

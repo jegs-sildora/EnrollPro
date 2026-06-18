@@ -22,7 +22,7 @@ export function StatusBadge({
           : undefined
       }
       className={cn(
-        "h-auto py-0.5 px-2.5 whitespace-nowrap text-center leading-tight justify-center border-none",
+        "h-auto py-1 px-2.5.5 whitespace-nowrap text-center leading-tight justify-center border-none",
         colorClasses,
         isTemp ? "cursor-help" : "",
         extraClassName,

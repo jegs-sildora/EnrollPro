@@ -125,7 +125,7 @@ export function ApplicationDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-xs text-foreground mt-1">
+              className="text-[11px] sm:text-base text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -174,7 +174,7 @@ export function ApplicationDetailPanel({
           <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
             Application Detail
           </SheetTitle>
-          <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <SheetDescription className="text-[11px] sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>#{applicant.trackingNumber}</span>
             <span className="hidden sm:inline">|</span>
             <span>
@@ -216,21 +216,21 @@ export function ApplicationDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-xs sm:text-[0.625rem] uppercase ">
+              <p className="text-base sm:text-[0.625rem] uppercase ">
                 Grade Level (Applicant Type)
               </p>
-              <p className="text-xs sm:text-sm">
+              <p className="text-base sm:text-base leading-tight">
                 {applicant.gradeLevel.name} <br />(
                 {formatScpType(applicant.applicantType)})
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-xs sm:text-[0.625rem] uppercase ">
+              <p className="text-base sm:text-[0.625rem] uppercase ">
                 Learner Reference Number
               </p>
-              <p className="text-xs sm:text-sm ">{applicant.lrn || "N/A"}</p>
+              <p className="text-base sm:text-base leading-tight ">{applicant.lrn || "N/A"}</p>
               {applicant.isPendingLrnCreation && (
-                <p className="text-xs sm:text-xs font-bold text-amber-700">
+                <p className="text-base sm:text-base font-bold text-amber-700">
                   Pending LRN Creation
                 </p>
               )}
@@ -253,7 +253,7 @@ export function ApplicationDetailPanel({
         {showRawJson && (
           <div className="rounded-md border bg-muted/20">
             <details className="group">
-              <summary className="cursor-pointer list-none p-3 text-xs sm:text-sm font-bold uppercase ">
+              <summary className="cursor-pointer list-none p-3 text-base sm:text-base leading-tight font-bold uppercase ">
                 <span className="group-open:hidden">
                   Show Raw Application JSON
                 </span>

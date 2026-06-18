@@ -391,7 +391,7 @@ export function StudentDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-xs text-foreground mt-1">
+              className="text-[11px] sm:text-base text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -498,7 +498,7 @@ export function StudentDetailPanel({
             <User className="h-5 w-5" />
             Enrolled Learner Details
           </SheetTitle>
-          <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <SheetDescription className="text-[11px] sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span className="flex items-center gap-1">
               <Fingerprint className="h-3 w-3" />#{student.trackingNumber}
             </span>
@@ -543,7 +543,7 @@ export function StudentDetailPanel({
                 <div className="mt-3">
                   <Button
                     variant="outline"
-                    className="font-bold text-xs h-8 uppercase border shadow-sm w-full max-w-[200px]"
+                    className="font-bold text-base h-8 uppercase border shadow-sm w-full max-w-[200px]"
                     onClick={handleEditClick}>
                     <UserRoundPen className="mr-2 h-3.5 w-3.5 shrink-0" />
                     Edit Learner Data
@@ -555,20 +555,20 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-xs sm:text-[0.625rem] uppercase  text-foreground">
+              <p className="text-base sm:text-[0.625rem] uppercase  text-foreground">
                 Grade Level & Section
               </p>
-              <p className="text-xs sm:text-sm">
+              <p className="text-base sm:text-base leading-tight">
                 {student.gradeLevel}
                 {student.enrollment?.section &&
                   ` • ${student.enrollment.section}`}
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-xs sm:text-[0.625rem] uppercase  text-foreground">
+              <p className="text-base sm:text-[0.625rem] uppercase  text-foreground">
                 Learner Reference Number
               </p>
-              <p className="text-xs sm:text-sm tabular-nums">
+              <p className="text-base sm:text-base leading-tight tabular-nums">
                 {student.lrn || "N/A"}
               </p>
             </div>
@@ -577,11 +577,11 @@ export function StudentDetailPanel({
 
         {/* Enrollment Information Section */}
         <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-          <div className="p-3 font-bold text-sm bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+          <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-primary" />
             Enrollment Information
           </div>
-          <div className="p-4 text-sm grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
+          <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
             <span className="text-foreground">School Year:</span>
             <span>{student.schoolYear}</span>
             <span className="text-foreground">Enrolled At:</span>
@@ -608,16 +608,16 @@ export function StudentDetailPanel({
         {/* Lifecycle Outcome (if any) */}
         {student.enrollment?.eosyStatus && (
           <div className="border rounded-md mb-4 border-dashed bg-muted/30 overflow-hidden">
-            <div className="p-3 font-bold text-sm bg-muted/50 border-b flex items-center gap-2 text-primary">
+            <div className="p-3 font-bold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
               <BadgeAlert className="h-4 w-4" />
               Lifecycle Outcome
             </div>
-            <div className="p-4 text-sm space-y-2">
+            <div className="p-4 text-base leading-tight space-y-2">
               <p className="font-black text-primary uppercase">
                 {formatEosyStatus(student.enrollment.eosyStatus)}
               </p>
               {student.enrollment.transferOutDate && (
-                <p className="text-xs">
+                <p className="text-base">
                   <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
@@ -625,7 +625,7 @@ export function StudentDetailPanel({
                 </p>
               )}
               {student.enrollment.transferOutSchoolName && (
-                <p className="text-xs">
+                <p className="text-base">
                   <span className="text-foreground mr-2 font-bold uppercase">
                     To:
                   </span>
@@ -633,7 +633,7 @@ export function StudentDetailPanel({
                 </p>
               )}
               {student.enrollment.transferOutReason && (
-                <p className="text-xs">
+                <p className="text-base">
                   <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
@@ -641,7 +641,7 @@ export function StudentDetailPanel({
                 </p>
               )}
               {student.enrollment.dropOutDate && (
-                <p className="text-xs">
+                <p className="text-base">
                   <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
@@ -649,7 +649,7 @@ export function StudentDetailPanel({
                 </p>
               )}
               {student.enrollment.dropOutReason && (
-                <p className="text-xs">
+                <p className="text-base">
                   <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
@@ -670,37 +670,37 @@ export function StudentDetailPanel({
 
             {/* Section 1: Personal Information */}
             <div className="space-y-4">
-              <p className="text-xs uppercase font-black text-foreground border-b pb-1">
+              <p className="text-base uppercase font-black text-foreground border-b pb-1">
                 Personal Information
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-bold text-xs uppercase flex gap-1">First Name <span className="text-destructive">*</span></Label>
-                  <Input id="firstName" value={profileForm.firstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, firstName: e.target.value }))} className={`font-bold text-sm bg-background uppercase ${errors.firstName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.firstName && <p className="text-xs text-destructive font-bold">{errors.firstName}</p>}
+                  <Label htmlFor="firstName" className="font-bold text-base uppercase flex gap-1">First Name <span className="text-destructive">*</span></Label>
+                  <Input id="firstName" value={profileForm.firstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, firstName: e.target.value }))} className={`font-bold text-base leading-tight bg-background uppercase ${errors.firstName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
+                  {errors.firstName && <p className="text-base text-destructive font-bold">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-bold text-xs uppercase flex gap-1">Last Name <span className="text-destructive">*</span></Label>
-                  <Input id="lastName" value={profileForm.lastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, lastName: e.target.value }))} className={`font-bold text-sm bg-background uppercase ${errors.lastName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.lastName && <p className="text-xs text-destructive font-bold">{errors.lastName}</p>}
+                  <Label htmlFor="lastName" className="font-bold text-base uppercase flex gap-1">Last Name <span className="text-destructive">*</span></Label>
+                  <Input id="lastName" value={profileForm.lastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, lastName: e.target.value }))} className={`font-bold text-base leading-tight bg-background uppercase ${errors.lastName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
+                  {errors.lastName && <p className="text-base text-destructive font-bold">{errors.lastName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="middleName" className="font-bold text-xs uppercase">Middle Name</Label>
-                  <Input id="middleName" value={profileForm.middleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, middleName: e.target.value }))} className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="middleName" className="font-bold text-base uppercase">Middle Name</Label>
+                  <Input id="middleName" value={profileForm.middleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, middleName: e.target.value }))} className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="suffix" className="font-bold text-xs uppercase">Extension (e.g. Jr, III)</Label>
-                  <Input id="suffix" value={profileForm.suffix} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, suffix: e.target.value }))} className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="suffix" className="font-bold text-base uppercase">Extension (e.g. Jr, III)</Label>
+                  <Input id="suffix" value={profileForm.suffix} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, suffix: e.target.value }))} className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="birthDate" className="font-bold text-xs uppercase flex gap-1">Date of Birth <span className="text-destructive">*</span></Label>
-                  <HybridDatePicker value={profileForm.birthDate} onChange={(val) => setProfileForm(p => ({ ...p, birthDate: val }))} className={`font-bold text-sm bg-background ${errors.birthDate ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.birthDate && <p className="text-xs text-destructive font-bold">{errors.birthDate}</p>}
+                  <Label htmlFor="birthDate" className="font-bold text-base uppercase flex gap-1">Date of Birth <span className="text-destructive">*</span></Label>
+                  <HybridDatePicker value={profileForm.birthDate} onChange={(val) => setProfileForm(p => ({ ...p, birthDate: val }))} className={`font-bold text-base leading-tight bg-background ${errors.birthDate ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
+                  {errors.birthDate && <p className="text-base text-destructive font-bold">{errors.birthDate}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sex" className="font-bold text-xs uppercase flex gap-1">Sex <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="sex" className="font-bold text-base uppercase flex gap-1">Sex <span className="text-destructive">*</span></Label>
                   <Select value={profileForm.sex} onValueChange={(val) => setProfileForm(p => ({ ...p, sex: val }))}>
-                    <SelectTrigger className={`bg-background font-bold text-sm ${errors.sex ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
+                    <SelectTrigger className={`bg-background font-bold text-base leading-tight ${errors.sex ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
                       <SelectValue placeholder="Select Sex" />
                     </SelectTrigger>
                     <SelectContent>
@@ -708,56 +708,56 @@ export function StudentDetailPanel({
                       <SelectItem value="FEMALE">FEMALE</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.sex && <p className="text-xs text-destructive font-bold">{errors.sex}</p>}
+                  {errors.sex && <p className="text-base text-destructive font-bold">{errors.sex}</p>}
                 </div>
               </div>
             </div>
 
             {/* Section 2: Parents & Guardian (SF1) */}
             <div className="space-y-4">
-              <p className="text-xs uppercase font-black text-foreground border-b pb-1">
+              <p className="text-base uppercase font-black text-foreground border-b pb-1">
                 Parents & Guardian
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="motherName" className="font-bold text-xs uppercase">Mother's Maiden Name</Label>
-                  <Input id="motherName" value={profileForm.motherName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="motherName" className="font-bold text-base uppercase">Mother's Maiden Name</Label>
+                  <Input id="motherName" value={profileForm.motherName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fatherName" className="font-bold text-xs uppercase">Father's Name</Label>
-                  <Input id="fatherName" value={profileForm.fatherName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, fatherName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="fatherName" className="font-bold text-base uppercase">Father's Name</Label>
+                  <Input id="fatherName" value={profileForm.fatherName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, fatherName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="guardianName" className="font-bold text-xs uppercase">Guardian's Name</Label>
-                  <Input id="guardianName" value={profileForm.guardianName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, guardianName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="guardianName" className="font-bold text-base uppercase">Guardian's Name</Label>
+                  <Input id="guardianName" value={profileForm.guardianName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, guardianName: e.target.value }))} placeholder="FIRST LAST" className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
               </div>
             </div>
 
             {/* Section 3: Contact & Address */}
             <div className="space-y-4">
-              <p className="text-xs uppercase font-black text-foreground border-b pb-1">
+              <p className="text-base uppercase font-black text-foreground border-b pb-1">
                 Contact & Address
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="profileContact" className="font-bold text-xs uppercase flex gap-1">Primary Contact No. <span className="text-destructive">*</span></Label>
-                  <Input id="profileContact" maxLength={11} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ""); }} value={profileForm.contactNumber} onChange={(e) => setProfileForm(p => ({ ...p, contactNumber: e.target.value }))} placeholder="09XXXXXXXXX" className={`font-bold text-sm bg-background ${errors.contactNumber ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.contactNumber && <p className="text-xs text-destructive font-bold">{errors.contactNumber}</p>}
+                  <Label htmlFor="profileContact" className="font-bold text-base uppercase flex gap-1">Primary Contact No. <span className="text-destructive">*</span></Label>
+                  <Input id="profileContact" maxLength={11} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ""); }} value={profileForm.contactNumber} onChange={(e) => setProfileForm(p => ({ ...p, contactNumber: e.target.value }))} placeholder="09XXXXXXXXX" className={`font-bold text-base leading-tight bg-background ${errors.contactNumber ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
+                  {errors.contactNumber && <p className="text-base text-destructive font-bold">{errors.contactNumber}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="profileEmail" className="font-bold text-xs uppercase">Learner Email</Label>
-                  <Input id="profileEmail" type="email" value={profileForm.emailAddress} onChange={(e) => setProfileForm(p => ({ ...p, emailAddress: e.target.value }))} placeholder="learner@email.com" className="font-bold text-sm bg-background" />
+                  <Label htmlFor="profileEmail" className="font-bold text-base uppercase">Learner Email</Label>
+                  <Input id="profileEmail" type="email" value={profileForm.emailAddress} onChange={(e) => setProfileForm(p => ({ ...p, emailAddress: e.target.value }))} placeholder="learner@email.com" className="font-bold text-base leading-tight bg-background" />
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="houseNoStreet" className="font-bold text-xs uppercase">House No. / Street</Label>
-                  <Input id="houseNoStreet" value={profileForm.houseNoStreet} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, houseNoStreet: e.target.value }))} placeholder="e.g. 123 OR RIZAL STREET" className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="houseNoStreet" className="font-bold text-base uppercase">House No. / Street</Label>
+                  <Input id="houseNoStreet" value={profileForm.houseNoStreet} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, houseNoStreet: e.target.value }))} placeholder="e.g. 123 OR RIZAL STREET" className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sitioPurok" className="font-bold text-xs uppercase">Sitio / Purok</Label>
-                  <Input id="sitioPurok" value={profileForm.sitioPurok} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, sitioPurok: e.target.value }))} placeholder="e.g. PUROK 1" className="font-bold text-sm bg-background uppercase" />
+                  <Label htmlFor="sitioPurok" className="font-bold text-base uppercase">Sitio / Purok</Label>
+                  <Input id="sitioPurok" value={profileForm.sitioPurok} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, sitioPurok: e.target.value }))} placeholder="e.g. PUROK 1" className="font-bold text-base leading-tight bg-background uppercase" />
                 </div>
               </div>
               <PhilippineAddressSelector
@@ -790,35 +790,35 @@ export function StudentDetailPanel({
 
             {/* Section 4: Special Demographics */}
             <div className="space-y-4">
-              <p className="text-xs uppercase font-black text-foreground border-b pb-1">
+              <p className="text-base uppercase font-black text-foreground border-b pb-1">
                 Special Demographics & Interventions
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase">IP Community</Label>
+                  <Label className="font-bold text-base uppercase">IP Community</Label>
                   <Select value={profileForm.isIpCommunity} onValueChange={(val) => setProfileForm(p => ({ ...p, isIpCommunity: val }))}>
-                    <SelectTrigger className="bg-background font-bold text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase">4Ps Beneficiary</Label>
+                  <Label className="font-bold text-base uppercase">4Ps Beneficiary</Label>
                   <Select value={profileForm.is4PsBeneficiary} onValueChange={(val) => setProfileForm(p => ({ ...p, is4PsBeneficiary: val }))}>
-                    <SelectTrigger className="bg-background font-bold text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase">Balik-Aral</Label>
+                  <Label className="font-bold text-base uppercase">Balik-Aral</Label>
                   <Select value={profileForm.isBalikAral} onValueChange={(val) => setProfileForm(p => ({ ...p, isBalikAral: val }))}>
-                    <SelectTrigger className="bg-background font-bold text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase">Disability Type</Label>
+                  <Label className="font-bold text-base uppercase">Disability Type</Label>
                   <Select value={profileForm.disabilityType} onValueChange={(val) => setProfileForm(p => ({ ...p, disabilityType: val }))}>
-                    <SelectTrigger className="bg-background font-bold text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NONE">None</SelectItem>
                       <SelectItem value="Visual Impairment">Visual Impairment</SelectItem>
@@ -846,7 +846,7 @@ export function StudentDetailPanel({
             <PreviousSchool applicant={typedStudentShim} />
             <Classifications applicant={typedStudentShim} />
             
-            <div className="pt-4 border-t text-xs uppercase text-foreground flex flex-col gap-1">
+            <div className="pt-4 border-t text-base uppercase text-foreground flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
                 Record Created: {formatDate(student.createdAt)}
@@ -868,7 +868,7 @@ export function StudentDetailPanel({
             type="button"
             onClick={() => setIsEditing(false)}
             disabled={isSubmitting}
-            className="font-bold uppercase text-xs border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
+            className="font-bold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
           >
             Cancel
           </Button>
@@ -876,7 +876,7 @@ export function StudentDetailPanel({
             type="submit"
             form="learner-edit-form"
             disabled={isSubmitting || !isProfileFormDirty}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase text-xs px-6 cursor-pointer"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase text-base px-6 cursor-pointer"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -891,14 +891,14 @@ export function StudentDetailPanel({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              className="flex-1 font-bold text-xs sm:text-xs h-9 uppercase bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm"
+              className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm"
               onClick={() => onTransferOut(student)}>
               <FileBadge2 className="h-4 w-4 mr-2" />
               Transferred Out
             </Button>
             <Button
               variant="outline"
-              className="flex-1 font-bold text-xs sm:text-xs h-9 uppercase bg-rose-50 text-rose-700 hover:text-rose-800 hover:bg-rose-100 border-rose-200 shadow-sm"
+              className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-rose-50 text-rose-700 hover:text-rose-800 hover:bg-rose-100 border-rose-200 shadow-sm"
               onClick={() => onDropout(student)}>
               <BadgeAlert className="h-4 w-4 mr-2" />
               Dropped Out

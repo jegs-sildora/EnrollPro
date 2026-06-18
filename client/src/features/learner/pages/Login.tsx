@@ -319,7 +319,7 @@ export default function LearnerLogin() {
                   <div className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-destructive" />
                   </div>
-                  <span className="text-sm font-bold text-destructive">{error}</span>
+                  <span className="text-base leading-tight font-bold text-destructive">{error}</span>
                 </div>
               )}
 
@@ -337,7 +337,7 @@ export default function LearnerLogin() {
                   >
                     <Sparkles className="w-4 h-4 text-primary" />
                   </div>
-                  <p className="text-sm font-bold text-primary">{success}</p>
+                  <p className="text-base leading-tight font-bold text-primary">{success}</p>
                 </div>
               )}
 
@@ -345,7 +345,7 @@ export default function LearnerLogin() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="lrn"
-                    className="text-foreground font-bold text-sm pl-1"
+                    className="text-foreground font-bold text-base leading-tight pl-1"
                   >
                     Learner Reference Number (LRN)
                   </Label>
@@ -373,7 +373,7 @@ export default function LearnerLogin() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="password"
-                    className="text-foreground font-bold text-sm pl-1"
+                    className="text-foreground font-bold text-base leading-tight pl-1"
                   >
                     Password
                   </Label>
@@ -408,7 +408,7 @@ export default function LearnerLogin() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-base leading-tight">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <Checkbox
                       id="rememberMe"
@@ -418,7 +418,7 @@ export default function LearnerLogin() {
                       }
                       className="rounded-sm data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors font-bold text-sm">
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors font-bold text-base leading-tight">
                       Remember me
                     </span>
                   </label>
@@ -427,7 +427,7 @@ export default function LearnerLogin() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+                  className="w-full h-11 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-3">
@@ -443,7 +443,7 @@ export default function LearnerLogin() {
                 </Button>
               </form>
 
-              <p className="text-center text-xs text-muted-foreground/70 mt-6 leading-relaxed">
+              <p className="text-center text-base text-muted-foreground/70 mt-6 leading-relaxed">
                 Forgot password? Contact your Class Adviser for a reset.
               </p>
             </CardContent>

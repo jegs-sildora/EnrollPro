@@ -90,7 +90,7 @@ export function OneTimePinSuccessDialog({
               <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-black uppercase ">
                 Official Enrollment Confirmed
               </DialogTitle>
-              <DialogDescription className="text-xs text-emerald-800/90 sm:text-sm font-bold">
+              <DialogDescription className="text-base text-emerald-800/90 sm:text-base leading-tight font-bold">
                 One-time learner portal PIN captured for{" "}
                 <span className="font-black text-emerald-900">
                   {learnerName}
@@ -107,7 +107,7 @@ export function OneTimePinSuccessDialog({
               <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Tracking No.
               </p>
-              <p className="text-sm font-black text-emerald-950">
+              <p className="text-base leading-tight font-black text-emerald-950">
                 {trackingNumber}
               </p>
             </div>
@@ -115,7 +115,7 @@ export function OneTimePinSuccessDialog({
               <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Grade Level
               </p>
-              <p className="text-sm font-black text-emerald-950">
+              <p className="text-base leading-tight font-black text-emerald-950">
                 {gradeLevelLabel}
               </p>
             </div>
@@ -123,7 +123,7 @@ export function OneTimePinSuccessDialog({
               <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Section
               </p>
-              <p className="text-sm font-black text-emerald-950">
+              <p className="text-base leading-tight font-black text-emerald-950">
                 {sectionName}
               </p>
             </div>
@@ -133,10 +133,10 @@ export function OneTimePinSuccessDialog({
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <div className="space-y-1">
-                <p className="text-xs text-amber-800 font-black uppercase ">
+                <p className="text-base text-amber-800 font-black uppercase ">
                   Volatile Data Warning
                 </p>
-                <p className="text-xs text-amber-900/90 font-bold leading-relaxed">
+                <p className="text-base text-amber-900/90 font-bold leading-relaxed">
                   This PIN is shown only once. After this dialog closes, it
                   cannot be retrieved from this screen.
                 </p>
@@ -155,7 +155,7 @@ export function OneTimePinSuccessDialog({
               type="button"
               variant="outline"
               className={cn(
-                "h-9 border-emerald-300 px-3 text-xs font-black",
+                "h-9 border-emerald-300 px-3 text-base font-black",
                 copied && "bg-emerald-100 text-emerald-900",
               )}
               onClick={handleCopyPin}>
@@ -165,7 +165,7 @@ export function OneTimePinSuccessDialog({
           </div>
 
           <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center gap-2 text-xs text-slate-700">
+            <div className="flex items-center gap-2 text-base text-slate-700">
               <Timer className="h-3.5 w-3.5" />
               <span className="font-bold">
                 Required review pause:{" "}
@@ -184,7 +184,7 @@ export function OneTimePinSuccessDialog({
               />
               <label
                 htmlFor="one-time-pin-acknowledgement"
-                className="cursor-pointer text-xs text-slate-800 sm:text-sm font-bold leading-relaxed">
+                className="cursor-pointer text-base text-slate-800 sm:text-base font-bold leading-relaxed">
                 I confirm the PIN has been written on the enrollment slip and/or
                 copied to the registrar secure handoff record.
               </label>
@@ -196,14 +196,14 @@ export function OneTimePinSuccessDialog({
           <Button
             type="button"
             variant="outline"
-            className="text-xs font-bold"
+            className="text-base font-bold"
             onClick={() => window.print()}>
             <Printer className="mr-2 h-3.5 w-3.5" />
             Print / Write on Slip First
           </Button>
           <Button
             type="button"
-            className="bg-emerald-600 text-xs hover:bg-emerald-700 font-black"
+            className="bg-emerald-600 text-base hover:bg-emerald-700 font-black"
             disabled={!canContinue}
             onClick={onAcknowledge}>
             {secondsLeft > 0

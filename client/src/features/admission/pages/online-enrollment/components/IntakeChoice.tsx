@@ -52,25 +52,25 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-600/70">
+                <div className="flex items-center gap-2 text-base font-black uppercase text-emerald-600/70">
                   <ClipboardList className="h-3 w-3" />
                   Instructions:
                 </div>
-                <p className="text-sm font-bold text-emerald-900 leading-relaxed">
+                <p className="text-base font-bold text-emerald-900 leading-relaxed">
                   Please fill out the digital form completely. Ensure all details match your official documents before submitting.
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase  text-foreground">
+                <div className="flex items-center gap-2 text-base font-black uppercase  text-foreground">
                   <FileCheck className="h-3 w-3" />
                   Please prepare the following:
                 </div>
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <li className="flex items-center gap-2 text-base leading-tight font-bold text-foreground">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                     PSA Birth Certificate
                   </li>
-                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <li className="flex items-center gap-2 text-base leading-tight font-bold text-foreground">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                     SF9 (Previous Report Card)
                   </li>
@@ -106,25 +106,25 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-600/70">
+                <div className="flex items-center gap-2 text-base font-black uppercase text-emerald-600/70">
                   <ClipboardList className="h-3 w-3" />
                   Instructions:
                 </div>
-                <p className="text-sm font-bold text-emerald-900 leading-relaxed">
+                <p className="text-base font-bold text-emerald-900 leading-relaxed">
                   Do not fill out online forms. Please submit your physical, signed Confirmation Slip directly to your designated Class Adviser during enrollment week.
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase  text-foreground">
+                <div className="flex items-center gap-2 text-base font-black uppercase  text-foreground">
                   <FileCheck className="h-3 w-3" />
                   Please prepare the following:
                 </div>
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <li className="flex items-center gap-2 text-base leading-tight font-bold text-foreground">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                     Signed Confirmation Slip
                   </li>
-                  <li className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <li className="flex items-center gap-2 text-base leading-tight font-bold text-foreground">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                     SF9 (Previous Report Card)
                   </li>

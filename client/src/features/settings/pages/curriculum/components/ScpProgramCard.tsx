@@ -53,7 +53,7 @@ export function ScpProgramCard({
               onUpdateScpField(scpIndex, "isOffered", checked)
             }
           />
-          <span className="text-sm font-bold">
+          <span className="text-base leading-tight font-bold">
             {SCP_TYPES.find((type) => type.value === scp.scpType)?.label ||
               scp.scpType}
           </span>

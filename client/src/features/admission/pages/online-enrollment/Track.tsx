@@ -353,7 +353,7 @@ export default function TrackApplication({
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-xs font-black uppercase  text-foreground">
+                className="text-base font-black uppercase  text-foreground">
                 Tracking Number
               </Label>
               <div className="relative">
@@ -372,7 +372,7 @@ export default function TrackApplication({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               </div>
               {errors.trackingNumber && (
-                <p className="text-xs text-primary font-bold">
+                <p className="text-base text-primary font-bold">
                   {errors.trackingNumber.message}
                 </p>
               )}
@@ -399,7 +399,7 @@ export default function TrackApplication({
                   <h4 className="font-black text-primary uppercase ">
                     Application Not Found
                   </h4>
-                  <p className="text-sm font-bold text-primary/80 mt-1">
+                  <p className="text-base leading-tight font-bold text-primary/80 mt-1">
                     {error}
                   </p>
                 </div>
@@ -420,14 +420,14 @@ export default function TrackApplication({
                       {Icon && <Icon className="w-10 h-10" />}
                     </div>
                     <div>
-                      <h3 className="text-xs font-black uppercase  opacity-70">
+                      <h3 className="text-base font-black uppercase  opacity-70">
                         Current Status
                       </h3>
                       <p className="text-3xl font-black uppercase  mt-1">
                         {config.label}
                       </p>
                     </div>
-                    <p className="text-sm font-bold leading-relaxed max-w-sm opacity-90">
+                    <p className="text-base font-bold leading-relaxed max-w-sm opacity-90">
                       {config.desc}
                     </p>
                   </div>
@@ -468,14 +468,14 @@ export default function TrackApplication({
                     <p className="text-[0.625rem] font-black uppercase text-foreground ">
                       Date Submitted
                     </p>
-                    <p className="text-xs font-bold text-foreground">
+                    <p className="text-base font-bold text-foreground">
                       {format(new Date(status.createdAt), "MMMM dd, yyyy")}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-6 bg-white border border-border rounded-2xl space-y-4">
-                  <h4 className="text-sm font-black uppercase  text-foreground">
+                  <h4 className="text-base leading-tight font-black uppercase  text-foreground">
                     Dynamic Next Steps
                   </h4>
                   <TrackingNextSteps

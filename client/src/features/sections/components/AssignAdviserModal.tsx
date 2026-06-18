@@ -253,7 +253,7 @@ export function AssignAdviserModal({
           <DialogTitle className="text-lg font-black uppercase">
             {step === 2 ? "Handover Audit — Confirm Transfer" : "Assign Class Adviser"}
           </DialogTitle>
-          <DialogDescription className="text-xs font-bold text-foreground">
+          <DialogDescription className="text-base font-bold text-foreground">
             {section ? `Target: ${section.gradeLevelName} — ${section.name}` : "Select a section"}
           </DialogDescription>
         </DialogHeader>
@@ -271,14 +271,14 @@ export function AssignAdviserModal({
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
                       Current Adviser
                     </p>
-                    <p className="text-sm font-black uppercase leading-tight truncate text-slate-800">
+                    <p className="text-base font-black uppercase leading-tight truncate text-slate-800">
                       {currentAdviserFull?.name ?? section.currentAdviser.name}
                     </p>
-                    <p className="text-xs font-bold text-slate-500">
+                    <p className="text-base font-bold text-slate-500">
                       Employee ID: {currentAdviserFull?.employeeId ?? "N/A"}
                     </p>
                     {currentAdviserFull?.specialization && (
-                      <p className="text-xs font-bold text-slate-400 truncate">
+                      <p className="text-base font-bold text-slate-400 truncate">
                         {currentAdviserFull.specialization}
                       </p>
                     )}
@@ -348,7 +348,7 @@ export function AssignAdviserModal({
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
                       <p className="text-lg font-bold text-slate-500">Searching...</p>
-                      <p className="text-sm font-bold text-slate-400">
+                      <p className="text-base leading-tight font-bold text-slate-400">
                         Scanning adviser directory...
                       </p>
                     </div>
@@ -357,11 +357,11 @@ export function AssignAdviserModal({
                   /* TASK 3 — Empty state */
                   <div className="h-36 flex flex-col items-center justify-center gap-2 text-center px-4">
                     <SearchX className="h-8 w-8 text-slate-300" />
-                    <p className="text-sm font-bold text-foreground">
+                    <p className="text-base leading-tight font-bold text-foreground">
                       No available personnel match this search criteria.
                     </p>
                     {!showAssigned && lockedCount > 0 && !normalizedSearch && (
-                      <p className="text-xs font-bold text-slate-400">
+                      <p className="text-base font-bold text-slate-400">
                         Toggle &quot;Show assigned&quot; to view locked personnel.
                       </p>
                     )}
@@ -390,13 +390,13 @@ export function AssignAdviserModal({
                             <span className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-full border-2 border-slate-300 bg-slate-100" />
                             <div className="flex-1 flex items-start justify-between gap-3 min-w-0">
                               <div className="space-y-0.5 min-w-0">
-                                <p className="text-sm font-black uppercase leading-none truncate">
+                                <p className="text-base font-black uppercase leading-none truncate">
                                   {teacher.name}
                                 </p>
-                                <p className="text-xs font-bold text-foreground">
+                                <p className="text-base font-bold text-foreground">
                                   Employee ID: {teacher.employeeId || "N/A"}
                                 </p>
-                                <p className="text-xs font-bold text-foreground/80 truncate">
+                                <p className="text-base font-bold text-foreground/80 truncate">
                                   {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                   {teacher.specialization || "No specialization"}
                                 </p>
@@ -443,16 +443,16 @@ export function AssignAdviserModal({
                             <div className="space-y-0.5 min-w-0">
                               <p
                                 className={cn(
-                                  "text-sm font-black uppercase leading-none truncate",
+                                  "text-base font-black uppercase leading-none truncate",
                                   isSelected ? "text-red-800" : "text-foreground",
                                 )}
                               >
                                 {teacher.name}
                               </p>
-                              <p className="text-xs font-bold text-foreground">
+                              <p className="text-base font-bold text-foreground">
                                 Employee ID: {teacher.employeeId || "N/A"}
                               </p>
-                              <p className="text-xs font-bold text-foreground/80 truncate">
+                              <p className="text-base font-bold text-foreground/80 truncate">
                                 {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                 {teacher.specialization || "No specialization"}
                               </p>
@@ -485,7 +485,7 @@ export function AssignAdviserModal({
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 text-xs font-bold text-foreground hover:text-foreground transition-colors group"
+              className="flex items-center gap-1.5 text-base font-bold text-foreground hover:text-foreground transition-colors group"
             >
               <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
               Back to Selection
@@ -498,11 +498,11 @@ export function AssignAdviserModal({
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                   Transferring From
                 </p>
-                <p className="text-sm font-black uppercase truncate text-red-700 line-through decoration-red-400">
+                <p className="text-base leading-tight font-black uppercase truncate text-red-700 line-through decoration-red-400">
                   {section?.currentAdviser?.name ?? "Unknown"}
                 </p>
                 {currentAdviserFull?.employeeId && (
-                  <p className="text-xs font-bold text-slate-400">
+                  <p className="text-base font-bold text-slate-400">
                     ID: {currentAdviserFull.employeeId}
                   </p>
                 )}
@@ -516,11 +516,11 @@ export function AssignAdviserModal({
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                   Transferring To
                 </p>
-                <p className="text-sm font-black uppercase truncate text-emerald-700">
+                <p className="text-base leading-tight font-black uppercase truncate text-emerald-700">
                   {selectedTeacher?.name ?? "—"}
                 </p>
                 {selectedTeacher?.employeeId && (
-                  <p className="text-xs font-bold text-slate-400">
+                  <p className="text-base font-bold text-slate-400">
                     ID: {selectedTeacher.employeeId}
                   </p>
                 )}
@@ -538,7 +538,7 @@ export function AssignAdviserModal({
                   value={reasonCategory}
                   onChange={(e) => setReasonCategory(e.target.value)}
                   className={cn(
-                    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-bold",
+                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-bold",
                     "ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     !reasonCategory && "text-foreground",
@@ -566,7 +566,7 @@ export function AssignAdviserModal({
                   placeholder="Provide a detailed justification for this adviser transfer for audit and record purposes..."
                   rows={4}
                   className={cn(
-                    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-bold resize-none",
+                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-bold resize-none",
                     "placeholder:text-foreground placeholder:font-normal ring-offset-background",
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
@@ -584,7 +584,7 @@ export function AssignAdviserModal({
         <DialogFooter className="px-6 py-4 border-t bg-muted/20 flex-row items-center justify-between">
           <Button
             variant="ghost"
-            className="font-bold uppercase text-xs"
+            className="font-bold uppercase text-base"
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -596,7 +596,7 @@ export function AssignAdviserModal({
               onClick={handleStep1Action}
               disabled={step1Disabled}
               className={cn(
-                "font-black uppercase text-xs min-w-48 transition-all duration-150",
+                "font-black uppercase text-base min-w-48 transition-all duration-150",
                 step1Disabled
                   ? "bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-100 cursor-not-allowed"
                   : section?.currentAdviser
@@ -626,7 +626,7 @@ export function AssignAdviserModal({
               onClick={() => void executeHandover()}
               disabled={step2Disabled}
               className={cn(
-                "font-black uppercase text-xs min-w-56 transition-all duration-150",
+                "font-black uppercase text-base min-w-56 transition-all duration-150",
                 step2Disabled
                   ? "bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-100 cursor-not-allowed"
                   : "bg-red-700 hover:bg-red-800 text-white border-transparent",

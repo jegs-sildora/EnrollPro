@@ -229,7 +229,7 @@ export default function RegistrarEOSYWorkspace() {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight uppercase">{section.gradeLevel.name} - {section.name}</h1>
-              <p className="text-sm text-slate-500 font-bold">EOSY Status Batch Updating Workspace</p>
+              <p className="text-base leading-tight text-slate-500 font-bold">EOSY Status Batch Updating Workspace</p>
             </div>
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function RegistrarEOSYWorkspace() {
             </div>
             <div>
               <p className="font-black uppercase tracking-tight">🔒 SECTION IS FINALIZED AND LOCKED FOR THE SUMMER</p>
-              <p className="text-sm opacity-90 font-bold text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
+              <p className="text-base leading-tight opacity-90 font-bold text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
             </div>
           </motion.div>
         )}
@@ -289,7 +289,7 @@ export default function RegistrarEOSYWorkspace() {
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
-                className="w-full bg-white border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full bg-white border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-base leading-tight font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Filter by name or LRN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -320,7 +320,7 @@ export default function RegistrarEOSYWorkspace() {
                           <p className="text-lg font-bold text-slate-500">
                             Searching...
                           </p>
-                          <p className="text-sm font-bold text-slate-400">
+                          <p className="text-base leading-tight font-bold text-slate-400">
                             Scanning EOSY records...
                           </p>
                         </div>
@@ -336,7 +336,7 @@ export default function RegistrarEOSYWorkspace() {
                         isLocked && "opacity-60 grayscale"
                       )}>
                         <TableCell className="text-center font-bold text-slate-400">{index + 1}</TableCell>
-                        <TableCell className="text-sm font-bold text-slate-600">
+                        <TableCell className="text-base leading-tight font-bold text-slate-600">
                           {record.enrollmentApplication.learner.lrn || "NO LRN"}
                         </TableCell>
                         <TableCell>
@@ -361,7 +361,7 @@ export default function RegistrarEOSYWorkspace() {
                             disabled={isLocked}
                           >
                             <SelectTrigger className={cn(
-                              "h-10 border-2 font-black uppercase text-xs",
+                              "h-10 border-2 font-black uppercase text-base",
                               status === "PROMOTED" && "border-emerald-200 text-emerald-700 bg-emerald-50/50",
                               status === "RETAINED" && "border-red-200 text-red-700 bg-red-50/50",
                               status === "DROPPED_OUT" && "border-slate-300 text-slate-600 bg-slate-50/50",
@@ -405,25 +405,25 @@ export default function RegistrarEOSYWorkspace() {
 
           <div className="space-y-3 py-4">
             <div className="bg-slate-50 p-4 rounded-xl border-2 border-slate-100 space-y-2">
-              <div className="flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center justify-between font-bold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Promoted</span>
-                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-xs">{summary.PROMOTED}</span>
+                <span className="text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded text-base">{summary.PROMOTED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center justify-between font-bold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Conditionally Promoted</span>
-                <span className="text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-xs">{summary.CONDITIONALLY_PROMOTED}</span>
+                <span className="text-amber-700 bg-amber-100 px-2.5 py-1 rounded text-base">{summary.CONDITIONALLY_PROMOTED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center justify-between font-bold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Retained</span>
-                <span className="text-red-700 bg-red-100 px-2 py-0.5 rounded text-xs">{summary.RETAINED}</span>
+                <span className="text-red-700 bg-red-100 px-2.5 py-1 rounded text-base">{summary.RETAINED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center justify-between font-bold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Dropped Out</span>
-                <span className="text-slate-700 bg-slate-200 px-2 py-0.5 rounded text-xs">{summary.DROPPED_OUT}</span>
+                <span className="text-slate-700 bg-slate-200 px-2.5 py-1 rounded text-base">{summary.DROPPED_OUT}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center justify-between font-bold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Transferred Out</span>
-                <span className="text-orange-700 bg-orange-100 px-2 py-0.5 rounded text-xs">{summary.TRANSFERRED_OUT}</span>
+                <span className="text-orange-700 bg-orange-100 px-2.5 py-1 rounded text-base">{summary.TRANSFERRED_OUT}</span>
               </div>
             </div>
 

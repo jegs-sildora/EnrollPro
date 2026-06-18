@@ -13,7 +13,7 @@ export function NoSchoolYearState() {
             <h3 className="font-extrabold text-xl text-foreground tracking-tight">
               No Active School Year Selected
             </h3>
-            <p className="text-sm text-foreground/60 leading-relaxed px-6 font-medium">
+            <p className="text-base text-foreground/60 leading-relaxed px-6 font-medium">
               Please select or create an active school year from the settings panel or use the school year switcher in the top bar to initialize and access the system features.
             </p>
           </div>

@@ -72,10 +72,10 @@ interface LearnerDashboardResponse {
 function SectionItem({ label, value, valueClassName }: { label: string; value: string | null | undefined; valueClassName?: string }) {
   return (
     <>
-      <div className="bg-muted text-muted-foreground font-bold text-xs uppercase px-4 py-2 border-r border-border flex items-center">
+      <div className="bg-muted text-muted-foreground font-bold text-base uppercase px-4 py-2 border-r border-border flex items-center">
         {label}
       </div>
-      <div className={`text-sm font-semibold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
+      <div className={`text-base leading-tight font-semibold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
         {(!value || value === "-" || value === "") ? (
           <span className="text-muted-foreground italic font-normal">
             Not Specified
@@ -98,10 +98,10 @@ function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, is
         className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors dark:bg-card dark:border-border dark:hover:bg-muted/50"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-900 uppercase dark:text-foreground">
+          <span className="text-base leading-tight font-bold text-gray-900 uppercase dark:text-foreground">
             {history.grade_level} &bull; S.Y. {history.school_year} &bull; Status: {history.status.toUpperCase()}
           </span>
-          <span className={`text-xs font-bold ${history.status === 'Active' ? 'text-green-700 dark:text-green-500' : 'text-gray-500 dark:text-gray-400'}`}>
+          <span className={`text-base font-bold ${history.status === 'Active' ? 'text-green-700 dark:text-green-500' : 'text-gray-500 dark:text-gray-400'}`}>
             [ {history.status.toUpperCase()} ]
           </span>
         </div>
@@ -111,8 +111,8 @@ function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, is
       {isOpen && (
         <div className="border-x border-b border-gray-200 rounded-b-sm overflow-x-auto dark:border-border">
           <div className="w-full overflow-x-auto whitespace-nowrap">
-            <table className="w-full border-collapse border border-border text-sm">
-              <thead className="bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider py-3">
+            <table className="w-full border-collapse border border-border text-base leading-tight">
+              <thead className="bg-primary text-primary-foreground text-base font-bold uppercase tracking-wide py-3">
                 <tr>
                   <th className="px-4 py-2 text-center">Learning Areas</th>
                   <th className="px-4 py-2 text-center">Quarter 1</th>
@@ -154,7 +154,7 @@ function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, is
                   <td className="text-center font-black bg-muted border border-border text-lg text-foreground">
                     {history.general_average}
                   </td>
-                  <td className="bg-muted border border-border text-center text-xs text-muted-foreground text-primary">
+                  <td className="bg-muted border border-border text-center text-base text-muted-foreground text-primary">
                     {Number(history.general_average) >= 90 ? "WITH HONORS" : ""}
                   </td>
                 </tr>
@@ -231,7 +231,7 @@ export default function LearnerDashboard() {
               <img src={data.schoolLogoUrl} alt="School Seal" className="h-8 w-8 object-contain" />
             ) : (
               <div className="h-8 w-8 rounded-full bg-red-900 flex items-center justify-center">
-                <span className="text-xs font-bold text-white">
+                <span className="text-base font-bold text-white">
                   {data?.schoolAcronym?.slice(0, 2) || "EP"}
                 </span>
               </div>
@@ -246,12 +246,12 @@ export default function LearnerDashboard() {
             </Badge>
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">
-                <span className="text-xs font-bold text-gray-700">
+                <span className="text-base font-bold text-gray-700">
                   {user.firstName[0]}{user.lastName[0]}
                 </span>
               </div>
               <div className="hidden sm:flex flex-col">
-                <span className="text-sm font-bold text-muted-foreground leading-tight">
+                <span className="text-base font-bold text-muted-foreground leading-tight">
                   {user.firstName} {user.lastName}
                 </span>
                 <Badge className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] uppercase w-fit h-4 px-1 py-0 border-0 leading-none mt-[2px]">LEARNER</Badge>
@@ -273,7 +273,7 @@ export default function LearnerDashboard() {
         {error && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-center gap-3 shadow-md">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-            <p className="text-sm text-destructive font-medium">{error}</p>
+            <p className="text-base leading-tight text-destructive font-medium">{error}</p>
           </div>
         )}
 
@@ -294,7 +294,7 @@ export default function LearnerDashboard() {
               
               
               <h2 className="text-xl font-black text-foreground uppercase text-center">{data.identity.lastName}, {data.identity.firstName}</h2>
-              <p className="text-sm font-semibold text-muted-foreground text-center mt-1">LRN: {data.identity.lrn}</p>
+              <p className="text-base leading-tight font-semibold text-muted-foreground text-center mt-1">LRN: {data.identity.lrn}</p>
               <p className="text-base font-bold text-primary text-center mt-4">Grade {data.enrollment.gradeLevel} - {data.enrollment.section}</p>
             </aside>
 
@@ -302,7 +302,7 @@ export default function LearnerDashboard() {
             <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-full overflow-y-auto bg-[url('/pixel-grid.svg')] px-4 py-6 lg:px-12 lg:py-8 space-y-12">
               <div className="mb-6 mt-4">
                 <h1 className="text-3xl font-black text-foreground tracking-tight">Learner Dashboard</h1>
-                <p className="text-sm font-semibold text-muted-foreground mt-1">
+                <p className="text-base leading-tight font-semibold text-muted-foreground mt-1">
                   Review official academic records, verify current enrollment status, and validate permanent profile data.
                 </p>
               </div>
@@ -316,7 +316,7 @@ export default function LearnerDashboard() {
                         <h3 className="text-2xl font-black text-gray-900 uppercase dark:text-foreground">
                           Official School Form 9 (SF9) - Historical Academic Records
                         </h3>
-                        <p className="text-sm text-gray-500 font-medium mt-1 dark:text-muted-foreground">Grades 7–10</p>
+                        <p className="text-base leading-tight text-gray-500 font-medium mt-1 dark:text-muted-foreground">Grades 7–10</p>
                       </div>
                     </div>
                   </div>
@@ -353,44 +353,44 @@ export default function LearnerDashboard() {
                     <h3 className="text-lg font-black text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Full Name</span>
-                        <span className="text-sm font-bold">{`${data.identity.lastName}, ${data.identity.firstName} ${data.identity.middleName || ""} ${data.identity.extensionName || ""}`.trim().replace(/\s+/g, ' ')}</span>
+                        <span className="text-base uppercase">Full Name</span>
+                        <span className="text-base leading-tight font-bold">{`${data.identity.lastName}, ${data.identity.firstName} ${data.identity.middleName || ""} ${data.identity.extensionName || ""}`.trim().replace(/\s+/g, ' ')}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">LRN</span>
-                        <span className="text-sm font-bold">{data.identity.lrn}</span>
+                        <span className="text-base uppercase">LRN</span>
+                        <span className="text-base leading-tight font-bold">{data.identity.lrn}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Sex</span>
-                        <span className="text-sm font-bold">{data.sf1.sex === "MALE" ? "Male" : "Female"}</span>
+                        <span className="text-base uppercase">Sex</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.sex === "MALE" ? "Male" : "Female"}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Date of Birth</span>
-                        <span className="text-sm font-bold">{formatDate(data.sf1.birthdate)}</span>
+                        <span className="text-base uppercase">Date of Birth</span>
+                        <span className="text-base leading-tight font-bold">{formatDate(data.sf1.birthdate)}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Place of Birth</span>
-                        <span className="text-sm font-bold">{data.sf1.placeOfBirth || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                        <span className="text-base uppercase">Place of Birth</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.placeOfBirth || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Age</span>
-                        <span className="text-sm font-bold">{`${Math.floor((Date.now() - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`}</span>
+                        <span className="text-base uppercase">Age</span>
+                        <span className="text-base leading-tight font-bold">{`${Math.floor((Date.now() - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Religion</span>
-                        <span className="text-sm font-bold">{data.sf1.religion || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                        <span className="text-base uppercase">Religion</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.religion || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">Mother Tongue</span>
-                        <span className="text-sm font-bold">{data.sf1.motherTongue || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
+                        <span className="text-base uppercase">Mother Tongue</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.motherTongue || <span className="text-muted-foreground italic font-normal">Not Specified</span>}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">IP Group Status</span>
-                        <span className="text-sm font-bold">{data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"}</span>
+                        <span className="text-base uppercase">IP Group Status</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"}</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                        <span className="text-xs uppercase">4Ps Beneficiary</span>
-                        <span className="text-sm font-bold">{data.sf1.is4PsBeneficiary ? "Yes" : "No"}</span>
+                        <span className="text-base uppercase">4Ps Beneficiary</span>
+                        <span className="text-base leading-tight font-bold">{data.sf1.is4PsBeneficiary ? "Yes" : "No"}</span>
                       </div>
                     </div>
                   </div>
@@ -453,7 +453,7 @@ export default function LearnerDashboard() {
 
                 {/* Sub-Section 4: Official Correction Procedure */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pt-4 border-t border-gray-200 dark:border-border print:hidden">
-                  <p className="text-sm text-gray-500 leading-relaxed max-w-2xl dark:text-muted-foreground">
+                  <p className="text-base text-gray-500 leading-relaxed max-w-2xl dark:text-muted-foreground">
                     <strong>Correction Procedure:</strong> For any official corrections to your permanent Learner Profile data, kindly present your PSA Birth Certificate to your Class Adviser. Online edits are not permitted for security and data integrity.
                   </p>
                 </div>

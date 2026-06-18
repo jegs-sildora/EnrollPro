@@ -1,25 +1,19 @@
+import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveSchoolYear, cloneSchoolYearStructure, getCurrentManilaYear, parseDateInput } from "../services/school-year-controller-shared.service.js";
+
+import { normalizeDateToUtcNoon } from "../school-year.service.js";
+import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
-import {
-  createSchoolYearControllerDeps,
-  SchoolYearControllerDeps,
-} from "../services/school-year-controller.deps.js";
-import {
-  clearActiveSchoolYearIfMatches,
-  ensureDefaultGradeLevels,
-  setActiveSchoolYear,
-} from "../services/school-year-controller-shared.service.js";
+
+
 
 function parseSchoolYearId(req: Request): number {
   return Number.parseInt(String(req.params.id ?? ""), 10);
 }
 
-export function createSchoolYearLifecycleController(
-  deps: SchoolYearControllerDeps = createSchoolYearControllerDeps(),
-) {
-  async function transitionSchoolYear(
+
+  export async function transitionSchoolYear(
     req: Request,
-    res: Response,
-  ): Promise<void> {
+    res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
     const { status } = req.body;
 
@@ -40,27 +34,27 @@ export function createSchoolYearLifecycleController(
       return;
     }
 
-    const year = await deps.prisma.schoolYear.findUnique({ where: { id } });
+    const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
       res.status(404).json({ message: "School year not found" });
       return;
     }
 
     if (status === "ACTIVE") {
-      await deps.prisma.schoolYear.updateMany({
+      await prisma.schoolYear.updateMany({
         where: { status: "ACTIVE", id: { not: id } },
         data: { status: "ARCHIVED" },
       });
 
-      await deps.prisma.schoolYear.update({
+      await prisma.schoolYear.update({
         where: { id },
         data: { status: "ACTIVE" },
       });
 
-      await ensureDefaultGradeLevels(deps);
-      await setActiveSchoolYear(deps, id);
+      await ensureDefaultGradeLevels();
+      await setActiveSchoolYear( id);
     } else if (status === "BOSY_LOCKED") {
-      await deps.prisma.schoolYear.update({
+      await prisma.schoolYear.update({
         where: { id },
         data: {
           status: "BOSY_LOCKED",
@@ -69,33 +63,31 @@ export function createSchoolYearLifecycleController(
         },
       });
     } else {
-      await deps.prisma.schoolYear.update({
+      await prisma.schoolYear.update({
         where: { id },
         data: { status },
       });
 
       if (year.status === "ACTIVE") {
-        await clearActiveSchoolYearIfMatches(deps, id);
+        await clearActiveSchoolYearIfMatches( id);
       }
     }
 
-    await deps.auditLog({
-      userId: req.user!.userId,
+    await prisma.auditLog.create({ data: { ipAddress: req.ip || "unknown", userAgent: req.headers["user-agent"] || null, userId: req.user!.userId,
       actionType: "SY_STATUS_CHANGED",
       description: `School year "${year.yearLabel}" status changed to ${status}`,
       subjectType: "SchoolYear",
       recordId: id,
-      req,
-    });
+      } });
 
-    const updated = await deps.prisma.schoolYear.findUnique({ where: { id } });
+    const updated = await prisma.schoolYear.findUnique({ where: { id } });
     res.json({ year: updated });
   }
 
-  async function deleteSchoolYear(req: Request, res: Response): Promise<void> {
+  export async function deleteSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
 
-    const year = await deps.prisma.schoolYear.findUnique({
+    const year = await prisma.schoolYear.findUnique({
       where: { id },
       include: {
         _count: {
@@ -130,27 +122,15 @@ export function createSchoolYearLifecycleController(
       return;
     }
 
-    await deps.prisma.schoolYear.delete({ where: { id } });
+    await prisma.schoolYear.delete({ where: { id } });
 
-    await deps.auditLog({
-      userId: req.user!.userId,
+    await prisma.auditLog.create({ data: { ipAddress: req.ip || "unknown", userAgent: req.headers["user-agent"] || null, userId: req.user!.userId,
       actionType: "SY_DELETED",
       description: `Deleted school year "${year.yearLabel}"`,
       subjectType: "SchoolYear",
       recordId: id,
-      req,
-    });
+      } });
 
     res.json({ message: "School year deleted" });
   }
 
-  return {
-    transitionSchoolYear,
-    deleteSchoolYear,
-  };
-}
-
-const schoolYearLifecycleController = createSchoolYearLifecycleController();
-
-export const { transitionSchoolYear, deleteSchoolYear } =
-  schoolYearLifecycleController;

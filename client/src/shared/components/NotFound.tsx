@@ -8,7 +8,7 @@ export default function NotFound() {
         <p className="mt-2 text-lg text-foreground">Page not found</p>
         <Link
           to="/"
-          className="mt-4 inline-block text-sm text-primary hover:underline">
+          className="mt-4 inline-block text-base text-primary hover:underline">
           Go back home
         </Link>
       </div>

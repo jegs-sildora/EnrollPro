@@ -116,7 +116,7 @@ export default function Step2Family() {
       </Alert>
 
       <div className="space-y-8">
-        <h3 className="text-sm font-bold uppercase  text-primary">
+        <h3 className="text-base leading-tight font-bold uppercase  text-primary">
           Current Home Address
         </h3>
 
@@ -124,7 +124,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.houseNo"
-              className="text-xs font-bold uppercase">
+              className="text-base font-bold uppercase">
               House No. / Street
             </Label>
             <Input
@@ -143,7 +143,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.street"
-              className="text-xs font-bold uppercase">
+              className="text-base font-bold uppercase">
               Sitio / Purok
             </Label>
             <Input
@@ -197,7 +197,7 @@ export default function Step2Family() {
           />
           <Label
             htmlFor="same-address"
-            className="text-sm font-bold cursor-pointer select-none">
+            className="text-base leading-tight font-bold cursor-pointer select-none">
             Permanent Address is same as Current Address
           </Label>
         </div>
@@ -210,14 +210,14 @@ export default function Step2Family() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden">
               <div className="pt-8 pb-1 space-y-6">
-                <h3 className="text-sm font-bold uppercase  text-primary">
+                <h3 className="text-base leading-tight font-bold uppercase  text-primary">
                   Permanent Address
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.houseNo"
-                      className="text-xs font-bold uppercase">
+                      className="text-base font-bold uppercase">
                       House No. / Street
                     </Label>
                     <Input
@@ -236,7 +236,7 @@ export default function Step2Family() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.street"
-                      className="text-xs font-bold uppercase">
+                      className="text-base font-bold uppercase">
                       Sitio / Purok
                     </Label>
                     <Input
@@ -287,7 +287,7 @@ export default function Step2Family() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase  text-primary">
+            <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Mother&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoMother"
-                className="text-xs font-bold uppercase text-foreground cursor-pointer">
+                className="text-base font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -343,7 +343,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.lastName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Last Name{" "}
                 {!hasNoMother && <span className="text-destructive">*</span>}
               </Label>
@@ -365,7 +365,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.lastName && (
-                <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.lastName.message}
                 </p>
@@ -375,7 +375,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.firstName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 First Name{" "}
                 {!hasNoMother && <span className="text-destructive">*</span>}
               </Label>
@@ -397,7 +397,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.firstName && (
-                <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.firstName.message}
                 </p>
@@ -407,7 +407,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.middleName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Middle Name
               </Label>
               <Input
@@ -429,7 +429,7 @@ export default function Step2Family() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase  text-primary">
+            <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Father&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoFather"
-                className="text-xs font-bold uppercase text-foreground cursor-pointer">
+                className="text-base font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -479,7 +479,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.lastName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Last Name{" "}
                 {!hasNoFather && <span className="text-destructive">*</span>}
               </Label>
@@ -501,7 +501,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.lastName && (
-                <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.lastName.message}
                 </p>
@@ -511,7 +511,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.firstName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 First Name{" "}
                 {!hasNoFather && <span className="text-destructive">*</span>}
               </Label>
@@ -533,7 +533,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.firstName && (
-                <p className="text-xs text-destructive font-bold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.firstName.message}
                 </p>
@@ -543,7 +543,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.middleName"
-                className="text-xs font-bold uppercase">
+                className="text-base font-bold uppercase">
                 Middle Name
               </Label>
               <Input
@@ -567,14 +567,14 @@ export default function Step2Family() {
       <Separator className="opacity-50" />
 
       <div className="space-y-6">
-        <h3 className="text-sm font-bold uppercase  text-primary">
+        <h3 className="text-base leading-tight font-bold uppercase  text-primary">
           Guardian Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <Label
               htmlFor="guardian.lastName"
-              className="text-xs font-bold uppercase">
+              className="text-base font-bold uppercase">
               Last Name{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -597,7 +597,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.lastName && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.lastName.message}
               </p>
@@ -607,7 +607,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="guardian.firstName"
-              className="text-xs font-bold uppercase">
+              className="text-base font-bold uppercase">
               First Name{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -630,7 +630,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.firstName && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.firstName.message}
               </p>
@@ -640,7 +640,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="guardianRelationship"
-              className="text-xs font-bold uppercase">
+              className="text-base font-bold uppercase">
               Relationship to Learner{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -663,7 +663,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardianRelationship && (
-              <p className="text-xs text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardianRelationship.message}
               </p>
@@ -675,7 +675,7 @@ export default function Step2Family() {
       <Separator className="opacity-50" />
 
       <div className="space-y-4">
-        <Label className="text-sm font-bold uppercase  text-primary">
+        <Label className="text-base leading-tight font-bold uppercase  text-primary">
           Who should we contact first?{" "}
           <span className="text-destructive">*</span>
         </Label>
@@ -755,7 +755,7 @@ export default function Step2Family() {
                   </div>
                   <span
                     className={cn(
-                      "font-bold text-sm uppercase  text-center",
+                      "font-bold text-base leading-tight uppercase  text-center",
                       data.primaryContact === option.value
                         ? "text-primary"
                         : "text-foreground",
@@ -768,7 +768,7 @@ export default function Step2Family() {
         </div>
 
         {errors.primaryContact && (
-          <p className="text-xs text-destructive font-bold flex items-center gap-1">
+          <p className="text-base text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.primaryContact.message}
           </p>
@@ -777,12 +777,12 @@ export default function Step2Family() {
 
       <div className="space-y-10">
         <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase  text-primary">
+          <h3 className="text-base leading-tight font-bold uppercase  text-primary">
             Contact Details
           </h3>
 
           {!data.primaryContact && (
-            <p className="text-sm text-foreground italic">
+            <p className="text-base leading-tight text-foreground italic">
               Select a primary contact above before entering contact details.
             </p>
           )}
@@ -800,10 +800,10 @@ export default function Step2Family() {
             {data.primaryContact && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-bold uppercase  text-primary">
+                  <h4 className="text-base leading-tight font-bold uppercase  text-primary">
                     Primary Contact
                   </h4>
-                  <Label className="text-xs font-black uppercase text-foreground  flex items-center gap-2">
+                  <Label className="text-base font-black uppercase text-foreground  flex items-center gap-2">
                     {data.primaryContact === "MOTHER" ? (
                       <Venus className="w-3 h-3" />
                     ) : data.primaryContact === "FATHER" ? (
@@ -824,7 +824,7 @@ export default function Step2Family() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="contactNumber"
-                      className="text-xs font-bold uppercase flex items-center gap-1">
+                      className="text-base font-bold uppercase flex items-center gap-1">
                       Contact Number <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -844,7 +844,7 @@ export default function Step2Family() {
                       }}
                     />
                     {errors.contactNumber && (
-                      <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
+                      <p className="text-base text-destructive font-bold flex items-center gap-1 mt-1">
                         <AlertCircle className="w-3 h-3" />
                         {errors.contactNumber.message}
                       </p>
@@ -892,10 +892,10 @@ export default function Step2Family() {
                     key={secondary.id}
                     className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
                     <div className="flex flex-col gap-1">
-                      <h4 className="text-sm font-bold uppercase  text-foreground">
+                      <h4 className="text-base leading-tight font-bold uppercase  text-foreground">
                         Secondary Contact (Optional)
                       </h4>
-                      <Label className="text-xs font-black uppercase text-foreground/60  flex items-center gap-2">
+                      <Label className="text-base font-black uppercase text-foreground/60  flex items-center gap-2">
                         <secondary.icon className="w-3 h-3" />
                         {secondary.label}'s Contact Information
                       </Label>
@@ -905,7 +905,7 @@ export default function Step2Family() {
                       <div className="space-y-1.5">
                         <Label
                           htmlFor={contactField}
-                          className="text-xs font-bold uppercase">
+                          className="text-base font-bold uppercase">
                           Contact Number
                         </Label>
                         <Input

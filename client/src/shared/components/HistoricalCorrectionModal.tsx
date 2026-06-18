@@ -95,7 +95,7 @@ export function HistoricalCorrectionModal({
             <ShieldAlert className="h-5 w-5 text-amber-600" />
             Authorize Historical Correction
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription className="text-sm">
             This grants a 10-minute window to modify a historical school year.
             All actions will be permanently recorded in the audit log. Use only
             when corrections are absolutely necessary.
@@ -106,7 +106,7 @@ export function HistoricalCorrectionModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="hc-password"
-              className="text-xs font-bold">
+              className="text-sm font-bold">
               Confirm Your Password
             </Label>
             <Input
@@ -123,7 +123,7 @@ export function HistoricalCorrectionModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="hc-reason"
-              className="text-xs font-bold">
+              className="text-sm font-bold">
               Reason for Correction{" "}
               <span className="font-normal text-foreground">
                 (min. 20 characters)
@@ -132,7 +132,7 @@ export function HistoricalCorrectionModal({
             <Textarea
               id="hc-reason"
               placeholder="Describe what needs to be corrected and why..."
-              className="resize-none h-24 text-xs"
+              className="resize-none h-24 text-sm"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               disabled={loading}

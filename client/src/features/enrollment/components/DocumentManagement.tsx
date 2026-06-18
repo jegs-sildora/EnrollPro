@@ -306,7 +306,7 @@ export function DocumentManagement({
         cell: ({ row }) => {
           const auditRow = row.original;
           return (
-            <div className="flex items-center gap-2 text-xs text-left min-w-[200px] h-12">
+            <div className="flex items-center gap-2 text-base text-left min-w-[200px] h-12">
               {auditRow.status === "Added" ? (
                 auditRow.document ? (
                   <Eye className="h-4 w-4 text-blue-500" />
@@ -326,7 +326,7 @@ export function DocumentManagement({
                   {auditRow.label}
                 </span>
                 {auditRow.document?.originalName && (
-                  <span className="text-sm text-foreground font-normal truncate max-w-[200px]">
+                  <span className="text-base leading-tight text-foreground font-normal truncate max-w-[200px]">
                     {auditRow.document.originalName}
                   </span>
                 )}
@@ -342,7 +342,7 @@ export function DocumentManagement({
           const auditRow = row.original;
           return (
             <div className="flex flex-col gap-1 text-center min-w-[150px]">
-              <span className="font-bold text-xs">
+              <span className="font-bold text-base">
                 {auditRow.modifiedBy
                   ? `${auditRow.modifiedBy.firstName} ${auditRow.modifiedBy.lastName}`
                   : "N/A"}
@@ -365,7 +365,7 @@ export function DocumentManagement({
         id: "lastModified",
         header: "Last Modified",
         cell: ({ row }) => (
-          <span className="text-xs font-bold min-w-[150px] block text-center">
+          <span className="text-base font-bold min-w-[150px] block text-center">
             {row.original.lastModified
               ? format(
                   new Date(row.original.lastModified),
@@ -452,7 +452,7 @@ export function DocumentManagement({
       {!hideUpload && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase ">
+            <CardTitle className="text-base leading-tight font-bold uppercase ">
               Upload New Document
             </CardTitle>
           </CardHeader>
@@ -504,7 +504,7 @@ export function DocumentManagement({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-bold uppercase ">
+          <CardTitle className="text-base leading-tight font-bold uppercase ">
             Submitted Documents ({auditRows.length})
           </CardTitle>
         </CardHeader>

@@ -42,14 +42,14 @@ export function AccessibilityMenu() {
 			>
 				<div className='space-y-4'>
 					<div className='flex items-center justify-between border-b pb-2'>
-						<h4 className='font-bold text-sm flex items-center gap-2'>
+						<h4 className='font-bold text-base flex items-center gap-2'>
 							<Accessibility className='size-4' /> Accessibility
 						</h4>
 						{fontSize !== 100 && (
 							<Button
 								variant='ghost'
 								size='sm'
-								className='h-7 px-2 text-sm font-bold text-primary hover:text-primary hover:bg-primary/10'
+								className='h-7 px-2 text-base font-bold text-primary hover:text-primary hover:bg-primary/10'
 								onClick={resetAll}
 							>
 								<RotateCcw className='mr-1 size-3' /> Reset
@@ -60,10 +60,10 @@ export function AccessibilityMenu() {
 					<div className='space-y-3'>
 						<div className='space-y-2'>
 							<div className='flex items-center justify-between'>
-								<Label className='text-sm font-bold flex items-center gap-2'>
+								<Label className='text-base font-bold flex items-center gap-2'>
 									<Type className='size-3.5' /> Text Size
 								</Label>
-								<span className='text-sm font-bold'>{fontSize}%</span>
+								<span className='text-base font-bold'>{fontSize}%</span>
 							</div>
 							<div className='flex items-center gap-2'>
 								<Button

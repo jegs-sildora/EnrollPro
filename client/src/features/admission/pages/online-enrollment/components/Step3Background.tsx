@@ -25,7 +25,7 @@ export default function Step3Background() {
           <Lock className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <p className="text-sm font-bold text-primary">
+          <p className="text-base leading-tight font-bold text-primary">
             Sensitive Information
           </p>
           <p className="text-[0.6875rem] text-primary font-bold uppercase ">
@@ -38,7 +38,7 @@ export default function Step3Background() {
         {/* IP Community */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-bold flex items-center gap-2">
+            <Label className="text-base leading-tight font-bold flex items-center gap-2">
               Is the learner a member of an IP cultural community? *
             </Label>
             <Badge
@@ -86,7 +86,7 @@ export default function Step3Background() {
                 <div className="pt-4 space-y-2 max-w-sm">
                   <Label
                     htmlFor="ip-group"
-                    className="text-xs font-bold uppercase text-foreground">
+                    className="text-base font-bold uppercase text-foreground">
                     Specify IP Group Name
                   </Label>
                   <Input
@@ -105,7 +105,7 @@ export default function Step3Background() {
         {/* 4Ps Beneficiary */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-bold">
+            <Label className="text-base leading-tight font-bold">
               Does the learner's household currently receive benefits under the
               Pantawid Pamilyang Pilipino Program (4Ps)? *
             </Label>
@@ -154,7 +154,7 @@ export default function Step3Background() {
                 <div className="pt-4 space-y-2 max-w-sm">
                   <Label
                     htmlFor="household-id"
-                    className="text-xs font-bold uppercase text-foreground">
+                    className="text-base font-bold uppercase text-foreground">
                     4Ps Household ID Number
                   </Label>
                   <Input
@@ -181,7 +181,7 @@ export default function Step3Background() {
 
         {/* Balik Aral */}
         <div className="space-y-4">
-          <Label className="text-sm font-bold">
+          <Label className="text-base leading-tight font-bold">
             Is this learner returning to school after a gap of 1 year or more?
             (Balik-Aral) *
           </Label>
@@ -219,7 +219,7 @@ export default function Step3Background() {
         {/* SNED / Disability */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-bold">
+            <Label className="text-base leading-tight font-bold">
               Is the learner under the Special Needs Education Program? *
             </Label>
             <Badge
@@ -273,7 +273,7 @@ export default function Step3Background() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden p-1">
                 <div className="pt-4 space-y-6">
-                  <p className="text-xs font-bold uppercase text-foreground ">
+                  <p className="text-base font-bold uppercase text-foreground ">
                     If Yes, check only 1, either from a1 or a2
                   </p>
 
@@ -294,7 +294,7 @@ export default function Step3Background() {
                       />
                       <Label
                         htmlFor="sned-a1"
-                        className="text-sm font-bold cursor-pointer">
+                        className="text-base leading-tight font-bold cursor-pointer">
                         a1. With Diagnosis from Licensed Medical Specialist
                       </Label>
                     </div>
@@ -329,7 +329,7 @@ export default function Step3Background() {
                                 />
                                 <Label
                                   htmlFor={`disability-${type}`}
-                                  className="text-sm font-bold cursor-pointer">
+                                  className="text-base leading-tight font-bold cursor-pointer">
                                   {type}
                                 </Label>
                               </div>
@@ -357,7 +357,7 @@ export default function Step3Background() {
                       />
                       <Label
                         htmlFor="sned-a2"
-                        className="text-sm font-bold cursor-pointer">
+                        className="text-base leading-tight font-bold cursor-pointer">
                         a2. With Manifestations
                       </Label>
                     </div>
@@ -392,7 +392,7 @@ export default function Step3Background() {
                                 />
                                 <Label
                                   htmlFor={`disability-${type}`}
-                                  className="text-sm font-bold cursor-pointer">
+                                  className="text-base leading-tight font-bold cursor-pointer">
                                   {type}
                                 </Label>
                               </div>
@@ -405,7 +405,7 @@ export default function Step3Background() {
 
                   {/* b. PWD ID */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold">
+                    <Label className="text-base leading-tight font-bold">
                       b. Does the Learner have a PWD ID?
                     </Label>
                     <RadioGroup

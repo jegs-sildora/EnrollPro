@@ -18,7 +18,7 @@ export default function EnrollmentManagement() {
           <h1 className="text-2xl sm:text-3xl font-bold">
             Sectioning & School Form 1 (SF1) Preparation
           </h1>
-          <p className="text-sm font-bold text-foreground">
+          <p className="text-base leading-tight font-bold text-foreground">
             Validate submitted credentials and execute batch sectioning to generate official class registers.
           </p>
         </div>
@@ -37,7 +37,7 @@ export default function EnrollmentManagement() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-xs uppercase", activeTab === "verification" ? "text-primary-foreground" : "text-foreground")}>
+            <span className={cn("relative z-20 text-base uppercase", activeTab === "verification" ? "text-primary-foreground" : "text-foreground")}>
               Document Verification
             </span>
           </TabsTrigger>
@@ -52,7 +52,7 @@ export default function EnrollmentManagement() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-xs uppercase", activeTab === "sectioning" ? "text-primary-foreground" : "text-foreground")}>
+            <span className={cn("relative z-20 text-base uppercase", activeTab === "sectioning" ? "text-primary-foreground" : "text-foreground")}>
               Section Assignment
             </span>
           </TabsTrigger>

@@ -472,7 +472,7 @@ export default function EnrollmentForm({
                     onChange={(e) => setTrackingNumberInput(e.target.value)} 
                     placeholder="Enter Tracking Number (e.g., EN-26-XXXXXX)"
                   />
-                  <p className="text-xs text-muted-foreground">You can find this in the email sent or success screen from your original application.</p>
+                  <p className="text-base text-muted-foreground">You can find this in the email sent or success screen from your original application.</p>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => setDuplicateAction(null)}>Back</Button>
@@ -549,14 +549,14 @@ export default function EnrollmentForm({
               <h2 className="text-xl font-bold  text-foreground leading-tight">
                 Learner Enrollment Form
               </h2>
-              <p className="text-sm text-foreground mt-0.5">
+              <p className="text-base leading-tight text-foreground mt-0.5">
                 Please complete all required fields below.
               </p>
             </div>
           </div>
 
           {submitError && (
-            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-bold">
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-bold">
               {submitError}
             </div>
           )}
@@ -601,11 +601,11 @@ export default function EnrollmentForm({
 
               {validationIssues.length > 0 && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
-                  <div className="flex items-center gap-2 text-destructive font-bold text-sm">
+                  <div className="flex items-center gap-2 text-destructive font-bold text-base leading-tight">
                     <AlertCircle className="w-4 h-4" />
                     Please review and complete the following fields to proceed:
                   </div>
-                  <ul className="list-disc pl-6 text-xs font-bold text-destructive/80 space-y-1">
+                  <ul className="list-disc pl-6 text-base font-bold text-destructive/80 space-y-1">
                     {validationIssues.map((issue, index) => (
                       <li key={`${issue.fieldPath}-${index}`}>
                         <a
@@ -628,7 +628,7 @@ export default function EnrollmentForm({
                 <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
                   <div className="flex items-center gap-2 mb-2">
                     <ShieldCheck className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-bold uppercase  text-primary">
+                    <h3 className="text-base leading-tight font-bold uppercase  text-primary">
                       Accuracy Certification
                     </h3>
                   </div>
@@ -648,7 +648,7 @@ export default function EnrollmentForm({
                             />
                             <Label
                               htmlFor="certify-check"
-                              className="text-sm font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
+                              className="text-base font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
                               <p>
                                 I certify that all information in this enrollment form
                                 is true, correct, and complete to the best of my
@@ -683,7 +683,7 @@ export default function EnrollmentForm({
                     }}>
                     Submit Registration
                   </Button>
-                  <p className="text-xs text-foreground flex items-center gap-1.5 font-bold italic">
+                  <p className="text-base text-foreground flex items-center gap-1.5 font-bold italic">
                     <Info className="w-3.5 h-3.5" />
                     Privacy consent was recorded before this submission.
                   </p>

@@ -172,7 +172,7 @@ export function LearnerExitModal({
       }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-sm font-bold uppercase tracking-wide">
+          <DialogTitle className="text-base leading-tight font-bold uppercase tracking-wide">
             {isViewMode ? "Learner Exit Record" : "Process Learner Exit"}
           </DialogTitle>
         </DialogHeader>
@@ -187,14 +187,14 @@ export function LearnerExitModal({
               <p className="truncate text-base font-bold leading-snug text-slate-900">
                 {fullName}
               </p>
-              <p className="mt-0.5 text-sm text-foreground">
+              <p className="mt-0.5 text-base leading-tight text-foreground">
                 LRN:{" "}
                 <span className="font-bold text-slate-700">
                   {lrnDisplay}
                 </span>
               </p>
               {sectionName && (
-                <p className="text-sm text-foreground">
+                <p className="text-base leading-tight text-foreground">
                   Section:{" "}
                   <span className="font-bold text-slate-700">
                     {sectionName}
@@ -208,7 +208,7 @@ export function LearnerExitModal({
           <div className="space-y-2">
             <Label
               htmlFor="exitType"
-              className="text-sm font-bold uppercase">
+              className="text-base leading-tight font-bold uppercase">
               Exit Type
             </Label>
             <Select
@@ -219,7 +219,7 @@ export function LearnerExitModal({
               disabled={isViewMode}>
               <SelectTrigger
                 id="exitType"
-                className="h-10 text-sm font-bold">
+                className="h-10 text-base leading-tight font-bold">
                 <SelectValue placeholder="Select exit type" />
               </SelectTrigger>
               <SelectContent>
@@ -227,7 +227,7 @@ export function LearnerExitModal({
                   <SelectItem
                     key={opt.value}
                     value={opt.value}
-                    className="text-sm font-bold">
+                    className="text-base leading-tight font-bold">
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -237,7 +237,7 @@ export function LearnerExitModal({
 
           {/* Effective Date */}
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase">Effective Date</Label>
+            <Label className="text-base leading-tight font-bold uppercase">Effective Date</Label>
             <DatePicker
               date={isViewMode ? savedEffectiveDate : effectiveDate}
               setDate={isViewMode ? () => {} : setEffectiveDate}
@@ -250,7 +250,7 @@ export function LearnerExitModal({
           <div className="space-y-2">
             <Label
               htmlFor="exitReason"
-              className="text-sm font-bold uppercase">
+              className="text-base leading-tight font-bold uppercase">
               Reason / Remarks
             </Label>
             <Textarea
@@ -265,11 +265,11 @@ export function LearnerExitModal({
                   ? "No reason recorded"
                   : "Provide a clear reason for this exit action (required)"
               }
-              className="min-h-24 text-sm font-bold"
+              className="min-h-24 text-base leading-tight font-bold"
               maxLength={isViewMode ? undefined : 500}
             />
             {!isViewMode && (
-              <p className="text-right text-xs text-foreground">
+              <p className="text-right text-base text-foreground">
                 {reason.length}/500
               </p>
             )}
@@ -279,7 +279,7 @@ export function LearnerExitModal({
           {!isViewMode && (
             <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-              <p className="text-xs leading-relaxed">
+              <p className="text-base leading-relaxed">
                 <strong>Notice:</strong> Processing this exit will change the
                 learner's official status for DepEd{" "}
                 <strong>School Form 4 (SF4)</strong> reporting. The learner will
@@ -293,14 +293,14 @@ export function LearnerExitModal({
         <DialogFooter>
           <Button
             variant="outline"
-            className="text-sm font-bold"
+            className="text-base leading-tight font-bold"
             onClick={handleClose}
             disabled={submitting}>
             {isViewMode ? "Close" : "Cancel"}
           </Button>
           {!isViewMode && (
             <Button
-              className="text-sm font-bold bg-red-600 hover:bg-red-700 text-white"
+              className="text-base leading-tight font-bold bg-red-600 hover:bg-red-700 text-white"
               disabled={
                 !exitType || !effectiveDate || !reason.trim() || submitting
               }

@@ -158,7 +158,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
         <div className="flex items-center gap-4 mb-12">
           <div>
             <h1 className="text-4xl font-bold ">{acronym}</h1>
-            <p className="text-white text-sm font-bold max-w-md">
+            <p className="text-white text-base leading-tight font-bold max-w-md">
               {projectTagline}
             </p>
           </div>
@@ -168,28 +168,28 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
           <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
             {schoolName}
           </h2>
-          <p className="text-white text-sm font-bold">{jhsScopeLabel}</p>
+          <p className="text-white text-base leading-tight font-bold">{jhsScopeLabel}</p>
           <div className="flex flex-col gap-1.5 mt-3">
             {schoolAddress && (
-              <div className="flex items-center gap-2 text-white text-sm font-bold">
+              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span>{schoolAddress}</span>
               </div>
             )}
             {schoolDivision && (
-              <div className="flex items-center gap-2 text-white text-sm font-bold">
+              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
                 <Building2 className="w-4 h-4 flex-shrink-0" />
                 <span>Division of {schoolDivision}</span>
               </div>
             )}
             {schoolRegion && (
-              <div className="flex items-center gap-2 text-white text-sm font-bold">
+              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
                 <Globe className="w-4 h-4 flex-shrink-0" />
                 <span>{schoolRegion}</span>
               </div>
             )}
             {!schoolAddress && !schoolDivision && !schoolRegion && (
-              <p className="text-white text-sm font-bold">
+              <p className="text-white text-base leading-tight font-bold">
                 DepEd Public School Enrollment and Sectioning Portal
               </p>
             )}
@@ -222,7 +222,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
               </div>
               <div>
                 <h3 className="font-bold text-white">{feature.title}</h3>
-                <p className="text-white text-sm font-bold">
+                <p className="text-white text-base leading-tight font-bold">
                   {feature.desc}
                 </p>
               </div>
@@ -231,7 +231,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-sm">
+      <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-base leading-tight">
         <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
           <Shield className="w-4 h-4" />
         </div>
@@ -557,7 +557,7 @@ export default function Login() {
               <CardTitle className="text-xl font-bold text-gray-900 pt-2">
                 Welcome Back
               </CardTitle>
-              <CardDescription className="text-gray-600 text-sm">
+              <CardDescription className="text-gray-600 text-base leading-tight">
                 Sign in to continue to{" "}
                 <span className="font-bold text-primary">EnrollPro</span>
               </CardDescription>
@@ -569,7 +569,7 @@ export default function Login() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-sm font-bold text-red-700">
+                  <span className="text-base leading-tight font-bold text-red-700">
                     {error}
                   </span>
                 </div>
@@ -581,7 +581,7 @@ export default function Login() {
                     <CheckCircle className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-primary">
+                    <p className="text-base leading-tight font-bold text-primary">
                       {success}
                     </p>
                   </div>
@@ -594,7 +594,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="accountName"
-                    className="text-gray-800 font-bold text-sm pl-1">
+                    className="text-gray-800 font-bold text-base leading-tight pl-1">
                     Employee ID
                   </Label>
                   <div className="relative group">
@@ -624,7 +624,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="password"
-                    className="text-gray-800 font-bold text-sm pl-1">
+                    className="text-gray-800 font-bold text-base leading-tight pl-1">
                     Password
                   </Label>
                   <div className="relative group">
@@ -664,7 +664,7 @@ export default function Login() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-base leading-tight">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <Checkbox
                       id="rememberMe"
@@ -674,11 +674,11 @@ export default function Login() {
                       }
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-sm">
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-base leading-tight">
                       Remember me
                     </span>
                   </label>
-                  <span className="text-gray-400 text-xs font-bold text-right leading-tight">
+                  <span className="text-gray-400 text-base font-bold text-right leading-tight">
                     Forgot password?<br/>Contact the System Admin.
                   </span>
                 </div>
@@ -686,7 +686,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-bold text-sm rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
+                  className="w-full h-11 font-bold text-base leading-tight rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
                   {isLoading ? (
                     <span className="flex items-center gap-3">
                       <Loader2 className="animate-spin h-5 w-5" />

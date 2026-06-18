@@ -67,7 +67,7 @@ export function PinHandoverModal({
 
         <div className="space-y-6 py-4">
           <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-            <p className="text-xs font-black uppercase text-slate-500 ">
+            <p className="text-base font-black uppercase text-slate-500 ">
               Temporary Portal PIN:
             </p>
             
@@ -88,7 +88,7 @@ export function PinHandoverModal({
 
           <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm font-bold text-amber-900 leading-relaxed">
+            <p className="text-base font-bold text-amber-900 leading-relaxed">
               IMPORTANT: This PIN will only be shown once. Please write this 
               down on the upper-right corner of the learner's physical form now.
             </p>
@@ -103,7 +103,7 @@ export function PinHandoverModal({
             />
             <Label
               htmlFor="pin-written"
-              className="text-sm font-black uppercase text-slate-700 leading-snug cursor-pointer select-none"
+              className="text-base font-black uppercase text-slate-700 leading-snug cursor-pointer select-none"
             >
               I have written this PIN on the physical enrollment slip.
             </Label>

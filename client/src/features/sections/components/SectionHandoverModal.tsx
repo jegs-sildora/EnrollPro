@@ -160,7 +160,7 @@ export function SectionHandoverModal({
               <DialogTitle className="text-xl font-black uppercase ">
                 Initiate Advisory Handover
               </DialogTitle>
-              <DialogDescription className="text-primary-foreground/80 font-bold text-xs">
+              <DialogDescription className="text-primary-foreground/80 font-bold text-base">
                 Section: {gradeLevelName} - {sectionName}
               </DialogDescription>
             </div>
@@ -171,7 +171,7 @@ export function SectionHandoverModal({
           {/* Current Adviser Section */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-black uppercase  text-foreground">
+              <Label className="text-base font-black uppercase  text-foreground">
                 Current Adviser (To be relieved)
               </Label>
               <Badge
@@ -199,7 +199,7 @@ export function SectionHandoverModal({
             {/* Reason Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase ">
+                <Label className="text-base font-black uppercase ">
                   Reason for Handover (Audit Required)
                 </Label>
                 <Select
@@ -213,7 +213,7 @@ export function SectionHandoverModal({
                       <SelectItem
                         key={reason}
                         value={reason}
-                        className="font-bold text-xs uppercase">
+                        className="font-bold text-base uppercase">
                         {reason}
                       </SelectItem>
                     ))}
@@ -228,21 +228,21 @@ export function SectionHandoverModal({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2 overflow-hidden">
-                    <Label className="text-xs font-black uppercase ">
+                    <Label className="text-base font-black uppercase ">
                       Specify Reason
                     </Label>
                     <Textarea
                       placeholder="Enter detailed reason for audit trail..."
                       value={customReason}
                       onChange={(e) => setCustomReason(e.target.value)}
-                      className="min-h-[80px] font-bold text-sm"
+                      className="min-h-[80px] font-bold text-base leading-tight"
                     />
                   </motion.div>
                 )}
               </AnimatePresence>
 
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase ">
+                <Label className="text-base font-black uppercase ">
                   Effective Handover Date
                 </Label>
                 <Input
@@ -251,7 +251,7 @@ export function SectionHandoverModal({
                   onChange={(e) => setHandoverDate(e.target.value)}
                   className="h-11 font-bold"
                 />
-                <p className="text-xs text-foreground font-bold italic leading-tight">
+                <p className="text-base text-foreground font-bold italic leading-tight">
                   The current adviser remains the signatory until this date. The
                   new adviser assumes authority the following day.
                 </p>
@@ -261,7 +261,7 @@ export function SectionHandoverModal({
             {/* New Adviser Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase ">
+                <Label className="text-base font-black uppercase ">
                   New Designated Adviser (Substitute)
                 </Label>
                 <div className="relative">
@@ -281,14 +281,14 @@ export function SectionHandoverModal({
                         <p className="text-lg font-bold text-slate-500">
                           Searching...
                         </p>
-                        <p className="text-sm font-bold text-slate-400">
+                        <p className="text-base leading-tight font-bold text-slate-400">
                           Scanning faculty records...
                         </p>
                       </div>
                     </div>
                   ) : filteredTeachers.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                      <p className="text-xs font-bold text-foreground italic">
+                      <p className="text-base font-bold text-foreground italic">
                         {searchQuery
                           ? "No matching teachers found"
                           : "Start typing to search..."}
@@ -309,14 +309,14 @@ export function SectionHandoverModal({
                         <div>
                           <p
                             className={cn(
-                              "font-black text-xs uppercase",
+                              "font-black text-base uppercase",
                               substituteTeacherId === teacher.id.toString()
                                 ? "text-primary"
                                 : "text-foreground",
                             )}>
                             {teacher.name}
                           </p>
-                          <p className="text-xs font-bold text-foreground">
+                          <p className="text-base font-bold text-foreground">
                             ID: {teacher.employeeId || "N/A"}
                           </p>
                         </div>
@@ -340,7 +340,7 @@ export function SectionHandoverModal({
               <p className="text-[11px] font-black uppercase text-amber-800  leading-none">
                 Official DepEd Compliance Notice
               </p>
-              <p className="text-xs font-bold text-amber-700 leading-relaxed">
+              <p className="text-base font-bold text-amber-700 leading-relaxed">
                 Advisory history is preserved in the ledger for legal audit.
                 Past grading periods will remain officially signed by{" "}
                 <span className="underline">
@@ -366,13 +366,13 @@ export function SectionHandoverModal({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-black uppercase text-xs  h-11 px-8">
+            className="font-black uppercase text-base  h-11 px-8">
             Cancel
           </Button>
           <Button
             onClick={handleHandover}
             disabled={submitting || !substituteTeacherId || !handoverReason}
-            className="font-black uppercase text-xs  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            className="font-black uppercase text-base  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing

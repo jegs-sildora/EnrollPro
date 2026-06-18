@@ -333,14 +333,14 @@ export default function Teachers() {
           <h1 className="text-2xl md:text-3xl font-bold text-balance text-foreground">
             Faculty & Staff Roster
           </h1>
-          <p className="text-sm text-foreground text-balance font-bold">
+          <p className="text-base leading-tight text-foreground text-balance font-bold">
             Manage official DepEd personnel profiles, department heads, and system access levels.
           </p>
         </div>
       </div>
 
       {!ayId ? (
-        <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-foreground">
+        <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-base leading-tight text-foreground">
           Set an active school year to edit designation metadata.
         </div>
       ) : null}

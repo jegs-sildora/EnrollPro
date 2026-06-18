@@ -51,7 +51,7 @@ export default function Settings() {
           <h1 className="text-3xl font-bold text-foreground ">
             Global System Configuration
           </h1>
-          <p className="text-sm font-bold">
+          <p className="text-base leading-tight font-bold">
             Define institutional branding, manage academic calendars, and execute official school year rollovers.
           </p>
         </div>

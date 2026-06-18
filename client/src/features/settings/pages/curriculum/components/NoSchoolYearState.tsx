@@ -11,7 +11,7 @@ export function NoSchoolYearState() {
           </div>
           <div className="space-y-1">
             <p className="font-bold text-foreground">No School Year Selected</p>
-            <p className="text-sm leading-relaxed px-4">
+            <p className="text-base leading-relaxed px-4">
               Please set an active year or choose one from the header switcher
               to manage records for this period.
             </p>

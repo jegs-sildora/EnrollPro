@@ -161,7 +161,7 @@ export function ConfirmationSlipModal({
                 Process Confirmation Slip
               </DialogTitle>
             </div>
-            <DialogDescription className="text-emerald-100 text-xs font-bold">
+            <DialogDescription className="text-emerald-100 text-base font-bold">
               Rapid enrollment for promoted returning learners (DO 017, s. 2025)
             </DialogDescription>
           </DialogHeader>
@@ -169,7 +169,7 @@ export function ConfirmationSlipModal({
 
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase  text-foreground flex justify-between">
+            <label className="text-base font-black uppercase  text-foreground flex justify-between">
               1. Scan or Type 12-Digit LRN
               {loading && (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -188,7 +188,7 @@ export function ConfirmationSlipModal({
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-xs font-bold">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-base font-bold">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
@@ -197,7 +197,7 @@ export function ConfirmationSlipModal({
           {learner && (
             <Card className="border-2 border-emerald-100 bg-emerald-50/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="bg-emerald-100/50 px-4 py-2 border-b border-emerald-100 flex justify-between items-center">
-                <span className="text-xs font-black uppercase  text-emerald-800">
+                <span className="text-base font-black uppercase  text-emerald-800">
                   Learner Found
                 </span>
                 <Badge
@@ -211,7 +211,7 @@ export function ConfirmationSlipModal({
                   <span className="text-xl font-black text-slate-900 uppercase">
                     {learner.lastName}, {learner.firstName} {learner.middleName}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">
+                  <span className="text-base font-bold text-slate-500">
                     Previous: {learner.previousGradeLevel} •{" "}
                     {learner.previousSection}
                   </span>
@@ -256,7 +256,7 @@ export function ConfirmationSlipModal({
           {!learner && !loading && !error && (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-20">
               <Search className="h-12 w-12" />
-              <p className="text-sm font-bold uppercase ">
+              <p className="text-base leading-tight font-bold uppercase ">
                 Awaiting LRN Input
               </p>
             </div>

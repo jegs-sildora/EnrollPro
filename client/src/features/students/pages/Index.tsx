@@ -45,7 +45,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   formatManilaDate,
   formatScpType,
-  getLearnerStatusColorClasses,
+
   SCP_ACRONYMS,
   cn,
 } from "@/shared/lib/utils";
@@ -515,14 +515,12 @@ export default function Students() {
       .replace(/^\w/, (c) => c.toUpperCase());
 
     return (
-      <Badge
-        variant="outline"
+      <span
         className={cn(
-          "text-[10px] font-black uppercase px-2 h-5 border-none whitespace-nowrap",
-          getLearnerStatusColorClasses(status),
+          "inline-flex px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full bg-primary/10 text-primary border border-primary/20",
         )}>
         {label}
-      </Badge>
+      </span>
     );
   };
 
@@ -786,11 +784,11 @@ export default function Students() {
         ),
         cell: ({ row }) => (
           <div className="flex flex-col text-left min-w-[200px] pl-2">
-            <span className="font-bold text-sm uppercase leading-tight">
+            <span className="font-bold text-base uppercase leading-tight">
               {row.original.fullName}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-bold text-foreground leading-snug opacity-80">
+              <span className="text-base font-bold text-foreground leading-snug opacity-80">
                 {formatLearningProgramLabel(row.original.learningProgram)}
               </span>
               {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -815,7 +813,7 @@ export default function Students() {
         ),
         cell: ({ row }) => (
           <div className="flex w-full justify-center">
-            <span className="font-bold text-sm text-center">{row.original.lrn}</span>
+            <span className="font-bold text-base leading-tight text-center">{row.original.lrn}</span>
           </div>
         ),
       },
@@ -841,7 +839,7 @@ export default function Students() {
 
           return (
             <div className="flex w-full justify-center">
-              <span className="font-bold text-sm uppercase text-center">{display}</span>
+              <span className="font-bold text-base leading-tight uppercase text-center">{display}</span>
             </div>
           );
         },
@@ -859,7 +857,7 @@ export default function Students() {
         ),
         cell: ({ row }) => (
           <div className="flex w-full justify-center">
-            <span className="font-bold text-sm text-center">{row.original.gradeLevel}</span>
+            <span className="font-bold text-base leading-tight text-center">{row.original.gradeLevel}</span>
           </div>
         ),
       },
@@ -876,7 +874,7 @@ export default function Students() {
         ),
         cell: ({ row }) => (
           <div className="flex w-full justify-center">
-            <span className="font-bold text-sm text-center">
+            <span className="font-bold text-base leading-tight text-center">
               {formatSectionLabel(row.original.section)}
             </span>
           </div>
@@ -911,7 +909,7 @@ export default function Students() {
         ),
         cell: ({ row }) => (
           <div className="flex w-full justify-center">
-            <span className="text-sm font-bold text-center block">
+            <span className="text-base leading-tight font-bold text-center block">
               {formatDate(row.original.dateEnrolled || row.original.createdAt)}
             </span>
           </div>
@@ -929,14 +927,14 @@ export default function Students() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
             <div className="flex-1 space-y-2 w-full">
-              <Label className="text-xs sm:text-sm uppercase  font-bold">
+              <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
                 Search Learner
               </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
                 <Input
                   placeholder="LRN, first name, last name..."
-                  className="pl-9 h-10 text-sm font-bold"
+                  className="pl-9 h-10 text-base leading-tight font-bold"
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -946,7 +944,7 @@ export default function Students() {
             </div>
             <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
               <div className="space-y-2">
-                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
                   Grade Level
                 </Label>
                 <Select
@@ -957,20 +955,20 @@ export default function Students() {
                       setPage(1);
                     });
                   }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
                     <SelectValue placeholder="All Grades" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
                       value="all"
-                      className="text-sm font-bold">
+                      className="text-base leading-tight font-bold">
                       All Grades
                     </SelectItem>
                     {gradeLevels.map((gl) => (
                       <SelectItem
                         key={gl.id}
                         value={gl.id.toString()}
-                        className="text-sm font-bold">
+                        className="text-base leading-tight font-bold">
                         {gl.name}
                       </SelectItem>
                     ))}
@@ -978,7 +976,7 @@ export default function Students() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
                   Program
                 </Label>
                 <Select
@@ -989,20 +987,20 @@ export default function Students() {
                       setPage(1);
                     });
                   }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
                     <SelectValue placeholder="All Programs" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
                       value="all"
-                      className="text-sm font-bold">
+                      className="text-base leading-tight font-bold">
                       All Programs
                     </SelectItem>
                     {availablePrograms.map((option) => (
                       <SelectItem
                         key={option.value}
                         value={option.value}
-                        className="text-sm font-bold">
+                        className="text-base leading-tight font-bold">
                         {option.label}
                       </SelectItem>
                     ))}
@@ -1010,7 +1008,7 @@ export default function Students() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
                   Section
                 </Label>
                 <Select
@@ -1021,13 +1019,13 @@ export default function Students() {
                       setPage(1);
                     });
                   }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold hover:bg-accent hover:text-accent-foreground transition-colors">
                     <SelectValue placeholder="All Sections" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
                       value="all"
-                      className="text-sm font-bold">
+                      className="text-base leading-tight font-bold">
                       All Sections
                     </SelectItem>
                     {gradeLevelFilter === "all" ? (
@@ -1038,12 +1036,12 @@ export default function Students() {
                         if (glSections.length === 0) return null;
                         return (
                           <SelectGroup key={gl.id}>
-                            <SelectLabel className="text-xs text-muted-foreground uppercase">{gl.name}</SelectLabel>
+                            <SelectLabel className="text-base text-muted-foreground uppercase">{gl.name}</SelectLabel>
                             {glSections.map((sec) => (
                               <SelectItem
                                 key={sec.id}
                                 value={sec.id.toString()}
-                                className="text-sm font-bold">
+                                className="text-base leading-tight font-bold">
                                 {formatSectionLabel(sec.name)}
                               </SelectItem>
                             ))}
@@ -1055,7 +1053,7 @@ export default function Students() {
                         <SelectItem
                           key={sec.id}
                           value={sec.id.toString()}
-                          className="text-sm font-bold">
+                          className="text-base leading-tight font-bold">
                           {formatSectionLabel(sec.name)}
                         </SelectItem>
                       ))
@@ -1067,7 +1065,7 @@ export default function Students() {
             <div className="flex w-full md:w-auto items-center gap-2">
               <Button
                 variant="outline"
-                className="h-10 px-3 text-sm font-bold w-full md:w-auto"
+                className="h-10 px-3 text-base leading-tight font-bold w-full md:w-auto"
                 onClick={() => {
                   void Promise.all([
                     queryClient.invalidateQueries({
@@ -1089,7 +1087,7 @@ export default function Students() {
 
               <Button
                 variant="outline"
-                className="h-10 px-3 text-sm font-bold w-full md:w-auto"
+                className="h-10 px-3 text-base leading-tight font-bold w-full md:w-auto"
                 onClick={() => {
                   startTransition(() => {
                     clearSearch();
@@ -1118,7 +1116,7 @@ export default function Students() {
                 ? "JHS Completer Records"
                 : "Inactive / Transferred Records"}
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm font-bold">
+          <CardDescription className="text-base sm:text-base leading-tight font-bold">
             Showing {students.length} of {total} learners
           </CardDescription>
         </CardHeader>
@@ -1197,7 +1195,7 @@ export default function Students() {
                 className="flex-1 flex flex-col overflow-hidden">
                 <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
                   {students.length === 0 ? (
-                    <div className="rounded-xl border p-6 text-center text-sm font-bold">
+                    <div className="rounded-xl border p-6 text-center text-base leading-tight font-bold">
                       No learners found for the selected filters.
                     </div>
                   ) : (
@@ -1207,11 +1205,11 @@ export default function Students() {
                         className="rounded-xl border bg-[hsl(var(--card))] p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-bold text-sm uppercase leading-tight break-words">
+                            <p className="font-bold text-base uppercase leading-tight break-words">
                               {student.fullName}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <p className="text-xs font-bold text-foreground leading-snug">
+                              <p className="text-base font-bold text-foreground leading-snug">
                                 {formatLearningProgramLabel(
                                   student.learningProgram,
                                 )}
@@ -1226,15 +1224,15 @@ export default function Students() {
                           {renderLearnerStatus(student)}
                         </div>
 
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-base">
                           <div>
-                            <p className="text-xs uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-bold text-foreground">
                               LRN
                             </p>
                             <p className="font-bold">{student.lrn}</p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-bold text-foreground">
                               Sex
                             </p>
                             <p className="font-bold uppercase">
@@ -1247,13 +1245,13 @@ export default function Students() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-bold text-foreground">
                               Grade Level
                             </p>
                             <p className="font-bold">{student.gradeLevel}</p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-bold text-foreground">
                               Section
                             </p>
                             <p className="font-bold">
@@ -1273,7 +1271,7 @@ export default function Students() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-9 flex-1 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            className="h-9 flex-1 text-base font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                             onClick={() => handleViewDetails(student.id)}>
                             <Eye className="h-3.5 w-3.5 mr-1.5" />
                             View
@@ -1283,7 +1281,7 @@ export default function Students() {
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                className="h-9 w-10 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                                className="h-9 w-10 px-0 text-base font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                                 aria-label={`Open actions for ${student.fullName}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -1382,7 +1380,7 @@ export default function Students() {
               <p className="font-bold text-foreground">
                 No School Year Selected
               </p>
-              <p className="text-sm text-foreground leading-relaxed px-4">
+              <p className="text-base text-foreground leading-relaxed px-4">
                 Please set an active year or choose one from the header switcher
                 to manage records for this period.
               </p>
@@ -1400,7 +1398,7 @@ export default function Students() {
         <h1 className="text-2xl sm:text-3xl font-bold">
           Master Learner Registry (LIS)
         </h1>
-        <p className="text-sm font-bold text-foreground">
+        <p className="text-base leading-tight font-bold text-foreground">
           Manage officially enrolled demographic data, enrollment histories, and permanent records.
         </p>
       </div>
@@ -1410,7 +1408,7 @@ export default function Students() {
         {/* Card 1: Total Enrolled + Grade Breakdown */}
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
               Total Enrolled
             </CardDescription>
@@ -1423,7 +1421,7 @@ export default function Students() {
               {GRADE_DISPLAY.map(({ key, label }) => (
                 <div
                   key={key}
-                  className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2 text-xs font-bold">
+                  className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2 text-base font-bold">
                   <span>{label}</span>
                   <span className="font-extrabold">
                     {summaryLoading ? "…" : <AnimatedNumber value={summary?.gradeBreakdown[key] ?? 0} />}
@@ -1437,34 +1435,34 @@ export default function Students() {
         {/* Card 2: Gender Breakdown + Progress Bar */}
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
               <PieChart className="h-3.5 w-3.5" />
               Sex Breakdown
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-foreground">…</div>
+              <div className="text-base leading-tight font-bold text-foreground">…</div>
             ) : !summary ? (
-              <p className="text-xs font-bold text-foreground">
+              <p className="text-base font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
+                  <div className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
                       <Mars className="h-3.5 w-3.5 text-sky-700" /> Male
                     </span>
-                    <span className="text-xs font-extrabold text-sky-700">
+                    <span className="text-base font-extrabold text-sky-700">
                       <AnimatedNumber value={summary.genderBreakdown.male} />
                     </span>
                   </div>
-                  <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
+                  <div className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
                       <Venus className="h-3.5 w-3.5 text-rose-700" /> Female
                     </span>
-                    <span className="text-xs font-extrabold text-rose-700">
+                    <span className="text-base font-extrabold text-rose-700">
                       <AnimatedNumber value={summary.genderBreakdown.female} />
                     </span>
                   </div>
@@ -1508,7 +1506,7 @@ export default function Students() {
         {/* Card 3: Curricular Programs */}
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5" />
               Curricular Programs
             </CardDescription>
@@ -1520,9 +1518,9 @@ export default function Students() {
           </CardHeader>
           <CardContent className="pt-0">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-foreground">…</div>
+              <div className="text-base leading-tight font-bold text-foreground">…</div>
             ) : programBreakdownItems.length === 0 ? (
-              <p className="text-xs font-bold text-foreground">
+              <p className="text-base font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1534,11 +1532,11 @@ export default function Students() {
                 {programBreakdownItems.map((item) => (
                   <div
                     key={item.key}
-                    className="flex items-center justify-between text-sm gap-2">
+                    className="flex items-center justify-between text-base leading-tight gap-2">
                     <span className="text-[11px] font-bold uppercase">
                       {item.label}
                     </span>
-                    <span className="text-xs font-extrabold text-blue-700">
+                    <span className="text-base font-extrabold text-blue-700">
                       <AnimatedNumber value={item.count} />
                     </span>
                   </div>
@@ -1551,7 +1549,7 @@ export default function Students() {
         {/* Card 4: Special Demographics / Flags */}
         <Card className="h-full shadow-sm bg-amber-50/40 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-800/30">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
               <Flag className="h-3.5 w-3.5 text-amber-600" />
               Special Demographics
             </CardDescription>
@@ -1561,9 +1559,9 @@ export default function Students() {
           </CardHeader>
           <CardContent className="pt-0">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-foreground">…</div>
+              <div className="text-base leading-tight font-bold text-foreground">…</div>
             ) : !summary ? (
-              <p className="text-xs font-bold text-foreground">
+              <p className="text-base font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1575,7 +1573,7 @@ export default function Students() {
                 ].map(({ label, value }) => (
                   <div
                     key={label}
-                    className="flex items-center justify-between text-xs font-bold">
+                    className="flex items-center justify-between text-base font-bold">
                     <span className="text-foreground">{label}</span>
                     <AnimatedNumber value={value} className="font-extrabold text-foreground" />
                   </div>
@@ -1738,7 +1736,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-xs font-bold">
+            <AlertDescription className="text-base font-bold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.
@@ -1808,7 +1806,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-xs font-bold">
+            <AlertDescription className="text-base font-bold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.

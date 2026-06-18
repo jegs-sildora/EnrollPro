@@ -296,7 +296,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     suffix: formSuffix ?? activeTeacher.suffix,
                   } as Teacher)}
                 </SheetTitle>
-                <SheetDescription className="text-white/80 font-bold uppercase text-xs flex items-center gap-2">
+                <SheetDescription className="text-white/80 font-bold uppercase text-base flex items-center gap-2">
                   <Fingerprint className="size-3" />
                   Employee ID: {activeTeacher.employeeId || "N/A"}
                 </SheetDescription>
@@ -309,7 +309,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
               {/* Card 1: EMPLOYMENT & SYSTEM PROFILE */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-primary" />
                     1. Employment & System Profile
@@ -317,7 +317,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </div>
                 <div className="px-5 pb-5 pt-4 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase text-foreground">
+                    <Label className="text-base font-black uppercase text-foreground">
                       SYSTEM ROLES & DESIGNATIONS *
                     </Label>
                     <Controller
@@ -343,7 +343,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   field.onChange(newRoles);
                                 }}
                               />
-                              <Label htmlFor={`role-${roleOption.value}`} className="text-xs font-bold uppercase cursor-pointer flex-1">
+                              <Label htmlFor={`role-${roleOption.value}`} className="text-base font-bold uppercase cursor-pointer flex-1">
                                 {roleOption.label}
                               </Label>
                             </div>
@@ -354,7 +354,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   </div>
 
                   <div className="space-y-1.5 mt-4">
-                    <Label className="text-xs font-black uppercase text-foreground">DepEd Position</Label>
+                    <Label className="text-base font-black uppercase text-foreground">DepEd Position</Label>
                     <Controller
                       name="plantillaPosition"
                       control={control}
@@ -365,16 +365,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               value={field.value || ""}
                               onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                               placeholder="e.g. MASTER TEACHER II"
-                              className="font-bold text-sm bg-background text-foreground border-border h-10"
+                              className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                               readOnly={formRoles.includes("MRF")}
                               aria-readonly={formRoles.includes("MRF")}
                             />
                           ) : (
                             <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                              <SelectTrigger className="font-bold text-sm bg-background text-foreground border-border h-10">
+                              <SelectTrigger className="font-bold text-base leading-tight bg-background text-foreground border-border h-10">
                                 <SelectValue placeholder="Select position" />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-sm uppercase max-h-[300px]">
+                              <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-base leading-tight uppercase max-h-[300px]">
                                 <SelectItem value="__NONE__">Not set</SelectItem>
                                 {designationPool.map((opt) => (
                                   <SelectItem key={opt} value={opt}>
@@ -391,16 +391,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                   {isFormTeachingStaff && (
                     <div className="space-y-1.5 mt-4">
-                      <Label className="text-xs font-black uppercase text-foreground">Department</Label>
+                      <Label className="text-base font-black uppercase text-foreground">Department</Label>
                       <Controller
                         name="department"
                         control={control}
                         render={({ field }) => (
                           <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                            <SelectTrigger className="font-bold text-sm bg-background text-foreground border-border h-10">
+                            <SelectTrigger className="font-bold text-base leading-tight bg-background text-foreground border-border h-10">
                               <SelectValue placeholder="Select department" />
                             </SelectTrigger>
-                            <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-sm uppercase max-h-[300px]">
+                            <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-base leading-tight uppercase max-h-[300px]">
                               <SelectItem value="__NONE__">Not set</SelectItem>
                               {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
@@ -417,16 +417,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <div className="space-y-4 pt-4 border-t border-border mt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-black uppercase text-foreground">Account Status</Label>
+                        <Label className="text-base font-black uppercase text-foreground">Account Status</Label>
                         <Controller
                           name="serviceStatus"
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={field.onChange} value={field.value || "ACTIVE"}>
-                              <SelectTrigger className="font-bold text-sm bg-background text-foreground border-border h-10">
+                              <SelectTrigger className="font-bold text-base leading-tight bg-background text-foreground border-border h-10">
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-sm uppercase max-h-[300px]">
+                              <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-base leading-tight uppercase max-h-[300px]">
                                 <SelectItem value="ACTIVE">Active</SelectItem>
                                 <SelectItem value="TRANSFERRED">Inactive (Transferred)</SelectItem>
                                 <SelectItem value="RETIRED_RESIGNED">Inactive (Resigned/Retired)</SelectItem>
@@ -439,7 +439,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
                       {formServiceStatus !== "ACTIVE" && (
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-black uppercase text-foreground">Effective Date</Label>
+                          <Label className="text-base font-black uppercase text-foreground">Effective Date</Label>
                           <Controller
                             name="serviceEffectiveDate"
                             control={control}
@@ -447,7 +447,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               <HybridDatePicker
                                 value={field.value || ""}
                                 onChange={field.onChange}
-                                className="h-10 font-bold text-sm"
+                                className="h-10 font-bold text-base leading-tight"
                               />
                             )}
                           />
@@ -456,14 +456,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
                     {formServiceStatus !== "ACTIVE" && (
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-black uppercase text-foreground">Remarks / Context <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
+                        <Label className="text-base font-black uppercase text-foreground">Remarks / Context <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
                         <Controller
                           name="serviceRemarks"
                           control={control}
                           render={({ field }) => (
                             <Textarea
                               placeholder="e.g., Maternity Leave, Transferred to Manila..."
-                              className="min-h-[80px] resize-none font-bold text-sm"
+                              className="min-h-[80px] resize-none font-bold text-base leading-tight"
                               {...field}
                               value={field.value ?? ""}
                             />
@@ -477,7 +477,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
               {/* Card 2: IDENTITY & CONTACT DETAILS */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-primary" />
                     2. Identity & Contact Details
@@ -486,7 +486,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 <div className="px-5 pb-5 pt-4 space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground">First Name *</Label>
+                      <Label className="text-base font-black uppercase text-foreground">First Name *</Label>
                       <Controller
                         name="firstName"
                         control={control}
@@ -494,13 +494,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground">Last Name *</Label>
+                      <Label className="text-base font-black uppercase text-foreground">Last Name *</Label>
                       <Controller
                         name="lastName"
                         control={control}
@@ -508,13 +508,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground">Middle Name <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
+                      <Label className="text-base font-black uppercase text-foreground">Middle Name <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
                       <Controller
                         name="middleName"
                         control={control}
@@ -523,13 +523,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground">Suffix <span className="text-foreground/50 font-bold ml-1">(e.g., JR., III)</span></Label>
+                      <Label className="text-base font-black uppercase text-foreground">Suffix <span className="text-foreground/50 font-bold ml-1">(e.g., JR., III)</span></Label>
                       <Controller
                         name="suffix"
                         control={control}
@@ -539,7 +539,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             placeholder="JR., III"
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
@@ -547,7 +547,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-black uppercase text-foreground">Sex *</Label>
+                    <Label className="text-base font-black uppercase text-foreground">Sex *</Label>
                     <Controller
                       name="sex"
                       control={control}
@@ -564,7 +564,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               type="button"
                               onClick={() => field.onChange(s.val)}
                               className={cn(
-                                "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-sm font-black uppercase",
+                                "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-black uppercase",
                                 field.value === s.val
                                   ? "border-primary bg-primary/5 text-primary"
                                   : "border-border hover:bg-muted/50 text-foreground",
@@ -587,7 +587,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                   <div className="grid gap-4 sm:grid-cols-2 mt-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground flex items-center gap-1">
+                      <Label className="text-base font-black uppercase text-foreground flex items-center gap-1">
                         <Smartphone className="size-3" />
                         Mobile Number
                       </Label>
@@ -601,13 +601,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
                             maxLength={11}
                             placeholder="09XXXXXXXXX"
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase text-foreground flex items-center gap-1">
+                      <Label className="text-base font-black uppercase text-foreground flex items-center gap-1">
                         <Mail className="size-3" />
                         Email Address *
                       </Label>
@@ -620,7 +620,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             value={field.value || ""}
                             type="email"
                             placeholder="juan@deped.edu.ph"
-                            className="font-bold text-sm bg-background text-foreground border-border h-10"
+                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
                       />
@@ -632,7 +632,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               {/* Card 3: ACTIVE SCHOOL YEAR ASSIGNMENTS */}
               {isTeachingStaff && (
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-sm tracking-wider text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                  <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
                       3. Active School Year Assignments
@@ -641,28 +641,28 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <div className="divide-y">
                     <div className="p-4">
                       <div className="space-y-1">
-                        <p className="text-xs font-black uppercase text-foreground leading-none">Advisory Section</p>
+                        <p className="text-base font-black uppercase text-foreground leading-none">Advisory Section</p>
                         {activeTeacher.designation?.advisorySection ? (
                           <div className="space-y-0.5 pt-1">
-                            <p className="font-black text-sm text-primary uppercase">{activeTeacher.designation.advisorySection.name}</p>
-                            <p className="text-xs font-bold text-foreground uppercase">{activeTeacher.designation.advisorySection.gradeLevelName}</p>
+                            <p className="font-black text-base leading-tight text-primary uppercase">{activeTeacher.designation.advisorySection.name}</p>
+                            <p className="text-base font-bold text-foreground uppercase">{activeTeacher.designation.advisorySection.gradeLevelName}</p>
                           </div>
                         ) : (
-                          <p className="text-sm font-bold text-slate-400 italic pt-1">None assigned</p>
+                          <p className="text-base leading-tight font-bold text-slate-400 italic pt-1">None assigned</p>
                         )}
                       </div>
                     </div>
 
                     <div className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-black uppercase text-foreground leading-none">Subject Teaching Load</p>
+                        <p className="text-base font-black uppercase text-foreground leading-none">Subject Teaching Load</p>
                         {loadLoading ? (
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-primary animate-pulse">
+                          <div className="flex items-center gap-1.5 text-base font-bold text-primary animate-pulse">
                             <RefreshCw className="h-3 w-3 animate-spin" />
                             SYNCING...
                           </div>
                         ) : (
-                          <Badge variant="outline" className="text-xs font-bold border-dashed border-primary/30 text-primary/60 bg-primary/5">
+                          <Badge variant="outline" className="text-base font-bold border-dashed border-primary/30 text-primary/60 bg-primary/5">
                             {loadError ? "Teaching Load Sync Failed" : "LIVE FROM ATLAS"}
                           </Badge>
                         )}
@@ -678,22 +678,22 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             {teachingLoad.map((load, idx) => (
                               <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
                                 <div className="space-y-0.5">
-                                  <p className="text-xs font-black uppercase text-primary leading-none">{load.subjectName}</p>
-                                  <p className="text-xs font-bold text-foreground uppercase">{load.subjectCode}</p>
+                                  <p className="text-base font-black uppercase text-primary leading-none">{load.subjectName}</p>
+                                  <p className="text-base font-bold text-foreground uppercase">{load.subjectCode}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-black text-xs uppercase text-foreground leading-none">{load.sectionName}</p>
-                                  <p className="text-xs font-bold text-foreground uppercase">{load.gradeLevel}</p>
+                                  <p className="font-black text-base uppercase text-foreground leading-none">{load.sectionName}</p>
+                                  <p className="text-base font-bold text-foreground uppercase">{load.gradeLevel}</p>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
                           <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
-                            <p className="text-xs font-black uppercase text-foreground mb-1">
+                            <p className="text-base font-black uppercase text-foreground mb-1">
                               {loadError ? "Teaching Load Sync Failed" : "No Load Data Found"}
                             </p>
-                            <p className="text-xs font-bold text-foreground/60 leading-tight max-w-[240px]">
+                            <p className="text-base font-bold text-foreground/60 leading-tight max-w-[240px]">
                               {loadError
                                 ? "Class schedule data is currently unavailable. Please ask the System Admin to check the connection."
                                 : "No teaching load found in ATLAS."}

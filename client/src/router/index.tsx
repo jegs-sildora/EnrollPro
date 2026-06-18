@@ -143,11 +143,11 @@ export const router = createBrowserRouter([
                 element: <WalkInEncoder />,
               },
               {
-                path: "/monitoring/enrollment/eosy",
+                path: "/eosy",
                 element: <EosyUpdating />,
               },
               {
-                path: "/monitoring/enrollment/eosy/workspace",
+                path: "/eosy/workspace",
                 element: <RegistrarEOSYWorkspace />,
               },
               {

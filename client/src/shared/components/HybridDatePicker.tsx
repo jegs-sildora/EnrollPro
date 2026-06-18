@@ -174,7 +174,7 @@ export function HybridDatePicker({
         placeholder={placeholder}
         maxLength={isFocused ? 10 : 50}
         autoComplete="off"
-        className={cn("font-bold text-sm pr-10", className)}
+        className={cn("font-bold text-base pr-10", className)}
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

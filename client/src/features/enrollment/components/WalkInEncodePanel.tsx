@@ -171,7 +171,7 @@ export function WalkInEncodePanel() {
               <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
                 Walk-In Direct Encode
               </h2>
-              <p className="text-xs font-black text-primary-foreground/80 uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+              <p className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 Bypass verification and enter Unassigned Pool
               </p>
             </div>
@@ -185,7 +185,7 @@ export function WalkInEncodePanel() {
               <div className="space-y-4">
                 {/* LEARNER PROFILE BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-xs tracking-wider text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <User className="h-4 w-4 text-primary" />
                       1. Learner Profile
@@ -243,7 +243,7 @@ export function WalkInEncodePanel() {
                             }
                           }}
                         />
-                        <label htmlFor="noLrn" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-600">
+                        <label htmlFor="noLrn" className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-600">
                           Learner has no LRN yet
                         </label>
                       </div>
@@ -371,7 +371,7 @@ export function WalkInEncodePanel() {
 
                 {/* PREVIOUS SCHOOL BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-xs tracking-wider text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
                       2. Previous School Data
@@ -405,7 +405,7 @@ export function WalkInEncodePanel() {
 
                 {/* EMERGENCY CONTACT BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-xs tracking-wider text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-primary" />
                       3. Emergency Contact
@@ -451,14 +451,14 @@ export function WalkInEncodePanel() {
 
                 {/* CHECKLIST */}
                 <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-xs tracking-wider text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
+                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
                     <span className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       4. Document Checklist
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-xs text-amber-700 mb-4 mt-2">Leave unchecked if missing. Learner will be temporarily enrolled.</p>
+                    <p className="text-base text-amber-700 mb-4 mt-2">Leave unchecked if missing. Learner will be temporarily enrolled.</p>
                     <div className="space-y-2">
 
                       <FormField
@@ -497,14 +497,14 @@ export function WalkInEncodePanel() {
                 type="button"
                 onClick={() => handleOpenChange(false)}
                 disabled={form.formState.isSubmitting}
-                className="font-bold uppercase text-xs border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
+                className="font-bold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className={`font-bold uppercase text-xs px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
+                className={`font-bold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
               >
                 {form.formState.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

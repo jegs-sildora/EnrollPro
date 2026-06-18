@@ -271,7 +271,7 @@ export function SectioningWorkspace() {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+          <p className="text-base leading-tight font-bold text-slate-500 uppercase tracking-widest animate-pulse">
             Loading Workspace...
           </p>
         </div>
@@ -302,7 +302,7 @@ export function SectioningWorkspace() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className={cn("relative z-20 text-xs uppercase", activeGradeLevelId === String(g.id) ? "text-primary-foreground" : "text-foreground")}>{g.name.replace(/grade\s*/i, "Grade ")}</span>
+              <span className={cn("relative z-20 text-base uppercase", activeGradeLevelId === String(g.id) ? "text-primary-foreground" : "text-foreground")}>{g.name.replace(/grade\s*/i, "Grade ")}</span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -320,7 +320,7 @@ export function SectioningWorkspace() {
                     <Users className="h-5 w-5 text-primary" />
                     Unassigned Learners
                   </CardTitle>
-                  <CardDescription className="text-xs font-bold text-muted-foreground">Unassigned learners awaiting placement.</CardDescription>
+                  <CardDescription className="text-base font-bold text-muted-foreground">Unassigned learners awaiting placement.</CardDescription>
                 </div>
                 <Badge variant="outline" className="font-black bg-background border-border">{selectedAppIds.length} Selected</Badge>
               </div>
@@ -371,7 +371,7 @@ export function SectioningWorkspace() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border text-sm bg-card">
+                <tbody className="divide-y divide-border text-base leading-tight bg-card">
                   {filteredAndSortedPool.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="p-12 text-center text-muted-foreground font-bold">
@@ -443,14 +443,14 @@ export function SectioningWorkspace() {
                     <LayoutGrid className="h-5 w-5 text-primary" />
                     Available Sections
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground text-xs font-bold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+                  <CardDescription className="text-muted-foreground text-base font-bold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
                 </div>
                 <Button 
                   size="sm" 
                   variant="default"
                   disabled={currentGradePool.length === 0 || processing}
                   onClick={() => setIsAutoDistributeModalOpen(true)}
-                  className="font-bold text-xs uppercase tracking-wide gap-1"
+                  className="font-bold text-base uppercase tracking-normal gap-1"
                 >
                   <AlertTriangle className="h-4 w-4" />
                   Auto-Distribute
@@ -461,7 +461,7 @@ export function SectioningWorkspace() {
               {currentGradeSections.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground">
                   <Info className="h-8 w-8" />
-                  <span className="font-bold text-sm">No sections defined for this grade.</span>
+                  <span className="font-bold text-base leading-tight">No sections defined for this grade.</span>
                 </div>
               ) : (
                 currentGradeSections.map((s) => {
@@ -513,7 +513,7 @@ export function SectioningWorkspace() {
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold">
+                        <div className="flex items-center justify-between text-base font-bold">
                           <span className="text-muted-foreground uppercase tracking-widest text-[10px]">Capacity Fill</span>
                           <span className={cn(isOverCapacity ? "text-destructive font-black" : "text-foreground/70")}>
                             {s.currentCount} / {s.maxCapacity} {isOverCapacity && <AlertTriangle className="inline h-3 w-3 ml-1" />}
@@ -541,7 +541,7 @@ export function SectioningWorkspace() {
                 onClick={assignLearners}
                 disabled={selectedAppIds.length === 0 || !targetSectionId || processing || isHistoricalReadOnly}
                 className={cn(
-                  "w-full h-12 text-sm font-black uppercase tracking-widest transition-all shadow-none",
+                  "w-full h-12 text-base leading-tight font-black uppercase tracking-widest transition-all shadow-none",
                   selectedAppIds.length > 0 && targetSectionId
                     ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted"
