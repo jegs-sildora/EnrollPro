@@ -23,14 +23,12 @@ export function AccessibilityMenu() {
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<PopoverTrigger asChild>
-							<Button
-								variant='outline'
-								size='sm'
-								className='h-8 w-8 p-0 text-primary hover:bg-primary/10	hover:text-primary'
+							<button
+								className='p-2 text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-900 transition-colors'
 								aria-label='Accessibility options'
 							>
 								<Accessibility className='size-4' />
-							</Button>
+							</button>
 						</PopoverTrigger>
 					</TooltipTrigger>
 					<TooltipContent>Accessibility Options</TooltipContent>

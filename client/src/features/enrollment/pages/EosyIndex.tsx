@@ -109,17 +109,17 @@ const formatStatusLabel = (status: EosyStatus | null) => {
 
   switch (normalized) {
     case "PROMOTED":
-      return "Promoted";
+      return "PROMOTED";
     case "RETAINED":
-      return "Retained";
+      return "RETAINED";
     case "CONDITIONALLY_PROMOTED":
-      return "Irregular";
+      return "PROMOTED (TO BEC)";
     case "TRANSFERRED_OUT":
-      return "Transferred Out";
+      return "TRANSFERRED OUT";
     case "DROPPED_OUT":
-      return "Dropped Out";
+      return "DROPPED OUT";
     default:
-      return "Promoted";
+      return "PROMOTED";
   }
 };
 
@@ -577,7 +577,7 @@ export default function EosyUpdating() {
                     ? "text-green-700 bg-green-50 border-green-200"
                     : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
-              <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (To BEC)" : statusLabel}</span>
+              <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
               {isScpDemoted && resolvedStatus === "PROMOTED" && (
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-2 cursor-help" />
               )}
@@ -632,7 +632,7 @@ export default function EosyUpdating() {
                         "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-bold whitespace-nowrap rounded-md border",
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
-                      <span className="flex-1 text-left">PROMOTED (To BEC)</span>
+                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-1" />
                     </SelectTrigger>
                   )
@@ -649,14 +649,14 @@ export default function EosyUpdating() {
                 )}
                 <SelectContent>
                   {isScpDemoted ? (
-                    <SelectItem value="PROMOTED_TO_BEC">Promoted (To BEC)</SelectItem>
+                    <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
                   ) : (
-                    <SelectItem value="PROMOTED">Promoted</SelectItem>
+                    <SelectItem value="PROMOTED">PROMOTED</SelectItem>
                   )}
-                  <SelectItem value="RETAINED">Retained</SelectItem>
-                  <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
-                  <SelectItem value="TRANSFERRED_OUT">Transferred</SelectItem>
-                  <SelectItem value="DROPPED_OUT">Dropped</SelectItem>
+                  <SelectItem value="RETAINED">RETAINED</SelectItem>
+                  <SelectItem value="CONDITIONALLY_PROMOTED">PROMOTED (TO BEC)</SelectItem>
+                  <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -779,7 +779,7 @@ export default function EosyUpdating() {
                         value={sectionFilter}
                         onValueChange={setSectionFilter}
                       >
-                        <SelectTrigger className="w-56 bg-background border-border hover:bg-accent hover:text-accent-foreground transition-colors font-bold">
+                        <SelectTrigger className="w-56 bg-background border-border font-bold">
                           <SelectValue placeholder="Filter by Section / Adviser" />
                         </SelectTrigger>
                         <SelectContent>
@@ -808,15 +808,15 @@ export default function EosyUpdating() {
                             onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
                             disabled={Object.keys(rowSelection).length === 0}
                           >
-                            <SelectTrigger className="w-48 bg-background border-border hover:bg-accent hover:text-accent-foreground transition-colors font-bold">
+                            <SelectTrigger className="w-48 bg-background border-border font-bold">
                               <SelectValue placeholder="Select New Status..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="PROMOTED">Promoted</SelectItem>
-                              <SelectItem value="RETAINED">Retained</SelectItem>
-                              <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
-                              <SelectItem value="TRANSFERRED_OUT">Transferred Out</SelectItem>
-                              <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
+                              <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+                              <SelectItem value="RETAINED">RETAINED</SelectItem>
+                              <SelectItem value="CONDITIONALLY_PROMOTED">PROMOTED (TO BEC)</SelectItem>
+                              <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+                              <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -878,7 +878,7 @@ export default function EosyUpdating() {
                           onClick={() => setFinalizeModalOpen(true)}
                           disabled={records.length === 0}
                           size="lg"
-                          className="font-bold shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="font-bold shadow-md transition-all bg-primary text-primary-foreground"
                         >
                           Finalize & Lock {targetScopeName}
                         </Button>

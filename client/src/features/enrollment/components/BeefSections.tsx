@@ -199,6 +199,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     isPrimary: boolean,
   ) => {
     const firstName = info?.firstName as string | undefined;
+    const middleName = info?.middleName as string | undefined;
     const lastName = (info?.lastName || info?.maidenName) as string | undefined;
 
     const validName = isValid(firstName) || isValid(lastName);
@@ -206,8 +207,8 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     const fullName = !validName
       ? null
       : info?.maidenName
-        ? `${firstName || ""} ${info.maidenName}`.trim()
-        : `${firstName || ""} ${info?.lastName || ""}`.trim();
+        ? `${firstName || ""} ${middleName || ""} ${info.maidenName}`.replace(/\s+/g, " ").trim()
+        : `${firstName || ""} ${middleName || ""} ${info?.lastName || ""}`.replace(/\s+/g, " ").trim();
 
     return {
       label,

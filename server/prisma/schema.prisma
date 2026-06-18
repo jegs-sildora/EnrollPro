@@ -388,6 +388,7 @@ model EnrollmentRecord {
   eosyStatus              EosyStatus?           @map("eosy_status")
   transferOutDate         DateTime?             @map("transfer_out_date") @db.Date
   dropOutDate             DateTime?             @map("drop_out_date") @db.Date
+  dropOutInterventionNotes String?              @map("drop_out_intervention_notes")
   transferOutSchoolName   String?               @map("transfer_out_school_name")
   transferOutReason       String?               @map("transfer_out_reason")
   confirmationConsent     Boolean?              @map("confirmation_consent")

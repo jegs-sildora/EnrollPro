@@ -27,6 +27,20 @@ async function main() {
     },
   });
 
+  const enrolledLearners = await prisma.enrollmentRecord.findMany({
+    where: { schoolYearId: activeSchoolYear.id },
+    select: { learnerId: true },
+  });
+
+  const learnerIds = enrolledLearners.map((r) => r.learnerId);
+
+  const learnerResult = await prisma.learner.updateMany({
+    where: { id: { in: learnerIds } },
+    data: {
+      status: "ACTIVE",
+    },
+  });
+
   const sectionsResult = await prisma.section.updateMany({
     where: { schoolYearId: activeSchoolYear.id },
     data: {
@@ -42,6 +56,7 @@ async function main() {
   });
 
   console.log(`✅ Reset ${result.count} enrollment records for SY ${activeSchoolYear.yearLabel}.`);
+  console.log(`✅ Reset ${learnerResult.count} learner statuses to ACTIVE.`);
   console.log(`✅ Reset finalization status for ${sectionsResult.count} sections and the school year.`);
 }
 

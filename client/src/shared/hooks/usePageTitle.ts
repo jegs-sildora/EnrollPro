@@ -18,23 +18,27 @@ function resolvePageTitle(pathname: string, search: string): string | null {
 
   // Exact matches first
   const exact: Record<string, string> = {
-    "/": "Dashboard",
-    "/dashboard": "Dashboard",
+    "/": "Master Dashboard",
+    "/dashboard": "Master Dashboard",
     "/login": "Sign In",
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",
     "/applications/enrollment": "Enrollment",
-    "/monitoring/enrollment": "Enrollment Monitoring",
-    "/students": "Learner Directory",
+    "/bosy": "Early Registration",
+    "/monitoring/enrollment": "Sectioning & SF1 Prep",
+    "/eosy": "EOSY Grade Finalization",
+    "/students": "Learner Registry",
     "/sections": "Sections",
-    "/sections/homerooms": "Homeroom Sections",
-    "/audit-logs": "Audit Logs",
-    "/settings": "Settings",
-    "/teachers": "Teacher Directory",
-    "/admin/users": "User Management",
+    "/sections/homerooms": "Adviser Assignments",
+    "/audit-logs": "Activity Logs",
+    "/settings": "System Configuration",
+    "/teachers": "Faculty & Staff",
+    "/admin/users": "Account Access",
     "/admin/system": "System Health",
-    "/admin/integration": "Integration Hub",
+    "/admin/integration": "Integrated Systems",
     "/monitoring/enrollment/requirements": "Documentary Requirements",
+    "/teacher/eosy": "EOSY Updating",
+    "/teacher/advisory": "My Advisory Class",
   };
 
   if (exact[pathname]) return exact[pathname];

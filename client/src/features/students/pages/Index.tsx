@@ -29,6 +29,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
+import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
@@ -224,6 +225,7 @@ const formatSectionLabel = (rawSection: string | null | undefined): string => {
 
   sectionName = sectionName
     .replace(/^G(?:RADE)?\s*\d+\s*[-_ ]*/i, "")
+    .replace(/^(REGULAR|STE|SPA|SPS|SPJ|SPFL|SPTVE)\s*[-_ ]*/i, "")
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -281,7 +283,8 @@ export default function Students() {
   const { activeSchoolYearId, viewingSchoolYearId, systemPhase } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "EOSY_CLOSING";
+  const canEditProfile = !isHistoricalReadOnly || hasOverride;
+  const canMutate = canEditProfile && systemPhase !== "EOSY_CLOSING";
   const queryClient = useQueryClient();
 
   const { panelPercentage, isDesktopViewport, startResizing } =
@@ -517,7 +520,7 @@ export default function Students() {
     return (
       <span
         className={cn(
-          "inline-flex px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full bg-primary/10 text-primary border border-primary/20",
+          "inline-flex px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider",
         )}>
         {label}
       </span>
@@ -619,6 +622,49 @@ export default function Students() {
   );
 
 
+  const handlePanelTransferOut = async (payload: any) => {
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
+        transferDate: payload.transferDate,
+        destinationSchool: payload.destinationSchool,
+        reasonNote: payload.reasonNote || undefined,
+      });
+
+      sileo.success({
+        title: "Transferred out",
+        description: "Learner lifecycle was updated successfully.",
+      });
+      await refreshTables();
+      await refreshDetailIfOpen(payload.student.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
+  const handlePanelDropout = async (payload: any) => {
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
+        dropOutDate: payload.dropOutDate,
+        reasonCode: payload.reasonCode,
+        interventionNotes: payload.interventionNotes || undefined,
+      });
+
+      sileo.success({
+        title: "Dropped out",
+        description: "Learner lifecycle was updated successfully.",
+      });
+      await refreshTables();
+      await refreshDetailIfOpen(payload.student.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
 
   const openAssignLrnDialog = useCallback(
     (student: Student | PanelStudentDetail) => {
@@ -771,7 +817,8 @@ export default function Students() {
   }, [summary]);
 
   const columns = useMemo<ColumnDef<Student>[]>(
-    () => [
+    () => {
+      const allColumns: ColumnDef<Student>[] = [
       {
         id: "lastName",
         accessorKey: "lastName",
@@ -782,23 +829,21 @@ export default function Students() {
             title="Learner"
           />
         ),
-        cell: ({ row }) => (
-          <div className="flex flex-col text-left min-w-[200px] pl-2">
+        cell: ({ row }) => {
+          return (
+          <div className="flex flex-col text-left min-w-[200px] pl-2 py-3">
             <span className="font-bold text-base uppercase leading-tight">
               {row.original.fullName}
             </span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-base font-bold text-foreground leading-snug opacity-80">
-                {formatLearningProgramLabel(row.original.learningProgram)}
-              </span>
-              {row.original.applicantType === "LATE_ENROLLEE" && (
+            {row.original.applicantType === "LATE_ENROLLEE" && (
+              <div className="flex items-center gap-2 mt-0.5">
                 <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
                   🕒 Late Enrollee
                 </Badge>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        ),
+        )},
       },
       {
         id: "lrn",
@@ -812,7 +857,7 @@ export default function Students() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center py-3">
             <span className="font-bold text-base leading-tight text-center">{row.original.lrn}</span>
           </div>
         ),
@@ -838,7 +883,7 @@ export default function Students() {
                 : row.original.sex || "—";
 
           return (
-            <div className="flex w-full justify-center">
+            <div className="flex w-full justify-center py-3">
               <span className="font-bold text-base leading-tight uppercase text-center">{display}</span>
             </div>
           );
@@ -856,7 +901,7 @@ export default function Students() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center py-3">
             <span className="font-bold text-base leading-tight text-center">{row.original.gradeLevel}</span>
           </div>
         ),
@@ -873,7 +918,7 @@ export default function Students() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center py-3">
             <span className="font-bold text-base leading-tight text-center">
               {formatSectionLabel(row.original.section)}
             </span>
@@ -886,12 +931,12 @@ export default function Students() {
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Status"
+            title="STATUS"
             className="justify-center [&_button]:!m-0"
           />
         ),
         cell: ({ row }) => (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center py-3">
             {renderLearnerStatus(row.original)}
           </div>
         ),
@@ -908,17 +953,16 @@ export default function Students() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center py-3">
             <span className="text-base leading-tight font-bold text-center block">
               {formatDate(row.original.dateEnrolled || row.original.createdAt)}
             </span>
           </div>
         ),
       },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+    ];
+    return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
+  }, [activeTab]);
 
   const renderContent = () => (
     <div className="space-y-6">
@@ -1601,8 +1645,8 @@ export default function Students() {
               />
             )}
             <span className="relative z-20">
-              <span className="hidden sm:inline">Active Enrolled</span>
-              <span className="sm:hidden">Active</span>
+              <span className="hidden sm:inline">Currently Enrolled</span>
+              <span className="sm:hidden">Current</span>
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -1616,7 +1660,7 @@ export default function Students() {
               />
             )}
             <span className="relative z-20">
-              <span className="hidden sm:inline">Alumni / JHS Completers</span>
+              <span className="hidden sm:inline">JHS Completers (Alumni)</span>
               <span className="sm:hidden">Alumni</span>
             </span>
           </TabsTrigger>
@@ -1631,7 +1675,7 @@ export default function Students() {
               />
             )}
             <span className="relative z-20">
-              <span className="hidden sm:inline">Transferred / Dropped Out</span>
+              <span className="hidden sm:inline">Transferred Out / Dropped</span>
               <span className="sm:hidden">Transferred / Dropped</span>
             </span>
           </TabsTrigger>
@@ -1714,9 +1758,9 @@ export default function Students() {
                 id={selectedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={refreshTables}
-                onTransferOut={openTransferOutDialog}
-                onDropout={openDropoutDialog}
-                canMutate={canMutate}
+                onTransferOut={handlePanelTransferOut}
+                onDropout={handlePanelDropout}
+                canEditProfile={canEditProfile}
               />
             </div>
           )}
@@ -1746,11 +1790,10 @@ export default function Students() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="transferOutDate">Transfer Date</Label>
-              <Input
-                id="transferOutDate"
-                type="date"
+              <HybridDatePicker
                 value={transferOutDate}
-                onChange={(event) => setTransferOutDate(event.target.value)}
+                onChange={setTransferOutDate}
+                placeholder="Select date"
               />
             </div>
             <div className="space-y-2">
@@ -1816,11 +1859,10 @@ export default function Students() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="dropOutDate">Dropout Date</Label>
-              <Input
-                id="dropOutDate"
-                type="date"
+              <HybridDatePicker
                 value={dropoutDate}
-                onChange={(event) => setDropoutDate(event.target.value)}
+                onChange={setDropoutDate}
+                placeholder="Select date"
               />
             </div>
             <div className="space-y-2">

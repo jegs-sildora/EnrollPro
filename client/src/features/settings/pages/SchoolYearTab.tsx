@@ -9,7 +9,6 @@ import {
   Lock,
   Plus,
   School,
-  CalendarDays,
   Workflow,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -1065,16 +1064,6 @@ export default function SchoolYearTab() {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
-          <CalendarDays className="text-maroon-700 w-6 h-6" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold ">
-            School Year Management
-          </h2>
-        </div>
-      </div>
 
       {!loading && isZeroState ? (
         <Card className="shadow-lg bg-white">
@@ -1106,10 +1095,8 @@ export default function SchoolYearTab() {
               "shadow-md",
               activeYear ? "border-green-500/20" : "border-amber-500/30",
             )}>
-            <CardHeader
-              className="bg-white border-b border-gray-200 pb-6 mb-6 rounded-t-lg flex flex-col justify-between items-start gap-4"
-            >
-              <div className="flex flex-col lg:flex-row w-full justify-between lg:items-start gap-4">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row w-full justify-between lg:items-start gap-4 mb-6">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-3 mb-1">
                     <CardTitle
@@ -1149,8 +1136,6 @@ export default function SchoolYearTab() {
                 )}
               </div>
 
-            </CardHeader>
-            <CardContent className="p-6">
               {activeYear ? (
                 <div className="space-y-6">
                   {/* System Academic Phase */}

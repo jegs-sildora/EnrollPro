@@ -1,27 +1,45 @@
-# MODULE: System Configuration - SY Header & Badge Refactoring (`/admin/system-configuration`)
-**Tech Stack:** React, Tailwind CSS
-**Context:** The current header uses an e-commerce style countdown timer ("Closes in 286 days") and a bloated, full-width badge. This must be replaced with a static, authoritative DepEd calendar display and a compact status pill.
+# MODULE: Edit Learner Data Form - Conditional Logic & Data Integrity
+**Tech Stack:** React, Tailwind CSS, React Hook Form (or similar)
+**Context:** The current "Update Learner Profile" form lacks specific data points required by DepEd SF1 and suffers from disconnected contact information. We must restructure the sections, implement conditional rendering, and enforce strict inputs.
 
 ## AGENT INSTRUCTIONS
-Execute the following modifications strictly. Purge any frontend math calculating days remaining.
+Execute the following form logic and DOM restructuring.
 
-### Task 1: Purge Countdown Logic
-*   **Target:** The `SchoolYearManagement` component.
-*   **Action:** Locate any JavaScript/TypeScript logic calculating the difference between the current date and the EOSY date (e.g., `daysRemaining`, `differenceInDays`). Delete this logic entirely.
+### Task 1: Personal Information Refinements (`image_0dd05b.png`)
+*   **Action 1 (Extension Dropdown):** Change the `EXTENSION` field from a text `<input>` to a `<select>` dropdown.
+    *   *Options:* `None`, `Jr.`, `Sr.`, `II`, `III`, `IV`, `V`.
+*   **Action 2 (Contact Info Relocation):** Remove the `CONTACT INFORMATION` sub-section from the Personal Info block. The Learner's Email can stay here, but the `PRIMARY CONTACT NO.` must be deleted and moved to the Family section.
 
-### Task 2: Header Typography & Layout Restructuring
-*   **Target:** The main `<h2>` or `<h1>` inside the School Year Management card (currently "School Year 2026-2027 Setup & Configuration").
-*   **Action 1 (String Replacement):** Change the text to strictly output the year: `School Year 2026-2027`.
-*   **Action 2 (Flexbox Alignment):** Wrap the title and the new badge (from Task 3) in a flex row so they sit next to each other on the same line.
-    *   *Implementation:* `<div className="flex items-center gap-3 mb-1">`
-    *   *Title Styling:* `text-xl font-black text-foreground`
+### Task 2: Family & Emergency Contacts (`image_0dd03f.png`)
+*   **Action 1 (Parent Contact Fields):** For Mother, Father, and Guardian, expand their rows to include a Contact Number input next to their Name inputs.
+    *   *Implementation Example:* `<div className="grid grid-cols-4 gap-3">` -> 3 columns for First/Middle/Last Name, 1 column for Contact Number.
+*   **Action 2 (Primary Emergency Selector):** At the top or bottom of the `II. FAMILY INFORMATION` section, add a new required dropdown.
+    *   *Label:* `Primary Emergency Contact *`
+    *   *Options:* `Mother`, `Father`, `Guardian`.
 
-### Task 3: Badge Polish (The Compact Pill)
-*   **Target:** The green "ACTIVE" badge.
-*   **Action:** Remove the old, wide, light-green block. Create a highly polished, single-line pill.
-    *   *Implementation:* `<span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">Current SY</span>`
+### Task 3: Conditional IP Community Input (`image_0dcd95.png`)
+*   **Action:** Implement conditional rendering linked to the state of the `IP COMMUNITY` dropdown.
+*   **Implementation Logic:**
+```jsx
+    
+    <div>
+      <Label>IP Community</Label>
+      <Select onChange="{(e)" value="{isIp}"> setIsIp(e.target.value)}>
+        <option value="NO">NO</option>
+        <option value="YES">YES</option>
+      </Select>
+    </div>
 
-### Task 4: Official Calendar Subtext
-*   **Target:** Directly below the new Title/Badge flex container.
-*   **Action:** Inject a subtle, read-only subtext row displaying the actual academic calendar dates.
-    *   *Implementation:* `<p className="text-sm font-semibold text-muted-foreground">Official Academic Calendar: June 8, 2026 – April 8, 2027</p>` (Note: Bind these dates dynamically to the backend data for the current active school year).
+    
+    {isIp === 'YES' && (
+      <div className="animate-in fade-in slide-in-from-top-2">
+        <Label>Specify IP Community *</Label>
+        <Input placeholder="e.g., Ati, Sulodnon, Mangyan" required/>
+      </div>
+    )}
+    ```
+
+### Task 4: Inject Missing SF1 Fields
+*   **Action:** In `III. BACKGROUND & SPECIAL CATEGORIES`, add two new required text inputs (or standardized dropdowns if your database has them pre-populated).
+    *   *Field 1:* `Mother Tongue *` (e.g., Hiligaynon, Cebuano, Tagalog)
+    *   *Field 2:* `Religion *` (e.g., Roman Catholic, Islam, INC)

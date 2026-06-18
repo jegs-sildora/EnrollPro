@@ -19,7 +19,9 @@ export const updateStudentSchema = z.object({
   email: z.string().email().optional().nullable(),
   contactNumber: z.string().optional().nullable(),
   religion: z.string().optional().nullable(),
+  motherTongue: z.string().optional().nullable(),
   isIpCommunity: z.boolean().optional(),
+  ipGroupName: z.string().optional().nullable(),
   is4PsBeneficiary: z.boolean().optional(),
   isLearnerWithDisability: z.boolean().optional(),
   disabilityTypes: z.array(z.string()).optional().nullable(),
@@ -60,4 +62,5 @@ export const updateStudentSchema = z.object({
     relationship: z.string().optional(),
     contactNumber: z.string().optional().nullable(),
   }).optional().nullable(),
+  primaryContact: z.enum(["MOTHER", "FATHER", "GUARDIAN"]).optional().nullable(),
 });

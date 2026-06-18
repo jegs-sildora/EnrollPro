@@ -10,7 +10,6 @@ import {
   History,
   LogOut,
   ChevronsUpDown,
-  ChevronDown,
   Calendar,
   Presentation,
   UserCog,
@@ -47,10 +46,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Separator } from "@/shared/ui/separator";
-import { Button } from "@/shared/ui/button";
-import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
+import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -116,31 +113,19 @@ function UserNav() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-9 w-fit gap-2 px-2.5 rounded-xl border border-border/45 hover:border-border/80 bg-card/60 hover:bg-card transition-all shadow-xs hover:shadow-sm">
-            <Avatar className="h-7 w-7 border shadow-sm">
-              <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-col items-start text-left leading-tight hidden lg:flex">
-              <span className="text-[11px] font-bold truncate max-w-[120px]">
+          <div className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-sm">
+              {initials}
+            </div>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-sm font-black text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
-              <div className="flex justify-start">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-[8px] font-black uppercase px-1 h-3.5 border-none",
-                    getRoleColorClasses(user?.roles?.[0]),
-                  )}>
-                  {formatUserRole(user?.roles?.[0])}
-                </Badge>
-              </div>
+              <span className="inline-flex mt-0.5 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
+                {formatUserRole(user?.roles?.[0])}
+              </span>
             </div>
-            <ChevronDown className="size-3 opacity-50 ml-0.5" />
-          </Button>
+          </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-56"
@@ -221,8 +206,6 @@ function SYSwitcher() {
   const currentId = viewingSchoolYearId ?? activeSchoolYearId;
   const currentYear = years.find((y) => y.id === currentId);
   const currentLabel = currentYear?.yearLabel ?? "No School Year Set";
-  const isOverride =
-    viewingSchoolYearId && viewingSchoolYearId !== activeSchoolYearId;
   const currentAcademicYear = years.find((y) => y.id === activeSchoolYearId) ?? null;
   const archivedYears = years.filter((y) => y.status === "ARCHIVED");
 
@@ -237,7 +220,7 @@ function SYSwitcher() {
     if (status === "BOSY_LOCKED" || status === "ACTIVE") {
       return {
         label: "ACTIVE",
-        className: "bg-emerald-100 text-emerald-700",
+        className: "bg-green-100 text-green-800",
       };
     }
 
@@ -257,7 +240,7 @@ function SYSwitcher() {
 
     return {
       label: "ACTIVE",
-      className: "bg-emerald-100 text-emerald-700",
+      className: "bg-green-100 text-green-800",
     };
   };
 
@@ -266,7 +249,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "text-[10px] font-bold px-2 py-0.5 rounded-full",
+          "inline-flex px-2 py-0.5 text-[11px] font-black uppercase tracking-wider whitespace-nowrap rounded-full",
           badge.className,
         )}>
         {badge.label}
@@ -295,34 +278,16 @@ function SYSwitcher() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "h-8 gap-2 text-sm font-bold transition-all duration-300 border rounded-xl hover:-translate-y-0.5 shadow-xs hover:shadow-sm",
-                currentYear?.status === "ARCHIVED"
-                  ? "border-slate-300 bg-slate-50/80 hover:bg-slate-50"
-                  : "border-border/60 hover:border-border bg-card/60 hover:bg-card",
-              )}
+            <button
+              className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
-              <Calendar
-                className={cn(
-                  "size-3.5",
-                  currentYear?.status === "ARCHIVED"
-                    ? "text-slate-500"
-                    : "text-primary",
-                )}
-              />
-              <span
-                className={cn(
-                  isOverride ? "text-primary" : "",
-                  currentYear?.status === "ARCHIVED" ? "text-slate-600" : "",
-                )}>
+              <Calendar className="text-gray-500 w-4 h-4" />
+              <span className="text-sm font-bold text-gray-900">
                 {currentLabel}
               </span>
               {renderStatusBadge(currentYear?.status)}
-              <ChevronsUpDown className="size-3 opacity-50" />
-            </Button>
+              <ChevronsUpDown className="text-gray-500 w-4 h-4" />
+            </button>
           </TooltipTrigger>
           <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
             Switch School Year

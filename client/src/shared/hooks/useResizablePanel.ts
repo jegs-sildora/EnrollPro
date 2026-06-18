@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
-export function useResizablePanel() {
-  const [panelPercentage, setPanelPercentage] = useState(35);
+export function useResizablePanel(initialPercentage: number = 50) {
+  const [panelPercentage, setPanelPercentage] = useState(initialPercentage);
   const [isDesktopViewport, setIsDesktopViewport] = useState(false);
 
   useEffect(() => {

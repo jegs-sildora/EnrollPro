@@ -37,6 +37,9 @@ const getRequestUserId = (req: Request): number | null => {
         isLearnerWithDisability,
         disabilityTypes,
         isBalikAral,
+        ipGroupName,
+        motherTongue,
+        primaryContact,
       } = req.body;
 
       const applicant = await prisma.enrollmentApplication.findUnique({
@@ -58,11 +61,22 @@ const getRequestUserId = (req: Request): number | null => {
       }
 
       const updated = await prisma.$transaction(async (tx) => {
+        // Compute dynamic contact number based on primaryContact if provided
+        let finalContactNumber = contactNumber;
+        if (primaryContact === "MOTHER" && motherName?.contactNumber) {
+          finalContactNumber = motherName.contactNumber;
+        } else if (primaryContact === "FATHER" && fatherName?.contactNumber) {
+          finalContactNumber = fatherName.contactNumber;
+        } else if (primaryContact === "GUARDIAN" && guardianInfo?.contactNumber) {
+          finalContactNumber = guardianInfo.contactNumber;
+        }
+
         // Update EnrollmentApplication fields
         await tx.enrollmentApplication.update({
           where: { id: parsedId },
           data: {
-            contactNumber: contactNumber || undefined,
+            contactNumber: finalContactNumber || undefined,
+            guardianRelationship: primaryContact === "GUARDIAN" ? (guardianInfo?.relationship || undefined) : undefined,
           }
         });
 
@@ -164,7 +178,9 @@ const getRequestUserId = (req: Request): number | null => {
               ? normalizeDateToUtcNoon(new Date(birthDate))
               : undefined,
             religion,
+            motherTongue,
             isIpCommunity,
+            ipGroupName: isIpCommunity ? ipGroupName : null,
             is4PsBeneficiary,
             isLearnerWithDisability,
             disabilityTypes,
