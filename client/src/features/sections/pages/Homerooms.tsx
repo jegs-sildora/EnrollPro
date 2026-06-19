@@ -333,7 +333,7 @@ export default function Homerooms() {
                   <Fragment>
                     <TableRow className="bg-muted/10 hover:bg-muted/10">
                       <TableCell colSpan={3} className="py-2 pl-6">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/60">{title}</span>
+                        <span className="font-black uppercase tracking-widest text-foreground/50">{title}</span>
                       </TableCell>
                     </TableRow>
                     {sections.map((s) => {
@@ -386,7 +386,7 @@ export default function Homerooms() {
                           <TableRow className="bg-muted/30">
                             <TableHead className="text-base uppercase text-left pl-6">Section Name</TableHead>
                             <TableHead className="text-base uppercase text-left w-[320px]">Class Adviser</TableHead>
-                            <TableHead className="text-base uppercase text-center w-[200px] pr-6">Enrolled / Capacity</TableHead>
+                            <TableHead className="text-base uppercase text-center w-[200px] pr-6">Enrolled</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

@@ -1,7 +1,7 @@
 import { useState, startTransition, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { sileo } from "sileo";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   BookOpen,
@@ -40,13 +40,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
-import {
-  getReducedMotionProps,
-  listVariants,
-  panelTransition,
-  sectionVariants,
-  staggerTransition,
-} from "@/shared/lib/motion";
+
 import {
   fetchAdviserQueue,
   fetchContinuingQueue,
@@ -179,8 +173,7 @@ export default function ReadingAssessmentPage() {
   const schoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const queryClient = useQueryClient();
 
-  const shouldReduceMotion = useReducedMotion() ?? false;
-  const motionState = getReducedMotionProps(shouldReduceMotion);
+
 
   const {
     inputValue: searchInput,
@@ -360,17 +353,12 @@ export default function ReadingAssessmentPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <motion.div
+    <div
       className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
-      variants={listVariants}
-      transition={staggerTransition}
-      {...motionState}
     >
       {/* Header */}
-      <motion.div
+      <div
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-        variants={sectionVariants}
-        transition={panelTransition}
       >
         <div>
           <h1 className="text-3xl font-bold">Adviser Intake Hub</h1>
@@ -407,13 +395,11 @@ export default function ReadingAssessmentPage() {
             <RefreshCw className={cn("h-5 w-5", isFetching && "animate-spin")} />
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Stat Cards */}
-      <motion.div
+      <div
         className="grid grid-cols-1 sm:grid-cols-4 gap-3"
-        variants={sectionVariants}
-        transition={panelTransition}
       >
         {[
           { Icon: Users, label: "Total in Queue", value: queue.length },
@@ -439,7 +425,7 @@ export default function ReadingAssessmentPage() {
             </CardContent>
           </Card>
         ))}
-      </motion.div>
+      </div>
 
       {/* Tabs */}
       <Tabs
@@ -480,7 +466,16 @@ export default function ReadingAssessmentPage() {
           ))}
         </TabsList>
 
-        <TabsContent value="pending" className="mt-3">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mt-3"
+          >
+            <TabsContent value="pending" className="mt-0 outline-none data-[state=inactive]:hidden">
           <QueueCard
             items={pendingPhilIriItems}
             loading={isLoading}
@@ -500,7 +495,7 @@ export default function ReadingAssessmentPage() {
           />
         </TabsContent>
 
-        <TabsContent value="ready" className="mt-3">
+            <TabsContent value="ready" className="mt-0 outline-none data-[state=inactive]:hidden">
           <QueueCard
             items={readyToConfirmItems}
             loading={isLoading}
@@ -520,7 +515,7 @@ export default function ReadingAssessmentPage() {
           />
         </TabsContent>
 
-        <TabsContent value="continuing" className="mt-3">
+            <TabsContent value="continuing" className="mt-0 outline-none data-[state=inactive]:hidden">
           <ContinuingQueueCard
             items={continuingItems}
             loading={isContinuingLoading}
@@ -539,7 +534,9 @@ export default function ReadingAssessmentPage() {
                 : "There are no continuing learners in your advisory queue."
             }
           />
-        </TabsContent>
+            </TabsContent>
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
 
       {/* ── Two-Step Intake Dialog ── */}
@@ -744,7 +741,7 @@ export default function ReadingAssessmentPage() {
           )}
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }
 

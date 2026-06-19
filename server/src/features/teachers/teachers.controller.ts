@@ -156,32 +156,32 @@ export async function index(req: Request, res: Response) {
         createdAt: teacher.createdAt,
         userAccount: teacher.user
           ? {
-              id: teacher.user.id,
-              isActive: teacher.user.isActive,
-              lastLoginAt: teacher.user.lastLoginAt
-                ? teacher.user.lastLoginAt.toISOString()
-                : null,
-              mustChangePassword: teacher.user.mustChangePassword,
-              roles: teacher.user.roles,
-            }
+            id: teacher.user.id,
+            isActive: teacher.user.isActive,
+            lastLoginAt: teacher.user.lastLoginAt
+              ? teacher.user.lastLoginAt.toISOString()
+              : null,
+            mustChangePassword: teacher.user.mustChangePassword,
+            roles: teacher.user.roles,
+          }
           : null,
         designation: designation
           ? {
-              id: designation.id,
-              isClassAdviser: designation.isClassAdviser,
-              advisorySectionId: designation.advisorySectionId,
-              advisorySection: designation.advisorySection
-                ? {
-                    id: designation.advisorySection.id,
-                    name: designation.advisorySection.name,
-                    gradeLevelId: designation.advisorySection.gradeLevelId,
-                    gradeLevelName: designation.advisorySection.gradeLevel.name,
-                  }
-                : null,
-              ancillaryRoles: designation.ancillaryRoles,
-              effectiveFrom: designation.effectiveFrom,
-              effectiveTo: designation.effectiveTo,
-            }
+            id: designation.id,
+            isClassAdviser: designation.isClassAdviser,
+            advisorySectionId: designation.advisorySectionId,
+            advisorySection: designation.advisorySection
+              ? {
+                id: designation.advisorySection.id,
+                name: designation.advisorySection.name,
+                gradeLevelId: designation.advisorySection.gradeLevelId,
+                gradeLevelName: designation.advisorySection.gradeLevel.name,
+              }
+              : null,
+            ancillaryRoles: designation.ancillaryRoles,
+            effectiveFrom: designation.effectiveFrom,
+            effectiveTo: designation.effectiveTo,
+          }
           : null,
       };
     });
@@ -256,6 +256,10 @@ interface TeacherUpsertPayload {
   specialization?: string | null;
   departmentCode?: string | null;
   plantillaPosition?: string | null;
+  birthdate?: string | null;
+  personnelType?: string | null;
+  prcLicenseNumber?: string | null;
+  functionalAssignment?: string | null;
 }
 
 export async function store(req: Request, res: Response) {
@@ -272,6 +276,10 @@ export async function store(req: Request, res: Response) {
       specialization,
       department,
       plantillaPosition,
+      birthdate,
+      personnelType,
+      prcLicenseNumber,
+      functionalAssignment,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -359,6 +367,10 @@ export async function store(req: Request, res: Response) {
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
           designation: "SUBJECT TEACHER",
           user: { connect: { id: upsertedUser.id } },
+          birthdate: parseDateOnly(birthdate),
+          personnelType: normalizeOptionalUpperText(personnelType),
+          prcLicenseNumber: normalizeOptionalText(prcLicenseNumber),
+          functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
         },
       });
 
@@ -416,6 +428,10 @@ export async function update(req: Request, res: Response) {
       serviceStatus,
       serviceEffectiveDate,
       serviceRemarks,
+      birthdate,
+      personnelType,
+      prcLicenseNumber,
+      functionalAssignment,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -484,6 +500,10 @@ export async function update(req: Request, res: Response) {
             : { disconnect: true },
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
           ...(serviceStatus ? { serviceStatus, isActive: serviceStatus === "ACTIVE" } : {}),
+          birthdate: parseDateOnly(birthdate),
+          personnelType: normalizeOptionalUpperText(personnelType),
+          prcLicenseNumber: normalizeOptionalText(prcLicenseNumber),
+          functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
         },
       });
 
@@ -553,7 +573,7 @@ export async function deactivate(req: Request, res: Response) {
   const { reason } = req.body;
 
   try {
-    // Check for active adviser assignments across all school years that are not ARCHIVED
+    // Check for active List of Classes across all school years that are not ARCHIVED
     const activeAssignments = await prisma.teacherDesignation.findMany({
       where: {
         teacherId: id,
@@ -773,11 +793,11 @@ export async function showDesignation(req: Request, res: Response) {
       },
       designation: designation
         ? {
-            ...designation,
-            updatedByName: designation.updatedBy
-              ? `${designation.updatedBy.lastName}, ${designation.updatedBy.firstName}`
-              : null,
-          }
+          ...designation,
+          updatedByName: designation.updatedBy
+            ? `${designation.updatedBy.lastName}, ${designation.updatedBy.firstName}`
+            : null,
+        }
         : null,
     });
   } catch (error: unknown) {
@@ -849,12 +869,12 @@ export async function upsertDesignation(req: Request, res: Response) {
 
     const collision = advisorySectionId
       ? await prisma.teacherDesignation.findFirst({
-          where: {
-            advisorySectionId,
-            schoolYearId: payload.schoolYearId,
-            teacherId: { not: id },
-          },
-        })
+        where: {
+          advisorySectionId,
+          schoolYearId: payload.schoolYearId,
+          teacherId: { not: id },
+        },
+      })
       : null;
 
     if (collision && !payload.allowAdviserOverride) {

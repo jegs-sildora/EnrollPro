@@ -119,7 +119,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
   defaultPassword,
   onResetToDefault,
 }: UserAccountFormSheetProps) {
-  const [panelPercentage, setPanelPercentage] = useState(45);
+  const [panelPercentage, setPanelPercentage] = useState(50);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,
   );

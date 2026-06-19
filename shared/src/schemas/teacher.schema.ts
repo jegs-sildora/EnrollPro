@@ -54,13 +54,21 @@ const teacherDepartmentSchema = z.enum(DEPED_TEACHER_DEPARTMENT_VALUES);
 
 const teacherSpecializationSchema = z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES);
 
-export const teacherSchema = z
+export const teacherSchemaBase = z
   .object({
     firstName: requiredUpperText("First name is required"),
     lastName: requiredUpperText("Last name is required"),
     middleName: optionalUpperText.optional(),
     suffix: optionalUpperText.optional(),
     sex: SexEnum.default("FEMALE"),
+    birthdate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+      .nullable()
+      .optional(),
+    personnelType: z.enum(["TEACHING", "NON_TEACHING"]).optional().nullable(),
+    prcLicenseNumber: z.string().optional().nullable(),
+    functionalAssignment: z.string().optional().nullable(),
     email: z
       .string()
       .trim()
@@ -122,8 +130,20 @@ export const teacherSchema = z
   })
   .strict();
 
+export const teacherSchema = teacherSchemaBase.superRefine((data, ctx) => {
+  if (data.personnelType === "TEACHING") {
+    if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["prcLicenseNumber"],
+        message: "PRC License Number must be exactly 7 digits",
+      });
+    }
+  }
+});
+
 // PUT semantics: full profile replacement contract.
-export const updateTeacherSchema = teacherSchema.extend({
+export const updateTeacherSchema = teacherSchemaBase.extend({
   serviceStatus: z.enum([
     "ACTIVE",
     "ON_LEAVE",
@@ -142,6 +162,16 @@ export const updateTeacherSchema = teacherSchema.extend({
     .optional()
     .nullable(),
   roles: z.array(z.string()).optional(),
+}).superRefine((data, ctx) => {
+  if (data.personnelType === "TEACHING") {
+    if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["prcLicenseNumber"],
+        message: "PRC License Number must be exactly 7 digits",
+      });
+    }
+  }
 });
 
 const optionalDateOnly = z

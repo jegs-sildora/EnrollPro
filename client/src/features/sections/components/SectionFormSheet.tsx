@@ -104,7 +104,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
       open={open}
       onOpenChange={onOpenChange}>
       <SheetContent
-        className="sm:max-w-2xl w-full p-0 flex flex-col h-full border-l-0 overflow-hidden bg-background">
+        className="p-0 flex flex-col h-full border-l-0 overflow-hidden bg-background">
 
         {/* Sticky Header with Accent */}
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">

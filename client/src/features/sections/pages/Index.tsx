@@ -65,7 +65,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { differenceInYears } from "date-fns";
 import { Badge } from "@/shared/ui/badge";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { cn, SCP_LABELS as SCP_FULL_LABELS } from "@/shared/lib/utils";
 
 interface Teacher {
@@ -1505,16 +1505,12 @@ export default function Sections() {
             ))}
           </TabsList>
 
-          <AnimatePresence mode="wait">
+          <div className="w-full">
             {groups
               .filter((g) => String(g.gradeLevelId) === activeGradeId)
               .map((g) => (
-                <motion.div
+                <div
                   key={g.gradeLevelId}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
                   className="w-full">
                   <TabsContent
                     value={String(g.gradeLevelId)}
@@ -1597,9 +1593,9 @@ export default function Sections() {
                       </CardContent>
                     </Card>
                   </TabsContent>
-                </motion.div>
+                </div>
               ))}
-          </AnimatePresence>
+          </div>
         </Tabs>
       )}
 

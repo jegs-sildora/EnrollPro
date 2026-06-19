@@ -102,7 +102,7 @@ export default function AdvisoryClass() {
       )}
 
       <Sheet open={!!selectedLearner} onOpenChange={(open) => !open && setSelectedLearner(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-2xl font-black uppercase tracking-tight text-primary">Learner Profile</SheetTitle>
             <SheetDescription className="font-bold">

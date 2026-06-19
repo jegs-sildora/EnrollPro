@@ -491,7 +491,7 @@ export default function EosyUpdating() {
 
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
-              <span className="font-bold uppercase truncate">
+              <span className="font-black uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -521,14 +521,14 @@ export default function EosyUpdating() {
         accessorKey: "section.name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-start" />,
         cell: ({ row }) => (
-          <span className="text-base font-bold">{row.original.section.name}</span>
+          <span className="text-base font-black">{row.original.section.name}</span>
         ),
         meta: { className: "w-1/5 text-left" }
       },
       {
         id: "finalAve",
         accessorKey: "finalAverage",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="GEN AVE" className="justify-center" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL RATING" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
           const ave = r.finalAverage;
@@ -878,7 +878,7 @@ export default function EosyUpdating() {
                           onClick={() => setFinalizeModalOpen(true)}
                           disabled={records.length === 0}
                           size="lg"
-                          className="font-bold shadow-md transition-all bg-primary text-primary-foreground"
+                          className="font-bold shadow-md transition-all bg-primary text-primary-foreground uppercase"
                         >
                           Finalize & Lock {targetScopeName}
                         </Button>

@@ -64,7 +64,7 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
@@ -551,7 +551,7 @@ export default function AdminUsers() {
         mobileNumber: formData.mobileNumber.trim() || null,
         email: formData.email.trim() || null,
         password: formData.password,
-                roles: formData.roles,
+               roles: formData.roles,
         mustChangePassword: formData.mustChangePassword,
         department: formData.department || null,
         accountName: formData.accountName?.trim() || null,
@@ -1403,25 +1403,17 @@ export default function AdminUsers() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="w-full space-y-6">
-            <TabsContent
-              value={activeTab}
-              forceMount
-              className="mt-0 focus-visible:outline-none ring-0 space-y-6">
-              {activeTab === "staff" && metricsElement}
+        <div className="w-full space-y-6">
+          <TabsContent
+            value={activeTab}
+            forceMount
+            className="mt-0 focus-visible:outline-none ring-0 space-y-6">
+            {activeTab === "staff" && metricsElement}
 
-              {filterElement}
-              {tableElement}
-            </TabsContent>
-          </motion.div>
-        </AnimatePresence>
+            {filterElement}
+            {tableElement}
+          </TabsContent>
+        </div>
       </Tabs>
 
       <UserAccountFormSheet

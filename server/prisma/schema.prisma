@@ -68,6 +68,10 @@ model Teacher {
   sex                 Sex                  @default(FEMALE)
   userId              Int?                 @unique(map: "uq_teachers_user_id") @map("user_id")
   serviceStatus       String               @default("ACTIVE") @map("service_status")
+  birthdate           DateTime?            @db.Date
+  personnelType       String?              @map("personnel_type")
+  prcLicenseNumber    String?              @map("prc_license_number")
+  functionalAssignment String?             @map("functional_assignment")
   advisoryHistory     SectionAdviser[]
   teacherDesignations TeacherDesignation[]
   department          Department?          @relation("DepartmentTeachers", fields: [departmentId], references: [id])

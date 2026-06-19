@@ -143,8 +143,8 @@ export default function ExecuteRolloverModal({
       const message =
         err && typeof err === "object" && "response" in err
           ? (
-              err as { response: { data?: { message?: string } } }
-            ).response.data?.message
+            err as { response: { data?: { message?: string } } }
+          ).response.data?.message
           : err instanceof Error
             ? err.message
             : "Failed to initiate school year rollover.";
@@ -257,170 +257,170 @@ export default function ExecuteRolloverModal({
       </AnimatePresence>
 
       <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <motion.div
-          variants={listVariants}
-          transition={staggerTransition}
-          {...motionState}>
-        <motion.div variants={sectionVariants} transition={panelTransition}>
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-2xl font-black uppercase text-primary">
-            Execute Academic Rollover
-          </DialogTitle>
-          <DialogDescription className="font-bold text-foreground pt-1">
-            Create and activate the{" "}
-            <span className="font-black text-primary">
-              {nextYearLabel || "next"}
-            </span>{" "}
-            academic cycle from{" "}
-            <span className="font-black">S.Y. {activeSchoolYearLabel ?? "—"}</span>.
-          </DialogDescription>
-        </DialogHeader>
-        </motion.div>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <motion.div
+            variants={listVariants}
+            transition={staggerTransition}
+            {...motionState}>
+            <motion.div variants={sectionVariants} transition={panelTransition}>
+              <DialogHeader className="pb-2">
+                <DialogTitle className="text-2xl font-black uppercase text-primary">
+                  Execute Academic Rollover
+                </DialogTitle>
+                <DialogDescription className="font-bold text-foreground pt-1">
+                  Create and activate the{" "}
+                  <span className="font-black text-primary">
+                    {nextYearLabel || "next"}
+                  </span>{" "}
+                  academic cycle from{" "}
+                  <span className="font-black">S.Y. {activeSchoolYearLabel ?? "—"}</span>.
+                </DialogDescription>
+              </DialogHeader>
+            </motion.div>
 
-        <motion.div
-          className="py-4 pb-2"
-          variants={sectionVariants}
-          transition={panelTransition}>
-          <div className="space-y-6">
-            {/* TASK 1: 2-col DatePicker grid */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-base font-black uppercase text-primary">
-                  Beginning of School Year (BOSY)
-                </Label>
-                <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
-                  <DatePicker
-                    date={bosyDate}
-                    setDate={setBosyDate}
-                    placeholder="Select opening date"
-                    className="w-full font-bold"
-                    timeZone="Asia/Manila"
-                  />
+            <motion.div
+              className="py-4 pb-2"
+              variants={sectionVariants}
+              transition={panelTransition}>
+              <div className="space-y-6">
+                {/* TASK 1: 2-col DatePicker grid */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-base font-black uppercase text-primary">
+                      Beginning of School Year (BOSY)
+                    </Label>
+                    <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
+                      <DatePicker
+                        date={bosyDate}
+                        setDate={setBosyDate}
+                        placeholder="Select opening date"
+                        className="w-full font-bold"
+                        timeZone="Asia/Manila"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-base font-black uppercase text-primary">
+                      End of School Year (EOSY)
+                    </Label>
+                    <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
+                      <DatePicker
+                        date={eosyDate}
+                        setDate={setEosyDate}
+                        placeholder="Select end date"
+                        className="w-full font-bold"
+                        timeZone="Asia/Manila"
+                        minDate={bosyDate}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* TASK 2: Softened payload card with generous spacing */}
+                <div className="rounded-lg bg-slate-50 p-6 space-y-1">
+                  <p className="text-base font-bold uppercase tracking-normal text-foreground mb-3">
+                    Rollover Payload from {activeSchoolYearLabel ?? "—"}
+                  </p>
+                  <ul className="space-y-4 font-bold text-foreground">
+                    {[
+                      `Archive ${activeSchoolYearLabel ?? "current S.Y."} and lock all historical SF1/SF5 records.`,
+                      "Clone Grade Levels, Sections, and SCP architecture (List of Classes will be wiped clean).",
+                      "Promote and carry over eligible learners to their next grade level holding pool.",
+                    ].map((action) => (
+                      <li key={action} className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                        <span className="text-base leading-tight text-slate-600">{action}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* TASK 3: Red box — warning + DepEd compliance ONLY */}
+                <div className="rounded-lg border border-red-200 bg-red-50 p-5 space-y-4">
+                  <Alert className="bg-transparent border-0 p-0 shadow-none">
+                    <AlertTitle className="font-black text-red-800 uppercase">
+                      Irreversible System Activation
+                    </AlertTitle>
+                    <AlertDescription className="text-base leading-tight font-bold text-red-700">
+                      Once executed, this action cannot be undone. The current school year will be permanently archived.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="depd-compliance"
+                      checked={isDepdCompliant}
+                      onCheckedChange={(checked) =>
+                        setIsDepdCompliant(checked === true)
+                      }
+                      disabled={isSubmitting}
+                      className="mt-0.5 border-red-400 data-[state=checked]:bg-red-700 data-[state=checked]:border-red-700"
+                    />
+                    <Label
+                      htmlFor="depd-compliance"
+                      className="text-base font-bold text-red-800 leading-snug cursor-pointer">
+                      I confirm that the selected BOSY and EOSY dates align with the
+                      official DepEd School Calendar Memorandum, and I authorize
+                      system activation.
+                    </Label>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-base font-black uppercase text-primary">
-                  End of School Year (EOSY)
+              {/* TASK 4: PIN section — outside the space-y group, mt-8 for clear visual break */}
+              <div className="flex flex-col items-center gap-3 mt-8 pb-4">
+                <Label className="text-base font-black uppercase text-primary tracking-widest text-center">
+                  Enter 6-Digit Admin PIN to Execute:
                 </Label>
-                <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
-                  <DatePicker
-                    date={eosyDate}
-                    setDate={setEosyDate}
-                    placeholder="Select end date"
-                    className="w-full font-bold"
-                    timeZone="Asia/Manila"
-                    minDate={bosyDate}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* TASK 2: Softened payload card with generous spacing */}
-            <div className="rounded-lg bg-slate-50 p-6 space-y-1">
-              <p className="text-base font-bold uppercase tracking-normal text-foreground mb-3">
-                Rollover Payload from {activeSchoolYearLabel ?? "—"}
-              </p>
-              <ul className="space-y-4 font-bold text-foreground">
-                {[
-                  `Archive ${activeSchoolYearLabel ?? "current S.Y."} and lock all historical SF1/SF5 records.`,
-                  "Clone Grade Levels, Sections, and SCP architecture (Adviser assignments will be wiped clean).",
-                  "Promote and carry over eligible learners to their next grade level holding pool.",
-                ].map((action) => (
-                  <li key={action} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-base leading-tight text-slate-600">{action}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* TASK 3: Red box — warning + DepEd compliance ONLY */}
-            <div className="rounded-lg border border-red-200 bg-red-50 p-5 space-y-4">
-              <Alert className="bg-transparent border-0 p-0 shadow-none">
-                <AlertTitle className="font-black text-red-800 uppercase">
-                  Irreversible System Activation
-                </AlertTitle>
-                <AlertDescription className="text-base leading-tight font-bold text-red-700">
-                  Once executed, this action cannot be undone. The current school year will be permanently archived.
-                </AlertDescription>
-              </Alert>
-
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="depd-compliance"
-                  checked={isDepdCompliant}
-                  onCheckedChange={(checked) =>
-                    setIsDepdCompliant(checked === true)
-                  }
+                <AdminPinInput
+                  value={pin}
+                  onChange={setPin}
+                  invalid={pinTouched && !isPinValid}
+                  onBlur={() => setPinTouched(true)}
+                  autoFocus={false}
                   disabled={isSubmitting}
-                  className="mt-0.5 border-red-400 data-[state=checked]:bg-red-700 data-[state=checked]:border-red-700"
+                  ariaLabel="Rollover execution admin PIN"
                 />
-                <Label
-                  htmlFor="depd-compliance"
-                  className="text-base font-bold text-red-800 leading-snug cursor-pointer">
-                  I confirm that the selected BOSY and EOSY dates align with the
-                  official DepEd School Calendar Memorandum, and I authorize
-                  system activation.
-                </Label>
+                {pinTouched && !isPinValid && (
+                  <p className="text-base text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                    Valid 6-digit administrative PIN required
+                  </p>
+                )}
               </div>
-            </div>
-          </div>
+            </motion.div>
 
-          {/* TASK 4: PIN section — outside the space-y group, mt-8 for clear visual break */}
-          <div className="flex flex-col items-center gap-3 mt-8 pb-4">
-            <Label className="text-base font-black uppercase text-primary tracking-widest text-center">
-              Enter 6-Digit Admin PIN to Execute:
-            </Label>
-            <AdminPinInput
-              value={pin}
-              onChange={setPin}
-              invalid={pinTouched && !isPinValid}
-              onBlur={() => setPinTouched(true)}
-              autoFocus={false}
-              disabled={isSubmitting}
-              ariaLabel="Rollover execution admin PIN"
-            />
-            {pinTouched && !isPinValid && (
-              <p className="text-base text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
-                Valid 6-digit administrative PIN required
-              </p>
-            )}
-          </div>
-        </motion.div>
-
-        <motion.div variants={sectionVariants} transition={panelTransition}>
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
-          <Button
-            variant="ghost"
-            onClick={() => handleClose(false)}
-            disabled={isSubmitting}
-            className="font-bold">
-            Cancel
-          </Button>
-          <Button
-            className={cn(
-              "font-black uppercase transition-all px-6 shrink-0",
-              !canSubmit || isSubmitting
-                ? "bg-slate-200 text-slate-500 cursor-not-allowed opacity-50"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",
-            )}
-            onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting}>
-            {isSubmitting ? (
-              "Processing..."
-            ) : (
-              <>
-                <Rocket className="mr-2 h-4 w-4" /> Execute School Year
-                Rollover
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-        </motion.div>
-        </motion.div>
-      </DialogContent>
+            <motion.div variants={sectionVariants} transition={panelTransition}>
+              <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleClose(false)}
+                  disabled={isSubmitting}
+                  className="font-bold">
+                  Cancel
+                </Button>
+                <Button
+                  className={cn(
+                    "font-black uppercase transition-all px-6 shrink-0",
+                    !canSubmit || isSubmitting
+                      ? "bg-slate-200 text-slate-500 cursor-not-allowed opacity-50"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",
+                  )}
+                  onClick={handleSubmit}
+                  disabled={!canSubmit || isSubmitting}>
+                  {isSubmitting ? (
+                    "Processing..."
+                  ) : (
+                    <>
+                      <Rocket className="mr-2 h-4 w-4" /> Execute School Year
+                      Rollover
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </motion.div>
+          </motion.div>
+        </DialogContent>
       </Dialog>
     </>
   );

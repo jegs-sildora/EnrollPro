@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState } from "@tanstack/react-table";
 import React, { useState, useRef, type ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import {
@@ -211,15 +211,12 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <AnimatePresence
-            mode="wait"
-            initial={false}>
             {loading ? (
-              <MotionTableBody
+              <MotionTableBody 
                 key="loading-body"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="relative">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={`skeleton-${i}`}>
@@ -251,11 +248,11 @@ export function DataTable<TData, TValue>({
                 ))}
               </MotionTableBody>
             ) : !forceEmptyState && rows.length > 0 ? (
-              <MotionTableBody
+              <MotionTableBody 
                 key="data-body"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="relative">
                 {prependBodyRow}
                 {virtualize
@@ -311,20 +308,20 @@ export function DataTable<TData, TValue>({
                   ))}
               </MotionTableBody>
             ) : prependBodyRow ? (
-              <MotionTableBody
+              <MotionTableBody 
                 key="prepend-body"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="relative">
                 {prependBodyRow}
               </MotionTableBody>
             ) : (
-              <MotionTableBody
+              <MotionTableBody 
                 key="empty-body"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="relative">
                 <TableRow key="no-results">
                   <TableCell
@@ -339,7 +336,6 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               </MotionTableBody>
             )}
-          </AnimatePresence>
         </Table>
       </div>
     </div>

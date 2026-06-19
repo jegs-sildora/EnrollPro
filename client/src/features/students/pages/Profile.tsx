@@ -28,7 +28,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
@@ -444,7 +444,14 @@ export default function StudentProfile() {
           )}
         </TabsList>
 
-        <div className="mt-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6">
           <TabsContent
             value="personal"
             className="m-0 focus-visible:outline-none ring-0">
@@ -1411,7 +1418,8 @@ export default function StudentProfile() {
               </motion.div>
             </TabsContent>
           )}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
 
       <PinResetHandoverModal

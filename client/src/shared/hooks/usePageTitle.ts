@@ -29,7 +29,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/eosy": "EOSY Grade Finalization",
     "/students": "Learner Registry",
     "/sections": "Sections",
-    "/sections/homerooms": "Adviser Assignments",
+    "/sections/homerooms": "List of Classes",
     "/audit-logs": "Activity Logs",
     "/settings": "System Configuration",
     "/teachers": "Faculty & Staff",

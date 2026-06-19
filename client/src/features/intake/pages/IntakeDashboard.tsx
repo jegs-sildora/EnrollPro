@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -734,6 +735,7 @@ function ConfirmationTab({
 }
 
 export default function IntakeDashboard() {
+  const [activeTab, setActiveTab] = useState("pre-listing");
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel, viewingSchoolYearLabel } =
     useSettingsStore();
 
@@ -788,46 +790,84 @@ export default function IntakeDashboard() {
         </p>
       </div>
 
-      <Tabs defaultValue="pre-listing">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3">
-          <TabsTrigger value="pre-listing" className="text-base font-bold uppercase tracking-normal">
-            <ClipboardList className="h-3 w-3 mr-1" /> Pre-Listing
-          </TabsTrigger>
-          <TabsTrigger value="reading" className="text-base font-bold uppercase tracking-normal">
-            <BookOpen className="h-3 w-3 mr-1" /> Reading Assessment
-            {readingCount > 0 && (
-              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white">{readingCount}</Badge>
+          <TabsTrigger value="pre-listing" className="text-base font-bold uppercase tracking-normal relative">
+            {activeTab === "pre-listing" && (
+              <motion.div
+                layoutId="intake-tab-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
             )}
+            <span className="relative z-10 flex items-center justify-center text-inherit w-full h-full data-[state=active]:text-primary-foreground">
+              <ClipboardList className="h-3 w-3 mr-1" /> Pre-Listing
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="confirmation" className="text-base font-bold uppercase tracking-normal">
-            <FileCheck2 className="h-3 w-3 mr-1" /> Confirmation
-            {confirmationCount > 0 && (
-              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-emerald-600 text-white">{confirmationCount}</Badge>
+          <TabsTrigger value="reading" className="text-base font-bold uppercase tracking-normal relative">
+            {activeTab === "reading" && (
+              <motion.div
+                layoutId="intake-tab-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
             )}
+            <span className="relative z-10 flex items-center justify-center text-inherit w-full h-full data-[state=active]:text-primary-foreground">
+              <BookOpen className="h-3 w-3 mr-1" /> Reading Assessment
+              {readingCount > 0 && (
+                <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white">{readingCount}</Badge>
+              )}
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="confirmation" className="text-base font-bold uppercase tracking-normal relative">
+            {activeTab === "confirmation" && (
+              <motion.div
+                layoutId="intake-tab-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center text-inherit w-full h-full data-[state=active]:text-primary-foreground">
+              <FileCheck2 className="h-3 w-3 mr-1" /> Confirmation
+              {confirmationCount > 0 && (
+                <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-emerald-600 text-white">{confirmationCount}</Badge>
+              )}
+            </span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pre-listing" className="mt-6">
-          <PreListingTab schoolYearId={schoolYearId} />
-        </TabsContent>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6"
+          >
+            <TabsContent value="pre-listing" className="mt-0 outline-none data-[state=inactive]:hidden">
+              <PreListingTab schoolYearId={schoolYearId} />
+            </TabsContent>
 
-        <TabsContent value="reading" className="mt-6">
-          <ReadingAssessmentTab
-            schoolYearId={schoolYearId}
-            queue={readingQueue}
-            isLoading={isReadingLoading}
-            isError={isReadingError}
-          />
-        </TabsContent>
+            <TabsContent value="reading" className="mt-0 outline-none data-[state=inactive]:hidden">
+              <ReadingAssessmentTab
+                schoolYearId={schoolYearId}
+                queue={readingQueue}
+                isLoading={isReadingLoading}
+                isError={isReadingError}
+              />
+            </TabsContent>
 
-        <TabsContent value="confirmation" className="mt-6">
-          <ConfirmationTab
-            schoolYearId={schoolYearId}
-            rows={confirmationQueue}
-            isLoading={isConfirmationLoading}
-            isError={isConfirmationError}
-          />
-        </TabsContent>
+            <TabsContent value="confirmation" className="mt-0 outline-none data-[state=inactive]:hidden">
+              <ConfirmationTab
+                schoolYearId={schoolYearId}
+                rows={confirmationQueue}
+                isLoading={isConfirmationLoading}
+                isError={isConfirmationError}
+              />
+            </TabsContent>
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
     </div>
   );

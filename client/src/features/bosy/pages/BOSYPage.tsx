@@ -10,7 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { motion, useReducedMotion } from "motion/react";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 
@@ -54,13 +53,7 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
-import {
-  getReducedMotionProps,
-  listVariants,
-  panelTransition,
-  sectionVariants,
-  staggerTransition,
-} from "@/shared/lib/motion";
+
 import { sileo } from "sileo";
 
 function formatNoShowStatus(status: string): string {
@@ -170,8 +163,6 @@ export default function BOSYPage() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isTableHovered, setIsTableHovered] = useState(false);
   const isUserInteracting = isSearchFocused || isTableHovered;
-  const shouldReduceMotion = useReducedMotion() ?? false;
-  const motionState = getReducedMotionProps(shouldReduceMotion);
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -391,16 +382,13 @@ export default function BOSYPage() {
   };
 
   return (
-    <motion.div
+    <div
       className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
-      variants={listVariants}
-      transition={staggerTransition}
-      {...motionState}>
+    >
       <PhaseBanner />
-      <motion.div
+      <div
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-        variants={sectionVariants}
-        transition={panelTransition}>
+      >
         <div>
           <h1 className="text-3xl font-bold">Early Registration (BOSY)</h1>
           <p className="text-base leading-tight font-bold">
@@ -443,7 +431,7 @@ export default function BOSYPage() {
             Refresh Data
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
@@ -762,6 +750,6 @@ export default function BOSYPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

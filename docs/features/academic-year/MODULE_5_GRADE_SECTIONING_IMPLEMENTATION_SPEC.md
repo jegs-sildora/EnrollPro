@@ -4,7 +4,7 @@ Last updated: 2026-04-14
 
 ## 1. Module intent
 
-Manage per-school-year grade levels, sections, capacities, adviser assignments, and SCP configuration schedules used by admission pipelines.
+Manage per-school-year grade levels, sections, capacities, List of Classes, and SCP configuration schedules used by admission pipelines.
 
 ## 2. Current implemented backend surface
 

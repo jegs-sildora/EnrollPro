@@ -78,6 +78,10 @@ export interface Teacher {
   plantillaPosition: string | null;
   natureOfAppointment?: "REGULAR_PERMANENT" | "SUBSTITUTE" | "CONTRACTUAL" | "LOCAL_SCHOOL_BOARD" | null;
   photoPath: string | null;
+  birthdate: string | null;
+  personnelType: string | null;
+  prcLicenseNumber: string | null;
+  functionalAssignment: string | null;
   sectionCount: number;
   designation: TeacherDesignation | null;
   isActive: boolean;

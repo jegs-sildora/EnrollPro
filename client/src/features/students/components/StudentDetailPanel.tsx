@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import {
   UserRoundPen,
-  Fingerprint,
   FileBadge2,
   BadgeAlert,
   CheckCircle2,
@@ -290,10 +289,10 @@ export function StudentDetailPanel({
       disabilityType: student.isLearnerWithDisability && student.disabilityTypes && student.disabilityTypes.length > 0 ? student.disabilityTypes[0] : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
-      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER" 
-        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER" 
-        : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN" 
-        : "MOTHER",
+      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER"
+        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER"
+          : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN"
+            : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
       fatherContactNumber: student.fatherName?.contactNumber || "",
       guardianContactNumber: student.guardianInfo?.contactNumber || "",
@@ -335,10 +334,10 @@ export function StudentDetailPanel({
       disabilityType: student.isLearnerWithDisability && student.disabilityTypes && student.disabilityTypes.length > 0 ? student.disabilityTypes[0] : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
-      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER" 
-        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER" 
-        : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN" 
-        : "MOTHER",
+      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER"
+        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER"
+          : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN"
+            : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
       fatherContactNumber: student.fatherName?.contactNumber || "",
       guardianContactNumber: student.guardianInfo?.contactNumber || "",
@@ -354,9 +353,9 @@ export function StudentDetailPanel({
     if (!profileForm.birthDate) newErrors.birthDate = "Date of Birth is required.";
     if (!profileForm.sex) newErrors.sex = "Sex is required.";
 
-    const selectedContactNo = profileForm.primaryContact === "MOTHER" ? profileForm.motherContactNumber 
+    const selectedContactNo = profileForm.primaryContact === "MOTHER" ? profileForm.motherContactNumber
       : profileForm.primaryContact === "FATHER" ? profileForm.fatherContactNumber
-      : profileForm.guardianContactNumber;
+        : profileForm.guardianContactNumber;
 
     if (!selectedContactNo.trim()) {
       newErrors.contactNumber = "Primary Contact No. is required for the selected Emergency Contact.";
@@ -417,21 +416,21 @@ export function StudentDetailPanel({
 
       if (profileForm.motherFirstName.trim() || profileForm.motherLastName.trim()) {
         payload.motherName = {
-           firstName: profileForm.motherFirstName.trim().toUpperCase() || "Unknown",
-           lastName: profileForm.motherLastName.trim().toUpperCase() || "Unknown",
-           middleName: profileForm.motherMiddleName.trim().toUpperCase() || null,
-           contactNumber: profileForm.motherContactNumber.trim() || null,
+          firstName: profileForm.motherFirstName.trim().toUpperCase() || "Unknown",
+          lastName: profileForm.motherLastName.trim().toUpperCase() || "Unknown",
+          middleName: profileForm.motherMiddleName.trim().toUpperCase() || null,
+          contactNumber: profileForm.motherContactNumber.trim() || null,
         };
       } else {
         payload.motherName = null;
       }
-      
+
       if (profileForm.fatherFirstName.trim() || profileForm.fatherLastName.trim()) {
         payload.fatherName = {
-           firstName: profileForm.fatherFirstName.trim().toUpperCase() || "Unknown",
-           lastName: profileForm.fatherLastName.trim().toUpperCase() || "Unknown",
-           middleName: profileForm.fatherMiddleName.trim().toUpperCase() || null,
-           contactNumber: profileForm.fatherContactNumber.trim() || null,
+          firstName: profileForm.fatherFirstName.trim().toUpperCase() || "Unknown",
+          lastName: profileForm.fatherLastName.trim().toUpperCase() || "Unknown",
+          middleName: profileForm.fatherMiddleName.trim().toUpperCase() || null,
+          contactNumber: profileForm.fatherContactNumber.trim() || null,
         };
       } else {
         payload.fatherName = null;
@@ -439,10 +438,10 @@ export function StudentDetailPanel({
 
       if (profileForm.guardianFirstName.trim() || profileForm.guardianLastName.trim()) {
         payload.guardianInfo = {
-           firstName: profileForm.guardianFirstName.trim().toUpperCase() || "Unknown",
-           lastName: profileForm.guardianLastName.trim().toUpperCase() || "Unknown",
-           middleName: profileForm.guardianMiddleName.trim().toUpperCase() || null,
-           contactNumber: profileForm.guardianContactNumber.trim() || null,
+          firstName: profileForm.guardianFirstName.trim().toUpperCase() || "Unknown",
+          lastName: profileForm.guardianLastName.trim().toUpperCase() || "Unknown",
+          middleName: profileForm.guardianMiddleName.trim().toUpperCase() || null,
+          contactNumber: profileForm.guardianContactNumber.trim() || null,
         };
       } else {
         payload.guardianInfo = null;
@@ -583,18 +582,7 @@ export function StudentDetailPanel({
             <User className="h-5 w-5" />
             Enrolled Learner Details
           </SheetTitle>
-          <SheetDescription className="text-[11px] sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <span className="flex items-center gap-1">
-              <Fingerprint className="h-3 w-3" />#{student.trackingNumber || String(student.id).padStart(6, "0")}
-            </span>
-            <span className="hidden sm:inline">|</span>
-            <span>Official Roster</span>
-            <span className="hidden sm:inline">|</span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDate(student.createdAt)}
-            </span>
-          </SheetDescription>
+
         </div>
       </div>
 
@@ -611,7 +599,7 @@ export function StudentDetailPanel({
             />
             <div className="text-center mt-4">
               <h3 className="font-black text-lg sm:text-xl uppercase  break-words">
-                {student.fullName}
+                {isEditing ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`.trim().replace(/^[,\s]+|[,\s]+$/g, '') || student.fullName : student.fullName}
               </h3>
               <div className="flex items-center justify-center gap-2 mt-1 font-black">
                 <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-3 py-1 rounded-full text-[11px] uppercase  shadow-sm">
@@ -640,21 +628,40 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-base uppercase  text-foreground">
+              <p className="text-base uppercase text-foreground">
                 Grade Level & Section
               </p>
               <p className="text-base leading-tight">
                 {student.gradeLevel}
                 {student.enrollment?.section &&
-                  ` • ${student.enrollment.section}`}
+                  ` - ${student.enrollment.section}`}
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-base uppercase  text-foreground">
+              <p className="text-base uppercase text-foreground">
                 Learner Reference Number
               </p>
               <p className="text-base leading-tight tabular-nums">
                 {student.lrn || "N/A"}
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4 mt-4">
+            <div>
+              <p className="text-base uppercase text-foreground">
+                Address
+              </p>
+              <p className="text-base leading-tight pr-2">
+                {isEditing ? [profileForm.houseNoStreet, profileForm.sitioPurok, profileForm.barangay, profileForm.cityMunicipality, profileForm.province].filter(Boolean).join(", ").toUpperCase() || "N/A" : student.address || "N/A"}
+              </p>
+            </div>
+            <div className="text-left sm:text-right mt-2 sm:mt-0">
+              <p className="text-base uppercase text-foreground">
+                Primary Contact
+              </p>
+              <p className="text-base leading-tight">
+                {isEditing ? (profileForm.primaryContact === "MOTHER" ? profileForm.motherContactNumber : profileForm.primaryContact === "FATHER" ? profileForm.fatherContactNumber : profileForm.guardianContactNumber) || "N/A" : student.contactNumber || student.parentGuardianContact || "N/A"}
               </p>
             </div>
           </div>
@@ -856,7 +863,7 @@ export function StudentDetailPanel({
               <div className="flex items-center gap-2 border-b pb-2">
                 <h3 className="text-lg font-bold uppercase text-primary">II. Family Information</h3>
               </div>
-              
+
               <div className="space-y-3 pt-3 border-t border-border/40">
                 <Label className="font-bold text-base uppercase text-primary flex gap-1">Primary Emergency Contact <span className="text-destructive">*</span></Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -906,7 +913,7 @@ export function StudentDetailPanel({
                 </div>
                 {errors.contactNumber && <p className="text-base text-destructive font-bold">{errors.contactNumber}</p>}
               </div>
-              
+
               <div className="space-y-3 pt-3 border-t border-border/40">
                 <Label className="font-bold text-base uppercase text-primary">Mother's Maiden Name</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1100,9 +1107,9 @@ export function StudentDetailPanel({
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button className="bg-white text-gray-700" variant="outline" onClick={() => setShowTransferOutDialog(false)}>Cancel</Button>
-                  <Button 
+                  <Button
                     variant="default"
-                    className="!bg-amber-600 hover:!bg-amber-700 !text-white font-bold px-5 py-2 shadow-sm border-none" 
+                    className="!bg-amber-600 hover:!bg-amber-700 !text-white font-bold px-5 py-2 shadow-sm border-none"
                     onClick={handleTransferOutSubmit}
                     disabled={!transferOutSchoolName || !transferOutDate}>
                     Confirm Transfer
@@ -1167,9 +1174,9 @@ export function StudentDetailPanel({
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button className="bg-white text-gray-700" variant="outline" onClick={() => setShowDropoutDialog(false)}>Cancel</Button>
-                  <Button 
+                  <Button
                     variant="default"
-                    className="!bg-red-600 hover:!bg-red-700 !text-white font-bold px-5 py-2 shadow-sm border-none" 
+                    className="!bg-red-600 hover:!bg-red-700 !text-white font-bold px-5 py-2 shadow-sm border-none"
                     onClick={handleDropoutSubmit}
                     disabled={!dropoutDate || !dropoutReasonCode}>
                     Finalize Drop Out

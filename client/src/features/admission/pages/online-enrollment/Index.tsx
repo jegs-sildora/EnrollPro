@@ -4,7 +4,6 @@ import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import EnrollmentForm from "./EnrollmentForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
-import { Button } from "@/shared/ui/button";
 import { IntakeChoice } from "./components/IntakeChoice";
 
 import { motion, AnimatePresence } from "motion/react";
@@ -49,7 +48,6 @@ export default function Apply() {
     systemStatus,
     systemPhase,
     facebookPageUrl,
-    schoolWebsite,
   } = useSettingsStore();
 
   const toManilaDateToken = (value: Date): number => {
@@ -225,13 +223,13 @@ export default function Apply() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-8 py-16 px-6 sm:px-16 bg-white/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
+                className="text-center space-y-6 py-8 px-6 sm:px-10 bg-white/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-destructive/50 to-transparent" />
                 <div className="space-y-6 relative z-10">
                   {logoUrl ? (
                     <img
                       src={`${API_BASE}${logoUrl}`}
-                      className="h-32 w-32 mx-auto object-contain drop-shadow-md"
+                      className="h-24 w-24 mx-auto object-contain drop-shadow-md"
                       alt={schoolName}
                     />
                   ) : (
@@ -243,58 +241,31 @@ export default function Apply() {
                     <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-base font-bold  uppercase border border-destructive/20">
-                      {isEosyClosing ? "EOSY Finalization Phase" : isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
-                    </div>
+
                   </div>
 
                   {isBosyLocked || isEosyClosing ? (
-                    <div className="space-y-6 max-w-lg mx-auto">
+                    <div className="space-y-4 max-w-lg mx-auto">
                       <div className="space-y-2">
-                        <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
-                          ONLINE ENROLLMENT IS NOW CLOSED
+                        <h3 className="text-2xl font-black text-gray-900 mt-6">
+                          Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
-                        <p className="text-base font-bold text-foreground uppercase  leading-relaxed">
-                          The standard online enrollment period for S.Y.{" "}
-                          {activeSchoolYearLabel} has officially ended, and
-                          class rosters have been finalized.
+                        <p className="text-base text-gray-600 mt-3 leading-relaxed max-w-lg mx-auto text-center">
+                          The online registration period has officially ended. Our teachers are now finalizing the student sections for the upcoming school year.
                         </p>
                       </div>
 
-                      <div className="p-6 rounded-xl bg-red-50 border-2 border-red-200 text-left space-y-4 shadow-inner">
-                        <div className="flex items-center gap-2 text-red-900 font-black uppercase  text-base leading-tight">
-                          LATE ENROLLMENT INSTRUCTIONS:
-                        </div>
-                        <p className="text-base text-red-900 font-bold leading-relaxed">
-                          If you still need to enroll a learner, you must now
-                          process this manually. Please proceed to the School
-                          Registrar's Office during working hours (8:00 AM -
-                          5:00 PM) and bring the following:
+                      <div className="mt-6 p-5 text-left bg-blue-50 border border-blue-100 rounded-xl max-w-lg mx-auto shadow-sm">
+                        <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider mb-2">Walk-In Enrollment Instructions</h3>
+                        <p className="text-sm text-blue-800 leading-relaxed mb-4">
+                          If you missed the online deadline, you can still enroll your child in person. Please visit the School Registrar's Office during office hours (8:00 AM - 5:00 PM, Monday to Friday).
                         </p>
-                        <ul className="grid grid-cols-1 gap-1.5 mt-2 pl-4">
-                          <li className="flex items-center gap-2 text-base leading-tight font-bold text-red-950 list-disc">
-                            Original SF9 (Report Card)
-                          </li>
-                          <li className="flex items-center gap-2 text-base leading-tight font-bold text-red-950 list-disc">
-                            PSA Birth Certificate
-                          </li>
+                        <p className="text-sm font-semibold text-blue-900 mb-2">Please bring physical copies of the following:</p>
+                        <ul className="list-disc list-inside text-sm text-blue-800 space-y-1 ml-1">
+                          <li>Original Report Card (DepEd Form 138 / SF9)</li>
+                          <li>PSA Birth Certificate (Bring Original and 1 Photocopy)</li>
+                          <li>Certificate of Good Moral Character</li>
                         </ul>
-                      </div>
-
-                      <div className="pt-4">
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase  text-base transition-all border-2"
-                          onClick={() => {
-                            if (schoolWebsite) {
-                              window.location.href = schoolWebsite;
-                            } else {
-                              window.location.href = "/";
-                            }
-                          }}>
-                          Return to School Homepage
-                        </Button>
                       </div>
 
                       {facebookPageUrl && (

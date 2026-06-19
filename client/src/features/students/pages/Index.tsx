@@ -481,8 +481,8 @@ export default function Students() {
       gradeLevelFilter === "all"
         ? sections
         : sections.filter(
-            (s) => s.gradeLevelId === parseInt(gradeLevelFilter, 10)
-          );
+          (s) => s.gradeLevelId === parseInt(gradeLevelFilter, 10)
+        );
     const availableTypes = new Set(relevantSections.map((s) => s.programType));
     return PROGRAM_FILTER_OPTIONS.filter((p) => availableTypes.has(p.value));
   }, [sections, gradeLevelFilter]);
@@ -505,7 +505,7 @@ export default function Students() {
 
   const renderLearnerStatus = (student: Student) => {
     let status = student.learnerStatus || "ACTIVE";
-    
+
     // Override with lifecycle outcome if present and tab is active/inactive
     if (activeTab !== "completers") {
       if (student.lifecycleOutcome === "DROPPED_OUT") status = "DROPPED";
@@ -819,150 +819,151 @@ export default function Students() {
   const columns = useMemo<ColumnDef<Student>[]>(
     () => {
       const allColumns: ColumnDef<Student>[] = [
-      {
-        id: "lastName",
-        accessorKey: "lastName",
-        meta: { skeletonClassName: "w-[200px]" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Learner"
-          />
-        ),
-        cell: ({ row }) => {
-          return (
-          <div className="flex flex-col text-left min-w-[200px] pl-2 py-3">
-            <span className="font-bold text-base uppercase leading-tight">
-              {row.original.fullName}
-            </span>
-            {row.original.applicantType === "LATE_ENROLLEE" && (
-              <div className="flex items-center gap-2 mt-0.5">
-                <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                  🕒 Late Enrollee
-                </Badge>
+        {
+          id: "lastName",
+          accessorKey: "lastName",
+          meta: { skeletonClassName: "w-[200px]" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Learner"
+            />
+          ),
+          cell: ({ row }) => {
+            return (
+              <div className="flex flex-col text-left min-w-[200px] pl-2 py-3">
+                <span className="font-bold text-base uppercase leading-tight">
+                  {row.original.fullName}
+                </span>
+                {row.original.applicantType === "LATE_ENROLLEE" && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                      Late Enrollee
+                    </Badge>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )},
-      },
-      {
-        id: "lrn",
-        accessorKey: "lrn",
-        meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="LRN"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            <span className="font-bold text-base leading-tight text-center">{row.original.lrn}</span>
-          </div>
-        ),
-      },
-      {
-        id: "sex",
-        accessorKey: "sex",
-        meta: { skeletonClassName: "w-[40px] mx-auto", className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Sex"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => {
-          const normalized = row.original.sex?.trim().toUpperCase();
-          const display =
-            normalized === "MALE" || normalized === "M"
-              ? "M"
-              : normalized === "FEMALE" || normalized === "F"
-                ? "F"
-                : row.original.sex || "—";
-
-          return (
-            <div className="flex w-full justify-center py-3">
-              <span className="font-bold text-base leading-tight uppercase text-center">{display}</span>
-            </div>
-          );
+            )
+          },
         },
-      },
-      {
-        id: "gradeLevel",
-        accessorKey: "gradeLevel",
-        meta: { skeletonClassName: "w-[80px] mx-auto", className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Grade Level"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            <span className="font-bold text-base leading-tight text-center">{row.original.gradeLevel}</span>
-          </div>
-        ),
-      },
-      {
-        id: "section",
-        accessorKey: "section",
-        meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Section"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            <span className="font-bold text-base leading-tight text-center">
-              {formatSectionLabel(row.original.section)}
-            </span>
-          </div>
-        ),
-      },
-      {
-        id: "status",
-        meta: { className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="STATUS"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            {renderLearnerStatus(row.original)}
-          </div>
-        ),
-      },
-      {
-        id: "dateEnrolled",
-        accessorKey: "dateEnrolled",
-        meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Date Enrolled"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            <span className="text-base leading-tight font-bold text-center block">
-              {formatDate(row.original.dateEnrolled || row.original.createdAt)}
-            </span>
-          </div>
-        ),
-      },
-    ];
-    return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
-  }, [activeTab]);
+        {
+          id: "lrn",
+          accessorKey: "lrn",
+          meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="LRN"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="flex w-full justify-center py-3">
+              <span className="font-bold text-base leading-tight text-center">{row.original.lrn}</span>
+            </div>
+          ),
+        },
+        {
+          id: "sex",
+          accessorKey: "sex",
+          meta: { skeletonClassName: "w-[40px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Sex"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => {
+            const normalized = row.original.sex?.trim().toUpperCase();
+            const display =
+              normalized === "MALE" || normalized === "M"
+                ? "M"
+                : normalized === "FEMALE" || normalized === "F"
+                  ? "F"
+                  : row.original.sex || "—";
+
+            return (
+              <div className="flex w-full justify-center py-3">
+                <span className="font-bold text-base leading-tight uppercase text-center">{display}</span>
+              </div>
+            );
+          },
+        },
+        {
+          id: "gradeLevel",
+          accessorKey: "gradeLevel",
+          meta: { skeletonClassName: "w-[80px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Grade Level"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="flex w-full justify-center py-3">
+              <span className="font-bold text-base leading-tight text-center">{row.original.gradeLevel}</span>
+            </div>
+          ),
+        },
+        {
+          id: "section",
+          accessorKey: "section",
+          meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Section"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="flex w-full justify-center py-3">
+              <span className="font-bold text-base leading-tight text-center">
+                {formatSectionLabel(row.original.section)}
+              </span>
+            </div>
+          ),
+        },
+        {
+          id: "status",
+          meta: { className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="STATUS"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="flex w-full justify-center py-3">
+              {renderLearnerStatus(row.original)}
+            </div>
+          ),
+        },
+        {
+          id: "dateEnrolled",
+          accessorKey: "dateEnrolled",
+          meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Date Enrolled"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="flex w-full justify-center py-3">
+              <span className="text-base leading-tight font-bold text-center block">
+                {formatDate(row.original.dateEnrolled || row.original.createdAt)}
+              </span>
+            </div>
+          ),
+        },
+      ];
+      return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
+    }, [activeTab]);
 
   const renderContent = () => (
     <div className="space-y-6">
@@ -1117,8 +1118,8 @@ export default function Students() {
                     }),
                     ayId
                       ? queryClient.invalidateQueries({
-                          queryKey: queryKeys.studentsSummary(ayId),
-                        })
+                        queryKey: queryKeys.studentsSummary(ayId),
+                      })
                       : Promise.resolve(),
                   ]);
                 }}
@@ -1283,7 +1284,7 @@ export default function Students() {
                               {student.sex === "MALE" || student.sex === "M"
                                 ? "M"
                                 : student.sex === "FEMALE" ||
-                                    student.sex === "F"
+                                  student.sex === "F"
                                   ? "F"
                                   : student.sex || "—"}
                             </p>

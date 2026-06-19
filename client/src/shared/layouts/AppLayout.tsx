@@ -551,7 +551,7 @@ function AppSidebar() {
                     <NavItem
                       to="/sections/homerooms"
                       icon={Layers}
-                      label="Adviser Assignments"
+                      label="List of Classes"
                       pathname={pathname}
                     />
                   </>
@@ -626,7 +626,7 @@ function AppSidebar() {
                       label="EOSY Updating"
                       pathname={pathname}
                     />
-                    
+
                     <NavDivider label="Management" />
                     <NavItem
                       to="/teacher/advisory"

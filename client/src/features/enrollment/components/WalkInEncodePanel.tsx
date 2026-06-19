@@ -163,7 +163,7 @@ export function WalkInEncodePanel() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        className="sm:max-w-2xl w-full p-0 flex flex-col h-full border-l-0 overflow-hidden bg-background"
+        className="p-0 flex flex-col h-full overflow-hidden"
       >
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-h-14">

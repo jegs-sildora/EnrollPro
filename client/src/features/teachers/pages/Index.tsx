@@ -13,6 +13,20 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { TeacherDirectoryCard } from "../components/TeacherDirectoryCard";
 import { TeacherDetailPanel } from "../components/TeacherDetailPanel";
 
+import {
+  UsersIcon,
+  UserCheckIcon,
+  UserMinusIcon,
+  BookOpenIcon,
+  SearchIcon,
+  FilterXIcon,
+  RefreshCwIcon,
+  UserPlusIcon,
+} from "lucide-react";
+import { Input } from "@/shared/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
+
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -20,11 +34,7 @@ import type {
 } from "../types";
 
 import { formatTeacherName } from "../utils";
-
-
-
-
-interface DesignationFilterOption {
+import { DEPED_TEACHER_DEPARTMENT_OPTIONS } from "@enrollpro/shared"; interface DesignationFilterOption {
   value: string;
   label: string;
 }
@@ -32,7 +42,7 @@ interface DesignationFilterOption {
 function normalizeSearchText(value: string): string {
   return value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toUpperCase()
     .replace(/[^A-Z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
@@ -64,8 +74,6 @@ function buildTeacherSearchIndex(teacher: Teacher): string {
 }
 
 
-
-
 export default function Teachers() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
@@ -73,9 +81,6 @@ export default function Teachers() {
   const queryClient = useQueryClient();
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-
-
 
 
   const [activeFilter, setActiveFilter] = useState("");
@@ -88,6 +93,7 @@ export default function Teachers() {
   const [limit, setLimit] = useState(25);
 
   const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const teachersQuery = useQuery({
     queryKey: queryKeys.teachersList(ayId),
@@ -119,16 +125,6 @@ export default function Teachers() {
 
 
 
-  const availableDepartments = useMemo(() => {
-    const depts = new Set<string>();
-    for (const teacher of teachers) {
-      if (teacher.department) {
-        depts.add(teacher.department.toUpperCase());
-      }
-    }
-
-    return Array.from(depts).sort();
-  }, [teachers]);
 
   const availableDesignationFilters = useMemo<DesignationFilterOption[]>(() => {
     const roles = new Set<string>();
@@ -153,7 +149,7 @@ export default function Teachers() {
     };
 
     const options: DesignationFilterOption[] = [];
-    
+
     for (const role of Array.from(roles).sort((a, b) => a.localeCompare(b))) {
       options.push({
         value: role,
@@ -176,6 +172,18 @@ export default function Teachers() {
       queryClient.invalidateQueries({ queryKey: queryKeys.teachersList(ayId) }),
     ]);
   }, [ayId, queryClient]);
+
+  const onStatusFilterChange = (value: TeacherStatusFilter) => {
+    setStatusFilter(value);
+  };
+
+  const onDesignationFilterChange = (value: TeacherDesignationFilter) => {
+    setDesignationFilter(value);
+  };
+
+  const onRefresh = () => {
+    invalidateTeacherQueries();
+  };
 
   // Reset page when filters or limit change
   useEffect(() => {
@@ -204,8 +212,6 @@ export default function Teachers() {
       }
     }
   }, [teachers, viewingTeacher]);
-
-
 
 
   const filteredTeachers = useMemo(() => {
@@ -245,85 +251,142 @@ export default function Teachers() {
     return filteredTeachers.slice(start, end);
   }, [filteredTeachers, page, limit]);
 
-  const hasActiveFilters =
-    activeFilter.trim().length > 0 ||
-    statusFilter !== "all" ||
-    designationFilter !== "all" ||
-    departmentFilter !== "all";
-
 
 
   // eSF7 profile validation is managed internally by the child panel component
 
-  
-  
-  
+
   const teacherDirectoryCardElement = useMemo(
     () => (
       <TeacherDirectoryCard
-        loading={loading}
-        isRefetching={isRefetching}
         showSkeleton={showSkeleton}
-        teachers={teachers}
         filteredTeachers={filteredTeachers}
         paginatedTeachers={paginatedTeachers}
-        statusFilter={statusFilter}
-        designationFilter={designationFilter}
-        departmentFilter={departmentFilter}
-        availableDepartments={availableDepartments}
-        availableDesignationFilters={availableDesignationFilters}
-        hasActiveFilters={hasActiveFilters}
         page={page}
         limit={limit}
         onPageChange={setPage}
         onLimitChange={setLimit}
-        onSearchQueryChange={setActiveFilter}
-        onStatusFilterChange={setStatusFilter}
-        onDesignationFilterChange={setDesignationFilter}
-        onDepartmentFilterChange={setDepartmentFilter}
-        onClearFilters={() => {
-          setActiveFilter("");
-          setStatusFilter("all");
-          setDesignationFilter("all");
-          setDepartmentFilter("all");
-        }}
-        onRefresh={invalidateTeacherQueries}
-        onOpenDetail={setViewingTeacher}
+        onOpenDetail={(t) => { setViewingTeacher(t); setIsPanelOpen(true); }}
+        controlBar={
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div className="w-full lg:w-[320px] shrink-0">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  className="w-full h-10 pl-9 bg-white text-sm border-gray-300"
+                  placeholder="Search by name, ID, or role..."
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-row flex-wrap lg:flex-nowrap items-center justify-end gap-3 w-full">
+              <div className="w-[160px]">
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => onStatusFilterChange(value as TeacherStatusFilter)}
+                >
+                  <SelectTrigger className="h-10 bg-white text-sm">
+                    <SelectValue placeholder="Employment Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="active">Active Only</SelectItem>
+                    <SelectItem value="inactive">Inactive Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[180px]">
+                <Select
+                  value={designationFilter}
+                  onValueChange={(value) => onDesignationFilterChange(value as TeacherDesignationFilter)}
+                >
+                  <SelectTrigger className="h-10 bg-white text-sm">
+                    <SelectValue placeholder="Plantilla Position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    {availableDesignationFilters.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="text-sm">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[160px]">
+                <Select
+                  value={departmentFilter}
+                  onValueChange={setDepartmentFilter}
+                >
+                  <SelectTrigger className="h-10 bg-white min-w-[160px] text-sm">
+                    <SelectValue placeholder="Learning Area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Subject Areas</SelectItem>
+                    {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="hidden lg:block w-px h-6 bg-gray-300 mx-1 shrink-0"></div>
+
+              <Button
+                className="h-10 px-3 text-sm text-gray-600 hover:text-gray-900 shrink-0"
+                variant="ghost"
+                onClick={() => {
+                  setActiveFilter("");
+                  setStatusFilter("all");
+                  setDesignationFilter("all");
+                  setDepartmentFilter("all");
+                }}
+              >
+                <FilterXIcon className="w-4 h-4 mr-2" /> Clear
+              </Button>
+              <Button
+                className="h-10 px-3 text-sm bg-white border-gray-300 shrink-0"
+                variant="outline"
+                onClick={onRefresh}
+              >
+                <RefreshCwIcon className="w-4 h-4 mr-2" /> Refresh
+              </Button>
+            </div>
+          </div>
+        }
       />
     ),
     [
       loading,
       isRefetching,
       showSkeleton,
-      teachers,
       filteredTeachers,
       paginatedTeachers,
+      page,
+      limit,
+      invalidateTeacherQueries,
       activeFilter,
       statusFilter,
       designationFilter,
       departmentFilter,
-      availableDepartments,
       availableDesignationFilters,
-      hasActiveFilters,
-      ayId,
-      page,
-      limit,
-      invalidateTeacherQueries,
+      onRefresh,
     ],
   );
 
   const renderedTeacherDetailPanel = useMemo(
     () => (
       <TeacherDetailPanel
-        open={Boolean(viewingTeacher)}
+        open={isPanelOpen}
         teacher={viewingTeacher}
-        onOpenChange={(open) => !open && setViewingTeacher(null)}
-        onSaveSuccess={invalidateTeacherQueries}
+        onOpenChange={(open) => { setIsPanelOpen(open); if (!open) setViewingTeacher(null); }}
+        onSaveSuccess={() => { invalidateTeacherQueries(); setIsPanelOpen(false); }}
       />
     ),
-    [viewingTeacher, invalidateTeacherQueries],
+    [isPanelOpen, viewingTeacher, invalidateTeacherQueries],
   );
-
 
 
   return (
@@ -334,9 +397,19 @@ export default function Teachers() {
             Faculty & Staff Roster
           </h1>
           <p className="text-base leading-tight text-foreground text-balance font-bold">
-            Manage official DepEd personnel profiles, department heads, and system access levels.
+            Manage official DepEd teaching and non-teaching personnel records, assign system roles, and monitor employment status.
           </p>
         </div>
+        <Button
+          onClick={() => {
+            setViewingTeacher(null);
+            setIsPanelOpen(true);
+          }}
+          className="font-bold uppercase tracking-wide"
+        >
+          <UserPlusIcon className="w-4 h-4 mr-2" />
+          Add Personnel
+        </Button>
       </div>
 
       {!ayId ? (
@@ -345,11 +418,58 @@ export default function Teachers() {
         </div>
       ) : null}
 
+      {/* Premium KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Faculty & Staff */}
+        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div>
+            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">Total Faculty & Staff</p>
+            <p className="mt-1 text-3xl font-black text-gray-900">{teachers.length}</p>
+          </div>
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <UsersIcon className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Active */}
+        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div>
+            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">Currently Active</p>
+            <p className="mt-1 text-3xl font-black text-green-600">{teachers.filter(t => t.isActive).length}</p>
+          </div>
+          <div className="p-3 bg-green-50 text-green-600 rounded-lg">
+            <UserCheckIcon className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Inactive / On Leave */}
+        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div>
+            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">Inactive / On Leave</p>
+            <p className="mt-1 text-3xl font-black text-gray-900">{teachers.filter(t => !t.isActive).length}</p>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
+            <UserMinusIcon className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Advisory Roles */}
+        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div>
+            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">Advisory Roles</p>
+            <p className="mt-1 text-3xl font-black text-orange-600">{teachers.filter(t => t.designation?.isClassAdviser).length}</p>
+          </div>
+          <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+            <BookOpenIcon className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* Teacher Directory Card */}
       {teacherDirectoryCardElement}
 
+      {/* Teacher Detail Panel */}
       {renderedTeacherDetailPanel}
-
-
     </div>
   );
 }
