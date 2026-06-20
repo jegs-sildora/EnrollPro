@@ -392,7 +392,7 @@ export default function BOSYPage() {
         <div>
           <h1 className="text-3xl font-bold">Early Registration (BOSY)</h1>
           <p className="text-base leading-tight font-bold">
-            Fast-track LRN verification and intent-to-enroll confirmation for continuing Grade 8–10 learners.
+            Verify Learner Reference Numbers (LRN) and confirm intent to enroll for returning Junior High School learners.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
@@ -462,15 +462,17 @@ export default function BOSYPage() {
               setRowSelection({});
             }}
             className={cn(
-              "shadow-sm cursor-pointer transition-colors border-2",
-              statusFilter === filterVal ? "border-primary bg-primary/5" : "border-transparent bg-[hsl(var(--card))] hover:border-primary/50"
+              "shadow-sm cursor-pointer transition-all border",
+              statusFilter === filterVal
+                ? "border-slate-200 border-l-4 border-l-primary bg-white"
+                : "border-slate-200 bg-white hover:border-primary/50"
             )}>
             <CardHeader className="p-3 pb-1 flex-row items-center gap-2">
               <div className={cn(
                 "p-1.5 rounded-lg shrink-0",
-                statusFilter === filterVal ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                statusFilter === filterVal ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
               )}>
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
               </div>
               <p className="text-[10px] font-black uppercase text-foreground leading-tight">
                 {label}
@@ -487,14 +489,14 @@ export default function BOSYPage() {
         ))}
       </div>
 
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-        <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <CardHeader className="px-3 sm:px-6 pb-3">
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+            <div className="relative w-full lg:w-64 shrink-0">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search LRN, First Name, Last Name..."
-                className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+                className="pl-9 h-10 w-full text-base leading-tight font-bold"
                 value={queueSearch}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
@@ -506,35 +508,43 @@ export default function BOSYPage() {
                 }}
               />
             </div>
-            {canMutate && statusFilter === "PENDING_VERIFICATION" && selectedIds.length > 0 ? (
-              <BulkConfirmBar
-                selectedCount={selectedIds.length}
-                loading={bulkLoading}
-                onConfirm={() => void handleBulkConfirm()}
-                onClear={() => setRowSelection({})}
-              />
-            ) : (
-              <Select
-                value={previousSectionName}
-                onValueChange={(val) => {
-                  setPreviousSectionName(val);
-                  startTransition(() => setQueuePage(1));
-                }}>
-                <SelectTrigger className="w-full md:w-[260px] h-11 bg-muted/30 border-2 border-transparent hover:border-primary/20 transition-all text-base leading-tight font-bold">
-                  <SelectValue placeholder="Filter by Previous Section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Previous Sections</SelectItem>
-                  {previousSections.map((sec) => (
-                    <SelectItem key={sec} value={sec}>
-                      {sec}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 lg:justify-end">
+              {canMutate && statusFilter === "PENDING_VERIFICATION" && selectedIds.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <BulkConfirmBar
+                    selectedCount={selectedIds.length}
+                    loading={bulkLoading}
+                    onConfirm={() => void handleBulkConfirm()}
+                    onClear={() => setRowSelection({})}
+                  />
+                </div>
+              ) : (
+                <Select
+                  value={previousSectionName}
+                  onValueChange={(val) => {
+                    setPreviousSectionName(val);
+                    startTransition(() => setQueuePage(1));
+                  }}>
+                  <SelectTrigger className="h-10 w-full sm:w-64 text-base leading-tight font-bold">
+                    <SelectValue placeholder="All Previous Sections" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL" className="text-base leading-tight font-bold">All Previous Sections</SelectItem>
+                    {previousSections.map((sec) => (
+                      <SelectItem key={sec} value={sec} className="text-base leading-tight font-bold">
+                        {sec}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </CardHeader>
+      </Card>
+
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
         <CardContent className="p-0 flex flex-col min-h-0">
           <div
             className="overflow-auto bg-muted/5"

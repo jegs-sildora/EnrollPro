@@ -1242,7 +1242,7 @@ export default function SchoolYearTab() {
                                 setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
                               }}
                               className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
-                              placeholder="Set date"
+                              placeholder="MM/DD/YYYY"
                             />
                           </div>
                           <span className="text-foreground font-bold">to</span>
@@ -1254,7 +1254,7 @@ export default function SchoolYearTab() {
                                 setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
                               }}
                               className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
-                              placeholder="Set date"
+                              placeholder="MM/DD/YYYY"
                             />
                           </div>
                         </div>

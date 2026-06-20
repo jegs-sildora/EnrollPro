@@ -14,21 +14,14 @@ import {
   BadgeAlert,
   FileBadge2,
   Fingerprint,
-  Mars,
-  Venus,
-  Users,
   CalendarDays,
   RefreshCw,
   AlertTriangle,
-  PieChart,
-  BookOpen,
-  Flag,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
 import { sileo } from "sileo";
@@ -159,28 +152,7 @@ interface ApiGradeLevelGroup {
   sections: ApiSection[];
 }
 
-interface StudentsSummary {
-  totalEnrolled: number;
-  genderBreakdown: {
-    male: number;
-    female: number;
-    other: number;
-  };
-  programBreakdown: Record<string, number>;
-  gradeBreakdown: Record<string, number>;
-  specialDemographics: {
-    fourPs: number;
-    balikAral: number;
-    transfereesIn: number;
-  };
-}
 
-const GRADE_DISPLAY = [
-  { key: "Grade 7", label: "G7" },
-  { key: "Grade 8", label: "G8" },
-  { key: "Grade 9", label: "G9" },
-  { key: "Grade 10", label: "G10" },
-] as const;
 
 const VALID_TABS = ["active", "completers", "inactive"] as const;
 type StudentTab = (typeof VALID_TABS)[number];
@@ -409,23 +381,9 @@ export default function Students() {
     enabled: Boolean(ayId || activeTab === "completers"),
   });
 
-  const summaryQuery = useQuery({
-    queryKey: ayId ? queryKeys.studentsSummary(ayId) : ["students", "summary", null],
-    queryFn: async () => {
-      if (!ayId) return null;
-      const res = await api.get<StudentsSummary>("/students/summary", {
-        params: { schoolYearId: ayId },
-      });
-      return res.data;
-    },
-    enabled: Boolean(ayId),
-  });
-
   const students = studentsQuery.data?.students ?? [];
   const total = studentsQuery.data?.pagination.total ?? 0;
   const loading = studentsQuery.isPending || studentsQuery.isFetching;
-  const summary = summaryQuery.data ?? null;
-  const summaryLoading = summaryQuery.isPending || summaryQuery.isFetching;
 
   // Fetch grade levels and sections
   useEffect(() => {
@@ -804,17 +762,7 @@ export default function Students() {
     }
   }, [actionStudent, lrnForm.lrn, refreshTables, refreshDetailIfOpen]);
 
-  const programBreakdownItems = useMemo(() => {
-    if (!summary) return [];
 
-    return PROGRAM_FILTER_OPTIONS.map((option) => ({
-      key: option.value,
-      label: option.label,
-      count: summary.programBreakdown[option.value] || 0,
-    }))
-      .filter((item) => item.count > 0)
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-  }, [summary]);
 
   const columns = useMemo<ColumnDef<Student>[]>(
     () => {
@@ -826,7 +774,7 @@ export default function Students() {
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Learner"
+              title="LEARNER NAME"
             />
           ),
           cell: ({ row }) => {
@@ -961,6 +909,18 @@ export default function Students() {
             </div>
           ),
         },
+        {
+          id: "actions",
+          meta: { skeletonClassName: "w-[100px] ml-auto" },
+          header: () => <div className="w-full"></div>,
+          cell: () => (
+            <div className="flex w-full justify-end py-3 pr-2">
+              <Button variant="ghost" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-bold px-3 py-1 h-auto pointer-events-none">
+                View Record
+              </Button>
+            </div>
+          ),
+        },
       ];
       return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
     }, [activeTab]);
@@ -970,182 +930,160 @@ export default function Students() {
       {/* Search and Filters */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-3">
-          <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
-            <div className="flex-1 space-y-2 w-full">
-              <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
-                Search Learner
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
-                <Input
-                  placeholder="LRN, first name, last name..."
-                  className="pl-9 h-10 text-base leading-tight font-bold"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                  }}
-                />
-              </div>
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+            {/* Search Input */}
+            <div className="relative w-full lg:w-64 shrink-0">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, ID, or LRN..."
+                className="pl-9 h-10 w-full text-base leading-tight font-bold"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-            <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
-              <div className="space-y-2">
-                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
-                  Grade Level
-                </Label>
-                <Select
-                  value={gradeLevelFilter}
-                  onValueChange={(value) => {
-                    startTransition(() => {
-                      setGradeLevelFilter(value);
-                      setPage(1);
-                    });
-                  }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
-                    <SelectValue placeholder="All Grades" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value="all"
-                      className="text-base leading-tight font-bold">
-                      All Grades
-                    </SelectItem>
-                    {gradeLevels.map((gl) => (
-                      <SelectItem
-                        key={gl.id}
-                        value={gl.id.toString()}
-                        className="text-base leading-tight font-bold">
-                        {gl.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
-                  Program
-                </Label>
-                <Select
-                  value={programFilter}
-                  onValueChange={(value) => {
-                    startTransition(() => {
-                      setProgramFilter(value);
-                      setPage(1);
-                    });
-                  }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
-                    <SelectValue placeholder="All Programs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value="all"
-                      className="text-base leading-tight font-bold">
-                      All Programs
-                    </SelectItem>
-                    {availablePrograms.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-base leading-tight font-bold">
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
-                  Section
-                </Label>
-                <Select
-                  value={sectionFilter}
-                  onValueChange={(value) => {
-                    startTransition(() => {
-                      setSectionFilter(value);
-                      setPage(1);
-                    });
-                  }}>
-                  <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold hover:bg-accent hover:text-accent-foreground transition-colors">
-                    <SelectValue placeholder="All Sections" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value="all"
-                      className="text-base leading-tight font-bold">
-                      All Sections
-                    </SelectItem>
-                    {gradeLevelFilter === "all" ? (
-                      gradeLevels.map((gl) => {
-                        const glSections = filteredSections.filter(
-                          (s) => s.gradeLevelId === gl.id
-                        );
-                        if (glSections.length === 0) return null;
-                        return (
-                          <SelectGroup key={gl.id}>
-                            <SelectLabel className="text-base text-muted-foreground uppercase">{gl.name}</SelectLabel>
-                            {glSections.map((sec) => (
-                              <SelectItem
-                                key={sec.id}
-                                value={sec.id.toString()}
-                                className="text-base leading-tight font-bold">
-                                {formatSectionLabel(sec.name)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        );
-                      })
-                    ) : (
-                      filteredSections.map((sec) => (
-                        <SelectItem
-                          key={sec.id}
-                          value={sec.id.toString()}
-                          className="text-base leading-tight font-bold">
-                          {formatSectionLabel(sec.name)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex w-full md:w-auto items-center gap-2">
-              <Button
-                variant="outline"
-                className="h-10 px-3 text-base leading-tight font-bold w-full md:w-auto"
-                onClick={() => {
-                  void Promise.all([
-                    queryClient.invalidateQueries({
-                      queryKey: queryKeys.studentsList(studentsQueryParams),
-                    }),
-                    ayId
-                      ? queryClient.invalidateQueries({
-                        queryKey: queryKeys.studentsSummary(ayId),
-                      })
-                      : Promise.resolve(),
-                  ]);
-                }}
-                disabled={loading || !ayId}>
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </Button>
-
-              <Button
-                variant="outline"
-                className="h-10 px-3 text-base leading-tight font-bold w-full md:w-auto"
-                onClick={() => {
+            
+            {/* Dropdowns */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 lg:justify-end">
+              <Select
+                value={gradeLevelFilter}
+                onValueChange={(value) => {
                   startTransition(() => {
-                    clearSearch();
-                    setGradeLevelFilter("all");
-                    setProgramFilter("all");
-                    setSectionFilter("all");
-                    setSortBy("dateEnrolled");
-                    setSortOrder("desc");
+                    setGradeLevelFilter(value);
                     setPage(1);
                   });
                 }}>
-                Reset
-              </Button>
+                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-bold">
+                  <SelectValue placeholder="All Grades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                    All Grades
+                  </SelectItem>
+                  {gradeLevels.map((gl) => (
+                    <SelectItem
+                      key={gl.id}
+                      value={gl.id.toString()}
+                      className="text-base leading-tight font-bold">
+                      {gl.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={programFilter}
+                onValueChange={(value) => {
+                  startTransition(() => {
+                    setProgramFilter(value);
+                    setPage(1);
+                  });
+                }}>
+                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-bold">
+                  <SelectValue placeholder="All Programs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                    All Programs
+                  </SelectItem>
+                  {availablePrograms.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-base leading-tight font-bold">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={sectionFilter}
+                onValueChange={(value) => {
+                  startTransition(() => {
+                    setSectionFilter(value);
+                    setPage(1);
+                  });
+                }}>
+                <SelectTrigger className="h-10 w-full sm:w-48 text-base leading-tight font-bold hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <SelectValue placeholder="All Sections" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                    All Sections
+                  </SelectItem>
+                  {gradeLevelFilter === "all" ? (
+                    gradeLevels.map((gl) => {
+                      const glSections = filteredSections.filter((s) => s.gradeLevelId === gl.id);
+                      if (glSections.length === 0) return null;
+                      return (
+                        <SelectGroup key={gl.id}>
+                          <SelectLabel className="text-base text-muted-foreground uppercase">{gl.name}</SelectLabel>
+                          {glSections.map((sec) => (
+                            <SelectItem
+                              key={sec.id}
+                              value={sec.id.toString()}
+                              className="text-base leading-tight font-bold">
+                              {formatSectionLabel(sec.name)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      );
+                    })
+                  ) : (
+                    filteredSections.map((sec) => (
+                      <SelectItem
+                        key={sec.id}
+                        value={sec.id.toString()}
+                        className="text-base leading-tight font-bold">
+                        {formatSectionLabel(sec.name)}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              
+              {/* Vertical Divider (Hidden on small screens when wrapped) */}
+              <div className="hidden lg:block w-px h-6 bg-border mx-1" />
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 text-base leading-tight font-bold flex-1 sm:flex-none"
+                  onClick={() => {
+                    void Promise.all([
+                      queryClient.invalidateQueries({
+                        queryKey: queryKeys.studentsList(studentsQueryParams),
+                      }),
+                      ayId
+                        ? queryClient.invalidateQueries({
+                          queryKey: queryKeys.studentsSummary(ayId),
+                        })
+                        : Promise.resolve(),
+                    ]);
+                  }}
+                  disabled={loading || !ayId}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 text-base leading-tight font-bold flex-1 sm:flex-none"
+                  onClick={() => {
+                    startTransition(() => {
+                      clearSearch();
+                      setGradeLevelFilter("all");
+                      setProgramFilter("all");
+                      setSectionFilter("all");
+                      setSortBy("dateEnrolled");
+                      setSortOrder("desc");
+                      setPage(1);
+                    });
+                  }}>
+                  Clear
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -1448,236 +1386,56 @@ export default function Students() {
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {/* Card 1: Total Enrolled + Grade Breakdown */}
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
-          <CardHeader className="pb-1">
-            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              Total Enrolled
-            </CardDescription>
-            <CardTitle className="text-3xl font-extrabold">
-              {summaryLoading ? "…" : <AnimatedNumber value={summary?.totalEnrolled ?? 0} />}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-1.5">
-              {GRADE_DISPLAY.map(({ key, label }) => (
-                <div
-                  key={key}
-                  className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2 text-base font-bold">
-                  <span>{label}</span>
-                  <span className="font-extrabold">
-                    {summaryLoading ? "…" : <AnimatedNumber value={summary?.gradeBreakdown[key] ?? 0} />}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Gender Breakdown + Progress Bar */}
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
-          <CardHeader className="pb-1">
-            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
-              <PieChart className="h-3.5 w-3.5" />
-              Sex Breakdown
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-2">
-            {summaryLoading ? (
-              <div className="text-base leading-tight font-bold text-foreground">…</div>
-            ) : !summary ? (
-              <p className="text-base font-bold text-foreground">
-                No enrolled learners yet.
-              </p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
-                      <Mars className="h-3.5 w-3.5 text-sky-700" /> Male
-                    </span>
-                    <span className="text-base font-extrabold text-sky-700">
-                      <AnimatedNumber value={summary.genderBreakdown.male} />
-                    </span>
-                  </div>
-                  <div className="rounded-md border bg-muted/40 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
-                      <Venus className="h-3.5 w-3.5 text-rose-700" /> Female
-                    </span>
-                    <span className="text-base font-extrabold text-rose-700">
-                      <AnimatedNumber value={summary.genderBreakdown.female} />
-                    </span>
-                  </div>
-                </div>
-                {summary.totalEnrolled > 0 && (
-                  <div className="space-y-1">
-                    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="bg-sky-500 transition-all"
-                        style={{
-                          width: `${(summary.genderBreakdown.male / summary.totalEnrolled) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-rose-400 transition-all"
-                        style={{
-                          width: `${(summary.genderBreakdown.female / summary.totalEnrolled) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-foreground font-bold text-right">
-                      <AnimatedNumber
-                        value={(summary.genderBreakdown.male / summary.totalEnrolled) * 100}
-                        decimals={1}
-                        suffix="% M"
-                      />
-                      {" · "}
-                      <AnimatedNumber
-                        value={(summary.genderBreakdown.female / summary.totalEnrolled) * 100}
-                        decimals={1}
-                        suffix="% F"
-                      />
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Curricular Programs */}
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
-          <CardHeader className="pb-1">
-            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
-              Curricular Programs
-            </CardDescription>
-            {!summaryLoading && programBreakdownItems.length > 0 && (
-              <CardTitle className="text-3xl font-extrabold">
-                <AnimatedNumber value={programBreakdownItems.length} />
-              </CardTitle>
-            )}
-          </CardHeader>
-          <CardContent className="pt-0">
-            {summaryLoading ? (
-              <div className="text-base leading-tight font-bold text-foreground">…</div>
-            ) : programBreakdownItems.length === 0 ? (
-              <p className="text-base font-bold text-foreground">
-                No enrolled learners yet.
-              </p>
-            ) : (
-              <div
-                className={cn(
-                  "flex flex-col gap-1.5",
-                  programBreakdownItems.length > 4 && "max-h-[80px] overflow-y-auto pr-1",
-                )}>
-                {programBreakdownItems.map((item) => (
-                  <div
-                    key={item.key}
-                    className="flex items-center justify-between text-base leading-tight gap-2">
-                    <span className="text-[11px] font-bold uppercase">
-                      {item.label}
-                    </span>
-                    <span className="text-base font-extrabold text-blue-700">
-                      <AnimatedNumber value={item.count} />
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Special Demographics / Flags */}
-        <Card className="h-full shadow-sm bg-amber-50/40 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-800/30">
-          <CardHeader className="pb-1">
-            <CardDescription className="text-base uppercase font-bold flex items-center gap-1.5">
-              <Flag className="h-3.5 w-3.5 text-amber-600" />
-              Special Demographics
-            </CardDescription>
-            <p className="text-[10px] text-foreground font-bold leading-tight">
-              DepEd funding &amp; intervention flags — not additional totals.
-            </p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {summaryLoading ? (
-              <div className="text-base leading-tight font-bold text-foreground">…</div>
-            ) : !summary ? (
-              <p className="text-base font-bold text-foreground">
-                No enrolled learners yet.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {[
-                  { label: "4Ps Beneficiaries", value: summary.specialDemographics.fourPs },
-                  { label: "Balik-Aral (Returnees)", value: summary.specialDemographics.balikAral },
-                  { label: "Transferees In", value: summary.specialDemographics.transfereesIn },
-                ].map(({ label, value }) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between text-base font-bold">
-                    <span className="text-foreground">{label}</span>
-                    <AnimatedNumber value={value} className="font-extrabold text-foreground" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-6 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="active"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "active" && (
               <motion.div
                 layoutId="students-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className="relative z-20">
-              <span className="hidden sm:inline">Currently Enrolled</span>
-              <span className="sm:hidden">Current</span>
+            <span className={cn("relative z-20 uppercase", activeTab === "active" ? "text-primary-foreground" : "text-foreground")}>
+              <span className="hidden sm:inline">Active Roster</span>
+              <span className="sm:hidden">Active</span>
             </span>
           </TabsTrigger>
           <TabsTrigger
             value="completers"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "completers" && (
               <motion.div
                 layoutId="students-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className="relative z-20">
-              <span className="hidden sm:inline">JHS Completers (Alumni)</span>
+            <span className={cn("relative z-20 uppercase", activeTab === "completers" ? "text-primary-foreground" : "text-foreground")}>
+              <span className="hidden sm:inline">Completers / Alumni</span>
               <span className="sm:hidden">Alumni</span>
             </span>
           </TabsTrigger>
           <TabsTrigger
             value="inactive"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "inactive" && (
               <motion.div
                 layoutId="students-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className="relative z-20">
-              <span className="hidden sm:inline">Transferred Out / Dropped</span>
-              <span className="sm:hidden">Transferred / Dropped</span>
+            <span className={cn("relative z-20 uppercase", activeTab === "inactive" ? "text-primary-foreground" : "text-foreground")}>
+              <span className="hidden sm:inline">Inactive (Transferred / Dropped)</span>
+              <span className="sm:hidden">Inactive</span>
             </span>
           </TabsTrigger>
         </TabsList>

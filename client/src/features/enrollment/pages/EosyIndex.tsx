@@ -158,6 +158,7 @@ export default function EosyUpdating() {
 
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const [preFlightModalOpen, setPreFlightModalOpen] = useState(false);
+  const [sf5WatermarkOpen, setSf5WatermarkOpen] = useState(false);
   const [finalizeLoading, setFinalizeLoading] = useState(false);
 
   useEffect(() => {
@@ -794,7 +795,13 @@ export default function EosyUpdating() {
 
                       {isScopeFinalized ? (
                         <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" className="font-bold border-border hover:bg-accent" onClick={() => sileo.success({ title: "Download", description: "Downloading SF5 (Section)..." })}>
+                          <Button variant="outline" className="font-bold border-border hover:bg-accent" onClick={() => {
+                            if (pendingCount > 0) {
+                              setSf5WatermarkOpen(true);
+                            } else {
+                              sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
+                            }
+                          }}>
                             📥 Download SF5
                           </Button>
                           <Button variant="outline" className="font-bold border-border hover:bg-accent" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
@@ -990,6 +997,75 @@ export default function EosyUpdating() {
         irregularBlockerCount={scopedIrregularBlockerCount ?? 0}
         targetScopeName={targetScopeName}
       />
+    
+      <Dialog open={sf5WatermarkOpen} onOpenChange={setSf5WatermarkOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white border border-gray-300 shadow-2xl">
+          <DialogHeader className="p-4 border-b bg-gray-50 flex flex-row items-center justify-between">
+            <div>
+              <DialogTitle className="text-lg font-bold">School Form 5 (SF5) Preview</DialogTitle>
+              <DialogDescription>Document generated with unsubmitted grades</DialogDescription>
+            </div>
+            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-red-200">
+              UNFINALIZED
+            </div>
+          </DialogHeader>
+          <div className="relative h-[600px] w-full bg-gray-100 p-8 flex items-center justify-center overflow-hidden">
+            {/* The Document Paper */}
+            <div className="relative bg-white w-full h-full shadow-lg border border-gray-200 p-8 flex flex-col justify-between">
+              
+              {/* WATERMARK OVERLAY */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-hidden">
+                <div className="transform -rotate-45 text-[6rem] font-black text-red-600/10 whitespace-nowrap select-none">
+                  DRAFT COPY
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 mt-48 overflow-hidden">
+                <div className="transform -rotate-45 text-[2rem] font-black text-red-600/10 whitespace-nowrap select-none">
+                  PENDING ACADEMIC CLEARANCE
+                </div>
+              </div>
+
+              {/* Fake Document Content */}
+              <div>
+                <h2 className="text-2xl font-serif text-center font-bold mb-8">School Form 5 (SF5)</h2>
+                <div className="space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+                </div>
+              </div>
+
+              {/* Signatures */}
+              <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
+                <div className="text-center w-1/3">
+                  <div className="border-b border-black mb-2 h-8"></div>
+                  <p className="text-xs font-bold">Class Adviser</p>
+                </div>
+                <div className="text-center w-1/3 relative">
+                  {/* Blocked Signature Field */}
+                  <div className="absolute inset-0 bg-red-100/80 backdrop-blur-sm flex items-center justify-center border-2 border-red-500 border-dashed z-40">
+                     <span className="text-red-700 font-bold text-xs uppercase text-center leading-tight">Signature Blocked<br/>(Pending Finalization)</span>
+                  </div>
+                  <div className="border-b border-black mb-2 h-8"></div>
+                  <p className="text-xs font-bold">Official Registrar Signature</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="p-4 border-t bg-gray-50 flex justify-between items-center">
+            <span className="text-sm text-gray-500 italic">This copy cannot be officially distributed.</span>
+            <div className="space-x-2">
+              <Button variant="outline" onClick={() => setSf5WatermarkOpen(false)}>Close Preview</Button>
+              <Button onClick={() => setSf5WatermarkOpen(false)} className="bg-primary hover:bg-primary/90 text-white font-bold">
+                Download Draft PDF
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </>
   );
 }

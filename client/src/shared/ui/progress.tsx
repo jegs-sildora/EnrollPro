@@ -4,14 +4,16 @@ import { cn } from "@/shared/lib/utils";
 
 const Progress = React.forwardRef<
   React.ComponentRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, value, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & { trackColorToken?: string }
+>(({ className, value, trackColorToken, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
-      "relative h-2 w-full overflow-hidden rounded-full bg-primary/20",
+      "relative h-2 w-full overflow-hidden rounded-full",
+      trackColorToken ? "" : "bg-primary/20",
       className
     )}
+    style={trackColorToken ? { backgroundColor: `hsl(var(--${trackColorToken}))` } as React.CSSProperties : undefined}
     {...props}
   >
     <ProgressPrimitive.Indicator

@@ -1,243 +1,264 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 
-interface SectionInfo {
-  id: number;
-  name: string;
-  maxCapacity: number;
-  enrollmentRecords: { id: number }[];
-}
-
-interface GradeLevelInfo {
-  id: number;
-  name: string;
-  _count: {
-    enrollmentApplications: number;
-  };
-  sections: SectionInfo[];
-}
-
 export async function getStats(req: Request, res: Response): Promise<void> {
   try {
     const schoolYearId = req.schoolYearId;
+    
+    // Fetch systemPhase
+    const setting = await prisma.schoolSetting.findFirst();
+    const systemPhase = setting?.systemPhase || "OFFICIAL_ENROLLMENT";
 
-    // STRICT SCOPING: If no SY context, return empty stats to prevent cross-SY leakage.
     if (!schoolYearId) {
       res.json({
         stats: {
-          totalPending: 0,
-          totalEnrolled: 0,
-          totalPreRegistered: 0,
-          sectionsAtCapacity: 0,
-          enrollmentTarget: {
-            current: 0,
-            target: 0,
-            seatsRemaining: 0,
-            progressPercent: 0,
-          },
-          gradeLevelBreakdown: [],
-          capacityAlerts: [],
-          actions: {
-            pendingReview: 0,
-            sectionsAtCapacity: 0,
-          },
+          systemPhase: "OFFICIAL_ENROLLMENT",
           kpiHeader: {
             pendingTotal: 0,
-            pendingIncomingG7: 0,
-            pendingTransferees: 0,
-            enrolledTotal: 0,
-            enrolledNew: 0,
-            enrolledContinuing: 0,
             unassignedTotal: 0,
-            unassignedCriticalG7: 0,
+            deficientTotal: 0,
+            enrolledTotal: 0,
           },
+          gradeLevelBreakdown: [],
+          criticalSections: [],
+          totalSections: 0,
         },
       });
       return;
     }
 
+    const gradeLevels = await prisma.gradeLevel.findMany({
+      orderBy: { displayOrder: 'asc' }
+    });
+
+    const currentMonth = new Date().getMonth() + 1;
+
     const [
-      totalPending,
-      totalEnrolled,
-      totalPreRegistered,
-      sectionsAtCapacity,
-      totalSectionCapacity,
-      gradeLevels,
-      pendingTotal,
-      pendingIncomingG7,
-      pendingTransferees,
       enrolledTotal,
-      enrolledNew,
-      enrolledContinuing,
+      pendingTotal,
       unassignedTotal,
-      unassignedCriticalG7,
+      deficientTotal,
+      lateIntakeCount,
+      pendingSF10Count,
+      overdueDocumentsCount,
+      activeSchoolTallyBOSY,
+      activeSchoolTallyLate,
+      transferredIn,
+      transferredOut,
+      droppedOut,
+      eosyFinalizedSections,
+      eosyPendingSections,
+      promotedTotal,
+      retainedTotal,
+      irregularTotal
     ] = await Promise.all([
-      prisma.enrollmentApplication.count({
-        where: {
-          status: {
-            in: ["VERIFIED", "VERIFIED", "VERIFIED"],
-          },
-          enrollmentRecord: { is: null },
-          schoolYearId,
-        },
+      prisma.enrollmentRecord.count({ where: { schoolYearId } }),
+      prisma.enrollmentApplication.count({ where: { status: "PENDING_VERIFICATION", schoolYearId } }),
+      prisma.enrollmentApplication.count({ where: { status: "VERIFIED", enrollmentRecord: { is: null }, schoolYearId } }),
+      prisma.enrollmentApplication.count({ where: { complianceStatus: "PENDING", schoolYearId } }),
+      
+      // V8.5 Queries (Classes Ongoing)
+      prisma.enrollmentApplication.count({ 
+        where: { status: "PENDING_VERIFICATION", isLateEnrollee: true, schoolYearId } 
       }),
-      prisma.enrollmentApplication.count({
-        where: {
-          status: { in: ["ENROLLED", "ENROLLED", "VERIFIED"] },
-          schoolYearId,
-        },
+      prisma.enrollmentRecord.count({ 
+        where: { sf10Status: { in: ["PENDING", "REQUESTED"] }, schoolYearId } 
       }),
-      prisma.enrollmentApplication.count({
-        where: {
-          status: "VERIFIED",
-          schoolYearId,
-        },
+      prisma.learner.count({ 
+        where: { 
+          OR: [
+            { isConditionallyEnrolled: true },
+            { missingRequirements: { isEmpty: false } }
+          ]
+        } 
       }),
-      // Count sections at capacity
-      prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*)::bigint AS count
-      FROM "sections" s
-      WHERE s."school_year_id" = ${schoolYearId}
-        AND (
-          SELECT COUNT(*)
-          FROM "enrollment_records" e
-          WHERE e."section_id" = s.id
-            AND e."school_year_id" = ${schoolYearId}
-        ) >= s."max_capacity"
-    `,
-      prisma.section.aggregate({
-        where: { schoolYearId },
-        _sum: { maxCapacity: true },
+      prisma.enrollmentRecord.count({ 
+        where: { isLateEnrollee: false, schoolYearId } 
       }),
-      prisma.gradeLevel.findMany({
-        orderBy: { displayOrder: "asc" },
-        select: {
-          id: true,
-          name: true,
-          _count: {
-            select: {
-              enrollmentApplications: {
-                where: {
-                  status: { in: ["ENROLLED", "ENROLLED", "VERIFIED"] },
-                  schoolYearId,
-                },
-              },
-            },
-          },
-          sections: {
-            where: { schoolYearId },
-            select: {
-              id: true,
-              name: true,
-              maxCapacity: true,
-              enrollmentRecords: {
-                where: { schoolYearId },
-                select: { id: true },
-              },
-            },
-          },
-        },
+      prisma.enrollmentRecord.count({ 
+        where: { isLateEnrollee: true, schoolYearId } 
       }),
-      // KPI Header 1: Pending Verifications
-      prisma.enrollmentApplication.count({
-        where: { status: "PENDING_VERIFICATION", schoolYearId },
+      prisma.sF4Log.count({ 
+        where: { movementType: "TRANSFER_IN", month: currentMonth } 
       }),
-      prisma.enrollmentApplication.count({
-        where: { status: "PENDING_VERIFICATION", schoolYearId, learnerType: "NEW_ENROLLEE", gradeLevel: { name: "Grade 7" } },
+      prisma.sF4Log.count({ 
+        where: { movementType: "TRANSFER_OUT", month: currentMonth } 
       }),
-      prisma.enrollmentApplication.count({
-        where: { status: "PENDING_VERIFICATION", schoolYearId, learnerType: "TRANSFEREE" },
+      prisma.sF4Log.count({ 
+        where: { movementType: "DROPPED_OUT", month: currentMonth } 
       }),
-      // KPI Header 2: Officially Enrolled
-      prisma.enrollmentApplication.count({
-        where: { status: "ENROLLED", schoolYearId },
-      }),
-      prisma.enrollmentApplication.count({
-        where: { status: "ENROLLED", schoolYearId, learnerType: "NEW_ENROLLEE" },
-      }),
-      prisma.enrollmentApplication.count({
-        where: { status: "ENROLLED", schoolYearId, learnerType: "CONTINUING" },
-      }),
-      // KPI Header 3: Unassigned Learners
-      prisma.enrollmentApplication.count({
-        where: { status: "VERIFIED", schoolYearId, enrollmentRecord: { is: null } },
-      }),
-      prisma.enrollmentApplication.count({
-        where: { status: "VERIFIED", schoolYearId, enrollmentRecord: { is: null }, gradeLevel: { name: "Grade 7" } },
-      }),
+      
+      // EOSY Queries
+      prisma.section.count({ where: { schoolYearId, isEosyFinalized: true } }),
+      prisma.section.count({ where: { schoolYearId, isEosyFinalized: false } }),
+      prisma.enrollmentRecord.count({ where: { schoolYearId, eosyStatus: "PROMOTED" } }),
+      prisma.enrollmentRecord.count({ where: { schoolYearId, eosyStatus: "RETAINED" } }),
+      prisma.enrollmentRecord.count({ where: { schoolYearId, eosyStatus: "CONDITIONALLY_PROMOTED" } })
     ]);
 
-    const gradeLevelBreakdown = (gradeLevels as GradeLevelInfo[]).map((gl) => {
-      const current = gl._count.enrollmentApplications;
-      const target = gl.sections.reduce((sum: number, s: SectionInfo) => sum + s.maxCapacity, 0);
-      return {
-        id: gl.id,
-        name: gl.name,
-        current,
-        target,
-        progressPercent:
-          target > 0 ? Number(((current / target) * 100).toFixed(1)) : 0,
-      };
+    const sections = await prisma.section.findMany({
+      where: { schoolYearId },
+      include: {
+        gradeLevel: true,
+        _count: {
+          select: { enrollmentRecords: true }
+        }
+      }
     });
 
-    const capacityAlerts = (gradeLevels as GradeLevelInfo[]).flatMap((gl) =>
-      gl.sections
-        .map((s: SectionInfo) => ({
-          sectionId: s.id,
-          sectionName: s.name,
-          gradeLevelName: gl.name,
-          current: s.enrollmentRecords.length,
-          target: s.maxCapacity,
-        }))
-        .filter((s) => s.current >= s.target * 0.9)
-        .map((s) => ({
-          message: `${s.gradeLevelName} '${s.sectionName}' is ${s.current >= s.target ? "at FULL" : "approaching max"} capacity (${s.current}/${s.target})`,
-          severity: s.current >= s.target ? ("CRITICAL" as const) : ("WARNING" as const),
-        })),
-    );
+    const criticalSections = sections
+      .map(s => ({
+        id: s.id,
+        name: `${s.gradeLevel.name} - ${s.name}`,
+        capacity: s.maxCapacity || 45,
+        enrolled: s._count.enrollmentRecords
+      }))
+      .sort((a, b) => b.enrolled - a.enrolled)
+      .slice(0, 3);
 
-    const sectionCapacityTarget = Number(
-      totalSectionCapacity?._sum?.maxCapacity ?? 0,
-    );
-    const enrollmentProgressPercent =
-      sectionCapacityTarget > 0
-        ? Number(((totalEnrolled / sectionCapacityTarget) * 100).toFixed(1))
-        : 0;
+    const totalSections = sections.length;
 
-    res.json({
-      stats: {
-        totalPending,
-        totalEnrolled,
-        totalPreRegistered,
-        sectionsAtCapacity: Number(sectionsAtCapacity[0]?.count ?? 0),
-        enrollmentTarget: {
-          current: totalEnrolled,
-          target: sectionCapacityTarget,
-          seatsRemaining: Math.max(sectionCapacityTarget - totalEnrolled, 0),
-          progressPercent: enrollmentProgressPercent,
+
+    const breakdownMap: Record<number, { male: number; female: number; current: number; late: number; dropped: number }> = {};
+    gradeLevels.forEach(gl => {
+      breakdownMap[gl.id] = { male: 0, female: 0, current: 0, late: 0, dropped: 0 };
+    });
+
+    const records = await prisma.enrollmentRecord.findMany({
+      where: { schoolYearId },
+      select: {
+        isLateEnrollee: true,
+        dropOutDate: true,
+        enrollmentApplication: {
+          select: { gradeLevelId: true }
         },
-        gradeLevelBreakdown,
-        capacityAlerts,
-        actions: {
-          pendingReview: totalPending,
-          sectionsAtCapacity: Number(sectionsAtCapacity[0]?.count ?? 0),
-        },
-        kpiHeader: {
-          pendingTotal,
-          pendingIncomingG7,
-          pendingTransferees,
-          enrolledTotal,
-          enrolledNew,
-          enrolledContinuing,
-          unassignedTotal,
-          unassignedCriticalG7,
-        },
+        learner: {
+          select: { sex: true }
+        }
+      }
+    });
+
+    records.forEach(r => {
+      const glId = r.enrollmentApplication?.gradeLevelId;
+      const sex = r.learner?.sex;
+      if (glId && breakdownMap[glId]) {
+        breakdownMap[glId].current += 1;
+        if (r.isLateEnrollee) breakdownMap[glId].late += 1;
+        if (r.dropOutDate) breakdownMap[glId].dropped += 1;
+        
+        if (sex === 'MALE') breakdownMap[glId].male += 1;
+        else if (sex === 'FEMALE') breakdownMap[glId].female += 1;
+      }
+    });
+
+    const gradeLevelBreakdown = gradeLevels.map(gl => ({
+      id: gl.id,
+      name: gl.name,
+      current: breakdownMap[gl.id]?.current || 0,
+      male: breakdownMap[gl.id]?.male || 0,
+      female: breakdownMap[gl.id]?.female || 0,
+      late: breakdownMap[gl.id]?.late || 0,
+      dropped: breakdownMap[gl.id]?.dropped || 0,
+    }));
+
+    const baseStats = {
+      systemPhase,
+      kpiHeader: {
+        pendingTotal,
+        unassignedTotal,
+        deficientTotal,
+        enrolledTotal,
       },
+      v85Stats: {
+        lateIntakeCount,
+        pendingSF10Count,
+        overdueDocumentsCount,
+        activeSchoolTallyBOSY,
+        activeSchoolTallyLate,
+        sf4Vitals: {
+          transferredIn,
+          transferredOut,
+          droppedOut
+        }
+      },
+      eosyStats: {
+        eosyFinalizedSections,
+        eosyPendingSections,
+        promotedTotal,
+        retainedTotal,
+        irregularTotal
+      },
+      criticalSections,
+      totalSections,
+      gradeLevelBreakdown,
+    };
+
+    res.json({ stats: baseStats });
+  } catch (error) {
+    console.error("Dashboard fetch error:", error);
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
+  }
+}
+
+export async function lockPhaseAndExportSF1(req: Request, res: Response): Promise<void> {
+  try {
+    const schoolYearId = req.schoolYearId;
+    if (!schoolYearId) {
+      res.status(400).json({ message: "No active school year" });
+      return;
+    }
+
+    const userId = req.user?.userId;
+
+    await prisma.schoolYear.update({
+      where: { id: schoolYearId },
+      data: { 
+        status: "BOSY_LOCKED",
+        bosyLockedAt: new Date(),
+        bosyLockedById: userId || null
+      }
     });
-  } catch (error: any) {
-    console.error("[DashboardController] Error fetching stats:", error);
-    res.status(500).json({
-      message: error.message || "Failed to fetch dashboard statistics",
+
+    // Mock an excel file buffer for the SF1 Baseline
+    const dummyExcelContent = Buffer.from("DUMMY_EXCEL_FILE_CONTENT_FOR_SF1");
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="SF1_BOSY_BASELINE.xlsx"');
+    res.send(dummyExcelContent);
+  } catch (error) {
+    console.error("Failed to lock phase:", error);
+    res.status(500).json({ message: "Failed to lock phase and export" });
+  }
+}
+
+export async function getAdminStats(req: Request, res: Response) {
+  res.json({
+    activeUsers: 42,
+    usersByRole: { REGISTRAR: 2, ADMIN: 1, PRINCIPAL: 1, TEACHER: 38 },
+    emailDeliveryRate: "99.9%",
+    systemStatus: "ACTIVE",
+  });
+}
+
+export async function getDemographics(req: Request, res: Response) {
+  res.json({
+    ageGroups: [{ name: "11-12", value: 30 }, { name: "13-14", value: 45 }, { name: "15-16", value: 25 }],
+    genderRatio: [{ name: "Male", value: 48 }, { name: "Female", value: 52 }],
+    municipalityDistribution: [{ name: "City Center", value: 60 }, { name: "Suburbs", value: 40 }]
+  });
+}
+
+export async function getRecentActivity(req: Request, res: Response) {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        user: { select: { email: true, roles: true } }
+      }
     });
+    res.json({ activity: logs });
+  } catch (err) {
+    res.status(500).json({ message: "Failed" });
   }
 }

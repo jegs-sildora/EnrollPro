@@ -1,64 +1,51 @@
-MODULE: "Add Personnel" Intake Form - Data Architecture & Logic
-Context: The user is clicking "+ Add Personnel" to register a new employee into the DepEd school database.
-Agent Constraint: DO NOT generate raw HTML, JSX, or Tailwind classes. Inherit all styling from the existing EnrollPro component library (Inputs, Selects, Cards, Modals). Implement ONLY the state logic, validation, and layout grouping described below.
+# ARCHITECTURAL SPECIFICATION: Master Enrollment Dashboard
+**Document Version:** 8.5 (Pure Live-Data Fetch & SARDO Removal)
+**Target View:** Re-hydrating `/dashboard` when `System.AcademicPhase === 'CLASSES_ONGOING'`
+**Agent Constraint:** STRICTLY NO RAW HTML, CSS, JSX, OR TAILWIND UTILITY CLASSES. Inherit 100% of DOM skeletons from EnrollPro component library. Apply ONLY the text, token, and live-data bindings below.
+**Data Mandate:** STRICTLY NO MOCK DATA. You are forbidden from hardcoding integers, placeholder tallies, or static strings. Every numerical value must be wired directly to the database resolvers defined below.
 
-Section 1: The Layout Strategy (Vertical Stepper or Grouped Cards)
-Instruction: Do not render a single massive column of inputs. Organize the form into three distinct, visually separated cards or accordion sections:
+## 1. HEADER & ACTIVE PHASE BANNER
+*   **Page Subtitle:** `Classes Ongoing (Late Enrollment) • S.Y. 2026–2027`
+*   **The Calming Blue Status Banner:**
+    *   Prefix (Bold inside brackets): `[Academic Phase: Classes Ongoing]`
+    *   Body String: `Regular BOSY enrollment is closed. All incoming applications are now automatically tagged and itemized as Late Enrollees.`
 
-Basic Identity
+---
 
-DepEd Professional Data
+## 2. ROW 1: THE "PRIVATE INVESTIGATOR" TRIAGE QUEUE
+*Enforce equal vertical stretching. Apply the dynamic "✓ Queue Cleared" gray reassurance stamp when any fetched metric === 0.*
 
-Contact & Emergency.
+*   **Card 1 (Late Intake):**
+    *   Card Title: `Late Enrollees to Process`
+    *   Sub-badge (Muted gray): `Appends to SF1 Bottom`
+    *   Active Button: `Process Late Admissions →`
+    *   **Live Data Binding:** strictly fetch `count(Applications where status === 'PENDING' AND is_late_enrollment === true)`.
+*   **Card 2 (The Paper Chase):**
+    *   Card Title: `Pending Form 137 (SF10)`
+    *   Sub-badge (Muted gray): `Awaiting SF10 (In) | Requested (Out)`
+    *   Active Button: `Manage Transfer Records →`
+    *   **Live Data Binding:** strictly fetch `count(LearnerRecords where sf10_status === 'PENDING' OR sf10_status === 'REQUESTED')`.
+*   **Card 3 (Overdue Deficiencies - Replacing SARDO):**
+    *   Card Title: `Overdue Documents`
+    *   Sub-badge (Muted gray): `Unresolved August Deficiencies`
+    *   Active Button: `Follow-up Missing Hardcopies →`
+    *   **Live Data Binding:** strictly fetch `count(Learners where is_conditionally_enrolled === true OR count(missing_requirements) > 0)`.
 
-Section 2: Group 1 - Basic Identity
-Fields Required:
+---
 
-First Name, Middle Name, Last Name (Standard text inputs)
+## 3. ROW 2: MACRO HEALTH (The Delta Tally & SF4 Vitals)
 
-Name Extension (Dropdown: None, Jr., Sr., II, III)
+*   **Left Card (Active School Tally - The "Delta" Resolver):**
+    *   Card Title: `Active School Tally`
+    *   **The Master Integer:** Render the dynamically computed sum: `(Total_BOSY_Approved) + (Total_Late_Approved)`. Strictly bind its color to the **Primary Theme Token** extracted from the uploaded school logo.
+    *   **The Registrar Reassurance Sub-string:** Directly beneath the giant integer, render a dynamically hydrated string template:  
+        `{count_BOSY_approved} Official BOSY Baseline • +{count_late_approved} Appended Late Enrollees`
+    *   **Grade Breakdown Grid:** Keep the 4 horizontal columns (`Grade 7` to `Grade 10`). For each column, render the primary enrolled count, followed by this dynamically computed sub-string:  
+        `(+{count_late_in_this_grade} Late | -{count_dropped_in_this_grade} Dropped)`
 
-Sex at Birth (Dropdown: Male, Female)
-
-Date of Birth (Date picker)
-
-Validation Rule: First and Last name are strictly required. Prevent numeric characters in name fields.
-
-Section 3: Group 2 - DepEd Professional Data (The Core)
-Fields Required:
-
-Personnel Type (Dropdown: Teaching, Non-Teaching). Crucial for conditional logic below.
-
-DepEd Employee ID (Numeric input). Validation: Must be exactly 7 digits.
-
-Plantilla Item Number (Text input).
-
-Plantilla Position / Rank (Dropdown: Teacher I, Teacher II, Master Teacher I, Admin Asst II, etc.)
-
-Employment Status (Dropdown: Regular Permanent, Substitute, Contract of Service, Local School Board)
-
-Conditional Logic Rule 1 (Teaching Only): If Personnel Type is set to "Teaching", dynamically reveal two new required fields:
-
-PRC License Number (Numeric, 7 digits)
-
-Major / Specialization (Text input, e.g., "Mathematics", "English")
-
-Conditional Logic Rule 2 (Non-Teaching Only): If Personnel Type is set to "Non-Teaching", hide the PRC fields and reveal:
-
-Functional Assignment (Dropdown: Registrar, Disbursing Officer, Utility, Security, etc.)
-
-Section 4: Group 3 - Contact & System Access
-Fields Required:
-
-Primary Contact Number (Numeric input). Validation: 11 digits, must start with '09'.
-
-DepEd Email Address (Email input). Validation: Regex strict validation ending in @deped.gov.ph to ensure official communication channels are used.
-
-System Role / Access Level (Dropdown: None, Teacher Portal, System Admin, HR Admin). Note: Explain that assigning a role here will automatically send an enrollment invite to their DepEd email.
-
-Section 5: The Footer Actions
-Instruction: The footer of the form must have two clear actions.
-
-Cancel (Ghost/Outline style, prompts a "Discard changes?" warning if fields are dirty).
-
-Save & Register Personnel (Primary solid style, disabled until all required fields pass validation).
+*   **Right Card (Monthly Movement Health - School Form 4):**
+    *   Card Title: `Monthly Student Movement (SF4)`
+    *   **The SF4 Ledger Stack:** Eradicate capacity progress bars entirely. Render a clean, 3-item vertical ledger dynamically bound to the *current calendar month's* movement logs:
+        1. `Transferred In (Move In):` bind to `count(SF4_Logs where movement_type === 'TRANSFER_IN' AND month === current_month)` *(Render integer in subtle success green)*
+        2. `Transferred Out (Move Out):` bind to `count(SF4_Logs where movement_type === 'TRANSFER_OUT' AND month === current_month)` *(Render integer in muted slate)*
+        3. `Dropped Out (Left School):` bind to `count(SF4_Logs where movement_type === 'DROPPED_OUT' AND month === current_month)` *(Render integer in soft gray)*

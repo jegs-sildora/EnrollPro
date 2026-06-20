@@ -261,6 +261,9 @@ model Learner {
   user                         User?                   @relation("UserLearnerProfile", fields: [userId], references: [id])
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
+  isConditionallyEnrolled Boolean                 @default(false) @map("is_conditionally_enrolled")
+  missingRequirements     String[]                @map("missing_requirements")
+  sf4Logs                 SF4Log[]
   @@map("learners")
 }
 
@@ -413,6 +416,7 @@ model EnrollmentRecord {
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
+  sf10Status              SF10Status            @default(PENDING) @map("sf10_status")
   @@map("enrollment_records")
 }
 
@@ -851,3 +855,22 @@ model EnrollmentHistory {
   @@map("enrollment_history")
 }
 
+
+enum SF10Status {
+  PENDING
+  REQUESTED
+  RECEIVED
+}
+
+model SF4Log {
+  id            Int      @id @default(autoincrement())
+  learnerId     Int      @map("learner_id")
+  movementType  String   @map("movement_type") // TRANSFER_IN, TRANSFER_OUT, DROPPED_OUT
+  month         Int      // 1-12
+  year          Int
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  learner       Learner  @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@map("sf4_logs")
+}
