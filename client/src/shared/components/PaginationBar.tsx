@@ -142,6 +142,7 @@ export function PaginationBar({
                 ? 'bg-primary text-primary-foreground shadow-md border-primary/20 hover:bg-primary'
                 : 'text-foreground hover:bg-muted hover:border-border',
             )}
+            style={page === p ? { backgroundColor: "hsl(var(--primary))", borderColor: "hsl(var(--primary))" } : undefined}
             onPointerDown={(e) => {
               if (e.button === 0 && page !== p) onPageChange(p);
             }}

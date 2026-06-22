@@ -4,20 +4,19 @@ import { isAxiosError } from "axios";
 import { sileo } from "sileo";
 import {
   AlertCircle,
-  BarChart3,
   BookOpen,
-  Building2,
+  Calendar,
   CheckCircle,
+  ClipboardList,
   Eye,
   EyeOff,
-  Globe,
   Loader2,
   Lock,
   LogIn,
-  MapPin,
-  Shield,
+  Recycle,
   Sparkles,
   User,
+  UserCheck,
 } from "lucide-react";
 
 import {
@@ -57,11 +56,14 @@ type SchoolMetaSettings = SettingsState & {
   schoolRegion?: string | null;
 };
 
-function getAcronym(value: string): string {
+
+
+
+
+function getAcronym(value: string | undefined | null): string {
+  if (!value) return "EnrollPro";
   const clean = value.trim();
-  if (!clean) {
-    return "EP";
-  }
+  if (!clean) return "EnrollPro";
 
   if (clean === "Hinigaran National High School") {
     return "HNHS";
@@ -87,33 +89,12 @@ function getAcronym(value: string): string {
     .join("");
 }
 
-function normalizeOptionalText(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const cleaned = value.trim();
-  return cleaned.length ? cleaned : null;
-}
-
 const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
-  acronym,
-  projectTagline,
   schoolName,
-  jhsScopeLabel,
-  schoolAddress,
-  schoolDivision,
-  schoolRegion,
-  projectFullName,
+  acronym,
 }: {
-  acronym: string;
-  projectTagline: string;
   schoolName: string;
-  jhsScopeLabel: string;
-  schoolAddress: string | null;
-  schoolDivision: string | null;
-  schoolRegion: string | null;
-  projectFullName: string;
+  acronym: string;
 }) {
   return (
     <div className="hidden lg:flex lg:w-[55%] xl:w-3/5 relative overflow-hidden bg-primary shrink-0">
@@ -155,87 +136,69 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
       </div>
 
       <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
-        <div className="flex items-center gap-4 mb-12">
+        <div className="space-y-6 mb-12">
+          {/* Sovereign Header */}
           <div>
-            <h1 className="text-4xl font-bold ">{acronym}</h1>
-            <p className="text-white text-base leading-tight font-bold max-w-md">
-              {projectTagline}
+            <span className="text-xs font-black tracking-widest text-blue-200 uppercase">{schoolName}</span>
+            <p className="text-white/70 text-sm mt-1">
+              Integrated Administrative, Academic & Support Systems
+            </p>
+          </div>
+
+          {/* Main System Title */}
+          <div>
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight text-white mb-2">
+              {acronym}
+            </h1>
+            <p className="text-white/90 text-lg font-medium">
+              Junior High School Information Management Portal
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 mb-12">
-          <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
-            {schoolName}
-          </h2>
-          <p className="text-white text-base leading-tight font-bold">{jhsScopeLabel}</p>
-          <div className="flex flex-col gap-1.5 mt-3">
-            {schoolAddress && (
-              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
-                <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span>{schoolAddress}</span>
-              </div>
-            )}
-            {schoolDivision && (
-              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
-                <Building2 className="w-4 h-4 flex-shrink-0" />
-                <span>Division of {schoolDivision}</span>
-              </div>
-            )}
-            {schoolRegion && (
-              <div className="flex items-center gap-2 text-white text-base leading-tight font-bold">
-                <Globe className="w-4 h-4 flex-shrink-0" />
-                <span>{schoolRegion}</span>
-              </div>
-            )}
-            {!schoolAddress && !schoolDivision && !schoolRegion && (
-              <p className="text-white text-base leading-tight font-bold">
-                DepEd Public School Enrollment and Sectioning Portal
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid gap-4">
+        <div className="flex flex-col gap-2">
           {[
             {
+              icon: UserCheck,
+              title: "EnrollPro: Learner Registry & Intake",
+              desc: "Single Source of Truth for identity, SF1 staging, and class sectioning.",
+            },
+            {
               icon: BookOpen,
-              title: "Automated Learner Intake",
-              desc: "Streamlined verification for incoming Grade 7 and transferees.",
+              title: "AIMS: Lessons & Remediation",
+              desc: "LMS module for daily course content, online quizzes, and mastery analytics.",
             },
             {
-              icon: BarChart3,
-              title: "Document Verification",
-              desc: "Digital tracking for SF9, PSA, and official enrollment forms.",
+              icon: Calendar,
+              title: "ATLAS: Master Scheduling & Loading",
+              desc: "Timetable manager for faculty teaching loads, room assignments, and campus mapping.",
             },
             {
-              icon: Shield,
-              title: "DepEd-Compliant Sectioning",
-              desc: "Automated heterogeneous sorting with balanced gender ratios.",
+              icon: ClipboardList,
+              title: "SMART: Academic Grading & Records",
+              desc: "Performance repository for quarterly grades, daily attendance, and historical class records.",
+            },
+            {
+              icon: Recycle,
+              title: "MRF: Campus Eco-Waste Management",
+              desc: "Sanitation ledger for solid waste collections, kilogram tracking, and litter reports.",
             },
           ].map((feature) => (
             <div
               key={feature.title}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 transition-all duration-0 hover:bg-white/10 hover:border-white/20 group">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              className="flex items-center gap-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 p-4 transition-all shadow-sm group">
+              <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <feature.icon className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="font-bold text-white">{feature.title}</h3>
-                <p className="text-white text-base leading-tight font-bold">
+              <div className="min-w-0">
+                <h3 className="font-bold text-white truncate">{feature.title}</h3>
+                <p className="text-white/80 text-sm leading-tight font-medium line-clamp-1">
                   {feature.desc}
                 </p>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-base leading-tight">
-        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-          <Shield className="w-4 h-4" />
-        </div>
-        <span>{projectFullName}</span>
       </div>
     </div>
   );
@@ -248,16 +211,23 @@ export default function Login() {
 
   const settings = useSettingsStore() as SchoolMetaSettings;
   const schoolName = settings.schoolName || "EnrollPro";
+  const acronym = useMemo(() => getAcronym(settings.schoolName), [settings.schoolName]);
   const isBosyEnrollmentOpen = settings.isBosyEnrollmentOpen;
-  const schoolAddress = normalizeOptionalText(settings.schoolAddress);
-  const schoolDivision = normalizeOptionalText(settings.schoolDivision);
-  const schoolRegion = normalizeOptionalText(settings.schoolRegion);
-  const projectTagline =
-    "Learner Enrollment and Sectioning System";
-  const projectFullName = `${schoolName}: ${projectTagline}`;
-  const jhsScopeLabel = "Junior High School (Grades 7-10)";
 
-  const acronym = useMemo(() => getAcronym(schoolName), [schoolName]);
+  const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+
+  const fullLogoUrl = useMemo(() => {
+    if (!settings.logoUrl) {
+      return null;
+    }
+    if (
+      settings.logoUrl.startsWith("http://") ||
+      settings.logoUrl.startsWith("https://")
+    ) {
+      return settings.logoUrl;
+    }
+    return `${apiBase}${settings.logoUrl}`;
+  }, [apiBase, settings.logoUrl]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [accountName, setAccountName] = useState("");
@@ -280,21 +250,6 @@ export default function Login() {
       setRememberMe(true);
     }
   }, []);
-
-  const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
-
-  const fullLogoUrl = useMemo(() => {
-    if (!settings.logoUrl) {
-      return null;
-    }
-    if (
-      settings.logoUrl.startsWith("http://") ||
-      settings.logoUrl.startsWith("https://")
-    ) {
-      return settings.logoUrl;
-    }
-    return `${apiBase}${settings.logoUrl}`;
-  }, [apiBase, settings.logoUrl]);
 
   useEffect(() => {
     if (!sessionExpired) {
@@ -439,16 +394,7 @@ export default function Login() {
         }
       `}</style>
 
-      <LoginDecorativeSidebar
-        acronym={acronym}
-        projectTagline={projectTagline}
-        schoolName={schoolName}
-        jhsScopeLabel={jhsScopeLabel}
-        schoolAddress={schoolAddress}
-        schoolDivision={schoolDivision}
-        schoolRegion={schoolRegion}
-        projectFullName={projectFullName}
-      />
+      <LoginDecorativeSidebar schoolName={schoolName} acronym={acronym} />
 
       <div className="relative w-full lg:w-[45%] xl:w-2/5 flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div
@@ -679,7 +625,7 @@ export default function Login() {
                     </span>
                   </label>
                   <span className="text-gray-400 text-base font-bold text-right leading-tight">
-                    Forgot password?<br/>Contact the System Admin.
+                    Forgot password?<br />Contact the System Admin.
                   </span>
                 </div>
 
@@ -702,6 +648,7 @@ export default function Login() {
               </form>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </div>

@@ -151,7 +151,7 @@ export const router = createBrowserRouter([
                 element: <RegistrarEOSYWorkspace />,
               },
               {
-                path: "/bosy",
+                path: "/continuing-learners",
                 element: <BOSYPage />,
               },
               {

@@ -5,14 +5,14 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import type {
   ColumnDef,
   RowSelectionState,
   OnChangeFn,
 } from "@tanstack/react-table";
 import type { BOSYQueueItem } from "../types";
-import { formatApplicationStatus, formatEosyStatus } from "@/shared/lib/utils";
+import { formatApplicationStatus, cn } from "@/shared/lib/utils";
 
 interface QueueTableProps {
   items: BOSYQueueItem[];
@@ -31,8 +31,8 @@ function statusBadge(status: string) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-black uppercase bg-orange-50 border-orange-200 text-orange-700">
-        Pending
+        className="text-[10px] font-black uppercase bg-amber-50 border-amber-200 text-amber-700">
+        [Pending Review]
       </Badge>
     );
   if (status === "READY_FOR_SECTIONING")
@@ -40,7 +40,7 @@ function statusBadge(status: string) {
       <Badge
         variant="outline"
         className="text-[10px] font-black uppercase bg-emerald-50 border-emerald-200 text-emerald-700">
-        Confirmed
+        [Confirmed]
       </Badge>
     );
   if (status === "ENROLLED" || status === "OFFICIALLY_ENROLLED")
@@ -100,20 +100,23 @@ export function QueueTable({
         id: "learner",
         accessorKey: "lastName",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="LEARNER"
-          />
+          <div className="bg-primary text-primary-foreground">
+            <DataTableColumnHeader
+              column={column}
+              title="LRN & Learner's Name"
+              className="text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
+            />
+          </div>
         ),
         cell: ({ row }) => {
           const r = row.original;
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
-              <span className="font-bold uppercase truncate">
+            <div className="flex flex-col text-left py-0.5 leading-tight">
+              <span className="font-semibold text-base">
                 {r.lastName}, {r.firstName}
-                {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
+                {r.middleName ? ` ${r.middleName[0]}.` : ""}
               </span>
-              <span className="text-base text-foreground font-bold">
+              <span className="text-sm text-muted-foreground font-semibold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -124,11 +127,13 @@ export function QueueTable({
         id: "gradeLevel",
         accessorKey: "gradeLevelName",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GRADE"
-            className="justify-center"
-          />
+          <div className="bg-primary text-primary-foreground">
+            <DataTableColumnHeader
+              column={column}
+              title="Target Grade"
+              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
+            />
+          </div>
         ),
         cell: ({ row }) => (
           <div className="text-center">
@@ -145,10 +150,13 @@ export function QueueTable({
         id: "priorSection",
         accessorKey: "priorSectionName",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="PREVIOUS SECTION / ADVISER"
-          />
+          <div className="bg-primary text-primary-foreground">
+            <DataTableColumnHeader
+              column={column}
+              title="Prior Section (S.Y. 25-26)"
+              className="text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
+            />
+          </div>
         ),
         cell: ({ row }) => (
           <div className="text-base">
@@ -167,11 +175,13 @@ export function QueueTable({
         id: "academicStatus",
         accessorKey: "academicStatus",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="PRIOR STATUS"
-            className="justify-center"
-          />
+          <div className="bg-primary text-primary-foreground">
+            <DataTableColumnHeader
+              column={column}
+              title="Last Year's Result"
+              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
+            />
+          </div>
         ),
         cell: ({ row }) => {
           const s = row.original.academicStatus;
@@ -181,12 +191,12 @@ export function QueueTable({
             );
           return (
             <div className="text-center">
-              <span
-                className={`text-[10px] font-black uppercase ${
-                  s === "PROMOTED" ? "text-emerald-600" : "text-amber-600"
-                }`}>
-                {formatEosyStatus(s)}
-              </span>
+              <Badge
+                variant="outline"
+                className={cn("text-[10px] font-black uppercase", s === "PROMOTED" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700")}
+              >
+                {s === "PROMOTED" ? "[Promoted]" : "[Retained]"}
+              </Badge>
             </div>
           );
         },
@@ -196,11 +206,13 @@ export function QueueTable({
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="STATUS"
-            className="justify-center"
-          />
+          <div className="bg-primary text-primary-foreground">
+            <DataTableColumnHeader
+              column={column}
+              title="Intake Status"
+              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
+            />
+          </div>
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
@@ -215,9 +227,7 @@ export function QueueTable({
       base.push({
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-base uppercase">
-            Action
-          </div>
+          <div className="text-center font-bold text-sm bg-primary text-primary-foreground py-2.5">Action</div>
         ),
         cell: ({ row }) => {
           const r = row.original;
@@ -228,15 +238,11 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 px-2 text-[10px] font-black uppercase text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                className="h-8 px-3 text-sm font-bold text-primary border-primary hover:bg-primary/10"
                 disabled={isConfirming}
                 onClick={() => onConfirmSingle(r.applicationId)}>
-                {isConfirming ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                )}
-                Confirm
+                {isConfirming && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Confirm Roll-Over ⚡
               </Button>
             </div>
           );
@@ -246,32 +252,7 @@ export function QueueTable({
       });
     }
 
-    if (onRevertSingle) {
-      base.push({
-        id: "revert",
-        header: () => (
-          <div className="text-center font-bold text-base uppercase">Flag</div>
-        ),
-        cell: ({ row }) => {
-          const r = row.original;
-          if (r.status !== "READY_FOR_SECTIONING") return null;
-          return (
-            <div className="flex justify-center">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 px-2 text-[10px] font-black uppercase text-amber-700 border-amber-200 hover:bg-amber-50"
-                onClick={() => onRevertSingle!(r.applicationId)}>
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Flag
-              </Button>
-            </div>
-          );
-        },
-        size: 80,
-        enableSorting: false,
-      });
-    }
+
 
     return base;
   }, [showConfirmAction, onConfirmSingle, confirmingIds, onRevertSingle]);
@@ -286,6 +267,15 @@ export function QueueTable({
 
   return (
     <DataTable
+      emptyStateContent={
+        <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-muted-foreground">
+          <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+            <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+          </div>
+          <p className="font-bold text-base text-foreground">No unconfirmed returning learners match your current filter.</p>
+          <p className="text-sm">Select a different 'Target Grade' above or verify your search spelling.</p>
+        </div>
+      }
       columns={columns}
       data={items}
       getRowId={(row) => String(row.applicationId)}

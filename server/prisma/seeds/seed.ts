@@ -3,6 +3,7 @@ import { PrismaClient, SchoolYearStatus, Role, Sex } from "../../src/generated/p
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
+import { execSync } from "child_process";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -10,6 +11,10 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 Seeding Default School Year (2026-2027)...");
+  console.log("📅 DepEd Term Configuration 3-Term System (Mandated DO 9, s. 2026)");
+  console.log("   Term 1: June 8 – September 15, 2026");
+  console.log("   Term 2: September 16 – December 18, 2026");
+  console.log("   Term 3: January 4 – April 8, 2027");
 
   const yearLabel = "2026-2027";
   const status: SchoolYearStatus = "ACTIVE";
@@ -163,6 +168,13 @@ async function main() {
     });
   }
   console.log("✅ Seeded Grade Levels.");
+
+  console.log("🌱 Running PSGC Seeder...");
+  try {
+    execSync("npx tsx src/scripts/seed-psgc.ts", { stdio: "inherit" });
+  } catch (error) {
+    console.error("❌ PSGC Seeder failed:", error);
+  }
 
   console.log("✅ Seed completed successfully.");
 }

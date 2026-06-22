@@ -380,7 +380,12 @@ export default function EosyUpdating() {
 
   const sectionOptions = useMemo(() => {
     const sectionsSet = new Set<string>();
-    records.forEach(r => sectionsSet.add(r.section.name));
+    records.forEach(r => {
+      const name = r.section?.name?.trim();
+      if (name) {
+        sectionsSet.add(name);
+      }
+    });
     return Array.from(sectionsSet).sort();
   }, [records]);
 

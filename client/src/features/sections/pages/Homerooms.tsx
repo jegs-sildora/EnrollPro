@@ -44,10 +44,10 @@ interface GradeLevelGroup {
 
 
 export default function Homerooms() {
-  const { activeSchoolYearId, viewingSchoolYearId, enableHomogeneousSections } = useSettingsStore()
+  const { activeSchoolYearId, viewingSchoolYearId, enableHomogeneousSections, systemPhase } = useSettingsStore()
   const ayId = viewingSchoolYearId ?? activeSchoolYearId
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly()
-  const canMutate = !isHistoricalReadOnly || hasOverride
+  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "CLASSES_ONGOING" && systemPhase !== "EOSY_CLOSING"
   const queryClient = useQueryClient()
 
   const [activeGradeId, setActiveGradeId] = useState("")

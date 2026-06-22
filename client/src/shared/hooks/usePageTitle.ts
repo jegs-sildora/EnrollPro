@@ -24,7 +24,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",
     "/applications/enrollment": "Enrollment",
-    "/bosy": "Early Registration",
+    "/continuing-learners": "Confirmation of Continuing Learners",
     "/monitoring/enrollment": "Sectioning & SF1 Prep",
     "/eosy": "EOSY Grade Finalization",
     "/students": "Learner Registry",

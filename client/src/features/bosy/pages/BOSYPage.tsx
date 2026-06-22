@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback, startTransition, useRef } from "react
 import {
   Search,
   Loader2,
-  RefreshCw,
-  AlertCircle,
   CheckCircle2,
-  LogOut,
   RotateCcw,
   Trash2,
 } from "lucide-react";
@@ -118,8 +115,8 @@ export default function BOSYPage() {
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const syId =
     typeof resolvedSchoolYearId === "number" &&
-    Number.isFinite(resolvedSchoolYearId) &&
-    resolvedSchoolYearId > 0
+      Number.isFinite(resolvedSchoolYearId) &&
+      resolvedSchoolYearId > 0
       ? resolvedSchoolYearId
       : null;
 
@@ -127,9 +124,9 @@ export default function BOSYPage() {
   const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
-  const [readinessLoading, setReadinessLoading] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>("PENDING_VERIFICATION");
+  const [targetGrade, setTargetGrade] = useState<string>("ALL");
   const {
     inputValue: queueSearch,
     setInputValue: setQueueSearch,
@@ -166,7 +163,6 @@ export default function BOSYPage() {
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
-    setReadinessLoading(true);
     try {
       await Promise.all([
         getBOSYReadiness(syId).then(setReadiness),
@@ -174,8 +170,6 @@ export default function BOSYPage() {
       ]);
     } catch (e) {
       toastApiError(e as never);
-    } finally {
-      setReadinessLoading(false);
     }
   }, [syId]);
 
@@ -234,10 +228,7 @@ export default function BOSYPage() {
     fetchQueue,
   ]);
 
-  const handleRefresh = () => {
-    void fetchReadiness();
-    void fetchQueue();
-  };
+
 
   const handleConfirmSingle = (applicationId: number) => {
     const item = queueItems.find((i) => i.applicationId === applicationId);
@@ -390,9 +381,9 @@ export default function BOSYPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold">Early Registration (BOSY)</h1>
+          <h1 className="text-3xl font-bold">Confirmation of Continuing Learners</h1>
           <p className="text-base leading-tight font-bold">
-            Verify Learner Reference Numbers (LRN) and confirm intent to enroll for returning Junior High School learners.
+            Verify returning Junior High School learners and roll their records over to the live S.Y. 2026–2027 masterlist.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
@@ -401,59 +392,47 @@ export default function BOSYPage() {
         <div className="flex items-center w-full md:w-auto gap-2">
           <div
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold",
-              isUserInteracting
-                ? "border-muted-foreground/30 text-foreground"
-                : "border-emerald-200 text-emerald-700",
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-bold",
+              "border-emerald-200 text-emerald-700 bg-emerald-50"
             )}
           >
             <span
               className={cn(
-                "size-2 rounded-full",
-                isUserInteracting ? "bg-muted-foreground/60" : "bg-emerald-500 animate-pulse",
+                "size-2 rounded-full bg-emerald-500"
               )}
             />
-            {isUserInteracting ? "Paused" : "Live Sync"}
+            Local Staging: Active
           </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 px-3 text-base leading-tight font-bold text-muted-foreground hover:text-foreground shrink-0"
-            onClick={handleRefresh}
-            disabled={readinessLoading || queueLoading}>
-            <RefreshCw
-              className={cn(
-                "h-4 w-4 mr-2",
-                (readinessLoading || queueLoading) && "animate-spin",
-              )}
-            />
-            Refresh Data
-          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           {
-            icon: AlertCircle,
-            label: "Pending Confirmation",
+            label: "Pending Confirmations",
+            subBadge: "Unverified Returning Enrollees",
             value: readiness?.pendingConfirmationCount ?? 0,
             filterVal: "PENDING_VERIFICATION",
+            actionText: "Review Enrollees →",
+            isPrimaryMetric: false,
           },
           {
-            icon: CheckCircle2,
-            label: "Confirmed (Returning)",
+            label: "Confirmed Continuing",
+            subBadge: "Added to Live S.Y. 2026–2027 Tally",
             value: readiness?.readyForSectioningCount ?? 0,
             filterVal: "READY_FOR_SECTIONING",
+            actionText: "View Masterlist →",
+            isPrimaryMetric: true,
           },
           {
-            icon: LogOut,
-            label: "Transferred / Dropped",
+            label: "Transfer Requests (SF10)",
+            subBadge: "Moving to Another School",
             value: readiness?.droppedCount ?? 0,
             filterVal: "TRANSFERRED_OUT",
+            actionText: "Process Transfers →",
+            isPrimaryMetric: false,
           },
-        ].map(({ icon: Icon, label, value, filterVal }) => (
+        ].map(({ label, subBadge, value, filterVal, actionText, isPrimaryMetric }) => (
           <Card
             key={label}
             onClick={() => {
@@ -462,28 +441,36 @@ export default function BOSYPage() {
               setRowSelection({});
             }}
             className={cn(
-              "shadow-sm cursor-pointer transition-all border",
-              statusFilter === filterVal
-                ? "border-slate-200 border-l-4 border-l-primary bg-white"
-                : "border-slate-200 bg-white hover:border-primary/50"
+              "shadow-sm cursor-pointer transition-all border flex flex-col",
+              statusFilter === filterVal ? "border-slate-300 bg-slate-50 ring-1 ring-slate-200" : "border-slate-200 bg-white hover:border-slate-300"
             )}>
-            <CardHeader className="p-3 pb-1 flex-row items-center gap-2">
-              <div className={cn(
-                "p-1.5 rounded-lg shrink-0",
-                statusFilter === filterVal ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-              )}>
-                <Icon className="h-4 w-4" />
+            <CardContent className="p-4 flex flex-row h-full justify-between gap-4">
+              <div className="flex flex-col justify-between">
+                <p className="text-sm font-bold leading-tight text-foreground">
+                  {label}
+                </p>
+                <div className="mt-4">
+                  <p 
+                    className={cn("text-4xl font-black leading-none", isPrimaryMetric && value > 0 ? "" : "text-slate-800")}
+                    style={isPrimaryMetric && value > 0 ? { color: "hsl(var(--primary))" } : undefined}
+                  >
+                    {value}
+                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground mt-0.5">{subBadge}</p>
+                </div>
               </div>
-              <p className="text-[10px] font-black uppercase text-foreground leading-tight">
-                {label}
-              </p>
-            </CardHeader>
-            <CardContent className="p-3 pt-0">
-              {readinessLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
-              ) : (
-                <p className="text-2xl font-black">{value}</p>
-              )}
+              <div className="flex self-end">
+                {value === 0 ? (
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                    Accounted For
+                  </div>
+                ) : (
+                  <Button variant="outline" size="sm" className="text-xs font-medium bg-transparent">
+                    {actionText}
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -491,12 +478,12 @@ export default function BOSYPage() {
 
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-3">
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
-            <div className="relative w-full lg:w-64 shrink-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
+            <div className="relative w-full lg:w-1/2 shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search LRN, First Name, Last Name..."
-                className="pl-9 h-10 w-full text-base leading-tight font-bold"
+                placeholder="Search by LRN, Last Name, or First Name..."
+                className="pl-9 h-10 w-full text-sm font-semibold"
                 value={queueSearch}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
@@ -508,8 +495,8 @@ export default function BOSYPage() {
                 }}
               />
             </div>
-            
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 lg:justify-end">
+
+            <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
               {canMutate && statusFilter === "PENDING_VERIFICATION" && selectedIds.length > 0 ? (
                 <div className="flex items-center gap-2">
                   <BulkConfirmBar
@@ -520,24 +507,54 @@ export default function BOSYPage() {
                   />
                 </div>
               ) : (
-                <Select
-                  value={previousSectionName}
-                  onValueChange={(val) => {
-                    setPreviousSectionName(val);
-                    startTransition(() => setQueuePage(1));
-                  }}>
-                  <SelectTrigger className="h-10 w-full sm:w-64 text-base leading-tight font-bold">
-                    <SelectValue placeholder="All Previous Sections" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL" className="text-base leading-tight font-bold">All Previous Sections</SelectItem>
-                    {previousSections.map((sec) => (
-                      <SelectItem key={sec} value={sec} className="text-base leading-tight font-bold">
-                        {sec}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <>
+                  <div className="flex flex-col gap-1 w-full sm:w-auto">
+                    <span className="text-sm font-bold text-foreground">Target Grade</span>
+                    <Select
+                      value={targetGrade}
+                      onValueChange={(val) => {
+                        setTargetGrade(val);
+                        setQueuePage(1);
+                        setRowSelection({});
+                      }}
+                    >
+                      <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-sm font-semibold">
+                        <SelectValue placeholder="All Returning Grades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="text-sm">All Returning Grades</SelectItem>
+                        <SelectItem value="8" className="text-sm">Incoming Grade 8</SelectItem>
+                        <SelectItem value="9" className="text-sm">Incoming Grade 9</SelectItem>
+                        <SelectItem value="10" className="text-sm">Incoming Grade 10</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-1 w-full sm:w-auto">
+                    <span className="text-sm font-bold text-foreground">Prior Section</span>
+                    <Select
+                      value={previousSectionName}
+                      onValueChange={(val) => {
+                        setPreviousSectionName(val);
+                        startTransition(() => setQueuePage(1));
+                      }}
+                    >
+                      <SelectTrigger className="h-10 w-full sm:w-64 text-sm font-semibold whitespace-nowrap">
+                        <SelectValue placeholder="All Previous Sections" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="text-sm font-semibold">All Previous Sections</SelectItem>
+                        {previousSections
+                          .filter((sec) => typeof sec === "string" && sec.trim() !== "")
+                          .map((sec) => (
+                            <SelectItem key={sec} value={sec} className="text-sm font-semibold">
+                              {sec}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -703,9 +720,8 @@ export default function BOSYPage() {
               {noShowLoading
                 ? "Loading no-show applicants…"
                 : noShowItems.length > 0
-                  ? `${noShowItems.length} SCP applicant${
-                      noShowItems.length !== 1 ? "s" : ""
-                    } in Ready for Enrollment or Pending (Incomplete) status have not reported. Confirming will withdraw all of them. This cannot be undone.`
+                  ? `${noShowItems.length} SCP applicant${noShowItems.length !== 1 ? "s" : ""
+                  } in Ready for Enrollment or Pending (Incomplete) status have not reported. Confirming will withdraw all of them. This cannot be undone.`
                   : "No eligible no-show applicants found for this school year."
               }
             </DialogDescription>

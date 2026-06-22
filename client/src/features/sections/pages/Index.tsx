@@ -329,11 +329,11 @@ interface RosterLearner {
 }
 
 export default function Sections() {
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, viewingSchoolYearId, systemPhase } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const canMutate = !isHistoricalReadOnly || hasOverride;
+  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "CLASSES_ONGOING" && systemPhase !== "EOSY_CLOSING";
 
   const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
   const [activeGradeId, setActiveGradeId] = useState<string>("");

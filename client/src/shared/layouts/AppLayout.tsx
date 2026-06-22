@@ -50,6 +50,7 @@ import { Separator } from "@/shared/ui/separator";
 import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Button } from "@/shared/ui/button";
 
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -57,6 +58,13 @@ import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { motion, AnimatePresence } from "motion/react";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/ui/dialog";
 
 const useWindowSize = () => {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -384,10 +392,15 @@ const NavItem = memo(function NavItem({
 }: {
   to: string;
   icon: React.ElementType;
-  label: string;
+  label: ReactNode;
   subtext?: string;
   pathname: string;
 }) {
+  const { selectedAccentHsl, colorScheme } = useSettingsStore();
+  const accentHsl =
+    selectedAccentHsl ??
+    (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+
   let isActive =
     pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
 
@@ -400,15 +413,21 @@ const NavItem = memo(function NavItem({
   }
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className="relative">
+      {isActive && (
+        <span 
+          className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full z-20"
+          style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
+        />
+      )}
       <SidebarMenuButton
         asChild
         isActive={isActive}
-        tooltip={label}>
+        tooltip={typeof label === "string" ? label : undefined}>
         <Link to={to}>
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
-            <span className="truncate w-full text-left leading-tight">{label}</span>
+            <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
             {subtext && <span className="text-[9px] font-normal opacity-70 truncate w-full text-left leading-tight">{subtext}</span>}
           </div>
         </Link>
@@ -503,7 +522,14 @@ function AppSidebar() {
                 {/* Items 1–7: shared between registrar role and SYSTEM_ADMIN */}
                 {(isRegistrar || isAdmin) && (
                   <>
-                    <NavDivider label="Enrollment & LIS" badge={!isEosyArchivedState ? officialEnrollmentBadge : undefined} />
+                    <NavDivider
+                      label="Enrollment & LIS"
+                      badge={
+                        !isEosyArchivedState
+                          ? (systemPhase === "EOSY_CLOSING" ? closingOperationsBadge : officialEnrollmentBadge)
+                          : undefined
+                      }
+                    />
                     <NavItem
                       to="/dashboard"
                       icon={LayoutDashboard}
@@ -511,27 +537,61 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavItem
-                      to="/bosy"
-                      icon={UserPlus}
-                      label="Early Registration"
-                      pathname={pathname}
-                    />
+                    {(systemPhase === "PRE_REGISTRATION" || systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT" || !systemPhase) && (
+                      <>
+                        <NavItem
+                          to="/continuing-learners"
+                          icon={UserPlus}
+                          label="Continuing Learners"
+                          pathname={pathname}
+                        />
+                        <NavItem
+                          to="/monitoring/enrollment"
+                          icon={Calendar}
+                          label="Sectioning & SF1 Prep"
+                          pathname={pathname}
+                        />
+                      </>
+                    )}
 
-                    <NavItem
-                      to="/monitoring/enrollment"
-                      icon={Calendar}
-                      label="Sectioning & SF1 Prep"
-                      pathname={pathname}
-                    />
+                    {systemPhase === "CLASSES_ONGOING" && (
+                      <>
+                        <NavItem
+                          to="/monitoring/enrollment/walk-in"
+                          icon={UserPlus}
+                          label="Late Enrollee Intake"
+                          pathname={pathname}
+                        />
+                        <NavItem
+                          to="/sections"
+                          icon={Calendar}
+                          label="Class Masterlists (SF1)"
+                          pathname={pathname}
+                        />
+                      </>
+                    )}
 
-                    <NavDivider label="Closing Operations" badge={!isEosyArchivedState ? closingOperationsBadge : undefined} />
-                    <NavItem
-                      to="/eosy"
-                      icon={ArrowUpRightSquare}
-                      label="EOSY Grade Finalization"
-                      pathname={pathname}
-                    />
+                    {systemPhase === "EOSY_CLOSING" && (
+                      <>
+                        <NavItem
+                          to="/sections"
+                          icon={Calendar}
+                          label="Class Masterlists (SF1)"
+                          pathname={pathname}
+                        />
+                        <NavItem
+                          to="/eosy"
+                          icon={ArrowUpRightSquare}
+                          label={
+                            <div className="flex items-center justify-between w-full">
+                              <span>EOSY Grade Finalization</span>
+                              <span className="size-2 bg-rose-500 rounded-full animate-pulse ml-2 shrink-0" />
+                            </div>
+                          }
+                          pathname={pathname}
+                        />
+                      </>
+                    )}
 
                     <NavDivider label="School Records" />
                     <NavItem
@@ -661,6 +721,50 @@ function AppSidebar() {
   );
 }
 
+const ROUTE_PHASES: Record<string, {
+  allowedPhases: string[];
+  moduleName: string;
+  redirectTo: string;
+  redirectLabel: string;
+}> = {
+  "/continuing-learners": {
+    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT"],
+    moduleName: "Continuing Learners",
+    redirectTo: "/monitoring/enrollment/walk-in",
+    redirectLabel: "Take me to Late Admissions"
+  },
+  "/monitoring/enrollment": {
+    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT"],
+    moduleName: "Sectioning & SF1 Prep",
+    redirectTo: "/sections",
+    redirectLabel: "Take me to Class Masterlists"
+  },
+  "/monitoring/enrollment/walk-in": {
+    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    moduleName: "Late Enrollee Intake",
+    redirectTo: "/dashboard",
+    redirectLabel: "Take me to Dashboard"
+  },
+  "/eosy": {
+    allowedPhases: ["EOSY_CLOSING"],
+    moduleName: "EOSY Grade Finalization",
+    redirectTo: "/dashboard",
+    redirectLabel: "Take me to Dashboard"
+  }
+};
+
+function formatPhaseName(phase: string | null): string {
+  if (!phase) return "Unknown Phase";
+  const map: Record<string, string> = {
+    PRE_REGISTRATION: "Pre-Registration",
+    OFFICIAL_ENROLLMENT: "Official Enrollment",
+    BOSY_ENROLLMENT: "BOSY Enrollment",
+    CLASSES_ONGOING: "Classes Ongoing",
+    EOSY_CLOSING: "EOSY Closing"
+  };
+  return map[phase] ?? phase;
+}
+
 export default function AppLayout({ children }: { children?: ReactNode }) {
   const {
     selectedAccentHsl,
@@ -668,15 +772,69 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     accentForeground,
     activeSchoolYearId,
     viewingSchoolYearId,
+    systemPhase,
   } = useSettingsStore();
   const { width } = useWindowSize();
   const accentHsl =
     selectedAccentHsl ??
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+
+  const [lastSafePath, setLastSafePath] = useState("/dashboard");
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [blockedInfo, setBlockedInfo] = useState<{
+    moduleName: string;
+    activePhase: string;
+    redirectTo: string;
+    redirectLabel: string;
+  } | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
+
+  useEffect(() => {
+    const currentPhase = systemPhase || "OFFICIAL_ENROLLMENT";
+    const rule = ROUTE_PHASES[location.pathname];
+    if (rule && !rule.allowedPhases.includes(currentPhase)) {
+      setBlockedInfo({
+        moduleName: rule.moduleName,
+        activePhase: currentPhase,
+        redirectTo: rule.redirectTo,
+        redirectLabel: rule.redirectLabel
+      });
+      setShowBlockedModal(true);
+      // Immediately stop from loading: push back to last safe route
+      navigate(lastSafePath, { replace: true });
+    } else {
+      setLastSafePath(location.pathname);
+    }
+  }, [location.pathname, systemPhase, navigate, lastSafePath]);
+
+  useEffect(() => {
+    if (!showBlockedModal) return;
+    setRedirectCountdown(3);
+    
+    const interval = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setShowBlockedModal(false);
+          navigate(blockedInfo?.redirectTo || "/dashboard");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showBlockedModal, blockedInfo, navigate]);
+
+  const handleConfirmRedirect = () => {
+    setShowBlockedModal(false);
+    navigate(blockedInfo?.redirectTo || "/dashboard");
+  };
 
   const selectedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const isSchoolYearBypassRoute =
@@ -685,7 +843,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     location.pathname.startsWith("/admin/system") ||
     location.pathname.startsWith("/settings") ||
     // BOSY rollover always targets the active year — intentional bypass
-    location.pathname === "/bosy" ||
+    location.pathname === "/continuing-learners" ||
     // Walk-in encoder is a direct mutation flow — intentional bypass
     location.pathname === "/monitoring/enrollment/walk-in";
   const shouldShowNoSchoolYearState =
@@ -830,6 +988,40 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           </PageTransition>
         </AnimatePresence>
       </SidebarInset>
+
+      <Dialog open={showBlockedModal} onOpenChange={(open) => { if (!open) handleConfirmRedirect(); }}>
+        <DialogContent className="sm:max-w-[420px] text-center p-6 bg-white rounded-xl shadow-lg border border-border">
+          <DialogHeader className="flex flex-col items-center">
+            <DialogTitle className="text-xl font-black text-rose-600 tracking-wide uppercase flex items-center gap-1.5">
+              [Module Out of Season]
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-base font-bold text-slate-800 leading-tight">
+              The {blockedInfo?.moduleName} module is closed.
+            </p>
+            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+              The active school phase is currently set to <span className="font-bold text-slate-700">{formatPhaseName(blockedInfo?.activePhase ?? null)}</span>.
+            </p>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative">
+              <div 
+                className="h-full bg-rose-500 transition-all duration-1000"
+                style={{ width: `${(redirectCountdown / 3) * 100}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+              Auto-redirecting in {redirectCountdown}s...
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              onClick={handleConfirmRedirect}
+              className="w-full h-10 font-bold uppercase tracking-wide bg-rose-600 hover:bg-rose-700 text-white border-none shadow-none">
+              {blockedInfo?.redirectLabel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }

@@ -530,7 +530,10 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
       return res.status(400).json({ message: "Missing required basic fields." });
     }
 
-    const { schoolYearId } = (req as any).currentSchoolYear;
+    const schoolYearId = req.schoolYearId || (await prisma.schoolSetting.findFirst({ select: { activeSchoolYearId: true } }))?.activeSchoolYearId;
+    if (!schoolYearId) {
+      return res.status(400).json({ message: "Active school year not found." });
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Upsert Learner
@@ -567,6 +570,9 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
         });
       }
 
+      // Fetch school setting to check system phase
+      const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
+
       // 2. Create Application
       const applicationStatus = (hasSf9 && hasPsa) ? "OFFICIALLY_ENROLLED" : "TEMPORARILY_ENROLLED";
 
@@ -577,10 +583,11 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           gradeLevelId,
           applicantType: "REGULAR",
           assignedProgram: assignedProgram || null,
+          isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",
           trackingNumber: null, // intentionally null for direct encode
           isTemporarilyEnrolled: applicationStatus === "TEMPORARILY_ENROLLED",
-          encodedById: (req as any).user?.userId,
+          encodedById: (req as any).user?.id ?? (req as any).user?.userId,
           status: applicationStatus,
           // create previous school if provided
           previousSchool: previousSchoolName ? {

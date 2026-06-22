@@ -1,51 +1,19 @@
-# ARCHITECTURAL SPECIFICATION: Master Enrollment Dashboard
-**Document Version:** 8.5 (Pure Live-Data Fetch & SARDO Removal)
-**Target View:** Re-hydrating `/dashboard` when `System.AcademicPhase === 'CLASSES_ONGOING'`
-**Agent Constraint:** STRICTLY NO RAW HTML, CSS, JSX, OR TAILWIND UTILITY CLASSES. Inherit 100% of DOM skeletons from EnrollPro component library. Apply ONLY the text, token, and live-data bindings below.
-**Data Mandate:** STRICTLY NO MOCK DATA. You are forbidden from hardcoding integers, placeholder tallies, or static strings. Every numerical value must be wired directly to the database resolvers defined below.
+# PATCH OVERRIDE: Document v24.1 (Surgical UI Stabilization)
+**Target:** Root Gate `/signin`
+**Rule:** Do not regenerate the whole page layout. Apply these 4 explicit overrides to the existing DOM nodes:
 
-## 1. HEADER & ACTIVE PHASE BANNER
-*   **Page Subtitle:** `Classes Ongoing (Late Enrollment) • S.Y. 2026–2027`
-*   **The Calming Blue Status Banner:**
-    *   Prefix (Bold inside brackets): `[Academic Phase: Classes Ongoing]`
-    *   Body String: `Regular BOSY enrollment is closed. All incoming applications are now automatically tagged and itemized as Late Enrollees.`
+1. **KILL THE TOP-LEFT ECHO:**
+   Locate the top-left header node. Force the string strictly to:
+   `<span className="text-xs font-black tracking-widest text-blue-200 uppercase">HINIGARAN NATIONAL HIGH SCHOOL</span>`
+   *(The string 'ENROLLPRO' is strictly banned from this specific parent div).*
 
----
+2. **DE-SAUSAGE THE ROSTER CARDS:**
+   Target the wrapper class of the 5 left-hand microservice cards. Change the border-radius and background tokens strictly to:
+   `rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 p-4 transition-all shadow-sm`
+   *(Crucial: Check your CSS; ensure `rounded-full` or `rounded-2xl` is completely stripped off these 5 cards).*
 
-## 2. ROW 1: THE "PRIVATE INVESTIGATOR" TRIAGE QUEUE
-*Enforce equal vertical stretching. Apply the dynamic "✓ Queue Cleared" gray reassurance stamp when any fetched metric === 0.*
+3. **ERADICATE THE ZOMBIE FOOTER:**
+   Locate the absolute-positioned footer node at the bottom-left containing the text `"EnrollPro: Learner Enrollment and Sectioning System"`. **Delete this DOM node entirely.** It is causing an unreadable text-collision with the MRF card. Let the bottom of the MRF card sit over empty, clean blue space.
 
-*   **Card 1 (Late Intake):**
-    *   Card Title: `Late Enrollees to Process`
-    *   Sub-badge (Muted gray): `Appends to SF1 Bottom`
-    *   Active Button: `Process Late Admissions →`
-    *   **Live Data Binding:** strictly fetch `count(Applications where status === 'PENDING' AND is_late_enrollment === true)`.
-*   **Card 2 (The Paper Chase):**
-    *   Card Title: `Pending Form 137 (SF10)`
-    *   Sub-badge (Muted gray): `Awaiting SF10 (In) | Requested (Out)`
-    *   Active Button: `Manage Transfer Records →`
-    *   **Live Data Binding:** strictly fetch `count(LearnerRecords where sf10_status === 'PENDING' OR sf10_status === 'REQUESTED')`.
-*   **Card 3 (Overdue Deficiencies - Replacing SARDO):**
-    *   Card Title: `Overdue Documents`
-    *   Sub-badge (Muted gray): `Unresolved August Deficiencies`
-    *   Active Button: `Follow-up Missing Hardcopies →`
-    *   **Live Data Binding:** strictly fetch `count(Learners where is_conditionally_enrolled === true OR count(missing_requirements) > 0)`.
-
----
-
-## 3. ROW 2: MACRO HEALTH (The Delta Tally & SF4 Vitals)
-
-*   **Left Card (Active School Tally - The "Delta" Resolver):**
-    *   Card Title: `Active School Tally`
-    *   **The Master Integer:** Render the dynamically computed sum: `(Total_BOSY_Approved) + (Total_Late_Approved)`. Strictly bind its color to the **Primary Theme Token** extracted from the uploaded school logo.
-    *   **The Registrar Reassurance Sub-string:** Directly beneath the giant integer, render a dynamically hydrated string template:  
-        `{count_BOSY_approved} Official BOSY Baseline • +{count_late_approved} Appended Late Enrollees`
-    *   **Grade Breakdown Grid:** Keep the 4 horizontal columns (`Grade 7` to `Grade 10`). For each column, render the primary enrolled count, followed by this dynamically computed sub-string:  
-        `(+{count_late_in_this_grade} Late | -{count_dropped_in_this_grade} Dropped)`
-
-*   **Right Card (Monthly Movement Health - School Form 4):**
-    *   Card Title: `Monthly Student Movement (SF4)`
-    *   **The SF4 Ledger Stack:** Eradicate capacity progress bars entirely. Render a clean, 3-item vertical ledger dynamically bound to the *current calendar month's* movement logs:
-        1. `Transferred In (Move In):` bind to `count(SF4_Logs where movement_type === 'TRANSFER_IN' AND month === current_month)` *(Render integer in subtle success green)*
-        2. `Transferred Out (Move Out):` bind to `count(SF4_Logs where movement_type === 'TRANSFER_OUT' AND month === current_month)` *(Render integer in muted slate)*
-        3. `Dropped Out (Left School):` bind to `count(SF4_Logs where movement_type === 'DROPPED_OUT' AND month === current_month)` *(Render integer in soft gray)*
+4. **SANITIZE THE LOGIN CARD HEADER:**
+   Locate the circular blue badge at the top center of the white login card containing the "sparkles" icon. **Remove this circular badge entirely.** Re-anchor the H2 `"Sign In to Portal"` directly to the top margin of the card's internal padding.

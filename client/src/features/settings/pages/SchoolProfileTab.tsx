@@ -288,7 +288,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School ID (6-digit format)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 123456" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
+                      <Input placeholder="e.g. 123456" {...field} value={field.value ?? ""} maxLength={6} inputMode="numeric" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -302,7 +302,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Region</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
+                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -316,7 +316,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Division</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent" />
+                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
