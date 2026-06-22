@@ -1161,7 +1161,7 @@ export default function SchoolYearTab() {
                         <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
                         <div>
                           <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-bold cursor-pointer text-foreground block">Official Enrollment</Label>
-                          <p className="text-sm text-foreground mt-1">Opens the public intake forms and processes normal verify/confirm workflows.</p>
+                          <p className="text-sm text-foreground mt-1">Opens the public enrollment forms and processes normal verify/confirm workflows.</p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-2">
@@ -1175,7 +1175,7 @@ export default function SchoolYearTab() {
                         <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
                         <div>
                           <Label htmlFor="EOSY_CLOSING" className="font-bold cursor-pointer text-foreground block">EOSY Closing</Label>
-                          <p className="text-sm text-foreground mt-1">Locks public intake forms and readies the database for end-of-year grade finalization.</p>
+                          <p className="text-sm text-foreground mt-1">Locks public enrollment forms and readies the database for end-of-year grade finalization.</p>
                         </div>
                       </div>
                     </RadioGroup>
@@ -1698,21 +1698,63 @@ export default function SchoolYearTab() {
       <ConfirmationModal
         open={showPhaseModal}
         onOpenChange={setShowPhaseModal}
-        title="Confirm Phase Shift"
+        title={
+          selectedPhase === "OFFICIAL_ENROLLMENT"
+            ? "Open Regular Enrollment Period?"
+            : selectedPhase === "CLASSES_ONGOING"
+              ? "Close Regular Enrollment & Tag Late Enrollees?"
+              : selectedPhase === "EOSY_CLOSING"
+                ? "Close School Year & Begin EOSY Updating?"
+                : "Confirm Phase Shift"
+        }
         variant="primary"
         confirmClassName="bg-primary text-primary-foreground"
         description={
-          <span className="block text-left text-foreground">
+          <span className="block text-left text-foreground space-y-4">
+            {selectedPhase === "OFFICIAL_ENROLLMENT" && (
+              <>
+                <p>You are about to open the official enrollment portals for School Year {activeYear?.yearLabel || "2026–2027"}.</p>
+                <p>Confirming this activates encoding for incoming Grade 7, Transferees, and Balik-Aral learners. The system will begin staging learner profiles for Beginning of School Year (BOSY) LIS tagging.</p>
+              </>
+            )}
             {selectedPhase === "CLASSES_ONGOING" && (
-              <>Are you sure you want to transition the system to <strong>Regular Classes</strong>? This will permanently tag all subsequent applicants as Late Enrollees for LIS reporting. This action cannot be undone without Admin privileges.</>
+              <>
+                <p>You are officially closing the regular enrollment window to mark the start of ongoing classes.</p>
+                <p>The public forms will remain open, but all learners encoded after today will be permanently flagged as "Late Enrollees" for BOSY LIS reporting.</p>
+              </>
             )}
             {selectedPhase === "EOSY_CLOSING" && (
-              <>Are you sure you want to transition the system to <strong>EOSY Closing</strong>? This will lock all public forms and prepare the database for the end of the school year. You cannot easily undo this.</>
-            )}
-            {selectedPhase === "OFFICIAL_ENROLLMENT" && (
-              <>Are you sure you want to shift to <strong>Official Enrollment</strong>? This opens the public intake forms and processes normal verify/confirm workflows.</>
+              <>
+                <p>You are officially closing School Year 2026–2027 to begin End of School Year (EOSY) finalization.</p>
+                <p>This locks all active class rolls across Grades 7 to 10. Class advisers will no longer be able to encode learner transfers or update profile details, allowing the administration to safely finalize promotional statuses and general averages.</p>
+              </>
             )}
           </span>
+        }
+        footerWarning={
+          selectedPhase === "CLASSES_ONGOING"
+            ? "LIS POLICY: Reverting a Late Enrollee timestamp requires an overriding Administrative pass."
+            : selectedPhase === "EOSY_CLOSING"
+              ? "CRITICAL LIS POLICY: Do not proceed until all class advisers have finalized their SMART electronic class records."
+              : undefined
+        }
+        cancelText={
+          selectedPhase === "OFFICIAL_ENROLLMENT"
+            ? "Keep Enrollment Closed"
+            : selectedPhase === "CLASSES_ONGOING"
+              ? "Keep Regular Enrollment Open"
+              : selectedPhase === "EOSY_CLOSING"
+                ? "Keep School Year Active"
+                : "Cancel"
+        }
+        confirmText={
+          selectedPhase === "OFFICIAL_ENROLLMENT"
+            ? "Open Regular Enrollment"
+            : selectedPhase === "CLASSES_ONGOING"
+              ? "Begin Classes & Tag Late Enrollees"
+              : selectedPhase === "EOSY_CLOSING"
+                ? "Lock System for EOSY Updating"
+                : "Confirm"
         }
         loading={isUpdatingPhase}
         onConfirm={async () => {
@@ -1740,7 +1782,6 @@ export default function SchoolYearTab() {
             setIsUpdatingPhase(false);
           }
         }}
-        confirmText="Confirm"
       />
     </div>
   );

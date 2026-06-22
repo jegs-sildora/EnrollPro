@@ -139,8 +139,8 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
         <div className="space-y-6 mb-12">
           {/* Sovereign Header */}
           <div>
-            <span className="text-xs font-black tracking-widest text-blue-200 uppercase">{schoolName}</span>
-            <p className="text-white/70 text-sm mt-1">
+            <span className="text-xl font-black tracking-widest text-primary-foreground uppercase">{schoolName}</span>
+            <p className="text-white/70 text-base mt-1">
               Integrated Administrative, Academic & Support Systems
             </p>
           </div>
@@ -327,6 +327,9 @@ export default function Login() {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+
+    // Give 2 secs delay when the Sign In click and the Signing In... msg shows up
+    await new Promise((resolve) => setTimeout(resolve, 700));
 
     try {
       const response = await api.post<AuthResponsePayload>("/auth/login", {

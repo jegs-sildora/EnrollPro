@@ -30,6 +30,7 @@ interface ConfirmationModalProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description: React.ReactNode;
+  footerWarning?: React.ReactNode;
   onConfirm: () => void;
   confirmText?: string;
   cancelText?: string;
@@ -85,6 +86,7 @@ export function ConfirmationModal({
   onOpenChange,
   title,
   description,
+  footerWarning,
   onConfirm,
   confirmText = "Confirm",
   cancelText = "Cancel",
@@ -116,15 +118,15 @@ export function ConfirmationModal({
       onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "w-[calc(100%-2rem)] sm:max-w-sm rounded-lg p-8 overflow-hidden",
+          "w-[calc(100%-2rem)] sm:max-w-2xl rounded-lg p-8 overflow-hidden",
           "bg-sidebar shadow-2xl",
         )}
         style={
           applyOverride
             ? ({
-                "--primary": "200 68% 9%",
-                "--primary-foreground": "0 0% 100%",
-              } as React.CSSProperties)
+              "--primary": "200 68% 9%",
+              "--primary-foreground": "0 0% 100%",
+            } as React.CSSProperties)
             : {}
         }>
         {/* ── Icon badge ─────────────────────────────────────────────── */}
@@ -146,10 +148,17 @@ export function ConfirmationModal({
 
         {/* ── Header — centred ───────────────────────────────────────── */}
         <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-xl font-bold ">{title}</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-center">
-            {description}
-          </DialogDescription>
+          <DialogTitle className="text-2xl font-bold ">{title}</DialogTitle>
+          <div className="space-y-4">
+            <DialogDescription className="text-base leading-relaxed text-center">
+              {description}
+            </DialogDescription>
+            {footerWarning && (
+              <div className="text-base font-bold text-destructive mt-2 p-3 bg-destructive/10 rounded-md outline-3 outline-destructive">
+                {footerWarning}
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         {/* ── Footer — side-by-side, confirm on the left ─────────────── */}

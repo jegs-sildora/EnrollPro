@@ -74,26 +74,6 @@ async function main() {
       sex: "MALE" as Sex,
       mobileNumber: "09171234501",
     },
-    {
-      firstName: "Gabriela",
-      lastName: "Silang",
-      email: "gsilang.reg@deped.edu.ph",
-      employeeId: "1234502",
-      roles: ["HEAD_REGISTRAR"],
-      designation: "Registrar",
-      sex: "FEMALE" as Sex,
-      mobileNumber: "09171234502",
-    },
-    {
-      firstName: "Andres",
-      lastName: "Bonifacio",
-      email: "abonifacio.mrf@deped.edu.ph",
-      employeeId: "1234503",
-      roles: ["MRF"],
-      designation: "MRF Staff",
-      sex: "MALE" as Sex,
-      mobileNumber: "09171234503",
-    },
   ];
 
   const defaultPassword = "DepEd2026!";
