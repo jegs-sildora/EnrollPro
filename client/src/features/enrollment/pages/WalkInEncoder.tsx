@@ -8,6 +8,7 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -204,6 +205,8 @@ export default function WalkInEncoder() {
   const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof WalkInFormState | string, string>>>({});
+  const [showSubmitConfirmModal, setShowSubmitConfirmModal] = useState(false);
   const [hydrationContext, setHydrationContext] =
     useState<HydrationContextState | null>(null);
   const [hydratedGradeToken, setHydratedGradeToken] = useState<string | null>(
@@ -498,116 +501,61 @@ export default function WalkInEncoder() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.lastName.trim() || !formData.firstName.trim()) {
-      sileo.error({
-        title: "Missing Learner Name",
-        description: "Last name and first name are required.",
-      });
-      return false;
-    }
+    const newErrors: Partial<Record<keyof WalkInFormState | string, string>> = {};
 
-    if (!formData.birthdate || !formData.sex || !formData.gradeLevelId) {
-      sileo.error({
-        title: "Missing Required Learner Details",
-        description: "Birthdate, sex, and grade level are required.",
-      });
-      return false;
-    }
+    if (!formData.lastName.trim()) newErrors.lastName = "Learner's last name is required.";
+    if (!formData.firstName.trim()) newErrors.firstName = "Learner's first name is required.";
+    if (!formData.birthdate) newErrors.birthdate = "Learner's birthdate is required.";
+    if (!formData.sex) newErrors.sex = "Learner's sex is required.";
+    if (!formData.gradeLevelId) newErrors.gradeLevelId = "Please select a grade level.";
 
-    if (
-      !formData.currentAddressBarangay.trim() ||
-      !formData.currentAddressCityMunicipality.trim() ||
-      !formData.currentAddressRegion.trim() ||
-      !formData.currentAddressProvince.trim()
-    ) {
-      sileo.error({
-        title: "Missing Address Fields",
-        description: "Barangay, city/municipality, and province are required.",
-      });
-      return false;
-    }
+    if (!formData.currentAddressBarangay.trim()) newErrors.currentAddressBarangay = "Barangay is required.";
+    if (!formData.currentAddressCityMunicipality.trim()) newErrors.currentAddressCityMunicipality = "City/Municipality is required.";
+    if (!formData.currentAddressRegion.trim()) newErrors.currentAddressRegion = "Region is required.";
+    if (!formData.currentAddressProvince.trim()) newErrors.currentAddressProvince = "Province is required.";
 
     if (!/^\d{12}$/.test(formData.lrn.trim())) {
-      sileo.error({
-        title: "Invalid LRN",
-        description: "LRN must be exactly 12 digits.",
-      });
-      return false;
+      newErrors.lrn = "Please provide a valid 12-digit Learner Reference Number.";
     }
 
-    if (
-      formData.learnerType === "TRANSFEREE" &&
-      !formData.originSchoolName.trim()
-    ) {
-      sileo.error({
-        title: "Origin School Required",
-        description: "Provide origin school name for transferees.",
-      });
-      return false;
+    if (formData.learnerType === "TRANSFEREE" && !formData.originSchoolName.trim()) {
+      newErrors.originSchoolName = "Origin school name is required for transferring learners.";
     }
 
-    if (
-      formData.lastSchoolId.trim() &&
-      !/^\d{6}$/.test(formData.lastSchoolId.trim())
-    ) {
-      sileo.error({
-        title: "Invalid School ID",
-        description: "DepEd School ID must be exactly 6 digits.",
-      });
-      return false;
+    if (formData.lastSchoolId.trim() && !/^\d{6}$/.test(formData.lastSchoolId.trim())) {
+      newErrors.lastSchoolId = "School ID must be exactly 6 digits.";
     }
 
-    // Validate Mother's Maiden Name (First Name & Maiden Last Name)
-    if (!formData.mother.firstName.trim() || !formData.mother.lastName.trim()) {
-      sileo.error({
-        title: "Missing Mother's Name",
-        description: "Mother's first name and maiden last name are required.",
-      });
-      return false;
+    if (!formData.hasNoMother) {
+      if (!formData.mother.firstName.trim()) newErrors.motherFirstName = "Mother's first name is required.";
+      if (!formData.mother.lastName.trim()) newErrors.motherLastName = "Mother's maiden last name is required.";
     }
 
-    // Validate Primary Contact Number (Mandatory, 11 digits)
     if (!formData.contactNumber.trim() || !/^\d{11}$/.test(formData.contactNumber.trim())) {
-      sileo.error({
-        title: "Invalid Contact Number",
-        description: "Primary contact number is required and must be exactly 11 digits.",
-      });
-      return false;
+      newErrors.contactNumber = "Please provide a valid 11-digit contact number.";
     }
 
-    // Validate Guardian details if toggled on
     if (isUnderGuardianCare) {
-      if (!formData.guardian.firstName.trim() || !formData.guardian.lastName.trim()) {
-        sileo.error({
-          title: "Missing Guardian's Name",
-          description: "Guardian's first name and last name are required.",
-        });
-        return false;
-      }
-      if (!formData.guardianRelationship.trim()) {
-        sileo.error({
-          title: "Missing Relationship",
-          description: "Guardian relationship to learner is required.",
-        });
-        return false;
-      }
+      if (!formData.guardian.firstName.trim()) newErrors.guardianFirstName = "Guardian's first name is required.";
+      if (!formData.guardian.lastName.trim()) newErrors.guardianLastName = "Guardian's last name is required.";
+      if (!formData.guardianRelationship.trim()) newErrors.guardianRelationship = "Please specify the guardian's relationship to the learner.";
     }
 
-    if (!formData.isSf9Submitted || !formData.isPsaBirthCertPresented) {
-      sileo.error({
-        title: "Physical Requirements Required",
-        description:
-          "Confirm both SF9 and PSA Birth Certificate before routing to sectioning.",
-      });
-      return false;
-    }
+    setErrors(newErrors);
 
-    const finalAverage = Number.parseFloat(formData.finalGeneralAverage);
-    if (Number.isNaN(finalAverage) || finalAverage < 0 || finalAverage > 100) {
+    if (Object.keys(newErrors).length > 0) {
       sileo.error({
-        title: "Invalid General Average",
-        description: "Provide a valid Final General Average between 0 and 100.",
+        title: "Incomplete Form",
+        description: "Please check the form for missing or invalid information.",
       });
+
+      setTimeout(() => {
+        const firstError = document.querySelector(".text-destructive.text-sm.mt-1");
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+
       return false;
     }
 
@@ -627,10 +575,14 @@ export default function WalkInEncoder() {
     setDateInput("");
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
+  const handleSubmit = () => {
+    if (validateForm()) {
+      setShowSubmitConfirmModal(true);
     }
+  };
+
+  const executeSubmit = async () => {
+
 
     const finalGeneralAverage =
       formData.finalGeneralAverage.trim().length > 0
@@ -676,32 +628,32 @@ export default function WalkInEncoder() {
         ? { firstName: "N/A", lastName: "N/A", middleName: undefined, extensionName: undefined, contactNumber: formData.primaryContact === "MOTHER" ? toOptionalTrimmed(formData.contactNumber) : undefined }
         : hasContactIdentity(formData.mother)
           ? {
-              firstName: formData.mother.firstName.trim(),
-              lastName: formData.mother.lastName.trim(),
-              middleName: toOptionalTrimmed(formData.mother.middleName),
-              extensionName: toOptionalTrimmed(formData.mother.extensionName),
-              contactNumber: formData.primaryContact === "MOTHER" ? toOptionalTrimmed(formData.contactNumber) : undefined,
-            }
+            firstName: formData.mother.firstName.trim(),
+            lastName: formData.mother.lastName.trim(),
+            middleName: toOptionalTrimmed(formData.mother.middleName),
+            extensionName: toOptionalTrimmed(formData.mother.extensionName),
+            contactNumber: formData.primaryContact === "MOTHER" ? toOptionalTrimmed(formData.contactNumber) : undefined,
+          }
           : undefined,
       father: formData.hasNoFather
         ? { firstName: "N/A", lastName: "N/A", middleName: undefined, extensionName: undefined, contactNumber: formData.primaryContact === "FATHER" ? toOptionalTrimmed(formData.contactNumber) : undefined }
         : hasContactIdentity(formData.father)
           ? {
-              firstName: formData.father.firstName.trim(),
-              lastName: formData.father.lastName.trim(),
-              middleName: toOptionalTrimmed(formData.father.middleName),
-              extensionName: toOptionalTrimmed(formData.father.extensionName),
-              contactNumber: formData.primaryContact === "FATHER" ? toOptionalTrimmed(formData.contactNumber) : undefined,
-            }
+            firstName: formData.father.firstName.trim(),
+            lastName: formData.father.lastName.trim(),
+            middleName: toOptionalTrimmed(formData.father.middleName),
+            extensionName: toOptionalTrimmed(formData.father.extensionName),
+            contactNumber: formData.primaryContact === "FATHER" ? toOptionalTrimmed(formData.contactNumber) : undefined,
+          }
           : undefined,
       guardian: formData.primaryContact === "GUARDIAN" && hasContactIdentity(formData.guardian)
         ? {
-            firstName: formData.guardian.firstName.trim(),
-            lastName: formData.guardian.lastName.trim(),
-            middleName: toOptionalTrimmed(formData.guardian.middleName),
-            extensionName: toOptionalTrimmed(formData.guardian.extensionName),
-            contactNumber: toOptionalTrimmed(formData.contactNumber),
-          }
+          firstName: formData.guardian.firstName.trim(),
+          lastName: formData.guardian.lastName.trim(),
+          middleName: toOptionalTrimmed(formData.guardian.middleName),
+          extensionName: toOptionalTrimmed(formData.guardian.extensionName),
+          contactNumber: toOptionalTrimmed(formData.contactNumber),
+        }
         : undefined,
       guardianRelationship: formData.primaryContact === "GUARDIAN" ? toOptionalTrimmed(formData.guardianRelationship) : undefined,
     };
@@ -838,13 +790,13 @@ export default function WalkInEncoder() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-left">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold">
-            Late Enrollment Form (BEEF)
+            Manual Basic Education Enrollment Forms (BEEF) Encoding
           </h1>
           <p className="text-base leading-tight text-foreground font-bold">
-            Enter paper forms for mid-year transfers and late entrants. A valid 12-digit LRN is required.
+            Encode submitted Basic Education Enrollment Forms (BEEF) for late enrollees and transferees.
           </p>
         </div>
-        <div className="text-base font-bold text-slate-800 whitespace-nowrap bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 sm:mt-1">
+        <div className="text-base font-bold text-foreground whitespace-nowrap bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 sm:mt-1">
           Late Entry: S.Y. {activeSchoolYearLabel || "2026–2027"}
         </div>
       </div>
@@ -853,7 +805,7 @@ export default function WalkInEncoder() {
       <Card className="border border-slate-200 bg-white shadow-sm rounded-xl mb-6">
         <CardContent className="p-5 md:p-6 flex flex-col space-y-4 text-left">
           <div className="space-y-2">
-            <Label htmlFor="interceptorLrn" className="text-base font-bold text-slate-800">
+            <Label htmlFor="interceptorLrn" className="text-base font-bold text-foreground">
               Learner Reference Number (LRN) *
             </Label>
             <div className="flex gap-3 w-full max-w-6.5xl items-start">
@@ -865,7 +817,7 @@ export default function WalkInEncoder() {
                   maxLength={12}
                   disabled={isSearchingLrn || isFormUnlocked}
                   placeholder="Type 12-digit LRN..."
-                  className="pl-11 h-12 text-lg font-bold tracking-wider text-slate-800 rounded-xl"
+                  className="pl-11 h-12 text-lg font-bold tracking-wider text-foreground rounded-xl"
                   onChange={(e) => {
                     setInterceptorLrn(e.target.value.replace(/[^\d]/g, "").slice(0, 12));
                   }}
@@ -898,7 +850,7 @@ export default function WalkInEncoder() {
 
           {/* DYNAMIC FEEDBACK ZONE */}
           {showNoLrnBanner && !isFormUnlocked && (
-            <div className="w-full max-w-6.5  xl p-4 rounded-xl border border-amber-200 bg-amber-50 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-start sm:items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
                 <p className="text-base font-bold text-amber-900">
@@ -977,7 +929,7 @@ export default function WalkInEncoder() {
                 {/* Row 1 (Academic Assignment) */}
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Learner Reference Number (LRN) *
                     </Label>
                     <Input
@@ -988,7 +940,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Learner Type *
                     </Label>
                     <Select
@@ -1007,7 +959,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Grade Level *
                     </Label>
                     <Select
@@ -1029,7 +981,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Prior Academic Status *
                     </Label>
                     <Select
@@ -1051,7 +1003,7 @@ export default function WalkInEncoder() {
                 {/* Row 2 (Legal Identity) */}
                 <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Last Name *
                     </Label>
                     <Input
@@ -1063,7 +1015,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       First Name *
                     </Label>
                     <Input
@@ -1075,7 +1027,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Middle Name
                     </Label>
                     <Input
@@ -1087,7 +1039,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Extension Name
                     </Label>
                     <Select
@@ -1111,7 +1063,7 @@ export default function WalkInEncoder() {
                 {/* Row 3 (Birthdate, Sex, Place of Birth) */}
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Birthdate *
                     </Label>
                     <div className="relative">
@@ -1186,7 +1138,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Sex *
                     </Label>
                     <div className="flex gap-4 pt-1">
@@ -1206,14 +1158,14 @@ export default function WalkInEncoder() {
                             "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight uppercase",
                             formData.sex === sexOption.value
                               ? "border-primary bg-primary/5 font-bold"
-                              : "border-border hover:bg-slate-50 text-slate-800",
+                              : "border-border hover:bg-slate-50 text-foreground",
                           )}>
                           <sexOption.icon
                             className={cn(
                               "w-4 h-4",
                               formData.sex === sexOption.value
                                 ? "text-primary"
-                                : "text-slate-800",
+                                : "text-foreground",
                             )}
                           />
                           <span className="font-bold">{sexOption.label}</span>
@@ -1223,7 +1175,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Place of Birth
                     </Label>
                     <Input
@@ -1252,7 +1204,7 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
                   <div className="space-y-2 col-span-1 sm:col-span-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Last School Attended *
                     </Label>
                     <Input
@@ -1265,7 +1217,7 @@ export default function WalkInEncoder() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       DepEd School ID (Optional)
                     </Label>
                     <Input
@@ -1283,7 +1235,7 @@ export default function WalkInEncoder() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Last Grade Completed *
                     </Label>
                     <Select
@@ -1307,7 +1259,7 @@ export default function WalkInEncoder() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       School Year Last Attended *
                     </Label>
                     <Select
@@ -1340,7 +1292,7 @@ export default function WalkInEncoder() {
               {/* SECTION 3: LEARNER ADDRESS */}
               <section className="space-y-6 text-left">
                 <h3
-                  className="text-base font-bold pl-3 border-l-4"
+                  className="text-xl font-bold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -1351,12 +1303,12 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground uppercase">
                       House No. / Street
                     </Label>
                     <Input
                       value={formData.currentAddressHouseNoStreet}
-                      placeholder="HOUSE NO / STREET"
+                      placeholder="HOUSE NO. / STREET"
                       className="h-10 font-bold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("currentAddressHouseNoStreet", event.target.value);
@@ -1364,12 +1316,12 @@ export default function WalkInEncoder() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-slate-800">
-                      Sitio
+                    <Label className="text-base font-bold text-foreground uppercase">
+                      Purok / Sitio / Subdivision
                     </Label>
                     <Input
                       value={formData.currentAddressSitio}
-                      placeholder="SITIO / SUBDIVISION"
+                      placeholder="PUROK / Sitio / Subdivision"
                       className="h-10 font-bold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("currentAddressSitio", event.target.value);
@@ -1434,8 +1386,8 @@ export default function WalkInEncoder() {
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <div>
-                      <h4 className="font-bold text-slate-800 text-base uppercase">Mother's Maiden Details</h4>
-                      <p className="text-sm text-slate-500">Provide the mother's name exactly as it appears on the birth certificate.</p>
+                      <h4 className="font-bold text-foreground text-base uppercase">Mother's Maiden Details</h4>
+                      <p className="text-sm text-foreground/80">Provide the mother's name exactly as it appears on the birth certificate.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
                       <Checkbox
@@ -1487,8 +1439,8 @@ export default function WalkInEncoder() {
                 <div className="space-y-4 pt-4 border-t border-slate-100">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <div>
-                      <h4 className="font-bold text-slate-800 text-base uppercase">Father's Details</h4>
-                      <p className="text-sm text-slate-500">Provide the father's full name.</p>
+                      <h4 className="font-bold text-foreground text-base uppercase">Father's Details</h4>
+                      <p className="text-sm text-foreground/80">Provide the father's full name.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
                       <Checkbox
@@ -1535,12 +1487,12 @@ export default function WalkInEncoder() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold uppercase text-slate-600">Suffix <span className="text-slate-400 font-normal">(Optional)</span></Label>
-                      <Select 
-                        value={formData.hasNoFather ? "" : formData.father.extensionName} 
+                      <Select
+                        value={formData.hasNoFather ? "" : formData.father.extensionName}
                         onValueChange={(val) => setContactField("father", "extensionName", val === "NONE" ? "" : val)}
                         disabled={formData.hasNoFather}
                       >
-                        <SelectTrigger className="h-10 bg-white font-bold text-slate-800 border-slate-300">
+                        <SelectTrigger className="h-10 bg-white font-bold text-foreground border-slate-300">
                           <SelectValue placeholder="SELECT" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1550,69 +1502,97 @@ export default function WalkInEncoder() {
                           <SelectItem value="II">II</SelectItem>
                           <SelectItem value="III">III</SelectItem>
                           <SelectItem value="IV">IV</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        </SelectContent>\n                      </Select>\n                      {errors.sex && <p className="text-destructive text-sm mt-1">{errors.sex}</p>}
                     </div>
                   </div>
                 </div>
 
-                {/* ROW 3: Primary Residence Gateway */}
+                {/* ROW 3 & 4: Primary Residence Gateway & Contact Number */}
                 <div className="pt-6 border-t border-slate-200">
-                  <div className="mb-4">
-                    <Label className="text-base font-bold text-slate-800 uppercase">Primary Caregiver</Label>
-                    <p className="text-sm text-slate-500">Who does the learner permanently reside with?</p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {(!formData.hasNoMother) && (
-                      <button
-                        type="button"
-                        onClick={() => setField("primaryContact", "MOTHER")}
-                        className={cn(
-                          "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
-                          formData.primaryContact === "MOTHER"
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  <div className="grid gap-8 md:grid-cols-2">
+                    {/* Primary Caregiver */}
+                    <div>
+                      <div className="mb-4">
+                        <Label className="text-base font-bold text-foreground uppercase">Primary Caregiver</Label>
+                        <p className="text-sm text-foreground/80">Who does the learner permanently reside with?</p>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {(!formData.hasNoMother) && (
+                          <button
+                            type="button"
+                            onClick={() => setField("primaryContact", "MOTHER")}
+                            className={cn(
+                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                              formData.primaryContact === "MOTHER"
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                            )}
+                          >
+                            <Venus className="w-5 h-5" />
+                            Mother
+                          </button>
                         )}
-                      >
-                        <Venus className="w-5 h-5" />
-                        Mother
-                      </button>
-                    )}
-                    {(!formData.hasNoFather) && (
-                      <button
-                        type="button"
-                        onClick={() => setField("primaryContact", "FATHER")}
-                        className={cn(
-                          "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
-                          formData.primaryContact === "FATHER"
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                        {(!formData.hasNoFather) && (
+                          <button
+                            type="button"
+                            onClick={() => setField("primaryContact", "FATHER")}
+                            className={cn(
+                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                              formData.primaryContact === "FATHER"
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                            )}
+                          >
+                            <Mars className="w-5 h-5" />
+                            Father
+                          </button>
                         )}
-                      >
-                        <Mars className="w-5 h-5" />
-                        Father
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setField("primaryContact", "GUARDIAN")}
-                      className={cn(
-                        "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
-                        formData.primaryContact === "GUARDIAN"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                      )}
-                    >
-                      <User className="w-5 h-5" />
-                      Legal Guardian
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => setField("primaryContact", "GUARDIAN")}
+                          className={cn(
+                            "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                            formData.primaryContact === "GUARDIAN"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                          )}
+                        >
+                          <User className="w-5 h-5" />
+                          Legal Guardian
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Master Contact Pipe */}
+                    <div>
+                      <div className="mb-4 space-y-1">
+                        <Label className="text-base font-bold text-foreground uppercase flex items-center gap-2">
+                          Primary Contact Number
+                          <span className="text-destructive text-sm">*</span>
+                        </Label>
+                        <p className="text-sm text-foreground/80">All emergency and school notifications will be sent to this number.</p>
+                      </div>
+                      <Input
+                        value={formData.contactNumber}
+                        placeholder="09XXXXXXXXX"
+                        maxLength={11}
+                        inputMode="numeric"
+                        className="h-12 max-w-sm text-lg font-bold bg-white border-2 border-slate-300 tracking-wider"
+                        onChange={(event) => {
+                          setField(
+                            "contactNumber",
+                            normalizeContactNumber(event.target.value),
+                          );
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* ROW 4: Dynamic Guardian Shell */}
+                {/* Dynamic Guardian Shell */}
                 {formData.primaryContact === "GUARDIAN" && (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase mb-4">Guardian Identity Details</h4>
+                    <h4 className="font-bold text-foreground text-sm uppercase mb-4">Guardian Identity Details</h4>
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold uppercase text-slate-600">Last Name</Label>
@@ -1621,8 +1601,7 @@ export default function WalkInEncoder() {
                           placeholder="LAST NAME"
                           className="h-10 font-bold uppercase bg-white border-slate-300"
                           onChange={(e) => setContactField("guardian", "lastName", e.target.value.toUpperCase())}
-                        />
-                      </div>
+                        />\n                      </div>\n                      {errors.birthdate && <p className="text-destructive text-sm mt-1">{errors.birthdate}</p>}
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold uppercase text-slate-600">First Name</Label>
                         <Input
@@ -1645,33 +1624,6 @@ export default function WalkInEncoder() {
                   </div>
                 )}
 
-                {/* ROW 5: Master Contact Pipe */}
-                <div className="pt-6 border-t border-slate-200">
-                  <div className="max-w-md space-y-2">
-                    <Label className="text-base font-bold text-slate-800 uppercase flex items-center gap-2">
-                      Primary Contact Number
-                      <span className="text-destructive text-sm">*</span>
-                    </Label>
-                    <Input
-                      value={formData.contactNumber}
-                      placeholder="09XXXXXXXXX"
-                      maxLength={11}
-                      inputMode="numeric"
-                      className="h-12 text-lg font-bold bg-white border-2 border-slate-300 tracking-wider"
-                      onChange={(event) => {
-                        setField(
-                          "contactNumber",
-                          normalizeContactNumber(event.target.value),
-                        );
-                      }}
-                    />
-                    <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                      All emergency and DepEd notifications will be sent to this number.
-                    </p>
-                  </div>
-                </div>
-
               </section>
 
               {/* SECTION 5: PHYSICAL REQUIREMENTS SUBMITTED */}
@@ -1688,7 +1640,7 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2 md:col-span-3">
-                    <Label className="text-base font-bold text-slate-800">
+                    <Label className="text-base font-bold text-foreground">
                       Final General Average (SF9) *
                     </Label>
                     <Input
@@ -1757,7 +1709,7 @@ export default function WalkInEncoder() {
                   className="h-11 px-6 font-bold text-white shadow-none border-none animate-in fade-in zoom-in duration-200"
                   style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
                   disabled={submitting}
-                  onClick={() => { void handleSubmit(); }}>
+                  onClick={() => { handleSubmit(); }}>
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1778,12 +1730,12 @@ export default function WalkInEncoder() {
       <Dialog open={showSectionModal} onOpenChange={(open) => { if (!open) handleSkipSectionAssignment(); }}>
         <DialogContent className="sm:max-w-[460px] text-left p-6 bg-white rounded-xl shadow-lg border border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-800 tracking-wide">
+            <DialogTitle className="text-xl font-black text-foreground tracking-wide">
               Assign Late Enrollee to a Class Section
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <p className="text-base font-semibold text-slate-500 leading-normal">
+            <p className="text-base font-semibold text-foreground/80 leading-normal">
               Select an active {createdGradeLevelName} section with available physical seating.
             </p>
 
@@ -1834,11 +1786,11 @@ export default function WalkInEncoder() {
                           onChange={() => setSelectedModalSectionId(s.id)}
                           className="h-4 w-4 accent-slate-800 cursor-pointer"
                         />
-                        <span className="text-base font-bold text-slate-800">
+                        <span className="text-base font-bold text-foreground">
                           Section {s.name}
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-slate-500 font-mono">
+                      <span className="text-xs font-bold text-foreground/80 font-mono">
                         {isFull ? (
                           <span className="text-rose-600 font-black">Full Capacity</span>
                         ) : (
@@ -1927,6 +1879,20 @@ export default function WalkInEncoder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Submission Confirmation Modal */}
+      <ConfirmationModal
+        open={showSubmitConfirmModal}
+        onOpenChange={setShowSubmitConfirmModal}
+        title="Confirm Submission"
+        description="Are you sure you want to save this learner's profile? Please review all details before proceeding."
+        confirmText="Save Learner Profile"
+        cancelText="Review Details"
+        onConfirm={() => {
+          setShowSubmitConfirmModal(false);
+          void executeSubmit();
+        }}
+        loading={submitting}
+      />
     </div>
   );
 }

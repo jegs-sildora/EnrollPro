@@ -372,7 +372,7 @@ function SYSwitcher() {
 
 const NavDivider = memo(function NavDivider({ label, badge }: { label: string; badge?: React.ReactNode }) {
   return (
-    <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-200 ease-linear group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
+    <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-300 ease-in-out group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
       <div className="flex items-center gap-2">
         <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
           {label}
@@ -401,8 +401,17 @@ const NavItem = memo(function NavItem({
     selectedAccentHsl ??
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
 
-  let isActive =
-    pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
+  let isActive = pathname === to;
+
+  if (!isActive && to !== "/") {
+    if (to === "/sections" && pathname.startsWith("/sections/homerooms")) {
+      isActive = false;
+    } else if (to === "/monitoring/enrollment" && pathname.startsWith("/monitoring/enrollment/walk-in")) {
+      isActive = false;
+    } else if (pathname.startsWith(to + "/")) {
+      isActive = true;
+    }
+  }
 
   // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
   if (
@@ -415,7 +424,7 @@ const NavItem = memo(function NavItem({
   return (
     <SidebarMenuItem className="relative">
       {isActive && (
-        <span 
+        <span
           className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full z-20"
           style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
         />
@@ -559,7 +568,7 @@ function AppSidebar() {
                         <NavItem
                           to="/monitoring/enrollment/walk-in"
                           icon={UserPlus}
-                          label="Late Enrollee Intake"
+                          label="Late Enrollee Form"
                           pathname={pathname}
                         />
                         <NavItem
@@ -815,7 +824,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (!showBlockedModal) return;
     setRedirectCountdown(3);
-    
+
     const interval = setInterval(() => {
       setRedirectCountdown((prev) => {
         if (prev <= 1) {
@@ -1004,7 +1013,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               The active school phase is currently set to <span className="font-bold text-slate-700">{formatPhaseName(blockedInfo?.activePhase ?? null)}</span>.
             </p>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative">
-              <div 
+              <div
                 className="h-full bg-rose-500 transition-all duration-1000"
                 style={{ width: `${(redirectCountdown / 3) * 100}%` }}
               />
