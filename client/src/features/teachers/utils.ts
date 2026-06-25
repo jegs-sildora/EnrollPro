@@ -6,6 +6,10 @@ import {
 } from "@enrollpro/shared";
 import type { Teacher, TeacherFormState } from "./types";
 
+type AdvisorySectionSummary = NonNullable<
+  NonNullable<Teacher["designation"]>["advisorySection"]
+>;
+
 export const TEACHER_SPECIALIZATION_GROUPS =
   DEPED_TEACHER_SPECIALIZATION_GROUPS;
 export const TEACHER_PLANTILLA_POSITION_OPTIONS =
@@ -42,6 +46,21 @@ export function formatTeacherName(
   return `${teacher.lastName}${nameSuffix}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`;
 }
 
+export function formatDisplayName(
+  teacher: Pick<Teacher, "firstName" | "lastName" | "suffix">,
+): string {
+  const titleCase = (value: string) =>
+    value
+      .toLocaleLowerCase()
+      .replace(/\b\p{L}/gu, (char) => char.toLocaleUpperCase());
+
+  const lastName = titleCase(teacher.lastName);
+  const firstName = titleCase(teacher.firstName);
+  const suffix = teacher.suffix ? ` ${teacher.suffix.toLocaleUpperCase()}` : "";
+
+  return `${lastName}${suffix}, ${firstName}`;
+}
+
 export function formatDateTime(value: string | null): string {
   if (!value) {
     return "-";
@@ -71,11 +90,12 @@ export function formatDesignationSummary(teacher: Teacher): string {
   return tags.length > 0 ? tags.join(" · ") : "None";
 }
 
-export function formatAdvisorySectionSummary(teacher: Teacher): string {
-  if (!teacher.designation?.advisorySection) {
+export function formatAdvisorySectionSummary(
+  section: AdvisorySectionSummary | null | undefined,
+): string {
+  if (!section) {
     return "-";
   }
 
-  const section = teacher.designation.advisorySection;
-  return `${section.gradeLevelName ?? "Grade"} - ${section.name}`;
+  return `${section.gradeLevelName ?? "Grade"} — ${section.name}`;
 }

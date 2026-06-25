@@ -203,7 +203,12 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   ],
   PENDING_CONFIRMATION: ["READY_FOR_SECTIONING", "WITHDRAWN"],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
-  FAILED_ASSESSMENT: ["SUBMITTED_BEEF", "UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  FAILED_ASSESSMENT: [
+    "SUBMITTED_BEEF",
+    "UNDER_REVIEW",
+    "WITHDRAWN",
+    "REJECTED",
+  ],
   ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "DROPPED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
@@ -344,9 +349,9 @@ export const DEPED_TEACHER_DEPARTMENT_OPTIONS = [
   { value: "ENG", label: "English" },
   { value: "FIL", label: "Filipino" },
   { value: "AP", label: "Araling Panlipunan" },
-  { value: "ESP", label: "Edukasyon sa Pagpapakatao" },
+  { value: "ESP", label: "ESP" },
   { value: "MAPEH", label: "MAPEH" },
-  { value: "TLE", label: "Technology and Livelihood Education" },
+  { value: "TLE", label: "TLE" },
 ] as const;
 
 export const DEPED_TEACHER_SUBJECT_VALUES = [
@@ -748,24 +753,53 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
   { value: "SCHOOL PRINCIPAL IV", label: "School Principal IV" },
 ] as const;
 
-export const ADMIN_STAFF_POOL = ['ADMINISTRATIVE OFFICER II', 'ADMINISTRATIVE ASSISTANT II', 'ADMINISTRATIVE ASSISTANT III', 'REGISTRAR I'] as const;
-export const TEACHING_POOL = ['TEACHER I', 'TEACHER II', 'TEACHER III', 'MASTER TEACHER I', 'MASTER TEACHER II', 'MASTER TEACHER III', 'MASTER TEACHER IV', 'SPECIAL SCIENCE TEACHER I', 'HEAD TEACHER I', 'HEAD TEACHER II', 'HEAD TEACHER III', 'HEAD TEACHER IV', 'HEAD TEACHER V', 'HEAD TEACHER VI'] as const;
-export const EXECUTIVE_POOL = ['PRINCIPAL I', 'PRINCIPAL II', 'PRINCIPAL III', 'PRINCIPAL IV', 'HEAD TEACHER III', 'HEAD TEACHER IV', 'HEAD TEACHER V', 'HEAD TEACHER VI'] as const;
-export const MRF_POOL = ['MRF STAFF'] as const;
+export const ADMIN_STAFF_POOL = [
+  "ADMINISTRATIVE OFFICER II",
+  "ADMINISTRATIVE ASSISTANT II",
+  "ADMINISTRATIVE ASSISTANT III",
+  "REGISTRAR I",
+] as const;
+export const TEACHING_POOL = [
+  "TEACHER I",
+  "TEACHER II",
+  "TEACHER III",
+  "MASTER TEACHER I",
+  "MASTER TEACHER II",
+  "MASTER TEACHER III",
+  "MASTER TEACHER IV",
+  "SPECIAL SCIENCE TEACHER I",
+  "HEAD TEACHER I",
+  "HEAD TEACHER II",
+  "HEAD TEACHER III",
+  "HEAD TEACHER IV",
+  "HEAD TEACHER V",
+  "HEAD TEACHER VI",
+] as const;
+export const EXECUTIVE_POOL = [
+  "PRINCIPAL I",
+  "PRINCIPAL II",
+  "PRINCIPAL III",
+  "PRINCIPAL IV",
+  "HEAD TEACHER III",
+  "HEAD TEACHER IV",
+  "HEAD TEACHER V",
+  "HEAD TEACHER VI",
+] as const;
+export const MRF_POOL = ["MRF STAFF"] as const;
 
 export function getDesignationPool(roles: string[]): string[] {
   const pool = new Set<string>();
   if (roles.includes("SYSTEM_ADMIN")) {
-    EXECUTIVE_POOL.forEach(r => pool.add(r));
+    EXECUTIVE_POOL.forEach((r) => pool.add(r));
   }
   if (roles.includes("HEAD_REGISTRAR")) {
-    ADMIN_STAFF_POOL.forEach(r => pool.add(r));
+    ADMIN_STAFF_POOL.forEach((r) => pool.add(r));
   }
   if (roles.includes("TEACHER") || roles.includes("CLASS_ADVISER")) {
-    TEACHING_POOL.forEach(r => pool.add(r));
+    TEACHING_POOL.forEach((r) => pool.add(r));
   }
   if (roles.includes("MRF")) {
-    MRF_POOL.forEach(r => pool.add(r));
+    MRF_POOL.forEach((r) => pool.add(r));
   }
   return Array.from(pool).sort((a, b) => a.localeCompare(b));
 }

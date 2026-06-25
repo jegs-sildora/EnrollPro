@@ -11,7 +11,57 @@ import {
 import type {
   Teacher,
 } from "../types";
-import { formatAdvisorySectionSummary } from "../utils";
+import { formatAdvisorySectionSummary, formatDisplayName } from "../utils";
+
+const serviceStatusLabels: Record<Teacher["serviceStatus"], string> = {
+  ACTIVE: "Active",
+  ON_LEAVE: "On Leave",
+  TRANSFERRED: "Transferred",
+  RETIRED_RESIGNED: "Retired/Resigned",
+  DROPPED_FROM_ROLLS: "Dropped from Rolls",
+};
+
+function formatServiceStatus(teacher: Teacher): string {
+  if (teacher.serviceStatus && teacher.serviceStatus !== "ACTIVE") {
+    return serviceStatusLabels[teacher.serviceStatus];
+  }
+
+  return teacher.isActive ? "Active" : "Inactive";
+}
+
+function formatJobTitle(value: string): string {
+  const romanNumerals = new Set(["I", "II", "III", "IV", "V", "VI"]);
+
+  return value
+    .toLocaleLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => {
+      const upperWord = word.toLocaleUpperCase();
+      if (romanNumerals.has(upperWord)) {
+        return upperWord;
+      }
+
+      if (upperWord === "MRF") {
+        return upperWord;
+      }
+
+      return `${word.charAt(0).toLocaleUpperCase()}${word.slice(1)}`;
+    })
+    .join(" ");
+}
+
+function getJobTitle(teacher: Teacher): string {
+  if (teacher.plantillaPosition) {
+    return formatJobTitle(teacher.plantillaPosition);
+  }
+
+  const roles = teacher.userAccount?.roles || [];
+  if (roles.includes("SYSTEM_ADMIN")) return "School Head";
+  if (roles.includes("HEAD_REGISTRAR")) return "Registrar";
+  if (roles.includes("MRF")) return "MRF Staff";
+  return "Subject Teacher";
+}
 
 interface TeacherDirectoryCardProps {
   showSkeleton: boolean;
@@ -50,7 +100,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           className={cn(
             "min-w-0 transition-opacity duration-200 flex flex-col flex-1 min-h-0 opacity-100",
           )}>
-          <div className="flex flex-col gap-3 mt-4 overflow-y-auto p-4">
+          <div className="flex flex-col gap-1.5 overflow-y-auto p-4">
             {(showSkeleton) ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -72,15 +122,17 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               ))
             ) : paginatedTeachers.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-base leading-tight text-foreground italic font-bold">
-                No teachers found.
+                No faculty or staff records found.
               </div>
             ) : (
               paginatedTeachers.map((teacher) => (
-                  <div
+                <button
+                  type="button"
                   key={teacher.id}
                   onClick={() => onOpenDetail(teacher)}
+                  aria-label={`View or edit profile for ${teacher.lastName}, ${teacher.firstName}`}
                   className={cn(
-                    "group flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer border-l-4",
+                    "group grid w-full grid-cols-1 gap-4 p-4 bg-white border border-gray-200 rounded-4xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-pointer border-l-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 xl:grid-cols-[minmax(260px,1fr)_minmax(420px,1.15fr)_auto] xl:items-center",
                     teacher.isActive ? "border-l-green-500" : "border-l-gray-300"
                   )}>
                   <div className="flex items-start gap-4">
@@ -88,33 +140,29 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
                     </div>
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-black text-foreground group-hover:text-primary transition-colors uppercase leading-none">
-                          {teacher.lastName}, {teacher.firstName}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-black text-foreground group-hover:text-slate-700 transition-colors leading-tight">
+                          {formatDisplayName(teacher)}
                         </h3>
-                        {!teacher.isActive && (
-                           <Badge variant="secondary" className="text-[10px] py-0 h-5">INACTIVE</Badge>
+                        {formatServiceStatus(teacher) !== "Active" && (
+                          <Badge variant="secondary" className="text-[10px] py-0 h-5">
+                            {formatServiceStatus(teacher)}
+                          </Badge>
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-foreground/70">
-                        <span className="bg-muted px-2 py-0.5 rounded text-xs uppercase tracking-wider text-foreground/80">ID: {teacher.employeeId || "N/A"}</span>
+                        <span className="bg-muted px-2 py-0.5 rounded text-xs uppercase tracking-wider text-foreground/80">
+                          {teacher.employeeId ? `Employee ID: ${teacher.employeeId}` : "Employee ID not set"}
+                        </span>
                         <span className="hidden sm:inline">•</span>
-                        <span className="text-primary uppercase tracking-wide text-xs">
-                          {teacher.plantillaPosition || 
-                            (() => {
-                              const roles = teacher.userAccount?.roles || [];
-                              if (roles.includes("SYSTEM_ADMIN")) return "SCHOOL HEAD";
-                              if (roles.includes("HEAD_REGISTRAR")) return "REGISTRAR";
-                              if (roles.includes("MRF")) return "MRF STAFF";
-                              return "SUBJECT TEACHER";
-                            })()
-                          }
+                        <span className="text-slate-600 tracking-wide text-xs font-black">
+                          {getJobTitle(teacher)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-start md:justify-end gap-2 mt-4 md:mt-0 ml-16 md:ml-0 max-w-full md:max-w-[50%]">
+                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(180px,0.7fr)_minmax(280px,1.3fr)]">
                     {teacher.department ? (
                        <Badge variant="outline" className="font-bold truncate max-w-[200px]">
                          <BookOpen className="w-3.5 h-3.5 mr-1.5 shrink-0" />
@@ -125,20 +173,25 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     ) : null}
 
                     {(() => {
-                        const advisory = formatAdvisorySectionSummary(teacher);
+                        const advisory = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
                         if (advisory !== "-") {
                           return (
-                            <Badge variant="secondary" className="font-bold truncate max-w-[200px]">
-                              <Users className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                              <span className="truncate">Adviser: {advisory}</span>
-                            </Badge>
+                            <div className="flex min-w-[280px] items-start gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-bold leading-snug text-slate-700">
+                              <Users className="mt-0.5 w-3.5 h-3.5 shrink-0 text-slate-500" />
+                              <span className="whitespace-normal break-words">
+                                Homeroom Adviser: {advisory}
+                              </span>
+                            </div>
                           );
                         }
                         return null;
                     })()}
 
                   </div>
-                </div>
+                  <span className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-black text-slate-700 transition-colors group-hover:bg-slate-100 group-hover:text-slate-900">
+                    Open Profile
+                  </span>
+                </button>
               ))
             )}
           </div>
@@ -150,7 +203,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               limit={limit}
               onPageChange={onPageChange}
               onLimitChange={onLimitChange}
-              itemName="Personnel"
+              itemName="Faculty/Staff"
             />
           </div>
         </div>

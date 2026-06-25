@@ -1,0 +1,215 @@
+{
+  "main": {
+    "id": "740d8b89579cab7d",
+    "type": "split",
+    "children": [
+      {
+        "id": "f79e587260ed86b2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "94cbe1ad747a5692",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "ceb9e3e48f2a2b23",
+    "type": "split",
+    "children": [
+      {
+        "id": "fef6578fd1a49098",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2feb96de29721552",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "7da54985fde65b32",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "3077b0071de96c4e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "4486401fa3ddf963",
+    "type": "split",
+    "children": [
+      {
+        "id": "6272b498559d4ef4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4739e3c82fd0539d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "4d735c492d0a2d65",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "2a319c43cd1b1d1c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "4fada2b6bdf2b3aa",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "13df9e8efccdd877",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "2feb96de29721552",
+  "lastOpenFiles": [
+    "EnrollPro's Second Brain/Reports/Refactoring Recommendations.md",
+    "EnrollPro's Second Brain/Reports/Executive Summary.md",
+    "EnrollPro's Second Brain/Reports/Full Audit Report.md",
+    "EnrollPro's Second Brain/Reports",
+    "EnrollPro's Second Brain/UI UX Audit/Design Findings.md",
+    "EnrollPro's Second Brain/UI UX Audit/DepEd Compliance.md",
+    "EnrollPro's Second Brain/UI UX Audit/Accessibility Review.md",
+    "EnrollPro's Second Brain/UI UX Audit",
+    "EnrollPro's Second Brain/Database/Relationships.md",
+    "EnrollPro's Second Brain/Database/Tables.md",
+    "EnrollPro's Second Brain/Database/ERD.md",
+    "EnrollPro's Second Brain/Database",
+    "EnrollPro's Second Brain/Codebase Analysis/Utilities.md",
+    "EnrollPro's Second Brain/Codebase Analysis/Services.md",
+    "EnrollPro's Second Brain/Codebase Analysis/Routes.md",
+    "EnrollPro's Second Brain/Codebase Analysis/Directory Audit.md",
+    "EnrollPro's Second Brain/Codebase Analysis/Dependencies.md",
+    "EnrollPro's Second Brain/Codebase Analysis/Components.md",
+    "EnrollPro's Second Brain/Codebase Analysis",
+    "EnrollPro's Second Brain/Business Processes/School Operations.md",
+    "EnrollPro's Second Brain/Business Processes/User Roles.md",
+    "EnrollPro's Second Brain/Business Processes/Enrollment Workflow.md",
+    "EnrollPro's Second Brain/Business Processes",
+    "EnrollPro's Second Brain/Architecture/System Overview.md",
+    "EnrollPro's Second Brain/Architecture/Frontend Architecture.md",
+    "EnrollPro's Second Brain/Architecture/Security Architecture.md",
+    "EnrollPro's Second Brain/Architecture/Database Architecture.md",
+    "EnrollPro's Second Brain/Architecture/Backend Architecture.md",
+    "EnrollPro's Second Brain/Architecture/API Architecture.md",
+    "EnrollPro's Second Brain/Architecture",
+    "EnrollPro's Second Brain/AI-Memory/Decision Log.md",
+    "EnrollPro's Second Brain/AI-Memory/Technical Debt.md",
+    "EnrollPro's Second Brain/AI-Memory"
+  ]
+}

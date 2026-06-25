@@ -22,22 +22,17 @@ import {
   CheckCircle2,
   CalendarClock,
   Wrench,
+  Menu,
 } from "lucide-react";
 
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarSeparator,
-  SidebarTrigger,
-} from "@/shared/ui/sidebar";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/shared/ui/navigation-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +41,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Separator } from "@/shared/ui/separator";
 import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -65,6 +59,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/shared/ui/sheet";
 
 const useWindowSize = () => {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -96,6 +97,26 @@ interface SchoolYearItem {
   yearLabel: string;
   status: string;
   isActive: boolean;
+}
+
+interface NavBadge {
+  label: string;
+  className: string;
+}
+
+interface NavLinkItem {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  subtext?: string;
+  badge?: NavBadge;
+  urgent?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  badge?: NavBadge;
+  items: NavLinkItem[];
 }
 
 function UserNav() {
@@ -370,370 +391,523 @@ function SYSwitcher() {
   );
 }
 
-const NavDivider = memo(function NavDivider({ label, badge }: { label: string; badge?: React.ReactNode }) {
+function renderNavBadge(badge: NavBadge | undefined) {
+  if (!badge) {
+    return null;
+  }
+
   return (
-    <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-300 ease-in-out group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
-      <div className="flex items-center gap-2">
-        <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
-          {label}
+    <span
+      className={cn(
+        "inline-flex shrink-0 rounded px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wide",
+        badge.className,
+      )}>
+      {badge.label}
+    </span>
+  );
+}
+
+function isNavItemActive(to: string, pathname: string, search: string): boolean {
+  const [targetPath, targetQuery] = to.split("?");
+
+  if (targetQuery) {
+    const targetParams = new URLSearchParams(targetQuery);
+    const currentParams = new URLSearchParams(search);
+    const targetTab = targetParams.get("tab");
+
+    if (targetTab) {
+      return pathname === targetPath && currentParams.get("tab") === targetTab;
+    }
+
+    return `${pathname}${search}` === to;
+  }
+
+  let isActive = pathname === targetPath;
+
+  if (!isActive && targetPath !== "/") {
+    if (targetPath === "/sections" && pathname.startsWith("/sections")) {
+      isActive = false;
+    } else if (
+      targetPath === "/monitoring/enrollment" &&
+      pathname.startsWith("/monitoring/enrollment/walk-in")
+    ) {
+      isActive = false;
+    } else if (pathname.startsWith(`${targetPath}/`)) {
+      isActive = true;
+    }
+  }
+
+  if (targetPath === "/sections" && pathname.startsWith("/sections/view-roster")) {
+    isActive = true;
+  }
+
+  if (targetPath === "/monitoring/enrollment" && pathname.startsWith("/eosy")) {
+    isActive = false;
+  }
+
+  return isActive;
+}
+
+function getNavigationGroups({
+  isAdmin,
+  isRegistrar,
+  isTeacher,
+  systemPhase,
+  isEosyArchivedState,
+}: {
+  isAdmin: boolean;
+  isRegistrar: boolean;
+  isTeacher: boolean;
+  systemPhase: string | null | undefined;
+  isEosyArchivedState: boolean;
+}): NavGroup[] {
+  const activeBadge: NavBadge = {
+    label: "ACTIVE",
+    className: "bg-emerald-500 text-white",
+  };
+  const classesOngoingBadge: NavBadge = {
+    label: "CLASSES ONGOING",
+    className: "bg-amber-500 text-white",
+  };
+
+  const officialEnrollmentBadge =
+    systemPhase === "OFFICIAL_ENROLLMENT"
+      ? activeBadge
+      : systemPhase === "CLASSES_ONGOING"
+        ? classesOngoingBadge
+        : undefined;
+  const closingOperationsBadge = systemPhase === "EOSY_CLOSING" ? activeBadge : undefined;
+  const groups: NavGroup[] = [];
+
+  if (isRegistrar || isAdmin) {
+    const enrollmentItems: NavLinkItem[] = [
+      {
+        to: "/dashboard",
+        icon: LayoutDashboard,
+        label: "Master Dashboard",
+      },
+    ];
+
+    if (
+      systemPhase === "PRE_REGISTRATION" ||
+      systemPhase === "OFFICIAL_ENROLLMENT" ||
+      systemPhase === "BOSY_ENROLLMENT" ||
+      !systemPhase
+    ) {
+      enrollmentItems.push(
+        {
+          to: "/continuing-learners",
+          icon: UserPlus,
+          label: "Continuing Learners",
+        },
+        {
+          to: "/monitoring/enrollment",
+          icon: Calendar,
+          label: "Sectioning & SF1 Prep",
+        },
+      );
+    }
+
+    if (systemPhase === "CLASSES_ONGOING") {
+      enrollmentItems.push(
+        {
+          to: "/monitoring/enrollment/walk-in",
+          icon: UserPlus,
+          label: "Late Enrollee Form",
+        },
+        {
+          to: "/sections",
+          icon: List,
+          label: "Class Sections (SF1)",
+        },
+      );
+    }
+
+    if (systemPhase === "EOSY_CLOSING") {
+      enrollmentItems.push(
+        {
+          to: "/sections",
+          icon: List,
+          label: "Class Sections (SF1)",
+        },
+        {
+          to: "/eosy",
+          icon: ArrowUpRightSquare,
+          label: "EOSY Grade Finalization",
+          urgent: true,
+        },
+      );
+    }
+
+    groups.push({
+      label: "Enrollment & Sectioning",
+      badge: !isEosyArchivedState
+        ? systemPhase === "EOSY_CLOSING"
+          ? closingOperationsBadge
+          : officialEnrollmentBadge
+        : undefined,
+      items: enrollmentItems,
+    });
+
+    groups.push({
+      label: "School Records",
+      items: [
+        {
+          to: "/students",
+          icon: Users,
+          label: "Learner Registry",
+        },
+        ...(isAdmin
+          ? [
+              {
+                to: "/teachers",
+                icon: Presentation,
+                label: "Faculty & Staff",
+              },
+            ]
+          : []),
+        {
+          to: "/sections",
+          icon: List,
+          label: "Class Sections (SF1)",
+        },
+      ],
+    });
+  }
+
+  if (isAdmin) {
+    groups.push(
+      {
+        label: "Integrated Systems",
+        items: [
+          {
+            to: "/admin/integration?tab=aims",
+            icon: Database,
+            label: "AIMS",
+            subtext: "Academic Info",
+          },
+          {
+            to: "/admin/integration?tab=smart",
+            icon: CheckCircle2,
+            label: "SMART",
+            subtext: "Simplified Master Records and Tracking",
+          },
+          {
+            to: "/admin/integration?tab=atlas",
+            icon: CalendarClock,
+            label: "ATLAS",
+            subtext: "Automated Teaching and Learning Assessment System",
+          },
+          {
+            to: "/admin/integration?tab=mrf",
+            icon: Wrench,
+            label: "MRF",
+            subtext: "Maintenance Requests",
+          },
+        ],
+      },
+      {
+        label: "System Administration",
+        badge: isEosyArchivedState ? activeBadge : undefined,
+        items: [
+          {
+            to: "/admin/users",
+            icon: UserCog,
+            label: "Account Access",
+          },
+          {
+            to: "/audit-logs",
+            icon: History,
+            label: "Activity Logs",
+          },
+          {
+            to: "/settings",
+            icon: Settings,
+            label: "System Configuration",
+          },
+        ],
+      },
+    );
+  }
+
+  if (isTeacher) {
+    groups.push({
+      label: "Teacher Workspace",
+      items: [
+        {
+          to: "/dashboard",
+          icon: LayoutDashboard,
+          label: "Dashboard",
+        },
+        {
+          to: "/teacher/eosy",
+          icon: ArrowUpRightSquare,
+          label: "EOSY Updating",
+        },
+        {
+          to: "/teacher/advisory",
+          icon: Users,
+          label: "My Advisory Class",
+        },
+        {
+          to: "/students",
+          icon: BookOpen,
+          label: "Learner Directory",
+        },
+      ],
+    });
+  }
+
+  return groups.filter((group) => group.items.length > 0);
+}
+
+function NavBrand({
+  schoolName,
+  logoUrl,
+}: {
+  schoolName: string | null | undefined;
+  logoUrl: string | null | undefined;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      {logoUrl ? (
+        <div className="flex aspect-square size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1">
+          <img
+            src={`${API_BASE}${logoUrl}`}
+            alt="School logo"
+            className="size-full object-contain"
+          />
+        </div>
+      ) : (
+        <div className="flex aspect-square size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <School className="size-5 text-primary" />
+        </div>
+      )}
+      <div className="grid min-w-0 text-left leading-tight">
+        {schoolName ? (
+          <span className="truncate text-sm font-black uppercase leading-[1.1] text-primary sm:text-base">
+            {schoolName}
+          </span>
+        ) : (
+          <Skeleton className="my-0.5 h-4 w-36" />
+        )}
+        <span className="truncate text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          School Records Workspace
         </span>
-        {badge}
       </div>
     </div>
   );
-});
+}
 
-const NavItem = memo(function NavItem({
-  to,
-  icon: Icon,
-  label,
-  subtext,
-  pathname,
+function NavLinkContent({
+  item,
+  isActive,
 }: {
-  to: string;
-  icon: React.ElementType;
-  label: ReactNode;
-  subtext?: string;
+  item: NavLinkItem;
+  isActive: boolean;
+}) {
+  const Icon = item.icon;
+
+  return (
+    <>
+      <Icon className={cn("size-4 shrink-0", isActive ? "text-primary" : "text-slate-500")} />
+      <span className="flex min-w-0 flex-1 flex-col items-start">
+        <span className="flex w-full min-w-0 items-center gap-2">
+          <span className="truncate font-black leading-tight">{item.label}</span>
+          {item.urgent ? <span className="size-2 shrink-0 rounded-full bg-rose-500" /> : null}
+          {renderNavBadge(item.badge)}
+        </span>
+        {item.subtext ? (
+          <span className="line-clamp-2 text-left text-[11px] font-semibold leading-tight text-muted-foreground">
+            {item.subtext}
+          </span>
+        ) : null}
+      </span>
+    </>
+  );
+}
+
+const DesktopTopNavigation = memo(function DesktopTopNavigation({
+  groups,
+  pathname,
+  search,
+}: {
+  groups: NavGroup[];
   pathname: string;
+  search: string;
 }) {
   const { selectedAccentHsl, colorScheme } = useSettingsStore();
   const accentHsl =
     selectedAccentHsl ??
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
 
-  let isActive = pathname === to;
-
-  if (!isActive && to !== "/") {
-    if (to === "/sections" && pathname.startsWith("/sections")) {
-      isActive = false;
-    } else if (to === "/monitoring/enrollment" && pathname.startsWith("/monitoring/enrollment/walk-in")) {
-      isActive = false;
-    } else if (pathname.startsWith(to + "/")) {
-      isActive = true;
-    }
-  }
-
-  if (
-    to === "/sections" &&
-    pathname.startsWith("/sections/view-roster")
-  ) {
-    isActive = true;
-  }
-
-  // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
-  if (
-    to === "/monitoring/enrollment" &&
-    pathname.startsWith("/eosy")
-  ) {
-    isActive = false;
-  }
-
   return (
-    <SidebarMenuItem className="relative">
-      {isActive && (
-        <span
-          className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full z-20"
-          style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
-        />
-      )}
-      <SidebarMenuButton
-        asChild
-        isActive={isActive}
-        tooltip={typeof label === "string" ? label : undefined}>
-        <Link to={to}>
-          <Icon className="size-4 shrink-0" />
-          <div className="flex flex-col items-start justify-center overflow-hidden w-full">
-            <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-[9px] font-normal opacity-70 truncate w-full text-left leading-tight">{subtext}</span>}
-          </div>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
+    <NavigationMenu
+      viewport={false}
+      className="hidden min-w-0 flex-1 justify-start xl:flex">
+      <NavigationMenuList className="justify-start gap-1">
+        {groups.map((group) => {
+          const hasActiveItem = group.items.some((item) => isNavItemActive(item.to, pathname, search));
+
+          return (
+            <NavigationMenuItem key={group.label}>
+              <NavigationMenuTrigger
+                className={cn(
+                  "gap-1.5 rounded-md px-3 text-sm font-black text-slate-700",
+                  hasActiveItem && "bg-primary/10 text-primary",
+                )}
+                style={
+                  hasActiveItem && accentHsl
+                    ? { color: `hsl(${accentHsl})` }
+                    : undefined
+                }>
+                <span>{group.label}</span>
+                {renderNavBadge(group.badge)}
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="min-w-80 p-2">
+                <div className="grid gap-1">
+                  {group.items.map((item) => {
+                    const isActive = isNavItemActive(item.to, pathname, search);
+
+                    return (
+                      <NavigationMenuLink
+                        key={item.to}
+                        asChild
+                        active={isActive}
+                        className={cn(
+                          "min-h-11 rounded-md px-3 py-2",
+                          isActive && "bg-primary/10 text-primary",
+                        )}>
+                        <Link to={item.to}>
+                          <NavLinkContent
+                            item={item}
+                            isActive={isActive}
+                          />
+                        </Link>
+                      </NavigationMenuLink>
+                    );
+                  })}
+                </div>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          );
+        })}
+      </NavigationMenuList>
+    </NavigationMenu>
   );
 });
 
-function AppSidebar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { clearAuth } = useAuthStore();
-  const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
-  const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
-  let officialEnrollmentBadge;
-  if (systemPhase === "OFFICIAL_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
-  } else if (systemPhase === "CLASSES_ONGOING") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide">CLASSES ONGOING</span>;
-  }
+function MobileNavLinks({
+  groups,
+  pathname,
+  search,
+  onNavigate,
+}: {
+  groups: NavGroup[];
+  pathname: string;
+  search: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <div className="space-y-5">
+      {groups.map((group) => (
+        <section
+          key={group.label}
+          className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <h3 className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">
+              {group.label}
+            </h3>
+            {renderNavBadge(group.badge)}
+          </div>
+          <div className="grid gap-1">
+            {group.items.map((item) => {
+              const isActive = isNavItemActive(item.to, pathname, search);
 
-  let closingOperationsBadge;
-  if (systemPhase === "EOSY_CLOSING") {
-    closingOperationsBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
-  }
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
-  const isHeadRegistrar = useAuthStore(
-    (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex min-h-12 items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "border-primary/20 bg-primary/10 text-primary"
+                      : "text-slate-700 hover:border-slate-200 hover:bg-slate-50",
+                  )}>
+                  <NavLinkContent
+                    item={item}
+                    isActive={isActive}
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
   );
-  const isRegistrar =
-    useAuthStore((s) => s.user?.roles?.includes("REGISTRAR")) || isHeadRegistrar;
-  const isTeacher = useAuthStore(
-    (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
-  );
-  const pathname = location.pathname;
+}
 
-  const handleLogout = async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      // Ignore network/logout failures and clear local session regardless.
-    }
-    clearAuth();
-    navigate("/staff/login");
-  };
+function MobileNavigationDrawer({
+  groups,
+  pathname,
+  search,
+  schoolName,
+  logoUrl,
+}: {
+  groups: NavGroup[];
+  pathname: string;
+  search: string;
+  schoolName: string | null | undefined;
+  logoUrl: string | null | undefined;
+}) {
+  const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <Sidebar collapsible="icon">
-        {/* ── Header: School Identity ── */}
-        <SidebarHeader className="h-20 justify-center px-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div className="flex items-center gap-3">
-                {logoUrl ? (
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-white p-1">
-                    <img
-                      src={`${API_BASE}${logoUrl}`}
-                      alt="Logo"
-                      className="size-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                    <School className="size-5 text-primary" />
-                  </div>
-                )}
-                <div className="grid flex-1 text-left text-base leading-tight group-data-[collapsible=icon]:hidden">
-                  {schoolName ? (
-                    <span className="font-black leading-[1.1] uppercase  break-words text-primary">
-                      {schoolName}
-                    </span>
-                  ) : (
-                    <Skeleton className="h-4 w-28 my-0.5" />
-                  )}
-                </div>
-              </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-
-        <SidebarSeparator />
-
-        {/* ── Navigation ── */}
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {/* Items 1–7: shared between registrar role and SYSTEM_ADMIN */}
-                {(isRegistrar || isAdmin) && (
-                  <>
-                    <NavDivider
-                      label="ENROLLMENT & SECTIONING"
-                      badge={
-                        !isEosyArchivedState
-                          ? (systemPhase === "EOSY_CLOSING" ? closingOperationsBadge : officialEnrollmentBadge)
-                          : undefined
-                      }
-                    />
-                    <NavItem
-                      to="/dashboard"
-                      icon={LayoutDashboard}
-                      label="Master Dashboard"
-                      pathname={pathname}
-                    />
-
-                    {(systemPhase === "PRE_REGISTRATION" || systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT" || !systemPhase) && (
-                      <>
-                        <NavItem
-                          to="/continuing-learners"
-                          icon={UserPlus}
-                          label="Continuing Learners"
-                          pathname={pathname}
-                        />
-                        <NavItem
-                          to="/monitoring/enrollment"
-                          icon={Calendar}
-                          label="Sectioning & SF1 Prep"
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    {systemPhase === "CLASSES_ONGOING" && (
-                      <>
-                        <NavItem
-                          to="/monitoring/enrollment/walk-in"
-                          icon={UserPlus}
-                          label="Late Enrollee Form"
-                          pathname={pathname}
-                        />
-                        <NavItem
-                          to="/sections"
-                          icon={List}
-                          label="Class Sections (SF1)"
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    {systemPhase === "EOSY_CLOSING" && (
-                      <>
-                        <NavItem
-                          to="/sections"
-                          icon={List}
-                          label="Class Sections (SF1)"
-                          pathname={pathname}
-                        />
-                        <NavItem
-                          to="/eosy"
-                          icon={ArrowUpRightSquare}
-                          label={
-                            <div className="flex items-center justify-between w-full">
-                              <span>EOSY Grade Finalization</span>
-                              <span className="size-2 bg-rose-500 rounded-full animate-pulse ml-2 shrink-0" />
-                            </div>
-                          }
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    <NavDivider label="School Records" />
-                    <NavItem
-                      to="/students"
-                      icon={Users}
-                      label="Learner Registry"
-                      pathname={pathname}
-                    />
-                    {isAdmin && (
-                      <NavItem
-                        to="/teachers"
-                        icon={Presentation}
-                        label="Faculty & Staff"
-                        pathname={pathname}
-                      />
-                    )}
-                    <NavItem
-                      to="/sections"
-                      icon={List}
-                      label="Class Sections (SF1)"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
-
-                {isAdmin && (
-                  <>
-                    <NavDivider label="Integrated Systems" />
-                    <NavItem
-                      to="/admin/integration?tab=aims"
-                      icon={Database}
-                      label="AIMS"
-                      subtext="Academic Info"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=smart"
-                      icon={CheckCircle2}
-                      label="SMART"
-                      subtext="Simplified Master Records and Tracking"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=atlas"
-                      icon={CalendarClock}
-                      label="ATLAS"
-                      subtext="Automated Teaching and Learning Assessment System"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=mrf"
-                      icon={Wrench}
-                      label="MRF"
-                      subtext="Maintenance Requests"
-                      pathname={pathname}
-                    />
-
-                    <NavDivider label="System Administration" badge={isEosyArchivedState ? activeBadge : undefined} />
-                    <NavItem
-                      to="/admin/users"
-                      icon={UserCog}
-                      label="Account Access"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/audit-logs"
-                      icon={History}
-                      label="Activity Logs"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/settings"
-                      icon={Settings}
-                      label="System Configuration"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
-
-                {isTeacher && (
-                  <>
-                    <NavDivider label="Operations" />
-                    <NavItem
-                      to="/dashboard"
-                      icon={LayoutDashboard}
-                      label="Dashboard"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/teacher/eosy"
-                      icon={ArrowUpRightSquare}
-                      label="EOSY Updating"
-                      pathname={pathname}
-                    />
-
-                    <NavDivider label="Management" />
-                    <NavItem
-                      to="/teacher/advisory"
-                      icon={Users}
-                      label="My Advisory Class"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/students"
-                      icon={BookOpen}
-                      label="Learner Directory"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
-
-      <ConfirmationModal
-        open={showLogoutConfirm}
-        onOpenChange={setShowLogoutConfirm}
-        title="Sign Out"
-        description="Are you sure you want to sign out of your account?"
-        confirmText="Sign Out"
-        onConfirm={handleLogout}
-        variant="primary"
-      />
-    </>
+    <Sheet
+      open={open}
+      onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="xl:hidden"
+        onClick={() => setOpen(true)}
+        aria-label="Open main navigation menu">
+        <Menu className="size-5" />
+      </Button>
+      <SheetContent
+        side="left"
+        className="flex w-[86vw] max-w-sm flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
+        <SheetHeader className="border-b border-border p-5 text-left">
+          <SheetTitle className="sr-only">Main Navigation</SheetTitle>
+          <SheetDescription className="sr-only">
+            Open school records, enrollment, and account areas.
+          </SheetDescription>
+          <NavBrand
+            schoolName={schoolName}
+            logoUrl={logoUrl}
+          />
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+          <MobileNavLinks
+            groups={groups}
+            pathname={pathname}
+            search={search}
+            onNavigate={() => setOpen(false)}
+          />
+        </div>
+        <div className="space-y-4 border-t border-border p-4">
+          <SYSwitcher />
+          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <span className="text-sm font-bold text-slate-700">Accessibility</span>
+            <AccessibilityMenu />
+          </div>
+          <UserNav />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -789,6 +963,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     activeSchoolYearId,
     viewingSchoolYearId,
     systemPhase,
+    systemStatus,
+    schoolName,
+    logoUrl,
   } = useSettingsStore();
   const { width } = useWindowSize();
   const accentHsl =
@@ -796,6 +973,20 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
   const navigate = useNavigate();
+  const userRoles = useAuthStore((s) => s.user?.roles);
+  const isAdmin = userRoles?.includes("SYSTEM_ADMIN") ?? false;
+  const isHeadRegistrar = userRoles?.includes("HEAD_REGISTRAR") ?? false;
+  const isRegistrar = (userRoles?.includes("REGISTRAR") ?? false) || isHeadRegistrar;
+  const isTeacher =
+    (userRoles?.includes("TEACHER") ?? false) || (userRoles?.includes("MRF") ?? false);
+  const isEosyArchivedState = systemStatus === "ARCHIVED";
+  const navGroups = getNavigationGroups({
+    isAdmin,
+    isRegistrar,
+    isTeacher,
+    systemPhase,
+    isEosyArchivedState,
+  });
 
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
@@ -872,7 +1063,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   useAccessibility();
 
   return (
-    <SidebarProvider className="relative">
+    <div className="relative flex min-h-svh flex-col overflow-hidden bg-background">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden="true">
@@ -943,46 +1134,67 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           }}
         />
       </div>
-      <AppSidebar />
-      <SidebarInset style={{ backgroundColor: "transparent" }}>
-        <Toaster
-          position={toastPosition}
-          theme={toastTheme}
-          options={accentHsl ? { fill: `hsl(${accentHsl})` } : undefined}
+
+      <Toaster
+        position={toastPosition}
+        theme={toastTheme}
+        options={accentHsl ? { fill: `hsl(${accentHsl})` } : undefined}
+      />
+
+      <header
+        className={cn(
+          "sticky top-0 z-40 flex min-h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-background/85 px-3 py-2 backdrop-blur-md sm:px-4",
+          isHistoricalReadOnly ? "bg-muted/85" : "",
+        )}>
+        <MobileNavigationDrawer
+          groups={navGroups}
+          pathname={location.pathname}
+          search={location.search}
+          schoolName={schoolName}
+          logoUrl={logoUrl}
+        />
+        <div className="min-w-0 shrink xl:w-72">
+          <NavBrand
+            schoolName={schoolName}
+            logoUrl={logoUrl}
+          />
+        </div>
+        <DesktopTopNavigation
+          groups={navGroups}
+          pathname={location.pathname}
+          search={location.search}
         />
 
-        {/* Top bar */}
-        <header
-          className={cn(
-            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4 sticky top-0 z-40 backdrop-blur-md bg-background/80",
-            isHistoricalReadOnly ? "bg-muted/80" : "",
-          )}>
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 h-4!"
-          />
-          <div className="flex items-center gap-2">
-            {isHistoricalReadOnly ? (
-              <Badge
-                variant="outline"
-                className="uppercase text-foreground border-border">
-                Historical View
-              </Badge>
-            ) : null}
+        <div className="ml-auto hidden shrink-0 items-center gap-4 lg:flex">
+          {isHistoricalReadOnly ? (
+            <Badge
+              variant="outline"
+              className="uppercase text-foreground border-border">
+              Historical View
+            </Badge>
+          ) : null}
+
+          <SYSwitcher />
+
+          <div className="flex h-8 items-center gap-1 border-x px-3">
+            <AccessibilityMenu />
           </div>
 
-          <div className="ml-auto flex items-center gap-4">
-            <SYSwitcher />
+          <UserNav />
+        </div>
 
-            <div className="flex items-center gap-1 border-x px-3 h-8">
-              <AccessibilityMenu />
-            </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
+          {isHistoricalReadOnly ? (
+            <Badge
+              variant="outline"
+              className="uppercase text-foreground border-border">
+              Historical View
+            </Badge>
+          ) : null}
+        </div>
+      </header>
 
-            <UserNav />
-          </div>
-        </header>
-
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col">
         <HistoricalBanner
           onOpenCorrectionModal={() => setShowCorrectionModal(true)}
         />
@@ -991,11 +1203,10 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           onOpenChange={setShowCorrectionModal}
         />
 
-        {/* Page content */}
         <AnimatePresence mode="wait">
           <PageTransition
             routeKey={location.pathname}
-            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
+            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-4 scrollbar-thin sm:px-6">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />
             ) : (
@@ -1003,7 +1214,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             )}
           </PageTransition>
         </AnimatePresence>
-      </SidebarInset>
+      </main>
 
       <Dialog open={showBlockedModal} onOpenChange={(open) => { if (!open) handleConfirmRedirect(); }}>
         <DialogContent className="sm:max-w-[420px] text-center p-6 bg-white rounded-xl shadow-lg border border-border">
@@ -1038,6 +1249,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+    </div>
   );
 }

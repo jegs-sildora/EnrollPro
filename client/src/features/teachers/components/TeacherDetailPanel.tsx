@@ -40,7 +40,7 @@ import {
   cn,
 } from "@/shared/lib/utils";
 import type { Teacher } from "../types";
-import { formatTeacherName } from "../utils";
+import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import {
@@ -55,20 +55,39 @@ interface TeacherDetailPanelProps {
   onSaveSuccess?: () => void;
 }
 
+interface TeachingLoadItem {
+  subjectName: string;
+  subjectCode: string;
+  sectionName: string;
+  gradeLevel: string;
+}
+
+interface TeachingLoadResponse {
+  data?: TeachingLoadItem[];
+}
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 const formSchema = z
   .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    firstName: z.string().min(1, "Enter the first name."),
+    lastName: z.string().min(1, "Enter the last name."),
     middleName: z.string().optional().nullable(),
     suffix: z.string().optional().nullable(),
     sex: z.enum(["MALE", "FEMALE"]),
-    birthdate: z.string().min(1, "Date of birth is required").nullable(),
+    birthdate: z.string().min(1, "Select the date of birth.").nullable(),
 
     personnelType: z.enum(["TEACHING", "NON_TEACHING"]).nullable(),
     employeeId: z
       .string()
       .trim()
-      .regex(/^\d{7}$/, "Employee ID must be exactly 7 numeric digits")
+      .regex(/^\d{7}$/, "Enter the 7-digit DepEd Employee ID.")
       .nullable(),
     plantillaPosition: z.string(),
     department: z.string().optional().nullable(),
@@ -80,14 +99,14 @@ const formSchema = z
     contactNumber: z
       .string()
       .trim()
-      .regex(/^09\d{9}$/, "Contact number must be exactly 11 digits starting with 09")
+      .regex(/^09\d{9}$/, "Enter an 11-digit mobile number starting with 09.")
       .or(z.literal(""))
       .nullable(),
     email: z
       .string()
       .trim()
-      .min(1, "Email is required")
-      .email("Invalid email address")
+      .min(1, "Enter the DepEd email address.")
+      .email("Enter a valid email address.")
       .or(z.literal(""))
       .nullable(),
 
@@ -108,7 +127,7 @@ const formSchema = z
       if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "PRC License Number must be exactly 7 digits",
+          message: "Enter the 7-digit PRC License Number for teaching personnel.",
           path: ["prcLicenseNumber"],
         });
       }
@@ -116,7 +135,7 @@ const formSchema = z
       if (!data.functionalAssignment || data.functionalAssignment.trim().length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Functional Assignment is required for non-teaching personnel",
+          message: "Enter the office assignment for non-teaching staff.",
           path: ["functionalAssignment"],
         });
       }
@@ -124,6 +143,24 @@ const formSchema = z
   });
 
 type FormValues = z.infer<typeof formSchema>;
+type PersonnelType = FormValues["personnelType"];
+
+function toPersonnelType(value: string | null): PersonnelType {
+  return value === "TEACHING" || value === "NON_TEACHING" ? value : null;
+}
+
+function formatDateInput(value: string | null | undefined): string {
+  return value ? new Date(value).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+}
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (!error || typeof error !== "object") {
+    return fallback;
+  }
+
+  const apiError = error as ApiErrorResponse;
+  return apiError.response?.data?.message ?? fallback;
+}
 
 export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   teacher,
@@ -131,7 +168,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   onOpenChange,
   onSaveSuccess,
 }: TeacherDetailPanelProps) {
-  const [teachingLoad, setTeachingLoad] = useState<any[]>([]);
+  const [teachingLoad, setTeachingLoad] = useState<TeachingLoadItem[]>([]);
   const [loadLoading, setLoadLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -197,6 +234,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     if (teacher) {
       const isTeacherOrAdviser = teacher.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
       const isMRF = teacher.userAccount?.roles?.includes("MRF") ?? false;
+      const serviceMetadata = teacher as Teacher & {
+        serviceEffectiveDate?: string | null;
+        serviceRemarks?: string | null;
+      };
 
       reset({
         firstName: teacher.firstName || "",
@@ -205,7 +246,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         suffix: teacher.suffix || "",
         sex: teacher.sex === "MALE" ? "MALE" : "FEMALE",
         birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : null,
-        personnelType: (teacher.personnelType as any) || null,
+        personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
         plantillaPosition: isMRF ? "MRF STAFF" : (teacher.plantillaPosition || ""),
         department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
@@ -215,9 +256,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         roles: teacher.userAccount?.roles || [],
         contactNumber: teacher.contactNumber || "",
         email: teacher.email || "",
-        serviceStatus: (teacher.serviceStatus as any) || "ACTIVE",
-        serviceEffectiveDate: (teacher as any).serviceEffectiveDate ? new Date((teacher as any).serviceEffectiveDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-        serviceRemarks: (teacher as any).serviceRemarks || "",
+        serviceStatus: teacher.serviceStatus || "ACTIVE",
+        serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
+        serviceRemarks: serviceMetadata.serviceRemarks || "",
       });
     } else {
       reset({
@@ -272,9 +313,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         setLoadLoading(true);
         setLoadError(null);
         try {
-          const res = await api.get(`/integration/atlas/faculty/${teacher.id}/teaching-load`);
+          const res = await api.get<TeachingLoadResponse>(`/integration/atlas/faculty/${teacher.id}/teaching-load`);
           setTeachingLoad(res.data.data || []);
-        } catch (err: any) {
+        } catch {
           setLoadError("Integration Service Offline");
         } finally {
           setLoadLoading(false);
@@ -320,19 +361,19 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
       if (isAdding) {
         await api.post(`/teachers`, profilePayload);
-        sileo.success({ title: "Personnel Created", description: "The personnel record has been created successfully." });
+        sileo.success({ title: "Faculty/Staff Record Created", description: "The faculty or staff record has been saved." });
       } else {
         await api.patch(`/teachers/${teacher!.id}`, profilePayload);
-        sileo.success({ title: "Profile Updated", description: "The personnel's profile has been updated successfully." });
+        sileo.success({ title: "Profile Updated", description: "The faculty/staff profile has been saved." });
       }
 
       if (onSaveSuccess) onSaveSuccess();
       reset(data);
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       sileo.error({ 
-        title: isAdding ? "Creation Failed" : "Update Failed", 
-        description: err?.response?.data?.message || "An error occurred." 
+        title: isAdding ? "Could Not Add Faculty/Staff" : "Could Not Update Profile", 
+        description: getApiErrorMessage(err, "Please check the required fields and try again.") 
       });
     } finally {
       setIsSubmitting(false);
@@ -368,7 +409,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               <div className="space-y-0.5">
                 <SheetTitle className="text-2xl font-black text-white uppercase leading-none">
                   {isAdding 
-                    ? "New Personnel Profile" 
+                    ? "New Faculty/Staff Profile" 
                     : formatTeacherName({
                         ...teacher!,
                         firstName: formFirstName || teacher!.firstName,
@@ -378,7 +419,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </SheetTitle>
                 <SheetDescription className="text-white/80 font-bold uppercase text-base flex items-center gap-2">
                   <Fingerprint className="size-3" />
-                  {isAdding ? "Create new personnel record" : `Employee ID: ${teacher?.employeeId || "N/A"}`}
+                  {isAdding ? "Create a new faculty or staff record" : `Employee ID: ${teacher?.employeeId || "not set"}`}
                 </SheetDescription>
               </div>
             </div>
@@ -387,12 +428,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-6 bg-muted/10">
 
-              {/* Card 1: Basic Identity */}
+              {/* Card 1: Personal Information */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-primary" />
-                    1. Basic Identity
+                    1. Personal Information
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4 space-y-4">
@@ -543,18 +584,18 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </div>
               </div>
 
-              {/* Card 2: DepEd Professional Data */}
+              {/* Card 2: Employment Details */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-primary" />
-                    2. DepEd Professional Data
+                    2. Employment Details
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4 space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-base font-black uppercase text-foreground">Personnel Type *</Label>
+                      <Label className="text-base font-black uppercase text-foreground">Staff Type *</Label>
                       <Controller
                         name="personnelType"
                         control={control}
@@ -564,8 +605,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="TEACHING">Teaching</SelectItem>
-                              <SelectItem value="NON_TEACHING">Non-Teaching</SelectItem>
+                              <SelectItem value="TEACHING">Teaching Personnel</SelectItem>
+                              <SelectItem value="NON_TEACHING">Non-Teaching Staff</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
@@ -609,6 +650,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <div className="grid gap-4 sm:grid-cols-2 mt-4">
                     <div className="space-y-1.5">
                       <Label className="text-base font-black uppercase text-foreground">DepEd Position (Plantilla)</Label>
+                      <p className="text-xs font-bold leading-tight text-foreground/60">
+                        Plantilla or official position title.
+                      </p>
                       <Controller
                         name="plantillaPosition"
                         control={control}
@@ -628,7 +672,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                   <SelectValue placeholder="Select position" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[300px]">
-                                  <SelectItem value="__NONE__">Not set</SelectItem>
+                                  <SelectItem value="__NONE__">No position set yet</SelectItem>
                                   {designationPool.map((opt) => (
                                     <SelectItem key={opt} value={opt}>
                                       {opt}
@@ -647,6 +691,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t border-border">
                       <div className="space-y-1.5">
                         <Label className="text-base font-black uppercase text-foreground flex items-center gap-1">PRC License Number *</Label>
+                        <p className="text-xs font-bold leading-tight text-foreground/60">
+                          Required for teaching personnel.
+                        </p>
                         <Controller
                           name="prcLicenseNumber"
                           control={control}
@@ -670,17 +717,17 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-base font-black uppercase text-foreground">Department / Major</Label>
+                        <Label className="text-base font-black uppercase text-foreground">Subject Area / Major</Label>
                         <Controller
                           name="department"
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
                               <SelectTrigger className="font-bold text-base leading-tight h-10">
-                                <SelectValue placeholder="Select department" />
+                                <SelectValue placeholder="Select subject area" />
                               </SelectTrigger>
                               <SelectContent className="max-h-[300px]">
-                                <SelectItem value="__NONE__">Not set</SelectItem>
+                                <SelectItem value="__NONE__">No subject area set yet</SelectItem>
                                 {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
                                   <SelectItem key={opt.value} value={opt.value}>
                                     {opt.label}
@@ -697,7 +744,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   {formPersonnelType === "NON_TEACHING" && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <div className="space-y-1.5">
-                        <Label className="text-base font-black uppercase text-foreground flex items-center gap-1">Functional Assignment *</Label>
+                        <Label className="text-base font-black uppercase text-foreground flex items-center gap-1">Office Assignment *</Label>
                         <Controller
                           name="functionalAssignment"
                           control={control}
@@ -724,7 +771,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <div className="space-y-4 pt-4 border-t border-border mt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-base font-black uppercase text-foreground">Employment Status</Label>
+                        <Label className="text-base font-black uppercase text-foreground">Service Status</Label>
                         <Controller
                           name="serviceStatus"
                           control={control}
@@ -734,10 +781,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ACTIVE">Active</SelectItem>
-                                <SelectItem value="TRANSFERRED">Inactive (Transferred)</SelectItem>
-                                <SelectItem value="RETIRED_RESIGNED">Inactive (Resigned/Retired)</SelectItem>
-                                <SelectItem value="ON_LEAVE">On Leave (Maternity/Sick)</SelectItem>
+                                <SelectItem value="ACTIVE">Active Personnel</SelectItem>
+                                <SelectItem value="TRANSFERRED">Transferred to another school/office</SelectItem>
+                                <SelectItem value="RETIRED_RESIGNED">Retired / Resigned</SelectItem>
+                                <SelectItem value="ON_LEAVE">On Leave</SelectItem>
                                 <SelectItem value="DROPPED_FROM_ROLLS">Dropped from Rolls</SelectItem>
                               </SelectContent>
                             </Select>
@@ -746,7 +793,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       </div>
                       {formServiceStatus !== "ACTIVE" && (
                         <div className="space-y-1.5">
-                          <Label className="text-base font-black uppercase text-foreground">Effective Date</Label>
+                          <Label className="text-base font-black uppercase text-foreground">Date Started</Label>
                           <Controller
                             name="serviceEffectiveDate"
                             control={control}
@@ -763,13 +810,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
                     {formServiceStatus !== "ACTIVE" && (
                       <div className="space-y-1.5">
-                        <Label className="text-base font-black uppercase text-foreground">Remarks / Context <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
+                        <Label className="text-base font-black uppercase text-foreground">Notes for this status <span className="text-foreground/50 font-bold ml-1">(optional)</span></Label>
                         <Controller
                           name="serviceRemarks"
                           control={control}
                           render={({ field }) => (
                             <Textarea
-                              placeholder="e.g., Maternity Leave, Transferred to Manila..."
+                              placeholder="e.g., maternity leave, transferred to another school, retired"
                               className="min-h-[80px] resize-none font-bold text-base leading-tight"
                               {...field}
                               value={field.value ?? ""}
@@ -782,12 +829,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </div>
               </div>
 
-              {/* Card 3: Contact & System Access */}
+              {/* Card 3: Contact Details & Login Access */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <Smartphone className="h-4 w-4 text-primary" />
-                    3. Contact & System Access
+                    3. Contact Details & Login Access
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4 space-y-4">
@@ -847,8 +894,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                   <div className="space-y-2 mt-4 pt-4 border-t border-border">
                     <Label className="text-base font-black uppercase text-foreground">
-                      SYSTEM ROLES & DESIGNATIONS *
+                      SYSTEM ROLES *
                     </Label>
+                    <p className="text-xs font-bold leading-tight text-foreground/60">
+                      Controls what this person can open in EnrollPro.
+                    </p>
                     <Controller
                       name="roles"
                       control={control}
@@ -884,26 +934,27 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </div>
               </div>
 
-              {/* Card 4: ACTIVE SCHOOL YEAR ASSIGNMENTS */}
+              {/* Card 4: Assignments for This School Year */}
               {!isAdding && isTeachingStaff && (
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                   <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
-                      4. Active School Year Assignments
+                      4. Assignments for This School Year
                     </span>
                   </div>
                   <div className="divide-y">
                     <div className="p-4">
                       <div className="space-y-1">
-                        <p className="text-base font-black uppercase text-foreground leading-none">Advisory Section</p>
+                        <p className="text-base font-black uppercase text-foreground leading-none">Advisory Class</p>
                         {teacher?.designation?.advisorySection ? (
                           <div className="space-y-0.5 pt-1">
-                            <p className="font-black text-base leading-tight text-primary uppercase">{teacher.designation.advisorySection.name}</p>
-                            <p className="text-base font-bold text-foreground uppercase">{teacher.designation.advisorySection.gradeLevelName}</p>
+                            <p className="font-black text-base leading-tight text-slate-700">
+                              Homeroom Adviser: {formatAdvisorySectionSummary(teacher.designation.advisorySection)}
+                            </p>
                           </div>
                         ) : (
-                          <p className="text-base leading-tight font-bold text-slate-400 italic pt-1">None assigned</p>
+                          <p className="text-base leading-tight font-bold text-slate-400 italic pt-1">No advisory class assigned</p>
                         )}
                       </div>
                     </div>
@@ -914,11 +965,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         {loadLoading ? (
                           <div className="flex items-center gap-1.5 text-base font-bold text-primary animate-pulse">
                             <RefreshCw className="h-3 w-3 animate-spin" />
-                            SYNCING...
+                            Checking ATLAS...
                           </div>
                         ) : (
                           <Badge variant="outline" className="text-base font-bold border-dashed border-primary/30 text-primary/60 bg-primary/5">
-                            {loadError ? "Teaching Load Sync Failed" : "LIVE FROM ATLAS"}
+                            {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
                           </Badge>
                         )}
                       </div>
@@ -946,11 +997,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         ) : (
                           <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
                             <p className="text-base font-black uppercase text-foreground mb-1">
-                              {loadError ? "Teaching Load Sync Failed" : "No Load Data Found"}
+                              {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
                             </p>
                             <p className="text-base font-bold text-foreground/60 leading-tight max-w-[240px]">
                               {loadError
-                                ? "Class schedule data is currently unavailable. Please ask the System Admin to check the connection."
+                                ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
                                 : "No teaching load found in ATLAS."}
                             </p>
                           </div>
@@ -960,7 +1011,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     <div className="p-3 bg-muted/10 text-center">
                       <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest">
-                        Created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : "N/A"}
+                        Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
                       </p>
                     </div>
                   </div>
@@ -978,7 +1029,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 )}
                 disabled={!isDirty || isSubmitting}
               >
-                {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save & Register Personnel" : "Update Profile")}
+                {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
               </Button>
             </div>
           </form>
@@ -989,8 +1040,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         open={showUnsavedModal}
         onOpenChange={setShowUnsavedModal}
         title="Unsaved Changes"
-        description="You have modified this profile. Closing this panel will discard your changes. Do you want to proceed?"
-        confirmText="Discard"
+        description="You have unsaved changes in this profile. Closing this panel will remove those changes."
+        confirmText="Discard Changes"
         cancelText="Keep Editing"
         onConfirm={() => {
           reset();
