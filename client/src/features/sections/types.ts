@@ -4,6 +4,7 @@ export interface SectionFormState {
   name: string;
   curriculumProgram?: string;
   programType?: string;
+  isHomogeneous?: boolean;
   sectionType: SectionTypeMode;
   adviserId: string;
   maxCapacity: number;

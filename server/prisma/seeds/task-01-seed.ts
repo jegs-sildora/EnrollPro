@@ -91,6 +91,13 @@ export const seedDatabase = async () => {
     const defaultPassword = await bcrypt.hash("DepEd2026!", 10);
     const teachers = [];
 
+    const SECTION_NAMES: Record<number, string[]> = {
+      7: ["Rizal", "Bonifacio", "Mabini", "Luna", "Aguinaldo"],
+      8: ["Maka-Diyos", "Makatao", "Makakalikasan", "Makabansa", "Matapat"],
+      9: ["Sampaguita", "Rose", "Daisy", "Orchid", "Tulip"],
+      10: ["Gold", "Silver", "Diamond", "Pearl", "Jade"]
+    };
+
     // 5. Create 20 Teachers & their Users
     for (let i = 1; i <= 20; i++) {
       const sex = faker.helpers.arrayElement(['Male', 'Female']);
@@ -127,6 +134,7 @@ export const seedDatabase = async () => {
           sex: prismaSex,
           userId: user.id,
           plantillaPosition: faker.helpers.arrayElement(POSITIONS),
+          designation: "CLASS ADVISER",
           departmentId: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code]
         }
       });
@@ -136,18 +144,24 @@ export const seedDatabase = async () => {
     // 6. Create Sections and Learners
     let teacherIdx = 0;
     for (const grade of grades) {
+      const gNum = parseInt(grade.name.replace("Grade ", ""), 10);
+      const names = SECTION_NAMES[gNum] || PROGRAMS.map(p => p.nameSuffix);
+      
+      let progIdx = 0;
       for (const prog of PROGRAMS) {
+        const sectionName = names[progIdx];
+        
         const section = await prisma.section.upsert({
           where: {
             uq_sections_name_grade_sy: {
-              name: prog.nameSuffix,
+              name: sectionName,
               gradeLevelId: grade.id,
               schoolYearId: sy.id,
             }
           },
           update: {},
           create: {
-            name: prog.nameSuffix,
+            name: sectionName,
             maxCapacity: 40,
             gradeLevelId: grade.id,
             schoolYearId: sy.id,
@@ -155,6 +169,8 @@ export const seedDatabase = async () => {
             isHomogeneous: prog.homo,
           }
         });
+        
+        progIdx++;
 
         const teacher = teachers[teacherIdx++];
         await prisma.sectionAdviser.create({

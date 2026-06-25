@@ -814,6 +814,7 @@ export async function getSectionRoster(
     lastName: record.enrollmentApplication.learner.lastName,
     middleName: record.enrollmentApplication.learner.middleName,
     sex: record.enrollmentApplication.learner.sex,
+    birthdate: record.enrollmentApplication.learner.birthdate?.toISOString() ?? null,
     status: record.enrollmentApplication.status,
     applicantType: record.enrollmentApplication.applicantType,
     enrolledAt: record.enrolledAt,
@@ -829,6 +830,8 @@ export async function getSectionRoster(
       maxCapacity: section.maxCapacity,
       programType: section.programType,
       gradeLevel: section.gradeLevel.name,
+      gradeLevelId: section.gradeLevelId,
+      schoolYearId: section.schoolYearId,
       advisingTeacher: activeAdviser
         ? {
             id: activeAdviser.id,

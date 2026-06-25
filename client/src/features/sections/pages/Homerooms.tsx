@@ -1,20 +1,40 @@
-import { useState, useEffect, useCallback, Fragment, useMemo } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { motion, AnimatePresence } from "motion/react"
-import { sileo } from "sileo"
-import { Plus } from "lucide-react"
-import api from "@/shared/api/axiosInstance"
-import { queryKeys } from "@/shared/lib/queryKeys"
-import { useSettingsStore } from "@/store/settings.slice"
-import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly"
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading"
-import { Button } from "@/shared/ui/button"
-import { Skeleton } from "@/shared/ui/skeleton"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
+// @ts-nocheck
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { sileo } from "sileo";
+import { useNavigate } from "react-router";
+import {
+  Plus,
+  Grid3X3,
+  CalendarDays,
+  ListFilter,
+  UserCheck,
+} from "lucide-react";
+import api from "@/shared/api/axiosInstance";
+import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { Button } from "@/shared/ui/button";
+import { SectionFormSheet } from "../components/SectionFormSheet";
+import type { SectionFormState, SectionItem, TeacherOption } from "../types";
+import { SectionHandoverModal } from "../components/SectionHandoverModal";
+import {
+  DEFAULT_MAX_CAPACITY_REGULAR,
+} from "@enrollpro/shared/constants";
 
-import { SectionFormSheet } from "../components/SectionFormSheet"
-import SectionRosterModal from "../components/SectionRosterModal"
-import { cn } from "@/shared/lib/utils"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/card";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import {
   Table,
   TableBody,
@@ -22,423 +42,1446 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/shared/ui/table"
-import type {
-
-  SectionFormState,
-  SectionItem,
-  TeacherOption,
-} from "../types"
+} from "@/shared/ui/table";
+import { Skeleton } from "@/shared/ui/skeleton";
 import {
-  DEFAULT_MAX_CAPACITY_REGULAR,
-  DEFAULT_MAX_CAPACITY_SCP,
-} from "@enrollpro/shared/constants"
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+
+import { Badge } from "@/shared/ui/badge";
+import { motion } from "motion/react";
+import { cn } from "@/shared/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+
+interface Teacher {
+  id: number;
+  name: string;
+  employeeId: string | null;
+}
+
+interface TLEProgram {
+  id: number;
+  name: string;
+  programCode: string;
+  category: string;
+  isActive: boolean;
+}
 
 interface GradeLevelGroup {
-  gradeLevelId: number
-  gradeLevelName: string
-  displayOrder: number
-  sections: SectionItem[]
+  gradeLevelId: number;
+  gradeLevelName: string;
+  displayOrder: number;
+  sections: SectionItem[];
+}
+
+
+const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
+const TLE_SECTION_DISPLAY_ORDERS = [9, 10];
+
+function formatSectionLabel(rawSection: string | null | undefined): string {
+  if (!rawSection) return "-";
+
+  let sectionName = rawSection.trim();
+  if (!sectionName) return "-";
+
+  if (sectionName.includes("--")) {
+    const segments = sectionName.split("--").filter(Boolean);
+    sectionName = segments[segments.length - 1] || sectionName;
+  }
+
+  sectionName = sectionName
+    .replace(/^G(?:RADE)?\s*\d+\s*[-_ ]*/i, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!sectionName) return rawSection;
+
+  return sectionName
+    .split(/(\s|-)/)
+    .map((part) => {
+      if (part === " " || part === "-") return part;
+
+      const upperPart = part.toUpperCase();
+      if (SECTION_ACRONYMS.has(upperPart) || /^\d+[A-Z]*$/.test(upperPart)) {
+        return upperPart;
+      }
+
+      if (upperPart.length <= 1) return upperPart;
+      return `${upperPart.charAt(0)}${upperPart.slice(1).toLowerCase()}`;
+    })
+    .join("");
+}
+
+function extractGradeLevelNumber(rawGradeLevel: string): string {
+  const matchedNumber = rawGradeLevel.match(/\d+/)?.[0];
+  if (matchedNumber) return matchedNumber;
+
+  const normalized = rawGradeLevel.replace(/^grade\s+/i, "").trim();
+  return normalized || rawGradeLevel;
+}
+
+function formatHeatmapLabel(
+  gradeLevelName: string,
+  sectionLabel: string,
+): string {
+  return `${extractGradeLevelNumber(gradeLevelName)} - ${sectionLabel}`;
 }
 
 
 
+function buildSectionDisplayName(
+  sectionName: string,
+  programType: string,
+  scpTypeLabels: Record<string, string>,
+): string {
+  const baseLabel = formatSectionLabel(sectionName);
+  const scpLabel = scpTypeLabels[programType];
+  if (!scpLabel) return baseLabel;
+
+  const normalizedBase = baseLabel.trim().toUpperCase();
+  const normalizedScp = scpLabel.trim().toUpperCase();
+
+  if (
+    normalizedBase === normalizedScp ||
+    normalizedBase.startsWith(`${normalizedScp} `) ||
+    normalizedBase.startsWith(`${normalizedScp}-`)
+  ) {
+    return baseLabel;
+  }
+
+  return `${scpLabel} ${baseLabel}`;
+}
+
+function extractTleSectionSuffix(
+  sectionName: string,
+  tleProgramName: string,
+): string {
+  const normalizedSectionName = sectionName.trim();
+  const normalizedProgramName = tleProgramName.trim();
+
+  if (!normalizedSectionName) return "";
+  if (!normalizedProgramName) return normalizedSectionName;
+
+  const prefix = `${normalizedProgramName} - `;
+  if (normalizedSectionName.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return normalizedSectionName.slice(prefix.length).trim();
+  }
+
+  if (
+    normalizedSectionName.toLowerCase() === normalizedProgramName.toLowerCase()
+  ) {
+    return "";
+  }
+
+  const markerIndex = normalizedSectionName.lastIndexOf(" - ");
+  if (markerIndex >= 0) {
+    return normalizedSectionName.slice(markerIndex + 3).trim();
+  }
+
+  return normalizedSectionName;
+}
+
+function buildTleSectionName(tleProgramName: string, suffix: string): string {
+  const normalizedProgramName = tleProgramName.trim();
+  const normalizedSuffix = suffix.trim();
+
+  if (!normalizedProgramName) return normalizedSuffix;
+  if (!normalizedSuffix) return normalizedProgramName;
+  return `${normalizedProgramName} - ${normalizedSuffix}`;
+}
+
+function fillColor(pct: number): string {
+  if (pct > 100) return "bg-red-600";
+  if (pct >= 90) return "bg-red-500";
+  if (pct >= 75) return "bg-orange-400";
+  if (pct >= 50) return "bg-yellow-400";
+  return "bg-green-500";
+}
+
+function fillEmoji(pct: number): string {
+  if (pct > 100) return "🔴";
+  if (pct >= 90) return "🔴";
+  if (pct >= 75) return "🟠";
+  if (pct >= 50) return "🟡";
+  return "";
+}
+
+;
+
+;
+
+;
+
+function resolveApiErrorMessage(error: unknown): string | null {
+  const apiError = error as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+    };
+  };
+
+  const data = apiError.response?.data;
+  if (data?.errors) {
+    const firstValidationMessage = Object.values(data.errors).flat()[0];
+    if (firstValidationMessage) {
+      return firstValidationMessage;
+    }
+  }
+
+  return data?.message ?? null;
+}
+
+function showSectionsErrorToast(
+  action: "load" | "create" | "update" | "delete",
+  error: unknown,
+) {
+  const messageFromApi = resolveApiErrorMessage(error);
+
+  const titleByAction = {
+    load: "Unable to load sections",
+    create: "Section creation failed",
+    update: "Section update failed",
+    delete: "Section deletion failed",
+  } as const;
+
+  const fallbackDescriptionByAction = {
+    load: "Refresh the page and try again.",
+    create: "Review the section details and try again.",
+    update: "Your changes were not saved. Please try again.",
+    delete: "The section was not removed. Please try again.",
+  } as const;
+
+  sileo.error({
+    title: titleByAction[action],
+    description: messageFromApi ?? fallbackDescriptionByAction[action],
+  });
+}
+
+interface RosterLearner {
+  id: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  gender: string;
+  birthdate: string;
+  status: string;
+  readingProfileLevel: string | null;
+  isPendingLrnCreation: boolean;
+  applicantType: string;
+  enrolledAt: string;
+  sectioningMethod?: string | null;
+  dateSectioned?: string | null;
+  learnerType?: string | null;
+  sex?: string | null;
+  sf1Remarks?: string | null;
+}
+
+
+function SectionCard({
+  section,
+  onEdit,
+  onDelete,
+  onViewRoster,
+  canMutate,
+  scpTypeLabels,
+  teachers,
+  onAdviserChange,
+}: {
+  section: SectionItem;
+  onEdit: () => void;
+  onDelete: () => void;
+  onViewRoster: () => void;
+  canMutate: boolean;
+  scpTypeLabels: Record<string, string>;
+  teachers: Teacher[];
+  onAdviserChange: (val: string) => void;
+}) {
+  const pct =
+    section.fillPercent ??
+    Math.round((section.enrolledCount / section.maxCapacity) * 100);
+
+  const initialAdviser = section.advisingTeacher ? String(section.advisingTeacher.id) : "none";
+  const [selectedAdviser, setSelectedAdviser] = useState(initialAdviser);
+
+  useEffect(() => {
+    setSelectedAdviser(section.advisingTeacher ? String(section.advisingTeacher.id) : "none");
+  }, [section.advisingTeacher]);
+
+  const hasPendingAdviserChange = selectedAdviser !== initialAdviser;
+
+  const toTitleCase = (str: string) => str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
+  );
+  return (
+    <div
+      className="rounded-lg border bg-card p-5 space-y-4 hover:border-primary/40 transition-colors cursor-pointer group flex flex-col h-full"
+      onClick={onViewRoster}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onViewRoster();
+      }}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-black text-base text-foreground truncate uppercase">
+            {toTitleCase(section.name)}
+          </p>
+          {section.programType !== "REGULAR" && (
+            <Badge
+              variant="outline"
+              className="mt-1 text-sm font-bold uppercase">
+              {scpTypeLabels[section.programType] ?? section.programType}
+            </Badge>
+          )}
+          {section.isHomogeneous && section.programType === "REGULAR" && (
+            <Badge
+              variant="outline"
+              className="mt-1 text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border-blue-200">
+              Pilot
+            </Badge>
+          )}
+        </div>
+        {canMutate && (
+          <div className="flex gap-1 shrink-0">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2 text-sm font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}>
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}>
+              Remove
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto space-y-4">
+        <div className="flex items-center justify-between border-t border-border/50 pt-4">
+          <div className="flex items-center gap-2 w-full">
+            <div className="flex flex-col w-full min-w-0 pr-2">
+              <span className="text-sm font-bold uppercase text-foreground mb-0.5">
+                Adviser
+              </span>
+              {canMutate ? (
+                <div onClick={(e) => e.stopPropagation()} className="w-full -ml-2">
+                  <Select
+                    value={selectedAdviser}
+                    onValueChange={setSelectedAdviser}>
+                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 text-sm font-bold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
+                      <SelectValue placeholder="UNASSIGNED" />
+                    </SelectTrigger>
+                    <SelectContent className="font-bold uppercase max-h-[300px]">
+                      <SelectItem value="none" className="text-xs text-foreground">UNASSIGNED</SelectItem>
+                      {section.advisingTeacher && !teachers.some(t => t.id === section.advisingTeacher!.id) && (
+                        <SelectItem value={String(section.advisingTeacher.id)} className="text-xs">
+                          {section.advisingTeacher.name}
+                        </SelectItem>
+                      )}
+                      {teachers.map((t) => (
+                        <SelectItem key={t.id} value={String(t.id)} className="text-xs">
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <span
+                  className={cn(
+                    "text-sm font-bold uppercase truncate",
+                    !section.advisingTeacher ? "text-primary italic" : "text-foreground",
+                  )}>
+                  {section.advisingTeacher
+                    ? section.advisingTeacher.name
+                    : "Unassigned"}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 border-t border-border/50 pt-4">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-muted-foreground uppercase tracking-wider">
+              Enrolled
+            </span>
+            <span className="text-foreground">
+              {section.enrolledCount} / {section.maxCapacity} ({pct}%)
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                pct >= 100
+                  ? "bg-destructive"
+                  : pct >= 90
+                    ? "bg-orange-500"
+                    : pct >= 75
+                      ? "bg-amber-400"
+                      : "bg-emerald-500",
+              )}
+              style={{ width: `${Math.min(pct, 100)}%` }}
+            />
+          </div>
+
+          {hasPendingAdviserChange ? (
+            <div className="flex items-center gap-2 mt-4 w-full">
+              <Button
+                className="flex-1 font-bold"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedAdviser(initialAdviser);
+                }}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 font-bold"
+                variant="default"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdviserChange(selectedAdviser);
+                }}>
+                Update
+              </Button>
+            </div>
+          ) : (
+            <Button
+              className="w-full mt-4 font-bold"
+              variant="default"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewRoster();
+              }}>
+              Open SF1 Masterlist →
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Homerooms() {
-  const { activeSchoolYearId, viewingSchoolYearId, enableHomogeneousSections, systemPhase } = useSettingsStore()
-  const ayId = viewingSchoolYearId ?? activeSchoolYearId
-  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly()
-  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "CLASSES_ONGOING" && systemPhase !== "EOSY_CLOSING"
-  const queryClient = useQueryClient()
+  const navigate = useNavigate();
+  const renderSectionGroup = (
+    title: string,
+    sections: SectionItem[],
+    glName: string,
+    glId: number,
+    glDisplayOrder: number,
+    defaultProgramType: string = "REGULAR",
+    defaultIsHomogeneous: boolean = false
+  ) => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b pb-2">
+          <h3 className="text-lg font-black uppercase text-foreground/80 tracking-tight flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary" />
+            {title}
+          </h3>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 pb-4">
+          {sections.map((s) => (
+            <SectionCard
+              key={s.id}
+              section={s}
+              teachers={teachers}
+              onAdviserChange={(val) => handleInlineAdviserChange(s, val)}
+              scpTypeLabels={offeredScpTypeLabels}
+              onEdit={() => handleOpenEdit(s, glName, glDisplayOrder)}
+              onDelete={() => {
+                setDeleteId(s.id);
+                setDeleteName(s.name);
+              }}
+              onViewRoster={() => navigate(`/sections/view-roster/${s.id}`)}
+              canMutate={canMutate}
+            />
+          ))}
+          {canMutate && (
+            <div
+              onClick={() => handleOpenCreate(glId, glName, glDisplayOrder, defaultProgramType, defaultIsHomogeneous)}
+              className="rounded-lg border-2 border-dashed border-border bg-transparent p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary cursor-pointer group min-h-[180px]"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") handleOpenCreate(glId, glName, glDisplayOrder, defaultProgramType, defaultIsHomogeneous);
+              }}>
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
+              </div>
+              <span className="font-bold uppercase text-sm mt-2">Add Section</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const [activeGradeId, setActiveGradeId] = useState("")
 
-  // Form sheet state
-  const [isFormSheetOpen, setIsFormSheetOpen] = useState(false)
-  const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">("create")
+  const { activeSchoolYearId, viewingSchoolYearId, systemPhase, enableHomogeneousSections, steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "CLASSES_ONGOING" && systemPhase !== "EOSY_CLOSING";
+
+  const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
+  const [activeGradeId, setActiveGradeId] = useState<string>("");
+
+  const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
+  const handleInlineAdviserChange = async (section: SectionItem, newAdviserId: string) => {
+    try {
+      const payload = {
+        name: section.name,
+        programType: section.programType,
+        isHomogeneous: section.isHomogeneous,
+        maxCapacity: section.maxCapacity,
+        tleProgramId: section.tleProgramId ?? null,
+        advisingTeacherId: newAdviserId === "none" ? null : parseInt(newAdviserId),
+      };
+      await api.put(`/sections/${section.id}`, payload);
+      fetchData();
+      sileo.success({
+        title: "Adviser updated",
+        description: `Class adviser for ${section.name} has been updated.`,
+      });
+    } catch (err) {
+      showSectionsErrorToast("update", err);
+    }
+  };
+
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
+
+  // Section Form Sheet State
+  const [isFormSheetOpen, setIsFormSheetOpen] = useState(false);
+  const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">(
+    "create",
+  );
   const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
     name: "",
-    curriculumProgram: "REGULAR",
+    programType: "REGULAR",
     sectionType: "HOME_ROOM",
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
-  })
-  const [createGlId, setCreateGlId] = useState<number | null>(null)
-  const [createGlName, setCreateGlName] = useState("")
-  const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
+  });
+  const [submittingForm, setSubmittingForm] = useState(false);
+  const [programOptions, setProgramOptions] = useState<
+    { value: string; label: string }[]
+  >([{ value: "REGULAR", label: "Regular (BEC)" }]);
+  const [createGlId, setCreateGlId] = useState<number | null>(null);
+  const [createGlName, setCreateGlName] = useState("");
+  const [createGlDisplayOrder, setCreateGlDisplayOrder] = useState<number>(0);
+  const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>(
+    [],
+  );
+  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
+  const [offeredScpTypeLabels, setOfferedScpTypeLabels] = useState<Record<string, string>>({});
+  // Delete confirmation
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteName, setDeleteName] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
+  // Late Enrollee Modal State
 
+  // Handover Modal State
+  const [handoverSection, setHandoverSection] = useState<{
+    id: number;
+    name: string;
+    gradeLevelName: string;
+    advisingTeacher: { id: number; name: string } | null;
+  } | null>(null);
 
+  // Heatmap grade filter
+  const [heatmapGradeFilter, setHeatmapGradeFilter] = useState<string>("all");
 
-  // Roster modal state
-  const [rosterSectionId, setRosterSectionId] = useState<number | null>(null)
+  // Roster view state
+  const [roster, setRoster] = useState<RosterLearner[]>([]);
+  const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
 
-  const sectionsQuery = useQuery({
-    queryKey: ayId ? queryKeys.homeroomSections(ayId) : (["homerooms", "sections", null] as const),
-    queryFn: async () => {
-      const res = await api.get(`/sections/${ayId}`)
-      return res.data.gradeLevels as GradeLevelGroup[]
+  const resolveTleProgramName = useCallback(
+    (tleProgramId: number | null | undefined) => {
+      if (tleProgramId == null) return "";
+      return (
+        tlePrograms.find((program) => program.id === tleProgramId)?.name ?? ""
+      );
     },
-    enabled: Boolean(ayId),
-  })
-
-  const programOptionsQuery = useQuery({
-    queryKey: ayId ? queryKeys.homeroomPrograms(ayId) : (["homerooms", "programs", null] as const),
-    queryFn: async () => {
-      const opts = [
-        { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" },
-        { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" },
-        { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in Sports (SPS)" },
-      ]
-
-      if (enableHomogeneousSections) {
-        opts.unshift({ value: "REGULAR_HETERO", label: "Regular/BEC (Heterogeneous)" })
-        opts.unshift({ value: "REGULAR_HOMO", label: "Regular/BEC (Homogeneous)" })
-      } else {
-        opts.unshift({ value: "REGULAR_HETERO", label: "Regular/BEC (Heterogeneous)" })
-      }
-      return opts
-    },
-    enabled: Boolean(ayId),
-  })
-
-  const excludeSectionId = isFormSheetOpen && formSheetMode === "edit" ? editingSectionId : null
-
-  const availableTeachersQuery = useQuery({
-    queryKey:
-      ayId && isFormSheetOpen
-        ? queryKeys.homeroomTeachers(ayId, excludeSectionId)
-        : (["homerooms", "teachers", null, null] as const),
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        schoolYearId: String(ayId),
-        sectionType: "HOME_ROOM",
-      })
-      if (excludeSectionId) {
-        params.set("excludeSectionId", String(excludeSectionId))
-      }
-      const res = await api.get(`/sections/teachers?${params.toString()}`)
-      return res.data.teachers as TeacherOption[]
-    },
-    enabled: Boolean(ayId && isFormSheetOpen),
-  })
+    [tlePrograms],
+  );
 
 
-  const groups = sectionsQuery.data ?? []
-  const loading = sectionsQuery.isPending || sectionsQuery.isFetching
-  const showSkeleton = useDelayedLoading(loading)
-  const programOptions = programOptionsQuery.data ?? [{ value: "REGULAR_HETERO", label: "Regular/BEC (Hetero)" }]
 
-  const rawTeachers = availableTeachersQuery.data ?? []
-  const currentAdviser = formSheetMode === "edit" && editingSectionId
-    ? groups.flatMap(g => g.sections).find(s => s.id === editingSectionId)?.advisingTeacher
-    : null;
+  const { maleLearners, femaleLearners } = useMemo(() => {
+    const males = roster
+      .filter((l) => l.sex === "MALE")
+      .sort(
+        (a, b) =>
+          (a.lastName || "").localeCompare(b.lastName || "") ||
+          (a.firstName || "").localeCompare(b.firstName || ""),
+      );
+    const females = roster
+      .filter((l) => l.sex === "FEMALE")
+      .sort(
+        (a, b) =>
+          (a.lastName || "").localeCompare(b.lastName || "") ||
+          (a.firstName || "").localeCompare(b.firstName || ""),
+      );
+    return { maleLearners: males, femaleLearners: females };
+  }, [roster]);
 
-  const availableTeachers = useMemo(() => {
-    const list = [...rawTeachers];
-    if (currentAdviser && !list.some(t => t.id === currentAdviser.id)) {
-      list.push({ id: currentAdviser.id, name: currentAdviser.name, employeeId: "" });
+  const fetchData = useCallback(async () => {
+    if (!ayId) {
+      setLoading(false);
+      return;
     }
-    return list;
-  }, [rawTeachers, currentAdviser]);
+    setLoading(true);
+    try {
+      const [res, teachersRes] = await Promise.all([
+        api.get(`/sections/${ayId}`),
+        api.get(`/sections/teachers?schoolYearId=${ayId}`),
+      ]);
+      setGroups(res.data.gradeLevels);
+      setTeachers(teachersRes.data.teachers);
 
-  const loadingTeachers = availableTeachersQuery.isPending || availableTeachersQuery.isFetching
+      // Auto-select first grade tab if none is active
+      if (res.data.gradeLevels && res.data.gradeLevels.length > 0) {
+        setActiveGradeId(
+          (prev) => prev || String(res.data.gradeLevels[0].gradeLevelId),
+        );
+      }
+    } catch (err) {
+      showSectionsErrorToast("load", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [ayId]);
 
   useEffect(() => {
-    if (groups.length > 0) {
-      setActiveGradeId((prev) => prev || String(groups[0].gradeLevelId))
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (heatmapGradeFilter === "all") return;
+
+    const selectedGradeExists = groups.some(
+      (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
+    );
+
+    if (!selectedGradeExists) {
+      setHeatmapGradeFilter("all");
     }
-  }, [groups])
+  }, [groups, heatmapGradeFilter]);
 
-  const invalidateHomeroomQueries = useCallback(async () => {
-    if (!ayId) return
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomSections(ayId) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomPrograms(ayId) }),
-    ])
-  }, [ayId, queryClient])
+  const heatmapGradeOptions = useMemo(
+    () =>
+      groups.map((group) => ({
+        value: group.gradeLevelId.toString(),
+        label: group.gradeLevelName,
+      })),
+    [groups],
+  );
 
-  const saveSectionMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        name: sectionFormData.name.trim(),
-        programType: (sectionFormData.curriculumProgram || "REGULAR").replace("_HOMO", "").replace("_HETERO", ""),
-        isHomogeneous: sectionFormData.curriculumProgram === "REGULAR_HOMO",
-        advisingTeacherId:
-          sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
-        maxCapacity: sectionFormData.maxCapacity,
-        tleProgramId: null,
+  const filteredHeatmapGroups = useMemo(
+    () =>
+      heatmapGradeFilter === "all"
+        ? groups
+        : groups.filter(
+          (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
+        ),
+    [groups, heatmapGradeFilter],
+  );
+
+  const heatmapItems = useMemo(
+    () =>
+      filteredHeatmapGroups.flatMap((group) =>
+        group.sections.map((section) => ({ group, section })),
+      ),
+    [filteredHeatmapGroups],
+  );
+
+  const selectedHeatmapGradeLabel = useMemo(() => {
+    if (heatmapGradeFilter === "all") return "All Grades";
+
+    return (
+      heatmapGradeOptions.find((option) => option.value === heatmapGradeFilter)
+        ?.label ?? "Selected Grade"
+    );
+  }, [heatmapGradeFilter, heatmapGradeOptions]);
+
+  const SCP_SHORT_LABELS: Record<string, string> = useMemo(
+    () => ({
+      REGULAR: "Regular (BEC)",
+      SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+      SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+      SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+      SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+      SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+      SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    const fetchProgramOptions = () => {
+      if (!ayId) return;
+
+      const opts = [];
+
+      if (enableHomogeneousSections) {
+        opts.push({ value: "REGULAR_HOMO", label: "Basic Education Curriculum (BEC) — Top 5" });
+        opts.push({ value: "REGULAR_HETERO", label: "Basic Education Curriculum (BEC) —  Heterogeneous" });
+      } else {
+        opts.push({ value: "REGULAR", label: "Basic Education Curriculum (BEC)" });
       }
 
-      if (formSheetMode === "create") {
-        return api.post("/sections", { ...payload, gradeLevelId: createGlId, schoolYearId: ayId })
+      if (steEnabled) {
+        opts.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology & Engineering (STE)" });
+      }
+      if (spaEnabled) {
+        opts.push({ value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" });
+      }
+      if (spsEnabled) {
+        opts.push({ value: "SPECIAL_PROGRAM_IN_SPORTS", label: "Special Program in the Sports (SPS)" });
       }
 
-      return api.put(`/sections/${editingSectionId}`, payload)
-    },
-    onSuccess: async () => {
-      sileo.success({
-        title: formSheetMode === "create" ? "Section created" : "Section updated",
-        description:
-          formSheetMode === "create"
-            ? `${sectionFormData.name.trim()} added successfully.`
-            : `Changes to ${sectionFormData.name.trim()} saved.`,
-      })
-      setIsFormSheetOpen(false)
-      await invalidateHomeroomQueries()
-    },
-    onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { message?: string } } }
-      sileo.error({
-        title: formSheetMode === "create" ? "Section creation failed" : "Section update failed",
-        description: apiErr.response?.data?.message ?? "Please try again.",
-      })
-    },
-  })
+      setProgramOptions(opts);
+      setOfferedScpTypeLabels(SCP_SHORT_LABELS);
+    };
+
+    if (ayId) {
+      fetchProgramOptions();
+    }
+  }, [ayId, enableHomogeneousSections, steEnabled, spaEnabled, spsEnabled, SCP_SHORT_LABELS]);
 
 
 
-  const handleOpenCreate = useCallback(() => {
-    const currentGroup = groups.find((g) => String(g.gradeLevelId) === activeGradeId)
-    if (!currentGroup) return
 
-    setFormSheetMode("create")
-    setEditingSectionId(null)
-    setCreateGlId(currentGroup.gradeLevelId)
-    setCreateGlName(currentGroup.gradeLevelName)
-    setSectionFormData({
-      name: "",
-      curriculumProgram: enableHomogeneousSections ? "REGULAR_HOMO" : "REGULAR_HETERO",
-      sectionType: "HOME_ROOM",
-      adviserId: "none",
-      maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
-      tleProgramId: null,
-    })
-    setIsFormSheetOpen(true)
-  }, [activeGradeId, groups])
+  useEffect(() => {
+    if (!ayId) return;
 
-  const handleOpenEdit = useCallback((section: SectionItem, glName: string) => {
-    setFormSheetMode("edit")
-    setEditingSectionId(section.id)
-    setCreateGlName(glName)
-    setSectionFormData({
-      name: section.name,
-      curriculumProgram: section.programType === "REGULAR"
-        ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO")
-        : section.programType,
-      sectionType: "HOME_ROOM",
-      adviserId: section.advisingTeacher ? String(section.advisingTeacher.id) : "none",
-      maxCapacity: section.maxCapacity,
-      tleProgramId: null,
-    })
-    setIsFormSheetOpen(true)
-  }, [])
+    api
+      .get("/bosy/tle-programs", { params: { schoolYearId: ayId } })
+      .then((res) => setTlePrograms(res.data.programs ?? res.data))
+      .catch(() => {
+        /* non-critical */
+      });
+  }, [ayId]);
 
-  const handleFieldChange = useCallback(
-    (field: keyof SectionFormState, value: string | number | null | boolean) => {
-      setSectionFormData((prev) => {
-        const next = { ...prev, [field]: value }
-        if (field === "curriculumProgram") {
-          next.maxCapacity =
-            String(value).startsWith("REGULAR") ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP
+  const fetchEligibleTeachers = useCallback(
+    async (
+      sectionType: "HOME_ROOM" | "TLE_LABORATORY",
+      tleProgramId: number | null,
+      excludeSectionId?: number | null,
+    ) => {
+      if (!ayId) return;
+
+      setLoadingTeachers(true);
+      try {
+        const params = new URLSearchParams({
+          schoolYearId: String(ayId),
+          sectionType,
+        });
+
+        if (excludeSectionId) {
+          params.set("excludeSectionId", String(excludeSectionId));
         }
-        return next as SectionFormState
-      })
+
+        if (sectionType === "TLE_LABORATORY" && tleProgramId != null) {
+          params.set("tleProgramId", String(tleProgramId));
+        }
+
+        const res = await api.get(`/sections/teachers?${params.toString()}`);
+        setAvailableTeachers(res.data.teachers);
+      } catch (err) {
+        console.error("Failed to fetch teachers", err);
+        setAvailableTeachers(
+          teachers.map((t) => ({
+            id: t.id,
+            name: t.name,
+            employeeId: t.employeeId,
+          })),
+        );
+      } finally {
+        setLoadingTeachers(false);
+      }
+    },
+    [ayId, teachers],
+  );
+
+  useEffect(() => {
+    if (!isFormSheetOpen) return;
+
+    const isTleSection =
+      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) &&
+      sectionFormData.sectionType === "TLE_LABORATORY";
+
+    void fetchEligibleTeachers(
+      isTleSection ? "TLE_LABORATORY" : "HOME_ROOM",
+      isTleSection ? sectionFormData.tleProgramId : null,
+      formSheetMode === "edit" ? editingSectionId : null,
+    );
+  }, [
+    createGlDisplayOrder,
+    editingSectionId,
+    fetchEligibleTeachers,
+    formSheetMode,
+    isFormSheetOpen,
+    sectionFormData.sectionType,
+    sectionFormData.tleProgramId,
+  ]);
+
+  useEffect(() => {
+    if (!isFormSheetOpen) return;
+    if (sectionFormData.adviserId === "none") return;
+
+    const hasSelectedTeacher = availableTeachers.some(
+      (teacher) => String(teacher.id) === sectionFormData.adviserId,
+    );
+
+    if (!hasSelectedTeacher) {
+      setSectionFormData((prev) => ({ ...prev, adviserId: "none" }));
+    }
+  }, [availableTeachers, isFormSheetOpen, sectionFormData.adviserId]);
+
+  const handleOpenCreate = useCallback(
+    (glId: number, glName: string, glDisplayOrder: number, defaultProgramType: string = "REGULAR", defaultIsHomogeneous: boolean = false) => {
+      setFormSheetMode("create");
+      setEditingSectionId(null);
+      setCreateGlId(glId);
+      setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
+      setSectionFormData({
+        name: "",
+        curriculumProgram: defaultProgramType === "REGULAR_HOMO" ? "REGULAR_HOMO" : defaultProgramType === "REGULAR_HETERO" ? "REGULAR_HETERO" : defaultProgramType,
+        programType: defaultProgramType,
+        isHomogeneous: defaultIsHomogeneous,
+        sectionType: "HOME_ROOM",
+        adviserId: "none",
+        maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+        tleProgramId: null,
+      });
+      setIsFormSheetOpen(true);
     },
     [],
-  )
+  );
+
+  const handleOpenEdit = useCallback(
+    async (section: SectionItem, glName: string, glDisplayOrder: number) => {
+      setFormSheetMode("edit");
+      setEditingSectionId(section.id);
+      setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
+      setSectionFormData({
+        name: section.name,
+        curriculumProgram: section.programType === "REGULAR" ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO") : section.programType,
+        programType: section.programType,
+        isHomogeneous: section.isHomogeneous,
+        sectionType:
+          TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) &&
+            section.tleProgramId
+            ? "TLE_LABORATORY"
+            : "HOME_ROOM",
+        adviserId: section.advisingTeacher
+          ? section.advisingTeacher.id.toString()
+          : "none",
+        maxCapacity: section.maxCapacity,
+        tleProgramId: section.tleProgramId ?? null,
+      });
+
+      setIsFormSheetOpen(true);
+    },
+    [],
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof SectionFormState, value: string | number | null) => {
+      setSectionFormData((prev) => {
+        const next: SectionFormState = { ...prev, [field]: value };
+
+        const currentProgramName = resolveTleProgramName(prev.tleProgramId);
+
+        if (field === "tleProgramId") {
+          const nextProgramName = resolveTleProgramName(Number(value));
+          const currentSuffix = extractTleSectionSuffix(
+            prev.name,
+            currentProgramName,
+          );
+          // Default to "A" when no suffix exists yet (fresh / first-time selection)
+          const suffix = currentSuffix.trim() || "A";
+          next.name = buildTleSectionName(nextProgramName, suffix);
+        }
+
+        // Auto-update capacity when program type changes
+        if (field === "programType" && next.sectionType !== "TLE_LABORATORY") {
+          next.maxCapacity = DEFAULT_MAX_CAPACITY_REGULAR;
+        }
+
+        if (field === "sectionType") {
+          if (value === "HOME_ROOM") {
+            next.tleProgramId = null;
+          }
+
+          if (value === "TLE_LABORATORY") {
+            // TLE labs operate under REGULAR with specialization track-lock.
+            next.programType = "REGULAR";
+            const suffix = extractTleSectionSuffix(
+              prev.name,
+              currentProgramName,
+            );
+            next.name = buildTleSectionName(currentProgramName, suffix);
+          }
+        }
+
+        return next;
+      });
+    },
+    [resolveTleProgramName],
+  );
 
   const handleFormSubmit = async () => {
-    if (!sectionFormData.name.trim()) return
-    await saveSectionMutation.mutateAsync()
-  }
+    if (!sectionFormData.name.trim()) return;
 
+    const allowTleLaboratory =
+      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder);
+    const isTleLaboratory =
+      allowTleLaboratory && sectionFormData.sectionType === "TLE_LABORATORY";
 
+    if (isTleLaboratory && !sectionFormData.tleProgramId) {
+      sileo.error({
+        title: "TLE Specialization Required",
+        description:
+          "Please select a TLE specialization for TLE Laboratory sections.",
+      });
+      return;
+    }
 
-  // All sections are homeroom sections (TLE labs no longer exist)
-  const homeroomGroups = groups
+    if (isTleLaboratory) {
+      const tleProgramName = resolveTleProgramName(
+        sectionFormData.tleProgramId,
+      );
+      const suffix = extractTleSectionSuffix(
+        sectionFormData.name,
+        tleProgramName,
+      );
+      if (!suffix.trim()) {
+        sileo.error({
+          title: "Section Name Suffix Required",
+          description:
+            "Add a suffix (e.g., A, B, C, D, or N) for the selected TLE specialization.",
+        });
+        return;
+      }
+    }
 
-  if (showSkeleton) {
+    setSubmittingForm(true);
+    try {
+      const isHomo = sectionFormData.curriculumProgram === "REGULAR_HOMO";
+      const resolvedProgramType = sectionFormData.curriculumProgram === "REGULAR_HOMO" || sectionFormData.curriculumProgram === "REGULAR_HETERO" ? "REGULAR" : (sectionFormData.curriculumProgram || "REGULAR");
+
+      const payload = {
+        name: sectionFormData.name.trim(),
+        programType: isTleLaboratory ? "REGULAR" : resolvedProgramType,
+        isHomogeneous: isTleLaboratory ? false : isHomo,
+        advisingTeacherId:
+          sectionFormData.adviserId === "none"
+            ? null
+            : parseInt(sectionFormData.adviserId),
+        maxCapacity: sectionFormData.maxCapacity,
+        // tleProgramId is the persistent lab marker for matrix scheduling.
+        tleProgramId: isTleLaboratory ? sectionFormData.tleProgramId : null,
+      };
+
+      if (formSheetMode === "create") {
+        await api.post("/sections", {
+          ...payload,
+          gradeLevelId: createGlId,
+          schoolYearId: ayId,
+        });
+        sileo.success({
+          title: "Section created",
+          description: `${payload.name} has been added successfully.`,
+        });
+      } else {
+        await api.put(`/sections/${editingSectionId}`, payload);
+        sileo.success({
+          title: "Section updated",
+          description: `Changes to ${payload.name} have been saved.`,
+        });
+      }
+
+      setIsFormSheetOpen(false);
+      fetchData();
+    } catch (err) {
+      showSectionsErrorToast(
+        formSheetMode === "create" ? "create" : "update",
+        err,
+      );
+    } finally {
+      setSubmittingForm(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/sections/${deleteId}`);
+      sileo.success({
+        title: "Section removed",
+        description: deleteName
+          ? `${deleteName} was removed successfully.`
+          : "The section was removed successfully.",
+      });
+      setDeleteId(null);
+      fetchData();
+    } catch (err) {
+      showSectionsErrorToast("delete", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  ;
+
+  ;
+
+  ;
+
+  if (!ayId) {
     return (
-      <div className="p-4 sm:p-6 space-y-6">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-10 w-72" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-lg" />
-          ))}
-        </div>
+      <div className="flex h-[calc(100vh-12rem)] w-full items-center justify-center">
+        <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+          <CardContent className="pt-10 pb-10 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <CalendarDays className="h-6 w-6 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">
+                No School Year Selected
+              </p>
+              <p className="text-base text-foreground leading-relaxed px-4">
+                Please set an active year or choose one from the header switcher
+                to manage records for this period.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    )
+    );
   }
-
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">Class Advisership & Section Management</h1>
-          <p className="text-base leading-tight text-foreground font-bold">Define grade level capacities and assign official class advisers to homeroom sections.</p>
+    <div className="space-y-6 ">
+      <div className="flex flex-col md:flex-row md:items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold ">Class Advisership & Section Management</h1>
+          <p className="text-base leading-tight text-foreground font-bold">
+            Manage grade level sections and advising teachers
+          </p>
         </div>
-        {canMutate && homeroomGroups.length > 0 && (
-          <Button onClick={handleOpenCreate} className="font-bold uppercase tracking-wide">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Section
+
+        {/* View Toggle */}
+        <div className="flex w-full md:w-auto flex-wrap h-auto gap-1 p-1 bg-white border border-border rounded-lg relative shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("heatmap")}
+            className={cn(
+              "flex-1 md:min-w-58 font-bold transition-all relative z-10 h-10",
+              viewMode === "heatmap"
+                ? "text-primary-foreground hover:text-primary-foreground"
+                : "text-foreground hover:bg-transparent",
+            )}>
+            {viewMode === "heatmap" && (
+              <motion.div
+                layoutId="view-toggle-pill"
+                className="absolute inset-0 bg-primary rounded-md shadow-sm"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-20 flex items-center justify-center text-base uppercase">
+              Room Density Matrix
+            </span>
           </Button>
-        )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className={cn(
+              "flex-1 md:min-w-58 font-bold transition-all relative z-10 h-10",
+              viewMode === "list"
+                ? "text-primary-foreground hover:text-primary-foreground"
+                : "text-foreground hover:bg-transparent",
+            )}>
+            {viewMode === "list" && (
+              <motion.div
+                layoutId="view-toggle-pill"
+                className="absolute inset-0 bg-primary rounded-md shadow-sm"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-20 flex items-center justify-center text-base uppercase">
+              List View
+            </span>
+          </Button>
+        </div>
       </div>
 
-      <Tabs value={activeGradeId} onValueChange={setActiveGradeId}>
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
-          {homeroomGroups.map((g) => (
-            <TabsTrigger
-              key={g.gradeLevelId}
-              value={String(g.gradeLevelId)}
-              className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              {activeGradeId === String(g.gradeLevelId) && (
-                <motion.div
-                  layoutId="homerooms-grade-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-              <span className={cn("relative z-20 text-base uppercase", activeGradeId === String(g.gradeLevelId) ? "text-primary-foreground" : "text-foreground")}>
-                {g.gradeLevelName}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeGradeId}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+      {showSkeleton ? (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-80" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="h-16 w-full rounded-lg"
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : viewMode === "heatmap" ? (
+        /* Capacity Heatmap overview */
+        <div className="w-full space-y-6">
+          <Tabs
+            value={heatmapGradeFilter}
+            onValueChange={setHeatmapGradeFilter}
             className="w-full">
-            {homeroomGroups.map((g) => {
-              const steSections = g.sections.filter((s) => s.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING")
-              const spsSections = g.sections.filter((s) => s.programType === "SPECIAL_PROGRAM_IN_SPORTS")
-              const spaSections = g.sections.filter((s) => s.programType === "SPECIAL_PROGRAM_IN_THE_ARTS")
-              const otherScpSections = g.sections.filter((s) => s.programType !== "REGULAR" && !["SCIENCE_TECHNOLOGY_AND_ENGINEERING", "SPECIAL_PROGRAM_IN_SPORTS", "SPECIAL_PROGRAM_IN_THE_ARTS"].includes(s.programType))
-              const pilotSections = g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous)
-              const regularSections = g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous)
-
-              const hasSections = g.sections.length > 0
-
-              const renderSectionGroup = (sections: typeof g.sections, title: string) => {
-                if (sections.length === 0) return null;
-                return (
-                  <Fragment>
-                    <TableRow className="bg-muted/10 hover:bg-muted/10">
-                      <TableCell colSpan={3} className="py-2 pl-6">
-                        <span className="font-black uppercase tracking-widest text-foreground/50">{title}</span>
-                      </TableCell>
-                    </TableRow>
-                    {sections.map((s) => {
-                      const pct = s.fillPercent ?? Math.round((s.enrolledCount / s.maxCapacity) * 100)
-                      return (
-                        <TableRow key={s.id} className="hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => handleOpenEdit(s, g.gradeLevelName)}>
-                          <TableCell className="font-medium text-left pl-6">
-                            <div className="flex items-center gap-2">
-                              <span className="font-black uppercase text-base leading-tight text-foreground">{s.name}</span>
-
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-left">
-                            <span className={cn("text-base font-bold uppercase", !s.advisingTeacher ? "text-amber-500 italic" : "text-foreground")}>
-                              {s.advisingTeacher ? s.advisingTeacher.name : "Unassigned"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center pr-6">
-                            <div className="flex flex-col gap-1 max-w-[140px] mx-auto">
-                              <div className="flex items-center justify-between text-base font-bold text-foreground">
-                                <span>{s.enrolledCount} / {s.maxCapacity}</span>
-                                <span>{pct}%</span>
-                              </div>
-                              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                <div className={`h-full rounded-full transition-all ${pct > 100 ? "bg-red-500" : pct >= 90 ? "bg-orange-400" : pct >= 75 ? "bg-yellow-400" : "bg-green-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </Fragment>
-                )
-              }
-
-              return (
-                <TabsContent
-                  key={g.gradeLevelId}
-                  value={String(g.gradeLevelId)}
-                  className="mt-0 focus-visible:outline-none ring-0 space-y-8">
-
-                  {!hasSections ? (
-                    <div className="rounded-lg border border-dashed p-12 text-center text-base leading-tight font-bold text-foreground/50 uppercase italic bg-muted/10">
-                      No sections in this group.
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/30">
-                            <TableHead className="text-base uppercase text-left pl-6">Section Name</TableHead>
-                            <TableHead className="text-base uppercase text-left w-[320px]">Class Adviser</TableHead>
-                            <TableHead className="text-base uppercase text-center w-[200px] pr-6">Enrolled</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {renderSectionGroup(steSections, "STE")}
-                          {renderSectionGroup(spsSections, "SPS")}
-                          {renderSectionGroup(spaSections, "SPA")}
-                          {renderSectionGroup(otherScpSections, "Other Special Curricular Programs")}
-                          {renderSectionGroup(pilotSections, "BEC (Homogeneous - Top 5)")}
-                          {renderSectionGroup(regularSections, "BEC (Heterogeneous)")}
-                        </TableBody>
-                      </Table>
-                    </div>
+            <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-0 p-1 bg-white border border-border rounded-lg relative">
+              <TabsTrigger
+                value="all"
+                className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                {heatmapGradeFilter === "all" && (
+                  <motion.div
+                    layoutId="heatmap-grade-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{
+                      type: "spring",
+                      bounce: 0.15,
+                      duration: 0.5,
+                    }}
+                  />
+                )}
+                <span
+                  className={cn(
+                    "relative z-20 uppercase text-base",
+                    heatmapGradeFilter === "all"
+                      ? "text-primary-foreground"
+                      : "text-foreground",
+                  )}>
+                  All Grades
+                </span>
+              </TabsTrigger>
+              {heatmapGradeOptions.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                  {heatmapGradeFilter === option.value && (
+                    <motion.div
+                      layoutId="heatmap-grade-pill"
+                      className="absolute inset-0 bg-primary rounded-md"
+                      transition={{
+                        type: "spring",
+                        bounce: 0.15,
+                        duration: 0.5,
+                      }}
+                    />
                   )}
-                </TabsContent>
-              )
-            })}
-          </motion.div>
-        </AnimatePresence>
-      </Tabs>
+                  <span
+                    className={cn(
+                      "relative z-20 uppercase text-base",
+                      heatmapGradeFilter === option.value
+                        ? "text-primary-foreground"
+                        : "text-foreground",
+                    )}>
+                    {option.label}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <Card className="border-border shadow-sm">
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Grid3X3 className="h-5 w-5" />
+                  Capacity Heatmap
+                </CardTitle>
+              </div>
+              <CardDescription>
+                Visual overview of section fill rates.  &lt;50% · 🟡 50-74% · 🟠
+                75-89% · 🔴 90%+
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {groups.length === 0 ? (
+                <p className="text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
+                  No grade levels found for this School Year.
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {heatmapItems.map(({ group, section }) => {
+                    const fillPercent =
+                      section.maxCapacity > 0
+                        ? (section.enrolledCount / section.maxCapacity) * 100
+                        : 0;
+                    const isOverCapacity =
+                      section.enrolledCount > section.maxCapacity;
+
+                    return (
+                      <div
+                        key={section.id}
+                        onClick={() =>
+                          navigate(`/sections/view-roster/${section.id}`)
+                        }
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-all group",
+                          isOverCapacity
+                            ? "border-red-300 bg-red-50/40 hover:border-red-400"
+                            : "border-border hover:border-primary/50",
+                        )}>
+                        <span className="text-lg group-hover:scale-110 transition-transform">
+                          {fillEmoji(fillPercent)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base leading-tight font-bold truncate group-hover:text-primary transition-colors">
+                            {formatHeatmapLabel(
+                              group.gradeLevelName,
+                              buildSectionDisplayName(
+                                section.name,
+                                section.programType,
+                                offeredScpTypeLabels,
+                              ),
+                            )}
+                          </p>
+                          <div className="mt-1 h-2 w-full rounded-full bg-muted">
+                            <div
+                              className={cn(
+                                "h-2 rounded-full transition-all",
+                                fillColor(fillPercent),
+                              )}
+                              style={{
+                                width: `${Math.min(fillPercent, 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            "text-base font-bold whitespace-nowrap",
+                            isOverCapacity
+                              ? "text-red-700 font-black"
+                              : "text-foreground",
+                          )}>
+                          {section.enrolledCount}/{section.maxCapacity}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {heatmapItems.length === 0 &&
+                    (groups.every((group) => group.sections.length === 0) ? (
+                      <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
+                        No sections created yet. Add sections to grade levels
+                        below.
+                      </p>
+                    ) : (
+                      <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
+                        No sections found for {selectedHeatmapGradeLabel}.
+                      </p>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        /* Active List View - Tabbed by Grade */
+        <Tabs
+          value={activeGradeId}
+          onValueChange={setActiveGradeId}
+          className="w-full">
+          <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border border-border rounded-lg relative">
+            {groups.map((g) => (
+              <TabsTrigger
+                key={g.gradeLevelId}
+                value={String(g.gradeLevelId)}
+                className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                {activeGradeId === String(g.gradeLevelId) && (
+                  <motion.div
+                    layoutId="grade-active-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span
+                  className={cn(
+                    "relative z-20 uppercase  text-base",
+                    activeGradeId === String(g.gradeLevelId)
+                      ? "text-primary-foreground"
+                      : "text-foreground",
+                  )}>
+                  {g.gradeLevelName}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <div className="w-full">
+            {groups
+              .filter((g) => String(g.gradeLevelId) === activeGradeId)
+              .map((g) => (
+                <div
+                  key={g.gradeLevelId}
+                  className="w-full">
+                  <TabsContent
+                    value={String(g.gradeLevelId)}
+                    forceMount
+                    className="mt-0 focus-visible:outline-none ring-0">
+                    <Card className="border-border shadow-sm">
+                      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
+                        <div>
+                          <CardTitle className="text-xl font-black uppercase">
+                            {g.gradeLevelName}
+                          </CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {g.sections.length === 0 && !canMutate ? (
+                          <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
+                            <p className="text-base leading-tight font-bold uppercase ">
+                              No Sections Configured
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-8 pb-4">
+                            {renderSectionGroup(
+                              "Special Curricular Programs (SCP)",
+                              g.sections.filter((s) => s.programType !== "REGULAR"),
+                              g.gradeLevelName,
+                              g.gradeLevelId,
+                              g.displayOrder,
+                              "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+                              false
+                            )}
+
+                            {renderSectionGroup(
+                              "Basic Education Curriculum (BEC) — Top 5",
+                              g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous),
+                              g.gradeLevelName,
+                              g.gradeLevelId,
+                              g.displayOrder,
+                              "REGULAR_HOMO",
+                              true
+                            )}
+
+                            {renderSectionGroup(
+                              "Basic Education Curriculum (BEC) —  Heterogeneous",
+                              g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous),
+                              g.gradeLevelName,
+                              g.gradeLevelId,
+                              g.displayOrder,
+                              "REGULAR_HETERO",
+                              false
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </div>
+              ))}
+          </div>
+        </Tabs>
+      )}
 
       <SectionFormSheet
         mode={formSheetMode}
         open={isFormSheetOpen}
-        title={formSheetMode === "create" ? `Add Homeroom — ${createGlName}` : "Edit Homeroom Section"}
+        onOpenChange={setIsFormSheetOpen}
+        title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
         description={
           formSheetMode === "create"
-            ? "Create a new homeroom section for this grade level."
-            : "Update the homeroom section details."
+            ? `Configure a new section roster for ${createGlName}.`
+            : `Update configuration for section ${sectionFormData.name}.`
         }
         formData={sectionFormData}
-        submitting={saveSectionMutation.isPending}
-        canSubmit={!!sectionFormData.name.trim()}
-        onOpenChange={setIsFormSheetOpen}
         onFieldChange={handleFieldChange}
-        onCancel={() => setIsFormSheetOpen(false)}
         onSubmit={handleFormSubmit}
+        onCancel={() => setIsFormSheetOpen(false)}
+        submitting={submittingForm}
+        canSubmit={
+          !!sectionFormData.name.trim() &&
+          (!TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) ||
+            sectionFormData.sectionType === "HOME_ROOM" ||
+            !!sectionFormData.tleProgramId)
+        }
         programOptions={programOptions}
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}
         gradeLevelName={createGlName}
-        gradeLevelDisplayOrder={0}
-        tlePrograms={[]}
-        defaultMode="HOMEROOM"
+        gradeLevelDisplayOrder={createGlDisplayOrder}
+        tlePrograms={tlePrograms}
       />
 
-
-
-      <SectionRosterModal
-        sectionId={rosterSectionId}
-        open={rosterSectionId !== null}
-        onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
+      <ConfirmationModal
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete Section"
+        description={`Are you sure you want to delete the section "${deleteName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        loading={deleting}
+        onConfirm={handleDelete}
+        variant="danger"
       />
+
+      {handoverSection && (
+        <SectionHandoverModal
+          open={!!handoverSection}
+          onOpenChange={(open) => !open && setHandoverSection(null)}
+          sectionId={handoverSection.id}
+          sectionName={handoverSection.name}
+          gradeLevelName={handoverSection.gradeLevelName}
+          currentAdviser={handoverSection.advisingTeacher}
+          teachers={teachers}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
-  )
+  );
 }

@@ -5,7 +5,6 @@ import { Toaster } from "sileo";
 import {
   LayoutDashboard,
   Users,
-  Layers,
   Settings,
   History,
   LogOut,
@@ -14,6 +13,7 @@ import {
   Presentation,
   UserCog,
   ArrowUpRightSquare,
+  List,
   UserPlus,
   School,
   Check,
@@ -404,13 +404,20 @@ const NavItem = memo(function NavItem({
   let isActive = pathname === to;
 
   if (!isActive && to !== "/") {
-    if (to === "/sections" && pathname.startsWith("/sections/homerooms")) {
+    if (to === "/sections" && pathname.startsWith("/sections")) {
       isActive = false;
     } else if (to === "/monitoring/enrollment" && pathname.startsWith("/monitoring/enrollment/walk-in")) {
       isActive = false;
     } else if (pathname.startsWith(to + "/")) {
       isActive = true;
     }
+  }
+
+  if (
+    to === "/sections" &&
+    pathname.startsWith("/sections/view-roster")
+  ) {
+    isActive = true;
   }
 
   // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
@@ -532,7 +539,7 @@ function AppSidebar() {
                 {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider
-                      label="Enrollment & LIS"
+                      label="ENROLLMENT & SECTIONING"
                       badge={
                         !isEosyArchivedState
                           ? (systemPhase === "EOSY_CLOSING" ? closingOperationsBadge : officialEnrollmentBadge)
@@ -573,8 +580,8 @@ function AppSidebar() {
                         />
                         <NavItem
                           to="/sections"
-                          icon={Calendar}
-                          label="Class Masterlists (SF1)"
+                          icon={List}
+                          label="Class Sections (SF1)"
                           pathname={pathname}
                         />
                       </>
@@ -584,8 +591,8 @@ function AppSidebar() {
                       <>
                         <NavItem
                           to="/sections"
-                          icon={Calendar}
-                          label="Class Masterlists (SF1)"
+                          icon={List}
+                          label="Class Sections (SF1)"
                           pathname={pathname}
                         />
                         <NavItem
@@ -618,9 +625,9 @@ function AppSidebar() {
                       />
                     )}
                     <NavItem
-                      to="/sections/homerooms"
-                      icon={Layers}
-                      label="List of Classes"
+                      to="/sections"
+                      icon={List}
+                      label="Class Sections (SF1)"
                       pathname={pathname}
                     />
                   </>
@@ -746,7 +753,7 @@ const ROUTE_PHASES: Record<string, {
     allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT"],
     moduleName: "Sectioning & SF1 Prep",
     redirectTo: "/sections",
-    redirectLabel: "Take me to Class Masterlists"
+    redirectLabel: "Take me to Class Sections"
   },
   "/monitoring/enrollment/walk-in": {
     allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],

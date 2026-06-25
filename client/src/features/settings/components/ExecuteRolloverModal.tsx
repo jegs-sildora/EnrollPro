@@ -325,7 +325,7 @@ export default function ExecuteRolloverModal({
                   <ul className="space-y-4 font-bold text-foreground">
                     {[
                       `Archive ${activeSchoolYearLabel ?? "current S.Y."} and lock all historical SF1/SF5 records.`,
-                      "Clone Grade Levels, Sections, and SCP architecture (List of Classes will be wiped clean).",
+                      "Clone Grade Levels, Sections, and SCP architecture (Class Sections (SF1) will be wiped clean).",
                       "Promote and carry over eligible learners to their next grade level holding pool.",
                     ].map((action) => (
                       <li key={action} className="flex items-start gap-3">

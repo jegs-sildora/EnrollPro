@@ -1,42 +1,25 @@
-# COPY SPECIFICATION: DepEd LIS Phase Rollover Modals (v25.1)
-**Target:** Global System Configuration -> Modal Dialog Overrides
-**Mandate:** Completely purge the collegiate word "Intake". Align all modal headers, prose, and button labels strictly with official DepEd LIS and School Form (SF) terminology.
+# SYSTEM DIRECTIVE: UI/UX Typographical Polish for SF1 Roster (v44.0)
 
----
+**Context Persona:** 
+Act as a Senior UI/UX Frontend Engineer finalizing a Philippine Department of Education (DepEd) system. Your focus is strict data-table legibility, correct color psychology, and perfect column alignment. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
 
-## INSTANCE 1: Activating "Official Enrollment" (image_6451e8.jpg)
-*Triggered when selecting Radio #1*
+**Core Mandate:** 
+The structural layout of the table is now correct, but the typography, alignment, and color choices are causing visual friction. Please apply the following four aesthetic corrections to the roster table:
 
-*   **Modal Header:** `Open Regular Enrollment Period?`
-*   **Body Paragraph 1:** `You are about to open the official enrollment portals for School Year 2026–2027.`
-*   **Body Paragraph 2:** `Confirming this activates encoding for incoming Grade 7, Transferees, and Balik-Aral learners. The system will begin staging learner profiles for Beginning of School Year (BOSY) LIS tagging.`
-*   **Footer Warning:** *(Leave blank)*
-*   **Button Lockup:**
-    *   Secondary (Grey): `[ Keep Enrollment Closed ]`
-    *   Primary Action (Solid Blue): `[ Open Regular Enrollment ]`
+## 1. Fix the Action Link Color Psychology
+*   The text View Learner Folder is currently rendered in a warning red color. In UI design, red implies a destructive action like Delete. 
+*   Change the color of these action links strictly to a standard, interactive institutional blue. 
+*   To save horizontal space, shorten the text of this link to simply read: Open Record.
 
----
+## 2. Prevent Data Wrapping in the Birthdate Column
+*   The Birthdate column is currently allowing the year to wrap onto a second line, breaking the vertical rhythm of the rows. 
+*   Apply the necessary CSS properties (such as whitespace-nowrap) to the Birthdate data cells to force the month, day, and year to remain on one single horizontal line at all times.
 
-## INSTANCE 2: Shifting to "Classes Ongoing / Late Enrollment" (image_6451c5.jpg)
-*Triggered when selecting Radio #2*
+## 3. Anchor the Demographic Dividers
+*   The MALE LEARNERS and FEMALE LEARNERS divider rows currently look like floating red error text. 
+*   Apply a very soft, light grey background fill to these full-width divider rows to visually anchor them. 
+*   Change the text color of MALE LEARNERS, FEMALE LEARNERS, and the TOTAL count from rusty red strictly to a bold, dark slate or the institution's dark maroon primary theme color.
 
-*   **Modal Header:** `Close Regular Enrollment & Tag Late Enrollees?`
-*   **Body Paragraph 1:** `You are officially closing the regular enrollment window to mark the start of ongoing classes.`
-*   **Body Paragraph 2:** `The public forms will remain open, but all learners encoded after today will be permanently flagged as "Late Enrollees" for BOSY LIS reporting.`
-*   **Footer Warning:** `LIS POLICY: Reverting a Late Enrollee timestamp requires an overriding Administrative pass.`
-*   **Button Lockup:**
-    *   Secondary (Grey): `[ Keep Regular Enrollment Open ]`
-    *   Primary Action (Amber / Warning): `[ Begin Classes & Tag Late Enrollees ]`
-
----
-
-## INSTANCE 3: Shifting to "EOSY Closing" (image_6451ca.jpg)
-*Triggered when selecting Radio #3*
-
-*   **Modal Header:** `Initiate EOSY Finalization & System Lock?`
-*   **Body Paragraph 1:** `You are locking the active database to begin End of School Year (EOSY) updating.`
-*   **Body Paragraph 2:** `This freezes learner encoding across all grade levels to prepare official School Form 5 (Report on Promotion) and School Form 6 (Summarized Report) for Division submission.`
-*   **Footer Warning:** `CRITICAL LIS GATE: Do not proceed until all class advisers have finalized their SMART electronic class records.`
-*   **Button Lockup:**
-    *   Secondary (Grey): `[ Keep School Year Active ]`
-    *   Primary Action (Crimson / Danger): `[ Lock System for EOSY Updating ]`
+## 4. Optimize Column Alignment for Scannability
+*   Target the AGE column and the REMARKS column. 
+*   Update their text alignment from left-aligned to strictly center-aligned for both the table headers and the individual data cells. (Rationale: Centering short integers and status flags makes vertical scanning much faster for the user).

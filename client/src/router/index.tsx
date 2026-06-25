@@ -22,8 +22,8 @@ import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
 
 import ChangePassword from "@/features/auth/components/ChangePasswordModal";
-import Sections from "@/features/sections/pages/Index"
 import Homerooms from "@/features/sections/pages/Homerooms"
+import ViewRoster from "@/features/sections/pages/ViewRoster"
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
@@ -92,7 +92,7 @@ export const router = createBrowserRouter([
             path: "/monitor",
             element: <Monitor />,
           },
-        {
+          {
             path: "/change-password",
             element: <ChangePassword />,
           },
@@ -164,11 +164,11 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/sections",
-                element: <Sections />,
+                element: <Homerooms />,
               },
               {
-                path: "/sections/homerooms",
-                element: <Homerooms />,
+                path: "/sections/view-roster/:sectionId",
+                element: <ViewRoster />,
               },
               {
                 path: "/monitoring/enrollment/requirements",

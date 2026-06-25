@@ -15,12 +15,6 @@ import {
   Sheet,
   SheetContent,
 } from "@/shared/ui/sheet";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/shared/ui/accordion";
 import type { SectionFormState, TeacherOption } from "../types";
 
 const TLE_REQUIRED_DISPLAY_ORDERS = [9, 10];
@@ -126,24 +120,17 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-muted/10">
-            <Accordion
-              type="multiple"
-              defaultValue={["identity", "advisory"]}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               {/* 1. SECTION IDENTITY */}
-              <AccordionItem
-                value="identity"
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-              >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground hover:no-underline hover:bg-muted/10">
+              <div className="bg-card border border-border rounded-xl shadow-sm">
+                <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-primary" />
                     1. Section Identity
                   </span>
-                </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
-                  <div className="space-y-4 pt-2">
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <div className="space-y-4">
                     {showSectionTypeRadio && (
                       <div className="space-y-2">
                         <Label className="font-bold text-base uppercase">Section Type</Label>
@@ -263,7 +250,15 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                         onChange={(event) =>
                           onFieldChange("name", event.target.value)
                         }
-                        className="font-black uppercase text-base placeholder:text-foreground/30"
+                        onBlur={() => {
+                          const trimmed = formData.name.trim();
+                          const titleCased = trimmed.replace(
+                            /\w\S*/g,
+                            (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+                          );
+                          onFieldChange("name", titleCased);
+                        }}
+                        className="font-black text-base placeholder:text-foreground/30"
                       />
                       <p className="text-[10px] text-foreground font-bold italic">
                         {isTleLaboratory
@@ -272,23 +267,20 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                       </p>
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
+                </div>
+              </div>
 
               {/* 2. ADVISORY & CAPACITY */}
-              <AccordionItem
-                value="advisory"
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
-              >
-                <AccordionTrigger className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground hover:no-underline hover:bg-muted/10">
+              <div className="bg-card border border-border rounded-xl shadow-sm">
+                <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
                     2. Advisory & Capacity
                   </span>
-                </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 pt-2 border-t border-border">
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <div className="flex gap-4 w-full">
+                    <div className="space-y-2 w-[70%]">
                       <Label className="font-bold text-base uppercase">{isTleLaboratory ? "TLE Instructor" : "Class Adviser"}</Label>
                       <Select
                         value={formData.adviserId}
@@ -316,9 +308,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="font-bold text-base uppercase">Maximum Capacity *</Label>
-                      <div className="flex items-center max-w-[600px]">
+                    <div className="space-y-2 w-[30%]">
+                      <Label className="font-bold text-base uppercase">Max Capacity *</Label>
+                      <div className="flex items-center w-full">
                         <Button
                           type="button"
                           variant="outline"
@@ -356,9 +348,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                       </div>
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="border-t px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end shrink-0">
