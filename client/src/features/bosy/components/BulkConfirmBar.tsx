@@ -42,7 +42,7 @@ export function BulkConfirmBar({
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            className="h-7 w-7 text-foreground hover:text-foreground hover:bg-muted/50"
             disabled={loading}
             onClick={onClear}>
             <X className="h-4 w-4" />

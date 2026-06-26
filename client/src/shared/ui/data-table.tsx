@@ -190,7 +190,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "text-center font-extrabold text-slate-800 dark:text-slate-200 text-xs px-3 sticky top-0 z-20 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
+                        "text-center font-extrabold text-foreground dark:text-slate-200 text-xs px-3 sticky top-0 z-20 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
                         dense ? "h-8" : "h-11",
                         meta?.headerClassName || meta?.className
                       )}

@@ -100,13 +100,10 @@ export function QueueTable({
         id: "learner",
         accessorKey: "lastName",
         header: ({ column }) => (
-          <div className="bg-primary text-primary-foreground">
-            <DataTableColumnHeader
-              column={column}
-              title="LRN & Learner's Name"
-              className="text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
-            />
-          </div>
+          <DataTableColumnHeader
+            column={column}
+            title="LRN & Learner's Name"
+          />
         ),
         cell: ({ row }) => {
           const r = row.original;
@@ -116,7 +113,7 @@ export function QueueTable({
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName[0]}.` : ""}
               </span>
-              <span className="text-sm text-muted-foreground font-semibold">
+              <span className="text-sm text-foreground font-semibold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -127,13 +124,11 @@ export function QueueTable({
         id: "gradeLevel",
         accessorKey: "gradeLevelName",
         header: ({ column }) => (
-          <div className="bg-primary text-primary-foreground">
-            <DataTableColumnHeader
-              column={column}
-              title="Target Grade"
-              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
-            />
-          </div>
+          <DataTableColumnHeader
+            column={column}
+            title="Target Grade"
+            className="justify-center"
+          />
         ),
         cell: ({ row }) => (
           <div className="text-center">
@@ -150,13 +145,10 @@ export function QueueTable({
         id: "priorSection",
         accessorKey: "priorSectionName",
         header: ({ column }) => (
-          <div className="bg-primary text-primary-foreground">
-            <DataTableColumnHeader
-              column={column}
-              title="Prior Section (S.Y. 25-26)"
-              className="text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
-            />
-          </div>
+          <DataTableColumnHeader
+            column={column}
+            title="Prior Section (S.Y. 25-26)"
+          />
         ),
         cell: ({ row }) => (
           <div className="text-base">
@@ -175,13 +167,11 @@ export function QueueTable({
         id: "academicStatus",
         accessorKey: "academicStatus",
         header: ({ column }) => (
-          <div className="bg-primary text-primary-foreground">
-            <DataTableColumnHeader
-              column={column}
-              title="Last Year's Result"
-              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
-            />
-          </div>
+          <DataTableColumnHeader
+            column={column}
+            title="Last Year's Result"
+            className="justify-center"
+          />
         ),
         cell: ({ row }) => {
           const s = row.original.academicStatus;
@@ -206,13 +196,11 @@ export function QueueTable({
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
-          <div className="bg-primary text-primary-foreground">
-            <DataTableColumnHeader
-              column={column}
-              title="Intake Status"
-              className="justify-center text-sm font-bold bg-primary text-primary-foreground py-2 px-1"
-            />
-          </div>
+          <DataTableColumnHeader
+            column={column}
+            title="Intake Status"
+            className="justify-center"
+          />
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
@@ -226,8 +214,12 @@ export function QueueTable({
     if (showConfirmAction) {
       base.push({
         id: "actions",
-        header: () => (
-          <div className="text-center font-bold text-sm bg-primary text-primary-foreground py-2.5">Action</div>
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Action"
+            className="justify-center"
+          />
         ),
         cell: ({ row }) => {
           const r = row.original;
@@ -268,7 +260,7 @@ export function QueueTable({
   return (
     <DataTable
       emptyStateContent={
-        <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
           <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
             <CheckCircle2 className="h-6 w-6 text-emerald-500" />
           </div>

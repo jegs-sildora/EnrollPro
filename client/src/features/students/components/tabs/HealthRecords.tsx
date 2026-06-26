@@ -154,9 +154,9 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
       },
       {
         id: "actions",
-        header: () => <div className="text-right">Actions</div>,
+        header: () => <div className="text-center">Actions</div>,
         cell: ({ row }) => (
-          <div className="text-right">
+          <div className="text-center">
             <Button
               variant="ghost"
               size="sm"

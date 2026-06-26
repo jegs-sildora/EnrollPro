@@ -131,7 +131,7 @@ const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
   {
     id: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="NAME" className="justify-start" />
+      <DataTableColumnHeader column={column} title="NAME" className="justify-center" />
     ),
     cell: ({ row }) => {
       const r = row.original;

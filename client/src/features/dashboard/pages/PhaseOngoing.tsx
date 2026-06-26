@@ -178,7 +178,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
             <p className="text-sm font-semibold text-foreground">{stats?.v85Stats?.activeSchoolTallyBOSY ?? 0} Official BOSY Baseline • +{stats?.v85Stats?.activeSchoolTallyLate ?? 0} Appended Late Enrollees</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 mt-4 border-t pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 border-t pt-4">
             {Array.of(7, 8, 9, 10).map((grade, idx) => {
               const b = stats?.gradeLevelBreakdown?.at(idx);
               return (

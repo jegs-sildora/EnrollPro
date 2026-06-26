@@ -28,6 +28,7 @@ import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import type {
   AuditLog,
   ChecklistData,
@@ -406,11 +407,17 @@ export function DocumentManagement({
       },
       {
         id: "actions",
-        header: "",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Action"
+            className="justify-center"
+          />
+        ),
         cell: ({ row }) => {
           const auditRow = row.original;
           return (
-            <div className="flex justify-end gap-2 pr-2">
+            <div className="flex justify-center gap-2">
               {auditRow.document ? (
                 <div className="flex gap-1">
                   <Button

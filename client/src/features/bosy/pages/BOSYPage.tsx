@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, startTransition, useRef } from "react";
+import { useState, useEffect, useCallback, startTransition } from "react";
 import {
   Search,
   Loader2,
@@ -159,9 +159,7 @@ export default function BOSYPage() {
   const [noShowLoading, setNoShowLoading] = useState(false);
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
   const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isTableHovered, setIsTableHovered] = useState(false);
-  const isUserInteracting = isSearchFocused || isTableHovered;
+
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -206,29 +204,7 @@ export default function BOSYPage() {
     void fetchQueue();
   }, [fetchQueue]);
 
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    if (typeof syId !== "number" || isUserInteracting) return;
 
-    const tick = () => {
-      void fetchReadiness();
-      void fetchQueue();
-    };
-
-    const intervalId = setInterval(tick, 5_000);
-    pollingRef.current = intervalId;
-    return () => {
-      if (pollingRef.current !== null) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    };
-  }, [
-    syId,
-    isUserInteracting,
-    fetchReadiness,
-    fetchQueue,
-  ]);
 
 
 
@@ -391,21 +367,6 @@ export default function BOSYPage() {
             <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}
         </div>
-        <div className="flex items-center w-full md:w-auto gap-2">
-          <div
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-bold",
-              "border-emerald-200 text-emerald-700 bg-emerald-50"
-            )}
-          >
-            <span
-              className={cn(
-                "size-2 rounded-full bg-emerald-500"
-              )}
-            />
-            Local Staging: Active
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -434,7 +395,7 @@ export default function BOSYPage() {
             actionText: "Process Transfers →",
             isPrimaryMetric: false,
           },
-        ].map(({ label, subBadge, value, filterVal, actionText, isPrimaryMetric }) => (
+        ].map(({ label, subBadge, value, filterVal, isPrimaryMetric }) => (
           <Card
             key={label}
             onClick={() => {
@@ -448,30 +409,18 @@ export default function BOSYPage() {
             )}>
             <CardContent className="p-4 flex flex-row h-full justify-between gap-4">
               <div className="flex flex-col justify-between">
-                <p className="text-sm font-bold leading-tight text-foreground">
+                <p className="text-base font-bold leading-tight text-foreground">
                   {label}
                 </p>
                 <div className="mt-4">
-                  <p 
-                    className={cn("text-4xl font-black leading-none", isPrimaryMetric && value > 0 ? "" : "text-slate-800")}
+                  <p
+                    className={cn("text-4xl font-black leading-none", isPrimaryMetric && value > 0 ? "" : "text-foreground")}
                     style={isPrimaryMetric && value > 0 ? { color: "hsl(var(--primary))" } : undefined}
                   >
                     {value}
                   </p>
-                  <p className="text-xs font-semibold text-muted-foreground mt-0.5">{subBadge}</p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{subBadge}</p>
                 </div>
-              </div>
-              <div className="flex self-end">
-                {value === 0 ? (
-                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                    Accounted For
-                  </div>
-                ) : (
-                  <Button variant="outline" size="sm" className="text-xs font-medium bg-transparent">
-                    {actionText}
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -482,13 +431,12 @@ export default function BOSYPage() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
             <div className="relative w-full lg:w-1/2 shrink-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <span className="text-base font-bold text-foreground">Search Learner</span>
+              <Search className="absolute left-2.5 h-4 w-4 bottom-3.5 text-foreground" />
               <Input
                 placeholder="Search by LRN, Last Name, or First Name..."
-                className="pl-9 h-10 w-full text-sm font-semibold"
+                className="pl-9 h-10 w-full text-base font-semibold mt-2"
                 value={queueSearch}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
                 onChange={(e) => {
                   setQueueSearch(e.target.value);
                   startTransition(() => {
@@ -511,7 +459,7 @@ export default function BOSYPage() {
               ) : (
                 <>
                   <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-sm font-bold text-foreground">Target Grade</span>
+                    <span className="text-base font-bold text-foreground">Target Grade</span>
                     <Select
                       value={targetGrade}
                       onValueChange={(val) => {
@@ -520,20 +468,20 @@ export default function BOSYPage() {
                         setRowSelection({});
                       }}
                     >
-                      <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-sm font-semibold">
+                      <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-base font-semibold">
                         <SelectValue placeholder="All Returning Grades" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL" className="text-sm">All Returning Grades</SelectItem>
-                        <SelectItem value="8" className="text-sm">Incoming Grade 8</SelectItem>
-                        <SelectItem value="9" className="text-sm">Incoming Grade 9</SelectItem>
-                        <SelectItem value="10" className="text-sm">Incoming Grade 10</SelectItem>
+                        <SelectItem value="ALL" className="text-base">All Returning Grades</SelectItem>
+                        <SelectItem value="8" className="text-base">Incoming Grade 8</SelectItem>
+                        <SelectItem value="9" className="text-base">Incoming Grade 9</SelectItem>
+                        <SelectItem value="10" className="text-base">Incoming Grade 10</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-sm font-bold text-foreground">Prior Section</span>
+                    <span className="text-base font-bold text-foreground">Prior Section</span>
                     <Select
                       value={previousSectionName}
                       onValueChange={(val) => {
@@ -541,15 +489,15 @@ export default function BOSYPage() {
                         startTransition(() => setQueuePage(1));
                       }}
                     >
-                      <SelectTrigger className="h-10 w-full sm:w-64 text-sm font-semibold whitespace-nowrap">
+                      <SelectTrigger className="h-10 w-full sm:w-64 text-base font-semibold whitespace-nowrap">
                         <SelectValue placeholder="All Previous Sections" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL" className="text-sm font-semibold">All Previous Sections</SelectItem>
+                        <SelectItem value="ALL" className="text-base font-semibold">All Previous Sections</SelectItem>
                         {previousSections
                           .filter((sec) => typeof sec === "string" && sec.trim() !== "")
                           .map((sec) => (
-                            <SelectItem key={sec} value={sec} className="text-sm font-semibold">
+                            <SelectItem key={sec} value={sec} className="text-base font-semibold">
                               {sec}
                             </SelectItem>
                           ))}
@@ -565,11 +513,7 @@ export default function BOSYPage() {
 
       <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
         <CardContent className="p-0 flex flex-col min-h-0">
-          <div
-            className="overflow-auto bg-muted/5"
-            onMouseEnter={() => setIsTableHovered(true)}
-            onMouseLeave={() => setIsTableHovered(false)}
-          >
+          <div className="overflow-auto bg-muted/5 w-full max-w-full">
             <QueueTable
               items={queueItems}
               loading={queueLoading}

@@ -939,10 +939,16 @@ export default function Students() {
         },
         {
           id: "actions",
-          meta: { skeletonClassName: "w-[100px] ml-auto" },
-          header: () => <div className="w-full"></div>,
+          meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Action"
+              className="justify-center"
+            />
+          ),
           cell: () => (
-            <div className="flex w-full justify-end py-3 pr-2">
+            <div className="flex w-full justify-center py-3">
               <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold">
                 <Eye className="w-4 h-4 mr-2" />
                 View

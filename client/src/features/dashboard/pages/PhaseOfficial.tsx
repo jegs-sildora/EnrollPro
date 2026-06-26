@@ -68,26 +68,26 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col w-full">
         <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
           <div className="flex flex-col items-center gap-1">
-            <h3 className="text-base sm:text-lg font-bold text-foreground">Total Official Enrollment</h3>
+            <h3 className="text-base sm:text-lg font-black text-foreground">Total Official Enrollment</h3>
             <div className="text-5xl sm:text-6xl font-black" style={{ color: "hsl(var(--primary))" }}>
               <AnimatedNumber value={stats?.kpiHeader?.enrolledTotal ?? 0} />
             </div>
-            <p className="text-sm font-semibold text-foreground">Officially Enrolled JHS Learners</p>
+            <p className="text-base font-bold text-foreground">Officially Enrolled JHS Learners</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 mt-4 border-t pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 border-t pt-4">
             {Array.of(7, 8, 9, 10).map((grade, idx) => {
               const b = stats?.gradeLevelBreakdown?.at(idx);
               return (
                 <div key={grade} className="text-center">
-                  <p className="text-sm font-semibold text-foreground mb-1">Grade {grade}</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-base font-bold text-foreground mb-1">Grade {grade}</p>
+                  <p className="text-3xl font-black text-foreground">
                     <AnimatedNumber value={b?.current ?? 0} />
                   </p>
-                  <p className="text-xs text-foreground mt-1 font-semibold flex justify-center gap-1.5">
-                    <span className="text-blue-700">{b?.male ?? 0} M</span>
-                    <span>|</span>
-                    <span className="text-pink-700">{b?.female ?? 0} F</span>
+                  <p className="text-base text-foreground mt-1 font-semibold flex justify-center gap-1.5">
+                    <span className="text-blue-700 font-bold">{b?.male ?? 0} M</span>
+                    <span className="font-bold">|</span>
+                    <span className="text-pink-700 font-bold">{b?.female ?? 0} F</span>
                   </p>
                 </div>
               );

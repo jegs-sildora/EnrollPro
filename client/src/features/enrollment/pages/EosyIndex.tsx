@@ -490,7 +490,7 @@ export default function EosyUpdating() {
       {
         id: "student",
         accessorKey: "enrollmentApplication.learner.lastName",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" className="justify-start pl-0" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" className="justify-center" />,
         cell: ({ row }) => {
           const sex = row.original.enrollmentApplication.learner.sex;
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
@@ -525,7 +525,7 @@ export default function EosyUpdating() {
       {
         id: "section",
         accessorKey: "section.name",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-start" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-center" />,
         cell: ({ row }) => (
           <span className="text-base font-black">{row.original.section.name}</span>
         ),
