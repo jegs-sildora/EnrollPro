@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { 
@@ -24,25 +24,32 @@ import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 
 interface PendingVerification {
   id: number;
+  learnerId: number;
   trackingNumber: string | null;
   status: string;
   createdAt: string;
   learner: {
+    id: number;
     firstName: string;
     lastName: string;
     middleName: string | null;
     lrn: string | null;
     sex: "MALE" | "FEMALE";
     previousGenAve?: number | null;
+    birthdate: string;
   };
   gradeLevel: {
     name: string;
   };
   applicantType: string;
-  previousSchool: any;
+  previousSchool: {
+    schoolName?: string;
+    generalAverage?: number;
+  } | null;
   familyMembers: Array<{
     relationship: string;
     firstName: string;
@@ -141,6 +148,64 @@ export function VerificationWorkspace() {
     if (selectedApp) {
       setAssignedProgram(selectedApp.applicantType);
     }
+  }, [selectedApp]);
+
+  const [duplicateInfo, setDuplicateInfo] = useState<{
+    firstName: string;
+    lastName: string;
+    lrn: string | null;
+    birthdate: string;
+    activeEnrollment: {
+      id: number;
+      trackingNumber: string | null;
+      status: string;
+      gradeLevelName: string;
+      sectionName: string | null;
+    } | null;
+  } | null>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
+  useEffect(() => {
+    if (!selectedApp) {
+      setDuplicateInfo(null);
+      return;
+    }
+
+    const lrnVal = selectedApp.learner.lrn ? selectedApp.learner.lrn.trim() : "";
+    const fName = selectedApp.learner.firstName.trim();
+    const lName = selectedApp.learner.lastName.trim();
+    const bDate = selectedApp.learner.birthdate;
+
+    const hasValidLrn = lrnVal.length === 12;
+    const hasValidDemographics = fName.length > 0 && lName.length > 0 && bDate && bDate.length > 0;
+
+    if (!hasValidLrn && !hasValidDemographics) {
+      setDuplicateInfo(null);
+      return;
+    }
+
+    api.post("/learner/check-duplicate", {
+      lrn: hasValidLrn ? lrnVal : undefined,
+      firstName: fName || undefined,
+      lastName: lName || undefined,
+      birthdate: bDate || undefined,
+    }).then((res) => {
+      if (res.data?.duplicateFound) {
+        const dupLearner = res.data.learner;
+        const activeEnrollment = dupLearner.activeEnrollment;
+        if (activeEnrollment && activeEnrollment.id !== selectedApp.id) {
+          setDuplicateInfo(dupLearner);
+          setShowDuplicateModal(true);
+        } else {
+          setDuplicateInfo(null);
+        }
+      } else {
+        setDuplicateInfo(null);
+      }
+    }).catch((err) => {
+      console.error("Duplicate check failed in VerificationWorkspace", err);
+      setDuplicateInfo(null);
+    });
   }, [selectedApp]);
 
   // Effect to auto-select if only 1 exact match via search
@@ -369,6 +434,20 @@ export function VerificationWorkspace() {
                   })()}
                 </div>
 
+                {duplicateInfo && (
+                  <div className="mb-8 p-4 rounded-xl border border-rose-200 bg-rose-50 text-left flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-base font-bold text-rose-900">
+                        Duplicate Enrollment Sentinel Triggered
+                      </p>
+                      <p className="text-base text-rose-700 font-bold">
+                        A matching active enrollment for this learner was found (Tracking: {duplicateInfo.activeEnrollment?.trackingNumber || "N/A"}, Section: {duplicateInfo.activeEnrollment?.sectionName || "Unassigned"}). Intake is blocked.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
                   <div className="space-y-4 mb-8">
                     <h3 className="text-base font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
@@ -470,7 +549,7 @@ export function VerificationWorkspace() {
                 {!(sf9Verified && psaVerified) && (
                   <Button
                     onClick={enrollTemporary}
-                    disabled={processing || isHistoricalReadOnly}
+                    disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                     variant="outline"
                     className="h-14 px-8 text-base leading-tight font-black uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
                   >
@@ -481,10 +560,10 @@ export function VerificationWorkspace() {
                 
                 <Button
                   onClick={approveLearner}
-                  disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly}
+                  disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                   className={cn(
                     "flex-1 h-14 text-base leading-tight font-black uppercase tracking-widest transition-all shadow-none",
-                    sf9Verified && psaVerified
+                    sf9Verified && psaVerified && !duplicateInfo
                       ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                       : "bg-muted text-muted-foreground hover:bg-muted opacity-50"
                   )}
@@ -514,6 +593,73 @@ export function VerificationWorkspace() {
           )}
         </Card>
       </div>
+
+      {/* Duplication Sentinel Blocking Modal */}
+      <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-4 bg-rose-50 border-b border-rose-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-rose-100 rounded-lg text-rose-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-base font-black uppercase text-rose-900">
+                Duplicate Profile Detected
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="px-6 py-5 bg-background space-y-4 text-left">
+            <p className="text-base leading-tight font-bold text-rose-900">
+              This learner already has an active enrollment record for the current school year. Verification is blocked.
+            </p>
+            {duplicateInfo && (
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex justify-between text-base font-bold">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="text-foreground uppercase">
+                    {duplicateInfo.lastName}, {duplicateInfo.firstName}
+                  </span>
+                </div>
+                {duplicateInfo.lrn && (
+                  <div className="flex justify-between text-base font-bold">
+                    <span className="text-muted-foreground">LRN:</span>
+                    <span className="text-foreground font-mono">{duplicateInfo.lrn}</span>
+                  </div>
+                )}
+                {duplicateInfo.activeEnrollment && (
+                  <>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Tracking Number:</span>
+                      <span className="text-foreground font-mono">
+                        {duplicateInfo.activeEnrollment.trackingNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Active Section:</span>
+                      <span className="text-foreground uppercase">
+                        {duplicateInfo.activeEnrollment.sectionName || "Unassigned"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Status:</span>
+                      <Badge variant="outline" className="font-black bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
+                        {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end">
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase text-base px-6 shadow-none border-none"
+              onClick={() => setShowDuplicateModal(false)}
+            >
+              Close and Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

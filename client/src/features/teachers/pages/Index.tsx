@@ -221,13 +221,13 @@ export default function Teachers() {
         designationFilter === "all" ||
         (designationFilter === "SUBJECT_TEACHER"
           ? !teacher.userAccount?.roles ||
-            teacher.userAccount.roles.length === 0
+          teacher.userAccount.roles.length === 0
           : teacher.userAccount?.roles?.includes(designationFilter));
 
       const matchesDepartment =
         departmentFilter === "all" ||
         (teacher.department ?? "").toUpperCase() ===
-          departmentFilter.toUpperCase();
+        departmentFilter.toUpperCase();
 
       return (
         matchesSearch &&
@@ -397,7 +397,7 @@ export default function Teachers() {
     <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
-          <h1 className="text-2xl md:text-3xl font-bold text-balance text-foreground">
+          <h1 className="text-2xl md:text-3xl font-black text-balance text-foreground">
             Faculty & Staff Roster
           </h1>
           <p className="text-base leading-tight text-foreground text-balance font-bold">

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { BookOpen, Users } from "lucide-react";
+import { BookOpen, Users, Eye } from "lucide-react";
 import { DEPED_TEACHER_DEPARTMENT_OPTIONS } from "@enrollpro/shared";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -164,32 +164,33 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
                   <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(180px,0.7fr)_minmax(280px,1.3fr)]">
                     {teacher.department ? (
-                       <Badge variant="outline" className="font-bold truncate max-w-[200px]">
-                         <BookOpen className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                         <span className="truncate">
-                           {DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === teacher.department)?.label || teacher.department}
-                         </span>
-                       </Badge>
+                      <Badge variant="outline" className="font-bold truncate max-w-[200px]">
+                        <BookOpen className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                        <span className="truncate">
+                          {DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === teacher.department)?.label || teacher.department}
+                        </span>
+                      </Badge>
                     ) : null}
 
                     {(() => {
-                        const advisory = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
-                        if (advisory !== "-") {
-                          return (
-                            <div className="flex min-w-[280px] items-start gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-bold leading-snug text-slate-700">
-                              <Users className="mt-0.5 w-3.5 h-3.5 shrink-0 text-slate-500" />
-                              <span className="whitespace-normal break-words">
-                                Homeroom Adviser: {advisory}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return null;
+                      const advisory = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
+                      if (advisory !== "-") {
+                        return (
+                          <div className="flex min-w-[280px] items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-bold leading-snug text-slate-700">
+                            <Users className="mt-0.5 w-3.5 h-3.5 shrink-0 text-slate-500" />
+                            <span className="whitespace-normal break-words">
+                              Homeroom Adviser: {advisory}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
                     })()}
 
                   </div>
-                  <span className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-black text-slate-700 transition-colors group-hover:bg-slate-100 group-hover:text-slate-900">
-                    Open Profile
+                  <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold pointer-events-none">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View
                   </span>
                 </button>
               ))

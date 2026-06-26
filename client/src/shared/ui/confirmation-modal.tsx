@@ -154,7 +154,7 @@ export function ConfirmationModal({
               {description}
             </DialogDescription>
             {footerWarning && (
-              <div className="text-base font-bold text-destructive mt-2 p-3 bg-destructive/10 rounded-md outline-3 outline-destructive">
+              <div className="text-base font-semibold text-destructive mt-2 p-3 bg-destructive/5 rounded-md outline-2 outline-destructive">
                 {footerWarning}
               </div>
             )}

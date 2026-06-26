@@ -457,6 +457,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
           lrn: true,
           sex: true,
           previousGenAve: true,
+          birthdate: true,
         },
       },
       gradeLevel: { select: { name: true } },

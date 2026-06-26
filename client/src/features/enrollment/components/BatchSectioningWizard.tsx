@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { sileo } from "sileo";
 import { useBlocker } from "react-router";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import api from "@/shared/api/axiosInstance";
 import axios from "axios";
@@ -274,6 +275,7 @@ export function BatchSectioningWizard({
   gradeLevelName,
   schoolYearId,
 }: Props) {
+  const { ayLabel } = useSchoolYearContext();
   const {
     previewData,
     modifiedAssignments,
@@ -1147,7 +1149,7 @@ export function BatchSectioningWizard({
                 </div>
                 <DialogDescription className="text-base font-bold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
-                  rosters for S.Y. 2026-2027 have not been finalized.
+                  rosters for S.Y. {ayLabel || "2026-2027"} have not been finalized.
                   <br />
                   <br />
                   Don't worry, your progress is paused. You can safely return to
@@ -1195,7 +1197,7 @@ export function BatchSectioningWizard({
                 </div>
                 <DialogDescription className="text-base font-bold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
-                  rosters for S.Y. 2026-2027 have not been finalized.
+                  rosters for S.Y. {ayLabel || "2026-2027"} have not been finalized.
                   <br />
                   <br />
                   Don't worry, your progress is paused. You can safely return to

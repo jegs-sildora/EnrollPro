@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { VerificationWorkspace } from "../components/VerificationWorkspace";
 import { SectioningWorkspace } from "../components/SectioningWorkspace";
@@ -7,7 +7,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
 
 export default function EnrollmentManagement() {
-  const [activeTab, setActiveTab] = useState("verification");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "sectioning" ? "sectioning" : "verification";
+
+  const setActiveTab = (val: string) => {
+    setSearchParams({ tab: val });
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">

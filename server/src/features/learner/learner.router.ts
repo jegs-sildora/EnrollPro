@@ -5,6 +5,7 @@ import {
   learnerSetupPassword,
   getLearnerMe,
   getLearnerDashboardUnified,
+  checkDuplicateLearner,
 } from "./learner.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -56,6 +57,13 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"),
   lookupLearnerByLrn,
+);
+
+router.post(
+  "/check-duplicate",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"),
+  checkDuplicateLearner,
 );
 
 export default router;

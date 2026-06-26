@@ -1725,7 +1725,7 @@ export default function SchoolYearTab() {
             )}
             {selectedPhase === "EOSY_CLOSING" && (
               <>
-                <p>You are officially closing School Year 2026–2027 to begin End of School Year (EOSY) finalization.</p>
+                <p>You are officially closing School Year {activeYear?.yearLabel || "2026–2027"} to begin End of School Year (EOSY) finalization.</p>
                 <p>This locks all active class rolls across Grades 7 to 10. Class advisers will no longer be able to encode learner transfers or update profile details, allowing the administration to safely finalize promotional statuses and general averages.</p>
               </>
             )}

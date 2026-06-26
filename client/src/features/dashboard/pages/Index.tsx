@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "@/shared/api/axiosInstance";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Skeleton } from "@/shared/ui/skeleton";
+import type { DashboardStats } from "../types";
 
 import { PhaseOfficial } from "./PhaseOfficial";
 import { PhaseOngoing } from "./PhaseOngoing";
@@ -10,7 +11,7 @@ import { PhaseEOSY } from "./PhaseEOSY";
 export default function DashboardIndex() {
   const { ayId } = useSchoolYearContext();
 
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function DashboardIndex() {
     load();
   }, [ayId]);
 
-  if (loading) {
+  if (loading || !stats) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-[300px]" />

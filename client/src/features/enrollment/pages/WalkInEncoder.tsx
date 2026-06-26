@@ -239,6 +239,46 @@ export default function WalkInEncoder() {
     date: string;
   } | null>(null);
 
+  const [duplicateInfo, setDuplicateInfo] = useState<any | null>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
+  useEffect(() => {
+    const lrnVal = formData.lrn.trim();
+    const fName = formData.firstName.trim();
+    const lName = formData.lastName.trim();
+    const bDate = formData.birthdate;
+
+    const hasValidLrn = lrnVal.length === 12;
+    const hasValidDemographics = fName.length > 0 && lName.length > 0 && bDate.length > 0;
+
+    if (!hasValidLrn && !hasValidDemographics) {
+      setDuplicateInfo(null);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await api.post("/learner/check-duplicate", {
+          lrn: hasValidLrn ? lrnVal : undefined,
+          firstName: fName || undefined,
+          lastName: lName || undefined,
+          birthdate: bDate || undefined,
+        });
+
+        if (response.data?.duplicateFound) {
+          setDuplicateInfo(response.data.learner);
+          setShowDuplicateModal(true);
+        } else {
+          setDuplicateInfo(null);
+        }
+      } catch (err) {
+        console.error("Duplicate check failed", err);
+      }
+    }, 600);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [formData.lrn, formData.firstName, formData.lastName, formData.birthdate]);
+
   const [dateInput, setDateInput] = useState(() => {
     if (!formData.birthdate) return "";
     const d = new Date(formData.birthdate);
@@ -573,9 +613,15 @@ export default function WalkInEncoder() {
     setHydrationContext(null);
     setHydratedGradeToken(null);
     setDateInput("");
+    setDuplicateInfo(null);
+    setShowDuplicateModal(false);
   };
 
   const handleSubmit = () => {
+    if (duplicateInfo) {
+      setShowDuplicateModal(true);
+      return;
+    }
     if (validateForm()) {
       setShowSubmitConfirmModal(true);
     }
@@ -1708,7 +1754,7 @@ export default function WalkInEncoder() {
                   type="button"
                   className="h-11 px-6 font-bold text-white shadow-none border-none animate-in fade-in zoom-in duration-200"
                   style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
-                  disabled={submitting}
+                  disabled={submitting || Boolean(duplicateInfo)}
                   onClick={() => { handleSubmit(); }}>
                   {submitting ? (
                     <>
@@ -1879,6 +1925,77 @@ export default function WalkInEncoder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Duplication Sentinel Blocking Modal */}
+      <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-4 bg-rose-50 border-b border-rose-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-rose-100 rounded-lg text-rose-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-base font-black uppercase text-rose-900">
+                Duplicate Profile Detected
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="px-6 py-5 bg-background space-y-4 text-left">
+            <p className="text-base leading-tight font-bold text-foreground">
+              A learner profile matching these credentials already exists in the system. Submission is blocked.
+            </p>
+            {duplicateInfo && (
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex justify-between text-base font-bold">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="text-foreground uppercase">
+                    {duplicateInfo.lastName}, {duplicateInfo.firstName}
+                  </span>
+                </div>
+                {duplicateInfo.lrn && (
+                  <div className="flex justify-between text-base font-bold">
+                    <span className="text-muted-foreground">LRN:</span>
+                    <span className="text-foreground font-mono">{duplicateInfo.lrn}</span>
+                  </div>
+                )}
+                {duplicateInfo.activeEnrollment ? (
+                  <>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Tracking Number:</span>
+                      <span className="text-foreground font-mono">
+                        {duplicateInfo.activeEnrollment.trackingNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Active Section:</span>
+                      <span className="text-foreground uppercase">
+                        {duplicateInfo.activeEnrollment.sectionName || "Not assigned yet"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-muted-foreground">Status:</span>
+                      <Badge variant="outline" className="font-black bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
+                        {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-base text-amber-700 font-bold">
+                    No active enrollment application found for the current school year.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end">
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase text-base px-6 shadow-none border-none"
+              onClick={() => setShowDuplicateModal(false)}
+            >
+              Close and Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Submission Confirmation Modal */}
       <ConfirmationModal
         open={showSubmitConfirmModal}

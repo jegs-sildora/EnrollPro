@@ -1,36 +1,44 @@
-# SYSTEM DIRECTIVE: Faculty Roster UI/UX Overhaul and Truncation Fix (v45.0)
+# SYSTEM DIRECTIVE: Strict Capstone Scope and Phase-Driven Analytics Engine (v62.0)
 
-**Context Persona:**
-Act as a Senior UI/UX Frontend Engineer and a Philippine Department of Education (DepEd) Public High School Principal. Your standard for UI design is high-contrast, scannable, and strictly corporate GovTech. Do not use Western SaaS buzzwords. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
+**Context Persona:** Act as a Senior GovTech Enterprise Architect and a Chief Philippine Department of Education (DepEd) High School Registrar. Your standard is offline-first, high-contrast, state-machine administrative software. Strictly avoid developer database slang and Western SaaS buzzwords. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
 
-**Core Mandate:**
-Examine the Faculty and Staff Roster interface shown in the file named image_06bf9b.jpg. The current layout suffers from severe data truncation, aggressive typography, and inconsistent button states. Execute the following four structural and aesthetic corrections:
+**Core Mandate:** The Master Dashboard dynamically reconfigures its structural layout, notification cards, and visual analytics based strictly on the active System Academic Phase selected in the Global System Configuration store. You must refactor the dashboard shell to cover strictly the documented scope of EnrollPro: Student Admission, SIMS Learner Profiling, Heterogeneous Homeroom Sectioning, Statutory Document Verification, and System Audit Trails. Do not render any grading, scheduling, coursework, or Form 137 (SF10) permanent record generation logic.
 
-## 1. Eradicate the Advisership Truncation (Critical Layout Fix)
+Execute the following architectural implementations:
 
-The system is currently using text-overflow ellipsis on the homeroom assignment (e.g., Adviser: Grade 8 - Ma...). This is an operational failure. You must guarantee the full section name is permanently visible.
+## 1. Sovereign Lexicon and Anti-Duplication Guardrails
+* **Cloud Hallucination Purge:** Eradicate all UI copy referencing live cloud syncing or national database pushing. Emphasize sovereign local intranet network archiving and offline clerical preparation.
+* **Clerical Terminology:** Enforce strict DepEd basic education vocabulary across all components: Learner Reference Number (LRN), Walk-in Encoding, Online Enrollment Verification, Feeder Elementary Intake, Transferee In, Transferee Out, Balik-Aral (Returning Learner), Dropped Out, Active Roster, and SIMS Learner Directory.
+* **Duplication Sentinel:** During walk-in encoding or online application verification, the system must continuously cross-reference inputs against the local PostgreSQL learners table. If an encoded 12-digit LRN or exact learner demographic match already exists, instantly trigger a blocking modal warning of duplicate enrollment.
 
-- **The Fix:** Restructure the internal flexbox or CSS grid of the faculty list item. Allocate a significantly wider minimum-width strictly to the Advisership data block.
-- **Text Wrapping:** If the section name is exceptionally long (e.g., Grade 8 — Science, Technology, and Engineering), allow the text to wrap cleanly to a second line within its container. You are strictly forbidden from hiding text with an ellipsis.
-- **Format:** Standardize the string to read strictly as: Homeroom Adviser: Grade 8 — Mabini.
+## 2. Phase Logic: Official Enrollment Phase (BOSY)
+When the global configuration state is set to Official Enrollment, the dashboard must function strictly as an admission intake and capacity-planning portal:
 
-## 2. Typography and Casing Scrub
+* **Top Status Sentinel:** Render the constructive institutional blue banner announcing: Academic Phase: Official Beginning of School Year (BOSY) Enrollment is Ongoing. Body text must confirm walk-in office encoding and public online enrollment verification are actively feeding the database.
+* **Demographic Tally Cards:** Itemize total active headcount across Grades 7, 8, 9, and 10. Each card must display live Male vs. Female ratios (derived from the learners table sex enum) and track specific intake sub-types: Feeder Elementary Graduates, External Transferees In, and Balik-Aral.
+* **Classroom Deficit Evaluator:** Compare live enrollment counts against configured homeroom seating capacities (max_capacity column in the sections table). If headcount surpasses available configured section seats, render the critical alert: Classroom Capacity Deficit Detected.
+* **Visual Analytics Grid:**
+    * Daily Intake Velocity (Stacked Bar Chart): X-Axis: Calendar Days (last 14 days). Y-Axis: Enrollee Count. Series: Stacked strictly by admission_channel (ONLINE vs F2F Walk-in). Rationale: Accurately displays daily encoding volume alongside intake channel distribution.
+    * Intake Demographic Breakdown (Horizontal Bar Chart): Y-Axis: DepEd Intake Categories (Feeder Elementary Graduates, External Transferees In, ALS Passers, PEPT Passers, Balik-Aral). X-Axis: Headcount. Rationale: Long government category strings require horizontal rendering to maintain readability.
+* **Action Gateways:** Inject interactive text links on bottom notification cards: Verify Online Enrollees →, Execute Student Sectioning →, and Review Statutory Checklists →.
 
-The aggressive all-caps text and warning colors are creating immense visual fatigue.
+## 3. Phase Logic: Classes Ongoing Phase (Late Enrollment)
+When the global configuration state is set to Classes Ongoing, regular intake freezes. The dashboard pivots strictly to monitoring student movement, room balance, and statutory paper compliance:
 
-- **Faculty Names:** Overwrite the all-caps formatting (ADAMS, EDA). Force the output strictly to standard Title Case: Adams, Eda.
-- **Job Titles:** Locate the role strings currently colored in red (e.g., MASTER TEACHER II, TEACHER I). In UI psychology, red implies an error or termination. Change this text color to a professional, muted slate grey, and format it strictly in standard Title Case (e.g., Master Teacher II).
+* **Top Status Sentinel:** Render the muted slate sentinel confirming regular BOSY enrollment is closed. Public web forms remain open, but all new submissions are permanently tagged as Late Enrollees.
+* **Section Load Variance Monitor:** Scan homeroom rosters. If the seating difference between the smallest and largest section within the same grade level exceeds 5 learners, render the operational alert: Section Load Disparity Requires Serpentine Rebalancing.
+* **Expired Temporary Admissions Sentinel:** Track learners admitted conditionally with missing PSA Birth Certificates or SF9 Report Cards (tracked via is_temporarily_enrolled flag). If the active system clock surpasses the DepEd documentary deadline (October 31), render an actionable audit card: Expired Conditional Admissions Require Immediate Action →.
+* **Visual Analytics Grid:**
+    * Monthly Learner Movement Trend (Grouped Bar Chart): X-Axis: School Months (June to active month). Y-Axis: Learner Count. Grouped Bars: Transferred In (Green), Transferred Out (Amber), Dropped Out (Slate Grey). Rationale: Compares discrete monthly administrative headcounts.
+    * Drop-out Reason Distribution (Horizontal Bar Chart): Y-Axis: Clerical drop_out_reason strings (Financial, Illness, Family Matters, Relocation, Bullying, Child Labor, Unknown). X-Axis: Dropped Headcount. Rationale: Aggregates student attrition data for institutional reporting.
+    * Statutory Document Compliance (Donut Chart): Segments: Complete Verified Records, Missing PSA Birth Certificate, Missing SF9 Report Card. Rationale: Represents 100% mutually exclusive sets of statutory requirement compliance derived from application_checklists.
 
-## 3. Action Button Standardization
+## 4. Phase Logic: EOSY Closing Phase
+When the global configuration state is set to EOSY Closing, the dashboard must manage enrollment directory locking, section finality locking, and SIMS record archiving:
 
-The action buttons on the far right are exhibiting inconsistent UI states (Eda Adams has an outlined button, while Elijah Block has a heavy solid button), creating visual clutter.
-
-- **The Fix:** Unify all list item action buttons to a single, subtle secondary state. Use a soft grey outline or a muted ghost button style.
-- **String Update:** Change the loud, all-caps text VIEW / EDIT PROFILE strictly to a calm, Title Case string: Open Profile.
-
-## 4. Purge the SaaS Hallucination (Refresh Button)
-
-Locate the Refresh button sitting on the far right of the filter bar.
-
-- **The Fix:** Permanently delete this button from the DOM.
-- **Rationale:** EnrollPro is a sovereign, offline-first local database. Filter state changes in a local React/DOM environment are instantaneous. A manual "Refresh" button implies a slow cloud-server fetch delay, which is an architectural hallucination.
+* **Top Status Sentinel:** Render the year-end closing banner instructing registrars to lock class rosters and verify permanent learner attributes for official School Form 1 (SF1) masterlist archiving. Public enrollment portals must be hard-locked (render badge: Web Intake Frozen).
+* **Section Finality Audit Card:** Render a dedicated metric card itemizing class sections pending year-end administrative locking (derived from is_eosy_finalized boolean) with the action link: Review Unlocked Sections →.
+* **SIMS Directory Consolidation Card:** Display total active, transferred, and dropped learner records consolidated across the academic year ready for historical audit logging.
+* **Visual Analytics Grid:**
+    * Annual Learner Retention Summary (Donut Chart): Segments: Officially Enrolled Active Tally, Cumulative Transferred Out, Cumulative Dropped Out. Rationale: Illustrates the definitive end-of-year student status breakdown for institutional headcount auditing.
+    * Grade Level Roster Finalization Leaderboard (Progress Bar List): Itemizes Grades 7, 8, 9, and 10. Displays percentage filled based on locked homeroom rosters ready for active academic year termination.

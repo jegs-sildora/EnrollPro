@@ -5,8 +5,9 @@ import { Button } from "@/shared/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/shared/ui/alert";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+import type { DashboardStats } from "../types";
 
-export function PhaseEOSY({ stats }: { stats: any }) {
+export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
   const { ayLabel } = useSchoolYearContext();
   const navigate = useNavigate();
 
@@ -29,8 +30,8 @@ export function PhaseEOSY({ stats }: { stats: any }) {
       </div>
 
       <Alert style={{ backgroundColor: "#FDF2F8", borderColor: "#FBCFE8" }}>
-        <AlertTitle className="font-bold" style={{ color: "#831843" }}>Academic Phase: EOSY Closing</AlertTitle>
-        <AlertDescription className="font-medium" style={{ color: "#831843" }}>
+        <AlertTitle className="font-black" style={{ color: "#831843" }}>Academic Phase: EOSY Closing</AlertTitle>
+        <AlertDescription className="font-bold" style={{ color: "#831843" }}>
           The school year is closing. Please ensure all class advisers encode final grades and finalize their sections for the official LIS export.
         </AlertDescription>
       </Alert>
@@ -45,7 +46,7 @@ export function PhaseEOSY({ stats }: { stats: any }) {
               <AnimatedNumber value={eosyPendingSections} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 Advisers Must Submit EOSY Grades
               </span>
             </div>
@@ -55,7 +56,7 @@ export function PhaseEOSY({ stats }: { stats: any }) {
                   Monitor Sections <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               ) : (
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
+                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-foreground bg-muted">
                   <Check className="w-4 h-4 mr-2" /> All Finalized
                 </div>
               )}
@@ -72,12 +73,12 @@ export function PhaseEOSY({ stats }: { stats: any }) {
               <AnimatedNumber value={promotedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 JHS Completers & Promoted
               </span>
             </div>
             <div className="mt-4 flex justify-end mt-auto pt-4">
-               <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
+               <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-foreground bg-muted">
                   <Award className="w-4 h-4 mr-2" /> Ready for Next Year
                 </div>
             </div>
@@ -93,12 +94,12 @@ export function PhaseEOSY({ stats }: { stats: any }) {
               <AnimatedNumber value={irregularTotal + retainedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 Conditional Promoted | Retained
               </span>
             </div>
             <div className="mt-4 flex justify-end mt-auto pt-4">
-              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
+              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-foreground bg-muted">
                 <AlertTriangle className="w-4 h-4 mr-2" /> Requires Guidance
               </div>
             </div>
@@ -114,7 +115,7 @@ export function PhaseEOSY({ stats }: { stats: any }) {
               <div className="text-5xl sm:text-6xl font-black" style={{ color: "hsl(var(--primary))" }}>
                 {finalizationPercent}%
               </div>
-              <p className="text-sm font-semibold text-muted-foreground">{eosyFinalizedSections} of {totalSections} Sections Officially Closed</p>
+              <p className="text-sm font-semibold text-foreground">{eosyFinalizedSections} of {totalSections} Sections Officially Closed</p>
             </div>
             
             <div className="w-full max-w-md mx-auto mt-6 bg-muted rounded-full h-3 overflow-hidden">
@@ -123,6 +124,35 @@ export function PhaseEOSY({ stats }: { stats: any }) {
                 style={{ width: `${finalizationPercent}%` }}
               />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        {/* Grade Level Roster Finalization progress bars */}
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+          <CardHeader className="px-3 sm:px-6 pb-2 text-left">
+            <CardTitle className="text-base sm:text-lg font-bold text-foreground">
+              Grade Level Finalization Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6 pb-6 space-y-6 flex flex-col justify-center">
+            {((stats?.eosyStats?.gradeLevelFinalization ?? new Array()) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => (
+              <div key={g.id} className="space-y-2 text-left">
+                <div className="flex justify-between text-sm font-bold text-foreground">
+                  <span>{g.name}</span>
+                  <span>
+                    {g.finalized} / {g.total} Sections ({g.percent}%)
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-500"
+                    style={{ width: `${g.percent}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

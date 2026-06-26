@@ -22,6 +22,7 @@ import {
 import type { BOSYReadiness, BOSYQueueItem } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -112,6 +113,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 export default function BOSYPage() {
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
+  const { ayLabel } = useSchoolYearContext();
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const syId =
     typeof resolvedSchoolYearId === "number" &&
@@ -383,7 +385,7 @@ export default function BOSYPage() {
         <div>
           <h1 className="text-3xl font-bold">Confirmation of Continuing Learners</h1>
           <p className="text-base leading-tight font-bold">
-            Verify returning Junior High School learners and roll their records over to the live S.Y. 2026–2027 masterlist.
+            Verify returning Junior High School learners and roll their records over to the live S.Y. {ayLabel || "2026–2027"} masterlist.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
@@ -418,7 +420,7 @@ export default function BOSYPage() {
           },
           {
             label: "Confirmed Continuing",
-            subBadge: "Added to Live S.Y. 2026–2027 Tally",
+            subBadge: `Added to Live S.Y. ${ayLabel || "2026–2027"} Tally`,
             value: readiness?.readyForSectioningCount ?? 0,
             filterVal: "READY_FOR_SECTIONING",
             actionText: "View Masterlist →",

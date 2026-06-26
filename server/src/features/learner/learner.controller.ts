@@ -525,3 +525,95 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
     schoolLogoUrl: schoolSetting.logoUrl || null,
   });
 }
+
+export async function checkDuplicateLearner(req: Request, res: Response) {
+  try {
+    const { lrn, firstName, lastName, birthdate } = req.body;
+
+    if (!lrn && (!firstName || !lastName || !birthdate)) {
+      res.status(400).json({ message: "Provide LRN or full demographic details" });
+      return;
+    }
+
+    const schoolSetting = await prisma.schoolSetting.findFirst({
+      select: { activeSchoolYearId: true }
+    });
+
+    if (!schoolSetting?.activeSchoolYearId) {
+      res.status(400).json({ message: "No active school year set" });
+      return;
+    }
+
+    const parsedBirthdate = birthdate ? new Date(birthdate) : undefined;
+
+    const matchConditions = new Array();
+    if (lrn && lrn.trim().length === 12) {
+      matchConditions.push({ lrn: lrn.trim() });
+    }
+    if (firstName && lastName && parsedBirthdate && !isNaN(parsedBirthdate.getTime())) {
+      matchConditions.push({
+        firstName: { equals: firstName.trim(), mode: "insensitive" },
+        lastName: { equals: lastName.trim(), mode: "insensitive" },
+        birthdate: parsedBirthdate,
+      });
+    }
+
+    if (matchConditions.length === 0) {
+      res.json({ duplicateFound: false });
+      return;
+    }
+
+    const learner = await prisma.learner.findFirst({
+      where: {
+        OR: matchConditions,
+      },
+      include: {
+        enrollmentApplications: {
+          where: {
+            schoolYearId: schoolSetting.activeSchoolYearId,
+            status: { notIn: Array.of("REJECTED", "WITHDRAWN") },
+          },
+          include: {
+            gradeLevel: true,
+            enrollmentRecord: {
+              include: {
+                section: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!learner) {
+      res.json({ duplicateFound: false });
+      return;
+    }
+
+    const activeApp = learner.enrollmentApplications.at(0);
+
+    res.json({
+      duplicateFound: true,
+      learner: {
+        id: learner.id,
+        firstName: learner.firstName,
+        lastName: learner.lastName,
+        lrn: learner.lrn,
+        birthdate: learner.birthdate,
+        activeEnrollment: activeApp
+          ? {
+              id: activeApp.id,
+              trackingNumber: activeApp.trackingNumber,
+              status: activeApp.status,
+              gradeLevelName: activeApp.gradeLevel.name,
+              sectionName: activeApp.enrollmentRecord?.section?.name ?? null,
+            }
+          : null,
+      },
+    });
+  } catch (error: any) {
+    console.error("Duplicate check error:", error);
+    res.status(500).json({ message: error.message || "Failed to check duplicate" });
+  }
+}
+

@@ -12,7 +12,6 @@ const prisma = new PrismaClient({ adapter });
 const GRADES = [7, 8, 9, 10];
 const PROGRAMS = [
   { nameSuffix: "SPA", type: ApplicantType.SPECIAL_PROGRAM_IN_THE_ARTS, homo: false },
-  { nameSuffix: "Regular 2", type: ApplicantType.REGULAR, homo: false },
   { nameSuffix: "STE", type: ApplicantType.SCIENCE_TECHNOLOGY_AND_ENGINEERING, homo: false },
   { nameSuffix: "Pilot", type: ApplicantType.REGULAR, homo: true },
   { nameSuffix: "Regular", type: ApplicantType.REGULAR, homo: false },

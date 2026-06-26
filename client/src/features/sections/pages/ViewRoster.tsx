@@ -9,8 +9,10 @@ import {
   AlertTriangle,
   UserPlus,
   Venus,
-  Mars
+  Mars,
+  Eye
 } from "lucide-react";
+
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { Button } from "@/shared/ui/button";
@@ -200,7 +202,7 @@ export default function ViewRoster() {
     }
 
     return (
-      <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors">
+      <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
         <TableCell className="text-center font-bold text-base text-muted-foreground py-3">
           {index}
         </TableCell>
@@ -230,13 +232,15 @@ export default function ViewRoster() {
           )}
         </TableCell>
         <TableCell className="text-right py-3 pr-2">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedStudentId(learner.id)} 
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-bold px-3 py-1 h-auto"
-          >
-            Open Record
-          </Button>
+          <div className="flex w-full justify-end py-3 pr-2">
+            <span
+              onClick={() => setSelectedStudentId(learner.id)}
+              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold cursor-pointer"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View
+            </span>
+          </div>
         </TableCell>
       </TableRow>
     );
@@ -263,11 +267,6 @@ export default function ViewRoster() {
             <p className="text-base leading-tight font-bold text-foreground">
               {section ? getProgramTypeLabel(section.programType) : "—"}
             </p>
-          </div>
-          <div className="bg-muted/50 px-4 py-2 rounded-lg border border-border flex items-center justify-center shrink-0">
-            <span className="text-base font-bold text-foreground whitespace-nowrap">
-              S.Y. {ayLabel?.replace(/-/g, "–") || "2026–2027"}
-            </span>
           </div>
         </div>
       </div>
@@ -337,9 +336,6 @@ export default function ViewRoster() {
             <CardTitle className="text-base sm:text-lg font-extrabold">
               Enrolled Learner Records
             </CardTitle>
-            <div className="text-base sm:text-base leading-tight font-bold text-muted-foreground mt-1">
-              Showing official Masterlist roll ({roster.length} of {section?.maxCapacity || 0} assigned seats)
-            </div>
           </div>
           <div className="flex items-center gap-3">
             <TooltipProvider>
@@ -438,7 +434,7 @@ export default function ViewRoster() {
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-bold text-sm tracking-widest text-primary uppercase px-2">
+                              <div className="flex justify-between font-bold text-sm tracking-widest text-blue-700 uppercase px-2">
                                 <span>MALE LEARNERS</span>
                                 <span>Total: {maleLearners.length}</span>
                               </div>
@@ -447,13 +443,13 @@ export default function ViewRoster() {
                           {maleLearners.map((learner, idx) => renderLearnerRow(learner, idx + 1))}
                         </>
                       )}
-                      
+
                       {/* Female Learners */}
                       {femaleLearners.length > 0 && (
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-bold text-sm tracking-widest text-primary uppercase px-2">
+                              <div className="flex justify-between font-bold text-sm tracking-widest text-pink-700 uppercase px-2">
                                 <span>FEMALE LEARNERS</span>
                                 <span>Total: {femaleLearners.length}</span>
                               </div>
@@ -462,7 +458,7 @@ export default function ViewRoster() {
                           {femaleLearners.map((learner, idx) => renderLearnerRow(learner, idx + 1))}
                         </>
                       )}
-                      
+
                       {maleLearners.length === 0 && femaleLearners.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={7} className="h-24 text-center text-muted-foreground font-bold">
@@ -512,8 +508,8 @@ export default function ViewRoster() {
                 id={selectedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={fetchRosterData}
-                onTransferOut={() => {}}
-                onDropout={() => {}}
+                onTransferOut={() => { }}
+                onDropout={() => { }}
                 canEditProfile={false}
               />
             </div>
@@ -521,11 +517,6 @@ export default function ViewRoster() {
         </SheetContent>
       </Sheet>
 
-      {/* Sovereign Page Footer */}
-      <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider print:hidden">
-        <span>Complies with DepEd Order No. 4, s. 2014 (Modified School Form 1)</span>
-        <span>Sovereign Offline Registry • Local Registry Node</span>
-      </div>
     </div>
   );
 }

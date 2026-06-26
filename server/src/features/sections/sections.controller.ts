@@ -758,6 +758,24 @@ export async function deleteSection(
     return;
   }
 
+  // Check if there are any enrollment records referencing this section
+  const enrollmentCount = await prisma.enrollmentRecord.count({
+    where: { sectionId: id },
+  });
+
+  if (enrollmentCount > 0) {
+    res.status(400).json({
+      message: "Cannot delete section because it contains enrolled learners. Please transfer or unassign all learners first.",
+    });
+    return;
+  }
+
+  // Clear advisory section references in teacher designations
+  await prisma.teacherDesignation.updateMany({
+    where: { advisorySectionId: id },
+    data: { advisorySectionId: null },
+  });
+
   await prisma.section.delete({ where: { id } });
 
   await auditLog({

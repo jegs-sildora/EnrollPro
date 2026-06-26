@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { Check, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Button } from "@/shared/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/shared/ui/alert";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+import type { DashboardStats } from "../types";
 
-export function PhaseOngoing({ stats }: { stats: any }) {
+export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
   const { ayLabel } = useSchoolYearContext();
   const navigate = useNavigate();
 
@@ -24,11 +24,51 @@ export function PhaseOngoing({ stats }: { stats: any }) {
       </div>
 
       <Alert style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}>
-        <AlertTitle className="font-bold" style={{ color: "#1E3A8A" }}>Academic Phase: Classes Ongoing</AlertTitle>
-        <AlertDescription className="font-medium" style={{ color: "#1E3A8A" }}>
+        <AlertTitle className="font-black" style={{ color: "#1E3A8A" }}>Academic Phase: Classes Ongoing</AlertTitle>
+        <AlertDescription className="font-bold" style={{ color: "#1E3A8A" }}>
           Regular BOSY enrollment is closed. All incoming applications are now automatically tagged and itemized as Late Enrollees.
         </AlertDescription>
       </Alert>
+
+      {stats?.v85Stats?.hasSectionLoadDisparity && (
+        <Alert style={{ backgroundColor: "#FEF3C7", borderColor: "#FDE68A" }}>
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-left">
+            <AlertTitle className="font-black text-amber-900">
+              Section Load Disparity Alert
+            </AlertTitle>
+            <AlertDescription className="text-amber-700 font-bold">
+              There is an active student headcount disparity greater than 5 learners within a grade level. Perform a serpentine load rebalancing to optimize advisory workloads.{" "}
+              <button
+                onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+                className="underline font-black cursor-pointer hover:text-amber-800"
+              >
+                Go to Sectioning
+              </button>
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+
+      {stats?.v85Stats?.isTemporaryAdmissionExpired && stats?.v85Stats?.expiredTemporaryAdmissionsCount > 0 && (
+        <Alert style={{ backgroundColor: "#FEF2F2", borderColor: "#FEE2E2" }}>
+          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-left">
+            <AlertTitle className="font-black text-rose-955">
+              Expired Temporary Admissions Detected
+            </AlertTitle>
+            <AlertDescription className="text-rose-700 font-bold">
+              There are {stats?.v85Stats?.expiredTemporaryAdmissionsCount} learners currently enrolled temporarily whose doc submission deadline (October 31) has expired. Follow up or flag these accounts.{" "}
+              <button
+                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                className="underline font-black cursor-pointer hover:text-rose-800"
+              >
+                Go to Verification Workspace
+              </button>
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
@@ -40,20 +80,25 @@ export function PhaseOngoing({ stats }: { stats: any }) {
               <AnimatedNumber value={pendingTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 Appends to SF1 Bottom
               </span>
             </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              {pendingTotal > 0 ? (
-                <Button variant="outline" onClick={() => navigate("/admission/queue")} className="font-medium">
-                  Process Late Admissions <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              ) : (
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
-                  <Check className="w-4 h-4 mr-2" /> Queue Cleared
-                </div>
-              )}
+            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
+              <div>
+                {pendingTotal === 0 && (
+                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
+                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                style={{ color: "hsl(var(--primary))" }}
+              >
+                Process Late Admissions &rarr;
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -67,20 +112,25 @@ export function PhaseOngoing({ stats }: { stats: any }) {
               <AnimatedNumber value={unassignedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 Awaiting SF10 (In) | Requested (Out)
               </span>
             </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              {unassignedTotal > 0 ? (
-                <Button variant="outline" onClick={() => navigate("/enrollment/sectioning")} className="font-medium">
-                  Manage Transfer Records <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              ) : (
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
-                  <Check className="w-4 h-4 mr-2" /> Queue Cleared
-                </div>
-              )}
+            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
+              <div>
+                {unassignedTotal === 0 && (
+                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
+                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                style={{ color: "hsl(var(--primary))" }}
+              >
+                Manage Transfer Records &rarr;
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -94,85 +144,60 @@ export function PhaseOngoing({ stats }: { stats: any }) {
               <AnimatedNumber value={deficientTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
                 Unresolved August Deficiencies
               </span>
             </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              {deficientTotal > 0 ? (
-                <Button variant="outline" onClick={() => navigate("/admission/queue")} className="font-medium">
-                  Follow-up Missing Hardcopies <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              ) : (
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 py-2 text-muted-foreground bg-muted">
-                  <Check className="w-4 h-4 mr-2" /> Queue Cleared
+            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
+              <div>
+                {deficientTotal === 0 && (
+                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
+                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                style={{ color: "hsl(var(--primary))" }}
+              >
+                Follow-up Missing Hardcopies &rarr;
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col w-full">
+        <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
+          <div className="flex flex-col items-center gap-1">
+            <h3 className="text-base sm:text-lg font-bold text-foreground">Active School Tally</h3>
+            <div className="text-5xl sm:text-6xl font-black" style={{ color: "hsl(var(--primary))" }}>
+              <AnimatedNumber value={(stats?.v85Stats?.activeSchoolTallyBOSY ?? 0) + (stats?.v85Stats?.activeSchoolTallyLate ?? 0)} />
+            </div>
+            <p className="text-sm font-semibold text-foreground">{stats?.v85Stats?.activeSchoolTallyBOSY ?? 0} Official BOSY Baseline • +{stats?.v85Stats?.activeSchoolTallyLate ?? 0} Appended Late Enrollees</p>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4 mt-4 border-t pt-4">
+            {Array.of(7, 8, 9, 10).map((grade, idx) => {
+              const b = stats?.gradeLevelBreakdown?.at(idx);
+              return (
+                <div key={grade} className="text-center">
+                  <p className="text-sm font-semibold text-foreground mb-1">Grade {grade}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    <AnimatedNumber value={b?.current ?? 0} />
+                  </p>
+                  <p className="text-xs text-foreground mt-1 font-medium">(+{b?.late ?? 0} Late | -{b?.dropped ?? 0} Dropped)</p>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] lg:col-span-3 flex flex-col">
-          <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
-            <div className="flex flex-col items-center gap-1">
-              <h3 className="text-base sm:text-lg font-bold text-foreground">Active School Tally</h3>
-              <div className="text-5xl sm:text-6xl font-black" style={{ color: "hsl(var(--primary))" }}>
-                <AnimatedNumber value={(stats?.v85Stats?.activeSchoolTallyBOSY ?? 0) + (stats?.v85Stats?.activeSchoolTallyLate ?? 0)} />
-              </div>
-              <p className="text-sm font-semibold text-muted-foreground">{stats?.v85Stats?.activeSchoolTallyBOSY ?? 0} Official BOSY Baseline • +{stats?.v85Stats?.activeSchoolTallyLate ?? 0} Appended Late Enrollees</p>
-            </div>
 
-            <div className="grid grid-cols-4 gap-4 mt-4 border-t pt-4">
-              {[7, 8, 9, 10].map((grade, idx) => {
-                const b = stats?.gradeLevelBreakdown?.[idx];
-                return (
-                  <div key={grade} className="text-center">
-                    <p className="text-sm font-semibold text-muted-foreground mb-1">Grade {grade}</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      <AnimatedNumber value={b?.current ?? 0} />
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium">(+{b?.late ?? 0} Late | -{b?.dropped ?? 0} Dropped)</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] lg:col-span-2 flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-bold text-foreground">Monthly Student Movement (SF4)</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex-1 flex flex-col justify-center">
-            <div className="w-full space-y-6">
-              
-              <div className="flex flex-row justify-between items-center">
-                <span className="text-sm font-semibold text-muted-foreground">Transferred In (Move In)</span>
-                <span className="text-xl font-bold text-green-600">
-                  +{stats?.v85Stats?.sf4Vitals?.transferredIn ?? 0}
-                </span>
-              </div>
-              
-              <div className="flex flex-row justify-between items-center">
-                <span className="text-sm font-semibold text-muted-foreground">Transferred Out (Move Out)</span>
-                <span className="text-xl font-bold text-slate-500">
-                  -{stats?.v85Stats?.sf4Vitals?.transferredOut ?? 0}
-                </span>
-              </div>
-              
-              <div className="flex flex-row justify-between items-center">
-                <span className="text-sm font-semibold text-muted-foreground">Dropped Out (Left School)</span>
-                <span className="text-xl font-bold text-gray-400">
-                  {stats?.v85Stats?.sf4Vitals?.droppedOut ?? 0}
-                </span>
-              </div>
 
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

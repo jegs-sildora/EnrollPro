@@ -119,9 +119,18 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const totalSections = sections.length;
 
 
-    const breakdownMap: Record<number, { male: number; female: number; current: number; late: number; dropped: number }> = {};
+    const breakdownMap = new Map();
     gradeLevels.forEach(gl => {
-      breakdownMap[gl.id] = { male: 0, female: 0, current: 0, late: 0, dropped: 0 };
+      breakdownMap.set(gl.id, {
+        male: 0,
+        female: 0,
+        current: 0,
+        late: 0,
+        dropped: 0,
+        feeder: 0,
+        transferee: 0,
+        balikAral: 0,
+      });
     });
 
     const records = await prisma.enrollmentRecord.findMany({
@@ -141,28 +150,312 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     records.forEach(r => {
       const glId = r.enrollmentApplication?.gradeLevelId;
       const sex = r.learner?.sex;
-      if (glId && breakdownMap[glId]) {
-        breakdownMap[glId].current += 1;
-        if (r.isLateEnrollee) breakdownMap[glId].late += 1;
-        if (r.dropOutDate) breakdownMap[glId].dropped += 1;
+      if (glId && breakdownMap.has(glId)) {
+        const item = breakdownMap.get(glId);
+        item.current += 1;
+        if (r.isLateEnrollee) item.late += 1;
+        if (r.dropOutDate) item.dropped += 1;
         
-        if (sex === 'MALE') breakdownMap[glId].male += 1;
-        else if (sex === 'FEMALE') breakdownMap[glId].female += 1;
+        if (sex === "MALE") item.male += 1;
+        else if (sex === "FEMALE") item.female += 1;
       }
     });
 
-    const gradeLevelBreakdown = gradeLevels.map(gl => ({
-      id: gl.id,
-      name: gl.name,
-      current: breakdownMap[gl.id]?.current || 0,
-      male: breakdownMap[gl.id]?.male || 0,
-      female: breakdownMap[gl.id]?.female || 0,
-      late: breakdownMap[gl.id]?.late || 0,
-      dropped: breakdownMap[gl.id]?.dropped || 0,
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: { schoolYearId },
+      select: {
+        gradeLevelId: true,
+        learnerType: true,
+      }
+    });
+
+    applications.forEach(app => {
+      const glId = app.gradeLevelId;
+      if (glId && breakdownMap.has(glId)) {
+        const item = breakdownMap.get(glId);
+        if (app.learnerType === "NEW_ENROLLEE") item.feeder += 1;
+        else if (app.learnerType === "TRANSFEREE") item.transferee += 1;
+        else if (app.learnerType === "RETURNING") item.balikAral += 1;
+      }
+    });
+
+    const gradeLevelBreakdown = gradeLevels.map(gl => {
+      const item = breakdownMap.get(gl.id);
+      return {
+        id: gl.id,
+        name: gl.name,
+        current: item?.current || 0,
+        male: item?.male || 0,
+        female: item?.female || 0,
+        late: item?.late || 0,
+        dropped: item?.dropped || 0,
+        feeder: item?.feeder || 0,
+        transferee: item?.transferee || 0,
+        balikAral: item?.balikAral || 0,
+      };
+    });
+
+    const sectionsList = await prisma.section.findMany({
+      where: { schoolYearId },
+      select: { maxCapacity: true }
+    });
+    const totalCapacity = sectionsList.reduce((sum, s) => sum + (s.maxCapacity || 0), 0);
+    const classroomDeficitDetected = enrolledTotal > totalCapacity;
+
+    const getManilaDateString = (date: Date): string => {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const parts = formatter.formatToParts(date);
+      const year = parts.find((part) => part.type === "year")?.value ?? "0";
+      const month = parts.find((part) => part.type === "month")?.value ?? "0";
+      const day = parts.find((part) => part.type === "day")?.value ?? "0";
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 15);
+    const recentApps = await prisma.enrollmentApplication.findMany({
+      where: {
+        schoolYearId,
+        createdAt: { gte: startDate }
+      },
+      select: {
+        createdAt: true,
+        admissionChannel: true,
+      }
+    });
+
+    const dailyMap = new Map();
+    recentApps.forEach(app => {
+      const dateStr = getManilaDateString(app.createdAt);
+      if (!dailyMap.has(dateStr)) {
+        dailyMap.set(dateStr, { online: 0, f2f: 0 });
+      }
+      const counts = dailyMap.get(dateStr);
+      if (app.admissionChannel === "ONLINE") counts.online += 1;
+      else counts.f2f += 1;
+    });
+
+    const dailyIntakeVelocity = new Array();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = getManilaDateString(d);
+      const counts = dailyMap.get(dateStr) || { online: 0, f2f: 0 };
+      const monthNamesFull = Array.of(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      );
+      const displayDate = `${monthNamesFull.at(d.getMonth())} ${d.getDate()}`;
+      dailyIntakeVelocity.push({
+        date: displayDate,
+        online: counts.online,
+        f2f: counts.f2f,
+      });
+    }
+
+    let feederCount = 0;
+    let transfereeCount = 0;
+    let alsCount = 0;
+    let peptCount = 0;
+    let balikAralCount = 0;
+    applications.forEach(app => {
+      if (app.learnerType === "NEW_ENROLLEE") feederCount += 1;
+      else if (app.learnerType === "TRANSFEREE") transfereeCount += 1;
+      else if (app.learnerType === "ALS") alsCount += 1;
+      else if (app.learnerType === "RETURNING") balikAralCount += 1;
+    });
+
+    const intakeDemographics = Array.of(
+      { category: "Feeder Elementary Graduates", count: feederCount },
+      { category: "External Transferees In", count: transfereeCount },
+      { category: "ALS Passers", count: alsCount },
+      { category: "PEPT Passers", count: peptCount },
+      { category: "Balik-Aral", count: balikAralCount }
+    );
+
+    let hasSectionLoadDisparity = false;
+    const gradeSectionsMap = new Map();
+    sections.forEach(s => {
+      const glId = s.gradeLevelId;
+      if (!gradeSectionsMap.has(glId)) {
+        gradeSectionsMap.set(glId, new Array());
+      }
+      gradeSectionsMap.get(glId).push(s._count.enrollmentRecords);
+    });
+
+    for (const [glId, counts] of gradeSectionsMap.entries()) {
+      if (counts.length > 1) {
+        const min = Math.min(...counts);
+        const max = Math.max(...counts);
+        if (max - min > 5) {
+          hasSectionLoadDisparity = true;
+        }
+      }
+    }
+
+    const expiredTemporaryAdmissionsCount = await prisma.enrollmentApplication.count({
+      where: { schoolYearId, isTemporarilyEnrolled: true }
+    });
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const deadline = new Date(currentYear, 9, 31, 23, 59, 59);
+    const isTemporaryAdmissionExpired = now > deadline;
+
+    const logs = await prisma.sF4Log.findMany({
+      where: {
+        year: { gte: currentYear - 1 }
+      },
+      select: {
+        movementType: true,
+        month: true,
+        year: true,
+      }
+    });
+
+    const monthNamesShort = Array.of(
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    );
+    const schoolYearMonths = Array.of(6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4);
+
+    const movementTrend = schoolYearMonths.map(m => {
+      let trIn = 0;
+      let trOut = 0;
+      let drOut = 0;
+      logs.forEach(log => {
+        if (log.month === m) {
+          if (log.movementType === "TRANSFER_IN") trIn += 1;
+          else if (log.movementType === "TRANSFER_OUT") trOut += 1;
+          else if (log.movementType === "DROPPED_OUT") drOut += 1;
+        }
+      });
+      return {
+        month: monthNamesShort.at(m - 1) || "Unknown",
+        transferredIn: trIn,
+        transferredOut: trOut,
+        droppedOut: drOut,
+      };
+    });
+
+    const dropOutRecords = await prisma.enrollmentRecord.findMany({
+      where: {
+        schoolYearId,
+        dropOutDate: { not: null }
+      },
+      select: {
+        dropOutReason: true,
+      }
+    });
+
+    const reasonsMap = new Map();
+    const standardReasons = Array.of(
+      "Financial", "Illness", "Family Matters", "Relocation", "Bullying", "Child Labor", "Unknown"
+    );
+    standardReasons.forEach(r => reasonsMap.set(r, 0));
+
+    dropOutRecords.forEach(rec => {
+      const r = rec.dropOutReason || "Unknown";
+      const currentVal = reasonsMap.get(r) || 0;
+      reasonsMap.set(r, currentVal + 1);
+    });
+
+    const dropoutDistribution = Array.from(reasonsMap.entries()).map(([reason, count]) => ({
+      reason,
+      count,
     }));
+
+    const complianceApps = await prisma.enrollmentApplication.findMany({
+      where: { schoolYearId },
+      select: {
+        isMissingSf9: true,
+        learner: {
+          select: {
+            hasPsaBirthCertificate: true,
+          }
+        }
+      }
+    });
+
+    let completeCount = 0;
+    let missingPsaCount = 0;
+    let missingSf9Count = 0;
+
+    complianceApps.forEach(app => {
+      const hasPsa = app.learner?.hasPsaBirthCertificate ?? false;
+      const isMissingSf9 = app.isMissingSf9;
+      if (!hasPsa) {
+        missingPsaCount += 1;
+      } else if (isMissingSf9) {
+        missingSf9Count += 1;
+      } else {
+        completeCount += 1;
+      }
+    });
+
+    const documentCompliance = Array.of(
+      { name: "Complete Verified Records", value: completeCount },
+      { name: "Missing PSA Birth Certificate", value: missingPsaCount },
+      { name: "Missing SF9 Report Card", value: missingSf9Count }
+    );
+
+    const activeEnrolledCount = await prisma.enrollmentRecord.count({
+      where: {
+        schoolYearId,
+        dropOutDate: null,
+        transferOutDate: null,
+      }
+    });
+    const cumulativeTransferredCount = await prisma.enrollmentRecord.count({
+      where: {
+        schoolYearId,
+        transferOutDate: { not: null }
+      }
+    });
+    const cumulativeDroppedCount = await prisma.enrollmentRecord.count({
+      where: {
+        schoolYearId,
+        dropOutDate: { not: null }
+      }
+    });
+
+    const learnerRetention = Array.of(
+      { name: "Officially Enrolled Active Tally", value: activeEnrolledCount },
+      { name: "Cumulative Transferred Out", value: cumulativeTransferredCount },
+      { name: "Cumulative Dropped Out", value: cumulativeDroppedCount }
+    );
+
+    const gradeLevelFinalization = gradeLevels.map(gl => {
+      const glSections = sections.filter(s => s.gradeLevelId === gl.id);
+      const totalCount = glSections.length;
+      const finalizedCount = glSections.filter(s => s.isEosyFinalized).length;
+      const percent = totalCount === 0 ? 0 : Math.round((finalizedCount / totalCount) * 100);
+      return {
+        id: gl.id,
+        name: gl.name,
+        total: totalCount,
+        finalized: finalizedCount,
+        percent,
+      };
+    });
+
+    const activeLearnersCount = await prisma.learner.count({
+      where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: null, transferOutDate: null } } }
+    });
+    const transferredLearnersCount = await prisma.learner.count({
+      where: { enrollmentRecords: { some: { schoolYearId, transferOutDate: { not: null } } } }
+    });
+    const droppedLearnersCount = await prisma.learner.count({
+      where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: { not: null } } } }
+    });
 
     const baseStats = {
       systemPhase,
+      classroomDeficitDetected,
+      dailyIntakeVelocity,
+      intakeDemographics,
       kpiHeader: {
         pendingTotal,
         unassignedTotal,
@@ -175,6 +468,12 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         overdueDocumentsCount,
         activeSchoolTallyBOSY,
         activeSchoolTallyLate,
+        hasSectionLoadDisparity,
+        isTemporaryAdmissionExpired,
+        expiredTemporaryAdmissionsCount,
+        movementTrend,
+        dropoutDistribution,
+        documentCompliance,
         sf4Vitals: {
           transferredIn,
           transferredOut,
@@ -186,7 +485,12 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         eosyPendingSections,
         promotedTotal,
         retainedTotal,
-        irregularTotal
+        irregularTotal,
+        learnerRetention,
+        gradeLevelFinalization,
+        activeLearnersCount,
+        transferredLearnersCount,
+        droppedLearnersCount
       },
       criticalSections,
       totalSections,

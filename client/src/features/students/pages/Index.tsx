@@ -31,7 +31,6 @@ import { Textarea } from "@/shared/ui/textarea";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -475,13 +474,22 @@ export default function Students() {
       .toLowerCase()
       .replace(/^\w/, (c) => c.toUpperCase());
 
+    const isEnrolled = status === "ENROLLED" || status === "ACTIVE";
+    const isDropped = status === "DROPPED" || status === "DROPPED_OUT";
+
     return (
-      <span
+      <Badge
+        variant="outline"
         className={cn(
-          "inline-flex px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider",
+          "font-bold text-sm px-2.5 py-0.5 rounded-md uppercase tracking-wider",
+          isEnrolled
+            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+            : isDropped
+              ? "bg-red-50 text-red-700 border-red-100"
+              : "bg-slate-50 text-slate-600 border-slate-100"
         )}>
         {label}
-      </span>
+      </Badge>
     );
   };
 
@@ -778,20 +786,26 @@ export default function Students() {
             />
           ),
           cell: ({ row }) => {
+            const firstInitial = (row.original.lastName || "").trim().charAt(0).toUpperCase() || "?";
             return (
-              <div className="flex flex-col text-left min-w-[200px] pl-2 py-3">
-                <span className="font-bold text-base uppercase leading-tight">
-                  {row.original.fullName}
-                </span>
-                {row.original.applicantType === "LATE_ENROLLEE" && (
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                      Late Enrollee
-                    </Badge>
-                  </div>
-                )}
+              <div className="flex items-center gap-3 pl-2 py-3 min-w-[200px]">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm bg-primary shrink-0">
+                  {firstInitial}
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="font-bold text-base uppercase leading-tight">
+                    {row.original.fullName}
+                  </span>
+                  {row.original.applicantType === "LATE_ENROLLEE" && (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                        Late Enrollee
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </div>
-            )
+            );
           },
         },
         {
@@ -824,16 +838,25 @@ export default function Students() {
           ),
           cell: ({ row }) => {
             const normalized = row.original.sex?.trim().toUpperCase();
-            const display =
-              normalized === "MALE" || normalized === "M"
-                ? "M"
-                : normalized === "FEMALE" || normalized === "F"
-                  ? "F"
-                  : row.original.sex || "—";
+            const isMale = normalized === "MALE" || normalized === "M";
+            const isFemale = normalized === "FEMALE" || normalized === "F";
+            const display = isMale ? "Male" : isFemale ? "Female" : row.original.sex || "—";
 
             return (
               <div className="flex w-full justify-center py-3">
-                <span className="font-bold text-base leading-tight uppercase text-center">{display}</span>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-bold text-sm px-2.5 py-0.5 rounded-md",
+                    isMale
+                      ? "bg-blue-50 text-blue-700 border-blue-100"
+                      : isFemale
+                        ? "bg-pink-50 text-pink-700 border-pink-100"
+                        : "bg-slate-50 text-slate-600 border-slate-200"
+                  )}
+                >
+                  {display}
+                </Badge>
               </div>
             );
           },
@@ -851,7 +874,12 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="font-bold text-base leading-tight text-center">{row.original.gradeLevel}</span>
+              <Badge
+                variant="outline"
+                className="font-bold text-sm px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border-primary/20"
+              >
+                {row.original.gradeLevel}
+              </Badge>
             </div>
           ),
         },
@@ -915,9 +943,10 @@ export default function Students() {
           header: () => <div className="w-full"></div>,
           cell: () => (
             <div className="flex w-full justify-end py-3 pr-2">
-              <Button variant="ghost" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-bold px-3 py-1 h-auto pointer-events-none">
-                View Record
-              </Button>
+              <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold">
+                <Eye className="w-4 h-4 mr-2" />
+                View
+              </span>
             </div>
           ),
         },
@@ -941,7 +970,7 @@ export default function Students() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            
+
             {/* Dropdowns */}
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 lg:justify-end">
               <Select
@@ -1041,7 +1070,7 @@ export default function Students() {
                   )}
                 </SelectContent>
               </Select>
-              
+
               {/* Vertical Divider (Hidden on small screens when wrapped) */}
               <div className="hidden lg:block w-px h-6 bg-border mx-1" />
 
@@ -1099,9 +1128,6 @@ export default function Students() {
                 ? "JHS Completer Records"
                 : "Inactive / Transferred Records"}
           </CardTitle>
-          <CardDescription className="text-base sm:text-base leading-tight font-bold">
-            Showing {students.length} of {total} learners
-          </CardDescription>
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
           <AnimatePresence mode="wait">
@@ -1165,6 +1191,7 @@ export default function Students() {
                     sorting={sorting}
                     onSortingChange={onSortingChange}
                     onRowClick={(row) => handleViewDetails(row.id)}
+                    getRowClassName={() => "group"}
                   />
                 </div>
               </motion.div>
@@ -1332,6 +1359,7 @@ export default function Students() {
                     sorting={sorting}
                     onSortingChange={onSortingChange}
                     onRowClick={(row) => handleViewDetails(row.id)}
+                    getRowClassName={() => "group"}
                   />
                 </div>
               </motion.div>

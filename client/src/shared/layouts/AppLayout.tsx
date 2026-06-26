@@ -559,12 +559,12 @@ function getNavigationGroups({
         },
         ...(isAdmin
           ? [
-              {
-                to: "/teachers",
-                icon: Presentation,
-                label: "Faculty & Staff",
-              },
-            ]
+            {
+              to: "/teachers",
+              icon: Presentation,
+              label: "Faculty & Staff",
+            },
+          ]
           : []),
         {
           to: "/sections",
@@ -664,9 +664,11 @@ function getNavigationGroups({
 function NavBrand({
   schoolName,
   logoUrl,
+  workspaceName,
 }: {
   schoolName: string | null | undefined;
   logoUrl: string | null | undefined;
+  workspaceName?: string;
 }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -685,14 +687,14 @@ function NavBrand({
       )}
       <div className="grid min-w-0 text-left leading-tight">
         {schoolName ? (
-          <span className="truncate text-sm font-black uppercase leading-[1.1] text-primary sm:text-base">
+          <span className="text-sm font-black uppercase leading-[1.1] text-primary sm:text-base md:text-lg tracking-tight">
             {schoolName}
           </span>
         ) : (
           <Skeleton className="my-0.5 h-4 w-36" />
         )}
-        <span className="truncate text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          School Records Workspace
+        <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+          {workspaceName || "School Records Workspace"}
         </span>
       </div>
     </div>
@@ -718,7 +720,7 @@ function NavLinkContent({
           {renderNavBadge(item.badge)}
         </span>
         {item.subtext ? (
-          <span className="line-clamp-2 text-left text-[11px] font-semibold leading-tight text-muted-foreground">
+          <span className="line-clamp-2 text-left text-[11px] font-semibold leading-tight text-foreground">
             {item.subtext}
           </span>
         ) : null}
@@ -753,7 +755,7 @@ const DesktopTopNavigation = memo(function DesktopTopNavigation({
             <NavigationMenuItem key={group.label}>
               <NavigationMenuTrigger
                 className={cn(
-                  "gap-1.5 rounded-md px-3 text-sm font-black text-slate-700",
+                  "gap-1.5 rounded-md px-3 text-sm font-black text-foreground",
                   hasActiveItem && "bg-primary/10 text-primary",
                 )}
                 style={
@@ -815,7 +817,7 @@ function MobileNavLinks({
           key={group.label}
           className="space-y-2">
           <div className="flex items-center gap-2 px-1">
-            <h3 className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-[11px] font-black uppercase tracking-wide text-foreground">
               {group.label}
             </h3>
             {renderNavBadge(group.badge)}
@@ -855,12 +857,14 @@ function MobileNavigationDrawer({
   search,
   schoolName,
   logoUrl,
+  workspaceName,
 }: {
   groups: NavGroup[];
   pathname: string;
   search: string;
   schoolName: string | null | undefined;
   logoUrl: string | null | undefined;
+  workspaceName?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -888,6 +892,7 @@ function MobileNavigationDrawer({
           <NavBrand
             schoolName={schoolName}
             logoUrl={logoUrl}
+            workspaceName={workspaceName}
           />
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-4 py-5">
@@ -991,6 +996,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
 
+  const activeGroup = navGroups.find(group =>
+    group.items.some(item => isNavItemActive(item.to, location.pathname, location.search))
+  );
+  const activeWorkspaceName = activeGroup ? `${activeGroup.label} Workspace` : "School Records Workspace";
+
   const [lastSafePath, setLastSafePath] = useState("/dashboard");
   const [showBlockedModal, setShowBlockedModal] = useState(false);
   const [blockedInfo, setBlockedInfo] = useState<{
@@ -1063,7 +1073,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   useAccessibility();
 
   return (
-    <div className="relative flex min-h-svh flex-col overflow-hidden bg-background">
+    <div className="relative flex h-svh w-full flex-col overflow-hidden bg-background">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden="true">
@@ -1143,54 +1153,65 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
       <header
         className={cn(
-          "sticky top-0 z-40 flex min-h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-background/85 px-3 py-2 backdrop-blur-md sm:px-4",
+          "sticky top-0 z-40 flex flex-col border-b border-border/60 bg-background/85 backdrop-blur-md",
           isHistoricalReadOnly ? "bg-muted/85" : "",
         )}>
-        <MobileNavigationDrawer
-          groups={navGroups}
-          pathname={location.pathname}
-          search={location.search}
-          schoolName={schoolName}
-          logoUrl={logoUrl}
-        />
-        <div className="min-w-0 shrink xl:w-72">
-          <NavBrand
-            schoolName={schoolName}
-            logoUrl={logoUrl}
-          />
-        </div>
-        <DesktopTopNavigation
-          groups={navGroups}
-          pathname={location.pathname}
-          search={location.search}
-        />
-
-        <div className="ml-auto hidden shrink-0 items-center gap-4 lg:flex">
-          {isHistoricalReadOnly ? (
-            <Badge
-              variant="outline"
-              className="uppercase text-foreground border-border">
-              Historical View
-            </Badge>
-          ) : null}
-
-          <SYSwitcher />
-
-          <div className="flex h-8 items-center gap-1 border-x px-3">
-            <AccessibilityMenu />
+        {/* Tier 1: Brand and Global Controls */}
+        <div className="flex min-h-16 w-full items-center justify-between gap-4 px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <MobileNavigationDrawer
+              groups={navGroups}
+              pathname={location.pathname}
+              search={location.search}
+              schoolName={schoolName}
+              logoUrl={logoUrl}
+              workspaceName={activeWorkspaceName}
+            />
+            <NavBrand
+              schoolName={schoolName}
+              logoUrl={logoUrl}
+              workspaceName={activeWorkspaceName}
+            />
           </div>
 
-          <UserNav />
+          {/* Right Side Actions - Desktop */}
+          <div className="ml-auto hidden shrink-0 items-center gap-4 lg:flex">
+            {isHistoricalReadOnly ? (
+              <Badge
+                variant="outline"
+                className="uppercase text-foreground border-border">
+                Historical View
+              </Badge>
+            ) : null}
+
+            <SYSwitcher />
+
+            <div className="flex h-8 items-center gap-1 border-x px-3">
+              <AccessibilityMenu />
+            </div>
+
+            <UserNav />
+          </div>
+
+          {/* Right Side Actions - Mobile */}
+          <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
+            {isHistoricalReadOnly ? (
+              <Badge
+                variant="outline"
+                className="uppercase text-foreground border-border">
+                Historical View
+              </Badge>
+            ) : null}
+          </div>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
-          {isHistoricalReadOnly ? (
-            <Badge
-              variant="outline"
-              className="uppercase text-foreground border-border">
-              Historical View
-            </Badge>
-          ) : null}
+        {/* Tier 2: Desktop Navigation Bar */}
+        <div className="hidden w-full items-center border-t border-border/45 bg-slate-50/40 dark:bg-slate-900/40 px-4 py-1.5 xl:flex">
+          <DesktopTopNavigation
+            groups={navGroups}
+            pathname={location.pathname}
+            search={location.search}
+          />
         </div>
       </header>
 
@@ -1206,7 +1227,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         <AnimatePresence mode="wait">
           <PageTransition
             routeKey={location.pathname}
-            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-4 scrollbar-thin sm:px-6">
+            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-4 scrollbar-thin">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />
             ) : (
