@@ -138,10 +138,41 @@ interface Props {
   id: number;
   onClose: () => void;
   onRefreshData?: () => void;
-  onTransferOut: (payload: any) => void;
-  onDropout: (payload: any) => void;
+  onTransferOut: (payload: StudentTransferOutPayload) => void;
+  onDropout: (payload: StudentDropoutPayload) => void;
   canEditProfile?: boolean;
 }
+
+export interface StudentTransferOutPayload {
+  student: StudentDetail;
+  transferDate: string;
+  destinationSchool: string;
+  reasonNote: string;
+}
+
+export interface StudentDropoutPayload {
+  student: StudentDetail;
+  dropOutDate: string;
+  reasonCode: string;
+  interventionNotes: string;
+}
+
+const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/50";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/50";
+  }
+  return "bg-primary/10 text-primary border-primary/20";
+};
 
 export function StudentDetailPanel({
   id,
@@ -165,6 +196,8 @@ export function StudentDetailPanel({
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
 
   const handleTransferOutSubmit = () => {
+    if (!student) return;
+
     onTransferOut({
       student,
       transferDate: transferOutDate,
@@ -175,6 +208,8 @@ export function StudentDetailPanel({
   };
 
   const handleDropoutSubmit = () => {
+    if (!student) return;
+
     onDropout({
       student,
       dropOutDate: dropoutDate,
@@ -593,9 +628,18 @@ export function StudentDetailPanel({
           <div className="flex flex-col items-center mb-6 pt-2">
             <UserPhoto
               photo={student.studentPhoto}
-              containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-2 border-primary border-dashed shadow-md"
+              containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
+              className="w-full h-full object-cover rounded-full"
               onEnlarge={() => setIsPhotoEnlarged(true)}
               alt={student.fullName}
+              fallbackIcon={
+                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-black text-xl sm:text-2xl bg-primary">
+                  {((f, l) => `${f}${l}`)(
+                    String(student.firstName || "").trim().charAt(0).toUpperCase(),
+                    String(student.lastName || "").trim().charAt(0).toUpperCase()
+                  ) || "?"}
+                </div>
+              }
             />
             <div className="text-center mt-4">
               <h3 className="font-black text-lg sm:text-xl uppercase  break-words">
@@ -628,14 +672,25 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-base uppercase text-foreground">
+              <p className="text-base uppercase text-foreground mb-1">
                 Grade Level & Section
               </p>
-              <p className="text-base leading-tight">
-                {student.gradeLevel}
-                {student.enrollment?.section &&
-                  ` - ${student.enrollment.section}`}
-              </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-bold text-sm px-2.5 py-0.5 rounded-md",
+                    getGradeLevelBadgeStyles(student.gradeLevel)
+                  )}
+                >
+                  {student.gradeLevel}
+                </Badge>
+                {student.enrollment?.section && (
+                  <span className="text-base font-bold text-muted-foreground">
+                    - {student.enrollment.section}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-base uppercase text-foreground">

@@ -17,13 +17,50 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/ui/sheet";
+import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
+
+interface AdvisoryLearner {
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  sex: string;
+  streetAddress: string | null;
+  barangay: string | null;
+  cityMunicipality: string | null;
+  province: string | null;
+  contactNumber: string | null;
+  guardianName: string | null;
+  guardianContact: string | null;
+  guardianRelationship: string | null;
+}
+
+interface AdvisoryRecord {
+  id: number;
+  enrollmentApplication: {
+    learner: AdvisoryLearner;
+  };
+}
+
+interface AdvisorySection {
+  name: string;
+  gradeLevel: {
+    displayOrder: number;
+  };
+}
+
+interface AdvisoryResponse {
+  section?: AdvisorySection | null;
+  records?: AdvisoryRecord[];
+}
 
 export default function AdvisoryClass() {
-  const [selectedLearner, setSelectedLearner] = useState<any>(null);
+  const [selectedLearner, setSelectedLearner] = useState<AdvisoryLearner | null>(null);
+  const retainedLearner = useRetainedSheetValue(selectedLearner);
 
   const { data, isLoading } = useQuery({
     queryKey: ["teacher", "advisory"],
-    queryFn: () => api.get("/teacher-eosy/advisory").then(res => res.data),
+    queryFn: () => api.get<AdvisoryResponse>("/teacher-eosy/advisory").then(res => res.data),
   });
 
   if (isLoading) {
@@ -71,7 +108,7 @@ export default function AdvisoryClass() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records?.map((record: any, idx: number) => {
+                {records?.map((record, idx) => {
                   const learner = record.enrollmentApplication.learner;
                   return (
                     <TableRow 
@@ -110,7 +147,7 @@ export default function AdvisoryClass() {
             </SheetDescription>
           </SheetHeader>
           
-          {selectedLearner && (
+          {retainedLearner && (
             <div className="mt-8 space-y-8">
               <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-xl border border-border">
                 <div className="h-16 w-16 bg-primary/10 text-primary flex items-center justify-center rounded-full shrink-0">
@@ -118,10 +155,10 @@ export default function AdvisoryClass() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black uppercase text-foreground leading-tight">
-                    {selectedLearner.lastName}, {selectedLearner.firstName} {selectedLearner.middleName}
+                    {retainedLearner.lastName}, {retainedLearner.firstName} {retainedLearner.middleName}
                   </h3>
                   <p className="text-base leading-tight font-bold text-muted-foreground mt-1">
-                    LRN: {selectedLearner.lrn || "Not Assigned"}
+                    LRN: {retainedLearner.lrn || "Not Assigned"}
                   </p>
                 </div>
               </div>
@@ -132,13 +169,13 @@ export default function AdvisoryClass() {
                   <div className="flex items-start gap-3 text-base leading-tight">
                     <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <span className="font-medium text-foreground leading-relaxed">
-                      {selectedLearner.streetAddress || "No street address"}, {selectedLearner.barangay}, {selectedLearner.cityMunicipality}, {selectedLearner.province}
+                      {retainedLearner.streetAddress || "No street address"}, {retainedLearner.barangay}, {retainedLearner.cityMunicipality}, {retainedLearner.province}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-base leading-tight">
                     <Phone className="h-4 w-4 text-primary shrink-0" />
                     <span className="font-bold text-foreground">
-                      {selectedLearner.contactNumber || "No contact number"}
+                      {retainedLearner.contactNumber || "No contact number"}
                     </span>
                   </div>
                 </div>
@@ -149,16 +186,16 @@ export default function AdvisoryClass() {
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm">
                   <div>
                     <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Name</p>
-                    <p className="font-bold text-foreground">{selectedLearner.guardianName || "No guardian listed"}</p>
+                    <p className="font-bold text-foreground">{retainedLearner.guardianName || "No guardian listed"}</p>
                   </div>
                   <div>
                     <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Contact</p>
-                    <p className="font-bold text-foreground">{selectedLearner.guardianContact || "No contact provided"}</p>
+                    <p className="font-bold text-foreground">{retainedLearner.guardianContact || "No contact provided"}</p>
                   </div>
-                  {selectedLearner.guardianRelationship && (
+                  {retainedLearner.guardianRelationship && (
                     <div>
                       <p className="text-base font-bold text-muted-foreground uppercase tracking-normal mb-1">Relationship</p>
-                      <p className="font-bold text-foreground capitalize">{selectedLearner.guardianRelationship}</p>
+                      <p className="font-bold text-foreground capitalize">{retainedLearner.guardianRelationship}</p>
                     </div>
                   )}
                 </div>

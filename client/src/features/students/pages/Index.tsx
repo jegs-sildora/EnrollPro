@@ -76,10 +76,14 @@ import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import {
   StudentDetailPanel,
   type StudentDetail as PanelStudentDetail,
+  type StudentDropoutPayload,
+  type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
 import { PaginationBar } from "@/shared/components/PaginationBar";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
@@ -241,6 +245,55 @@ const formatLearningProgramLabel = (
     : displayName;
 };
 
+const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/50";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/50";
+  }
+  return "bg-primary/10 text-primary border-primary/20";
+};
+
+const getGradeLevelColorDotClass = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-500";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-500";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-500";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-sky-500";
+  }
+  return "bg-muted-foreground";
+};
+
+const getGradeLevelTextClass = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) return "text-emerald-700";
+  if (normalized.includes("8") || normalized.includes("g8")) return "text-amber-700";
+  if (normalized.includes("9") || normalized.includes("g9")) return "text-rose-700";
+  if (normalized.includes("10") || normalized.includes("g10")) return "text-sky-700";
+  return "text-muted-foreground";
+};
+
+const getInitials = (firstName?: string | null, lastName?: string | null): string => {
+  const f = String(firstName || "").trim().charAt(0).toUpperCase();
+  const l = String(lastName || "").trim().charAt(0).toUpperCase();
+  return `${f}${l}` || "?";
+};
+
 export default function Students() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -306,6 +359,7 @@ export default function Students() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
     null,
   );
+  const retainedStudentId = useRetainedSheetValue(selectedStudentId);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
@@ -588,7 +642,7 @@ export default function Students() {
   );
 
 
-  const handlePanelTransferOut = async (payload: any) => {
+  const handlePanelTransferOut = async (payload: StudentTransferOutPayload) => {
     setActionSubmitting(true);
     try {
       await api.post(`/students/${payload.student.id}/lifecycle/transfer-out`, {
@@ -603,14 +657,14 @@ export default function Students() {
       });
       await refreshTables();
       await refreshDetailIfOpen(payload.student.id);
-    } catch (err) {
+    } catch (err: unknown) {
       toastApiError(err as never);
     } finally {
       setActionSubmitting(false);
     }
   };
 
-  const handlePanelDropout = async (payload: any) => {
+  const handlePanelDropout = async (payload: StudentDropoutPayload) => {
     setActionSubmitting(true);
     try {
       await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
@@ -625,7 +679,7 @@ export default function Students() {
       });
       await refreshTables();
       await refreshDetailIfOpen(payload.student.id);
-    } catch (err) {
+    } catch (err: unknown) {
       toastApiError(err as never);
     } finally {
       setActionSubmitting(false);
@@ -786,12 +840,20 @@ export default function Students() {
             />
           ),
           cell: ({ row }) => {
-            const firstInitial = (row.original.lastName || "").trim().charAt(0).toUpperCase() || "?";
+            const initials = getInitials(row.original.firstName, row.original.lastName);
             return (
               <div className="flex items-center gap-3 pl-2 py-3 min-w-[200px]">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm bg-primary shrink-0">
-                  {firstInitial}
-                </div>
+                <UserPhoto
+                  photo={row.original.studentPhoto}
+                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  className="w-full h-full object-cover"
+                  alt={row.original.fullName}
+                  fallbackIcon={
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                      {initials}
+                    </div>
+                  }
+                />
                 <div className="flex flex-col text-left">
                   <span className="font-bold text-base uppercase leading-tight">
                     {row.original.fullName}
@@ -876,7 +938,10 @@ export default function Students() {
             <div className="flex w-full justify-center py-3">
               <Badge
                 variant="outline"
-                className="font-bold text-sm px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border-primary/20"
+                className={cn(
+                  "font-bold text-sm px-2.5 py-0.5 rounded-md",
+                  getGradeLevelBadgeStyles(row.original.gradeLevel)
+                )}
               >
                 {row.original.gradeLevel}
               </Badge>
@@ -999,7 +1064,10 @@ export default function Students() {
                       key={gl.id}
                       value={gl.id.toString()}
                       className="text-base leading-tight font-bold">
-                      {gl.name}
+                      <div className="flex items-center gap-2">
+                        <span className={cn("w-2.5 h-2.5 rounded-full border border-black/10 shrink-0", getGradeLevelColorDotClass(gl.name))} />
+                        <span>{gl.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1052,7 +1120,7 @@ export default function Students() {
                       if (glSections.length === 0) return null;
                       return (
                         <SelectGroup key={gl.id}>
-                          <SelectLabel className="text-base text-muted-foreground uppercase">{gl.name}</SelectLabel>
+                          <SelectLabel className={cn("text-base uppercase font-bold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
                           {glSections.map((sec) => (
                             <SelectItem
                               key={sec.id}
@@ -1220,21 +1288,34 @@ export default function Students() {
                         key={student.id}
                         className="rounded-xl border bg-[hsl(var(--card))] p-3">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-bold text-base uppercase leading-tight break-words">
-                              {student.fullName}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <p className="text-base font-bold text-foreground leading-snug">
-                                {formatLearningProgramLabel(
-                                  student.learningProgram,
-                                )}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <UserPhoto
+                              photo={student.studentPhoto}
+                              containerClassName="w-10 h-10 rounded-full shadow-sm border shrink-0"
+                              className="w-full h-full object-cover"
+                              alt={student.fullName}
+                              fallbackIcon={
+                                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                                  {getInitials(student.firstName, student.lastName)}
+                                </div>
+                              }
+                            />
+                            <div className="min-w-0">
+                              <p className="font-bold text-base uppercase leading-tight break-words">
+                                {student.fullName}
                               </p>
-                              {student.applicantType === "LATE_ENROLLEE" && (
-                                <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                                  Late Enrolled
-                                </Badge>
-                              )}
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-base font-bold text-foreground leading-snug">
+                                  {formatLearningProgramLabel(
+                                    student.learningProgram,
+                                  )}
+                                </p>
+                                {student.applicantType === "LATE_ENROLLEE" && (
+                                  <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                                    Late Enrolled
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                           {renderLearnerStatus(student)}
@@ -1264,7 +1345,15 @@ export default function Students() {
                             <p className="text-base uppercase  font-bold text-foreground">
                               Grade Level
                             </p>
-                            <p className="font-bold">{student.gradeLevel}</p>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "font-bold text-sm px-2.5 py-0.5 mt-0.5 rounded-md",
+                                getGradeLevelBadgeStyles(student.gradeLevel)
+                              )}
+                            >
+                              {student.gradeLevel}
+                            </Badge>
                           </div>
                           <div>
                             <p className="text-base uppercase  font-bold text-foreground">
@@ -1545,10 +1634,10 @@ export default function Students() {
             <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
           </div>
 
-          {selectedStudentId && (
+          {retainedStudentId && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
-                id={selectedStudentId}
+                id={retainedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={refreshTables}
                 onTransferOut={handlePanelTransferOut}

@@ -27,6 +27,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/smart-api": {
+        target: "http://localhost:5003",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/smart-api/, ""),
+        secure: false,
+      },
     },
   },
 });

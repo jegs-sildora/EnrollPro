@@ -23,6 +23,7 @@ import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInBusinessDays, format } from "date-fns";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { isAxiosError } from "axios";
 
 interface UnsectionedLearner {
   id: number;
@@ -33,6 +34,15 @@ interface UnsectionedLearner {
   applicantType: string;
   learnerType: string;
   promotionGenAve: number | null;
+}
+
+interface UnsectionedPoolResponse {
+  pool?: UnsectionedLearner[];
+  learners?: UnsectionedLearner[];
+}
+
+interface ApiErrorResponse {
+  message?: string;
 }
 
 interface InsertLateEnrolleeModalProps {
@@ -92,15 +102,18 @@ export function InsertLateEnrolleeModal({
   const fetchPool = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/sections/unsectioned-pool/${gradeLevelId}`, {
+      const res = await api.get<UnsectionedPoolResponse>(`/sections/unsectioned-pool/${gradeLevelId}`, {
         params: { schoolYearId },
       });
-      setPool(res.data.pool);
+      setPool(res.data.pool ?? res.data.learners ?? []);
     } catch (err: unknown) {
       console.error("Pool fetch failed", err);
+      const message = isAxiosError<ApiErrorResponse>(err)
+        ? err.response?.data?.message ?? "Could not retrieve the unsectioned learner pool."
+        : "Could not retrieve the unsectioned learner pool.";
       sileo.error({
         title: "Load Error",
-        description: "Could not retrieve the unsectioned learner pool.",
+        description: message,
       });
     } finally {
       setLoading(false);

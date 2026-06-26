@@ -1,0 +1,235 @@
+/**
+ * ExcelRenderer Styles - Print-Perfect CSS
+ * Ensures rendered Excel templates match original format exactly
+ * Optimized for both screen display and printing
+ */
+
+/* Container */
+.excel-renderer-container {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  font-family: Arial, sans-serif;
+}
+
+/* Sheet wrapper */
+.excel-sheet {
+  display: inline-block;
+  min-width: 100%;
+}
+
+/* Table */
+.excel-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11pt;
+  background: white;
+}
+
+/* Cell defaults */
+.excel-cell {
+  padding: 4px 6px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  position: relative;
+  line-height: 1.2;
+}
+
+.excel-cell:empty::before {
+  content: '\00a0'; /* Non-breaking space to preserve cell height */
+}
+
+/* Cell type specific styles */
+.cell-type-number {
+  text-align: right;
+}
+
+.cell-type-date {
+  text-align: center;
+}
+
+.cell-type-boolean {
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cell-type-empty {
+  background: transparent;
+}
+
+/* Print styles - Critical for DepEd forms */
+@media print {
+  /* Reset page margins */
+  @page {
+    size: A4 portrait;
+    margin: 0.5in;
+  }
+
+  /* Hide unnecessary UI elements */
+  body * {
+    visibility: hidden;
+  }
+
+  .excel-renderer-container,
+  .excel-renderer-container * {
+    visibility: visible;
+  }
+
+  .excel-renderer-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: visible;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ensure exact sizing on print */
+  .excel-table {
+    width: 100%;
+    page-break-inside: auto;
+  }
+
+  .excel-row {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Preserve borders and colors */
+  .excel-cell {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  /* Remove scroll on print */
+  html,
+  body {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Force font sizes to be exact */
+  * {
+    font-size: inherit !important;
+  }
+
+  /* Prevent text wrapping changes */
+  .excel-cell {
+    white-space: inherit !important;
+    word-wrap: inherit !important;
+  }
+}
+
+/* Landscape orientation for wide forms (SF2, SF8, etc.) */
+@media print and (orientation: landscape) {
+  @page {
+    size: A4 landscape;
+  }
+}
+
+/* Screen-specific responsive styles */
+@media screen and (max-width: 1200px) {
+  .excel-renderer-container {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Loading state */
+.excel-renderer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Error state */
+.excel-renderer-error {
+  padding: 20px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  color: #c33;
+  font-size: 14px;
+}
+
+/* Zoom controls (optional) */
+.excel-zoom-controls {
+  position: sticky;
+  top: 0;
+  left: 0;
+  background: white;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.excel-zoom-controls button {
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.excel-zoom-controls button:hover {
+  background: #f5f5f5;
+}
+
+.excel-zoom-controls button:active {
+  background: #e5e5e5;
+}
+
+/* Print button styling */
+.excel-print-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.excel-print-button:hover {
+  background: #059669;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media print {
+  .excel-print-button {
+    display: none;
+  }
+
+  .excel-zoom-controls {
+    display: none;
+  }
+}
+
+/* Accessibility */
+.excel-cell:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+/* Selection highlighting */
+.excel-cell-selected {
+  background: rgba(59, 130, 246, 0.1) !important;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}

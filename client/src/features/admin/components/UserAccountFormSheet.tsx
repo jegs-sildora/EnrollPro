@@ -34,6 +34,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetTitle,
 } from "@/shared/ui/sheet";
 import { Badge } from "@/shared/ui/badge";
@@ -285,6 +286,9 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
         <SheetTitle className="sr-only">
           {mode === "edit" && user?.roles.includes("LEARNER") ? "Manage Security" : mode === "edit" ? "Edit Account" : "Create Account"}
         </SheetTitle>
+        <SheetDescription className="sr-only">
+          Update account access, roles, contact details, and school personnel information.
+        </SheetDescription>
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           {/* Sticky Header with Curated HSL Accent & Glassmorphism */}
           <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetFooter,
@@ -15,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { Badge } from "@/shared/ui/badge";
@@ -23,6 +25,7 @@ import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInBusinessDays, format } from "date-fns";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { isAxiosError } from "axios";
 
 interface UnsectionedLearner {
   id: number;
@@ -33,6 +36,16 @@ interface UnsectionedLearner {
   applicantType: string;
   learnerType: string;
   promotionGenAve: number | null;
+}
+
+interface UnsectionedPoolResponse {
+  pool?: UnsectionedLearner[];
+  learners?: UnsectionedLearner[];
+}
+
+interface InlineSlotErrorResponse {
+  message?: string;
+  sectionName?: string;
 }
 
 interface InsertLateEnrolleeDrawerProps {
@@ -92,15 +105,21 @@ export default function InsertLateEnrolleeDrawer({
   const fetchPool = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/sections/unsectioned-pool/${gradeLevelId}`, {
-        params: { schoolYearId },
-      });
-      setPool(res.data.pool);
+      const res = await api.get<UnsectionedPoolResponse>(
+        `/sections/unsectioned-pool/${gradeLevelId}`,
+        {
+          params: { schoolYearId },
+        },
+      );
+      setPool(res.data.pool ?? res.data.learners ?? []);
     } catch (err: unknown) {
       console.error("Pool fetch failed", err);
+      const message = isAxiosError<InlineSlotErrorResponse>(err)
+        ? err.response?.data?.message ?? "Could not retrieve the unsectioned learner pool."
+        : "Could not retrieve the unsectioned learner pool.";
       sileo.error({
         title: "Load Error",
-        description: "Could not retrieve the unsectioned learner pool.",
+        description: message,
       });
     } finally {
       setLoading(false);
@@ -138,11 +157,14 @@ export default function InsertLateEnrolleeDrawer({
       });
 
       onSuccess();
-      onOpenChange(false);
+      closeDrawer();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { status?: number; data?: { message?: string; sectionName?: string } } };
-      const status = axiosErr?.response?.status;
-      const message = axiosErr?.response?.data?.message ?? "An unexpected error occurred during manual sectioning.";
+      const status = isAxiosError<InlineSlotErrorResponse>(err)
+        ? err.response?.status
+        : undefined;
+      const message = isAxiosError<InlineSlotErrorResponse>(err)
+        ? err.response?.data?.message ?? "An unexpected error occurred during manual sectioning."
+        : "An unexpected error occurred during manual sectioning.";
       if (status === 409) {
         sileo.error({
           title: "Section at Capacity",
@@ -157,39 +179,52 @@ export default function InsertLateEnrolleeDrawer({
   };
 
   const isScpSection = programType !== "REGULAR";
+  const closeDrawer = () => {
+    onOpenChange(false);
+  };
+
+  const handleSheetOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      onOpenChange(true);
+    }
+  };
 
   return (
     <Sheet
       open={open}
-      onOpenChange={onOpenChange}>
-      <SheetContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl">
-        <SheetHeader className="px-6 pt-6 pb-4 bg-muted/30 border-b border-border">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <UserPlus className="h-5 w-5" />
-              </div>
-              <div>
-                <SheetTitle className="text-lg font-black uppercase ">
-                  Insert Late Enrollee
-                </SheetTitle>
-                <p className="text-base font-bold text-foreground uppercase  mt-0.5">
-                  Target: {gradeLevelName} - {sectionName}
-                </p>
-              </div>
+      onOpenChange={handleSheetOpenChange}>
+      <SheetContent
+        showClose={false}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl flex flex-col h-full bg-background">
+        <SheetHeader className="px-6 py-4 bg-primary shrink-0 border-b border-primary/20 flex flex-row items-center justify-between space-y-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary-foreground/10 rounded-lg text-primary-foreground border border-primary-foreground/20">
+              <UserPlus className="h-5 w-5" />
             </div>
-            {classOpeningDate && (
-              <Badge
-                variant="outline"
-                className="bg-white font-bold text-base uppercase border-border px-2">
-                Classes Started:{" "}
-                {format(new Date(classOpeningDate), "MMM d, yyyy")}
-              </Badge>
-            )}
+            <div>
+              <SheetTitle className="text-lg font-black uppercase text-primary-foreground">
+                Insert Late Enrollee
+              </SheetTitle>
+              <SheetDescription className="text-base text-primary-foreground uppercase font-bold mt-0.5">
+                {gradeLevelName} — {sectionName}
+              </SheetDescription>
+            </div>
           </div>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={closeDrawer}
+            className="size-9 shrink-0 rounded-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            aria-label="Close insert late enrollee panel">
+            <X className="size-4" />
+          </Button>
         </SheetHeader>
 
-        <div className="p-6 space-y-6 bg-background">
+        <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background">
           {!selectedLearner ? (
             <div className="space-y-4">
               <div className="relative">
@@ -392,29 +427,24 @@ export default function InsertLateEnrolleeDrawer({
           )}
         </div>
 
-        <SheetFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between sm:justify-between">
-          <p className="text-base font-black text-foreground uppercase ">
-            S.M.A.R.T. Integration Active
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="font-bold uppercase text-base">
-              Cancel
-            </Button>
-            <Button
-              disabled={!selectedLearner || isSubmitting}
-              onClick={handleSlotting}
-              className="font-bold uppercase text-base px-6">
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-              )}
-              Confirm & Update SF1
-            </Button>
-          </div>
+        <SheetFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={closeDrawer}
+            className="font-bold uppercase text-sm h-10 px-4">
+            Cancel
+          </Button>
+          <Button
+            disabled={!selectedLearner || isSubmitting}
+            onClick={handleSlotting}
+            className="font-bold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+            )}
+            Confirm & Update SF1
+          </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

@@ -421,7 +421,7 @@ export default function BOSYPage() {
                   </p>
                   <p className="text-sm font-semibold text-foreground mt-0.5">{subBadge}</p>
                 </div>
-              </div>
+              </div> 
             </CardContent>
           </Card>
         ))}

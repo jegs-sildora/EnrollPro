@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, ApplicantType, Sex, SchoolYearStatus, TermFormat, SystemAcademicPhase } from "../../src/generated/prisma/index.js";
+import { PrismaClient, ApplicantType, Sex, SchoolYearStatus, TermFormat, SystemAcademicPhase, AddressType, FamilyRelationship } from "../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -200,6 +200,11 @@ export const seedDatabase = async () => {
           const learnerFirstName = faker.person.firstName(lSex === 'Male' ? 'male' : 'female').toUpperCase();
           const learnerLastName = faker.person.lastName().toUpperCase();
           const learnerMiddleName = faker.person.lastName().toUpperCase();
+
+          const isIp = faker.helpers.arrayElement([true, false, false, false]);
+          const ipGroupName = isIp ? faker.helpers.arrayElement(["ATI", "AETA", "BADJAO", "MAMANWA"]) : null;
+          const religion = faker.helpers.arrayElement(["ROMAN CATHOLIC", "ISLAM", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "BIBLE BAPTIST"]);
+          const motherTongue = faker.helpers.arrayElement(["TAGALOG", "CEBUANO", "HILIGAYNON", "ILOCANO", "WARAY"]);
           
           const learner = await prisma.learner.create({
             data: {
@@ -210,8 +215,37 @@ export const seedDatabase = async () => {
               birthdate,
               sex: prismaLSex,
               status: "ACTIVE",
+              religion,
+              motherTongue,
+              isIpCommunity: isIp,
+              ipGroupName,
             }
           });
+
+          const contactNo = '09' + faker.string.numeric(9);
+          const fatherFirstName = faker.person.firstName("male").toUpperCase();
+          const fatherLastName = learnerLastName;
+          const fatherMiddleName = faker.person.lastName().toUpperCase();
+
+          const motherFirstName = faker.person.firstName("female").toUpperCase();
+          const motherLastName = faker.person.lastName().toUpperCase();
+          const motherMiddleName = faker.person.lastName().toUpperCase();
+          const motherMaidenName = faker.person.lastName().toUpperCase();
+
+          const guardianFirstName = faker.person.firstName().toUpperCase();
+          const guardianLastName = faker.person.lastName().toUpperCase();
+          const guardianMiddleName = faker.person.lastName().toUpperCase();
+          const guardianRelationship = faker.helpers.arrayElement(["UNCLE", "AUNT", "GRANDMOTHER", "GRANDFATHER", "BROTHER", "SISTER"]);
+
+          const currentPurok = "PUROK " + faker.person.lastName().toUpperCase() + " " + faker.string.numeric(2);
+          const currentBarangay = faker.helpers.arrayElement(["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"]);
+          const currentCity = faker.helpers.arrayElement(["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"]);
+          const currentZip = faker.helpers.arrayElement(["6100", "6116", "6115", "6101"]);
+
+          const permanentPurok = "PUROK " + faker.person.lastName().toUpperCase() + " " + faker.string.numeric(2);
+          const permanentBarangay = faker.helpers.arrayElement(["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"]);
+          const permanentCity = faker.helpers.arrayElement(["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"]);
+          const permanentZip = faker.helpers.arrayElement(["6100", "6116", "6115", "6101"]);
 
           const app = await prisma.enrollmentApplication.create({
             data: {
@@ -220,6 +254,61 @@ export const seedDatabase = async () => {
               gradeLevelId: grade.id,
               applicantType: prog.type,
               status: "SECTIONED",
+              contactNumber: contactNo,
+              guardianName: `${guardianLastName}, ${guardianFirstName} ${guardianMiddleName}`.trim(),
+              guardianRelationship,
+              addresses: {
+                createMany: {
+                  data: [
+                    {
+                      addressType: AddressType.CURRENT,
+                      houseNoStreet: currentPurok,
+                      barangay: currentBarangay,
+                      cityMunicipality: currentCity,
+                      province: "NEGROS OCCIDENTAL",
+                      country: "PHILIPPINES",
+                      zipCode: currentZip,
+                    },
+                    {
+                      addressType: AddressType.PERMANENT,
+                      houseNoStreet: permanentPurok,
+                      barangay: permanentBarangay,
+                      cityMunicipality: permanentCity,
+                      province: "NEGROS OCCIDENTAL",
+                      country: "PHILIPPINES",
+                      zipCode: permanentZip,
+                    }
+                  ]
+                }
+              },
+              familyMembers: {
+                createMany: {
+                  data: [
+                    {
+                      relationship: FamilyRelationship.FATHER,
+                      firstName: fatherFirstName,
+                      lastName: fatherLastName,
+                      middleName: fatherMiddleName,
+                      contactNumber: '09' + faker.string.numeric(9),
+                    },
+                    {
+                      relationship: FamilyRelationship.MOTHER,
+                      firstName: motherFirstName,
+                      lastName: motherLastName,
+                      middleName: motherMiddleName,
+                      maidenName: motherMaidenName,
+                      contactNumber: '09' + faker.string.numeric(9),
+                    },
+                    {
+                      relationship: FamilyRelationship.GUARDIAN,
+                      firstName: guardianFirstName,
+                      lastName: guardianLastName,
+                      middleName: guardianMiddleName,
+                      contactNumber: '09' + faker.string.numeric(9),
+                    }
+                  ]
+                }
+              }
             }
           });
 

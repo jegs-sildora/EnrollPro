@@ -8,6 +8,7 @@ import {
   EosyStatus,
   SectioningMethod,
   SectionAdviserStatus,
+  PrismaClient,
 } from "../../generated/prisma/index.js";
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
@@ -15,7 +16,7 @@ import type { SectioningParams } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 
 
-const sectioningEngine = new SectioningEngine(prisma as any);
+const sectioningEngine = new SectioningEngine(prisma as unknown as PrismaClient);
 
 export async function getBatchPrerequisites(req: Request, res: Response) {
   const { gradeLevelId } = req.params;
@@ -865,47 +866,53 @@ export async function getUnsectionedPool(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const gradeLevelId = req.query.gradeLevelId;
+  const gradeLevelId = req.params.gradeLevelId ?? req.query.gradeLevelId;
   const schoolYearId = req.query.schoolYearId
     ? parseInt(String(req.query.schoolYearId))
     : req.schoolYearId;
+  const parsedGradeLevelId = parseInt(String(gradeLevelId));
 
-  if (!gradeLevelId || !schoolYearId) {
+  if (!Number.isInteger(parsedGradeLevelId) || parsedGradeLevelId <= 0) {
+    res.status(400).json({ message: "A valid grade level is required." });
+    return;
+  }
+
+  if (!schoolYearId) {
     res.status(400).json({ message: "gradeLevelId and schoolYearId required" });
     return;
   }
 
-  const applications = await prisma.enrollmentApplication.findMany({
-    where: {
-      gradeLevelId: parseInt(gradeLevelId as string),
-      schoolYearId: schoolYearId,
-      status: "VERIFIED",
-      enrollmentRecord: null,
-    },
-    include: {
-      learner: {
-        include: {
-          enrollmentRecords: {
-            where: {
-              schoolYearId: { not: schoolYearId },
-              finalAverage: { not: null },
+  try {
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: {
+        gradeLevelId: parsedGradeLevelId,
+        schoolYearId,
+        status: "VERIFIED",
+        enrollmentRecord: null,
+      },
+      include: {
+        learner: {
+          include: {
+            enrollmentRecords: {
+              where: {
+                schoolYearId: { not: schoolYearId },
+                finalAverage: { not: null },
+              },
+              orderBy: { schoolYearId: "desc" },
+              take: 1,
+              select: { finalAverage: true },
             },
-            orderBy: { schoolYearId: "desc" },
-            take: 1,
-            select: { finalAverage: true },
           },
         },
+        previousSchool: { select: { generalAverage: true } },
       },
-      previousSchool: { select: { generalAverage: true } },
-    },
-    orderBy: [
-      { learner: { lastName: "asc" } },
-      { learner: { firstName: "asc" } },
-    ],
-  });
+      orderBy: [
+        { learner: { lastName: "asc" } },
+        { learner: { firstName: "asc" } },
+      ],
+    });
 
-  res.json({
-    learners: applications.map((app) => ({
+    const pool = applications.map((app) => ({
       id: app.learner.id,
       enrollmentApplicationId: app.id,
       lrn: app.learner.lrn,
@@ -914,13 +921,21 @@ export async function getUnsectionedPool(
       middleName: app.learner.middleName,
       sex: app.learner.sex,
       applicantType: app.applicantType,
+      learnerType: app.learnerType,
       promotionGenAve:
         app.learner.enrollmentRecords[0]?.finalAverage ??
         app.previousSchool?.generalAverage ??
         app.learner.previousGenAve ??
         null,
-    })),
-  });
+    }));
+
+    res.json({ pool, learners: pool });
+  } catch (error: unknown) {
+    console.error("Failed to retrieve unsectioned learner pool", error);
+    res.status(500).json({
+      message: "Could not retrieve the unsectioned learner pool.",
+    });
+  }
 }
 
 export async function autoDistributeUnassigned(

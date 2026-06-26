@@ -36,7 +36,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/teachers": "Faculty & Staff",
     "/admin/users": "Account Access",
     "/admin/system": "System Health",
-    "/admin/integration": "Integrated Systems",
+    "/smart": "SMART",
     "/monitoring/enrollment/requirements": "Documentary Requirements",
     "/teacher/eosy": "EOSY Updating",
     "/teacher/advisory": "My Advisory Class",
@@ -50,6 +50,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
   if (pathname.startsWith("/applications/")) return "Application Detail";
   if (pathname.startsWith("/settings/")) return "Settings";
   if (pathname.startsWith("/admin/")) return "Administration";
+  if (pathname.startsWith("/smart")) return "SMART";
 
   return null;
 }

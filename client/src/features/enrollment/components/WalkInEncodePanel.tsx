@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sileo } from "sileo";
+import { isAxiosError } from "axios";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
   SheetTrigger,
 } from "@/shared/ui/sheet";
 import { Button } from "@/shared/ui/button";
@@ -25,9 +28,51 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
-import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { directEncodeWalkInSchema } from "@enrollpro/shared";
+import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
+
+interface SchoolYearGradeLevel {
+  id: number;
+  name: string;
+}
+
+interface ActiveSchoolYearGradeLevelsResponse {
+  gradeLevels?: SchoolYearGradeLevel[];
+}
+
+interface LearnerLookupResponse {
+  firstName: string;
+  lastName: string;
+  middleName?: string | null;
+  birthdate?: string | null;
+  sex?: "MALE" | "FEMALE";
+  previousSchool?: {
+    schoolName?: string | null;
+    generalAverage?: number | null;
+  } | null;
+  familyMembers?: Array<{
+    firstName: string;
+    lastName: string;
+    contactNumber?: string | null;
+  }>;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+}
+
+function getWalkInErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiErrorResponse>(error)) {
+    return error.response?.data?.message ?? error.message ?? fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export function WalkInEncodePanel() {
   const [open, setOpen] = useState(false);
@@ -39,13 +84,13 @@ export function WalkInEncodePanel() {
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
     queryFn: async () => {
-      const res = await api.get("/school-year/grade-levels");
+      const res = await api.get<ActiveSchoolYearGradeLevelsResponse>("/school-year/grade-levels");
       return res.data;
     },
   });
 
-  const form = useForm({
-    resolver: zodResolver(directEncodeWalkInSchema),
+  const form = useForm<DirectEncodeWalkInPayload>({
+    resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
     defaultValues: {
       lrn: "",
       firstName: "",
@@ -53,7 +98,7 @@ export function WalkInEncodePanel() {
       middleName: "",
       birthdate: "",
       sex: "MALE",
-      gradeLevelId: undefined,
+      gradeLevelId: 0,
       assignedProgram: "REGULAR",
       previousSchoolName: "",
       previousGenAve: undefined,
@@ -63,13 +108,14 @@ export function WalkInEncodePanel() {
       hasPsa: false,
     },
   });
+  const { isDirty, isSubmitting } = form.formState;
 
   const handleLrnLookup = async (lrn: string) => {
     if (lrn.length !== 12) return;
 
     setIsLookingUp(true);
     try {
-      const res = await api.get(`/learner/lookup?lrn=${lrn}`);
+      const res = await api.get<LearnerLookupResponse>(`/learner/lookup?lrn=${lrn}`);
       const data = res.data;
 
       form.setValue("firstName", data.firstName);
@@ -96,8 +142,8 @@ export function WalkInEncodePanel() {
       }
 
       sileo.success({ title: "Learner Found", description: "Profile auto-populated." });
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.status === 404) {
         // Just silent for 404, it's a new learner. Or maybe a tiny toast.
         // sileo.info("New Learner", "No existing record found.");
       } else {
@@ -108,7 +154,25 @@ export function WalkInEncodePanel() {
     }
   };
 
-  const onSubmit = async (values: any) => {
+  const resetPanelState = () => {
+    form.reset();
+    setNoLrn(false);
+  };
+
+  const closePanel = () => {
+    resetPanelState();
+    setOpen(false);
+  };
+
+  const requestClosePanel = () => {
+    if (isDirty) {
+      setShowDiscardModal(true);
+      return;
+    }
+    closePanel();
+  };
+
+  const onSubmit = async (values: DirectEncodeWalkInPayload) => {
     const payload = {
       ...values,
       firstName: values.firstName?.toUpperCase(),
@@ -123,27 +187,21 @@ export function WalkInEncodePanel() {
         title: "Successfully Encoded",
         description: "Learner routed directly to unassigned sectioning pool.",
       });
-      setOpen(false);
-      form.reset();
+      closePanel();
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
-    } catch (err: any) {
+    } catch (err: unknown) {
       sileo.error({
         title: "Encoding Failed",
-        description: err.response?.data?.message || "An error occurred.",
+        description: getWalkInErrorMessage(err, "The learner was not encoded. Please review the form and try again."),
       });
     }
   };
 
-  // Prevent closing when clicking outside if form has data to prevent accidental loss
+  // The encoder is intentionally non-dismissible through outside clicks or Escape.
+  // Closing is handled only through explicit Cancel, close, discard, or successful save.
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && form.formState.isDirty) {
-      setShowDiscardModal(true);
-      return;
-    }
-    setOpen(newOpen);
-    if (!newOpen) {
-      form.reset();
-      setNoLrn(false);
+    if (newOpen) {
+      setOpen(true);
     }
   };
 
@@ -160,6 +218,7 @@ export function WalkInEncodePanel() {
         </Button>
       </SheetTrigger>
       <SheetContent
+        showClose={false}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -168,14 +227,24 @@ export function WalkInEncodePanel() {
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-h-14">
             <div className="space-y-0.5">
-              <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
+              <SheetTitle className="text-base font-black text-primary-foreground uppercase leading-none">
                 Walk-In Direct Encode
-              </h2>
-              <p className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+              </SheetTitle>
+              <SheetDescription className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 Bypass verification and enter Unassigned Pool
-              </p>
+              </SheetDescription>
             </div>
           </div>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={requestClosePanel}
+            className="size-10 shrink-0 rounded-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            aria-label="Close late enrollee panel"
+          >
+            <X className="size-5" />
+          </Button>
         </div>
 
         <Form {...form}>
@@ -195,7 +264,7 @@ export function WalkInEncodePanel() {
                     <div className="space-y-4">
 
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="lrn"
                         render={({ field }) => (
                           <FormItem>
@@ -208,7 +277,7 @@ export function WalkInEncodePanel() {
                                 <Input
                                   placeholder="12-digit LRN"
                                   disabled={noLrn}
-                                  value={field.value}
+                                  value={field.value ?? ""}
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, '').slice(0, 12);
                                     field.onChange(val);
@@ -218,8 +287,9 @@ export function WalkInEncodePanel() {
                                   }}
                                   onBlur={() => {
                                     field.onBlur();
-                                    if (field.value.length === 12) {
-                                      handleLrnLookup(field.value);
+                                    const value = field.value ?? "";
+                                    if (value.length === 12) {
+                                      handleLrnLookup(value);
                                     }
                                   }}
                                 />
@@ -250,7 +320,7 @@ export function WalkInEncodePanel() {
 
                       <div className="grid grid-cols-2 gap-4 font-bold">
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
@@ -261,7 +331,7 @@ export function WalkInEncodePanel() {
                           )}
                         />
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
@@ -275,7 +345,7 @@ export function WalkInEncodePanel() {
 
                       <div className="grid grid-cols-3 gap-4">
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="middleName"
                           render={({ field }) => (
                             <FormItem>
@@ -285,7 +355,7 @@ export function WalkInEncodePanel() {
                           )}
                         />
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="birthdate"
                           render={({ field }) => (
                             <FormItem>
@@ -298,7 +368,7 @@ export function WalkInEncodePanel() {
                           )}
                         />
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="sex"
                           render={({ field }) => (
                             <FormItem>
@@ -322,19 +392,22 @@ export function WalkInEncodePanel() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="gradeLevelId"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Incoming Grade Level</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                              <Select
+                                onValueChange={(value) => field.onChange(Number(value))}
+                                value={field.value > 0 ? field.value.toString() : undefined}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select Grade" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {activeSchoolYear?.gradeLevels?.map((gl: any) => (
+                                  {activeSchoolYear?.gradeLevels?.map((gl) => (
                                     <SelectItem key={gl.id} value={gl.id.toString()}>{gl.name}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -344,7 +417,7 @@ export function WalkInEncodePanel() {
                           )}
                         />
                         <FormField
-                          control={form.control as any}
+                          control={form.control}
                           name="assignedProgram"
                           render={({ field }) => (
                             <FormItem>
@@ -380,7 +453,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 pb-5 pt-4">
                     <div className="space-y-4">
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="previousSchoolName"
                         render={({ field }) => (
                           <FormItem className="col-span-2">
@@ -390,12 +463,29 @@ export function WalkInEncodePanel() {
                         )}
                       />
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="previousGenAve"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Final General Average</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="e.g. 85.50" {...field} value={field.value || ""} /></FormControl>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="e.g. 85.50"
+                                value={field.value ?? ""}
+                                onChange={(e) => {
+                                  field.onChange(
+                                    e.target.value === ""
+                                      ? undefined
+                                      : Number(e.target.value),
+                                  );
+                                }}
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
+                              />
+                            </FormControl>
                           </FormItem>
                         )}
                       />
@@ -414,7 +504,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 pb-5 pt-4">
                     <div className="space-y-4">
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="guardianName"
                         render={({ field }) => (
                           <FormItem>
@@ -425,7 +515,7 @@ export function WalkInEncodePanel() {
                         )}
                       />
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="guardianContact"
                         render={({ field }) => (
                           <FormItem>
@@ -462,7 +552,7 @@ export function WalkInEncodePanel() {
                     <div className="space-y-2">
 
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="hasSf9"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-amber-100 rounded-lg transition-colors">
@@ -474,7 +564,7 @@ export function WalkInEncodePanel() {
                         )}
                       />
                       <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="hasPsa"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-amber-100 rounded-lg transition-colors">
@@ -495,18 +585,18 @@ export function WalkInEncodePanel() {
               <Button
                 variant="outline"
                 type="button"
-                onClick={() => handleOpenChange(false)}
-                disabled={form.formState.isSubmitting}
+                onClick={requestClosePanel}
+                disabled={isSubmitting}
                 className="font-bold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={form.formState.isSubmitting}
+                disabled={isSubmitting}
                 className={`font-bold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
               >
-                {form.formState.isSubmitting ? (
+                {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   isCompleteDocs ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <AlertCircle className="h-4 w-4 mr-2" />

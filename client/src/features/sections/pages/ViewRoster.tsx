@@ -21,6 +21,7 @@ import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { sileo } from "sileo";
+import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 
 import {
   Select,
@@ -72,6 +73,20 @@ interface SectionDetails {
   advisingTeacher: { id: number; name: string } | null;
 }
 
+interface RosterResponse {
+  section: SectionDetails;
+  learners: LearnerRecord[];
+}
+
+interface SectionTeacherOption {
+  id: number;
+  name: string;
+}
+
+interface SectionTeachersResponse {
+  teachers: SectionTeacherOption[];
+}
+
 export default function ViewRoster() {
   const { sectionId } = useParams();
 
@@ -86,20 +101,21 @@ export default function ViewRoster() {
 
   const [section, setSection] = useState<SectionDetails | null>(null);
   const [roster, setRoster] = useState<LearnerRecord[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<SectionTeacherOption[]>([]);
+  const retainedStudentId = useRetainedSheetValue(selectedStudentId);
 
   const fetchRosterData = useCallback(async () => {
     if (!sectionId || !ayId) return;
     setLoading(true);
     try {
       const [rosterRes, teachersRes] = await Promise.all([
-        api.get(`/sections/${sectionId}/roster`),
-        api.get(`/sections/teachers?schoolYearId=${ayId}`)
+        api.get<RosterResponse>(`/sections/${sectionId}/roster`),
+        api.get<SectionTeachersResponse>(`/sections/teachers?schoolYearId=${ayId}`)
       ]);
       setSection(rosterRes.data.section);
       setRoster(rosterRes.data.learners);
       setTeachers(teachersRes.data.teachers);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       sileo.error({ title: "Error", description: "Failed to load roster data." });
     } finally {
@@ -118,7 +134,7 @@ export default function ViewRoster() {
         newAdviserId: newAdviserId === "none" ? null : parseInt(newAdviserId),
       });
       sileo.success({ title: "Success", description: "Class adviser updated successfully." });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       sileo.error({ title: "Error", description: "Failed to update class adviser." });
     }
@@ -143,7 +159,7 @@ export default function ViewRoster() {
       window.URL.revokeObjectURL(url);
       a.remove();
       sileo.success({ title: "Success", description: "SF1 exported successfully." });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to download SF1 template", err);
       sileo.error({ title: "Error", description: "Failed to download SF1." });
     } finally {
@@ -275,45 +291,17 @@ export default function ViewRoster() {
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-base font-bold text-muted-foreground">
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-base font-bold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <Select
-                disabled={loading}
-                value={section?.advisingTeacher ? String(section.advisingTeacher.id) : "none"}
-                onValueChange={async (val) => {
-                  await handleInlineAdviserChange(val);
-                  const newName = val === "none" ? null : teachers.find(t => t.id === parseInt(val))?.name;
-                  setSection((prev: any) => prev ? {
-                    ...prev,
-                    advisingTeacher: val === "none" ? null : { id: parseInt(val), name: newName || "" }
-                  } : null);
-                }}
-              >
-                <SelectTrigger className="h-9 px-3 border-border hover:bg-muted bg-background shadow-sm focus:ring-0 text-base font-bold truncate max-w-[250px]">
-                  <SelectValue placeholder="UNASSIGNED" />
-                </SelectTrigger>
-                <SelectContent className="font-bold max-h-[300px]">
-                  <SelectItem value="none" className="text-sm text-amber-600 italic font-bold">
-                    UNASSIGNED
-                  </SelectItem>
-                  {section?.advisingTeacher && !teachers.some(t => t.id === section.advisingTeacher!.id) && (
-                    <SelectItem value={String(section.advisingTeacher.id)} className="text-sm">
-                      {section.advisingTeacher.name}
-                    </SelectItem>
-                  )}
-                  {teachers.map((t) => (
-                    <SelectItem key={t.id} value={String(t.id)} className="text-sm">
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-black uppercase text-foreground">
+                {section?.advisingTeacher ? section.advisingTeacher.name : "UNASSIGNED"}
+              </span>
             </div>
 
-            <div className="flex items-center gap-6 text-sm font-bold text-foreground tracking-wide">
-              <span className="text-muted-foreground">
+            <div className="flex items-center gap-6 text-base font-bold text-foreground tracking-wide">
+              <span className="text-foreground">
                 Total Seated: <span className="text-foreground">{roster.length} / {section?.maxCapacity || 0}</span>
               </span>
               <div className="w-px h-4 bg-border" />
@@ -346,7 +334,7 @@ export default function ViewRoster() {
                       variant="default"
                       disabled={loading || (roster.length >= (section?.maxCapacity || 0))}
                       onClick={() => setShowDrawer(true)}
-                      className="h-9 font-bold text-xs bg-green-600 hover:bg-green-700 text-white border-none"
+                      className="h-9 font-bold text-sm bg-green-600 hover:bg-green-700 text-white border-none"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Add Learner to Roster
@@ -368,7 +356,7 @@ export default function ViewRoster() {
               variant="outline"
               onClick={handleDownloadSf1}
               disabled={exportingSf1 || loading}
-              className="h-9 font-bold text-xs border-border text-foreground bg-background hover:bg-muted shadow-sm"
+              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               {exportingSf1 ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -380,7 +368,7 @@ export default function ViewRoster() {
             <Button
               variant="outline"
               onClick={() => window.print()}
-              className="h-9 font-bold text-xs border-border text-foreground bg-background hover:bg-muted shadow-sm"
+              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               <Printer className="h-4 w-4 mr-2" /> Print
             </Button>
@@ -390,7 +378,7 @@ export default function ViewRoster() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-base font-bold text-muted-foreground">
+              <p className="text-base font-bold text-foreground">
                 Loading Roster Data...
               </p>
             </div>
@@ -475,11 +463,11 @@ export default function ViewRoster() {
         </CardContent>
       </Card>
 
-      {showDrawer && sectionId && section && (
+      {sectionId && section && (
         <InsertLateEnrolleeDrawer
           open={showDrawer}
           onOpenChange={setShowDrawer}
-          sectionId={parseInt(sectionId)}
+          sectionId={Number(sectionId)}
           sectionName={section.name}
           gradeLevelId={section.gradeLevelId}
           gradeLevelName={section.gradeLevel}
@@ -502,10 +490,10 @@ export default function ViewRoster() {
         <SheetContent
           side="right"
           className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
-          {selectedStudentId && (
+          {retainedStudentId && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
-                id={selectedStudentId}
+                id={retainedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={fetchRosterData}
                 onTransferOut={() => { }}

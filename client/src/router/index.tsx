@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 // router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router";
+import { Loader2 } from "lucide-react";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
@@ -43,18 +44,28 @@ import Apply from "@/features/admission/pages/online-enrollment/Index";
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
 import TeacherEosyDashboard from "@/features/teachers/pages/EosyDashboard";
 import AdvisoryClass from "@/features/teachers/pages/AdvisoryClass";
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 
-const IntegrationHub = lazy(
-  () => import("@/features/integration/pages/IntegrationHub"),
-);
-
+const SMARTLayout = lazy(() => import("@/features/smart/layouts/SMARTLayout"));
+import { smartRoutes } from "@/features/smart/routes";
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-
+      {
+        path: "/smart",
+        element: (
+          <Suspense fallback={
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+              <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+            </div>
+          }>
+            <SMARTLayout />
+          </Suspense>
+        ),
+        children: smartRoutes,
+      },
 
       // 1. Learner Portal routes (public - no staff auth required)
       {
@@ -211,10 +222,6 @@ export const router = createBrowserRouter([
                   {
                     path: "/admin/system",
                     element: <SystemHealth />,
-                  },
-                  {
-                    path: "/admin/integration",
-                    element: <IntegrationHub />,
                   },
                   {
                     path: "/audit-logs",

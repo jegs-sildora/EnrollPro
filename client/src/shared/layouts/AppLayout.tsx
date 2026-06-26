@@ -18,10 +18,7 @@ import {
   School,
   Check,
   BookOpen,
-  Database,
   CheckCircle2,
-  CalendarClock,
-  Wrench,
   Menu,
 } from "lucide-react";
 
@@ -575,59 +572,42 @@ function getNavigationGroups({
     });
   }
 
+  if (isAdmin || isRegistrar || isTeacher) {
+    groups.push({
+      label: "Integrated Systems",
+      items: [
+        {
+          to: "/smart",
+          icon: CheckCircle2,
+          label: "SMART",
+          subtext: "Simplified Master Records and Tracking",
+        },
+      ],
+    });
+  }
+
   if (isAdmin) {
-    groups.push(
-      {
-        label: "Integrated Systems",
-        items: [
-          {
-            to: "/admin/integration?tab=aims",
-            icon: Database,
-            label: "AIMS",
-            subtext: "Academic Info",
-          },
-          {
-            to: "/admin/integration?tab=smart",
-            icon: CheckCircle2,
-            label: "SMART",
-            subtext: "Simplified Master Records and Tracking",
-          },
-          {
-            to: "/admin/integration?tab=atlas",
-            icon: CalendarClock,
-            label: "ATLAS",
-            subtext: "Automated Teaching and Learning Assessment System",
-          },
-          {
-            to: "/admin/integration?tab=mrf",
-            icon: Wrench,
-            label: "MRF",
-            subtext: "Maintenance Requests",
-          },
-        ],
-      },
-      {
-        label: "System Administration",
-        badge: isEosyArchivedState ? activeBadge : undefined,
-        items: [
-          {
-            to: "/admin/users",
-            icon: UserCog,
-            label: "Account Access",
-          },
-          {
-            to: "/audit-logs",
-            icon: History,
-            label: "Activity Logs",
-          },
-          {
-            to: "/settings",
-            icon: Settings,
-            label: "System Configuration",
-          },
-        ],
-      },
-    );
+    groups.push({
+      label: "System Administration",
+      badge: isEosyArchivedState ? activeBadge : undefined,
+      items: [
+        {
+          to: "/admin/users",
+          icon: UserCog,
+          label: "Account Access",
+        },
+        {
+          to: "/audit-logs",
+          icon: History,
+          label: "Activity Logs",
+        },
+        {
+          to: "/settings",
+          icon: Settings,
+          label: "System Configuration",
+        },
+      ],
+    });
   }
 
   if (isTeacher) {

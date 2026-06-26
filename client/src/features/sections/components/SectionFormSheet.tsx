@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
 } from "@/shared/ui/sheet";
 import type { SectionFormState, TeacherOption } from "../types";
 
@@ -107,13 +109,13 @@ export const SectionFormSheet = memo(function SectionFormSheet({
               {initials}
             </div>
             <div className="space-y-0.5">
-              <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
+              <SheetTitle className="text-base font-black text-primary-foreground uppercase leading-none">
                 {title}
-              </h2>
-              <p className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+              </SheetTitle>
+              <SheetDescription className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 <Library className="size-3" />
                 {description}
-              </p>
+              </SheetDescription>
             </div>
           </div>
         </div>
