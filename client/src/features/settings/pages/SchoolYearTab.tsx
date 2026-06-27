@@ -10,6 +10,7 @@ import {
   Plus,
   School,
   Workflow,
+  Archive,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -202,7 +203,7 @@ function getEnrollmentWindowStatus(
   closeDate: string | null | undefined,
 ) {
   if (!openDate || !closeDate) {
-    return { label: "⚫ UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
+    return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
 
   const todayToken = toManilaDateToken(new Date());
@@ -217,7 +218,7 @@ function getEnrollmentWindowStatus(
   }
 
   if (todayToken > endToken) {
-    return { label: "⚫ ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-800" };
+    return { label: " ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-800" };
   }
 
   return {
@@ -970,7 +971,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <div className="space-y-6 mx-auto bg-white p-6 rounded-lg shadow">
+    <div className="space-y-6 pb-24 relative">
       <AnimatePresence>
         {isRolloverLoaderOpen && (
           <motion.div
@@ -1100,13 +1101,18 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-3 mb-1">
                     <CardTitle
-                      className="text-xl font-extrabold text-foreground"
+                      className="flex items-center gap-2 text-xl font-extrabold text-foreground"
                     >
-                      {activeYear ? (
-                        <>School Year {activeYear.yearLabel}</>
-                      ) : (
-                        <>No Active School Year</>
-                      )}
+                      <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                        <CalendarIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        {activeYear ? (
+                          <>School Year {activeYear.yearLabel}</>
+                        ) : (
+                          <>No Active School Year</>
+                        )}
+                      </div>
                     </CardTitle>
                     {activeYear && (
                       <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">
@@ -1115,15 +1121,15 @@ export default function SchoolYearTab() {
                     )}
                   </div>
                   {activeYear && (
-                    <p className="font-extrabold text-foreground">
+                    <p className="font-extrabold text-foreground text-lg">
                       {(() => {
                         const firstDay = localCalendarState.term1Start;
                         const isQuarters = localCalendarState.termFormat === "QUARTERS";
                         const lastDay = isQuarters ? localCalendarState.term4End : localCalendarState.term3End;
 
                         return firstDay && lastDay
-                          ? `Official Academic Calendar: ${formatManilaDate(firstDay)} – ${formatManilaDate(lastDay)}`
-                          : "Official Academic Calendar: Dates not fully configured";
+                          ? `Official School Calendar: ${formatManilaDate(firstDay)} – ${formatManilaDate(lastDay)}`
+                          : "Official School Calendar: Dates not fully configured";
                       })()}
                     </p>
                   )}
@@ -1272,7 +1278,7 @@ export default function SchoolYearTab() {
                             Official Intake Period (BOSY)
                           </h4>
                         </div>
-                        <p className="text-base font-extrabold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
                           Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
                         </p>
                       </div>
@@ -1420,7 +1426,12 @@ export default function SchoolYearTab() {
           {archivedYears.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">School Year Archive</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                    <Archive className="h-5 w-5" />
+                  </div>
+                  School Year Archive
+                </CardTitle>
                 <CardDescription>
                   Historical years are kept for audit and reporting.
                 </CardDescription>

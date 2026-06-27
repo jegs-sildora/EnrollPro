@@ -135,57 +135,46 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     "group grid w-full grid-cols-1 gap-4 p-4 bg-white border border-gray-200 rounded-4xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-pointer border-l-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 xl:grid-cols-[minmax(260px,1fr)_minmax(420px,1.15fr)_auto] xl:items-center",
                     teacher.isActive ? "border-l-green-500" : "border-l-gray-300"
                   )}>
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 min-w-0">
                     <div className="flex items-center justify-center w-12 h-12 text-lg font-extrabold text-primary-foreground rounded-xl bg-primary shadow-sm uppercase shrink-0">
                       {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-extrabold text-foreground group-hover:text-slate-700 transition-colors leading-tight">
+                        <h3 className="text-lg font-extrabold text-primary group-hover:text-slate-700 transition-colors leading-tight truncate uppercase">
                           {formatDisplayName(teacher)}
                         </h3>
                         {formatServiceStatus(teacher) !== "Active" && (
-                          <Badge variant="secondary" className="text-[10px] py-0 h-5">
+                          <Badge variant="secondary" className="text-[10px] py-0 h-5 shrink-0">
                             {formatServiceStatus(teacher)}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-extrabold text-foreground/70">
-                        <span className="bg-muted px-2 py-0.5 rounded text-xs uppercase tracking-wider text-foreground/80">
+                      <div className="flex items-center gap-2 text-sm font-extrabold text-foreground/70 w-full min-w-0">
+                        <span className="text-sm uppercase tracking-wider text-foreground/80 whitespace-nowrap shrink-0">
                           {teacher.employeeId ? `Employee ID: ${teacher.employeeId}` : "Employee ID not set"}
                         </span>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="text-slate-600 tracking-wide text-xs font-extrabold">
-                          {getJobTitle(teacher)}
+                        <span className="hidden sm:inline shrink-0">•</span>
+                        <span className="text-primary tracking-wide text-sm font-extrabold uppercase whitespace-nowrap">
+                          {(() => {
+                            const adv = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
+                            return adv !== "-" ? `${adv}` : getJobTitle(teacher);
+                          })()}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(180px,0.7fr)_minmax(280px,1.3fr)]">
+                  <div className="flex justify-center items-center gap-2 mt-2">
                     {teacher.department ? (
-                      <Badge variant="outline" className="font-extrabold truncate max-w-[200px]">
+                      <Badge variant="outline" className="font-extrabold truncate max-w-full w-fit">
                         <BookOpen className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                        <span className="truncate">
+                        <span className="truncate whitespace-nowrap">
                           {DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === teacher.department)?.label || teacher.department}
                         </span>
                       </Badge>
                     ) : null}
 
-                    {(() => {
-                      const advisory = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
-                      if (advisory !== "-") {
-                        return (
-                          <div className="flex min-w-[280px] items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-extrabold leading-snug text-slate-700">
-                            <Users className="mt-0.5 w-3.5 h-3.5 shrink-0 text-slate-500" />
-                            <span className="whitespace-normal break-words">
-                              Homeroom Adviser: {advisory}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
 
                   </div>
                   <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold pointer-events-none">

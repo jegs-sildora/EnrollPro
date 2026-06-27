@@ -274,7 +274,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School Name</FormLabel>
                     <FormControl>
-                      <Input className="font-extrabold" {...field} />
+                      <Input className="font-bold" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,7 +288,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School ID (6-digit format)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 123456" {...field} value={field.value ?? ""} maxLength={6} inputMode="numeric" />
+                      <Input className="font-bold" placeholder="e.g. 123456" {...field} value={field.value ?? ""} maxLength={6} inputMode="numeric" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -302,7 +302,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Region</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent" />
+                      <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -316,7 +316,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Division</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent" />
+                      <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -330,7 +330,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School Head Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Juan Dela Cruz" {...field} value={field.value ?? ""} />
+                      <Input placeholder="e.g. Juan Dela Cruz" {...field} value={field.value ?? ""} className="font-bold" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -344,7 +344,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Principal IV" {...field} value={field.value ?? ""} />
+                      <Input placeholder="e.g. Principal IV" {...field} value={field.value ?? ""} className="font-bold" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -370,7 +370,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">STE</FormLabel>
-                    <p className="text-base leading-tight text-muted-foreground">Science, Technology, and Engineering</p>
+                    <p className="text-base leading-tight text-foreground">Science, Technology, and Engineering</p>
                   </div>
                   <Switch
                     checked={steEnabled}
@@ -384,7 +384,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">SPA</FormLabel>
-                    <p className="text-base leading-tight text-muted-foreground">Special Program in the Arts</p>
+                    <p className="text-base leading-tight text-foreground">Special Program in the Arts</p>
                   </div>
                   <Switch
                     checked={spaEnabled}
@@ -398,7 +398,7 @@ export default function SchoolProfileTab() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">SPS</FormLabel>
-                    <p className="text-base leading-tight text-muted-foreground">Special Program in Sports</p>
+                    <p className="text-base leading-tight text-foreground">Special Program in Sports</p>
                   </div>
                   <Switch
                     checked={spsEnabled}
@@ -431,7 +431,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Facebook Page URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://www.facebook.com/..." {...field} value={field.value ?? ""} />
+                      <Input className="font-bold" placeholder="https://www.facebook.com/..." {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -445,7 +445,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>Official DepEd Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="school.id@deped.edu.ph" {...field} value={field.value ?? ""} />
+                      <Input className="font-bold" placeholder="school.id@deped.edu.ph" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -459,7 +459,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School Website (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://your-school.edu.ph" {...field} value={field.value ?? ""} />
+                      <Input className="font-bold" placeholder="https://your-school.edu.ph" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -469,139 +469,100 @@ export default function SchoolProfileTab() {
 
             <Separator />
 
-            {/* Logo preview & upload */}
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
-                {logoPreview ? (
-                  <img
-                    src={logoPreview}
-                    alt="Preview"
-                    className="h-full w-full rounded-lg object-contain p-1"
-                  />
-                ) : logoUrl ? (
-                  <img
-                    src={`${API_BASE}${logoUrl}`}
-                    alt="School Logo"
-                    className="h-full w-full rounded-lg object-contain p-1"
-                  />
-                ) : (
-                  <Upload className="h-8 w-8 text-foreground" />
-                )}
-              </div>
-              <div className="flex flex-1 flex-col gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                  id="logo-upload"
-                />
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    {uploading ? "Uploading..." : "Upload Logo"}
-                  </Button>
-                  {logoUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleRemoveLogo}
-                      disabled={removingLogo}
-                      className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {removingLogo ? "Removing..." : "Remove"}
-                    </Button>
-                  )}
-                </div>
-                <p className="text-base leading-tight">Accepted: .png, .jpg, .webp — Max 2MB</p>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Extracted Palette */}
-            {palette.length > 0 && (
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              {/* Logo preview & upload */}
               <div className="space-y-3">
-                <h4 className="text-base leading-tight font-extrabold">Official School Color</h4>
-                <p className="text-base leading-tight">
-                  Select a color from your uploaded logo to apply to the system's buttons and menus.
-                </p>
-                <div className="flex flex-row flex-wrap items-start gap-6">
-                  {palette.map((color, i) => {
-                    const isSelected = color.hsl === currentAccent;
-                    return (
-                      <div
-                        key={i}
-                        className="flex flex-col items-center gap-2">
-                        <button
+                <h4 className="text-base leading-tight font-extrabold">Official School Logo</h4>
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border bg">
+                    {logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        alt="Preview"
+                        className="h-full w-full rounded-lg object-contain p-1"
+                      />
+                    ) : logoUrl ? (
+                      <img
+                        src={`${API_BASE}${logoUrl}`}
+                        alt="School Logo"
+                        className="h-full w-full rounded-lg object-contain p-1"
+                      />
+                    ) : (
+                      <Upload className="h-8 w-8 text-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      id="logo-upload"
+                    />
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {uploading ? "Uploading..." : "Upload Logo"}
+                      </Button>
+                      {logoUrl && (
+                        <Button
                           type="button"
-                          onClick={() => handleSelectAccent(color)}
-                          disabled={selectingAccent}
-                          className={`group relative h-16 w-16 rounded-2xl border-2 transition-all hover:scale-105 ${isSelected
-                            ? "border-foreground ring-4 ring-foreground/20 ring-offset-2 shadow-sm"
-                            : "border-border/50 hover:border-foreground/50 hover:shadow-md shadow-sm"
-                            }`}
-                          style={{ backgroundColor: color.hex }}
-                          title={`${color.hex} — hsl(${color.hsl})`}>
-                          {isSelected && (
-                            <Check
-                              className="absolute inset-0 m-auto h-6 w-6 drop-shadow-md"
-                              style={{ color: `hsl(${color.foreground})` }}
-                            />
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
+                          variant="outline"
+                          onClick={handleRemoveLogo}
+                          disabled={removingLogo}
+                          className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {removingLogo ? "Removing..." : "Remove"}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-base leading-tight">Accepted: .png, .jpg, .webp — Max 2MB</p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Current Accent */}
-            <div className="space-y-3">
-              <h4 className="text-base leading-tight font-extrabold">Selected Theme Color</h4>
-              <div className="flex items-center gap-4">
-                <div
-                  className="h-10 w-10 rounded-lg shadow-sm border border-border"
-                  style={{ backgroundColor: `hsl(${currentAccent})` }}
-                />
-                <div>
-                  <p className="text-base text-foreground">
-                    {logoUrl ? "From extracted palette" : "Default blue"}
+              {/* Extracted Palette */}
+              {palette.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-base leading-tight font-extrabold">Official School Color</h4>
+                  <p className="text-base leading-tight">
+                    Select a color from your uploaded logo to apply to the system's buttons and menus.
                   </p>
+                  <div className="flex flex-row flex-wrap items-start gap-6">
+                    {palette.map((color, i) => {
+                      const isSelected = color.hsl === currentAccent;
+                      return (
+                        <div
+                          key={i}
+                          className="flex flex-col items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectAccent(color)}
+                            disabled={selectingAccent}
+                            className={`group relative h-16 w-16 rounded-2xl border-2 transition-all hover:scale-105 ${isSelected
+                              ? "border-foreground ring-4 ring-foreground/20 ring-offset-2 shadow-sm"
+                              : "border-border/50 hover:border-foreground/50 hover:shadow-md shadow-sm"
+                              }`}
+                            style={{ backgroundColor: color.hex }}
+                            title={`${color.hex} — hsl(${color.hsl})`}>
+                            {isSelected && (
+                              <Check
+                                className="absolute inset-0 m-auto h-6 w-6 drop-shadow-md"
+                                style={{ color: `hsl(${color.foreground})` }}
+                              />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Live Preview */}
-            <div className="rounded-lg border border-border p-4 space-y-3">
-              <p className="text-base leading-tight font-extrabold">System Appearance Preview</p>
-              <div className="flex flex-wrap gap-3">
-                <Button type="button" size="sm">Save School Profile</Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline">
-                  Cancel
-                </Button>
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="text-base leading-tight text-primary hover:underline pt-2">
-                  View Learner Record
-                </a>
-              </div>
-              <div className="flex gap-2">
-                <Badge>Pending</Badge>
-                <Badge variant="success">Enrolled</Badge>
-                <Badge variant="warning">Pending</Badge>
-                <Badge variant="danger">Dropped</Badge>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>

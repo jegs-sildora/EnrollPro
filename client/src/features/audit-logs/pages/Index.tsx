@@ -30,6 +30,7 @@ import {
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 
@@ -161,10 +162,28 @@ function getDiffs(log: AuditLogRow) {
   return null;
 }
 
+function parseUserAgent(ua: string) {
+  if (!ua) return "Unknown Device/Browser";
+  let browser = "Unknown Browser";
+  if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Edg")) browser = "Edge";
+  else if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+  
+  let os = "Unknown OS";
+  if (ua.includes("Win")) os = "Windows";
+  else if (ua.includes("Mac")) os = "MacOS";
+  else if (ua.includes("Linux")) os = "Linux";
+  else if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("like Mac OS X")) os = "iOS";
+  
+  return `${browser} on ${os}`;
+}
+
 const FIELD_MAP: Record<string, string> = {
-  spsEnabled: "SPS (Sports) Status",
-  spaEnabled: "SPA (Arts) Status",
-  steEnabled: "STE (Science) Status",
+  spsEnabled: "Special Program in Sports (SPS) Status",
+  spaEnabled: "Special Program in the Arts (SPA) Status",
+  steEnabled: "Science, Technology, and Engineering (STE) Status",
 };
 
 function formatKeyName(key: string) {
@@ -260,9 +279,19 @@ export default function AuditLogs() {
     () => [
       {
         accessorKey: "createdAt",
-        header: "Timestamp",
+        size: 160,
+        minSize: 140,
+        maxSize: 190,
+        meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Timestamp"
+            className="justify-center [&_button]:!m-0"
+          />
+        ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="flex w-full justify-center py-3">
             <span className="whitespace-nowrap text-base font-extrabold text-foreground">
               {formatTimestamp(row.original.createdAt)}
             </span>
@@ -271,29 +300,33 @@ export default function AuditLogs() {
       },
       {
         accessorKey: "user",
-        header: "Staff Member",
+        size: 250,
+        minSize: 200,
+        maxSize: 350,
+        meta: { skeletonClassName: "w-[150px]" },
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Staff Member"
+          />
+        ),
         cell: ({ row }) => {
           const log = row.original;
           return (
-            <div className="space-y-0.5 text-left">
-              <p className="text-base leading-tight font-extrabold  text-foreground">
+            <div className="flex min-w-0 flex-col text-left py-3 pl-2">
+              <span className="text-base leading-tight font-extrabold text-foreground uppercase">
                 {log.user
                   ? `${log.user.lastName}, ${log.user.firstName}`
                   : "System / Guest"}
-              </p>
+              </span>
               {log.user && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base font-extrabold text-foreground opacity-70">
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-sm font-extrabold text-foreground">
                     ID: {log.user.id}
                   </span>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[9px] font-extrabold uppercase px-1.5 h-3.5 border-none",
-                      getRoleColorClasses(log.user.roles?.[0]),
-                    )}>
-                    {formatUserRole(log.user.roles?.[0])}
-                  </Badge>
+                  <span className="text-sm font-extrabold text-foreground">
+                    | {formatUserRole(log.user.roles?.[0])}
+                  </span>
                 </div>
               )}
             </div>
@@ -301,28 +334,18 @@ export default function AuditLogs() {
         },
       },
       {
-        accessorKey: "actionType",
-        header: "Action",
-        cell: ({ row }) => {
-          const action = row.original.actionType;
-          const isDestructive = action.includes("DELETE") || action.includes("REMOVE") || action.includes("DROP");
-
-          return (
-            <div className="text-center">
-              <span
-                className={cn(
-                  "inline-flex px-3 py-1 text-sm  whitespace-nowrap bg-muted text-muted-foreground rounded-full",
-                  isDestructive && "bg-destructive/10 text-destructive border border-destructive/20"
-                )}>
-                {actionLabel(action)}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "subject",
-        header: "Subject",
+        id: "systemModule",
+        size: 220,
+        minSize: 180,
+        maxSize: 260,
+        meta: { skeletonClassName: "w-[150px] mx-auto", className: "text-center", headerClassName: "text-center" },
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="System Module"
+            className="justify-center [&_button]:!m-0"
+          />
+        ),
         cell: ({ row }) => {
           const log = row.original;
           const type = log.subjectType ? log.subjectType.charAt(0) + log.subjectType.slice(1).toLowerCase() : "System";
@@ -330,36 +353,60 @@ export default function AuditLogs() {
           let displayType = type;
           if (type === "Schoolyear") displayType = "School Year";
           if (type === "Schoolsetting") displayType = "School Profile Settings";
+          if (type === "Enrollment") displayType = "Enrollment";
+          if (type === "Student") displayType = "Learner Registry";
+          if (type === "User") displayType = "Staff Management";
+          if (type === "Section") displayType = "Class Sectioning";
+
+          let colorClass = "bg-slate-100 text-slate-800";
+          if (displayType === "School Profile Settings") colorClass = "bg-blue-100 text-blue-800";
+          if (displayType === "School Year") colorClass = "bg-indigo-100 text-indigo-800";
+          if (displayType === "Learner Registry") colorClass = "bg-slate-700 text-white";
+          if (displayType === "Enrollment") colorClass = "bg-emerald-100 text-emerald-800";
+          if (displayType === "Staff Management") colorClass = "bg-violet-100 text-violet-800";
+          if (displayType === "Class Sectioning") colorClass = "bg-amber-100 text-amber-800";
 
           return (
-            <div className="text-left space-y-0.5 flex justify-center items-center flex-col">
-              <span className="text-base font-extrabold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
+            <div className="flex w-full justify-center py-3">
+              <Badge className={cn("px-2.5 py-0.5 border-none", colorClass)}>
                 {displayType}
-              </span>
-              {log.resolvedSubject ? (
-                <p className="text-base leading-tight font-extrabold text-foreground">
-                  {log.resolvedSubject.replace(/Schoolyear/ig, "S.Y.").replace(/Schoolsetting Record #\d+/ig, "School Profile Settings")}
-                </p>
-              ) : log.recordId ? (
-                <p className="text-base font-extrabold text-foreground">
-                  Record #{log.recordId}
-                </p>
-              ) : null}
+              </Badge>
             </div>
           );
         },
       },
       {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => (
-          <span className="text-base font-normal text-foreground max-w-[400px] break-words block text-left leading-relaxed">
-            {row.original.description}
-          </span>
+        id: "recordedAction",
+        size: 400,
+        minSize: 300,
+        maxSize: 600,
+        meta: { skeletonClassName: "w-[250px]" },
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Recorded Action"
+          />
         ),
+        cell: ({ row }) => {
+          const action = row.original.actionType;
+          return (
+            <div className="flex min-w-0 flex-col text-left py-3 pl-2 leading-relaxed">
+              <span className="font-extrabold text-foreground block mb-0.5 uppercase">
+                {actionLabel(action)}
+              </span>
+              <span className="text-base text-foreground/80 max-w-[400px] break-words block">
+                {row.original.description}
+              </span>
+            </div>
+          );
+        },
       },
       {
         id: "expander",
+        size: 60,
+        minSize: 50,
+        maxSize: 70,
+        meta: { className: "text-center", headerClassName: "text-center" },
         header: "",
         cell: ({ row }) => {
           const diff = getDiffs(row.original);
@@ -367,7 +414,7 @@ export default function AuditLogs() {
           if (!hasChanges) return null;
 
           return (
-            <div className="flex items-center justify-center pr-2">
+            <div className="flex items-center justify-center py-3 pr-2">
               <ChevronDown
                 className={cn(
                   "h-5 w-5 text-muted-foreground transition-transform duration-200",
@@ -472,7 +519,7 @@ export default function AuditLogs() {
             System Activity Logs
           </h1>
           <p className="text-base leading-tight font-extrabold text-foreground ">
-            Track institutional data modifications, grading overrides, and staff login activity.
+            Track institutional data modifications, enrollment overrides, and staff login activity.
           </p>
         </div>
         <div className="flex gap-2">
@@ -588,7 +635,7 @@ export default function AuditLogs() {
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-extrabold uppercase text-foreground/70 mr-2">Quick Presets:</span>
+                  <span className="text-base font-extrabold uppercase text-foreground mr-2">Quick Presets:</span>
                   <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(0)}>Today</Button>
                   <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
                   <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(null)}>This Month</Button>
@@ -614,11 +661,11 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-foreground" />
-                  <p className="text-base font-extrabold uppercase st text-foreground">
+                  <p className="text-base font-extrabold uppercase text-foreground">
                     Total Events
                   </p>
                 </div>
-                <CardTitle className="text-3xl font-extrabold ">
+                <CardTitle className="text-3xl font-extrabold mb-4">
                   <AnimatedNumber value={total} />
                 </CardTitle>
               </CardHeader>
@@ -706,8 +753,8 @@ export default function AuditLogs() {
                                   const isIsoDate = (str: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(str);
                                   const formatVal = (v: any) => {
                                     if (v === null || v === undefined) return "—";
-                                    if (v === true || String(v) === "true") return <span className="text-green-600 font-extrabold">Enabled</span>;
-                                    if (v === false || String(v) === "false") return <span className="text-destructive font-extrabold">Disabled</span>;
+                                    if (v === true || String(v) === "true") return <span className="text-green-600 font-extrabold">Active</span>;
+                                    if (v === false || String(v) === "false") return <span className="text-destructive font-extrabold">Inactive</span>;
                                     if (typeof v === "object") return JSON.stringify(v);
                                     const str = String(v);
                                     if (isIsoDate(str)) {
@@ -734,6 +781,15 @@ export default function AuditLogs() {
                                 })}
                               </tbody>
                             </table>
+                          </div>
+                          <div className="mt-4 rounded-lg border bg-background shadow-sm overflow-hidden p-4">
+                            <p className="text-sm font-extrabold uppercase text-foreground/60 mb-1">Network Security Footprint</p>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-foreground">{row.ipAddress || "Unknown IP"}</span>
+                              <span className="text-foreground/70 text-sm border-l pl-2 border-border">
+                                {parseUserAgent(row.userAgent || "")}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </motion.div>

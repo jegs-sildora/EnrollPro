@@ -4,9 +4,7 @@ import { sileo } from "sileo";
 import { useNavigate } from "react-router";
 import {
   Plus,
-  Grid3X3,
   CalendarDays,
-  ListFilter,
   UserCheck,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -23,7 +21,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -161,23 +158,6 @@ function formatSectionLabel(rawSection: string | null | undefined): string {
     .join("");
 }
 
-function extractGradeLevelNumber(rawGradeLevel: string): string {
-  const matchedNumber = rawGradeLevel.match(/\d+/)?.[0];
-  if (matchedNumber) return matchedNumber;
-
-  const normalized = rawGradeLevel.replace(/^grade\s+/i, "").trim();
-  return normalized || rawGradeLevel;
-}
-
-function formatHeatmapLabel(
-  gradeLevelName: string,
-  sectionLabel: string,
-): string {
-  return `${extractGradeLevelNumber(gradeLevelName)} - ${sectionLabel}`;
-}
-
-
-
 function buildSectionDisplayName(
   sectionName: string,
   programType: string,
@@ -237,22 +217,6 @@ function buildTleSectionName(tleProgramName: string, suffix: string): string {
   if (!normalizedProgramName) return normalizedSuffix;
   if (!normalizedSuffix) return normalizedProgramName;
   return `${normalizedProgramName} - ${normalizedSuffix}`;
-}
-
-function fillColor(pct: number): string {
-  if (pct > 100) return "bg-red-600";
-  if (pct >= 90) return "bg-red-500";
-  if (pct >= 75) return "bg-orange-400";
-  if (pct >= 50) return "bg-yellow-400";
-  return "bg-green-500";
-}
-
-function fillEmoji(pct: number): string {
-  if (pct > 100) return "🔴";
-  if (pct >= 90) return "🔴";
-  if (pct >= 75) return "🟠";
-  if (pct >= 50) return "🟡";
-  return "";
 }
 
 ;
@@ -607,7 +571,6 @@ export default function Homerooms() {
     (!isHistoricalReadOnly || hasOverride) &&
     systemPhase !== "EOSY_CLOSING";
 
-  const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
   const [activeGradeId, setActiveGradeId] = useState<string>("");
 
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
@@ -707,9 +670,6 @@ export default function Homerooms() {
     advisingTeacher: { id: number; name: string } | null;
   } | null>(null);
 
-  // Heatmap grade filter
-  const [heatmapGradeFilter, setHeatmapGradeFilter] = useState<string>("all");
-
   // Roster view state
   const [roster, setRoster] = useState<RosterLearner[]>([]);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
@@ -774,54 +734,6 @@ export default function Homerooms() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    if (heatmapGradeFilter === "all") return;
-
-    const selectedGradeExists = groups.some(
-      (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
-    );
-
-    if (!selectedGradeExists) {
-      setHeatmapGradeFilter("all");
-    }
-  }, [groups, heatmapGradeFilter]);
-
-  const heatmapGradeOptions = useMemo(
-    () =>
-      groups.map((group) => ({
-        value: group.gradeLevelId.toString(),
-        label: group.gradeLevelName,
-      })),
-    [groups],
-  );
-
-  const filteredHeatmapGroups = useMemo(
-    () =>
-      heatmapGradeFilter === "all"
-        ? groups
-        : groups.filter(
-          (group) => group.gradeLevelId.toString() === heatmapGradeFilter,
-        ),
-    [groups, heatmapGradeFilter],
-  );
-
-  const heatmapItems = useMemo(
-    () =>
-      filteredHeatmapGroups.flatMap((group) =>
-        group.sections.map((section) => ({ group, section })),
-      ),
-    [filteredHeatmapGroups],
-  );
-
-  const selectedHeatmapGradeLabel = useMemo(() => {
-    if (heatmapGradeFilter === "all") return "All Grades";
-
-    return (
-      heatmapGradeOptions.find((option) => option.value === heatmapGradeFilter)
-        ?.label ?? "Selected Grade"
-    );
-  }, [heatmapGradeFilter, heatmapGradeOptions]);
 
   const SCP_SHORT_LABELS: Record<string, string> = useMemo(
     () => ({
@@ -1210,58 +1122,12 @@ export default function Homerooms() {
 
   return (
     <div className="space-y-6 ">
-      <div className="flex flex-col md:flex-row md:items-center justify-between">
+      <div>
         <div>
           <h1 className="text-3xl font-extrabold ">Class Advisership & Section Management</h1>
           <p className="text-base leading-tight text-foreground font-extrabold">
             Manage grade level sections and advising teachers
           </p>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex w-full md:w-auto flex-wrap h-auto gap-1 p-1 bg-white border border-border rounded-lg relative shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("heatmap")}
-            className={cn(
-              "flex-1 md:min-w-58 font-extrabold transition-all relative z-10 h-10",
-              viewMode === "heatmap"
-                ? "text-primary-foreground hover:text-primary-foreground"
-                : "text-foreground hover:bg-transparent",
-            )}>
-            {viewMode === "heatmap" && (
-              <motion.div
-                layoutId="view-toggle-pill"
-                className="absolute inset-0 bg-primary rounded-md shadow-sm"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-20 flex items-center justify-center text-base uppercase">
-              Room Density Matrix
-            </span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("list")}
-            className={cn(
-              "flex-1 md:min-w-58 font-extrabold transition-all relative z-10 h-10",
-              viewMode === "list"
-                ? "text-primary-foreground hover:text-primary-foreground"
-                : "text-foreground hover:bg-transparent",
-            )}>
-            {viewMode === "list" && (
-              <motion.div
-                layoutId="view-toggle-pill"
-                className="absolute inset-0 bg-primary rounded-md shadow-sm"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-20 flex items-center justify-center text-base uppercase">
-              List View
-            </span>
-          </Button>
         </div>
       </div>
 
@@ -1284,164 +1150,8 @@ export default function Homerooms() {
             </CardContent>
           </Card>
         </div>
-      ) : viewMode === "heatmap" ? (
-        /* Capacity Heatmap overview */
-        <div className="w-full space-y-6">
-          <Tabs
-            value={heatmapGradeFilter}
-            onValueChange={setHeatmapGradeFilter}
-            className="w-full">
-            <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-0 p-1 bg-white border border-border rounded-lg relative">
-              <TabsTrigger
-                value="all"
-                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                {heatmapGradeFilter === "all" && (
-                  <motion.div
-                    layoutId="heatmap-grade-pill"
-                    className="absolute inset-0 bg-primary rounded-md"
-                    transition={{
-                      type: "spring",
-                      bounce: 0.15,
-                      duration: 0.5,
-                    }}
-                  />
-                )}
-                <span
-                  className={cn(
-                    "relative z-20 uppercase text-base",
-                    heatmapGradeFilter === "all"
-                      ? "text-primary-foreground"
-                      : "text-foreground",
-                  )}>
-                  All Grades
-                </span>
-              </TabsTrigger>
-              {heatmapGradeOptions.map((option) => (
-                <TabsTrigger
-                  key={option.value}
-                  value={option.value}
-                  className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                  {heatmapGradeFilter === option.value && (
-                    <motion.div
-                      layoutId="heatmap-grade-pill"
-                      className="absolute inset-0 bg-primary rounded-md"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.15,
-                        duration: 0.5,
-                      }}
-                    />
-                  )}
-                  <span
-                    className={cn(
-                      "relative z-20 uppercase text-base",
-                      heatmapGradeFilter === option.value
-                        ? "text-primary-foreground"
-                        : "text-foreground",
-                    )}>
-                    {option.label}
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          <Card className="border-border shadow-sm">
-            <CardHeader className="space-y-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Grid3X3 className="h-5 w-5" />
-                  Capacity Heatmap
-                </CardTitle>
-              </div>
-              <CardDescription>
-                Visual overview of section fill rates.  &lt;50% · 🟡 50-74% · 🟠
-                75-89% · 🔴 90%+
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {groups.length === 0 ? (
-                <p className="text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
-                  No grade levels found for this School Year.
-                </p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {heatmapItems.map(({ group, section }) => {
-                    const fillPercent =
-                      section.maxCapacity > 0
-                        ? (section.enrolledCount / section.maxCapacity) * 100
-                        : 0;
-                    const isOverCapacity =
-                      section.enrolledCount > section.maxCapacity;
-
-                    return (
-                      <div
-                        key={section.id}
-                        onClick={() =>
-                          navigate(`/sections/view-roster/${section.id}`)
-                        }
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-all group",
-                          isOverCapacity
-                            ? "border-red-300 bg-red-50/40 hover:border-red-400"
-                            : "border-border hover:border-primary/50",
-                        )}>
-                        <span className="text-lg group-hover:scale-110 transition-transform">
-                          {fillEmoji(fillPercent)}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base leading-tight font-extrabold truncate group-hover:text-primary transition-colors">
-                            {formatHeatmapLabel(
-                              group.gradeLevelName,
-                              buildSectionDisplayName(
-                                section.name,
-                                section.programType,
-                                offeredScpTypeLabels,
-                              ),
-                            )}
-                          </p>
-                          <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                            <div
-                              className={cn(
-                                "h-2 rounded-full transition-all",
-                                fillColor(fillPercent),
-                              )}
-                              style={{
-                                width: `${Math.min(fillPercent, 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <span
-                          className={cn(
-                            "text-base font-extrabold whitespace-nowrap",
-                            isOverCapacity
-                              ? "text-red-700 font-extrabold"
-                              : "text-foreground",
-                          )}>
-                          {section.enrolledCount}/{section.maxCapacity}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {heatmapItems.length === 0 &&
-                    (groups.every((group) => group.sections.length === 0) ? (
-                      <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
-                        No sections created yet. Add sections to grade levels
-                        below.
-                      </p>
-                    ) : (
-                      <p className="col-span-full text-base leading-tight text-[hsl(var(--muted-foreground))] text-center py-4">
-                        No sections found for {selectedHeatmapGradeLabel}.
-                      </p>
-                    ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
       ) : (
-        /* Active List View - Tabbed by Grade */
+        /* Grade-level section list */
         <Tabs
           value={activeGradeId}
           onValueChange={setActiveGradeId}

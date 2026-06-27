@@ -950,7 +950,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         {teacher?.designation?.advisorySection ? (
                           <div className="space-y-0.5 pt-1">
                             <p className="font-extrabold text-base leading-tight text-slate-700">
-                              Homeroom Adviser: {formatAdvisorySectionSummary(teacher.designation.advisorySection)}
+                              {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
                             </p>
                           </div>
                         ) : (
