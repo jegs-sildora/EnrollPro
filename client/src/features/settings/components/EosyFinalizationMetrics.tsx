@@ -7,7 +7,7 @@ export function EosyFinalizationMetrics() {
   useEffect(() => {
     getRolloverReadiness()
       .then(setReadiness)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   if (!readiness) return null;
@@ -31,7 +31,7 @@ export function EosyFinalizationMetrics() {
       </h3>
       <ul className="flex flex-col gap-3">
         {readiness.blockers.map((blocker, index) => (
-          <li key={index} className="flex items-start text-base leading-tight text-amber-900 font-medium">
+          <li key={index} className="flex items-start text-base leading-tight text-amber-900 ">
             <span className="mr-2 shrink-0">⚠️</span>
             <span>{blocker}</span>
           </li>

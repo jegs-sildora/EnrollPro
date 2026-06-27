@@ -34,9 +34,9 @@ export default function BOSYQueue() {
     setError(null);
     try {
       let res: any;
-      const params = { 
-        page: p, 
-        limit: l, 
+      const params = {
+        page: p,
+        limit: l,
         search: s.trim() || undefined,
         gradeLevel: g !== "all" ? g : undefined
       };
@@ -53,7 +53,7 @@ export default function BOSYQueue() {
         const l = item.learner ?? item;
         const rawSex = (l.sex ?? item.sex ?? "").toString().trim().toUpperCase();
         const sex = rawSex === "MALE" || rawSex === "M" ? "Male" : rawSex === "FEMALE" || rawSex === "F" ? "Female" : "";
-        
+
         // Helper to extract nested names robustly
         const getName = (obj: any, flatKey: string) => {
           if (typeof obj === "string") return obj;
@@ -79,11 +79,11 @@ export default function BOSYQueue() {
       });
 
       setItems(normalized);
-      setMeta(payload.meta ?? payload.pagination ?? { 
-        total: payload.total ?? normalized.length, 
-        page: p, 
+      setMeta(payload.meta ?? payload.pagination ?? {
+        total: payload.total ?? normalized.length,
+        page: p,
         limit: l,
-        totalPages: payload.totalPages ?? Math.ceil((payload.total ?? normalized.length) / l) 
+        totalPages: payload.totalPages ?? Math.ceil((payload.total ?? normalized.length) / l)
       });
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Failed to load BOSY data from EnrollPro.");
@@ -110,10 +110,10 @@ export default function BOSYQueue() {
   // Keep client-side filter as a secondary "instant" filter for the current page
   const filtered = search
     ? items.filter((item) => {
-        const name = `${item.firstName} ${item.lastName}`.toLowerCase();
-        const lrn = String(item.lrn);
-        return name.includes(search.toLowerCase()) || lrn.includes(search);
-      })
+      const name = `${item.firstName} ${item.lastName}`.toLowerCase();
+      const lrn = String(item.lrn);
+      return name.includes(search.toLowerCase()) || lrn.includes(search);
+    })
     : items;
 
   return (
@@ -122,7 +122,7 @@ export default function BOSYQueue() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">BOSY Queue</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">BOSY Queue</h1>
           <p className="text-gray-600 mt-1">
             Beginning of School Year — learner return confirmation tracking. Read-only from EnrollPro.
           </p>
@@ -197,7 +197,7 @@ export default function BOSYQueue() {
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-              <p className="text-gray-700 font-medium">Unable to load BOSY data</p>
+              <p className="text-gray-700 ">Unable to load BOSY data</p>
               <p className="text-gray-500 text-sm mt-1">{error}</p>
               <Button onClick={() => void load(page, limit, search)} variant="outline" className="mt-4 rounded-xl">Try Again</Button>
             </div>
@@ -206,16 +206,16 @@ export default function BOSYQueue() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
-                    <TableHead className="font-bold text-gray-700">Sex</TableHead>
-                    <TableHead className="font-bold text-gray-700">Prior Grade</TableHead>
-                    <TableHead className="font-bold text-gray-700">Prior Section</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Prior Grade</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Prior Section</TableHead>
                     {tab === "expected" && (
-                      <TableHead className="font-bold text-gray-700">Final Avg</TableHead>
+                      <TableHead className="font-extrabold text-gray-700">Final Avg</TableHead>
                     )}
                     {tab === "pending" && (
-                      <TableHead className="font-bold text-gray-700">Status</TableHead>
+                      <TableHead className="font-extrabold text-gray-700">Status</TableHead>
                     )}
                   </TableRow>
                 </TableHeader>
@@ -231,7 +231,7 @@ export default function BOSYQueue() {
                     filtered.map((item, i) => (
                       <TableRow key={item.enrollmentRecordId ?? item.learnerId ?? i} className="hover:bg-slate-50/50">
                         <TableCell className="font-mono text-sm text-gray-600">{item.lrn ?? "—"}</TableCell>
-                        <TableCell className="font-medium text-gray-900">
+                        <TableCell className=" text-gray-900">
                           {item.lastName}, {item.firstName} {item.middleName ?? ""}
                         </TableCell>
                         <TableCell>
@@ -305,11 +305,11 @@ export default function BOSYQueue() {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
+
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-9 min-w-[36px] px-2 rounded-lg font-bold shadow-sm"
+                  className="h-9 min-w-[36px] px-2 rounded-lg font-extrabold shadow-sm"
                   style={{ backgroundColor: colors.primary }}
                 >
                   {page}

@@ -91,7 +91,7 @@ export function HistoricalCorrectionModal({
       onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-black">
+          <DialogTitle className="flex items-center gap-2 font-extrabold">
             <ShieldAlert className="h-5 w-5 text-amber-600" />
             Authorize Historical Correction
           </DialogTitle>
@@ -106,7 +106,7 @@ export function HistoricalCorrectionModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="hc-password"
-              className="text-sm font-bold">
+              className="text-sm font-extrabold">
               Confirm Your Password
             </Label>
             <Input
@@ -123,7 +123,7 @@ export function HistoricalCorrectionModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="hc-reason"
-              className="text-sm font-bold">
+              className="text-sm font-extrabold">
               Reason for Correction{" "}
               <span className="font-normal text-foreground">
                 (min. 20 characters)
@@ -138,7 +138,7 @@ export function HistoricalCorrectionModal({
               disabled={loading}
             />
             {reasonTooShort && (
-              <p className="text-[0.7rem] text-destructive font-bold">
+              <p className="text-[0.7rem] text-destructive font-extrabold">
                 Reason must be at least 20 characters ({reason.trim().length}
                 /20)
               </p>
@@ -150,14 +150,14 @@ export function HistoricalCorrectionModal({
           <Button
             variant="outline"
             size="sm"
-            className="font-bold"
+            className="font-extrabold"
             onClick={handleClose}
             disabled={loading}>
             Cancel
           </Button>
           <Button
             size="sm"
-            className="font-bold"
+            className="font-extrabold"
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}>
             {loading ? (

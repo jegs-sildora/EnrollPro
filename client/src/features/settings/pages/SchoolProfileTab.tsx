@@ -274,7 +274,7 @@ export default function SchoolProfileTab() {
                   <FormItem>
                     <FormLabel>School Name</FormLabel>
                     <FormControl>
-                      <Input className="font-bold" {...field} />
+                      <Input className="font-extrabold" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -527,7 +527,7 @@ export default function SchoolProfileTab() {
             {/* Extracted Palette */}
             {palette.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-base leading-tight font-bold">Official School Color</h4>
+                <h4 className="text-base leading-tight font-extrabold">Official School Color</h4>
                 <p className="text-base leading-tight">
                   Select a color from your uploaded logo to apply to the system's buttons and menus.
                 </p>
@@ -564,7 +564,7 @@ export default function SchoolProfileTab() {
 
             {/* Current Accent */}
             <div className="space-y-3">
-              <h4 className="text-base leading-tight font-bold">Selected Theme Color</h4>
+              <h4 className="text-base leading-tight font-extrabold">Selected Theme Color</h4>
               <div className="flex items-center gap-4">
                 <div
                   className="h-10 w-10 rounded-lg shadow-sm border border-border"
@@ -580,7 +580,7 @@ export default function SchoolProfileTab() {
 
             {/* Live Preview */}
             <div className="rounded-lg border border-border p-4 space-y-3">
-              <p className="text-base leading-tight font-bold">System Appearance Preview</p>
+              <p className="text-base leading-tight font-extrabold">System Appearance Preview</p>
               <div className="flex flex-wrap gap-3">
                 <Button type="button" size="sm">Save School Profile</Button>
                 <Button

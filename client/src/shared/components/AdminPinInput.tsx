@@ -125,7 +125,7 @@ export function AdminPinInput({
             }
           }}
           className={cn(
-            "h-14 w-12 sm:h-16 sm:w-14 rounded-2xl border-2 bg-muted/30 px-0 text-center text-3xl sm:text-4xl font-black tabular-nums leading-none text-foreground shadow-sm transition-colors",
+            "h-14 w-12 sm:h-16 sm:w-14 rounded-2xl border-2 bg-muted/30 px-0 text-center text-3xl sm:text-4xl font-extrabold tabular-nums leading-none text-foreground shadow-sm transition-colors",
             "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/35",
             invalid
               ? "border-destructive text-destructive focus-visible:border-destructive focus-visible:ring-destructive/35"

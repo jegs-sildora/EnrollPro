@@ -129,13 +129,13 @@ export function ActionButtons({
           {canMarkAsVerified ? (
             <>
               <Button
-                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
+                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-extrabold"
                 onClick={handlers.onMarkVerified}
                 disabled={!isMandatoryDocumentsMet}>
                 Mark as Verified
               </Button>
               {!isMandatoryDocumentsMet && (
-                <p className="text-base text-center text-amber-700 font-bold">
+                <p className="text-base text-center text-amber-700 font-extrabold">
                   Complete all mandatory physical document checks before marking
                   as verified.
                 </p>
@@ -151,11 +151,10 @@ export function ActionButtons({
             <>
               <Button
                 variant={isProfileLocked ? "outline" : "destructive"}
-                className={`w-full font-bold ${
-                  isProfileLocked
+                className={`w-full font-extrabold ${isProfileLocked
                     ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
                     : ""
-                }`}
+                  }`}
                 onClick={handleToggleLock}>
                 {isProfileLocked
                   ? "Unlock Profile (Admin Override)"
@@ -171,10 +170,10 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-base leading-tight text-foreground text-center py-2">
-              No further actions available for this application.
-            </p>
-          )}
+              <p className="text-base leading-tight text-foreground text-center py-2">
+                No further actions available for this application.
+              </p>
+            )}
         </div>
       ) : (
         <div className="flex flex-col gap-2 p-4 border-t bg-background mt-auto">
@@ -197,7 +196,7 @@ export function ActionButtons({
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-extrabold"
                   onClick={handlers.onReject}>
                   Reject Application
                 </Button>
@@ -210,13 +209,13 @@ export function ActionButtons({
             status === "READY_FOR_SECTIONING" ||
             status === "ELIGIBLE" ||
             status === "READY_FOR_ENROLLMENT") && (
-            <Button
-              variant="secondary"
-              className="w-full border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100 font-bold"
-              onClick={handlers.onTemporarilyEnroll}>
-              Mark as Temporarily Enrolled
-            </Button>
-          )}
+              <Button
+                variant="secondary"
+                className="w-full border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100 font-extrabold"
+                onClick={handlers.onTemporarilyEnroll}>
+                Mark as Temporarily Enrolled
+              </Button>
+            )}
 
           {/* SCP: Verify & Schedule first step (pipeline-aware) */}
           {isSCP &&
@@ -231,22 +230,22 @@ export function ActionButtons({
               <>
                 {hasSteps && nextPending && handlers.onScheduleStep ? (
                   <Button
-                    className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
+                    className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-extrabold"
                     onClick={() => handlers.onScheduleStep!(nextPending)}
                     disabled={!isMandatoryDocumentsMet}>
                     Verify &amp; Schedule: {getStepLabel(nextPending)}
                   </Button>
                 ) : (
                   <Button
-                    className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-                    onClick={handlers.onScheduleExam || (() => {})}
+                    className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-extrabold"
+                    onClick={handlers.onScheduleExam || (() => { })}
                     disabled={!isMandatoryDocumentsMet}>
                     Verify &amp; Schedule Exam
                   </Button>
                 )}
                 <Button
                   variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-extrabold"
                   onClick={handlers.onReject}>
                   Reject Application
                 </Button>
@@ -262,7 +261,7 @@ export function ActionButtons({
                 {hasSteps && nextPending && handlers.onScheduleStep && (
                   <Button
                     variant="outline"
-                    className="w-full bg-primary text-primary-foreground font-bold"
+                    className="w-full bg-primary text-primary-foreground font-extrabold"
                     onClick={() => handlers.onScheduleStep!(nextPending)}
                     disabled={!isMandatoryDocumentsMet}>
                     Schedule Next: {getStepLabel(nextPending)}
@@ -270,7 +269,7 @@ export function ActionButtons({
                 )}
                 <Button
                   variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-extrabold"
                   onClick={handlers.onReject}>
                   Reject Application
                 </Button>
@@ -281,15 +280,14 @@ export function ActionButtons({
             (status === "EXAM_SCHEDULED" || status === "ASSESSMENT_TAKEN") &&
             assessmentDecisionAction && (
               <Button
-                className={`w-full font-bold ${
-                  assessmentDecisionAction === "PASS"
+                className={`w-full font-extrabold ${assessmentDecisionAction === "PASS"
                     ? "bg-green-600 text-white hover:bg-green-700"
                     : "bg-red-600 text-white hover:bg-red-700"
-                }`}
+                  }`}
                 onClick={
                   assessmentDecisionAction === "PASS"
-                    ? (handlers.onPass || (() => {}))
-                    : (handlers.onFail || (() => {}))
+                    ? (handlers.onPass || (() => { }))
+                    : (handlers.onFail || (() => { }))
                 }>
                 {assessmentDecisionAction === "PASS"
                   ? "Mark as Passed"
@@ -301,7 +299,7 @@ export function ActionButtons({
             <>
               {handlers.onScheduleInterview && (
                 <Button
-                  className="w-full bg-amber-600 text-white hover:bg-amber-700 font-bold"
+                  className="w-full bg-amber-600 text-white hover:bg-amber-700 font-extrabold"
                   onClick={handlers.onScheduleInterview}>
                   Schedule Interview
                 </Button>
@@ -314,7 +312,7 @@ export function ActionButtons({
             handlers.onAssignLrn && (
               <Button
                 variant="outline"
-                className="w-full border-amber-500 text-amber-700 hover:bg-amber-50 font-bold"
+                className="w-full border-amber-500 text-amber-700 hover:bg-amber-50 font-extrabold"
                 onClick={handlers.onAssignLrn}>
                 Assign LRN
               </Button>
@@ -323,13 +321,13 @@ export function ActionButtons({
           {isSCP && status === "FAILED_ASSESSMENT" && (
             <>
               <Button
-                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-                onClick={handlers.onOfferRegular || (() => {})}>
+                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-extrabold"
+                onClick={handlers.onOfferRegular || (() => { })}>
                 Offer Regular Section
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+                className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-extrabold"
                 onClick={handlers.onReject}>
                 Reject
               </Button>
@@ -340,11 +338,10 @@ export function ActionButtons({
             <>
               <Button
                 variant={isProfileLocked ? "outline" : "destructive"}
-                className={`w-full font-bold ${
-                  isProfileLocked
+                className={`w-full font-extrabold ${isProfileLocked
                     ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
                     : ""
-                }`}
+                  }`}
                 onClick={handleToggleLock}>
                 {isProfileLocked
                   ? "Unlock Profile (Admin Override)"
@@ -360,10 +357,10 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-base leading-tight text-foreground text-center py-2">
-              No further actions available for this application.
-            </p>
-          )}
+              <p className="text-base leading-tight text-foreground text-center py-2">
+                No further actions available for this application.
+              </p>
+            )}
         </div>
       )}
 

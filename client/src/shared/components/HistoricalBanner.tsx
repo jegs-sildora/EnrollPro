@@ -48,7 +48,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b px-4 py-2 text-sm font-bold",
+        "flex items-center gap-3 border-b px-4 py-2 text-sm font-extrabold",
         hasOverride
           ? "bg-amber-50 border-amber-200 text-amber-900"
           : "bg-muted border-border text-foreground",
@@ -60,7 +60,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
       {hasOverride && (
         <Badge
           variant="outline"
-          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-[0.625rem] font-black uppercase">
+          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-[0.625rem] font-extrabold uppercase">
           <ShieldAlert className="h-3 w-3 mr-1" />
           Correction Override Active
         </Badge>
@@ -71,7 +71,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[0.7rem] font-bold hover:bg-background"
+            className="h-7 px-2 text-[0.7rem] font-extrabold hover:bg-background"
             onClick={onOpenCorrectionModal}>
             <ShieldAlert className="h-3 w-3 mr-1" />
             Authorize Correction
@@ -82,7 +82,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[0.7rem] font-bold text-amber-700 hover:bg-amber-100"
+            className="h-7 px-2 text-[0.7rem] font-extrabold text-amber-700 hover:bg-amber-100"
             onClick={handleClearOverride}>
             <X className="h-3 w-3 mr-1" />
             Clear Override
@@ -92,7 +92,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-[0.7rem] font-bold hover:bg-background"
+          className="h-7 px-2 text-[0.7rem] font-extrabold hover:bg-background"
           onClick={handleSwitchToActive}>
           Switch to Active Year
         </Button>

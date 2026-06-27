@@ -31,7 +31,7 @@ function statusBadge(status: string) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-black uppercase bg-amber-50 border-amber-200 text-amber-700">
+        className="text-[10px] font-extrabold uppercase bg-amber-50 border-amber-200 text-amber-700">
         [Pending Review]
       </Badge>
     );
@@ -39,7 +39,7 @@ function statusBadge(status: string) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-black uppercase bg-emerald-50 border-emerald-200 text-emerald-700">
+        className="text-[10px] font-extrabold uppercase bg-emerald-50 border-emerald-200 text-emerald-700">
         [Confirmed]
       </Badge>
     );
@@ -47,14 +47,14 @@ function statusBadge(status: string) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-black uppercase bg-blue-50 border-blue-200 text-blue-700">
+        className="text-[10px] font-extrabold uppercase bg-blue-50 border-blue-200 text-blue-700">
         Enrolled
       </Badge>
     );
   return (
     <Badge
       variant="outline"
-      className="text-[10px] font-black uppercase">
+      className="text-[10px] font-extrabold uppercase">
       {formatApplicationStatus(status)}
     </Badge>
   );
@@ -134,7 +134,7 @@ export function QueueTable({
           <div className="text-center">
             <Badge
               variant="outline"
-              className="text-[10px] font-black uppercase">
+              className="text-[10px] font-extrabold uppercase">
               {row.original.gradeLevelName}
             </Badge>
           </div>
@@ -152,7 +152,7 @@ export function QueueTable({
         ),
         cell: ({ row }) => (
           <div className="text-base">
-            <span className="font-bold">
+            <span className="font-extrabold">
               {row.original.priorSectionName ?? "—"}
             </span>
             {row.original.priorAdviserName && (
@@ -183,7 +183,7 @@ export function QueueTable({
             <div className="text-center">
               <Badge
                 variant="outline"
-                className={cn("text-[10px] font-black uppercase", s === "PROMOTED" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700")}
+                className={cn("text-[10px] font-extrabold uppercase", s === "PROMOTED" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700")}
               >
                 {s === "PROMOTED" ? "[Promoted]" : "[Retained]"}
               </Badge>
@@ -230,7 +230,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-3 text-sm font-bold text-primary border-primary hover:bg-primary/10"
+                className="h-8 px-3 text-sm font-extrabold text-primary border-primary hover:bg-primary/10"
                 disabled={isConfirming}
                 onClick={() => onConfirmSingle(r.applicationId)}>
                 {isConfirming && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -264,7 +264,7 @@ export function QueueTable({
           <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
             <CheckCircle2 className="h-6 w-6 text-emerald-500" />
           </div>
-          <p className="font-bold text-base text-foreground">No unconfirmed returning learners match your current filter.</p>
+          <p className="font-extrabold text-base text-foreground">No unconfirmed returning learners match your current filter.</p>
           <p className="text-sm">Select a different 'Target Grade' above or verify your search spelling.</p>
         </div>
       }

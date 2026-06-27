@@ -204,7 +204,7 @@ export default function Apply() {
         />
 
         {!isClosed && systemPhase === "CLASSES_ONGOING" && (
-          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-base leading-tight font-bold text-center py-3 px-4 shadow-sm relative z-20">
+          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-base leading-tight font-extrabold text-center py-3 px-4 shadow-sm relative z-20">
             Classes have officially started. Submissions will be marked for late processing.
           </div>
         )}
@@ -233,12 +233,12 @@ export default function Apply() {
                       alt={schoolName}
                     />
                   ) : (
-                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-black text-primary">
+                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-extrabold text-primary">
                       {schoolName?.charAt(0)}
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-black">
                       {schoolName}
                     </h2>
 
@@ -247,7 +247,7 @@ export default function Apply() {
                   {isBosyLocked || isEosyClosing ? (
                     <div className="space-y-4 max-w-lg mx-auto">
                       <div className="space-y-2">
-                        <h3 className="text-2xl font-black text-gray-900 mt-6">
+                        <h3 className="text-2xl font-extrabold text-gray-900 mt-6">
                           Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
                         <p className="text-base text-gray-600 mt-3 leading-relaxed max-w-lg mx-auto text-center">
@@ -256,7 +256,7 @@ export default function Apply() {
                       </div>
 
                       <div className="mt-6 p-5 text-left bg-blue-50 border border-blue-100 rounded-xl max-w-lg mx-auto shadow-sm">
-                        <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider mb-2">Walk-In Enrollment Instructions</h3>
+                        <h3 className="text-sm font-extrabold text-blue-900 uppercase tracking-wider mb-2">Walk-In Enrollment Instructions</h3>
                         <p className="text-sm text-blue-800 leading-relaxed mb-4">
                           If you missed the online deadline, you can still enroll your child in person. Please visit the School Registrar's Office during office hours (8:00 AM - 5:00 PM, Monday to Friday).
                         </p>
@@ -270,7 +270,7 @@ export default function Apply() {
 
                       {facebookPageUrl && (
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <p className="text-base font-bold text-slate-500 uppercase  text-center">
+                          <p className="text-base font-extrabold text-slate-500 uppercase  text-center">
                             For real-time updates and official memorandums,
                             please follow our page:
                           </p>
@@ -278,7 +278,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -291,7 +291,7 @@ export default function Apply() {
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-lg mx-auto">
-                      <h3 className="text-xl sm:text-2xl font-bold text-black">
+                      <h3 className="text-xl sm:text-2xl font-extrabold text-black">
                         S.Y. {activeSchoolYearLabel || "Admissions"} Portal is
                         Currently Closed
                       </h3>
@@ -303,7 +303,7 @@ export default function Apply() {
                       </p>
                       {facebookPageUrl ? (
                         <div className="pt-6 border-t border-border/50 space-y-4">
-                          <p className="text-base font-bold text-slate-500 uppercase  text-center leading-relaxed">
+                          <p className="text-base font-extrabold text-slate-500 uppercase  text-center leading-relaxed">
                             Please stay tuned to our official school social
                             media pages for announcements regarding the next
                             registration schedule.
@@ -312,7 +312,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -322,7 +322,7 @@ export default function Apply() {
                           </a>
                         </div>
                       ) : (
-                        <p className="text-base leading-tight text-black font-bold pt-4 border-t border-border/50">
+                        <p className="text-base leading-tight text-black font-extrabold pt-4 border-t border-border/50">
                           Please stay tuned to our official school social media
                           pages or visit the school campus for announcements
                           regarding the next registration schedule.

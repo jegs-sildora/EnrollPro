@@ -58,7 +58,7 @@ export default function DocumentaryRequirements() {
         accessorKey: "feature",
         header: "",
         cell: ({ row }) => (
-          <span className="font-bold text-base leading-tight bg-muted/20 block p-1">
+          <span className="font-extrabold text-base leading-tight bg-muted/20 block p-1">
             {row.original.feature}
           </span>
         ),
@@ -66,7 +66,7 @@ export default function DocumentaryRequirements() {
       {
         accessorKey: "phase1",
         header: () => (
-          <div className="bg-blue-50/50 text-blue-700 font-bold p-1">
+          <div className="bg-blue-50/50 text-blue-700 font-extrabold p-1">
             Phase 1 — Basic Education Early Registration Form
           </div>
         ),
@@ -79,7 +79,7 @@ export default function DocumentaryRequirements() {
       {
         accessorKey: "phase2",
         header: () => (
-          <div className="bg-emerald-50/50 text-emerald-700 font-bold p-1">
+          <div className="bg-emerald-50/50 text-emerald-700 font-extrabold p-1">
             Phase 2 — Actual Enrollment
           </div>
         ),
@@ -113,9 +113,9 @@ export default function DocumentaryRequirements() {
     {
       feature: "Document Handling",
       phase1: "Presented for verification only (not collected)",
-      phase1Class: "font-bold text-blue-600",
+      phase1Class: "font-extrabold text-blue-600",
       phase2: "Original documents submitted and filed",
-      phase2Class: "font-bold text-emerald-600",
+      phase2Class: "font-extrabold text-emerald-600",
     },
     {
       feature: "System Status",
@@ -130,7 +130,7 @@ export default function DocumentaryRequirements() {
         accessorKey: "grade",
         header: "Grade",
         cell: ({ row }) => (
-          <span className="font-bold text-center block">
+          <span className="font-extrabold text-center block">
             {row.original.grade}
           </span>
         ),
@@ -159,7 +159,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-base font-bold">{row.original.phase2}</span>
+          <span className="text-base font-extrabold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -224,7 +224,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-base font-bold">{row.original.phase2}</span>
+          <span className="text-base font-extrabold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -234,7 +234,7 @@ export default function DocumentaryRequirements() {
   const specialData: SpecialDataRow[] = [
     {
       category: (
-        <div className="font-bold flex items-center gap-1.5">
+        <div className="font-extrabold flex items-center gap-1.5">
           <RefreshCw className="h-3 w-3 text-primary" />
           Balik-Aral
         </div>
@@ -244,7 +244,7 @@ export default function DocumentaryRequirements() {
     },
     {
       category: (
-        <div className="font-bold flex items-center gap-1.5">
+        <div className="font-extrabold flex items-center gap-1.5">
           <Stethoscope className="h-3 w-3 text-primary" />
           LWD / SPED
         </div>
@@ -254,7 +254,7 @@ export default function DocumentaryRequirements() {
     },
     {
       category: (
-        <div className="font-bold flex items-center gap-1.5">
+        <div className="font-extrabold flex items-center gap-1.5">
           <UserPlus className="h-3 w-3 text-primary" />
           PEPT / A&E
         </div>
@@ -267,7 +267,7 @@ export default function DocumentaryRequirements() {
   return (
     <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-10 px-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold ">Documentary Requirements Guide</h1>
+        <h1 className="text-3xl font-extrabold ">Documentary Requirements Guide</h1>
         <p className="text-foreground">
           Official reference for enrollment documents based on DepEd Order No.
           017, s. 2025.
@@ -276,7 +276,7 @@ export default function DocumentaryRequirements() {
 
       <Alert className="bg-primary/5 border-primary/20">
         <ShieldCheck className="h-4 w-4 text-primary" />
-        <AlertTitle className="font-bold text-primary">
+        <AlertTitle className="font-extrabold text-primary">
           Policy Update: DO 017, s. 2025
         </AlertTitle>
         <AlertDescription className="text-base leading-tight">
@@ -301,7 +301,7 @@ export default function DocumentaryRequirements() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-extrabold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     1
                   </span>
@@ -313,7 +313,7 @@ export default function DocumentaryRequirements() {
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-extrabold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     2
                   </span>
@@ -325,7 +325,7 @@ export default function DocumentaryRequirements() {
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-extrabold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     3
                   </span>
@@ -337,7 +337,7 @@ export default function DocumentaryRequirements() {
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-card">
-                <h4 className="font-bold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
+                <h4 className="font-extrabold text-base leading-tight mb-2 flex items-center gap-2 text-primary">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[0.625rem]">
                     4
                   </span>
@@ -364,7 +364,7 @@ export default function DocumentaryRequirements() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2.5 text-base leading-tight">
-              <li className="flex items-start gap-2 text-destructive font-bold">
+              <li className="flex items-start gap-2 text-destructive font-extrabold">
                 <span className="mt-0.5">✕</span>
                 <span>Enrollment or Processing Fees</span>
               </li>
@@ -378,7 +378,7 @@ export default function DocumentaryRequirements() {
                 <li
                   key={item}
                   className="flex items-start gap-2 text-foreground">
-                  <span className="mt-0.5 font-bold">✕</span>
+                  <span className="mt-0.5 font-extrabold">✕</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -482,7 +482,7 @@ export default function DocumentaryRequirements() {
                     key={doc}
                     className="flex items-center gap-2 text-base p-2.5 rounded border bg-muted/20">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span className="font-bold">{doc}</span>
+                    <span className="font-extrabold">{doc}</span>
                   </div>
                 ))}
               </div>
@@ -520,7 +520,7 @@ export default function DocumentaryRequirements() {
                   key={form.name}
                   className="flex flex-col gap-1 p-3 rounded-lg border bg-card hover:bg-muted/10 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="text-base font-bold text-primary bg-primary/10 px-2.5 py-1 rounded">
+                    <span className="text-base font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded">
                       {form.name}
                     </span>
                   </div>
@@ -548,7 +548,7 @@ export default function DocumentaryRequirements() {
             <strong>not refused entry</strong>. They are marked as "Temporarily
             Enrolled" and may attend classes normally.
           </p>
-          <ul className="list-disc pl-5 space-y-1 font-bold">
+          <ul className="list-disc pl-5 space-y-1 font-extrabold">
             <li>
               Cannot be promoted to the next grade level until requirements are
               complete.

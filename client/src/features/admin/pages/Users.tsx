@@ -84,12 +84,12 @@ interface User {
   mobileNumber: string | null;
   email: string;
   roles: (
-  | "SYSTEM_ADMIN"
-  | "HEAD_REGISTRAR"
-  | "CLASS_ADVISER"
-  | "TEACHER"
-  | "MRF"
-  | "LEARNER"
+    | "SYSTEM_ADMIN"
+    | "HEAD_REGISTRAR"
+    | "CLASS_ADVISER"
+    | "TEACHER"
+    | "MRF"
+    | "LEARNER"
   )[];
   isActive: boolean;
   lastLoginAt: string | null;
@@ -551,7 +551,7 @@ export default function AdminUsers() {
         mobileNumber: formData.mobileNumber.trim() || null,
         email: formData.email.trim() || null,
         password: formData.password,
-               roles: formData.roles,
+        roles: formData.roles,
         mustChangePassword: formData.mustChangePassword,
         department: formData.department || null,
         accountName: formData.accountName?.trim() || null,
@@ -772,19 +772,19 @@ export default function AdminUsers() {
           return (
             <div className="flex items-center gap-3 text-left min-w-[240px] pl-2 py-1">
               <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
-                <AvatarFallback className="text-base font-bold bg-primary/5 text-primary">
+                <AvatarFallback className="text-base font-extrabold bg-primary/5 text-primary">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-base uppercase leading-tight text-foreground truncate">
+                <span className="font-extrabold text-base uppercase leading-tight text-foreground truncate">
                   {user.lastName}, {user.firstName}
                 </span>
-                <span className="text-[11px] font-bold text-foreground truncate">
+                <span className="text-[11px] font-extrabold text-foreground truncate">
                   {user.email}
                 </span>
                 {activeTab === "staff" && user.employeeId && (
-                  <span className="text-base font-black text-primary uppercase mt-0.5 flex items-center gap-1">
+                  <span className="text-base font-extrabold text-primary uppercase mt-0.5 flex items-center gap-1">
                     <IdCard className="h-2.5 w-2.5" /> ID: {user.employeeId}
                   </span>
                 )}
@@ -868,10 +868,10 @@ export default function AdminUsers() {
             return (
               <div className="space-y-1.5 text-left min-w-[160px] py-1 px-4">
                 <div className="flex flex-col items-start">
-                  <div className="text-[11px] font-black text-primary uppercase leading-none">
+                  <div className="text-[11px] font-extrabold text-primary uppercase leading-none">
                     {currentApp?.gradeLevel?.name || "—"}
                   </div>
-                  <div className="text-base font-bold text-foreground uppercase">
+                  <div className="text-base font-extrabold text-foreground uppercase">
                     {currentApp?.enrollmentRecord?.section?.name ||
                       "UNSECTIONED"}
                   </div>
@@ -883,7 +883,7 @@ export default function AdminUsers() {
             <div className="flex justify-start px-4 min-w-[140px] py-1">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full bg-secondary text-secondary-foreground border border-border"
+                  "inline-flex px-3 py-1 text-sm font-extrabold whitespace-nowrap rounded-full bg-secondary text-secondary-foreground border border-border"
                 )}>
                 {formatUserRole(user.roles?.[0])}
               </span>
@@ -920,7 +920,7 @@ export default function AdminUsers() {
                   </DropdownMenuLabel>
                   <DropdownMenuItem
                     onClick={() => openProfileEditor(user)}
-                    className="gap-2 font-bold text-base group focus:bg-primary focus:text-primary-foreground">
+                    className="gap-2 font-extrabold text-base group focus:bg-primary focus:text-primary-foreground">
                     <Edit2 className="h-3.5 w-3.5 text-primary group-focus:text-primary-foreground" /> {user.roles?.includes("LEARNER") ? "Manage Security" : "Edit Account"}
                   </DropdownMenuItem>
                   {!user.roles?.includes("LEARNER") && (
@@ -935,7 +935,7 @@ export default function AdminUsers() {
                         copyToClipboard(newPass);
                         setResetOpen(true);
                       }}
-                      className="gap-2 font-bold text-base group focus:bg-primary focus:text-primary-foreground">
+                      className="gap-2 font-extrabold text-base group focus:bg-primary focus:text-primary-foreground">
                       <Key className="h-3.5 w-3.5 text-orange-600 group-focus:text-primary-foreground" /> Reset
                       Password
                     </DropdownMenuItem>
@@ -945,19 +945,19 @@ export default function AdminUsers() {
                     <DropdownMenuItem
                       disabled={currentUser?.id === user.id}
                       onClick={() => setDeactivateId(user.id)}
-                      className="gap-2 font-bold text-base text-destructive focus:bg-destructive focus:text-destructive-foreground">
+                      className="gap-2 font-extrabold text-base text-destructive focus:bg-destructive focus:text-destructive-foreground">
                       <Ban className="h-3.5 w-3.5" /> Restrict Access
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
                       onClick={() => setReactivateId(user.id)}
-                      className="gap-2 font-bold text-base text-green-600 focus:bg-green-600 focus:text-white">
+                      className="gap-2 font-extrabold text-base text-green-600 focus:bg-green-600 focus:text-white">
                       <CheckCircle className="h-3.5 w-3.5" /> Reactivate Access
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
                     onClick={() => navigate(`/audit-logs?actorId=${user.id}`)}
-                    className="gap-2 font-bold text-base focus:text-primary-foreground focus:bg-primary group">
+                    className="gap-2 font-extrabold text-base focus:text-primary-foreground focus:bg-primary group">
                     <History className="h-3.5 w-3.5 group-focus:text-primary-foreground" /> Audit Trail
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -992,7 +992,7 @@ export default function AdminUsers() {
               key={i}
               className="border-none shadow-sm bg-[hsl(var(--card))]">
               <CardHeader className="pb-2">
-                <p className="text-base uppercase font-bold text-foreground">
+                <p className="text-base uppercase font-extrabold text-foreground">
                   {m.label}
                 </p>
                 <CardTitle className={cn("text-2xl font-extrabold", m.color)}>
@@ -1023,7 +1023,7 @@ export default function AdminUsers() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
             <div className="flex-1 space-y-2 w-full">
-              <Label className="text-base sm:text-base leading-tight uppercase font-bold flex items-center justify-between">
+              <Label className="text-base sm:text-base leading-tight uppercase font-extrabold flex items-center justify-between">
                 <span>
                   {activeTab === "staff"
                     ? "Personnel Filter"
@@ -1039,7 +1039,7 @@ export default function AdminUsers() {
                       ? "Search by Employee ID, Email, or Name..."
                       : "LRN, first name, last name..."
                   }
-                  className="pl-9 h-10 text-base leading-tight font-bold shadow-inner focus:ring-primary/20"
+                  className="pl-9 h-10 text-base leading-tight font-extrabold shadow-inner focus:ring-primary/20"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -1049,13 +1049,13 @@ export default function AdminUsers() {
               {activeTab === "staff" ? (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
+                    <Label className="text-base sm:text-base leading-tight uppercase  font-extrabold">
                       Role
                     </Label>
                     <Select
                       value={roleFilter}
                       onValueChange={setRoleFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-36 text-base leading-tight font-bold">
+                      <SelectTrigger className="h-10 w-full md:w-36 text-base leading-tight font-extrabold">
                         <SelectValue placeholder="All Roles" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1070,13 +1070,13 @@ export default function AdminUsers() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
+                    <Label className="text-base sm:text-base leading-tight uppercase  font-extrabold">
                       Status
                     </Label>
                     <Select
                       value={statusFilter}
                       onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-32 text-base leading-tight font-bold">
+                      <SelectTrigger className="h-10 w-full md:w-32 text-base leading-tight font-extrabold">
                         <SelectValue placeholder="All Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1090,22 +1090,22 @@ export default function AdminUsers() {
               ) : (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
+                    <Label className="text-base sm:text-base leading-tight uppercase  font-extrabold">
                       Grade Level
                     </Label>
                     <Select
                       value={gradeLevelFilter}
                       onValueChange={setGradeLevelFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
+                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-extrabold">
                         <SelectValue placeholder="All Grades" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="text-base leading-tight font-bold">All Grades</SelectItem>
+                        <SelectItem value="all" className="text-base leading-tight font-extrabold">All Grades</SelectItem>
                         {gradeLevels.map((gl) => (
                           <SelectItem
                             key={gl.id}
                             value={gl.id.toString()}
-                            className="text-base leading-tight font-bold">
+                            className="text-base leading-tight font-extrabold">
                             {gl.name}
                           </SelectItem>
                         ))}
@@ -1113,22 +1113,22 @@ export default function AdminUsers() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
+                    <Label className="text-base sm:text-base leading-tight uppercase  font-extrabold">
                       Specialized Program
                     </Label>
                     <Select
                       value={programFilter}
                       onValueChange={setProgramFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold">
+                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-extrabold">
                         <SelectValue placeholder="All Specialized Programs" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="text-base leading-tight font-bold">All Specialized Programs</SelectItem>
+                        <SelectItem value="all" className="text-base leading-tight font-extrabold">All Specialized Programs</SelectItem>
                         {dynamicProgramOptions.map((option) => (
                           <SelectItem
                             key={option.value}
                             value={option.value}
-                            className="text-base leading-tight font-bold">
+                            className="text-base leading-tight font-extrabold">
                             {option.label}
                           </SelectItem>
                         ))}
@@ -1136,22 +1136,22 @@ export default function AdminUsers() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base sm:text-base leading-tight uppercase  font-bold">
+                    <Label className="text-base sm:text-base leading-tight uppercase  font-extrabold">
                       Section
                     </Label>
                     <Select
                       value={sectionFilter}
                       onValueChange={setSectionFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-bold hover:bg-accent hover:text-accent-foreground transition-colors">
+                      <SelectTrigger className="h-10 w-full md:w-52 text-base leading-tight font-extrabold hover:bg-accent hover:text-accent-foreground transition-colors">
                         <SelectValue placeholder="All Sections" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="text-base leading-tight font-bold">All Sections</SelectItem>
+                        <SelectItem value="all" className="text-base leading-tight font-extrabold">All Sections</SelectItem>
                         {filteredSections.map((s) => (
                           <SelectItem
                             key={s.id}
                             value={s.id.toString()}
-                            className="text-base leading-tight font-bold">
+                            className="text-base leading-tight font-extrabold">
                             {s.name}
                           </SelectItem>
                         ))}
@@ -1173,7 +1173,7 @@ export default function AdminUsers() {
               </Button>
               <Button
                 variant="outline"
-                className="h-10 px-3 text-base leading-tight font-bold w-full md:w-auto"
+                className="h-10 px-3 text-base leading-tight font-extrabold w-full md:w-auto"
                 onClick={() => {
                   clearSearch();
                   setRoleFilter("all");
@@ -1214,7 +1214,7 @@ export default function AdminUsers() {
           <CardTitle className="text-base sm:text-lg font-extrabold">
             {activeTab === "staff" ? "Personnel Accounts" : "Learner Accounts"}
           </CardTitle>
-          <p className="text-base sm:text-base leading-tight font-bold text-foreground">
+          <p className="text-base sm:text-base leading-tight font-extrabold text-foreground">
             Showing {users.length} of {total} records
           </p>
         </CardHeader>
@@ -1231,7 +1231,7 @@ export default function AdminUsers() {
                 </div>
               ))
             ) : users.length === 0 ? (
-              <div className="rounded-xl border p-6 text-center text-base leading-tight font-bold">
+              <div className="rounded-xl border p-6 text-center text-base leading-tight font-extrabold">
                 No users found matching the selected criteria.
               </div>
             ) : (
@@ -1245,16 +1245,16 @@ export default function AdminUsers() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-8 w-8 border shrink-0">
-                        <AvatarFallback className="text-base font-bold">
+                        <AvatarFallback className="text-base font-extrabold">
                           {user.firstName.charAt(0)}
                           {user.lastName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <p className="font-bold text-base uppercase leading-tight break-words">
+                        <p className="font-extrabold text-base uppercase leading-tight break-words">
                           {user.lastName}, {user.firstName}
                         </p>
-                        <p className="text-base font-bold text-foreground truncate">
+                        <p className="text-base font-extrabold text-foreground truncate">
                           {user.email}
                         </p>
                       </div>
@@ -1262,7 +1262,7 @@ export default function AdminUsers() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-base font-bold uppercase shrink-0 border-none",
+                        "text-base font-extrabold uppercase shrink-0 border-none",
                         getRoleColorClasses(user.roles?.[0]),
                       )}>
                       {activeTab === "learners"
@@ -1271,7 +1271,7 @@ export default function AdminUsers() {
                         : formatUserRole(user.roles?.[0])}
                     </Badge>
                   </div>
-                  <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-base font-bold">
+                  <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-base font-extrabold">
                     <div className="flex items-center gap-1.5 text-primary">
                       <Briefcase className="h-3 w-3" />
                       {user.designation || "—"}
@@ -1330,10 +1330,10 @@ export default function AdminUsers() {
     <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-maroon-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-maroon-900">
             Learner Account Management
           </h1>
-          <p className="text-base leading-tight font-bold text-foreground">
+          <p className="text-base leading-tight font-extrabold text-foreground">
             Manage portal access, monitor account statuses, and reset learner passwords.
           </p>
         </div>
@@ -1344,7 +1344,7 @@ export default function AdminUsers() {
                 setCreateOpen(true);
                 setFormData((p) => ({ ...p, password: generatePassword() }));
               }}
-              className="h-10 font-bold">
+              className="h-10 font-extrabold">
               <Plus className="h-4 w-4 mr-2" />
               Add Staff Account
             </Button>
@@ -1359,7 +1359,7 @@ export default function AdminUsers() {
         <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
           <TabsTrigger
             value="staff"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "staff" && (
               <motion.div
                 layoutId="pill"
@@ -1381,7 +1381,7 @@ export default function AdminUsers() {
           </TabsTrigger>
           <TabsTrigger
             value="learners"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "learners" && (
               <motion.div
                 layoutId="pill"
@@ -1471,7 +1471,7 @@ export default function AdminUsers() {
                 ? "Reset to Default Password"
                 : "Reset Staff Password"}
             </DialogTitle>
-            <DialogDescription className="font-bold text-base">
+            <DialogDescription className="font-extrabold text-base">
               {selectedUser?.roles?.includes("LEARNER")
                 ? `Confirming reset for ${selectedUser.lastName}, ${selectedUser.firstName}.`
                 : "Generate a new temporary password for this staff member."}
@@ -1481,7 +1481,7 @@ export default function AdminUsers() {
           <div className="space-y-4 py-2">
             <div
               className={cn(
-                "p-3 rounded-lg border text-[11px] font-bold uppercase leading-relaxed",
+                "p-3 rounded-lg border text-[11px] font-extrabold uppercase leading-relaxed",
                 selectedUser?.roles?.includes("LEARNER")
                   ? "bg-primary/5 border-primary/10 text-primary"
                   : "bg-orange-50 border-orange-100 text-orange-800",
@@ -1493,7 +1493,7 @@ export default function AdminUsers() {
 
             {!selectedUser?.roles?.includes("LEARNER") && (
               <div className="space-y-2">
-                <Label className="text-base font-bold uppercase">
+                <Label className="text-base font-extrabold uppercase">
                   New Temporary Password *
                 </Label>
                 <div className="flex gap-2">
@@ -1502,7 +1502,7 @@ export default function AdminUsers() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="font-bold h-10"
+                    className="font-extrabold h-10"
                   />
                   <Button
                     variant="outline"
@@ -1542,13 +1542,13 @@ export default function AdminUsers() {
             <Button
               variant="outline"
               onClick={() => setResetOpen(false)}
-              className="flex-1 font-bold uppercase  text-base h-10">
+              className="flex-1 font-extrabold uppercase  text-base h-10">
               Cancel
             </Button>
             <Button
               onClick={handleResetPassword}
               disabled={submitting}
-              className="flex-[2] font-black uppercase  text-base h-10">
+              className="flex-[2] font-extrabold uppercase  text-base h-10">
               {submitting ? (
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
               ) : (

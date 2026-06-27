@@ -64,9 +64,9 @@ export default function TeachingLoad() {
 
   const filtered = search
     ? faculty.filter((f) => {
-        const name = `${f.firstName ?? ""} ${f.lastName ?? ""}`.toLowerCase();
-        return name.includes(search.toLowerCase());
-      })
+      const name = `${f.firstName ?? ""} ${f.lastName ?? ""}`.toLowerCase();
+      return name.includes(search.toLowerCase());
+    })
     : faculty;
 
   const minutesToHours = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
@@ -77,10 +77,10 @@ export default function TeachingLoad() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Teaching Load</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Teaching Load</h1>
           <p className="text-gray-600 mt-1 flex items-center gap-2">
             Faculty teaching assignments and subject coverage — read-only from ATLAS.
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-medium">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 ">
               AY 2026-2027
             </Badge>
           </p>
@@ -109,7 +109,7 @@ export default function TeachingLoad() {
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{loadLoading ? "…" : faculty.length}</p>
+                <p className="text-2xl font-extrabold text-gray-900">{loadLoading ? "…" : faculty.length}</p>
                 <p className="text-sm text-gray-500">Faculty Members</p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function TeachingLoad() {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-extrabold text-gray-900">
                   {coverageLoading ? "…" : coverage ? (coverage.count ?? 0) - (coverage.unassignedCount ?? 0) : "—"}
                 </p>
                 <p className="text-sm text-gray-500">Subjects Assigned</p>
@@ -137,7 +137,7 @@ export default function TeachingLoad() {
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-extrabold text-gray-900">
                   {coverageLoading ? "…" : coverage?.unassignedCount ?? "—"}
                 </p>
                 <p className="text-sm text-gray-500">Unassigned Subjects</p>
@@ -176,7 +176,7 @@ export default function TeachingLoad() {
           ) : loadError ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-              <p className="text-gray-700 font-medium">Unable to load teaching loads</p>
+              <p className="text-gray-700 ">Unable to load teaching loads</p>
               <p className="text-gray-500 text-sm mt-1">{loadError}</p>
               <Button onClick={() => void loadAll()} variant="outline" className="mt-4 rounded-xl">Try Again</Button>
             </div>
@@ -185,11 +185,11 @@ export default function TeachingLoad() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-bold text-gray-700">Faculty Name</TableHead>
-                    <TableHead className="font-bold text-gray-700 text-center">Subjects</TableHead>
-                    <TableHead className="font-bold text-gray-700">Weekly Load</TableHead>
-                    <TableHead className="font-bold text-gray-700 text-center">Load %</TableHead>
-                    <TableHead className="font-bold text-gray-700">Assigned Subjects</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Faculty Name</TableHead>
+                    <TableHead className="font-extrabold text-gray-700 text-center">Subjects</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Weekly Load</TableHead>
+                    <TableHead className="font-extrabold text-gray-700 text-center">Load %</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Assigned Subjects</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -205,14 +205,14 @@ export default function TeachingLoad() {
                       const rawSubjectHours = f.subjectHours ?? f.weeklyHours ?? 0;
                       const advHours = f.isClassAdviser ? (f.advisoryEquivalentHours ?? 0) : 0;
                       const pureTeachingHours = Math.max(0, rawSubjectHours - advHours);
-                      
-                      const loadPct = f.maxHoursPerWeek 
-                        ? Math.round((pureTeachingHours / f.maxHoursPerWeek) * 100) 
+
+                      const loadPct = f.maxHoursPerWeek
+                        ? Math.round((pureTeachingHours / f.maxHoursPerWeek) * 100)
                         : (f.loadPercentage ?? 0);
-                      
+
                       return (
                         <TableRow key={f.facultyId ?? i}>
-                          <TableCell className="font-medium text-gray-900">
+                          <TableCell className=" text-gray-900">
                             {f.firstName && f.lastName
                               ? `${f.lastName}, ${f.firstName}`
                               : f.name ?? "—"}
@@ -234,10 +234,10 @@ export default function TeachingLoad() {
                                 {f.subjectHours != null
                                   ? `${f.subjectHours}h`
                                   : f.totalMinutesPerWeek != null
-                                  ? minutesToHours(f.totalMinutesPerWeek)
-                                  : f.weeklyHours != null
-                                  ? `${f.weeklyHours}h`
-                                  : "—"}
+                                    ? minutesToHours(f.totalMinutesPerWeek)
+                                    : f.weeklyHours != null
+                                      ? `${f.weeklyHours}h`
+                                      : "—"}
                               </span>
                               {f.maxHoursPerWeek != null && (
                                 <span className="text-[10px] text-gray-400">Max: {f.maxHoursPerWeek}h</span>
@@ -246,11 +246,11 @@ export default function TeachingLoad() {
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className={`text-sm font-bold ${loadPct > 100 ? 'text-red-600' : 'text-emerald-600'}`}>
+                              <span className={`text-sm font-extrabold ${loadPct > 100 ? 'text-red-600' : 'text-emerald-600'}`}>
                                 {loadPct}%
                               </span>
                               <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                   className={`h-full ${loadPct > 100 ? 'bg-red-500' : 'bg-emerald-500'}`}
                                   style={{ width: `${Math.min(loadPct, 100)}%` }}
                                 />
@@ -261,8 +261,8 @@ export default function TeachingLoad() {
                             {Array.isArray(f.assignments)
                               ? f.assignments.map((a: any) => a.subject?.name ?? a.subject?.code ?? a.subjectCode ?? "").filter(Boolean).join(", ") || "—"
                               : Array.isArray(f.assignedSubjects)
-                              ? f.assignedSubjects.map((s: any) => s.name ?? s.code ?? s).join(", ")
-                              : f.subjects ?? "—"}
+                                ? f.assignedSubjects.map((s: any) => s.name ?? s.code ?? s).join(", ")
+                                : f.subjects ?? "—"}
                           </TableCell>
                         </TableRow>
                       );

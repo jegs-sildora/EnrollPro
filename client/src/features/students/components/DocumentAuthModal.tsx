@@ -51,11 +51,11 @@ export function DocumentAuthModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] border-t-4">
         <DialogHeader>
-          <DialogTitle className="text-xl font-black uppercase text-primary flex items-center gap-2">
+          <DialogTitle className="text-xl font-extrabold uppercase text-primary flex items-center gap-2">
             <ShieldCheck className="h-6 w-6" />
             Authenticate Permanent Record
           </DialogTitle>
-          <DialogDescription className="font-bold text-foreground pt-2">
+          <DialogDescription className="font-extrabold text-foreground pt-2">
             You are authenticating the identity document for:
             <div className="mt-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-foreground uppercase">
               {studentName} ({trackingNumber})
@@ -66,24 +66,24 @@ export function DocumentAuthModal({
         <div className="space-y-6 py-4">
           <div className="flex gap-3 p-4 bg-primary-50 border border-primary-100 rounded-lg">
             <InfoIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-base font-bold text-primary leading-relaxed">
-              DepEd D.O. 017, s. 2025 mandates that a learner only submits their 
-              Birth Certificate <span className="font-black underline">ONCE</span> during their basic education. 
+            <p className="text-base font-extrabold text-primary leading-relaxed">
+              DepEd D.O. 017, s. 2025 mandates that a learner only submits their
+              Birth Certificate <span className="font-extrabold underline">ONCE</span> during their basic education.
               Verifying an original PSA document permanently satisfies this requirement.
             </p>
           </div>
 
           <div className="space-y-3">
-            <Label className="text-base font-black uppercase text-foreground ">
+            <Label className="text-base font-extrabold uppercase text-foreground ">
               Select Document Presented:
             </Label>
-            
-            <RadioGroup 
-              value={documentType} 
+
+            <RadioGroup
+              value={documentType}
               onValueChange={(val) => setDocumentType(val as "PSA" | "SECONDARY")}
               className="space-y-3"
             >
-              <div 
+              <div
                 className={cn(
                   "flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
                   documentType === "PSA" ? "border-primary bg-primary/10" : "border-slate-100 bg-white hover:border-slate-200"
@@ -92,12 +92,12 @@ export function DocumentAuthModal({
               >
                 <RadioGroupItem value="PSA" id="psa" className="mt-1" />
                 <Label htmlFor="psa" className="cursor-pointer">
-                  <span className="block font-black text-base leading-tight uppercase text-foreground">Original PSA / NSO Birth Certificate</span>
-                  <span className="block text-base font-bold text-foreground mt-0.5">Satisfies requirement. This will permanently lock the identity vault for this learner.</span>
+                  <span className="block font-extrabold text-base leading-tight uppercase text-foreground">Original PSA / NSO Birth Certificate</span>
+                  <span className="block text-base font-extrabold text-foreground mt-0.5">Satisfies requirement. This will permanently lock the identity vault for this learner.</span>
                 </Label>
               </div>
 
-              <div 
+              <div
                 className={cn(
                   "flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
                   documentType === "SECONDARY" ? "border-amber-500 bg-amber-50/50" : "border-slate-100 bg-white hover:border-slate-200"
@@ -106,8 +106,8 @@ export function DocumentAuthModal({
               >
                 <RadioGroupItem value="SECONDARY" id="secondary" className="mt-1" />
                 <Label htmlFor="secondary" className="cursor-pointer">
-                  <span className="block font-black text-base leading-tight uppercase text-foreground">Recognized Secondary Document</span>
-                  <span className="block text-base font-bold text-foreground mt-0.5 text-balance">e.g., Local Civil Registry, Baptismal, Barangay Cert. Grants temporary clearance. PSA still required by Oct 31, 2026.</span>
+                  <span className="block font-extrabold text-base leading-tight uppercase text-foreground">Recognized Secondary Document</span>
+                  <span className="block text-base font-extrabold text-foreground mt-0.5 text-balance">e.g., Local Civil Registry, Baptismal, Barangay Cert. Grants temporary clearance. PSA still required by Oct 31, 2026.</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -122,9 +122,9 @@ export function DocumentAuthModal({
             />
             <Label
               htmlFor="certify"
-              className="text-base font-bold text-foreground leading-snug cursor-pointer select-none"
+              className="text-base font-extrabold text-foreground leading-snug cursor-pointer select-none"
             >
-              I certify that I have physically inspected and verified the 
+              I certify that I have physically inspected and verified the
               authenticity of the selected document.
             </Label>
           </div>
@@ -138,9 +138,9 @@ export function DocumentAuthModal({
             onClick={handleConfirm}
             disabled={!hasCertified || isSubmitting}
             className={cn(
-              "font-black uppercase  transition-all px-8",
-              hasCertified 
-                ? "bg-primary/90 text-white hover:bg-primary shadow-lg" 
+              "font-extrabold uppercase  transition-all px-8",
+              hasCertified
+                ? "bg-primary/90 text-white hover:bg-primary shadow-lg"
                 : "bg-slate-200 text-foreground cursor-not-allowed border-none shadow-none"
             )}
           >

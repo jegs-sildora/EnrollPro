@@ -131,11 +131,11 @@ export const LoaderCore = ({
   const progressPercent = loadingStates.length === 0
     ? 0
     : Math.min(
-        100,
-        isFinalizing
-          ? 100
-          : ((Math.min(displayedValue + 1, loadingStates.length) / loadingStates.length) * 100),
-      );
+      100,
+      isFinalizing
+        ? 100
+        : ((Math.min(displayedValue + 1, loadingStates.length) / loadingStates.length) * 100),
+    );
   const resolvedCompletionMessage = completionMessage.replace(
     "{seconds}",
     String(countdown),
@@ -221,16 +221,16 @@ export const LoaderCore = ({
                 className={cn(
                   "text-[0.98rem] leading-snug transition-colors duration-300",
                   isCurrent
-                    ? "font-bold text-foreground"
+                    ? "font-extrabold text-foreground"
                     : isCompleted
-                      ? "font-bold text-foreground"
-                      : "font-bold text-foreground/55",
+                      ? "font-extrabold text-foreground"
+                      : "font-extrabold text-foreground/55",
                 )}
               >
                 {loadingState.text}
               </div>
               {isFinalStep && isFinalizing ? (
-                <div className="mt-1 text-xs font-bold uppercase tracking-wide text-emerald-700">
+                <div className="mt-1 text-xs font-extrabold uppercase tracking-wide text-emerald-700">
                   Final checks complete
                 </div>
               ) : null}
@@ -246,7 +246,7 @@ export const LoaderCore = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm font-bold text-emerald-950 shadow-sm"
+            className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm font-extrabold text-emerald-950 shadow-sm"
           >
             {resolvedCompletionMessage}
           </motion.div>

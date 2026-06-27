@@ -10,7 +10,7 @@ export function NoSchoolYearState() {
             <CalendarDays className="h-6 w-6 text-primary" />
           </div>
           <div className="space-y-1">
-            <p className="font-bold text-foreground">No School Year Selected</p>
+            <p className="font-extrabold text-foreground">No School Year Selected</p>
             <p className="text-base leading-relaxed px-4">
               Please set an active year or choose one from the header switcher
               to manage records for this period.

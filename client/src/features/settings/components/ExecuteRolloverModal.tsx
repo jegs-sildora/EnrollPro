@@ -237,10 +237,10 @@ export default function ExecuteRolloverModal({
 
             <div className="relative z-10 w-full max-w-3xl px-6">
               <div className="text-center mb-5">
-                <h3 className="text-md font-black text-foreground uppercase">
+                <h3 className="text-md font-extrabold text-foreground uppercase">
                   Processing School Year Rollover
                 </h3>
-                <p className="text-md font-bold text-foreground">
+                <p className="text-md font-extrabold text-foreground">
                   Please keep this window open while records are being updated.
                 </p>
               </div>
@@ -264,16 +264,16 @@ export default function ExecuteRolloverModal({
             {...motionState}>
             <motion.div variants={sectionVariants} transition={panelTransition}>
               <DialogHeader className="pb-2">
-                <DialogTitle className="text-2xl font-black uppercase text-primary">
+                <DialogTitle className="text-2xl font-extrabold uppercase text-primary">
                   Execute Academic Rollover
                 </DialogTitle>
-                <DialogDescription className="font-bold text-foreground pt-1">
+                <DialogDescription className="font-extrabold text-foreground pt-1">
                   Create and activate the{" "}
-                  <span className="font-black text-primary">
+                  <span className="font-extrabold text-primary">
                     {nextYearLabel || "next"}
                   </span>{" "}
                   academic cycle from{" "}
-                  <span className="font-black">S.Y. {activeSchoolYearLabel ?? "—"}</span>.
+                  <span className="font-extrabold">S.Y. {activeSchoolYearLabel ?? "—"}</span>.
                 </DialogDescription>
               </DialogHeader>
             </motion.div>
@@ -286,7 +286,7 @@ export default function ExecuteRolloverModal({
                 {/* TASK 1: 2-col DatePicker grid */}
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-base font-black uppercase text-primary">
+                    <Label className="text-base font-extrabold uppercase text-primary">
                       Beginning of School Year (BOSY)
                     </Label>
                     <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
@@ -294,14 +294,14 @@ export default function ExecuteRolloverModal({
                         date={bosyDate}
                         setDate={setBosyDate}
                         placeholder="Select opening date"
-                        className="w-full font-bold"
+                        className="w-full font-extrabold"
                         timeZone="Asia/Manila"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-black uppercase text-primary">
+                    <Label className="text-base font-extrabold uppercase text-primary">
                       End of School Year (EOSY)
                     </Label>
                     <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
@@ -309,7 +309,7 @@ export default function ExecuteRolloverModal({
                         date={eosyDate}
                         setDate={setEosyDate}
                         placeholder="Select end date"
-                        className="w-full font-bold"
+                        className="w-full font-extrabold"
                         timeZone="Asia/Manila"
                         minDate={bosyDate}
                       />
@@ -319,10 +319,10 @@ export default function ExecuteRolloverModal({
 
                 {/* TASK 2: Softened payload card with generous spacing */}
                 <div className="rounded-lg bg-slate-50 p-6 space-y-1">
-                  <p className="text-base font-bold uppercase tracking-normal text-foreground mb-3">
+                  <p className="text-base font-extrabold uppercase tracking-normal text-foreground mb-3">
                     Rollover Payload from {activeSchoolYearLabel ?? "—"}
                   </p>
-                  <ul className="space-y-4 font-bold text-foreground">
+                  <ul className="space-y-4 font-extrabold text-foreground">
                     {[
                       `Archive ${activeSchoolYearLabel ?? "current S.Y."} and lock all historical SF1/SF5 records.`,
                       "Clone Grade Levels, Sections, and SCP architecture (Class Sections (SF1) will be wiped clean).",
@@ -339,10 +339,10 @@ export default function ExecuteRolloverModal({
                 {/* TASK 3: Red box — warning + DepEd compliance ONLY */}
                 <div className="rounded-lg border border-red-200 bg-red-50 p-5 space-y-4">
                   <Alert className="bg-transparent border-0 p-0 shadow-none">
-                    <AlertTitle className="font-black text-red-800 uppercase">
+                    <AlertTitle className="font-extrabold text-red-800 uppercase">
                       Irreversible System Activation
                     </AlertTitle>
-                    <AlertDescription className="text-base leading-tight font-bold text-red-700">
+                    <AlertDescription className="text-base leading-tight font-extrabold text-red-700">
                       Once executed, this action cannot be undone. The current school year will be permanently archived.
                     </AlertDescription>
                   </Alert>
@@ -359,7 +359,7 @@ export default function ExecuteRolloverModal({
                     />
                     <Label
                       htmlFor="depd-compliance"
-                      className="text-base font-bold text-red-800 leading-snug cursor-pointer">
+                      className="text-base font-extrabold text-red-800 leading-snug cursor-pointer">
                       I confirm that the selected BOSY and EOSY dates align with the
                       official DepEd School Calendar Memorandum, and I authorize
                       system activation.
@@ -370,7 +370,7 @@ export default function ExecuteRolloverModal({
 
               {/* TASK 4: PIN section — outside the space-y group, mt-8 for clear visual break */}
               <div className="flex flex-col items-center gap-3 mt-8 pb-4">
-                <Label className="text-base font-black uppercase text-primary tracking-widest text-center">
+                <Label className="text-base font-extrabold uppercase text-primary tracking-widest text-center">
                   Enter 6-Digit Admin PIN to Execute:
                 </Label>
                 <AdminPinInput
@@ -383,7 +383,7 @@ export default function ExecuteRolloverModal({
                   ariaLabel="Rollover execution admin PIN"
                 />
                 {pinTouched && !isPinValid && (
-                  <p className="text-base text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                  <p className="text-base text-primary font-extrabold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                     Valid 6-digit administrative PIN required
                   </p>
                 )}
@@ -396,12 +396,12 @@ export default function ExecuteRolloverModal({
                   variant="ghost"
                   onClick={() => handleClose(false)}
                   disabled={isSubmitting}
-                  className="font-bold">
+                  className="font-extrabold">
                   Cancel
                 </Button>
                 <Button
                   className={cn(
-                    "font-black uppercase transition-all px-6 shrink-0",
+                    "font-extrabold uppercase transition-all px-6 shrink-0",
                     !canSubmit || isSubmitting
                       ? "bg-slate-200 text-slate-500 cursor-not-allowed opacity-50"
                       : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",

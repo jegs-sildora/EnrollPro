@@ -32,7 +32,7 @@ export default function AdmissionHeader({
             />
           ) : (
             <div className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 rounded-full bg-[hsl(var(--primary))/0.1] flex items-center justify-center">
-              <span className="text-base sm:text-xl font-bold text-foreground">
+              <span className="text-base sm:text-xl font-extrabold text-foreground">
                 {schoolName?.charAt(0) || ""}
               </span>
             </div>
@@ -48,10 +48,10 @@ export default function AdmissionHeader({
 
         {/* 2. School Name & Title (Centered) */}
         <div className="flex flex-col items-center justify-center text-center min-w-0">
-          <span className="text-[0.8rem] sm:text-lg md:text-xl font-black  text-foreground leading-none uppercase wrap-break-word">
+          <span className="text-[0.8rem] sm:text-lg md:text-xl font-extrabold  text-foreground leading-none uppercase wrap-break-word">
             {schoolName}
           </span>
-          <span className="text-[0.565rem] sm:text-[0.625rem] md:text-base font-black   uppercase text-foreground mt-0.5 sm:mt-1 wrap-break-word">
+          <span className="text-[0.565rem] sm:text-[0.625rem] md:text-base font-extrabold   uppercase text-foreground mt-0.5 sm:mt-1 wrap-break-word">
             {title}
           </span>
         </div>

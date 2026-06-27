@@ -112,7 +112,7 @@ export default function ClassAssignments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Class Assignments</h1>
+          <h1 className="text-2xl font-extrabold">Class Assignments</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Teaching load — which teacher handles which subject in which section.
             Synced automatically from Atlas on teacher login.
@@ -252,7 +252,7 @@ export default function ClassAssignments() {
           ) : assignments.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="font-medium">No class assignments yet for {schoolYear}</p>
+              <p className="">No class assignments yet for {schoolYear}</p>
               <p className="text-sm mt-1">
                 Assignments will appear here when teachers log in (Atlas sync) or when you add them manually above.
               </p>
@@ -271,7 +271,7 @@ export default function ClassAssignments() {
               <TableBody>
                 {assignments.map((a) => (
                   <TableRow key={a.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="">
                       {a.teacher?.user?.lastName ?? ""}, {a.teacher?.user?.firstName ?? ""}
                       <span className="text-xs text-muted-foreground ml-1">
                         ({a.teacher?.employeeId ?? "—"})
@@ -330,7 +330,7 @@ export default function ClassAssignments() {
               <TableBody>
                 {workloadSummary.map((row) => (
                   <TableRow key={`${row.teacherId}-${row.sectionId}`}>
-                    <TableCell className="font-medium">{row.teacherName}</TableCell>
+                    <TableCell className="">{row.teacherName}</TableCell>
                     <TableCell>{row.sectionName} ({gradeLevelLabel(row.gradeLevel)})</TableCell>
                     <TableCell>{row.hgMinutes} min</TableCell>
                     <TableCell>{row.advisoryRoleMinutes} min</TableCell>

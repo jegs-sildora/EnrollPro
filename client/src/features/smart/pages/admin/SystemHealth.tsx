@@ -116,7 +116,7 @@ export default function SystemHealth() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">System Health</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">System Health</h1>
           <p className="text-sm text-slate-600">Live pulse of SMART, EnrollPro, Atlas, and AIMS.</p>
         </div>
 
@@ -159,7 +159,7 @@ export default function SystemHealth() {
                   <ShieldAlert className="w-5 h-5 text-amber-600" />
                 )}
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">{health.status}</p>
+              <p className="mt-2 text-xl font-extrabold text-slate-900">{health.status}</p>
               <p className="text-xs text-slate-500 mt-1">Response: {formatDuration(health.responseTimeMs)}</p>
             </div>
 
@@ -168,7 +168,7 @@ export default function SystemHealth() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Node Uptime</p>
                 <Server className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">{formatUptime(health.local.uptimeSeconds)}</p>
+              <p className="mt-2 text-xl font-extrabold text-slate-900">{formatUptime(health.local.uptimeSeconds)}</p>
               <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString()}</p>
             </div>
 
@@ -177,7 +177,7 @@ export default function SystemHealth() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Database</p>
                 <Database className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">{health.local.database.online ? "ONLINE" : "OFFLINE"}</p>
+              <p className="mt-2 text-xl font-extrabold text-slate-900">{health.local.database.online ? "ONLINE" : "OFFLINE"}</p>
               <p className="text-xs text-slate-500 mt-1">Latency: {health.local.database.latencyMs} ms</p>
             </div>
 
@@ -186,7 +186,7 @@ export default function SystemHealth() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Heap Used</p>
                 <Clock3 className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">{formatBytes(health.local.memory.heapUsed)}</p>
+              <p className="mt-2 text-xl font-extrabold text-slate-900">{formatBytes(health.local.memory.heapUsed)}</p>
               <p className="text-xs text-slate-500 mt-1">RSS: {formatBytes(health.local.memory.rss)}</p>
             </div>
           </div>
@@ -220,21 +220,21 @@ export default function SystemHealth() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">State</p>
-                <p className={`mt-1 font-bold ${health.sync.circuitBreaker.open ? "text-rose-700" : "text-emerald-700"}`}>
+                <p className={`mt-1 font-extrabold ${health.sync.circuitBreaker.open ? "text-rose-700" : "text-emerald-700"}`}>
                   {health.sync.circuitBreaker.open ? "OPEN" : "CLOSED"}
                 </p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Consecutive Failures</p>
-                <p className="mt-1 font-bold text-slate-900">{health.sync.circuitBreaker.consecutiveCriticalFailures}</p>
+                <p className="mt-1 font-extrabold text-slate-900">{health.sync.circuitBreaker.consecutiveCriticalFailures}</p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Threshold</p>
-                <p className="mt-1 font-bold text-slate-900">{health.sync.circuitBreaker.failureThreshold}</p>
+                <p className="mt-1 font-extrabold text-slate-900">{health.sync.circuitBreaker.failureThreshold}</p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Cooldown</p>
-                <p className="mt-1 font-bold text-slate-900">{Math.round(health.sync.circuitBreaker.cooldownMs / 1000)} s</p>
+                <p className="mt-1 font-extrabold text-slate-900">{Math.round(health.sync.circuitBreaker.cooldownMs / 1000)} s</p>
               </div>
             </div>
             {health.sync.circuitBreaker.reason && (

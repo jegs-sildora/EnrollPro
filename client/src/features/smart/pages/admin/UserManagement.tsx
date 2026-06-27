@@ -259,7 +259,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-12 h-12 text-amber-500" />
-          <p className="text-gray-700 font-medium">{error}</p>
+          <p className="text-gray-700 ">{error}</p>
           <Button onClick={fetchUsers} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -274,7 +274,7 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
             User Management
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -289,8 +289,8 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Total Users</p>
-                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{userCounts.total}</p>
+                <p className="text-xs  text-gray-500">Total Users</p>
+                <p className="text-2xl font-extrabold" style={{ color: '#111827' }}>{userCounts.total}</p>
               </div>
               <div className="p-2 rounded-lg bg-gray-100">
                 <Users className="w-5 h-5 text-gray-600" />
@@ -302,8 +302,8 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Admins</p>
-                <p className="text-2xl font-bold" style={{ color: colors.primary }}>{userCounts.admin}</p>
+                <p className="text-xs  text-gray-500">Admins</p>
+                <p className="text-2xl font-extrabold" style={{ color: colors.primary }}>{userCounts.admin}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
                 <Shield className="w-5 h-5" style={{ color: colors.primary }} />
@@ -315,8 +315,8 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Teachers</p>
-                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{userCounts.teacher}</p>
+                <p className="text-xs  text-gray-500">Teachers</p>
+                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{userCounts.teacher}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <UserCheck className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -328,8 +328,8 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Registrars</p>
-                <p className="text-2xl font-bold" style={{ color: colors.accent }}>{userCounts.registrar}</p>
+                <p className="text-xs  text-gray-500">Registrars</p>
+                <p className="text-2xl font-extrabold" style={{ color: colors.accent }}>{userCounts.registrar}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.accent}15` }}>
                 <ClipboardList className="w-5 h-5" style={{ color: colors.accent }} />
@@ -341,8 +341,8 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500">Active</p>
-                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{userCounts.active}</p>
+                <p className="text-xs  text-gray-500">Active</p>
+                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{userCounts.active}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <CheckCircle2 className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -403,12 +403,12 @@ export default function UserManagement() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="font-bold text-gray-700">User</TableHead>
-                  <TableHead className="font-bold text-gray-700">Employee ID</TableHead>
-                  <TableHead className="font-bold text-gray-700">Role</TableHead>
-                  <TableHead className="font-bold text-gray-700">Status</TableHead>
-                  <TableHead className="font-bold text-gray-700">Last Active</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-right">Actions</TableHead>
+                  <TableHead className="font-extrabold text-gray-700">User</TableHead>
+                  <TableHead className="font-extrabold text-gray-700">Employee ID</TableHead>
+                  <TableHead className="font-extrabold text-gray-700">Role</TableHead>
+                  <TableHead className="font-extrabold text-gray-700">Status</TableHead>
+                  <TableHead className="font-extrabold text-gray-700">Last Active</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -448,19 +448,19 @@ export default function UserManagement() {
                         {user.teacher?.employeeId || user.username}
                       </TableCell>
                       <TableCell>
-                        <Badge className="border-0 font-medium flex items-center gap-1 w-fit" style={{ backgroundColor: `${colors.primary}${roleOpacity[user.role] || '18'}`, color: colors.primary }}>
+                        <Badge className="border-0  flex items-center gap-1 w-fit" style={{ backgroundColor: `${colors.primary}${roleOpacity[user.role] || '18'}`, color: colors.primary }}>
                           {roleIcons[user.role]}
                           {roleLabels[user.role]}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {user.status === "Active" ? (
-                          <Badge className="border-0 font-medium" style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
+                          <Badge className="border-0 " style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             Active
                           </Badge>
                         ) : (
-                          <Badge className="bg-gray-100 text-gray-600 border-0 font-medium">
+                          <Badge className="bg-gray-100 text-gray-600 border-0 ">
                             <XCircle className="w-3 h-3 mr-1" />
                             Inactive
                           </Badge>
@@ -603,8 +603,8 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreate} 
+            <Button
+              onClick={handleCreate}
               disabled={saving || !formData.username || !formData.password || !formData.firstName || !formData.lastName || (formData.role === "TEACHER" && !formData.employeeId)}
               className="gap-2 text-white rounded-xl"
               style={{ backgroundColor: colors.primary }}
@@ -721,8 +721,8 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsEditOpen(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button 
-              onClick={handleUpdate} 
+            <Button
+              onClick={handleUpdate}
               disabled={saving || !formData.username || !formData.firstName || !formData.lastName}
               className="gap-2 text-white rounded-xl"
               style={{ backgroundColor: colors.primary }}
@@ -754,7 +754,7 @@ export default function UserManagement() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-bold" style={{ color: '#111827' }}>
+                  <h3 className="text-xl font-extrabold" style={{ color: '#111827' }}>
                     {selectedUser.firstName} {selectedUser.lastName}
                   </h3>
                   <Badge className="border-0 mt-1" style={{ backgroundColor: `${colors.primary}${roleOpacity[selectedUser.role] || '18'}`, color: colors.primary }}>
@@ -766,11 +766,11 @@ export default function UserManagement() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <p className="text-xs text-gray-500">Employee ID</p>
-                  <p className="font-mono font-medium">{selectedUser.teacher?.employeeId || selectedUser.username}</p>
+                  <p className="font-mono ">{selectedUser.teacher?.employeeId || selectedUser.username}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Email</p>
-                  <p className="font-medium">{selectedUser.email || "—"}</p>
+                  <p className="">{selectedUser.email || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Status</p>
@@ -780,12 +780,12 @@ export default function UserManagement() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Last Active</p>
-                  <p className="font-medium">{selectedUser.lastActive}</p>
+                  <p className="">{selectedUser.lastActive}</p>
                 </div>
                 {selectedUser.teacher?.specialization && (
                   <div className="col-span-2">
                     <p className="text-xs text-gray-500">Specialization</p>
-                    <p className="font-medium">{selectedUser.teacher.specialization}</p>
+                    <p className="">{selectedUser.teacher.specialization}</p>
                   </div>
                 )}
               </div>
@@ -832,7 +832,7 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={saving}

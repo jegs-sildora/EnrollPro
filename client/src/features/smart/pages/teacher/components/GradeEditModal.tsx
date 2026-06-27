@@ -73,8 +73,8 @@ export function GradeEditModal({
         {selectedRecord && (
           <div className="max-h-[85vh] overflow-y-auto">
             <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Edit Grade</p>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight mt-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Edit Grade</p>
+              <h3 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight mt-1">
                 {selectedRecord.student.lastName}, {selectedRecord.student.firstName}
               </h3>
               <p className="text-[10px] font-semibold text-slate-500 mt-1">{selectedRecord.student.lrn}</p>
@@ -82,7 +82,7 @@ export function GradeEditModal({
 
             {isHGClass ? (
               <div className="p-5 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
                   Descriptor ({selectedTerm})
                 </p>
                 <Select
@@ -115,7 +115,7 @@ export function GradeEditModal({
                           key={tab}
                           type="button"
                           onClick={() => onTabChange(tab)}
-                          className="h-10 rounded-lg text-xs font-black uppercase tracking-widest transition"
+                          className="h-10 rounded-lg text-xs font-extrabold uppercase tracking-widest transition"
                           style={active ? { backgroundColor: "var(--theme-primary)", color: "var(--theme-primary-text)" } : { color: "#475569" }}
                         >
                           {tab === "WW" ? "Quiz" : tab === "QA" ? "TA" : tab}
@@ -150,7 +150,7 @@ export function GradeEditModal({
                               className="w-full h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold"
                             />
                           </div>
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
                             Quiz {i + 1} Score (MAX {maxAllowed})
                           </label>
                           <input
@@ -159,7 +159,7 @@ export function GradeEditModal({
                             value={mobileScoreDraft[key] ?? getScoreFromGrade(selectedRecord, "WW", i)}
                             onChange={(e) => onMobileScoreDraftChange(selectedRecord.student.id, "WW", i, e.target.value)}
                             onBlur={() => onMobileScoreCommit(selectedRecord, "WW", i)}
-                            className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-bold text-slate-700 focus:outline-none"
+                            className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-extrabold text-slate-700 focus:outline-none"
                             style={{ borderColor: invalidCells[getCellKey(selectedRecord.student.id, "WW", i)] ? "#f43f5e" : undefined }}
                             placeholder="0"
                           />
@@ -191,7 +191,7 @@ export function GradeEditModal({
                               className="w-full h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold"
                             />
                           </div>
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
                             PT {i + 1} Score (MAX {maxAllowed})
                           </label>
                           <input
@@ -200,7 +200,7 @@ export function GradeEditModal({
                             value={mobileScoreDraft[key] ?? getScoreFromGrade(selectedRecord, "PT", i)}
                             onChange={(e) => onMobileScoreDraftChange(selectedRecord.student.id, "PT", i, e.target.value)}
                             onBlur={() => onMobileScoreCommit(selectedRecord, "PT", i)}
-                            className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-bold text-slate-700 focus:outline-none"
+                            className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-extrabold text-slate-700 focus:outline-none"
                             style={{ borderColor: invalidCells[getCellKey(selectedRecord.student.id, "PT", i)] ? "#f43f5e" : undefined }}
                             placeholder="0"
                           />
@@ -223,7 +223,7 @@ export function GradeEditModal({
                         onBlur={(e) => onApplyColumnMeta("QA", 0, qaMeta.description || "", e.currentTarget.value)}
                         className="w-full h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold"
                       />
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
                         TA Score (MAX {getMaxForCell("QA", 0)})
                       </label>
                       <input
@@ -235,7 +235,7 @@ export function GradeEditModal({
                         }
                         onChange={(e) => onMobileScoreDraftChange(selectedRecord.student.id, "QA", 0, e.target.value)}
                         onBlur={() => onMobileScoreCommit(selectedRecord, "QA", 0)}
-                        className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-bold text-slate-700 focus:outline-none"
+                        className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base font-extrabold text-slate-700 focus:outline-none"
                         style={{ borderColor: invalidCells[getCellKey(selectedRecord.student.id, "QA", 0)] ? "#f43f5e" : undefined }}
                         placeholder="0"
                       />
@@ -246,7 +246,7 @@ export function GradeEditModal({
                 <div className="px-5 pb-5">
                   <Button
                     type="button"
-                    className="w-full h-11 rounded-xl text-xs font-black uppercase tracking-widest"
+                    className="w-full h-11 rounded-xl text-xs font-extrabold uppercase tracking-widest"
                     style={{ backgroundColor: "var(--theme-primary)", color: "var(--theme-primary-text)" }}
                     onClick={() => onOpenChange(false)}
                   >

@@ -272,7 +272,7 @@ export default function Teachers() {
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  className="w-full h-10 pl-9 bg-white text-base border-gray-300 uppercase font-bold"
+                  className="w-full h-10 pl-9 bg-white text-base border-gray-300 uppercase font-extrabold"
                   aria-label="Search faculty and staff"
                   placeholder="Search name, Employee ID, mobile number, subject area, ..."
                   value={activeFilter}
@@ -397,10 +397,10 @@ export default function Teachers() {
     <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
-          <h1 className="text-2xl md:text-3xl font-black text-balance text-foreground">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-balance text-foreground">
             Faculty & Staff Roster
           </h1>
-          <p className="text-base leading-tight text-foreground text-balance font-bold">
+          <p className="text-base leading-tight text-foreground text-balance font-extrabold">
             Manage faculty and staff records, school roles, advisory classes,
             and service status.
           </p>
@@ -410,7 +410,7 @@ export default function Teachers() {
             setViewingTeacher(null);
             setIsPanelOpen(true);
           }}
-          className="font-bold uppercase tracking-wide">
+          className="font-extrabold uppercase tracking-wide">
           <UserPlusIcon className="w-4 h-4 mr-2" />
           Add Faculty/Staff
         </Button>
@@ -427,10 +427,10 @@ export default function Teachers() {
         {/* Total Faculty & Staff */}
         <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Total Faculty & Staff
             </p>
-            <p className="mt-1 text-3xl font-black text-gray-900">
+            <p className="mt-1 text-3xl font-extrabold text-gray-900">
               {teachers.length}
             </p>
           </div>
@@ -442,10 +442,10 @@ export default function Teachers() {
         {/* Active */}
         <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Active Personnel
             </p>
-            <p className="mt-1 text-3xl font-black text-green-600">
+            <p className="mt-1 text-3xl font-extrabold text-green-600">
               {teachers.filter((t) => t.isActive).length}
             </p>
           </div>
@@ -457,10 +457,10 @@ export default function Teachers() {
         {/* Inactive / On Leave */}
         <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Inactive / On Leave
             </p>
-            <p className="mt-1 text-3xl font-black text-gray-900">
+            <p className="mt-1 text-3xl font-extrabold text-gray-900">
               {teachers.filter((t) => !t.isActive).length}
             </p>
           </div>
@@ -472,10 +472,10 @@ export default function Teachers() {
         {/* Class Advisers */}
         <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Class Advisers
             </p>
-            <p className="mt-1 text-3xl font-black text-orange-600">
+            <p className="mt-1 text-3xl font-extrabold text-orange-600">
               {teachers.filter((t) => t.designation?.isClassAdviser).length}
             </p>
           </div>

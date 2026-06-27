@@ -130,11 +130,11 @@ function RubricBuilder({
     <div className="space-y-4 border-t border-border pt-4 mt-2">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base leading-tight font-black uppercase text-primary flex items-center gap-1.5">
+          <Label className="text-base leading-tight font-extrabold uppercase text-primary flex items-center gap-1.5">
             <CheckCircle2 className="size-3.5" />
             Interview Evaluation Rubric
           </Label>
-          <p className="text-base font-bold text-foreground">
+          <p className="text-base font-extrabold text-foreground">
             Define categories and criteria. Teachers use this during interviews.
           </p>
         </div>
@@ -143,7 +143,7 @@ function RubricBuilder({
             variant="outline"
             size="sm"
             onClick={onReset}
-            className="h-7 gap-1.5 border-primary/20 text-base font-bold text-primary hover:bg-primary/5">
+            className="h-7 gap-1.5 border-primary/20 text-base font-extrabold text-primary hover:bg-primary/5">
             <RotateCcw className="h-3 w-3" />
             RESET TO OFFICIAL STE RUBRIC
           </Button>
@@ -160,7 +160,7 @@ function RubricBuilder({
               <div className="flex-1">
                 <Input
                   placeholder="Category Name (e.g., Image Interpretation)"
-                  className="h-8 text-base leading-tight font-bold uppercase "
+                  className="h-8 text-base leading-tight font-extrabold uppercase "
                   value={cat.name || ""}
                   onChange={(e) => updateCategory(cat.id, e.target.value)}
                 />
@@ -178,17 +178,17 @@ function RubricBuilder({
               {cat.criteria.length > 0 && (
                 <div className="grid grid-cols-12 gap-2 mb-1 px-1">
                   <div className="col-span-4">
-                    <span className="text-base font-black uppercase text-foreground">
+                    <span className="text-base font-extrabold uppercase text-foreground">
                       Criterion Name
                     </span>
                   </div>
                   <div className="col-span-6">
-                    <span className="text-base font-black uppercase text-foreground">
+                    <span className="text-base font-extrabold uppercase text-foreground">
                       Description
                     </span>
                   </div>
                   <div className="col-span-1 text-center">
-                    <span className="text-base font-black uppercase text-foreground">
+                    <span className="text-base font-extrabold uppercase text-foreground">
                       Max Pts
                     </span>
                   </div>
@@ -203,7 +203,7 @@ function RubricBuilder({
                     <div className="col-span-4">
                       <Input
                         placeholder="Criterion"
-                        className="h-8 text-base leading-tight font-bold"
+                        className="h-8 text-base leading-tight font-extrabold"
                         value={crit.name || ""}
                         onChange={(e) =>
                           updateCriterion(
@@ -218,7 +218,7 @@ function RubricBuilder({
                     <div className="col-span-6">
                       <Input
                         placeholder="Guideline/Description"
-                        className="h-8 text-base leading-tight font-bold text-foreground"
+                        className="h-8 text-base leading-tight font-extrabold text-foreground"
                         value={crit.description || ""}
                         onChange={(e) =>
                           updateCriterion(
@@ -234,7 +234,7 @@ function RubricBuilder({
                       <Input
                         type="number"
                         min={0}
-                        className="h-8 text-base leading-tight font-black text-center"
+                        className="h-8 text-base leading-tight font-extrabold text-center"
                         value={crit.maxPts}
                         placeholder="0"
                         onChange={(e) =>
@@ -265,7 +265,7 @@ function RubricBuilder({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-base font-bold border-dashed w-full"
+                className="h-7 text-base font-extrabold border-dashed w-full"
                 onClick={() => addCriterion(cat.id)}>
                 <Plus className="size-3 mr-1" /> Add Criterion
               </Button>
@@ -276,7 +276,7 @@ function RubricBuilder({
         <Button
           variant="secondary"
           size="sm"
-          className="w-full font-black text-base uppercase "
+          className="w-full font-extrabold text-base uppercase "
           onClick={addCategory}>
           <Plus className="size-3.5 mr-1.5" /> Add Rubric Category
         </Button>
@@ -297,7 +297,7 @@ function RubricBuilder({
           )}
           <span
             className={cn(
-              "text-base leading-tight font-black uppercase ",
+              "text-base leading-tight font-extrabold uppercase ",
               isTotalValid ? "text-emerald-700" : "text-amber-700",
             )}>
             {isTotalValid ? "Rubric Validated" : "Rubric Must Total 100"}
@@ -305,7 +305,7 @@ function RubricBuilder({
         </div>
         <div
           className={cn(
-            "px-3 py-1 rounded-md text-base leading-tight font-black flex items-center gap-1",
+            "px-3 py-1 rounded-md text-base leading-tight font-extrabold flex items-center gap-1",
             isTotalValid
               ? "bg-emerald-600 text-white"
               : "bg-amber-600 text-white",
@@ -341,7 +341,7 @@ export function AdmissionStepsSection({
     <div className="space-y-4">
       {isSteProgram && (
         <div className="space-y-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
-          <Label className="text-base leading-tight font-bold uppercase ">
+          <Label className="text-base leading-tight font-extrabold uppercase ">
             Admission Pipeline
           </Label>
           <div
@@ -353,11 +353,10 @@ export function AdmissionStepsSection({
               role="radio"
               aria-checked={!scp.isTwoPhase}
               onClick={() => onUpdateScpField(scpIndex, "isTwoPhase", false)}
-              className={`h-10 rounded-md border px-3 text-base leading-tight font-bold transition ${
-                !scp.isTwoPhase
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-foreground hover:bg-muted"
-              }`}>
+              className={`h-10 rounded-md border px-3 text-base leading-tight font-extrabold transition ${!scp.isTwoPhase
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-foreground hover:bg-muted"
+                }`}>
               1 Exam Phase (Qualifying Exam + Interview)
             </button>
             <button
@@ -365,11 +364,10 @@ export function AdmissionStepsSection({
               role="radio"
               aria-checked={scp.isTwoPhase}
               onClick={() => onUpdateScpField(scpIndex, "isTwoPhase", true)}
-              className={`h-10 rounded-md border px-3 text-base leading-tight font-bold transition ${
-                scp.isTwoPhase
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-foreground hover:bg-muted"
-              }`}>
+              className={`h-10 rounded-md border px-3 text-base leading-tight font-extrabold transition ${scp.isTwoPhase
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-foreground hover:bg-muted"
+                }`}>
               2 Exam Phases (Preliminary Exam + Final Exam + Interview)
             </button>
           </div>
@@ -382,7 +380,7 @@ export function AdmissionStepsSection({
       )}
 
       <div className="space-y-3">
-        <Label className="text-base leading-tight font-bold uppercase ">Admission Steps</Label>
+        <Label className="text-base leading-tight font-extrabold uppercase ">Admission Steps</Label>
 
         {scp.steps.length === 0 && (
           <p className="text-base leading-tight  italic py-2">
@@ -399,13 +397,13 @@ export function AdmissionStepsSection({
                 <span className="pointer-events-none absolute left-3 top-10 h-[calc(100%+1.25rem)] w-px bg-border" />
               )}
 
-              <span className="absolute left-0 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-base leading-tight font-bold text-primary">
+              <span className="absolute left-0 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-base leading-tight font-extrabold text-primary">
                 {step.stepOrder}
               </span>
 
               <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border">
-                  <span className="text-base leading-tight font-bold text-foreground">
+                  <span className="text-base leading-tight font-extrabold text-foreground">
                     {step.label}
                   </span>
                   {step.isRequired ? (
@@ -442,7 +440,7 @@ export function AdmissionStepsSection({
                       minDate={scpYearStart}
                       maxDate={scpYearEnd}
                       showYearSelect={false}
-                      className="h-8 text-base leading-tight font-bold uppercase"
+                      className="h-8 text-base leading-tight font-extrabold uppercase"
                     />
                     <TimePicker
                       value={step.scheduledTime}
@@ -457,13 +455,13 @@ export function AdmissionStepsSection({
                     <div className="space-y-2 border-t border-border/50 pt-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <Label className="text-base leading-tight font-bold uppercase">
+                          <Label className="text-base leading-tight font-extrabold uppercase">
                             Cut-Off Score
                           </Label>
                           <Input
                             type="number"
                             placeholder="Min Score"
-                            className="h-8 text-base leading-tight font-bold"
+                            className="h-8 text-base leading-tight font-extrabold"
                             value={step.cutoffScore ?? ""}
                             onChange={(event) =>
                               onUpdateStep(
@@ -480,14 +478,14 @@ export function AdmissionStepsSection({
 
                         {step.stepOrder === firstExamStepOrder ? (
                           <div className="space-y-1">
-                            <Label className="text-base leading-tight font-bold uppercase">
+                            <Label className="text-base leading-tight font-extrabold uppercase">
                               Max Slots
                             </Label>
                             <Input
                               type="number"
                               min={1}
                               placeholder="e.g. 70"
-                              className="h-8 text-base leading-tight font-bold"
+                              className="h-8 text-base leading-tight font-extrabold"
                               value={scp.maxSlots ?? ""}
                               onChange={(event) =>
                                 onUpdateScpField(
@@ -534,12 +532,12 @@ export function AdmissionStepsSection({
 
                   <div className="space-y-3 border-t border-border/50 pt-3">
                     <div className="space-y-1">
-                      <Label className="text-base leading-tight font-bold uppercase">
+                      <Label className="text-base leading-tight font-extrabold uppercase">
                         Venue
                       </Label>
                       <Input
                         placeholder="Venue (optional)"
-                        className="h-8 text-base leading-tight font-bold uppercase"
+                        className="h-8 text-base leading-tight font-extrabold uppercase"
                         value={step.venue || ""}
                         onChange={(event) =>
                           onUpdateStep(
@@ -553,12 +551,12 @@ export function AdmissionStepsSection({
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-base leading-tight font-bold uppercase">
+                      <Label className="text-base leading-tight font-extrabold uppercase">
                         Notes
                       </Label>
                       <Textarea
                         placeholder="Additional requirements..."
-                        className="min-h-[72px] text-base leading-tight font-bold"
+                        className="min-h-[72px] text-base leading-tight font-extrabold"
                         value={step.notes || ""}
                         onChange={(event) =>
                           onUpdateStep(

@@ -77,11 +77,11 @@ const formatStatusLabel = (status: string | null) => {
 export default function TeacherEosyDashboard() {
   const { systemPhase } = useSettingsStore();
   const isEosyPhase = systemPhase === "EOSY_CLOSING";
-  
+
   const [loading, setLoading] = useState(true);
   const [section, setSection] = useState<Section | null>(null);
   const [records, setRecords] = useState<EnrollmentRecord[]>([]);
-  
+
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -134,12 +134,12 @@ export default function TeacherEosyDashboard() {
       };
 
       await api.post("/teacher-eosy/advisory/submit", payload);
-      
+
       sileo.success({
         title: "Advisory Finalized",
         description: "Your section's EOSY grades and statuses have been submitted to the Registrar."
       });
-      
+
       setConfirmModalOpen(false);
       void fetchAdvisory();
     } catch (err) {
@@ -164,15 +164,15 @@ export default function TeacherEosyDashboard() {
 
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
-              <span className="font-bold uppercase truncate">
+              <span className="font-extrabold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-base text-foreground font-black uppercase">
+                <span className="text-base text-foreground font-extrabold uppercase">
                   LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
                 {genderLabel && (
-                  <Badge variant="outline" className="h-3 px-1 text-[7px] font-black border-muted-foreground/20">
+                  <Badge variant="outline" className="h-3 px-1 text-[7px] font-extrabold border-muted-foreground/20">
                     {genderLabel}
                   </Badge>
                 )}
@@ -194,7 +194,7 @@ export default function TeacherEosyDashboard() {
 
           if (isFinalized) {
             return (
-              <span className={cn("font-bold text-base sm:text-base leading-tight tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
+              <span className={cn("font-extrabold text-base sm:text-base leading-tight tabular-nums block text-center", isFailing ? "text-red-600" : "text-emerald-600")}>
                 {ave?.toFixed(0) || "0"}
               </span>
             );
@@ -208,9 +208,9 @@ export default function TeacherEosyDashboard() {
                 min="60"
                 max="100"
                 className={cn(
-                  "h-8 w-24 text-center font-bold text-base leading-tight bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
-                  isFailing ? "text-red-600 border-red-300 focus:ring-red-500" : 
-                  isScpWarning ? "text-amber-600 border-amber-500 focus:ring-amber-500" : "text-emerald-600"
+                  "h-8 w-24 text-center font-extrabold text-base leading-tight bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                  isFailing ? "text-red-600 border-red-300 focus:ring-red-500" :
+                    isScpWarning ? "text-amber-600 border-amber-500 focus:ring-amber-500" : "text-emerald-600"
                 )}
                 value={ave ?? ""}
                 onChange={(e) => handleAverageChange(r.id, e.target.value)}
@@ -234,7 +234,7 @@ export default function TeacherEosyDashboard() {
           const r = row.original;
           const resolvedStatus = r.eosyStatus ?? "PROMOTED";
           const statusLabel = formatStatusLabel(r.eosyStatus);
-          
+
           const ave = r.finalAverage;
           const applicantType = r.enrollmentApplication.applicantType;
           const isScpWarning = applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE" && ave !== null && ave >= 75 && ave < 85;
@@ -242,7 +242,7 @@ export default function TeacherEosyDashboard() {
           if (isFinalized) {
             return (
               <div className="flex justify-center">
-                <Badge variant="outline" className="h-6 w-24 text-[10px] font-bold bg-muted text-foreground flex items-center justify-center uppercase">
+                <Badge variant="outline" className="h-6 w-24 text-[10px] font-extrabold bg-muted text-foreground flex items-center justify-center uppercase">
                   {statusLabel}
                 </Badge>
               </div>
@@ -257,12 +257,12 @@ export default function TeacherEosyDashboard() {
               >
                 <SelectTrigger
                   className={cn(
-                    "h-8 w-40 font-black uppercase text-[10px]",
+                    "h-8 w-40 font-extrabold uppercase text-[10px]",
                     isScpWarning
                       ? "text-amber-700 bg-amber-50 border-amber-400"
                       : resolvedStatus === "PROMOTED"
-                      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                      : "text-amber-700 bg-amber-50 border-amber-200",
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200",
                   )}>
                   {isScpWarning ? "PROMOTED (BEC)" : <SelectValue />}
                 </SelectTrigger>
@@ -293,7 +293,7 @@ export default function TeacherEosyDashboard() {
           <Lock className="h-8 w-8 text-muted-foreground" />
         </div>
         <div className="text-center max-w-md space-y-2">
-          <h2 className="text-xl font-black uppercase">EOSY Phase Not Active</h2>
+          <h2 className="text-xl font-extrabold uppercase">EOSY Phase Not Active</h2>
           <p className="text-base text-muted-foreground leading-relaxed">
             EOSY status updates are only available during the End of School Year phase.
           </p>
@@ -306,7 +306,7 @@ export default function TeacherEosyDashboard() {
     return (
       <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-base leading-tight font-medium">Loading Advisory Records...</p>
+        <p className="text-base leading-tight ">Loading Advisory Records...</p>
       </div>
     );
   }
@@ -318,7 +318,7 @@ export default function TeacherEosyDashboard() {
           <Users className="h-8 w-8 text-muted-foreground" />
         </div>
         <div className="text-center max-w-md space-y-2">
-          <h2 className="text-xl font-black uppercase">No Advisory Assigned</h2>
+          <h2 className="text-xl font-extrabold uppercase">No Advisory Assigned</h2>
           <p className="text-base text-muted-foreground leading-relaxed">
             You do not have an active advisory section assigned for this school year.
           </p>
@@ -331,14 +331,14 @@ export default function TeacherEosyDashboard() {
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
         <PhaseBanner />
-        
+
         {/* ── Top Header ── */}
         <div className="flex items-center justify-between pb-6 flex-shrink-0">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-primary">
+            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-primary">
               EOSY Finalization
             </h1>
-            <p className="text-base leading-tight font-bold text-foreground">
+            <p className="text-base leading-tight font-extrabold text-foreground">
               {section.gradeLevel.name} - {section.name}
             </p>
           </div>
@@ -346,27 +346,27 @@ export default function TeacherEosyDashboard() {
 
         <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
           <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
-            
+
             {/* Header / Actions Row */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-3 rounded-md border border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 {isFinalized ? (
-                  <Badge variant="outline" className="bg-emerald-600 text-white border-emerald-700 px-3 py-1.5 shadow-sm text-base uppercase font-black">
+                  <Badge variant="outline" className="bg-emerald-600 text-white border-emerald-700 px-3 py-1.5 shadow-sm text-base uppercase font-extrabold">
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> ✓ Submitted & Locked
                   </Badge>
                 ) : (
-                  <span className="text-base leading-tight font-bold text-muted-foreground">
+                  <span className="text-base leading-tight font-extrabold text-muted-foreground">
                     Please review grades and statuses before submitting.
                   </span>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-3">
                 {!isFinalized && (
                   <Button
                     onClick={() => setConfirmModalOpen(true)}
                     disabled={isSubmitDisabled}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold"
                   >
                     <Lock className="h-4 w-4 mr-2" /> Submit to Registrar
                   </Button>
@@ -375,7 +375,7 @@ export default function TeacherEosyDashboard() {
             </div>
 
             {isFinalized && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 text-emerald-800 text-base leading-tight font-medium">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 text-emerald-800 text-base leading-tight ">
                 Your section's records have been submitted and locked. They are now read-only and await Registrar's batch sectioning algorithm.
               </div>
             )}
@@ -389,7 +389,7 @@ export default function TeacherEosyDashboard() {
                 />
               </div>
             </div>
-            
+
           </div>
         </Card>
       </div>
@@ -401,14 +401,14 @@ export default function TeacherEosyDashboard() {
               <AlertTriangle className="h-6 w-6 text-amber-600" />
             </div>
             <DialogTitle className="text-center text-xl text-amber-700">Submit to Registrar?</DialogTitle>
-            <DialogDescription className="text-center pt-2 font-medium text-amber-800">
+            <DialogDescription className="text-center pt-2  text-amber-800">
               Warning: This action is final. Are you sure you want to lock these grades and forward them to the Head Registrar?
             </DialogDescription>
           </DialogHeader>
           <div className="bg-amber-50 p-4 rounded-md text-base leading-tight text-amber-800 space-y-2 my-2 border border-amber-100">
             <p>• All entered grades and statuses will be forwarded to the Registrar.</p>
             <p>• Your section's records will be locked and become read-only.</p>
-            <p className="font-bold underline mt-3">This action cannot be undone by a teacher.</p>
+            <p className="font-extrabold underline mt-3">This action cannot be undone by a teacher.</p>
           </div>
           <DialogFooter className="sm:justify-center flex-col sm:flex-row gap-2">
             <Button
@@ -423,7 +423,7 @@ export default function TeacherEosyDashboard() {
               variant="default"
               onClick={handleSubmit}
               disabled={submitLoading}
-              className="w-full sm:w-auto font-bold bg-amber-600 hover:bg-amber-700 text-white"
+              className="w-full sm:w-auto font-extrabold bg-amber-600 hover:bg-amber-700 text-white"
             >
               {submitLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Confirm & Submit

@@ -87,12 +87,12 @@ export function OneTimePinSuccessDialog({
               <CheckCircle2 className="h-5 w-5" />
             </span>
             <div className="space-y-1 text-left">
-              <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-black uppercase ">
+              <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-extrabold uppercase ">
                 Official Enrollment Confirmed
               </DialogTitle>
-              <DialogDescription className="text-base text-emerald-800/90 sm:text-base leading-tight font-bold">
+              <DialogDescription className="text-base text-emerald-800/90 sm:text-base leading-tight font-extrabold">
                 One-time learner portal PIN captured for{" "}
-                <span className="font-black text-emerald-900">
+                <span className="font-extrabold text-emerald-900">
                   {learnerName}
                 </span>
                 .
@@ -104,26 +104,26 @@ export function OneTimePinSuccessDialog({
         <div className="space-y-4 px-6 py-5">
           <div className="grid gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 sm:grid-cols-3">
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
+              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
                 Tracking No.
               </p>
-              <p className="text-base leading-tight font-black text-emerald-950">
+              <p className="text-base leading-tight font-extrabold text-emerald-950">
                 {trackingNumber}
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
+              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
                 Grade Level
               </p>
-              <p className="text-base leading-tight font-black text-emerald-950">
+              <p className="text-base leading-tight font-extrabold text-emerald-950">
                 {gradeLevelLabel}
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
+              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
                 Section
               </p>
-              <p className="text-base leading-tight font-black text-emerald-950">
+              <p className="text-base leading-tight font-extrabold text-emerald-950">
                 {sectionName}
               </p>
             </div>
@@ -133,10 +133,10 @@ export function OneTimePinSuccessDialog({
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <div className="space-y-1">
-                <p className="text-base text-amber-800 font-black uppercase ">
+                <p className="text-base text-amber-800 font-extrabold uppercase ">
                   Volatile Data Warning
                 </p>
-                <p className="text-base text-amber-900/90 font-bold leading-relaxed">
+                <p className="text-base text-amber-900/90 font-extrabold leading-relaxed">
                   This PIN is shown only once. After this dialog closes, it
                   cannot be retrieved from this screen.
                 </p>
@@ -145,17 +145,17 @@ export function OneTimePinSuccessDialog({
           </div>
 
           <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-white p-4 text-center">
-            <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
+            <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
               Learner Portal One-Time PIN
             </p>
-            <p className=" text-4xl  text-emerald-900 sm:text-5xl font-black">
+            <p className=" text-4xl  text-emerald-900 sm:text-5xl font-extrabold">
               {portalPin}
             </p>
             <Button
               type="button"
               variant="outline"
               className={cn(
-                "h-9 border-emerald-300 px-3 text-base font-black",
+                "h-9 border-emerald-300 px-3 text-base font-extrabold",
                 copied && "bg-emerald-100 text-emerald-900",
               )}
               onClick={handleCopyPin}>
@@ -167,7 +167,7 @@ export function OneTimePinSuccessDialog({
           <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center gap-2 text-base text-slate-700">
               <Timer className="h-3.5 w-3.5" />
-              <span className="font-bold">
+              <span className="font-extrabold">
                 Required review pause:{" "}
                 {secondsLeft > 0 ? `${secondsLeft}s` : "Complete"}
               </span>
@@ -184,7 +184,7 @@ export function OneTimePinSuccessDialog({
               />
               <label
                 htmlFor="one-time-pin-acknowledgement"
-                className="cursor-pointer text-base text-slate-800 sm:text-base font-bold leading-relaxed">
+                className="cursor-pointer text-base text-slate-800 sm:text-base font-extrabold leading-relaxed">
                 I confirm the PIN has been written on the enrollment slip and/or
                 copied to the registrar secure handoff record.
               </label>
@@ -196,14 +196,14 @@ export function OneTimePinSuccessDialog({
           <Button
             type="button"
             variant="outline"
-            className="text-base font-bold"
+            className="text-base font-extrabold"
             onClick={() => window.print()}>
             <Printer className="mr-2 h-3.5 w-3.5" />
             Print / Write on Slip First
           </Button>
           <Button
             type="button"
-            className="bg-emerald-600 text-base hover:bg-emerald-700 font-black"
+            className="bg-emerald-600 text-base hover:bg-emerald-700 font-extrabold"
             disabled={!canContinue}
             onClick={onAcknowledge}>
             {secondsLeft > 0

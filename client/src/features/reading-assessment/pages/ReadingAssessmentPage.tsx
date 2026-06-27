@@ -60,35 +60,35 @@ const READING_LEVELS: {
   colorClass: string;
   badgeClass: string;
 }[] = [
-  {
-    value: "INDEPENDENT",
-    label: "Independent",
-    description: "Reads fluently with full comprehension",
-    colorClass: "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white",
-    badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-  {
-    value: "INSTRUCTIONAL",
-    label: "Instructional",
-    description: "Reads with some support; grade-level with guidance",
-    colorClass: "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white",
-    badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
-  },
-  {
-    value: "FRUSTRATION",
-    label: "Frustration",
-    description: "Struggles even with support; below grade level",
-    colorClass: "bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white",
-    badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
-  },
-  {
-    value: "NON_READER",
-    label: "Non-Reader",
-    description: "Cannot decode or read independently",
-    colorClass: "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white",
-    badgeClass: "bg-red-50 text-red-700 border-red-200",
-  },
-];
+    {
+      value: "INDEPENDENT",
+      label: "Independent",
+      description: "Reads fluently with full comprehension",
+      colorClass: "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    {
+      value: "INSTRUCTIONAL",
+      label: "Instructional",
+      description: "Reads with some support; grade-level with guidance",
+      colorClass: "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+    },
+    {
+      value: "FRUSTRATION",
+      label: "Frustration",
+      description: "Struggles even with support; below grade level",
+      colorClass: "bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white",
+      badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    {
+      value: "NON_READER",
+      label: "Non-Reader",
+      description: "Cannot decode or read independently",
+      colorClass: "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white",
+      badgeClass: "bg-red-50 text-red-700 border-red-200",
+    },
+  ];
 
 function getReadingLevelMeta(level: ReadingLevel | null) {
   return READING_LEVELS.find((r) => r.value === level) ?? null;
@@ -280,9 +280,8 @@ export default function ReadingAssessmentPage() {
       );
       sileo.success({
         title: "Phil-IRI Recorded",
-        description: `${selected.learner.firstName} — ${
-          getReadingLevelMeta(level)?.label ?? level
-        }`,
+        description: `${selected.learner.firstName} — ${getReadingLevelMeta(level)?.label ?? level
+          }`,
       });
     } catch (err) {
       toastApiError(err as never);
@@ -339,9 +338,8 @@ export default function ReadingAssessmentPage() {
   };
 
   const selectedFullName = selected
-    ? `${selected.learner.lastName}, ${selected.learner.firstName}${
-        selected.learner.middleName ? ` ${selected.learner.middleName[0]}.` : ""
-      }`
+    ? `${selected.learner.lastName}, ${selected.learner.firstName}${selected.learner.middleName ? ` ${selected.learner.middleName[0]}.` : ""
+    }`
     : "";
 
   const INTAKE_TABS = [
@@ -361,8 +359,8 @@ export default function ReadingAssessmentPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold">Adviser Intake Hub</h1>
-          <p className="text-base leading-tight font-bold">
+          <h1 className="text-3xl font-extrabold">Adviser Intake Hub</h1>
+          <p className="text-base leading-tight font-extrabold">
             Phil-IRI Assessment &amp; Enrollment Confirmation
             {activeSchoolYearLabel ? ` · ${activeSchoolYearLabel}` : ""}
           </p>
@@ -370,7 +368,7 @@ export default function ReadingAssessmentPage() {
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold",
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-extrabold",
               isUserInteracting
                 ? "border-muted-foreground/30 text-foreground"
                 : "border-emerald-200 text-emerald-700",
@@ -412,7 +410,7 @@ export default function ReadingAssessmentPage() {
               <div className="p-1.5 rounded-lg bg-muted shrink-0">
                 <Icon className="h-3.5 w-3.5 text-foreground" />
               </div>
-              <p className="text-[10px] font-black uppercase text-foreground leading-tight">
+              <p className="text-[10px] font-extrabold uppercase text-foreground leading-tight">
                 {label}
               </p>
             </CardHeader>
@@ -420,7 +418,7 @@ export default function ReadingAssessmentPage() {
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-foreground" />
               ) : (
-                <p className="text-2xl font-black">{value}</p>
+                <p className="text-2xl font-extrabold">{value}</p>
               )}
             </CardContent>
           </Card>
@@ -442,7 +440,7 @@ export default function ReadingAssessmentPage() {
             <TabsTrigger
               key={tab.key}
               value={tab.key}
-              className="flex-1 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              className="flex-1 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
               {activeTab === tab.key && (
                 <motion.div
@@ -456,7 +454,7 @@ export default function ReadingAssessmentPage() {
                 {tab.count > 0 && (
                   <Badge
                     variant={activeTab === tab.key ? "secondary" : "outline"}
-                    className="h-5 px-1.5 text-base font-bold"
+                    className="h-5 px-1.5 text-base font-extrabold"
                   >
                     {tab.count}
                   </Badge>
@@ -476,64 +474,64 @@ export default function ReadingAssessmentPage() {
             className="mt-3"
           >
             <TabsContent value="pending" className="mt-0 outline-none data-[state=inactive]:hidden">
-          <QueueCard
-            items={pendingPhilIriItems}
-            loading={isLoading}
-            isSearching={isSearching}
-            searchInput={searchInput}
-            onSearchChange={setSearchInput}
-            onSearchFocus={() => setIsSearchFocused(true)}
-            onSearchBlur={() => setIsSearchFocused(false)}
-            onTableHoverChange={setIsTableHovered}
-            onSelect={handleSelect}
-            emptyTitle="All Phil-IRI Assessments Complete"
-            emptyDescription={
-              search
-                ? "No learners match your search."
-                : "All learners in your queue have been assessed."
-            }
-          />
-        </TabsContent>
+              <QueueCard
+                items={pendingPhilIriItems}
+                loading={isLoading}
+                isSearching={isSearching}
+                searchInput={searchInput}
+                onSearchChange={setSearchInput}
+                onSearchFocus={() => setIsSearchFocused(true)}
+                onSearchBlur={() => setIsSearchFocused(false)}
+                onTableHoverChange={setIsTableHovered}
+                onSelect={handleSelect}
+                emptyTitle="All Phil-IRI Assessments Complete"
+                emptyDescription={
+                  search
+                    ? "No learners match your search."
+                    : "All learners in your queue have been assessed."
+                }
+              />
+            </TabsContent>
 
             <TabsContent value="ready" className="mt-0 outline-none data-[state=inactive]:hidden">
-          <QueueCard
-            items={readyToConfirmItems}
-            loading={isLoading}
-            isSearching={isSearching}
-            searchInput={searchInput}
-            onSearchChange={setSearchInput}
-            onSearchFocus={() => setIsSearchFocused(true)}
-            onSearchBlur={() => setIsSearchFocused(false)}
-            onTableHoverChange={setIsTableHovered}
-            onSelect={handleSelect}
-            emptyTitle={pendingPhilIriItems.length > 0 ? "No Learners Ready Yet" : "All Done!"}
-            emptyDescription={
-              pendingPhilIriItems.length > 0
-                ? "Complete Phil-IRI assessments first."
-                : "All learners have been confirmed for this school year."
-            }
-          />
-        </TabsContent>
+              <QueueCard
+                items={readyToConfirmItems}
+                loading={isLoading}
+                isSearching={isSearching}
+                searchInput={searchInput}
+                onSearchChange={setSearchInput}
+                onSearchFocus={() => setIsSearchFocused(true)}
+                onSearchBlur={() => setIsSearchFocused(false)}
+                onTableHoverChange={setIsTableHovered}
+                onSelect={handleSelect}
+                emptyTitle={pendingPhilIriItems.length > 0 ? "No Learners Ready Yet" : "All Done!"}
+                emptyDescription={
+                  pendingPhilIriItems.length > 0
+                    ? "Complete Phil-IRI assessments first."
+                    : "All learners have been confirmed for this school year."
+                }
+              />
+            </TabsContent>
 
             <TabsContent value="continuing" className="mt-0 outline-none data-[state=inactive]:hidden">
-          <ContinuingQueueCard
-            items={continuingItems}
-            loading={isContinuingLoading}
-            isSearching={isContinuingSearching}
-            searchInput={continuingSearchInput}
-            onSearchChange={setContinuingSearchInput}
-            onSearchFocus={() => setIsSearchFocused(true)}
-            onSearchBlur={() => setIsSearchFocused(false)}
-            onTableHoverChange={setIsTableHovered}
-            confirmingIds={confirmingIds}
-            onConfirm={handleConfirmContinuing}
-            emptyTitle="No Continuing Learners"
-            emptyDescription={
-              search
-                ? "No continuing learners match your search."
-                : "There are no continuing learners in your advisory queue."
-            }
-          />
+              <ContinuingQueueCard
+                items={continuingItems}
+                loading={isContinuingLoading}
+                isSearching={isContinuingSearching}
+                searchInput={continuingSearchInput}
+                onSearchChange={setContinuingSearchInput}
+                onSearchFocus={() => setIsSearchFocused(true)}
+                onSearchBlur={() => setIsSearchFocused(false)}
+                onTableHoverChange={setIsTableHovered}
+                confirmingIds={confirmingIds}
+                onConfirm={handleConfirmContinuing}
+                emptyTitle="No Continuing Learners"
+                emptyDescription={
+                  search
+                    ? "No continuing learners match your search."
+                    : "There are no continuing learners in your advisory queue."
+                }
+              />
             </TabsContent>
           </motion.div>
         </AnimatePresence>
@@ -548,20 +546,20 @@ export default function ReadingAssessmentPage() {
       >
         <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Adviser Intake</DialogTitle>
+            <DialogTitle className="text-xl font-extrabold">Adviser Intake</DialogTitle>
             {selected && (
               <DialogDescription asChild>
                 <div className="space-y-1.5 pt-0.5">
-                  <span className="block font-bold text-foreground text-base">
+                  <span className="block font-extrabold text-foreground text-base">
                     {selectedFullName}
                   </span>
-                  <span className="block text-base font-bold text-foreground">
+                  <span className="block text-base font-extrabold text-foreground">
                     LRN: {selected.learner.lrn ?? "None"} &middot;{" "}
                     {selected.gradeLevel.name}
                   </span>
                   <Badge
                     variant={isScpTrack ? "default" : "secondary"}
-                    className="text-[10px] font-black"
+                    className="text-[10px] font-extrabold"
                   >
                     {isScpTrack ? "SCP Track" : "BEC / BEEF Track"}
                   </Badge>
@@ -575,7 +573,7 @@ export default function ReadingAssessmentPage() {
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "size-6 rounded-full flex items-center justify-center text-base font-black shrink-0",
+                  "size-6 rounded-full flex items-center justify-center text-base font-extrabold shrink-0",
                   step1Done
                     ? "bg-emerald-500 text-white"
                     : "bg-primary text-primary-foreground",
@@ -583,14 +581,14 @@ export default function ReadingAssessmentPage() {
               >
                 {step1Done ? <CheckCircle2 className="size-3.5" /> : "1"}
               </div>
-              <p className="font-bold text-base leading-tight">Phil-IRI Reading Assessment</p>
+              <p className="font-extrabold text-base leading-tight">Phil-IRI Reading Assessment</p>
             </div>
 
             {step1Done ? (
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5">
                 <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="text-base leading-tight font-bold text-emerald-800">
+                  <p className="text-base leading-tight font-extrabold text-emerald-800">
                     {getReadingLevelMeta(effectiveLevel as ReadingLevel)?.label ??
                       effectiveLevel}
                   </p>
@@ -608,7 +606,7 @@ export default function ReadingAssessmentPage() {
                     onClick={() => void handleGradePhilIRI(level.value)}
                     disabled={philIriSaving}
                     className={cn(
-                      "w-full min-h-[58px] rounded-xl font-bold text-base px-4 py-3",
+                      "w-full min-h-[58px] rounded-xl font-extrabold text-base px-4 py-3",
                       "flex flex-col items-start justify-center gap-0.5",
                       "transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
                       level.colorClass,
@@ -640,10 +638,10 @@ export default function ReadingAssessmentPage() {
             <Separator className="my-4" />
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-base font-black shrink-0">
+                <div className="size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-base font-extrabold shrink-0">
                   2
                 </div>
-                <p className="font-bold text-base leading-tight">Document Verification</p>
+                <p className="font-extrabold text-base leading-tight">Document Verification</p>
               </div>
               <p className="text-base leading-tight text-foreground">
                 Physically verify the following DepEd-required documents before confirming
@@ -677,7 +675,7 @@ export default function ReadingAssessmentPage() {
                       <div className="flex-1 min-w-0">
                         <p
                           className={cn(
-                            "text-base leading-tight font-bold",
+                            "text-base leading-tight font-extrabold",
                             checked ? "text-emerald-700" : "text-foreground",
                           )}
                         >
@@ -697,7 +695,7 @@ export default function ReadingAssessmentPage() {
               </div>
 
               <Button
-                className="w-full h-12 text-base leading-tight font-bold"
+                className="w-full h-12 text-base leading-tight font-extrabold"
                 disabled={!allDocsChecked || confirmSaving}
                 onClick={() => void handleConfirmEnrollment()}
               >
@@ -729,7 +727,7 @@ export default function ReadingAssessmentPage() {
               <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/40 px-4 py-3">
                 <Lock className="size-4 text-foreground shrink-0" />
                 <div>
-                  <p className="text-base leading-tight font-bold text-foreground">
+                  <p className="text-base leading-tight font-extrabold text-foreground">
                     Document Verification (Step 2)
                   </p>
                   <p className="text-base text-foreground">
@@ -793,11 +791,11 @@ function QueueCard({
           const a = row.original;
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight">
-              <span className="font-bold uppercase text-base">
+              <span className="font-extrabold uppercase text-base">
                 {a.learner.lastName}, {a.learner.firstName}
                 {a.learner.middleName ? ` ${a.learner.middleName[0]}.` : ""}
               </span>
-              <span className="text-[10px] text-foreground font-bold">
+              <span className="text-[10px] text-foreground font-extrabold">
                 LRN: {a.learner.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -815,7 +813,7 @@ function QueueCard({
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
-            <Badge variant="outline" className="text-[10px] font-black uppercase">
+            <Badge variant="outline" className="text-[10px] font-extrabold uppercase">
               {row.original.gradeLevel.name}
             </Badge>
           </div>
@@ -838,7 +836,7 @@ function QueueCard({
             <div className="flex justify-center">
               <Badge
                 variant={isScpTrack ? "default" : "secondary"}
-                className="text-[10px] font-black uppercase"
+                className="text-[10px] font-extrabold uppercase"
               >
                 {isScpTrack ? "SCP" : "BEC/BEEF"}
               </Badge>
@@ -865,7 +863,7 @@ function QueueCard({
               {levelMeta ? (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border",
+                    "inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border",
                     levelMeta.badgeClass,
                   )}
                 >
@@ -873,7 +871,7 @@ function QueueCard({
                   {levelMeta.label}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                   <BookOpen className="size-2.5" />
                   Pending
                 </span>
@@ -886,7 +884,7 @@ function QueueCard({
       {
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-base uppercase">
+          <div className="text-center font-extrabold text-primary-foreground text-base uppercase">
             Action
           </div>
         ),
@@ -895,7 +893,7 @@ function QueueCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-base font-bold text-primary hover:text-primary hover:bg-primary/10"
+              className="h-8 text-base font-extrabold text-primary hover:text-primary hover:bg-primary/10"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(row.original);
@@ -921,7 +919,7 @@ function QueueCard({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search LRN, First Name, Last Name…"
-            className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+            className="pl-10 h-11 text-base leading-tight font-extrabold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
             value={searchInput}
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
@@ -944,12 +942,12 @@ function QueueCard({
             virtualize={false}
             onRowClick={onSelect}
             rowSelection={{}}
-            onRowSelectionChange={() => {}}
+            onRowSelectionChange={() => { }}
             emptyStateContent={
               !loading && !isSearching && items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <CheckCircle2 className="size-10 text-emerald-500" />
-                  <p className="font-bold text-base">{emptyTitle}</p>
+                  <p className="font-extrabold text-base">{emptyTitle}</p>
                   <p className="text-base leading-tight text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined
@@ -1022,11 +1020,11 @@ function ContinuingQueueCard({
           const a = row.original;
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight">
-              <span className="font-bold uppercase text-base">
+              <span className="font-extrabold uppercase text-base">
                 {a.lastName}, {a.firstName}
                 {a.middleName ? ` ${a.middleName[0]}.` : ""}
               </span>
-              <span className="text-[10px] text-foreground font-bold">
+              <span className="text-[10px] text-foreground font-extrabold">
                 LRN: {a.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -1044,7 +1042,7 @@ function ContinuingQueueCard({
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
-            <Badge variant="outline" className="text-[10px] font-black uppercase">
+            <Badge variant="outline" className="text-[10px] font-extrabold uppercase">
               {row.original.gradeLevelName}
             </Badge>
           </div>
@@ -1067,12 +1065,12 @@ function ContinuingQueueCard({
           return (
             <div className="flex justify-center">
               {isConfirmed ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
                   <CheckCircle2 className="size-2.5" />
                   Confirmed
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                   Pending
                 </span>
               )}
@@ -1084,7 +1082,7 @@ function ContinuingQueueCard({
       {
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-base uppercase">
+          <div className="text-center font-extrabold text-primary-foreground text-base uppercase">
             Action
           </div>
         ),
@@ -1098,7 +1096,7 @@ function ContinuingQueueCard({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-8 text-base font-bold transition-opacity",
+                  "h-8 text-base font-extrabold transition-opacity",
                   isConfirmed
                     ? "text-foreground cursor-not-allowed opacity-50"
                     : "text-primary hover:text-primary hover:bg-primary/10",
@@ -1139,7 +1137,7 @@ function ContinuingQueueCard({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
             placeholder="Search LRN, First Name, Last Name…"
-            className="pl-10 h-11 text-base leading-tight font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+            className="pl-10 h-11 text-base leading-tight font-extrabold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
             value={searchInput}
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
@@ -1162,12 +1160,12 @@ function ContinuingQueueCard({
             virtualize={false}
             getRowId={(row) => String(row.applicationId)}
             rowSelection={{}}
-            onRowSelectionChange={() => {}}
+            onRowSelectionChange={() => { }}
             emptyStateContent={
               !loading && !isSearching && items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <UserCheck className="size-10 text-emerald-500" />
-                  <p className="font-bold text-base">{emptyTitle}</p>
+                  <p className="font-extrabold text-base">{emptyTitle}</p>
                   <p className="text-base leading-tight text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined

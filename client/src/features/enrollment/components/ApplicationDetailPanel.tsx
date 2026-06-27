@@ -104,9 +104,9 @@ export function ApplicationDetailPanel({
 
   const persistedMandatoryMet = applicant
     ? isMandatoryDocumentsMet(
-        applicant.learnerType,
-        applicant.checklist as unknown as Record<string, unknown>,
-      )
+      applicant.learnerType,
+      applicant.checklist as unknown as Record<string, unknown>,
+    )
     : false;
 
   const [mandatoryMet, setMandatoryMet] = useState(false);
@@ -120,7 +120,7 @@ export function ApplicationDetailPanel({
       <div className="flex flex-col h-full overflow-hidden bg-background">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
           <div>
-            <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
+            <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
               <Skeleton className="h-6 w-40" />
             </SheetTitle>
             <SheetDescription
@@ -145,7 +145,7 @@ export function ApplicationDetailPanel({
     return (
       <div className="flex flex-col h-full overflow-hidden bg-background">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-          <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
+          <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
             Error
           </SheetTitle>
           <SheetDescription className="hidden">
@@ -169,9 +169,9 @@ export function ApplicationDetailPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-black">
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold">
         <div>
-          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
+          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase">
             Application Detail
           </SheetTitle>
           <SheetDescription className="text-[11px] sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -193,7 +193,7 @@ export function ApplicationDetailPanel({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-extrabold">
         {/* Summary Block */}
         <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
           <div className="flex flex-col items-center mb-6 pt-2">
@@ -204,11 +204,11 @@ export function ApplicationDetailPanel({
               alt={`${applicant.lastName} ${applicant.firstName}`}
             />
             <div className="text-center mt-4">
-              <h3 className="font-black text-lg sm:text-xl uppercase  break-words">
+              <h3 className="font-extrabold text-lg sm:text-xl uppercase  break-words">
                 {applicant.lastName}, {applicant.firstName}{" "}
                 {applicant.middleName}
               </h3>
-              <div className="flex items-center justify-center gap-2 mt-1 font-black">
+              <div className="flex items-center justify-center gap-2 mt-1 font-extrabold">
                 <StatusBadge status={applicant.status} />
               </div>
             </div>
@@ -230,7 +230,7 @@ export function ApplicationDetailPanel({
               </p>
               <p className="text-base sm:text-base leading-tight ">{applicant.lrn || "N/A"}</p>
               {applicant.isPendingLrnCreation && (
-                <p className="text-base sm:text-base font-bold text-amber-700">
+                <p className="text-base sm:text-base font-extrabold text-amber-700">
                   Pending LRN Creation
                 </p>
               )}
@@ -253,7 +253,7 @@ export function ApplicationDetailPanel({
         {showRawJson && (
           <div className="rounded-md border bg-muted/20">
             <details className="group">
-              <summary className="cursor-pointer list-none p-3 text-base sm:text-base leading-tight font-bold uppercase ">
+              <summary className="cursor-pointer list-none p-3 text-base sm:text-base leading-tight font-extrabold uppercase ">
                 <span className="group-open:hidden">
                   Show Raw Application JSON
                 </span>

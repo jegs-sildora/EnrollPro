@@ -63,9 +63,9 @@ export default function FinalizeEnrollmentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base leading-tight font-black uppercase tracking-wide">{title}</DialogTitle>
+          <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">{title}</DialogTitle>
           {learnerName ? (
-            <p className="text-base text-foreground font-bold">{learnerName}</p>
+            <p className="text-base text-foreground font-extrabold">{learnerName}</p>
           ) : null}
         </DialogHeader>
 
@@ -75,14 +75,14 @@ export default function FinalizeEnrollmentModal({
               checked={confirmationSlipReceived}
               onCheckedChange={(checked) => setConfirmationSlipReceived(Boolean(checked))}
             />
-            <span className="text-base font-bold">
+            <span className="text-base font-extrabold">
               Physical Enrollment Form / Confirmation Slip Received
             </span>
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Height (cm)</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Height (cm)</Label>
               <Input
                 type="number"
                 min={90}
@@ -93,11 +93,11 @@ export default function FinalizeEnrollmentModal({
                 placeholder="e.g. 150"
               />
               {!isHeightValid && heightCm ? (
-                <p className="text-base text-destructive font-bold">Height must be 90 to 220 cm.</p>
+                <p className="text-base text-destructive font-extrabold">Height must be 90 to 220 cm.</p>
               ) : null}
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Weight (kg)</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Weight (kg)</Label>
               <Input
                 type="number"
                 min={20}
@@ -108,7 +108,7 @@ export default function FinalizeEnrollmentModal({
                 placeholder="e.g. 45"
               />
               {!isWeightValid && weightKg ? (
-                <p className="text-base text-destructive font-bold">Weight must be 20 to 150 kg.</p>
+                <p className="text-base text-destructive font-extrabold">Weight must be 20 to 150 kg.</p>
               ) : null}
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function FinalizeEnrollmentModal({
                 weightKg: weightNum,
               })
             }
-            className="font-black uppercase text-base bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="font-extrabold uppercase text-base bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

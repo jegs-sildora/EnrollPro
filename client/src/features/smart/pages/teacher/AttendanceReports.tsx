@@ -161,11 +161,11 @@ export default function AttendanceReports() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      
+
       const section = sections.find(s => s.id === selectedSection);
       const sectionName = section ? `${gradeLevelLabels[section.gradeLevel]}-${section.name}` : "Attendance";
       link.setAttribute("download", `${sectionName}_${startDate}_to_${endDate}.xlsx`);
-      
+
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -187,7 +187,7 @@ export default function AttendanceReports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Attendance Reports</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Attendance Reports</h1>
           <p className="text-gray-500 mt-1">View and download attendance summaries</p>
         </div>
       </div>
@@ -280,7 +280,7 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Total Students</p>
-                <p className="text-3xl font-bold" style={{ color: colors.primary }}>
+                <p className="text-3xl font-extrabold" style={{ color: colors.primary }}>
                   {summary.length}
                 </p>
               </div>
@@ -290,13 +290,13 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Avg. Attendance</p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-3xl font-extrabold text-green-600">
                   {summary.length > 0
                     ? (
-                        (summary.reduce((acc, s) => acc + s.present, 0) /
-                          summary.reduce((acc, s) => acc + s.total, 0)) *
-                        100
-                      ).toFixed(1)
+                      (summary.reduce((acc, s) => acc + s.present, 0) /
+                        summary.reduce((acc, s) => acc + s.total, 0)) *
+                      100
+                    ).toFixed(1)
                     : 0}
                   %
                 </p>
@@ -307,7 +307,7 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Total Days</p>
-                <p className="text-3xl font-bold" style={{ color: colors.secondary }}>
+                <p className="text-3xl font-extrabold" style={{ color: colors.secondary }}>
                   {summary[0]?.total || 0}
                 </p>
               </div>
@@ -391,7 +391,7 @@ export default function AttendanceReports() {
                   {summary.map((student) => (
                     <TableRow key={student.studentId}>
                       <TableCell className="font-mono text-sm">{student.lrn}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="">
                         {student.lastName}, {student.firstName} {student.middleName?.[0]}.
                       </TableCell>
                       <TableCell className="text-center">
@@ -417,13 +417,12 @@ export default function AttendanceReports() {
                       <TableCell className="text-center font-semibold">{student.total}</TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`font-bold ${
-                            parseFloat(getAttendanceRate(student.present, student.total)) >= 90
-                              ? "text-green-600"
-                              : parseFloat(getAttendanceRate(student.present, student.total)) >= 75
+                          className={`font-extrabold ${parseFloat(getAttendanceRate(student.present, student.total)) >= 90
+                            ? "text-green-600"
+                            : parseFloat(getAttendanceRate(student.present, student.total)) >= 75
                               ? "text-amber-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           {getAttendanceRate(student.present, student.total)}%
                         </span>

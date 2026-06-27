@@ -139,7 +139,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
         <div className="space-y-6 mb-12">
           {/* Sovereign Header */}
           <div>
-            <span className="text-xl font-black tracking-widest text-primary-foreground uppercase">{schoolName}</span>
+            <span className="text-xl font-extrabold tracking-widest text-primary-foreground uppercase">{schoolName}</span>
             <p className="text-white/70 text-base mt-1">
               Integrated Administrative, Academic & Support Systems
             </p>
@@ -147,10 +147,10 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
 
           {/* Main System Title */}
           <div>
-            <h1 className="text-4xl xl:text-5xl font-bold leading-tight text-white mb-2">
+            <h1 className="text-4xl xl:text-5xl font-extrabold leading-tight text-white mb-2">
               {acronym}
             </h1>
-            <p className="text-white/90 text-lg font-medium">
+            <p className="text-white/90 text-lg ">
               Junior High School Information Management Portal
             </p>
           </div>
@@ -191,8 +191,8 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
                 <feature.icon className="w-6 h-6" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-white truncate">{feature.title}</h3>
-                <p className="text-white/80 text-sm leading-tight font-medium line-clamp-1">
+                <h3 className="font-extrabold text-white truncate">{feature.title}</h3>
+                <p className="text-white/80 text-sm leading-tight  line-clamp-1">
                   {feature.desc}
                 </p>
               </div>
@@ -503,12 +503,12 @@ export default function Login() {
                   <Sparkles className="w-5 h-5 text-white" />
                 )}
               </div>
-              <CardTitle className="text-xl font-bold text-gray-900 pt-2">
+              <CardTitle className="text-xl font-extrabold text-gray-900 pt-2">
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-base leading-tight">
                 Sign in to continue to{" "}
-                <span className="font-bold text-primary">EnrollPro</span>
+                <span className="font-extrabold text-primary">EnrollPro</span>
               </CardDescription>
             </CardHeader>
 
@@ -518,7 +518,7 @@ export default function Login() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-base leading-tight font-bold text-red-700">
+                  <span className="text-base leading-tight font-extrabold text-red-700">
                     {error}
                   </span>
                 </div>
@@ -530,7 +530,7 @@ export default function Login() {
                     <CheckCircle className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-base leading-tight font-bold text-primary">
+                    <p className="text-base leading-tight font-extrabold text-primary">
                       {success}
                     </p>
                   </div>
@@ -543,7 +543,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="accountName"
-                    className="text-gray-800 font-bold text-base leading-tight pl-1">
+                    className="text-gray-800 font-extrabold text-base leading-tight pl-1">
                     Employee ID
                   </Label>
                   <div className="relative group">
@@ -563,7 +563,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold focus-visible:ring-offset-0"
+                      className="pl-12 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold focus-visible:ring-offset-0"
                       autoComplete="username"
                       required
                     />
@@ -573,7 +573,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="password"
-                    className="text-gray-800 font-bold text-base leading-tight pl-1">
+                    className="text-gray-800 font-extrabold text-base leading-tight pl-1">
                     Password
                   </Label>
                   <div className="relative group">
@@ -593,7 +593,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 pr-11 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold focus-visible:ring-offset-0"
+                      className="pl-12 pr-11 h-11 bg-slate-50/80 border-slate-200/60 hover:border-slate-300/80 focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold focus-visible:ring-offset-0"
                       autoComplete="current-password"
                       required
                     />
@@ -623,11 +623,11 @@ export default function Login() {
                       }
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-base leading-tight">
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-extrabold text-base leading-tight">
                       Remember me
                     </span>
                   </label>
-                  <span className="text-gray-400 text-base font-bold text-right leading-tight">
+                  <span className="text-gray-400 text-base font-extrabold text-right leading-tight">
                     Forgot password?<br />Contact the System Admin.
                   </span>
                 </div>
@@ -635,7 +635,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-bold text-base leading-tight rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
+                  className="w-full h-11 font-extrabold text-base leading-tight rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
                   {isLoading ? (
                     <span className="flex items-center gap-3">
                       <Loader2 className="animate-spin h-5 w-5" />

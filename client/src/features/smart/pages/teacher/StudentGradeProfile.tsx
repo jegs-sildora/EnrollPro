@@ -88,16 +88,16 @@ export default function StudentGradeProfilePage() {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <div className="text-center">
-          <div 
+          <div
             className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg animate-pulse"
             style={{ backgroundColor: `${colors.primary}15` }}
           >
-            <div 
+            <div
               className="w-10 h-10 border-[3px] border-t-transparent rounded-full animate-spin"
               style={{ borderColor: colors.primary, borderTopColor: 'transparent' }}
             />
           </div>
-          <p className="text-gray-500 font-medium">Loading student profile...</p>
+          <p className="text-gray-500 ">Loading student profile...</p>
         </div>
       </div>
     );
@@ -136,7 +136,7 @@ export default function StudentGradeProfilePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Student Grade Profile</h1>
+          <h1 className="text-2xl font-extrabold" style={{ color: '#111827' }}>Student Grade Profile</h1>
           <p style={{ color: '#4b5563' }}>Complete academic record</p>
         </div>
       </div>
@@ -147,23 +147,22 @@ export default function StudentGradeProfilePage() {
         <Card className="lg:col-span-2 border-0 shadow-xl shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
           <CardHeader className="border-b border-gray-100 px-6 py-5" style={{ backgroundColor: `${colors.primary}08` }}>
             <div className="flex items-center gap-4">
-              <div 
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold shadow-lg"
                 style={{ backgroundColor: colors.primary }}
               >
                 {student.lastName.charAt(0)}
               </div>
               <div>
-                <CardTitle className="text-xl font-bold text-gray-900">{fullName}</CardTitle>
+                <CardTitle className="text-xl font-extrabold text-gray-900">{fullName}</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
                     LRN: {student.lrn}
                   </Badge>
-                  <Badge className={`${
-                    student.gender?.toLowerCase() === "male"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-pink-100 text-pink-700"
-                  }`}>
+                  <Badge className={`${student.gender?.toLowerCase() === "male"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-pink-100 text-pink-700"
+                    }`}>
                     {student.gender || "N/A"}
                   </Badge>
                 </div>
@@ -248,13 +247,13 @@ export default function StudentGradeProfilePage() {
               <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
                 <Award className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-lg">Academic Summary</h3>
+              <h3 className="font-extrabold text-lg">Academic Summary</h3>
             </div>
-            
+
             <div className="space-y-4 flex-1">
               <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">General Average</p>
-                <p className="text-4xl font-bold">
+                <p className="text-4xl font-extrabold">
                   {summary.generalAverage !== null ? summary.generalAverage.toFixed(2) : "N/A"}
                 </p>
                 {summary.generalAverage !== null && (
@@ -263,30 +262,29 @@ export default function StudentGradeProfilePage() {
                   </Badge>
                 )}
               </div>
-              
+
               {summary.honors && (
                 <div className="p-4 rounded-xl backdrop-blur-sm border" style={{ backgroundColor: `${colors.accent}30`, borderColor: `${colors.accent}40` }}>
                   <div className="flex items-center gap-2">
                     <Medal className="w-5 h-5" style={{ color: colors.accent }} />
-                    <p className="font-bold text-white">{summary.honors}</p>
+                    <p className="font-extrabold text-white">{summary.honors}</p>
                   </div>
                 </div>
               )}
-              
+
               <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">Status</p>
-                <Badge className={`${
-                  summary.promotionStatus === "PROMOTED" ? "text-white" :
+                <Badge className={`${summary.promotionStatus === "PROMOTED" ? "text-white" :
                   summary.promotionStatus === "CONDITIONALLY PROMOTED" ? "bg-amber-400/30 text-amber-100" :
-                  summary.promotionStatus === "RETAINED" ? "bg-red-400/30 text-red-100" :
-                  "bg-gray-400/30 text-gray-100"
-                }`}
+                    summary.promotionStatus === "RETAINED" ? "bg-red-400/30 text-red-100" :
+                      "bg-gray-400/30 text-gray-100"
+                  }`}
                   style={summary.promotionStatus === "PROMOTED" ? { backgroundColor: `${colors.primary}50`, color: 'white' } : undefined}
                 >
                   {summary.promotionStatus || "Pending"}
                 </Badge>
               </div>
-              
+
               <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">Progress</p>
                 <p className="text-lg font-semibold">
@@ -303,14 +301,14 @@ export default function StudentGradeProfilePage() {
         <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="p-2.5 rounded-xl text-white shadow-lg"
                 style={{ backgroundColor: colors.primary }}
               >
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-gray-900">Subject Grades</CardTitle>
+                <CardTitle className="text-lg font-extrabold text-gray-900">Subject Grades</CardTitle>
                 <CardDescription className="text-gray-500 text-sm">
                   Term grades and final rating per subject
                 </CardDescription>
@@ -326,12 +324,12 @@ export default function StudentGradeProfilePage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="font-bold text-gray-700 min-w-[200px]">Subject</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-center">T1</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-center">T2</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-center">T3</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-center" style={{ backgroundColor: `${colors.primary}08` }}>Final Grade</TableHead>
-                  <TableHead className="font-bold text-gray-700 text-center">Remarks</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 min-w-[200px]">Subject</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-center">T1</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-center">T2</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-center">T3</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-center" style={{ backgroundColor: `${colors.primary}08` }}>Final Grade</TableHead>
+                  <TableHead className="font-extrabold text-gray-700 text-center">Remarks</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -365,7 +363,7 @@ export default function StudentGradeProfilePage() {
                     })}
                     <TableCell className="text-center" style={{ backgroundColor: `${colors.primary}06` }}>
                       {subject.finalGrade !== null ? (
-                        <span className={`text-lg font-bold ${subject.finalGrade >= 75 ? "" : "text-red-600"}`} style={subject.finalGrade >= 75 ? { color: colors.primary } : undefined}>
+                        <span className={`text-lg font-extrabold ${subject.finalGrade >= 75 ? "" : "text-red-600"}`} style={subject.finalGrade >= 75 ? { color: colors.primary } : undefined}>
                           {subject.finalGrade}
                         </span>
                       ) : (
@@ -374,13 +372,12 @@ export default function StudentGradeProfilePage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {subject.remarks ? (
-                        <Badge className={`${
-                          subject.remarks === "PASSED" 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : subject.remarks === "QUALITATIVE"
+                        <Badge className={`${subject.remarks === "PASSED"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : subject.remarks === "QUALITATIVE"
                             ? "bg-sky-100 text-sky-700"
                             : "bg-red-100 text-red-700"
-                        }`}>
+                          }`}>
                           {subject.remarks === "PASSED" ? (
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                           ) : subject.remarks === "QUALITATIVE" ? (
@@ -399,24 +396,23 @@ export default function StudentGradeProfilePage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                
+
                 {/* General Average Row */}
                 <TableRow className="border-t-2" style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }}>
-                  <TableCell colSpan={5} className="font-bold text-right pr-8" style={{ color: colors.primary }}>
+                  <TableCell colSpan={5} className="font-extrabold text-right pr-8" style={{ color: colors.primary }}>
                     General Average:
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-2xl font-bold" style={{ color: colors.primary }}>
+                    <span className="text-2xl font-extrabold" style={{ color: colors.primary }}>
                       {summary.generalAverage !== null ? summary.generalAverage.toFixed(2) : "N/A"}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
                     {summary.promotionStatus && (
-                      <Badge className={`${
-                        summary.promotionStatus === "PROMOTED" ? "text-white" :
+                      <Badge className={`${summary.promotionStatus === "PROMOTED" ? "text-white" :
                         summary.promotionStatus === "CONDITIONALLY PROMOTED" ? "bg-amber-500 text-white" :
-                        "bg-red-500 text-white"
-                      }`}
+                          "bg-red-500 text-white"
+                        }`}
                         style={summary.promotionStatus === "PROMOTED" ? { backgroundColor: colors.primary } : undefined}
                       >
                         {summary.promotionStatus}
@@ -433,7 +429,7 @@ export default function StudentGradeProfilePage() {
       {/* DepEd Grading Legend */}
       <Card className="border-0 shadow-lg shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
         <CardHeader className="border-b border-gray-100 px-6 py-4">
-          <CardTitle className="text-sm font-bold text-gray-700">DepEd Grading Scale</CardTitle>
+          <CardTitle className="text-sm font-extrabold text-gray-700">DepEd Grading Scale</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -454,7 +450,7 @@ export default function StudentGradeProfilePage() {
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <h4 className="font-bold text-gray-700 text-sm mb-3">Academic Honors (Based on General Average):</h4>
+            <h4 className="font-extrabold text-gray-700 text-sm mb-3">Academic Honors (Based on General Average):</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: "With Highest Honors", range: "98-100", icon: "🏆" },

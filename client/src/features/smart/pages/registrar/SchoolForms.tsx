@@ -193,16 +193,16 @@ export default function SchoolForms() {
   });
 
   // Filtered sections based on selected grade
-  const filteredSectionsForDropdown = selectedGrade === "ALL" 
-    ? sections 
+  const filteredSectionsForDropdown = selectedGrade === "ALL"
+    ? sections
     : sections.filter(s => s.gradeLevel === selectedGrade);
 
   const { colors: themeColors, schoolName, schoolRegion, schoolDivision, logoUrl } = useTheme();
   const fullLogoUrl = logoUrl ? (logoUrl.startsWith("http") ? logoUrl : `${SERVER_URL}${logoUrl}`) : null;
-  
+
   // Selection state
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  
+
   // Form data states
   const [sf8Data, setSf8Data] = useState<any>(null);
   const [sf9Data, setSf9Data] = useState<any>(null);
@@ -374,7 +374,7 @@ export default function SchoolForms() {
   const handleToggleStudent = (id: string) => {
     // Also set the single selected student for the view buttons
     setSelectedStudent(id);
-    setSelectedStudentIds(prev => 
+    setSelectedStudentIds(prev =>
       prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
     );
   };
@@ -382,15 +382,15 @@ export default function SchoolForms() {
   const handleBulkPrint = async (formType: 'sf9' | 'sf10', all = false) => {
     const idsToPrint = all ? students.map(s => s.id) : selectedStudentIds;
     if (idsToPrint.length === 0) return;
-    
+
     setLoading(true);
     try {
       const results = await Promise.all(
-        idsToPrint.map(id => 
+        idsToPrint.map(id =>
           formType === 'sf9' ? registrarApi.getSF9(id, schoolYear) : registrarApi.getSF10(id)
         )
       );
-      
+
       const data = results.map(r => r.data);
       if (formType === 'sf9') {
         setBulkSf9Data(data as SF9Data[]);
@@ -422,8 +422,8 @@ export default function SchoolForms() {
         </div>
         <div className="flex-1 text-center">
           <p className="text-xs text-gray-700 mb-1">SF 9 - JHS</p>
-          <h2 className="font-bold text-base text-gray-900">Republic of the Philippines</h2>
-          <h3 className="font-bold text-sm text-gray-900">Department of Education</h3>
+          <h2 className="font-extrabold text-base text-gray-900">Republic of the Philippines</h2>
+          <h3 className="font-extrabold text-sm text-gray-900">Department of Education</h3>
           <p className="text-sm text-gray-800 mt-1">{schoolRegion || "Region _____________"}</p>
           <p className="text-sm text-gray-800">{schoolDivision ? `Division of ${schoolDivision}` : "Division of _____________"}</p>
           <p className="text-sm text-gray-800 mt-1">District: _____________</p>
@@ -440,59 +440,59 @@ export default function SchoolForms() {
 
       {/* Title */}
       <div className="text-center mb-6">
-        <h1 className="text-xl font-bold text-gray-900 uppercase">Learner's Progress Report Card</h1>
+        <h1 className="text-xl font-extrabold text-gray-900 uppercase">Learner's Progress Report Card</h1>
       </div>
 
       {/* Student Information */}
       <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6 text-sm">
         <div>
-          <span className="font-bold text-gray-900">Name: </span>
+          <span className="font-extrabold text-gray-900">Name: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[200px]">{data.student.name}</span>
         </div>
         <div>
-          <span className="font-bold text-gray-900">LRN: </span>
+          <span className="font-extrabold text-gray-900">LRN: </span>
           <span className="border-b border-gray-400 text-gray-900 font-mono inline-block min-w-[150px]">{data.student.lrn}</span>
         </div>
         <div>
-          <span className="font-bold text-gray-900">Age: </span>
+          <span className="font-extrabold text-gray-900">Age: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{data.student.age || "____"}</span>
         </div>
         <div>
-          <span className="font-bold text-gray-900">Sex: </span>
+          <span className="font-extrabold text-gray-900">Sex: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{data.student.gender || "____"}</span>
         </div>
         <div>
-          <span className="font-bold text-gray-900">Grade: </span>
+          <span className="font-extrabold text-gray-900">Grade: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{formatGradeLevel(data.student.gradeLevel)}</span>
         </div>
         <div>
-          <span className="font-bold text-gray-900">Section: </span>
+          <span className="font-extrabold text-gray-900">Section: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[120px]">{data.student.section}</span>
         </div>
         <div className="col-span-2">
-          <span className="font-bold text-gray-900">School Year: </span>
+          <span className="font-extrabold text-gray-900">School Year: </span>
           <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[120px]">{data.student.schoolYear}</span>
         </div>
       </div>
 
       {/* Dear Parent Message */}
       <div className="bg-gray-100 p-4 rounded mb-6 text-sm border border-gray-400">
-        <p className="font-bold text-gray-900 mb-2">Dear Parent,</p>
+        <p className="font-extrabold text-gray-900 mb-2">Dear Parent,</p>
         <p className="text-gray-800 text-justify leading-relaxed">
-          This report card shows the ability and progress your child has made in different learning areas as well as his/her core values. 
+          This report card shows the ability and progress your child has made in different learning areas as well as his/her core values.
           The school welcomes you should you desire to know more about your child's progress.
         </p>
       </div>
 
       {/* Report on Learning Progress and Achievement */}
       <div className="mb-6">
-        <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNING PROGRESS AND ACHIEVEMENT</h3>
+        <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNING PROGRESS AND ACHIEVEMENT</h3>
         <table className="w-full border-2 border-gray-600 text-sm">
           <thead>
             <tr className="border-b-2 border-gray-600 bg-gray-100">
               <th rowSpan={2} className="border-r border-gray-600 p-2 text-left text-gray-900 w-44">Learning Areas</th>
               <th colSpan={3} className="border-r border-gray-600 p-2 text-gray-900">Term</th>
-              <th rowSpan={2} className="border-r border-gray-600 p-2 text-gray-900 w-16">Final<br/>Rating</th>
+              <th rowSpan={2} className="border-r border-gray-600 p-2 text-gray-900 w-16">Final<br />Rating</th>
               <th rowSpan={2} className="p-2 text-gray-900 w-20">Remarks</th>
             </tr>
             <tr className="border-b-2 border-gray-600 bg-gray-100">
@@ -504,7 +504,7 @@ export default function SchoolForms() {
           <tbody>
             {data.subjectGrades.map((sg: any, index: number) => (
               <tr key={index} className="border-b border-gray-600">
-                <td className="border-r border-gray-600 p-2 font-medium text-gray-900">{sg.subjectName}</td>
+                <td className="border-r border-gray-600 p-2  text-gray-900">{sg.subjectName}</td>
                 <td className={`border-r border-gray-600 p-2 text-center font-semibold ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
                   {sg.T1 ?? ''}
                 </td>
@@ -514,7 +514,7 @@ export default function SchoolForms() {
                 <td className={`border-r border-gray-600 p-2 text-center font-semibold ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
                   {sg.T3 ?? ''}
                 </td>
-                <td className={`border-r border-gray-600 p-2 text-center font-bold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
+                <td className={`border-r border-gray-600 p-2 text-center font-extrabold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
                   {sg.final ?? ''}
                 </td>
                 <td className="p-2 text-center text-sm text-gray-900">
@@ -522,7 +522,7 @@ export default function SchoolForms() {
                 </td>
               </tr>
             ))}
-            <tr className="bg-gray-200 font-bold border-t-2 border-gray-600">
+            <tr className="bg-gray-200 font-extrabold border-t-2 border-gray-600">
               <td colSpan={4} className="border-r border-gray-600 p-2 text-right text-gray-900">General Average</td>
               <td className="border-r border-gray-600 p-2 text-center text-lg text-gray-900">
                 {data.generalAverage?.toFixed(2) ?? ''}
@@ -557,7 +557,7 @@ export default function SchoolForms() {
 
       {/* Page break: Core Values goes on back side (page 2) */}
       <div className="mb-6 sf9-page-break">
-        <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNER'S OBSERVED VALUES</h3>
+        <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNER'S OBSERVED VALUES</h3>
         <table className="w-full border-2 border-gray-600 text-xs">
           <thead>
             <tr className="border-b-2 border-gray-600 bg-gray-100">
@@ -579,7 +579,7 @@ export default function SchoolForms() {
               <React.Fragment key={i}>
                 {cv.behaviors.map((b, j) => (
                   <tr key={`${i}-${j}`} className="border-b border-gray-600">
-                    {j === 0 && <td rowSpan={cv.behaviors.length} className="border-r border-gray-600 p-2 font-bold text-gray-900 align-top">{cv.value}</td>}
+                    {j === 0 && <td rowSpan={cv.behaviors.length} className="border-r border-gray-600 p-2 font-extrabold text-gray-900 align-top">{cv.value}</td>}
                     <td className="border-r border-gray-600 p-2 text-gray-800">{b}</td>
                     <td className="border-r border-gray-600 p-2"></td>
                     <td className="border-r border-gray-600 p-2"></td>
@@ -598,7 +598,7 @@ export default function SchoolForms() {
 
       {/* Attendance Record */}
       <div className="mb-6">
-        <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">ATTENDANCE RECORD</h3>
+        <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">ATTENDANCE RECORD</h3>
         <table className="w-full border-2 border-gray-600 text-xs">
           <thead>
             <tr className="border-b border-gray-600 bg-gray-100">
@@ -611,7 +611,7 @@ export default function SchoolForms() {
           <tbody>
             {['School Days', 'Days Present', 'Days Absent'].map(row => (
               <tr key={row} className="border-b border-gray-600">
-                <td className="border-r border-gray-600 p-1.5 font-medium text-gray-900">{row}</td>
+                <td className="border-r border-gray-600 p-1.5  text-gray-900">{row}</td>
                 {Array(12).fill('').map((_, i) => (
                   <td key={i} className="border-r border-gray-600 p-1.5 text-center"></td>
                 ))}
@@ -623,7 +623,7 @@ export default function SchoolForms() {
 
       {/* Parent/Guardian Signature */}
       <div className="mb-6 border-2 border-gray-600 p-4">
-        <h3 className="font-bold text-sm mb-3 text-gray-900">PARENT / GUARDIAN'S SIGNATURE</h3>
+        <h3 className="font-extrabold text-sm mb-3 text-gray-900">PARENT / GUARDIAN'S SIGNATURE</h3>
         <div className="grid grid-cols-4 gap-4 text-xs">
           {['Term 1', 'Term 2', 'Term 3'].map(q => (
             <div key={q}>
@@ -637,14 +637,14 @@ export default function SchoolForms() {
       {/* Footer Signatures */}
       <div className="grid grid-cols-2 gap-8 mt-8 pt-4 border-t-2 border-gray-400">
         <div className="text-center">
-          <div className="border-b border-gray-600 mx-8 mb-1 min-h-[2rem] flex items-end justify-center font-bold text-gray-900">
+          <div className="border-b border-gray-600 mx-8 mb-1 min-h-[2rem] flex items-end justify-center font-extrabold text-gray-900">
             {data.student.adviser || ""}
           </div>
-          <p className="text-sm text-gray-900 font-medium">Class Adviser</p>
+          <p className="text-sm text-gray-900 ">Class Adviser</p>
         </div>
         <div className="text-center">
           <div className="border-b border-gray-600 mx-8 mb-1 h-8"></div>
-          <p className="text-sm text-gray-900 font-medium">School Principal</p>
+          <p className="text-sm text-gray-900 ">School Principal</p>
         </div>
       </div>
     </div>
@@ -659,8 +659,8 @@ export default function SchoolForms() {
           <img src="/DepEd.png" alt="DepEd Logo" className="w-16 h-16 object-contain" />
         </div>
         <div className="flex-1 text-center">
-          <h2 className="font-bold text-base text-gray-900">Republic of the Philippines</h2>
-          <h3 className="font-bold text-sm text-gray-900">Department of Education</h3>
+          <h2 className="font-extrabold text-base text-gray-900">Republic of the Philippines</h2>
+          <h3 className="font-extrabold text-sm text-gray-900">Department of Education</h3>
           {schoolRegion && <p className="text-sm text-gray-800 mt-1">{schoolRegion}</p>}
           {schoolDivision && <p className="text-sm text-gray-800">Division of {schoolDivision}</p>}
           {schoolName && <p className="text-sm text-gray-800">{schoolName}</p>}
@@ -676,41 +676,41 @@ export default function SchoolForms() {
 
       {/* Title */}
       <div className="text-center mb-4">
-        <h1 className="text-lg font-bold text-gray-900 uppercase">Learner's Permanent Academic Record for Junior High School</h1>
+        <h1 className="text-lg font-extrabold text-gray-900 uppercase">Learner's Permanent Academic Record for Junior High School</h1>
         <p className="text-xs text-gray-700 mt-1">(Formerly Form 137)</p>
       </div>
 
       {/* Student's Personal Information */}
       <div className="mb-4 border-2 border-gray-600">
         <div className="bg-gray-200 p-1.5 border-b-2 border-gray-600">
-          <h3 className="font-bold text-xs text-gray-900">LEARNER'S INFORMATION</h3>
+          <h3 className="font-extrabold text-xs text-gray-900">LEARNER'S INFORMATION</h3>
         </div>
         <div className="p-3 text-xs">
           <div className="grid grid-cols-5 gap-3 mb-2">
             <div className="col-span-2">
-              <label className="font-bold text-gray-900">LAST NAME:</label>
+              <label className="font-extrabold text-gray-900">LAST NAME:</label>
               <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{data.student.name.split(',')[0]?.trim() || ''}</div>
             </div>
             <div className="col-span-2">
-              <label className="font-bold text-gray-900">FIRST NAME:</label>
+              <label className="font-extrabold text-gray-900">FIRST NAME:</label>
               <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{data.student.name.split(',')[1]?.trim().split(' ')[0] || ''}</div>
             </div>
             <div>
-              <label className="font-bold text-gray-900">MIDDLE NAME:</label>
+              <label className="font-extrabold text-gray-900">MIDDLE NAME:</label>
               <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{data.student.name.split(',')[1]?.trim().split(' ').slice(1).join(' ') || ''}</div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-gray-900">LRN:</label>
+              <label className="font-extrabold text-gray-900">LRN:</label>
               <div className="border-b border-gray-600 mt-1 font-mono text-gray-900 pb-1">{data.student.lrn}</div>
             </div>
             <div>
-              <label className="font-bold text-gray-900">BIRTHDATE:</label>
+              <label className="font-extrabold text-gray-900">BIRTHDATE:</label>
               <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{data.student.birthDate || ''}</div>
             </div>
             <div>
-              <label className="font-bold text-gray-900">SEX:</label>
+              <label className="font-extrabold text-gray-900">SEX:</label>
               <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{data.student.gender}</div>
             </div>
           </div>
@@ -720,7 +720,7 @@ export default function SchoolForms() {
       {/* Eligibility for JHS Enrolment */}
       <div className="mb-4 border-2 border-gray-600">
         <div className="bg-gray-200 p-1.5 border-b-2 border-gray-600">
-          <h3 className="font-bold text-xs text-gray-900">ELIGIBILITY FOR JHS ENROLMENT</h3>
+          <h3 className="font-extrabold text-xs text-gray-900">ELIGIBILITY FOR JHS ENROLMENT</h3>
         </div>
         <div className="p-2 text-xs grid grid-cols-3 gap-3">
           <div className="text-gray-900">
@@ -742,13 +742,13 @@ export default function SchoolForms() {
           <div className="p-2 border-b-2 border-gray-600 bg-gray-100">
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="font-bold text-gray-900">School Year: </span>
+                <span className="font-extrabold text-gray-900">School Year: </span>
                 <span className="text-gray-900">{record.schoolYear}</span>
-                <span className="font-bold text-gray-900 ml-4">Grade Level: </span>
+                <span className="font-extrabold text-gray-900 ml-4">Grade Level: </span>
                 <span className="text-gray-900">{formatGradeLevel(record.gradeLevel)}</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">Section: </span>
+                <span className="font-extrabold text-gray-900">Section: </span>
                 <span className="text-gray-900">{record.section}</span>
               </div>
             </div>
@@ -765,10 +765,10 @@ export default function SchoolForms() {
                   Term Rating
                 </th>
                 <th rowSpan={2} className="border-r border-gray-600 p-1.5 text-center text-gray-900 w-16">
-                  Final<br/>Rating
+                  Final<br />Rating
                 </th>
                 <th rowSpan={2} className="p-1.5 text-center text-gray-900 w-20">
-                  Action<br/>Taken
+                  Action<br />Taken
                 </th>
               </tr>
               <tr className="border-b-2 border-gray-600 bg-gray-200">
@@ -781,16 +781,16 @@ export default function SchoolForms() {
               {record.subjectGrades.map((sg: any, idx: number) => (
                 <tr key={idx} className="border-b border-gray-600">
                   <td className="border-r border-gray-600 p-1.5 text-gray-900">{sg.subjectName}</td>
-                  <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
                     {sg.T1 ?? ''}
                   </td>
-                  <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T2 ?? 0) < 75 && sg.T2 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T2 ?? 0) < 75 && sg.T2 ? 'text-red-600' : 'text-gray-900'}`}>
                     {sg.T2 ?? ''}
                   </td>
-                  <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
                     {sg.T3 ?? ''}
                   </td>
-                  <td className={`border-r border-gray-600 p-1.5 text-center font-bold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`border-r border-gray-600 p-1.5 text-center font-extrabold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
                     {sg.final ?? ''}
                   </td>
                   <td className="p-1.5 text-center text-xs text-gray-900">{sg.remarks || ''}</td>
@@ -798,7 +798,7 @@ export default function SchoolForms() {
               ))}
 
               {/* General Average Row */}
-              <tr className="border-t-2 border-gray-600 bg-gray-200 font-bold">
+              <tr className="border-t-2 border-gray-600 bg-gray-200 font-extrabold">
                 <td colSpan={5} className="border-r border-gray-600 p-1.5 text-right text-gray-900">General Average:</td>
                 <td className="border-r border-gray-600 p-1.5 text-center text-sm text-gray-900">
                   {record.generalAverage?.toFixed(2) ?? ''}
@@ -813,20 +813,20 @@ export default function SchoolForms() {
             <div className="text-xs mb-2">
               <div className="flex items-center justify-between mb-1">
                 <div>
-                  <span className="font-bold text-gray-900">Prepared by: </span>
+                  <span className="font-extrabold text-gray-900">Prepared by: </span>
                   <span className="text-gray-900">_________________________</span>
                 </div>
                 <div>
-                  <span className="font-bold text-gray-900">Date: </span>
+                  <span className="font-extrabold text-gray-900">Date: </span>
                   <span className="text-gray-900">_____________</span>
                 </div>
               </div>
               <div className="text-xs text-gray-700 italic mt-1">Signature of Adviser over Printed Name</div>
             </div>
-            
+
             <div className="border-t border-gray-400 pt-2 mt-2">
               <div className="flex items-center gap-3 text-xs">
-                <span className="font-bold text-gray-900">Remarks:</span>
+                <span className="font-extrabold text-gray-900">Remarks:</span>
                 <label className="flex items-center gap-1">
                   <input type="checkbox" className="w-3 h-3" />
                   <span className="text-gray-900">PROMOTED to Grade ____</span>
@@ -838,7 +838,7 @@ export default function SchoolForms() {
               </div>
               {record.honors && (
                 <div className="mt-1 text-xs">
-                  <span className="font-bold text-gray-900">Award/Recognition: </span>
+                  <span className="font-extrabold text-gray-900">Award/Recognition: </span>
                   <span className="text-amber-700 font-semibold">{record.honors}</span>
                 </div>
               )}
@@ -860,9 +860,9 @@ export default function SchoolForms() {
 
       {/* Footer Certification */}
       <div className="mt-4 pt-3 border-t-2 border-gray-600 text-xs">
-        <p className="text-center text-gray-900 font-bold mb-2">CERTIFICATION</p>
+        <p className="text-center text-gray-900 font-extrabold mb-2">CERTIFICATION</p>
         <p className="text-gray-700 italic text-center leading-relaxed">
-          I CERTIFY that this is a true record of {data.student.name.split(',')[1]?.trim().split(' ')[0] || ''} {data.student.name.split(',')[0] || ''} 
+          I CERTIFY that this is a true record of {data.student.name.split(',')[1]?.trim().split(' ')[0] || ''} {data.student.name.split(',')[0] || ''}
           {' '}with LRN {data.student.lrn} and that he/she is eligible for admission to Grade ______.
         </p>
         <div className="grid grid-cols-2 gap-8 mt-4">
@@ -897,10 +897,10 @@ export default function SchoolForms() {
             { label: "School Forms" },
           ]}
         />
-        
+
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-extrabold text-gray-900">
             DepEd School Forms
           </h1>
           <p className="text-gray-600 mt-1">
@@ -931,7 +931,7 @@ export default function SchoolForms() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <div className="flex items-center gap-1 mb-2">
-                  <label className="block text-sm font-medium text-gray-700">School Year</label>
+                  <label className="block text-sm  text-gray-700">School Year</label>
                   <HelpTooltip content="Select the school year for which to generate forms" />
                 </div>
                 <Select value={schoolYear} onValueChange={(v: string | null) => v && setSchoolYear(v)}>
@@ -946,7 +946,7 @@ export default function SchoolForms() {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Grade Filter</label>
+                <label className="block text-sm  text-gray-700 mb-2">Grade Filter</label>
                 <Select value={selectedGrade} onValueChange={(v: string | null) => {
                   if (v) {
                     setSelectedGrade(v);
@@ -971,7 +971,7 @@ export default function SchoolForms() {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Section Filter</label>
+                <label className="block text-sm  text-gray-700 mb-2">Section Filter</label>
                 <Select value={selectedSection} onValueChange={(v: string | null) => {
                   if (v) {
                     setSelectedSection(v);
@@ -1005,8 +1005,8 @@ export default function SchoolForms() {
             const isDev = form.status === "dev";
 
             return (
-              <Card 
-                key={form.id} 
+              <Card
+                key={form.id}
                 className={`group border-0 shadow-lg shadow-gray-200/50 transition-all duration-300 bg-white overflow-hidden rounded-2xl p-0 ${isDev ? 'opacity-75 grayscale-[0.3]' : 'hover:shadow-xl'}`}
               >
                 <CardHeader className="border-b border-gray-100 px-6 py-4" style={{ backgroundColor: isDev ? '#f8fafc' : `${themeColors.primary}08` }}>
@@ -1016,7 +1016,7 @@ export default function SchoolForms() {
                     </div>
                     <div className="flex flex-col flex-1">
                       <div className="flex items-center justify-between">
-                        <Badge className="font-bold text-sm border border-transparent" style={{ backgroundColor: isDev ? '#f1f5f9' : `${themeColors.primary}15`, color: isDev ? '#64748b' : themeColors.primary }}>
+                        <Badge className="font-extrabold text-sm border border-transparent" style={{ backgroundColor: isDev ? '#f1f5f9' : `${themeColors.primary}15`, color: isDev ? '#64748b' : themeColors.primary }}>
                           {form.id}
                         </Badge>
                         {isDev && (
@@ -1025,7 +1025,7 @@ export default function SchoolForms() {
                           </Badge>
                         )}
                       </div>
-                      <CardTitle className={`text-base font-bold mt-1 ${isDev ? 'text-slate-700' : 'text-gray-900'}`}>
+                      <CardTitle className={`text-base font-extrabold mt-1 ${isDev ? 'text-slate-700' : 'text-gray-900'}`}>
                         {form.name}
                       </CardTitle>
                     </div>
@@ -1035,7 +1035,7 @@ export default function SchoolForms() {
                   <p className={`text-sm mb-6 flex-1 ${isDev ? 'text-slate-500' : 'text-gray-600'}`}>
                     {form.description}
                   </p>
-                  
+
                   <div className="flex mt-auto">
                     {(form.id === "SF9" || form.id === "SF10") && !isDev ? (
                       <Button
@@ -1189,54 +1189,55 @@ export default function SchoolForms() {
                   {filteredStudents.map((student) => {
                     const isSelected = selectedStudentIds.includes(student.id);
                     return (
-                    <TableRow
-                      key={student.id}
-                      className={`transition-colors cursor-pointer ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-gray-50'}`}
-                      onClick={() => handleToggleStudent(student.id)}
-                    >
-                      <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-primary"
-                          checked={isSelected}
-                          onChange={() => handleToggleStudent(student.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-gray-600">{student.lrn}</TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
-                          {student.lastName}, {student.firstName} {student.middleName || ""} {student.suffix || ""}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${(student.gender ?? "").toLowerCase() === "male" ? "border-blue-200 text-blue-600 bg-blue-50" : "border-pink-200 text-pink-600 bg-pink-50"}`}
-                        >
-                          {student.gender}
-                        </Badge>
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-gray-100">
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={() => handleViewSF9(student.id)} className="gap-2">
-                              <FileText className="w-4 h-4 text-blue-500" />
-                              <span>View SF9</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewSF10(student.id)} className="gap-2">
-                              <FolderOpen className="w-4 h-4 text-green-500" />
-                              <span>View SF10</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )})}
+                      <TableRow
+                        key={student.id}
+                        className={`transition-colors cursor-pointer ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-gray-50'}`}
+                        onClick={() => handleToggleStudent(student.id)}
+                      >
+                        <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-primary"
+                            checked={isSelected}
+                            onChange={() => handleToggleStudent(student.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-sm text-gray-600">{student.lrn}</TableCell>
+                        <TableCell>
+                          <span className={` ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
+                            {student.lastName}, {student.firstName} {student.middleName || ""} {student.suffix || ""}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${(student.gender ?? "").toLowerCase() === "male" ? "border-blue-200 text-blue-600 bg-blue-50" : "border-pink-200 text-pink-600 bg-pink-50"}`}
+                          >
+                            {student.gender}
+                          </Badge>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-gray-100">
+                                <MoreVertical className="w-4 h-4 text-gray-400" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem onClick={() => handleViewSF9(student.id)} className="gap-2">
+                                <FileText className="w-4 h-4 text-blue-500" />
+                                <span>View SF9</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewSF10(student.id)} className="gap-2">
+                                <FolderOpen className="w-4 h-4 text-green-500" />
+                                <span>View SF10</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1263,14 +1264,14 @@ export default function SchoolForms() {
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${themeColors.primary}15` }}>
                 <BookOpen className="w-10 h-10" style={{ color: themeColors.primary }} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">SF8 - School Health and Nutrition Form</h2>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">SF8 - School Health and Nutrition Form</h2>
               <p className="text-gray-600 mb-6">
                 This form is currently not available. The SF8 health and nutrition records will be implemented in a future update.
               </p>
               <div className="rounded-xl p-4 text-sm text-left max-w-md mx-auto border" style={{ backgroundColor: `${themeColors.primary}10`, borderColor: `${themeColors.primary}30` }}>
-                <p className="font-medium mb-2" style={{ color: themeColors.primary }}>What is SF8?</p>
+                <p className=" mb-2" style={{ color: themeColors.primary }}>What is SF8?</p>
                 <p style={{ color: `${themeColors.primary}bb` }}>
-                  SF8 (School Form 8) is the School Health and Nutrition Form that records student health information, 
+                  SF8 (School Form 8) is the School Health and Nutrition Form that records student health information,
                   immunizations, medical history, nutritional status, and health-related interventions.
                 </p>
               </div>
@@ -1356,8 +1357,8 @@ export default function SchoolForms() {
             </div>
             <div className="flex-1 text-center">
               <p className="text-xs text-gray-700 mb-1">SF 9 - JHS</p>
-              <h2 className="font-bold text-base text-gray-900">Republic of the Philippines</h2>
-              <h3 className="font-bold text-sm text-gray-900">Department of Education</h3>
+              <h2 className="font-extrabold text-base text-gray-900">Republic of the Philippines</h2>
+              <h3 className="font-extrabold text-sm text-gray-900">Department of Education</h3>
               <p className="text-sm text-gray-800 mt-1">{schoolRegion || "Region _____________"}</p>
               <p className="text-sm text-gray-800">{schoolDivision ? `Division of ${schoolDivision}` : "Division of _____________"}</p>
               <p className="text-sm text-gray-800 mt-1">District: _____________</p>
@@ -1374,59 +1375,59 @@ export default function SchoolForms() {
 
           {/* Title */}
           <div className="text-center mb-6">
-            <h1 className="text-xl font-bold text-gray-900 uppercase">Learner's Progress Report Card</h1>
+            <h1 className="text-xl font-extrabold text-gray-900 uppercase">Learner's Progress Report Card</h1>
           </div>
 
           {/* Student Information */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6 text-sm">
             <div>
-              <span className="font-bold text-gray-900">Name: </span>
+              <span className="font-extrabold text-gray-900">Name: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[200px]">{sf9Data.student.name}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-900">LRN: </span>
+              <span className="font-extrabold text-gray-900">LRN: </span>
               <span className="border-b border-gray-400 text-gray-900 font-mono inline-block min-w-[150px]">{sf9Data.student.lrn}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-900">Age: </span>
+              <span className="font-extrabold text-gray-900">Age: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{sf9Data.student.age || "____"}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-900">Sex: </span>
+              <span className="font-extrabold text-gray-900">Sex: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{sf9Data.student.gender || "____"}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-900">Grade: </span>
+              <span className="font-extrabold text-gray-900">Grade: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[80px]">{formatGradeLevel(sf9Data.student.gradeLevel)}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-900">Section: </span>
+              <span className="font-extrabold text-gray-900">Section: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[120px]">{sf9Data.student.section}</span>
             </div>
             <div className="col-span-2">
-              <span className="font-bold text-gray-900">School Year: </span>
+              <span className="font-extrabold text-gray-900">School Year: </span>
               <span className="border-b border-gray-400 text-gray-900 inline-block min-w-[120px]">{sf9Data.student.schoolYear}</span>
             </div>
           </div>
 
           {/* Dear Parent Message */}
           <div className="bg-gray-100 p-4 rounded mb-6 text-sm border border-gray-400">
-            <p className="font-bold text-gray-900 mb-2">Dear Parent,</p>
+            <p className="font-extrabold text-gray-900 mb-2">Dear Parent,</p>
             <p className="text-gray-800 text-justify leading-relaxed">
-              This report card shows the ability and progress your child has made in different learning areas as well as his/her core values. 
+              This report card shows the ability and progress your child has made in different learning areas as well as his/her core values.
               The school welcomes you should you desire to know more about your child's progress.
             </p>
           </div>
 
           {/* Report on Learning Progress and Achievement */}
           <div className="mb-6">
-            <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNING PROGRESS AND ACHIEVEMENT</h3>
+            <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNING PROGRESS AND ACHIEVEMENT</h3>
             <table className="w-full border-2 border-gray-600 text-sm">
               <thead>
                 <tr className="border-b-2 border-gray-600 bg-gray-100">
                   <th rowSpan={2} className="border-r border-gray-600 p-2 text-left text-gray-900 w-44">Learning Areas</th>
                   <th colSpan={3} className="border-r border-gray-600 p-2 text-gray-900">Term</th>
-                  <th rowSpan={2} className="border-r border-gray-600 p-2 text-gray-900 w-16">Final<br/>Rating</th>
+                  <th rowSpan={2} className="border-r border-gray-600 p-2 text-gray-900 w-16">Final<br />Rating</th>
                   <th rowSpan={2} className="p-2 text-gray-900 w-20">Remarks</th>
                 </tr>
                 <tr className="border-b-2 border-gray-600 bg-gray-100">
@@ -1438,7 +1439,7 @@ export default function SchoolForms() {
               <tbody>
                 {sf9Data.subjectGrades.map((sg: any, index: number) => (
                   <tr key={index} className="border-b border-gray-600">
-                    <td className="border-r border-gray-600 p-2 font-medium text-gray-900">{sg.subjectName}</td>
+                    <td className="border-r border-gray-600 p-2  text-gray-900">{sg.subjectName}</td>
                     <td className={`border-r border-gray-600 p-2 text-center font-semibold ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
                       {sg.T1 ?? ''}
                     </td>
@@ -1448,7 +1449,7 @@ export default function SchoolForms() {
                     <td className={`border-r border-gray-600 p-2 text-center font-semibold ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
                       {sg.T3 ?? ''}
                     </td>
-                    <td className={`border-r border-gray-600 p-2 text-center font-bold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
+                    <td className={`border-r border-gray-600 p-2 text-center font-extrabold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
                       {sg.final ?? ''}
                     </td>
                     <td className="p-2 text-center text-sm text-gray-900">
@@ -1456,7 +1457,7 @@ export default function SchoolForms() {
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-gray-200 font-bold border-t-2 border-gray-600">
+                <tr className="bg-gray-200 font-extrabold border-t-2 border-gray-600">
                   <td colSpan={4} className="border-r border-gray-600 p-2 text-right text-gray-900">General Average</td>
                   <td className="border-r border-gray-600 p-2 text-center text-lg text-gray-900">
                     {sf9Data.generalAverage?.toFixed(2) ?? ''}
@@ -1491,7 +1492,7 @@ export default function SchoolForms() {
 
           {/* Page break: Core Values goes on back side (page 2) */}
           <div className="mb-6 sf9-page-break">
-            <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNER'S OBSERVED VALUES</h3>
+            <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">REPORT ON LEARNER'S OBSERVED VALUES</h3>
             <table className="w-full border-2 border-gray-600 text-xs">
               <thead>
                 <tr className="border-b-2 border-gray-600 bg-gray-100">
@@ -1513,7 +1514,7 @@ export default function SchoolForms() {
                   <React.Fragment key={i}>
                     {cv.behaviors.map((b, j) => (
                       <tr key={`${i}-${j}`} className="border-b border-gray-600">
-                        {j === 0 && <td rowSpan={cv.behaviors.length} className="border-r border-gray-600 p-2 font-bold text-gray-900 align-top">{cv.value}</td>}
+                        {j === 0 && <td rowSpan={cv.behaviors.length} className="border-r border-gray-600 p-2 font-extrabold text-gray-900 align-top">{cv.value}</td>}
                         <td className="border-r border-gray-600 p-2 text-gray-800">{b}</td>
                         <td className="border-r border-gray-600 p-2"></td>
                         <td className="border-r border-gray-600 p-2"></td>
@@ -1532,7 +1533,7 @@ export default function SchoolForms() {
 
           {/* Attendance Record */}
           <div className="mb-6">
-            <h3 className="font-bold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">ATTENDANCE RECORD</h3>
+            <h3 className="font-extrabold text-sm mb-2 bg-gray-200 p-2 text-gray-900 border border-gray-400">ATTENDANCE RECORD</h3>
             <table className="w-full border-2 border-gray-600 text-xs">
               <thead>
                 <tr className="border-b border-gray-600 bg-gray-100">
@@ -1545,7 +1546,7 @@ export default function SchoolForms() {
               <tbody>
                 {['School Days', 'Days Present', 'Days Absent'].map(row => (
                   <tr key={row} className="border-b border-gray-600">
-                    <td className="border-r border-gray-600 p-1.5 font-medium text-gray-900">{row}</td>
+                    <td className="border-r border-gray-600 p-1.5  text-gray-900">{row}</td>
                     {Array(12).fill('').map((_, i) => (
                       <td key={i} className="border-r border-gray-600 p-1.5 text-center"></td>
                     ))}
@@ -1557,7 +1558,7 @@ export default function SchoolForms() {
 
           {/* Parent/Guardian Signature */}
           <div className="mb-6 border-2 border-gray-600 p-4">
-            <h3 className="font-bold text-sm mb-3 text-gray-900">PARENT / GUARDIAN'S SIGNATURE</h3>
+            <h3 className="font-extrabold text-sm mb-3 text-gray-900">PARENT / GUARDIAN'S SIGNATURE</h3>
             <div className="grid grid-cols-4 gap-4 text-xs">
               {['Term 1', 'Term 2', 'Term 3'].map(q => (
                 <div key={q}>
@@ -1571,14 +1572,14 @@ export default function SchoolForms() {
           {/* Footer Signatures */}
           <div className="grid grid-cols-2 gap-8 mt-8 pt-4 border-t-2 border-gray-400">
             <div className="text-center">
-              <div className="border-b border-gray-600 mx-8 mb-1 min-h-[2rem] flex items-end justify-center font-bold text-gray-900">
+              <div className="border-b border-gray-600 mx-8 mb-1 min-h-[2rem] flex items-end justify-center font-extrabold text-gray-900">
                 {sf9Data.student.adviser || ""}
               </div>
-              <p className="text-sm text-gray-900 font-medium">Class Adviser</p>
+              <p className="text-sm text-gray-900 ">Class Adviser</p>
             </div>
             <div className="text-center">
               <div className="border-b border-gray-600 mx-8 mb-1 h-8"></div>
-              <p className="text-sm text-gray-900 font-medium">School Principal</p>
+              <p className="text-sm text-gray-900 ">School Principal</p>
             </div>
           </div>
         </div>
@@ -1614,8 +1615,8 @@ export default function SchoolForms() {
               <img src="/DepEd.png" alt="DepEd Logo" className="w-16 h-16 object-contain" />
             </div>
             <div className="flex-1 text-center">
-              <h2 className="font-bold text-base text-gray-900">Republic of the Philippines</h2>
-              <h3 className="font-bold text-sm text-gray-900">Department of Education</h3>
+              <h2 className="font-extrabold text-base text-gray-900">Republic of the Philippines</h2>
+              <h3 className="font-extrabold text-sm text-gray-900">Department of Education</h3>
               {schoolRegion && <p className="text-sm text-gray-800 mt-1">{schoolRegion}</p>}
               {schoolDivision && <p className="text-sm text-gray-800">Division of {schoolDivision}</p>}
               {schoolName && <p className="text-sm text-gray-800">{schoolName}</p>}
@@ -1631,41 +1632,41 @@ export default function SchoolForms() {
 
           {/* Title */}
           <div className="text-center mb-4">
-            <h1 className="text-lg font-bold text-gray-900 uppercase">Learner's Permanent Academic Record for Junior High School</h1>
+            <h1 className="text-lg font-extrabold text-gray-900 uppercase">Learner's Permanent Academic Record for Junior High School</h1>
             <p className="text-xs text-gray-700 mt-1">(Formerly Form 137)</p>
           </div>
 
           {/* Student's Personal Information */}
           <div className="mb-4 border-2 border-gray-600">
             <div className="bg-gray-200 p-1.5 border-b-2 border-gray-600">
-              <h3 className="font-bold text-xs text-gray-900">LEARNER'S INFORMATION</h3>
+              <h3 className="font-extrabold text-xs text-gray-900">LEARNER'S INFORMATION</h3>
             </div>
             <div className="p-3 text-xs">
               <div className="grid grid-cols-5 gap-3 mb-2">
                 <div className="col-span-2">
-                  <label className="font-bold text-gray-900">LAST NAME:</label>
+                  <label className="font-extrabold text-gray-900">LAST NAME:</label>
                   <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{sf10Data.student.name.split(',')[0]?.trim() || ''}</div>
                 </div>
                 <div className="col-span-2">
-                  <label className="font-bold text-gray-900">FIRST NAME:</label>
+                  <label className="font-extrabold text-gray-900">FIRST NAME:</label>
                   <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{sf10Data.student.name.split(',')[1]?.trim().split(' ')[0] || ''}</div>
                 </div>
                 <div>
-                  <label className="font-bold text-gray-900">MIDDLE NAME:</label>
+                  <label className="font-extrabold text-gray-900">MIDDLE NAME:</label>
                   <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{sf10Data.student.name.split(',')[1]?.trim().split(' ').slice(1).join(' ') || ''}</div>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-gray-900">LRN:</label>
+                  <label className="font-extrabold text-gray-900">LRN:</label>
                   <div className="border-b border-gray-600 mt-1 font-mono text-gray-900 pb-1">{sf10Data.student.lrn}</div>
                 </div>
                 <div>
-                  <label className="font-bold text-gray-900">BIRTHDATE:</label>
+                  <label className="font-extrabold text-gray-900">BIRTHDATE:</label>
                   <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{sf10Data.student.birthDate || ''}</div>
                 </div>
                 <div>
-                  <label className="font-bold text-gray-900">SEX:</label>
+                  <label className="font-extrabold text-gray-900">SEX:</label>
                   <div className="border-b border-gray-600 mt-1 text-gray-900 pb-1">{sf10Data.student.gender}</div>
                 </div>
               </div>
@@ -1675,7 +1676,7 @@ export default function SchoolForms() {
           {/* Eligibility for JHS Enrolment */}
           <div className="mb-4 border-2 border-gray-600">
             <div className="bg-gray-200 p-1.5 border-b-2 border-gray-600">
-              <h3 className="font-bold text-xs text-gray-900">ELIGIBILITY FOR JHS ENROLMENT</h3>
+              <h3 className="font-extrabold text-xs text-gray-900">ELIGIBILITY FOR JHS ENROLMENT</h3>
             </div>
             <div className="p-2 text-xs grid grid-cols-3 gap-3">
               <div className="text-gray-900">
@@ -1697,13 +1698,13 @@ export default function SchoolForms() {
               <div className="p-2 border-b-2 border-gray-600 bg-gray-100">
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="font-bold text-gray-900">School Year: </span>
+                    <span className="font-extrabold text-gray-900">School Year: </span>
                     <span className="text-gray-900">{record.schoolYear}</span>
-                    <span className="font-bold text-gray-900 ml-4">Grade Level: </span>
+                    <span className="font-extrabold text-gray-900 ml-4">Grade Level: </span>
                     <span className="text-gray-900">{formatGradeLevel(record.gradeLevel)}</span>
                   </div>
                   <div>
-                    <span className="font-bold text-gray-900">Section: </span>
+                    <span className="font-extrabold text-gray-900">Section: </span>
                     <span className="text-gray-900">{record.section}</span>
                   </div>
                 </div>
@@ -1720,10 +1721,10 @@ export default function SchoolForms() {
                       Term Rating
                     </th>
                     <th rowSpan={2} className="border-r border-gray-600 p-1.5 text-center text-gray-900 w-16">
-                      Final<br/>Rating
+                      Final<br />Rating
                     </th>
                     <th rowSpan={2} className="p-1.5 text-center text-gray-900 w-20">
-                      Action<br/>Taken
+                      Action<br />Taken
                     </th>
                   </tr>
                   <tr className="border-b-2 border-gray-600 bg-gray-200">
@@ -1736,16 +1737,16 @@ export default function SchoolForms() {
                   {record.subjectGrades.map((sg: any, idx: number) => (
                     <tr key={idx} className="border-b border-gray-600">
                       <td className="border-r border-gray-600 p-1.5 text-gray-900">{sg.subjectName}</td>
-                      <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
+                      <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T1 ?? 0) < 75 && sg.T1 ? 'text-red-600' : 'text-gray-900'}`}>
                         {sg.T1 ?? ''}
                       </td>
-                      <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T2 ?? 0) < 75 && sg.T2 ? 'text-red-600' : 'text-gray-900'}`}>
+                      <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T2 ?? 0) < 75 && sg.T2 ? 'text-red-600' : 'text-gray-900'}`}>
                         {sg.T2 ?? ''}
                       </td>
-                      <td className={`border-r border-gray-600 p-1.5 text-center font-medium ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
+                      <td className={`border-r border-gray-600 p-1.5 text-center  ${(sg.T3 ?? 0) < 75 && sg.T3 ? 'text-red-600' : 'text-gray-900'}`}>
                         {sg.T3 ?? ''}
                       </td>
-                      <td className={`border-r border-gray-600 p-1.5 text-center font-bold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
+                      <td className={`border-r border-gray-600 p-1.5 text-center font-extrabold ${(sg.final ?? 0) < 75 && sg.final ? 'text-red-600' : 'text-gray-900'}`}>
                         {sg.final ?? ''}
                       </td>
                       <td className="p-1.5 text-center text-xs text-gray-900">{sg.remarks || ''}</td>
@@ -1753,7 +1754,7 @@ export default function SchoolForms() {
                   ))}
 
                   {/* General Average Row */}
-                  <tr className="border-t-2 border-gray-600 bg-gray-200 font-bold">
+                  <tr className="border-t-2 border-gray-600 bg-gray-200 font-extrabold">
                     <td colSpan={5} className="border-r border-gray-600 p-1.5 text-right text-gray-900">General Average:</td>
                     <td className="border-r border-gray-600 p-1.5 text-center text-sm text-gray-900">
                       {record.generalAverage?.toFixed(2) ?? ''}
@@ -1768,20 +1769,20 @@ export default function SchoolForms() {
                 <div className="text-xs mb-2">
                   <div className="flex items-center justify-between mb-1">
                     <div>
-                      <span className="font-bold text-gray-900">Prepared by: </span>
+                      <span className="font-extrabold text-gray-900">Prepared by: </span>
                       <span className="text-gray-900">_________________________</span>
                     </div>
                     <div>
-                      <span className="font-bold text-gray-900">Date: </span>
+                      <span className="font-extrabold text-gray-900">Date: </span>
                       <span className="text-gray-900">_____________</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-700 italic mt-1">Signature of Adviser over Printed Name</div>
                 </div>
-                
+
                 <div className="border-t border-gray-400 pt-2 mt-2">
                   <div className="flex items-center gap-3 text-xs">
-                    <span className="font-bold text-gray-900">Remarks:</span>
+                    <span className="font-extrabold text-gray-900">Remarks:</span>
                     <label className="flex items-center gap-1">
                       <input type="checkbox" className="w-3 h-3" />
                       <span className="text-gray-900">PROMOTED to Grade ____</span>
@@ -1793,7 +1794,7 @@ export default function SchoolForms() {
                   </div>
                   {record.honors && (
                     <div className="mt-1 text-xs">
-                      <span className="font-bold text-gray-900">Award/Recognition: </span>
+                      <span className="font-extrabold text-gray-900">Award/Recognition: </span>
                       <span className="text-amber-700 font-semibold">{record.honors}</span>
                     </div>
                   )}
@@ -1815,9 +1816,9 @@ export default function SchoolForms() {
 
           {/* Footer Certification */}
           <div className="mt-4 pt-3 border-t-2 border-gray-600 text-xs">
-            <p className="text-center text-gray-900 font-bold mb-2">CERTIFICATION</p>
+            <p className="text-center text-gray-900 font-extrabold mb-2">CERTIFICATION</p>
             <p className="text-gray-700 italic text-center leading-relaxed">
-              I CERTIFY that this is a true record of {sf10Data.student.name.split(',')[1]?.trim().split(' ')[0] || ''} {sf10Data.student.name.split(',')[0] || ''} 
+              I CERTIFY that this is a true record of {sf10Data.student.name.split(',')[1]?.trim().split(' ')[0] || ''} {sf10Data.student.name.split(',')[0] || ''}
               {' '}with LRN {sf10Data.student.lrn} and that he/she is eligible for admission to Grade ______.
             </p>
             <div className="grid grid-cols-2 gap-8 mt-4">

@@ -197,37 +197,37 @@ export default function TeacherDashboard() {
 
   // Prepare chart data with more vibrant colors
   const chartData = masteryData ? [
-    { 
-      name: "Outstanding", 
-      range: "90-100", 
+    {
+      name: "Outstanding",
+      range: "90-100",
       students: masteryData.distribution.outstanding,
       fill: "#10b981", // Emerald 500
       secondary: "#059669" // Emerald 600
     },
-    { 
-      name: "Very Satisfactory", 
-      range: "85-89", 
+    {
+      name: "Very Satisfactory",
+      range: "85-89",
       students: masteryData.distribution.verySatisfactory,
       fill: "#3b82f6", // Blue 500
       secondary: "#2563eb" // Blue 600
     },
-    { 
-      name: "Satisfactory", 
-      range: "80-84", 
+    {
+      name: "Satisfactory",
+      range: "80-84",
       students: masteryData.distribution.satisfactory,
       fill: "#f59e0b", // Amber 500
       secondary: "#d97706" // Amber 600
     },
-    { 
-      name: "Fairly Satisfactory", 
-      range: "75-79", 
+    {
+      name: "Fairly Satisfactory",
+      range: "75-79",
       students: masteryData.distribution.fairlySatisfactory,
       fill: "#f97316", // Orange 500
       secondary: "#ea580c" // Orange 600
     },
-    { 
-      name: "Did Not Meet", 
-      range: "<75", 
+    {
+      name: "Did Not Meet",
+      range: "<75",
       students: masteryData.distribution.didNotMeet,
       fill: "#ef4444", // Red 500
       secondary: "#dc2626" // Red 600
@@ -245,7 +245,7 @@ export default function TeacherDashboard() {
               <Sparkles className="w-8 h-8 text-indigo-500 animate-pulse" />
             </div>
           </div>
-          <p className="text-slate-500 font-medium text-lg animate-pulse">Igniting your dashboard...</p>
+          <p className="text-slate-500  text-lg animate-pulse">Igniting your dashboard...</p>
         </div>
       </div>
     );
@@ -260,10 +260,10 @@ export default function TeacherDashboard() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
               <AlertTriangle className="w-10 h-10" />
             </div>
-            <h3 className="font-bold text-slate-900 text-2xl mb-2">Oops! Something's wrong</h3>
+            <h3 className="font-extrabold text-slate-900 text-2xl mb-2">Oops! Something's wrong</h3>
             <p className="text-slate-500 mb-8">{error || "We couldn't load your dashboard data right now."}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
+            <Button
+              onClick={() => window.location.reload()}
               className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg transition-all"
             >
               Try to Refresh
@@ -285,46 +285,46 @@ export default function TeacherDashboard() {
       <div className="relative overflow-hidden rounded-[2.5rem] bg-white border border-slate-200 p-8 md:p-12 shadow-xl shadow-slate-200/50">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 -skew-x-12 translate-x-1/2" />
         <div className="absolute top-0 right-1/4 w-px h-full bg-slate-100" />
-        
+
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-6">
-              <Badge variant="secondary" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
+              <Badge variant="secondary" className="px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest border"
                 style={{ backgroundColor: `${colors.primary}15`, color: colors.primary, borderColor: `${colors.primary}30` }}>
                 <Target className="w-3 h-3 mr-2" />
-                {data.currentTerm === 'T1' ? 'Term 1' : 
-                 data.currentTerm === 'T2' ? 'Term 2' : 
-                 data.currentTerm === 'T3' ? 'Term 3' : 
-                 'Teacher Portal v2.0'}
+                {data.currentTerm === 'T1' ? 'Term 1' :
+                  data.currentTerm === 'T2' ? 'Term 2' :
+                    data.currentTerm === 'T3' ? 'Term 3' :
+                      'Teacher Portal v2.0'}
               </Badge>
               <div className="h-4 w-px bg-slate-200" />
-              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">
                 <Calendar className="w-3 h-3" />
                 S.Y. {data.classAssignments[0]?.schoolYear || "2026-2027"}
               </div>
             </div>
-            
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
+
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
               Good day, <br />
-              <span className="font-black" style={{ color: colors.primary }}>
+              <span className="font-extrabold" style={{ color: colors.primary }}>
                 Teacher {data.teacher.name.split(',')[0]}
               </span>
             </h1>
-            
-            <p className="text-slate-500 text-lg mt-6 max-w-lg leading-relaxed font-medium">
-              You're currently managing <span className="text-slate-900 font-bold underline decoration-indigo-200 decoration-4 underline-offset-4">{data.stats.totalStudents} students</span> across <span className="text-slate-900 font-bold underline decoration-emerald-200 decoration-4 underline-offset-4">{data.stats.totalClasses} classes</span>.
+
+            <p className="text-slate-500 text-lg mt-6 max-w-lg leading-relaxed ">
+              You're currently managing <span className="text-slate-900 font-extrabold underline decoration-indigo-200 decoration-4 underline-offset-4">{data.stats.totalStudents} students</span> across <span className="text-slate-900 font-extrabold underline decoration-emerald-200 decoration-4 underline-offset-4">{data.stats.totalClasses} classes</span>.
             </p>
-            
+
             <div className="flex flex-wrap items-center gap-4 mt-10">
               <Link to="/teacher/advisory">
-                <Button className="h-14 px-8 rounded-2xl text-white shadow-xl border-0 transition-all active:scale-95 group font-bold"
+                <Button className="h-14 px-8 rounded-2xl text-white shadow-xl border-0 transition-all active:scale-95 group font-extrabold"
                   style={{ backgroundColor: colors.primary, boxShadow: `0 20px 25px -5px ${colors.primary}40` }}>
                   <Users className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
                   My Advisory
                 </Button>
               </Link>
               <Link to="/teacher/classes">
-                <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95 font-bold">
+                <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95 font-extrabold">
                   <BookOpen className="w-5 h-5 mr-3" />
                   Class Records
                 </Button>
@@ -335,8 +335,8 @@ export default function TeacherDashboard() {
           <div className="hidden lg:flex flex-col gap-4 min-w-[300px]">
             <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Overall Passing</p>
-                <p className="text-4xl font-black text-slate-900">{stats?.summary.overallPassingRate.toFixed(0)}%</p>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Overall Passing</p>
+                <p className="text-4xl font-extrabold text-slate-900">{stats?.summary.overallPassingRate.toFixed(0)}%</p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
                 <TrendingUp className="w-7 h-7 text-emerald-500" />
@@ -344,8 +344,8 @@ export default function TeacherDashboard() {
             </div>
             <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade Submission</p>
-                <p className="text-4xl font-black text-slate-900">{stats?.summary.gradeSubmissionRate.toFixed(0)}%</p>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Grade Submission</p>
+                <p className="text-4xl font-extrabold text-slate-900">{stats?.summary.gradeSubmissionRate.toFixed(0)}%</p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
                 <FileCheck className="w-7 h-7 text-indigo-500" />
@@ -358,31 +358,31 @@ export default function TeacherDashboard() {
       {/* Stats Cards - Refined Professional Look */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { 
-            label: "Active Students", 
-            value: data.stats.totalStudents, 
-            icon: Users, 
+          {
+            label: "Active Students",
+            value: data.stats.totalStudents,
+            icon: Users,
             bg: "bg-indigo-50", fg: "text-indigo-600",
             desc: "Currently enrolled"
           },
-          { 
-            label: "Handled Classes", 
-            value: data.stats.totalClasses, 
-            icon: BookOpen, 
+          {
+            label: "Handled Classes",
+            value: data.stats.totalClasses,
+            icon: BookOpen,
             bg: "bg-emerald-50", fg: "text-emerald-600",
             desc: "Teaching assignments"
           },
-          { 
-            label: "Critical Cases", 
-            value: stats?.summary.studentsAtRiskCount || 0, 
-            icon: AlertTriangle, 
+          {
+            label: "Critical Cases",
+            value: stats?.summary.studentsAtRiskCount || 0,
+            icon: AlertTriangle,
             bg: "bg-rose-50", fg: "text-rose-600",
             desc: "Requires immediate attention"
           },
-          { 
-            label: "Graded Items", 
-            value: stats?.summary.totalGraded || 0, 
-            icon: FileCheck, 
+          {
+            label: "Graded Items",
+            value: stats?.summary.totalGraded || 0,
+            icon: FileCheck,
             bg: "bg-amber-50", fg: "text-amber-600",
             desc: "Successful submissions"
           },
@@ -394,11 +394,11 @@ export default function TeacherDashboard() {
                   <stat.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                  <p className="text-2xl font-black text-slate-900 mt-0.5">{stat.value}</p>
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                  <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{stat.value}</p>
                 </div>
               </div>
-              <p className="text-[10px] font-medium text-slate-400 pl-1">{stat.desc}</p>
+              <p className="text-[10px]  text-slate-400 pl-1">{stat.desc}</p>
             </CardContent>
           </Card>
         ))}
@@ -408,11 +408,11 @@ export default function TeacherDashboard() {
         <Card className="border-0 shadow-2xl shadow-rose-100/40 rounded-[2.5rem] overflow-hidden bg-rose-50/70 border border-rose-100">
           <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-600">Atlas removal detected</p>
-              <h3 className="text-lg font-black text-slate-900 mt-1">{data.archivedClassesCount || stats?.archivedClassesCount || 0} subject assignment(s) were removed from the current Atlas load</h3>
-              <p className="text-sm text-slate-600 font-medium mt-1">SMART keeps the grade history, but these assignments are hidden from active dashboard counts. Contact the EnrollPro/Atlas admin if this was not intended.</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-rose-600">Atlas removal detected</p>
+              <h3 className="text-lg font-extrabold text-slate-900 mt-1">{data.archivedClassesCount || stats?.archivedClassesCount || 0} subject assignment(s) were removed from the current Atlas load</h3>
+              <p className="text-sm text-slate-600  mt-1">SMART keeps the grade history, but these assignments are hidden from active dashboard counts. Contact the EnrollPro/Atlas admin if this was not intended.</p>
             </div>
-            <Badge className="bg-rose-600 text-white font-black px-4 py-2 rounded-xl border-0 shadow-lg shadow-rose-300/50 text-sm self-start md:self-center">
+            <Badge className="bg-rose-600 text-white font-extrabold px-4 py-2 rounded-xl border-0 shadow-lg shadow-rose-300/50 text-sm self-start md:self-center">
               CONTACT ADMIN
             </Badge>
           </CardContent>
@@ -421,94 +421,94 @@ export default function TeacherDashboard() {
 
       {/* ── Performance Mastery ── Full Width */}
       <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden flex flex-col bg-white">
-          <CardHeader className="p-8 pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-slate-900 text-white">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900">Performance Mastery</h2>
-                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Distribution of student ratings</p>
-                </div>
+        <CardHeader className="p-8 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-slate-900 text-white">
+                <BarChart3 className="w-5 h-5" />
               </div>
-              
-              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                <Select value={selectedGradeLevel} onValueChange={(val) => {
-                  if (val) setSelectedGradeLevel(val);
-                  setSelectedSection("all");
-                }}>
-                  <SelectTrigger className="h-9 w-[110px] bg-white border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
-                    <SelectValue placeholder="Grade" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                    <SelectItem value="all" className="text-xs font-bold uppercase">All Grades</SelectItem>
-                    {masteryData?.filters.gradeLevels.map(gl => (
-                      <SelectItem key={gl} value={gl} className="text-xs font-bold uppercase">{gradeLevelLabels[gl] || gl}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedSection} onValueChange={(val) => val && setSelectedSection(val)}>
-                  <SelectTrigger className="h-9 w-[130px] bg-white border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
-                    <SelectValue placeholder="Section" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                    <SelectItem value="all" className="text-xs font-bold uppercase">All Sections</SelectItem>
-                    {filteredSections.map(s => (
-                      <SelectItem key={s.id} value={s.id} className="text-xs font-bold uppercase">{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900">Performance Mastery</h2>
+                <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mt-1">Distribution of student ratings</p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-8 pt-0 flex-1">
-            <div className="h-[320px] w-full mt-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    {chartData.map((entry, index) => (
-                      <linearGradient key={`gradient-${index}`} id={`barGradient-${index}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={entry.fill} stopOpacity={1} />
-                        <stop offset="100%" stopColor={entry.secondary} stopOpacity={0.8} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                    dy={10}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    cursor={{ fill: '#f8fafc', radius: 12 }}
-                    contentStyle={{ 
-                      border: 'none', 
-                      borderRadius: '20px', 
-                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                      padding: '16px',
-                      backgroundColor: '#fff'
-                    }}
-                    itemStyle={{ fontWeight: 900, fontSize: '14px' }}
-                  />
-                  <Bar dataKey="students" radius={[12, 12, 0, 0]} maxBarSize={60}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`url(#barGradient-${index})`} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+
+            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              <Select value={selectedGradeLevel} onValueChange={(val) => {
+                if (val) setSelectedGradeLevel(val);
+                setSelectedSection("all");
+              }}>
+                <SelectTrigger className="h-9 w-[110px] bg-white border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
+                  <SelectValue placeholder="Grade" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                  <SelectItem value="all" className="text-xs font-extrabold uppercase">All Grades</SelectItem>
+                  {masteryData?.filters.gradeLevels.map(gl => (
+                    <SelectItem key={gl} value={gl} className="text-xs font-extrabold uppercase">{gradeLevelLabels[gl] || gl}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedSection} onValueChange={(val) => val && setSelectedSection(val)}>
+                <SelectTrigger className="h-9 w-[130px] bg-white border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                  <SelectItem value="all" className="text-xs font-extrabold uppercase">All Sections</SelectItem>
+                  {filteredSections.map(s => (
+                    <SelectItem key={s.id} value={s.id} className="text-xs font-extrabold uppercase">{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardHeader>
+        <CardContent className="p-8 pt-0 flex-1">
+          <div className="h-[320px] w-full mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  {chartData.map((entry, index) => (
+                    <linearGradient key={`gradient-${index}`} id={`barGradient-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={entry.fill} stopOpacity={1} />
+                      <stop offset="100%" stopColor={entry.secondary} stopOpacity={0.8} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  dy={10}
+                />
+                <YAxis
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc', radius: 12 }}
+                  contentStyle={{
+                    border: 'none',
+                    borderRadius: '20px',
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                    padding: '16px',
+                    backgroundColor: '#fff'
+                  }}
+                  itemStyle={{ fontWeight: 900, fontSize: '14px' }}
+                />
+                <Bar dataKey="students" radius={[12, 12, 0, 0]} maxBarSize={60}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`url(#barGradient-${index})`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── Grading Status ── Full Width Big Card */}
       <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
@@ -518,157 +518,157 @@ export default function TeacherDashboard() {
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900">Grading Status</h2>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Submission progress per class</p>
+              <h2 className="text-xl font-extrabold text-slate-900">Grading Status</h2>
+              <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mt-1">Submission progress per class</p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-8 pt-0">
-            {stats?.classStats && stats.classStats.length > 0 ? (
-              <ScrollArea className="h-[520px] pr-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-                  {stats.classStats.map((classStat, idx) => {
-                    const percentage = classStat.totalStudents > 0
-                      ? Math.round((classStat.gradedCount / classStat.totalStudents) * 100)
-                      : 0;
-                    const barColorList = [colors.primary, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-                    const barColor = barColorList[idx % barColorList.length];
-                    return (
-                      <div key={classStat.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <p className="text-sm font-black text-slate-900 leading-tight">{classStat.sectionName}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{classStat.subjectName}</p>
-                          </div>
-                          <span className="text-xl font-black" style={{ color: barColor }}>{percentage}%</span>
-                        </div>
-                        <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className="h-full rounded-full transition-all duration-1000 ease-out"
-                            style={{ width: `${percentage}%`, backgroundColor: barColor }}
-                          />
-                        </div>
-                        <div className="flex justify-between mt-3">
-                          <p className="text-[9px] font-bold text-slate-400">{classStat.gradedCount} graded</p>
-                          <p className="text-[9px] font-bold text-slate-400">{classStat.totalStudents} total</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            ) : (
-              <div className="py-16 text-center text-slate-300">
-                <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="font-black text-sm uppercase tracking-widest">No class records found</p>
-              </div>
-            )}
-            <div className="mt-8">
-              <Link to="/teacher/classes">
-                <Button className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 transition-all font-black text-[10px] tracking-[0.2em] uppercase">
-                  VIEW DETAILED REPORTS
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-      {/* ── Academic Honors ── Full Width */}
-        <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
-          <CardHeader className="p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                <Medal className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-slate-900">Academic Honors</h2>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Leading advisory achievements</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {advisoryHonors?.hasAdvisory && (
-                <Badge variant="secondary" className="bg-slate-50 text-slate-400 border-slate-100 font-black px-4 py-2 rounded-xl text-[10px] tracking-widest uppercase">
-                  ADVISORY CLASS
-                </Badge>
-              )}
-              
-              <Select value={selectedHonorsTerm} onValueChange={(val) => val && setSelectedHonorsTerm(val)}>
-                <SelectTrigger className="h-9 w-[130px] bg-slate-50 border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
-                  <SelectValue placeholder="Select Term" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                  <SelectItem value="T1" className="text-xs font-bold uppercase">Term 1</SelectItem>
-                  <SelectItem value="T2" className="text-xs font-bold uppercase">Term 2</SelectItem>
-                  <SelectItem value="T3" className="text-xs font-bold uppercase">Term 3</SelectItem>
-                  <SelectItem value="FINAL" className="text-xs font-bold uppercase">Final Grade</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[420px] overflow-y-auto px-8 pb-8">
-              {(() => {
-                const allHonors = [
-                  ...(advisoryHonors?.advisoryHonors || []),
-                  ...(advisoryHonors?.withHonors || []),
-                ].sort((a, b) => b.grade - a.grade);
-
-                if (allHonors.length === 0) {
+          {stats?.classStats && stats.classStats.length > 0 ? (
+            <ScrollArea className="h-[520px] pr-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
+                {stats.classStats.map((classStat, idx) => {
+                  const percentage = classStat.totalStudents > 0
+                    ? Math.round((classStat.gradedCount / classStat.totalStudents) * 100)
+                    : 0;
+                  const barColorList = [colors.primary, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+                  const barColor = barColorList[idx % barColorList.length];
                   return (
-                    <div className="py-20 text-center text-slate-300 bg-slate-50 rounded-[2rem] mt-4 border-2 border-dashed border-slate-100">
-                      <Star className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                      <p className="font-black text-sm uppercase tracking-widest">No advisory honors yet</p>
-                      <p className="text-[10px] font-bold mt-2">Students with grades of 85 and above will appear here.</p>
+                    <div key={classStat.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="text-sm font-extrabold text-slate-900 leading-tight">{classStat.sectionName}</p>
+                          <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">{classStat.subjectName}</p>
+                        </div>
+                        <span className="text-xl font-extrabold" style={{ color: barColor }}>{percentage}%</span>
+                      </div>
+                      <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${percentage}%`, backgroundColor: barColor }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-3">
+                        <p className="text-[9px] font-extrabold text-slate-400">{classStat.gradedCount} graded</p>
+                        <p className="text-[9px] font-extrabold text-slate-400">{classStat.totalStudents} total</p>
+                      </div>
                     </div>
                   );
-                }
+                })}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="py-16 text-center text-slate-300">
+              <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="font-extrabold text-sm uppercase tracking-widest">No class records found</p>
+            </div>
+          )}
+          <div className="mt-8">
+            <Link to="/teacher/classes">
+              <Button className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 transition-all font-extrabold text-[10px] tracking-[0.2em] uppercase">
+                VIEW DETAILED REPORTS
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* ── Academic Honors ── Full Width */}
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+        <CardHeader className="p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <Medal className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900">Academic Honors</h2>
+              <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mt-1">Leading advisory achievements</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {advisoryHonors?.hasAdvisory && (
+              <Badge variant="secondary" className="bg-slate-50 text-slate-400 border-slate-100 font-extrabold px-4 py-2 rounded-xl text-[10px] tracking-widest uppercase">
+                ADVISORY CLASS
+              </Badge>
+            )}
+
+            <Select value={selectedHonorsTerm} onValueChange={(val) => val && setSelectedHonorsTerm(val)}>
+              <SelectTrigger className="h-9 w-[130px] bg-slate-50 border-slate-100 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                <SelectValue placeholder="Select Term" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                <SelectItem value="T1" className="text-xs font-extrabold uppercase">Term 1</SelectItem>
+                <SelectItem value="T2" className="text-xs font-extrabold uppercase">Term 2</SelectItem>
+                <SelectItem value="T3" className="text-xs font-extrabold uppercase">Term 3</SelectItem>
+                <SelectItem value="FINAL" className="text-xs font-extrabold uppercase">Final Grade</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[420px] overflow-y-auto px-8 pb-8">
+            {(() => {
+              const allHonors = [
+                ...(advisoryHonors?.advisoryHonors || []),
+                ...(advisoryHonors?.withHonors || []),
+              ].sort((a, b) => b.grade - a.grade);
+
+              if (allHonors.length === 0) {
                 return (
-                  <div className="overflow-hidden rounded-3xl border border-slate-100 mt-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-100">
-                          <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                          <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Section</th>
-                          <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Grade</th>
-                          <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {allHonors.map((student, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/50 transition-all">
-                            <td className="px-6 py-5">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="w-9 h-9 border-2 border-white shadow-sm">
-                                  <AvatarFallback className="font-black text-xs text-white" style={{ backgroundColor: colors.primary }}>
-                                    {student.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-black text-slate-900 text-sm tracking-tight">{student.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-5 text-slate-500 font-bold text-xs">{student.class}</td>
-                            <td className="px-6 py-5 text-center">
-                              <span className="font-black text-xs px-3 py-1.5 rounded-xl" style={{ color: colors.primary, backgroundColor: `${colors.primary}15` }}>
-                                {typeof student.grade === 'number' ? student.grade.toFixed(2) : student.grade}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-right">
-                              <Badge className="bg-emerald-500 text-white border-0 text-[9px] font-black uppercase px-3 py-1 rounded-lg shadow-lg shadow-emerald-500/20">
-                                {student.honor}
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="py-20 text-center text-slate-300 bg-slate-50 rounded-[2rem] mt-4 border-2 border-dashed border-slate-100">
+                    <Star className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                    <p className="font-extrabold text-sm uppercase tracking-widest">No advisory honors yet</p>
+                    <p className="text-[10px] font-extrabold mt-2">Students with grades of 85 and above will appear here.</p>
                   </div>
                 );
-              })()}
-            </div>
-          </CardContent>
-        </Card>
+              }
+
+              return (
+                <div className="overflow-hidden rounded-3xl border border-slate-100 mt-4">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-left text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Student</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Section</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Grade</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {allHonors.map((student, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-all">
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-9 h-9 border-2 border-white shadow-sm">
+                                <AvatarFallback className="font-extrabold text-xs text-white" style={{ backgroundColor: colors.primary }}>
+                                  {student.name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-extrabold text-slate-900 text-sm tracking-tight">{student.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 text-slate-500 font-extrabold text-xs">{student.class}</td>
+                          <td className="px-6 py-5 text-center">
+                            <span className="font-extrabold text-xs px-3 py-1.5 rounded-xl" style={{ color: colors.primary, backgroundColor: `${colors.primary}15` }}>
+                              {typeof student.grade === 'number' ? student.grade.toFixed(2) : student.grade}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <Badge className="bg-emerald-500 text-white border-0 text-[9px] font-extrabold uppercase px-3 py-1 rounded-lg shadow-lg shadow-emerald-500/20">
+                              {student.honor}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── Students Needing Attention ── Full Width Big Card */}
       <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white border-t-[8px] border-t-rose-500">
@@ -679,11 +679,11 @@ export default function TeacherDashboard() {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900">Students Needing Attention</h2>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Immediate intervention required</p>
+                <h2 className="text-2xl font-extrabold text-slate-900">Students Needing Attention</h2>
+                <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mt-1">Immediate intervention required</p>
               </div>
             </div>
-            <Badge className="bg-rose-500 text-white font-black px-4 py-2 rounded-xl border-0 shadow-lg shadow-rose-500/30 text-sm">
+            <Badge className="bg-rose-500 text-white font-extrabold px-4 py-2 rounded-xl border-0 shadow-lg shadow-rose-500/30 text-sm">
               {stats?.summary.studentsAtRisk.length || 0} students
             </Badge>
           </div>
@@ -699,17 +699,17 @@ export default function TeacherDashboard() {
                         <Users className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black text-slate-900 truncate">{student.name}</p>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5 truncate">{student.class}</p>
+                        <p className="text-sm font-extrabold text-slate-900 truncate">{student.name}</p>
+                        <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5 truncate">{student.class}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-rose-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grade</p>
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Grade</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl font-black text-rose-600 leading-none">
+                        <span className="text-2xl font-extrabold text-rose-600 leading-none">
                           {typeof student.grade === 'number' ? student.grade.toFixed(2) : student.grade}
                         </span>
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg"
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-lg"
                           style={{ backgroundColor: student.grade <= 72 ? '#fef2f2' : '#fff7ed', color: student.grade <= 72 ? '#dc2626' : '#ea580c' }}>
                           {student.grade <= 72 ? 'INC' : 'FAILED'}
                         </span>
@@ -721,8 +721,8 @@ export default function TeacherDashboard() {
           ) : (
             <div className="py-24 flex flex-col items-center justify-center text-center bg-emerald-50/50 rounded-[2.5rem] border-2 border-dashed border-emerald-100">
               <CheckCircle2 className="w-16 h-16 mb-4 text-emerald-400" />
-              <p className="font-black text-emerald-800 text-lg uppercase tracking-widest">All students passed!</p>
-              <p className="text-[10px] text-emerald-600 font-bold px-8 mt-3 leading-relaxed max-w-md text-center">
+              <p className="font-extrabold text-emerald-800 text-lg uppercase tracking-widest">All students passed!</p>
+              <p className="text-[10px] text-emerald-600 font-extrabold px-8 mt-3 leading-relaxed max-w-md text-center">
                 Great job maintaining academic performance across all classes!
               </p>
             </div>

@@ -20,7 +20,7 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-base leading-tight font-bold">Art Fields</Label>
+        <Label className="text-base leading-tight font-extrabold">Art Fields</Label>
         <Input
           placeholder="Visual Arts, Music, Theatre Arts, Creative Writing..."
           className="h-9 text-base leading-tight"
@@ -41,7 +41,7 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_SPORTS") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-base leading-tight font-bold ">Sports Offered</Label>
+        <Label className="text-base leading-tight font-extrabold ">Sports Offered</Label>
         <Input
           placeholder="Basketball, Volleyball, Archery, Swimming..."
           className="h-9 text-base leading-tight"
@@ -62,7 +62,7 @@ export function ProgramSpecificFieldsSection({
   if (scp.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE") {
     return (
       <div className="space-y-1.5">
-        <Label className="text-base leading-tight font-bold ">Languages Offered</Label>
+        <Label className="text-base leading-tight font-extrabold ">Languages Offered</Label>
         <Input
           placeholder="Spanish, Japanese, French, Mandarin..."
           className="h-9 text-base leading-tight"

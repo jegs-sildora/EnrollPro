@@ -38,8 +38,8 @@ export default function CurriculumTabPage() {
               <CalendarDays className="h-6 w-6 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-foreground">No Active School Year</p>
-              <p className="text-base leading-relaxed px-4 font-bold">
+              <p className="font-extrabold text-foreground">No Active School Year</p>
+              <p className="text-base leading-relaxed px-4 font-extrabold">
                 Select an active school year from Settings or the header
                 switcher to configure curriculum programs.
               </p>
@@ -86,7 +86,7 @@ export default function CurriculumTabPage() {
           <div className="sticky bottom-0 z-20">
             <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-base font-bold text-foreground">
+                <p className="text-base font-extrabold text-foreground">
                   {hasUnsavedChanges
                     ? "You have unsaved curriculum configuration changes."
                     : "All curriculum configurations are saved."}
@@ -94,13 +94,13 @@ export default function CurriculumTabPage() {
                 <div className="flex items-center justify-end gap-2">
                   <Button
                     variant="outline"
-                    className="font-bold"
+                    className="font-extrabold"
                     onClick={handleDiscardScpChanges}
                     disabled={savingScp || !hasUnsavedChanges}>
                     Discard Changes
                   </Button>
                   <Button
-                    className="font-bold"
+                    className="font-extrabold"
                     onClick={handleSaveScp}
                     disabled={savingScp || !hasUnsavedChanges}>
                     {savingScp

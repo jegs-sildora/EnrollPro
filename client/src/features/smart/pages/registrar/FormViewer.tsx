@@ -61,7 +61,7 @@ export default function FormViewer() {
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">DepEd Form Viewer</h1>
+            <h1 className="text-3xl font-extrabold">DepEd Form Viewer</h1>
             <p className="text-muted-foreground mt-1">
               View and print school forms using admin-uploaded templates
             </p>
@@ -95,7 +95,7 @@ export default function FormViewer() {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Form Selection */}
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm  mb-2">
                 Select Form Type
               </label>
               <Select
@@ -124,7 +124,7 @@ export default function FormViewer() {
             {/* Sheet Selection (for multi-sheet templates) */}
             {sheets.length > 1 && (
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm  mb-2">
                   Select Sheet
                 </label>
                 <Select
@@ -147,7 +147,7 @@ export default function FormViewer() {
 
             {/* Zoom Controls */}
             <div className="flex-shrink-0">
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm  mb-2">
                 Zoom ({Math.round(scale * 100)}%)
               </label>
               <div className="flex gap-2">

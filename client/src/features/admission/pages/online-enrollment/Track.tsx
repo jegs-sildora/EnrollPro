@@ -294,8 +294,8 @@ export default function TrackApplication({
 
   const normalizedStatus = status
     ? normalizeTrackingStatus(
-        status.status || status.trackingStatus || status.rawStatus,
-      )
+      status.status || status.trackingStatus || status.rawStatus,
+    )
     : null;
   const rawStatusKey = String(
     status?.rawStatus || status?.status || status?.trackingStatus || "",
@@ -339,10 +339,10 @@ export default function TrackApplication({
           "shadow-xl border-2 border-primary/5 rounded-lg overflow-hidden transition-all duration-500 w-full",
         )}>
         <CardHeader className="bg-primary text-primary-foreground p-8 text-center">
-          <CardTitle className="text-2xl font-black uppercase ">
+          <CardTitle className="text-2xl font-extrabold uppercase ">
             Application Monitor
           </CardTitle>
-          <CardDescription className="text-primary-foreground/90 font-bold">
+          <CardDescription className="text-primary-foreground/90 font-extrabold">
             Enter your tracking number to check your status
           </CardDescription>
         </CardHeader>
@@ -353,7 +353,7 @@ export default function TrackApplication({
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-base font-black uppercase  text-foreground">
+                className="text-base font-extrabold uppercase  text-foreground">
                 Tracking Number
               </Label>
               <div className="relative">
@@ -362,7 +362,7 @@ export default function TrackApplication({
                   {...register("trackingNumber")}
                   placeholder="REG-2026-00001"
                   className={cn(
-                    "h-14 pl-12 text-lg font-black border-2 transition-all",
+                    "h-14 pl-12 text-lg font-extrabold border-2 transition-all",
                     errors.trackingNumber
                       ? "border-primary focus-visible:ring-primary"
                       : "border-primary/10 focus-visible:border-primary focus-visible:ring-primary/5",
@@ -372,7 +372,7 @@ export default function TrackApplication({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               </div>
               {errors.trackingNumber && (
-                <p className="text-base text-primary font-bold">
+                <p className="text-base text-primary font-extrabold">
                   {errors.trackingNumber.message}
                 </p>
               )}
@@ -380,7 +380,7 @@ export default function TrackApplication({
 
             <Button
               type="submit"
-              className="w-full h-14 text-lg font-black uppercase  bg-primary hover:bg-primary/90 transition-all text-primary-foreground"
+              className="w-full h-14 text-lg font-extrabold uppercase  bg-primary hover:bg-primary/90 transition-all text-primary-foreground"
               disabled={isLoading}>
               {isLoading ? "Searching..." : "Check Status"}
             </Button>
@@ -396,10 +396,10 @@ export default function TrackApplication({
                 className="mt-8 p-6 bg-primary/5 border-2 border-primary/20 rounded-2xl flex items-start gap-4">
                 <AlertCircle className="w-6 h-6 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-black text-primary uppercase ">
+                  <h4 className="font-extrabold text-primary uppercase ">
                     Application Not Found
                   </h4>
-                  <p className="text-base leading-tight font-bold text-primary/80 mt-1">
+                  <p className="text-base leading-tight font-extrabold text-primary/80 mt-1">
                     {error}
                   </p>
                 </div>
@@ -411,51 +411,51 @@ export default function TrackApplication({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="mt-10 space-y-8">
-                  <div
-                    className={cn(
-                      "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
-                      config.color,
-                    )}>
-                    <div className="p-4 rounded-full bg-white shadow-sm border border-current/20">
-                      {Icon && <Icon className="w-10 h-10" />}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-black uppercase  opacity-70">
-                        Current Status
-                      </h3>
-                      <p className="text-3xl font-black uppercase  mt-1">
-                        {config.label}
-                      </p>
-                    </div>
-                    <p className="text-base font-bold leading-relaxed max-w-sm opacity-90">
-                      {config.desc}
+                <div
+                  className={cn(
+                    "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
+                    config.color,
+                  )}>
+                  <div className="p-4 rounded-full bg-white shadow-sm border border-current/20">
+                    {Icon && <Icon className="w-10 h-10" />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold uppercase  opacity-70">
+                      Current Status
+                    </h3>
+                    <p className="text-3xl font-extrabold uppercase  mt-1">
+                      {config.label}
                     </p>
                   </div>
+                  <p className="text-base font-extrabold leading-relaxed max-w-sm opacity-90">
+                    {config.desc}
+                  </p>
+                </div>
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground  flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <User className="w-3 h-3" /> Learner's Name
                     </p>
-                    <p className="font-black text-primary uppercase">
+                    <p className="font-extrabold text-primary uppercase">
                       {status.lastName}, {status.firstName}{" "}
                       {status.middleName || ""}
                     </p>
                   </div>
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground  flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <FileText className="w-3 h-3" /> Grade Level
                     </p>
-                    <p className="font-black text-primary uppercase">
+                    <p className="font-extrabold text-primary uppercase">
                       {status.gradeLevel.name}
                     </p>
                   </div>
 
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-primary/60  flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-extrabold uppercase text-primary/60  flex items-center justify-center gap-1.5">
                       <BookOpen className="w-3 h-3" /> Learning Program
                     </p>
-                    <p className="font-black text-primary uppercase">
+                    <p className="font-extrabold text-primary uppercase">
                       {learningProgramLabel}
                     </p>
                   </div>
@@ -465,17 +465,17 @@ export default function TrackApplication({
 
 
                   <div className="p-5 bg-white border border-border rounded-2xl space-y-1 text-center md:col-span-3">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground ">
+                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground ">
                       Date Submitted
                     </p>
-                    <p className="text-base font-bold text-foreground">
+                    <p className="text-base font-extrabold text-foreground">
                       {format(new Date(status.createdAt), "MMMM dd, yyyy")}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-6 bg-white border border-border rounded-2xl space-y-4">
-                  <h4 className="text-base leading-tight font-black uppercase  text-foreground">
+                  <h4 className="text-base leading-tight font-extrabold uppercase  text-foreground">
                     Dynamic Next Steps
                   </h4>
                   <TrackingNextSteps
@@ -489,7 +489,7 @@ export default function TrackApplication({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 px-5 font-black w-full sm:w-auto"
+                      className="h-11 px-5 font-extrabold w-full sm:w-auto"
                       onClick={handleBackToSearch}>
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Back to Search
@@ -498,7 +498,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="pt-4 text-center">
-                  <p className="text-[0.6875rem] font-bold text-foreground/60 uppercase ">
+                  <p className="text-[0.6875rem] font-extrabold text-foreground/60 uppercase ">
                     Last updated: {format(new Date(), "hh:mm a")}
                   </p>
                 </div>

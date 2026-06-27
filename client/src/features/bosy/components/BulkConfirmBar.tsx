@@ -23,13 +23,13 @@ export function BulkConfirmBar({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2 border border-border">
-          <span className="text-base font-black uppercase text-foreground">
+          <span className="text-base font-extrabold uppercase text-foreground">
             {selectedCount} selected
           </span>
           <Button
             size="sm"
             variant="default"
-            className="h-7 px-3 text-[11px] font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-7 px-3 text-[11px] font-extrabold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
             disabled={loading}
             onClick={onConfirm}>
             {loading ? (

@@ -263,7 +263,7 @@ export default function AuditLogs() {
         header: "Timestamp",
         cell: ({ row }) => (
           <div className="text-center">
-            <span className="whitespace-nowrap text-base font-bold text-foreground">
+            <span className="whitespace-nowrap text-base font-extrabold text-foreground">
               {formatTimestamp(row.original.createdAt)}
             </span>
           </div>
@@ -276,20 +276,20 @@ export default function AuditLogs() {
           const log = row.original;
           return (
             <div className="space-y-0.5 text-left">
-              <p className="text-base leading-tight font-bold  text-foreground">
+              <p className="text-base leading-tight font-extrabold  text-foreground">
                 {log.user
                   ? `${log.user.lastName}, ${log.user.firstName}`
                   : "System / Guest"}
               </p>
               {log.user && (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold text-foreground opacity-70">
+                  <span className="text-base font-extrabold text-foreground opacity-70">
                     ID: {log.user.id}
                   </span>
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[9px] font-black uppercase px-1.5 h-3.5 border-none",
+                      "text-[9px] font-extrabold uppercase px-1.5 h-3.5 border-none",
                       getRoleColorClasses(log.user.roles?.[0]),
                     )}>
                     {formatUserRole(log.user.roles?.[0])}
@@ -311,7 +311,7 @@ export default function AuditLogs() {
             <div className="text-center">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 text-sm font-medium whitespace-nowrap bg-muted text-muted-foreground rounded-full",
+                  "inline-flex px-3 py-1 text-sm  whitespace-nowrap bg-muted text-muted-foreground rounded-full",
                   isDestructive && "bg-destructive/10 text-destructive border border-destructive/20"
                 )}>
                 {actionLabel(action)}
@@ -333,15 +333,15 @@ export default function AuditLogs() {
 
           return (
             <div className="text-left space-y-0.5 flex justify-center items-center flex-col">
-              <span className="text-base font-bold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
+              <span className="text-base font-extrabold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
                 {displayType}
               </span>
               {log.resolvedSubject ? (
-                <p className="text-base leading-tight font-bold text-foreground">
+                <p className="text-base leading-tight font-extrabold text-foreground">
                   {log.resolvedSubject.replace(/Schoolyear/ig, "S.Y.").replace(/Schoolsetting Record #\d+/ig, "School Profile Settings")}
                 </p>
               ) : log.recordId ? (
-                <p className="text-base font-bold text-foreground">
+                <p className="text-base font-extrabold text-foreground">
                   Record #{log.recordId}
                 </p>
               ) : null}
@@ -468,17 +468,17 @@ export default function AuditLogs() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-3xl font-extrabold text-foreground">
             System Activity Logs
           </h1>
-          <p className="text-base leading-tight font-bold text-foreground ">
+          <p className="text-base leading-tight font-extrabold text-foreground ">
             Track institutional data modifications, grading overrides, and staff login activity.
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
-            className="font-bold text-base"
+            className="font-extrabold text-base"
             onClick={() => fetchLogs(page)}
             disabled={loading}>
             <RefreshCw
@@ -488,7 +488,7 @@ export default function AuditLogs() {
           </Button>
           {isSystemAdmin && (
             <Button
-              className="font-bold text-base"
+              className="font-extrabold text-base"
               onClick={handleExport}
               disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
@@ -505,8 +505,8 @@ export default function AuditLogs() {
               <div className="mx-auto h-12 w-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
                 <ShieldAlert className="h-6 w-6" />
               </div>
-              <p className="font-bold">Access Restricted</p>
-              <p className="text-base leading-tight text-foreground font-bold">
+              <p className="font-extrabold">Access Restricted</p>
+              <p className="text-base leading-tight text-foreground font-extrabold">
                 Your role cannot access full audit logs. Contact a system
                 administrator if this access is required.
               </p>
@@ -517,24 +517,24 @@ export default function AuditLogs() {
         <>
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold uppercase text-foreground">
+              <CardTitle className="text-base font-extrabold uppercase text-foreground">
                 Search Filters
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-4">
                 <div className="space-y-2">
-                  <Label className="text-base font-bold uppercase st text-foreground">
+                  <Label className="text-base font-extrabold uppercase st text-foreground">
                     Action Category
                   </Label>
                   <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
-                    <SelectTrigger className="font-bold text-base">
+                    <SelectTrigger className="font-extrabold text-base">
                       <SelectValue placeholder="All Actions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all" className="font-bold text-base">All Actions</SelectItem>
+                      <SelectItem value="all" className="font-extrabold text-base">All Actions</SelectItem>
                       {filterMeta.actionTypes.map((at) => (
-                        <SelectItem key={at} value={at} className="font-bold text-base">
+                        <SelectItem key={at} value={at} className="font-extrabold text-base">
                           {actionLabel(at)}
                         </SelectItem>
                       ))}
@@ -543,17 +543,17 @@ export default function AuditLogs() {
                 </div>
                 {isSystemAdmin && (
                   <div className="space-y-2">
-                    <Label className="text-base font-bold uppercase st text-foreground">
+                    <Label className="text-base font-extrabold uppercase st text-foreground">
                       Actor Filter
                     </Label>
                     <Select value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
-                      <SelectTrigger className="font-bold text-base">
+                      <SelectTrigger className="font-extrabold text-base">
                         <SelectValue placeholder="All Staff Members" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="font-bold text-base">All Staff Members</SelectItem>
+                        <SelectItem value="all" className="font-extrabold text-base">All Staff Members</SelectItem>
                         {filterMeta.actors.map((actor) => (
-                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-bold text-base">
+                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-extrabold text-base">
                             {actor.name} ({formatUserRole(actor.roles?.[0])})
                           </SelectItem>
                         ))}
@@ -562,7 +562,7 @@ export default function AuditLogs() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label className="text-base font-bold uppercase st text-foreground">
+                  <Label className="text-base font-extrabold uppercase st text-foreground">
                     Date From
                   </Label>
                   <HybridDatePicker
@@ -574,7 +574,7 @@ export default function AuditLogs() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-base font-bold uppercase st text-foreground">
+                  <Label className="text-base font-extrabold uppercase st text-foreground">
                     Date To
                   </Label>
                   <HybridDatePicker
@@ -588,14 +588,14 @@ export default function AuditLogs() {
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-bold uppercase text-foreground/70 mr-2">Quick Presets:</span>
-                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(0)}>Today</Button>
-                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
-                  <Button variant="outline" size="sm" className="h-8 text-base font-bold" onClick={() => handlePresetDate(null)}>This Month</Button>
+                  <span className="text-base font-extrabold uppercase text-foreground/70 mr-2">Quick Presets:</span>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(0)}>Today</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(7)}>Last 7 Days</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-base font-extrabold" onClick={() => handlePresetDate(null)}>This Month</Button>
                 </div>
                 <Button
                   variant="ghost"
-                  className="font-bold text-base h-8"
+                  className="font-extrabold text-base h-8"
                   onClick={() => {
                     setActionType("all");
                     setActorId("all");
@@ -614,11 +614,11 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-foreground" />
-                  <p className="text-base font-bold uppercase st text-foreground">
+                  <p className="text-base font-extrabold uppercase st text-foreground">
                     Total Events
                   </p>
                 </div>
-                <CardTitle className="text-3xl font-black ">
+                <CardTitle className="text-3xl font-extrabold ">
                   <AnimatedNumber value={total} />
                 </CardTitle>
               </CardHeader>
@@ -627,11 +627,11 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <p className="text-base font-bold uppercase st text-foreground">
+                  <p className="text-base font-extrabold uppercase st text-foreground">
                     Critical Alerts
                   </p>
                 </div>
-                <CardTitle className="text-3xl font-black  text-amber-600">
+                <CardTitle className="text-3xl font-extrabold  text-amber-600">
                   <AnimatedNumber value={meta.criticalCount} />
                 </CardTitle>
               </CardHeader>
@@ -640,11 +640,11 @@ export default function AuditLogs() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" />
-                  <p className="text-base font-bold uppercase st text-primary">
+                  <p className="text-base font-extrabold uppercase st text-primary">
                     Active Actors
                   </p>
                 </div>
-                <CardTitle className="text-3xl font-black  flex items-center gap-2 text-primary">
+                <CardTitle className="text-3xl font-extrabold  flex items-center gap-2 text-primary">
                   {meta.activeActors}
                 </CardTitle>
               </CardHeader>
@@ -684,7 +684,7 @@ export default function AuditLogs() {
                         className="overflow-hidden"
                       >
                         <div className="p-6 border-l-4 border-l-primary/50 mx-4 my-2 rounded-r-lg bg-card shadow-sm border border-border/50">
-                          <h4 className="text-base font-bold uppercase tracking-wide text-foreground mb-4 flex items-center gap-2">
+                          <h4 className="text-base font-extrabold uppercase tracking-wide text-foreground mb-4 flex items-center gap-2">
                             <Activity className="h-4 w-4 text-primary" />
                             Detailed Changes
                           </h4>
@@ -692,9 +692,9 @@ export default function AuditLogs() {
                             <table className="w-full text-base leading-tight text-left">
                               <thead className="bg-muted/50 border-b">
                                 <tr>
-                                  <th className="px-4 py-3 font-bold text-foreground">Modified Field</th>
-                                  <th className="px-4 py-3 font-bold text-foreground">Changed From</th>
-                                  <th className="px-4 py-3 font-bold text-foreground">Changed To</th>
+                                  <th className="px-4 py-3 font-extrabold text-foreground">Modified Field</th>
+                                  <th className="px-4 py-3 font-extrabold text-foreground">Changed From</th>
+                                  <th className="px-4 py-3 font-extrabold text-foreground">Changed To</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y">
@@ -706,8 +706,8 @@ export default function AuditLogs() {
                                   const isIsoDate = (str: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(str);
                                   const formatVal = (v: any) => {
                                     if (v === null || v === undefined) return "—";
-                                    if (v === true || String(v) === "true") return <span className="text-green-600 font-bold">Enabled</span>;
-                                    if (v === false || String(v) === "false") return <span className="text-destructive font-bold">Disabled</span>;
+                                    if (v === true || String(v) === "true") return <span className="text-green-600 font-extrabold">Enabled</span>;
+                                    if (v === false || String(v) === "false") return <span className="text-destructive font-extrabold">Disabled</span>;
                                     if (typeof v === "object") return JSON.stringify(v);
                                     const str = String(v);
                                     if (isIsoDate(str)) {
@@ -722,11 +722,11 @@ export default function AuditLogs() {
 
                                   return (
                                     <tr key={key} className="hover:bg-muted/30 transition-colors">
-                                      <td className="px-4 py-3 font-bold text-foreground/80">{formatKeyName(key)}</td>
-                                      <td className="px-4 py-3 font-medium text-destructive bg-destructive/5">
+                                      <td className="px-4 py-3 font-extrabold text-foreground/80">{formatKeyName(key)}</td>
+                                      <td className="px-4 py-3  text-destructive bg-destructive/5">
                                         <span className="line-through decoration-destructive/40 opacity-80">{formatVal(oldVal)}</span>
                                       </td>
-                                      <td className="px-4 py-3 font-medium text-green-700 bg-green-50">
+                                      <td className="px-4 py-3  text-green-700 bg-green-50">
                                         {formatVal(newVal)}
                                       </td>
                                     </tr>

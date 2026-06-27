@@ -33,7 +33,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                 <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
               )}
               {isLast ? (
-                <span className="font-medium text-gray-900 flex items-center gap-1.5">
+                <span className=" text-gray-900 flex items-center gap-1.5">
                   {item.icon}
                   {item.label}
                 </span>

@@ -74,7 +74,7 @@ export default function AdminLayout() {
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <p className="text-gray-600 ">Loading...</p>
         </div>
       </div>
     );
@@ -132,7 +132,7 @@ export default function AdminLayout() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm  transition-all duration-200",
                     isActive
                       ? "bg-violet-500/20 text-violet-400"
                       : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -156,7 +156,7 @@ export default function AdminLayout() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{userDisplayName}</p>
+              <p className="text-sm  text-white truncate">{userDisplayName}</p>
               <p className="text-xs text-slate-400 truncate">{userEmail}</p>
             </div>
             <button 
@@ -192,11 +192,11 @@ export default function AdminLayout() {
             <div className="flex items-center gap-3">
               {/* User Avatar */}
               <div className="flex items-center gap-2">
-                <span className="hidden sm:block text-sm font-medium text-slate-700">
+                <span className="hidden sm:block text-sm  text-slate-700">
                   {user.firstName || user.username}
                 </span>
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-violet-500 text-white text-sm font-medium">
+                  <AvatarFallback className="bg-violet-500 text-white text-sm ">
                     {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

@@ -90,7 +90,7 @@ export function HybridDatePicker({
 
     let parts = val.split("/");
     if (parts.length > 3) parts = parts.slice(0, 3);
-    
+
     if (parts[0]) parts[0] = parts[0].substring(0, 2);
     if (parts[1]) parts[1] = parts[1].substring(0, 2);
     if (parts[2]) parts[2] = parts[2].substring(0, 4);
@@ -109,7 +109,7 @@ export function HybridDatePicker({
       if (parts.length === 2 && parts[1] === "" && selectionStart === 2) newCursor = 3;
       if (parts.length === 3 && parts[2] === "" && selectionStart === 5) newCursor = 6;
     }
-    
+
     requestAnimationFrame(() => {
       input.setSelectionRange(newCursor, newCursor);
     });
@@ -174,7 +174,7 @@ export function HybridDatePicker({
         placeholder={placeholder}
         maxLength={isFocused ? 10 : 50}
         autoComplete="off"
-        className={cn("font-bold text-base pr-10", className)}
+        className={cn("font-extrabold text-base pr-10", className)}
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { 
-  Users, 
-  Search, 
+import {
+  Users,
+  Search,
   ChevronUp,
   ChevronDown,
   LayoutGrid,
@@ -17,18 +17,18 @@ import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
   CardDescription,
 } from "@/shared/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -82,7 +82,7 @@ const SCP_SHORT_LABELS: Record<string, string> = {
 
 export function SectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
-  
+
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -134,7 +134,7 @@ export function SectioningWorkspace() {
   const loading = (sectionsInitialLoading || poolInitialLoading || gradeLevelsLoading) && !isHistoricalReadOnly;
 
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
-  
+
   type SortConfig = { key: "genAve"; direction: "asc" | "desc" } | null;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
@@ -215,7 +215,7 @@ export function SectioningWorkspace() {
 
   const assignLearners = async () => {
     if (!targetSectionId || selectedAppIds.length === 0) return;
-    
+
     setProcessing(true);
     try {
       await api.post("/sectioning/assign-bulk", {
@@ -271,7 +271,7 @@ export function SectioningWorkspace() {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-base leading-tight font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+          <p className="text-base leading-tight font-extrabold text-slate-500 uppercase tracking-widest animate-pulse">
             Loading Workspace...
           </p>
         </div>
@@ -291,7 +291,7 @@ export function SectioningWorkspace() {
               value={String(g.id)}
               disabled={isLockedIn && activeGradeLevelId !== String(g.id)}
               className={cn(
-                "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 isLockedIn && activeGradeLevelId !== String(g.id) && "opacity-40 cursor-not-allowed bg-muted/20"
               )}
             >
@@ -316,13 +316,13 @@ export function SectioningWorkspace() {
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
+                  <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <Users className="h-5 w-5 text-primary" />
                     Unassigned Learners
                   </CardTitle>
-                  <CardDescription className="text-base font-bold text-muted-foreground">Unassigned learners awaiting placement.</CardDescription>
+                  <CardDescription className="text-base font-extrabold text-muted-foreground">Unassigned learners awaiting placement.</CardDescription>
                 </div>
-                <Badge variant="outline" className="font-black bg-background border-border">{selectedAppIds.length} Selected</Badge>
+                <Badge variant="outline" className="font-extrabold bg-background border-border">{selectedAppIds.length} Selected</Badge>
               </div>
               <div className="flex gap-2 mt-4">
                 <div className="relative flex-1">
@@ -349,7 +349,7 @@ export function SectioningWorkspace() {
             <div className="flex-1 overflow-auto p-0 relative">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-primary z-10 border-b border-border">
-                  <tr className="text-[10px] font-black uppercase text-primary-foreground tracking-widest">
+                  <tr className="text-[10px] font-extrabold uppercase text-primary-foreground tracking-widest">
                     <th className="p-4 w-10">
                       <Checkbox
                         className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
@@ -374,7 +374,7 @@ export function SectioningWorkspace() {
                 <tbody className="divide-y divide-border text-base leading-tight bg-card">
                   {filteredAndSortedPool.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="p-12 text-center text-muted-foreground font-bold">
+                      <td colSpan={3} className="p-12 text-center text-muted-foreground font-extrabold">
                         No learners match your criteria.
                       </td>
                     </tr>
@@ -410,19 +410,19 @@ export function SectioningWorkspace() {
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col">
-                              <span className="font-bold text-foreground uppercase flex items-center gap-2">
+                              <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
                                 {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                                 {l.duplicateFlag && (
                                   <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4">DUPLICATE DETECTED - RESOLVE OVER COUNTER</Badge>
                                 )}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
-                                <Badge variant="outline" className="text-[9px] uppercase font-black border-border text-foreground">{l.sex}</Badge>
+                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
+                                <Badge variant="outline" className="text-[9px] uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 font-black text-foreground/80">
+                          <td className="p-4 font-extrabold text-foreground/80">
                             {l.genAve ? l.genAve.toFixed(2) : <span className="text-muted-foreground/50">--</span>}
                           </td>
                         </tr>
@@ -439,18 +439,18 @@ export function SectioningWorkspace() {
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-black uppercase tracking-wide flex items-center gap-2 text-foreground">
+                  <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <LayoutGrid className="h-5 w-5 text-primary" />
                     Available Sections
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground text-base font-bold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+                  <CardDescription className="text-muted-foreground text-base font-extrabold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
                 </div>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="default"
                   disabled={currentGradePool.length === 0 || processing}
                   onClick={() => setIsAutoDistributeModalOpen(true)}
-                  className="font-bold text-base uppercase tracking-normal gap-1"
+                  className="font-extrabold text-base uppercase tracking-normal gap-1"
                 >
                   <AlertTriangle className="h-4 w-4" />
                   Auto-Distribute
@@ -461,13 +461,13 @@ export function SectioningWorkspace() {
               {currentGradeSections.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground">
                   <Info className="h-8 w-8" />
-                  <span className="font-bold text-base leading-tight">No sections defined for this grade.</span>
+                  <span className="font-extrabold text-base leading-tight">No sections defined for this grade.</span>
                 </div>
               ) : (
                 currentGradeSections.map((s) => {
                   const isOverCapacity = s.currentCount >= s.maxCapacity;
                   const isSelected = targetSectionId === s.id;
-                  
+
                   return (
                     <div
                       key={s.id}
@@ -486,7 +486,7 @@ export function SectioningWorkspace() {
                       )}
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className={cn("font-black text-lg uppercase transition-colors flex items-center gap-2", isSelected ? "text-primary" : "text-foreground")}>
+                          <h4 className={cn("font-extrabold text-lg uppercase transition-colors flex items-center gap-2", isSelected ? "text-primary" : "text-foreground")}>
                             {s.name}
                             <Button
                               variant="ghost"
@@ -501,21 +501,21 @@ export function SectioningWorkspace() {
                               <Users className="h-4 w-4" />
                             </Button>
                           </h4>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
                             {s.adviser || "No Adviser Assigned"}
                           </span>
                         </div>
                         <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase bg-background",
+                          "text-[9px] font-extrabold uppercase bg-background",
                           s.programType === "REGULAR" ? "text-muted-foreground border-border" : "text-primary border-primary/30"
                         )}>
                           {SCP_SHORT_LABELS[s.programType] ?? s.programType}
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-base font-bold">
+                        <div className="flex items-center justify-between text-base font-extrabold">
                           <span className="text-muted-foreground uppercase tracking-widest text-[10px]">Capacity Fill</span>
-                          <span className={cn(isOverCapacity ? "text-destructive font-black" : "text-foreground/70")}>
+                          <span className={cn(isOverCapacity ? "text-destructive font-extrabold" : "text-foreground/70")}>
                             {s.currentCount} / {s.maxCapacity} {isOverCapacity && <AlertTriangle className="inline h-3 w-3 ml-1" />}
                           </span>
                         </div>
@@ -534,14 +534,14 @@ export function SectioningWorkspace() {
                 })
               )}
             </div>
-            
+
             {/* Action Footer */}
             <div className="p-4 border-t border-border bg-muted/20">
               <Button
                 onClick={assignLearners}
                 disabled={selectedAppIds.length === 0 || !targetSectionId || processing || isHistoricalReadOnly}
                 className={cn(
-                  "w-full h-12 text-base leading-tight font-black uppercase tracking-widest transition-all shadow-none",
+                  "w-full h-12 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
                   selectedAppIds.length > 0 && targetSectionId
                     ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted"

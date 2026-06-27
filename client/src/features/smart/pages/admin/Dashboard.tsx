@@ -117,7 +117,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-12 h-12 text-amber-500" />
-          <p className="text-gray-700 font-medium">{error || "Failed to load data"}</p>
+          <p className="text-gray-700 ">{error || "Failed to load data"}</p>
           <Button onClick={fetchDashboard} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
             Admin Dashboard
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
             System Online
           </Badge>
           <Link to="/admin/logs">
-            <Button 
+            <Button
               className="gap-2 text-white font-semibold rounded-xl shadow-lg"
               style={{ backgroundColor: colors.primary }}
             >
@@ -173,19 +173,19 @@ export default function AdminDashboard() {
           },
           { label: "Active\nToday", value: stats.activeUsers, icon: Activity, color: "primary", gradient: "primary", footerText: "Live" },
         ].map((stat) => (
-          <Card 
-            key={stat.label} 
+          <Card
+            key={stat.label}
             className="group border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 bg-white overflow-hidden"
           >
             <CardContent className="p-6 h-full flex flex-col">
               <div className="flex items-start justify-between flex-1">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 whitespace-pre-line leading-tight">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-2" style={{ color: '#111827' }}>
+                  <p className="text-sm  text-gray-500 whitespace-pre-line leading-tight">{stat.label}</p>
+                  <p className="text-3xl font-extrabold mt-2" style={{ color: '#111827' }}>
                     {stat.value.toLocaleString()}
                   </p>
                 </div>
-                <div 
+                <div
                   className={`p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform`}
                   style={stat.gradient === "primary" ? { backgroundColor: colors.primary } : stat.gradient === "secondary" ? { backgroundColor: colors.secondary } : stat.gradient === "accent" ? { backgroundColor: colors.accent } : { backgroundColor: colors.primary }}
                 >
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center text-sm text-gray-500">
                 <TrendingUp className="w-4 h-4 mr-1" style={{ color: colors.primary }} />
-                <span className="font-medium" style={{ color: colors.primary }}>{stat.footerText}</span>
+                <span className="" style={{ color: colors.primary }}>{stat.footerText}</span>
               </div>
             </CardContent>
           </Card>
@@ -211,8 +211,8 @@ export default function AdminDashboard() {
                   <Server className="w-5 h-5" style={{ color: colors.primary }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">System Uptime</p>
-                  <p className="text-xl font-bold" style={{ color: colors.primary }}>{systemStatus.uptime}</p>
+                  <p className="text-sm  text-gray-500">System Uptime</p>
+                  <p className="text-xl font-extrabold" style={{ color: colors.primary }}>{systemStatus.uptime}</p>
                 </div>
               </div>
               <CheckCircle2 className="w-6 h-6" style={{ color: colors.primary }} />
@@ -227,8 +227,8 @@ export default function AdminDashboard() {
                   <LogIn className="w-5 h-5" style={{ color: colors.accent }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Today's Logins</p>
-                  <p className="text-xl font-bold" style={{ color: colors.accent }}>{stats.todayLogins}</p>
+                  <p className="text-sm  text-gray-500">Today's Logins</p>
+                  <p className="text-xl font-extrabold" style={{ color: colors.accent }}>{stats.todayLogins}</p>
                 </div>
               </div>
               <ArrowUpRight className="w-5 h-5" style={{ color: colors.primary }} />
@@ -243,8 +243,8 @@ export default function AdminDashboard() {
                   <Users className="w-5 h-5" style={{ color: colors.primary }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Total Admins</p>
-                  <p className="text-xl font-bold" style={{ color: colors.primary }}>{stats.totalAdmins}</p>
+                  <p className="text-sm  text-gray-500">Total Admins</p>
+                  <p className="text-xl font-extrabold" style={{ color: colors.primary }}>{stats.totalAdmins}</p>
                 </div>
               </div>
               <Badge className="border-0" style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>Staff</Badge>
@@ -352,22 +352,22 @@ export default function AdminDashboard() {
         <CardContent className="p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h3 className="text-2xl font-bold mb-2">User Distribution</h3>
+              <h3 className="text-2xl font-extrabold mb-2">User Distribution</h3>
               <p className="text-white/70 max-w-xl">
                 Overview of all registered users in the system by role type.
               </p>
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="bg-white/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Teachers</span>
-                  <p className="text-xl font-bold">{stats.totalTeachers}</p>
+                  <p className="text-xl font-extrabold">{stats.totalTeachers}</p>
                 </div>
                 <div className="bg-white/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Admins</span>
-                  <p className="text-xl font-bold">{stats.totalAdmins}</p>
+                  <p className="text-xl font-extrabold">{stats.totalAdmins}</p>
                 </div>
                 <div className="bg-white/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Registrars</span>
-                  <p className="text-xl font-bold">{stats.totalRegistrars}</p>
+                  <p className="text-xl font-extrabold">{stats.totalRegistrars}</p>
                 </div>
               </div>
             </div>

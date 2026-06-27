@@ -56,23 +56,23 @@ export function PinHandoverModal({
     }}>
       <DialogContent className="sm:max-w-[500px] border-emerald-200" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="text-xl font-black uppercase text-emerald-700 flex items-center gap-2">
+          <DialogTitle className="text-xl font-extrabold uppercase text-emerald-700 flex items-center gap-2">
             <CheckCircle2 className="h-6 w-6" />
             Official Enrollment Confirmed
           </DialogTitle>
-          <DialogDescription className="font-bold text-foreground pt-2">
+          <DialogDescription className="font-extrabold text-foreground pt-2">
             {learnerName.toUpperCase()} has been successfully enrolled and sectioned.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-            <p className="text-base font-black uppercase text-slate-500 ">
+            <p className="text-base font-extrabold uppercase text-slate-500 ">
               Temporary Portal PIN:
             </p>
-            
+
             <div className="flex items-center justify-center gap-4">
-              <span className="text-4xl font-black  text-slate-900 font-bold">
+              <span className="text-4xl font-extrabold  text-slate-900 font-extrabold">
                 {pin.split("").join(" ")}
               </span>
               <Button
@@ -88,8 +88,8 @@ export function PinHandoverModal({
 
           <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-base font-bold text-amber-900 leading-relaxed">
-              IMPORTANT: This PIN will only be shown once. Please write this 
+            <p className="text-base font-extrabold text-amber-900 leading-relaxed">
+              IMPORTANT: This PIN will only be shown once. Please write this
               down on the upper-right corner of the learner's physical form now.
             </p>
           </div>
@@ -103,7 +103,7 @@ export function PinHandoverModal({
             />
             <Label
               htmlFor="pin-written"
-              className="text-base font-black uppercase text-slate-700 leading-snug cursor-pointer select-none"
+              className="text-base font-extrabold uppercase text-slate-700 leading-snug cursor-pointer select-none"
             >
               I have written this PIN on the physical enrollment slip.
             </Label>
@@ -114,11 +114,10 @@ export function PinHandoverModal({
           <Button
             onClick={handleClose}
             disabled={!hasWrittenPin}
-            className={`w-full h-12 font-black uppercase  transition-all ${
-              hasWrittenPin
-                ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100"
-                : "bg-slate-200 text-slate-500 cursor-not-allowed border-none shadow-none"
-            }`}
+            className={`w-full h-12 font-extrabold uppercase  transition-all ${hasWrittenPin
+              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100"
+              : "bg-slate-200 text-slate-500 cursor-not-allowed border-none shadow-none"
+              }`}
           >
             Complete Enrollment
           </Button>

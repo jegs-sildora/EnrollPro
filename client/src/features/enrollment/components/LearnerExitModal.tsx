@@ -120,12 +120,12 @@ export function LearnerExitModal({
 
   const fullName = application
     ? [
-        application.lastName,
-        ", ",
-        application.firstName,
-        application.middleName ? ` ${application.middleName}` : "",
-        application.suffix ? `, ${application.suffix}` : "",
-      ].join("")
+      application.lastName,
+      ", ",
+      application.firstName,
+      application.middleName ? ` ${application.middleName}` : "",
+      application.suffix ? `, ${application.suffix}` : "",
+    ].join("")
     : "—";
 
   const lrnDisplay = application?.isPendingLrnCreation
@@ -172,7 +172,7 @@ export function LearnerExitModal({
       }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base leading-tight font-bold uppercase tracking-wide">
+          <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">
             {isViewMode ? "Learner Exit Record" : "Process Learner Exit"}
           </DialogTitle>
         </DialogHeader>
@@ -184,19 +184,19 @@ export function LearnerExitModal({
               <User className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-bold leading-snug text-slate-900">
+              <p className="truncate text-base font-extrabold leading-snug text-slate-900">
                 {fullName}
               </p>
               <p className="mt-0.5 text-base leading-tight text-foreground">
                 LRN:{" "}
-                <span className="font-bold text-slate-700">
+                <span className="font-extrabold text-slate-700">
                   {lrnDisplay}
                 </span>
               </p>
               {sectionName && (
                 <p className="text-base leading-tight text-foreground">
                   Section:{" "}
-                  <span className="font-bold text-slate-700">
+                  <span className="font-extrabold text-slate-700">
                     {sectionName}
                   </span>
                 </p>
@@ -208,7 +208,7 @@ export function LearnerExitModal({
           <div className="space-y-2">
             <Label
               htmlFor="exitType"
-              className="text-base leading-tight font-bold uppercase">
+              className="text-base leading-tight font-extrabold uppercase">
               Exit Type
             </Label>
             <Select
@@ -219,7 +219,7 @@ export function LearnerExitModal({
               disabled={isViewMode}>
               <SelectTrigger
                 id="exitType"
-                className="h-10 text-base leading-tight font-bold">
+                className="h-10 text-base leading-tight font-extrabold">
                 <SelectValue placeholder="Select exit type" />
               </SelectTrigger>
               <SelectContent>
@@ -227,7 +227,7 @@ export function LearnerExitModal({
                   <SelectItem
                     key={opt.value}
                     value={opt.value}
-                    className="text-base leading-tight font-bold">
+                    className="text-base leading-tight font-extrabold">
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -237,10 +237,10 @@ export function LearnerExitModal({
 
           {/* Effective Date */}
           <div className="space-y-2">
-            <Label className="text-base leading-tight font-bold uppercase">Effective Date</Label>
+            <Label className="text-base leading-tight font-extrabold uppercase">Effective Date</Label>
             <DatePicker
               date={isViewMode ? savedEffectiveDate : effectiveDate}
-              setDate={isViewMode ? () => {} : setEffectiveDate}
+              setDate={isViewMode ? () => { } : setEffectiveDate}
               placeholder={isViewMode ? "No date recorded" : "Select effective date"}
               maxDate={new Date()}
             />
@@ -250,7 +250,7 @@ export function LearnerExitModal({
           <div className="space-y-2">
             <Label
               htmlFor="exitReason"
-              className="text-base leading-tight font-bold uppercase">
+              className="text-base leading-tight font-extrabold uppercase">
               Reason / Remarks
             </Label>
             <Textarea
@@ -265,7 +265,7 @@ export function LearnerExitModal({
                   ? "No reason recorded"
                   : "Provide a clear reason for this exit action (required)"
               }
-              className="min-h-24 text-base leading-tight font-bold"
+              className="min-h-24 text-base leading-tight font-extrabold"
               maxLength={isViewMode ? undefined : 500}
             />
             {!isViewMode && (
@@ -293,14 +293,14 @@ export function LearnerExitModal({
         <DialogFooter>
           <Button
             variant="outline"
-            className="text-base leading-tight font-bold"
+            className="text-base leading-tight font-extrabold"
             onClick={handleClose}
             disabled={submitting}>
             {isViewMode ? "Close" : "Cancel"}
           </Button>
           {!isViewMode && (
             <Button
-              className="text-base leading-tight font-bold bg-red-600 hover:bg-red-700 text-white"
+              className="text-base leading-tight font-extrabold bg-red-600 hover:bg-red-700 text-white"
               disabled={
                 !exitType || !effectiveDate || !reason.trim() || submitting
               }

@@ -50,19 +50,19 @@ function TeacherUserNav() {
             className="relative h-9 w-fit gap-2 px-2.5 rounded-xl border border-border/45 hover:border-border/80 bg-card/60 hover:bg-card transition-all shadow-xs hover:shadow-sm"
           >
             <Avatar className="h-7 w-7 border shadow-sm">
-              <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-sm font-extrabold bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-col items-start text-left leading-tight hidden lg:flex">
-              <span className="text-[11px] font-bold truncate max-w-[120px]">
+              <span className="text-[11px] font-extrabold truncate max-w-[120px]">
                 {user?.firstName} {user?.lastName}
               </span>
               <div className="flex justify-start">
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[8px] font-black uppercase px-1 h-3.5 border-none",
+                    "text-[8px] font-extrabold uppercase px-1 h-3.5 border-none",
                     getRoleColorClasses(user?.roles?.[0]),
                   )}
                 >
@@ -80,7 +80,7 @@ function TeacherUserNav() {
         >
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-base font-bold leading-none">
+              <p className="text-base font-extrabold leading-none">
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="text-sm leading-none text-foreground">{user?.email}</p>
@@ -88,7 +88,7 @@ function TeacherUserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm"
+            className="cursor-pointer font-extrabold text-sm"
             asChild
           >
             <Link to="/admin/users">
@@ -98,7 +98,7 @@ function TeacherUserNav() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm text-destructive focus:text-primary-foreground"
+            className="cursor-pointer font-extrabold text-sm text-destructive focus:text-primary-foreground"
             onClick={() => setShowLogoutConfirm(true)}
           >
             <LogOut className="mr-2 h-4 w-4" />
@@ -145,7 +145,7 @@ export default function TeacherIntakeLayout() {
             </div>
           )}
           {schoolName && (
-            <span className="font-black text-base uppercase text-primary truncate leading-tight">
+            <span className="font-extrabold text-base uppercase text-primary truncate leading-tight">
               {schoolName}
             </span>
           )}

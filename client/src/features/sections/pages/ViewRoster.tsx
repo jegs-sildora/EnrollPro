@@ -219,30 +219,30 @@ export default function ViewRoster() {
 
     return (
       <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
-        <TableCell className="text-center font-bold text-base text-muted-foreground py-3">
+        <TableCell className="text-center font-extrabold text-base text-muted-foreground py-3">
           {index}
         </TableCell>
-        <TableCell className="text-center font-bold text-base py-3">
+        <TableCell className="text-center font-extrabold text-base py-3">
           {learner.lrn || "—"}
         </TableCell>
         <TableCell className="py-3 pl-2 min-w-[200px]">
-          <span className="font-bold text-base uppercase block leading-tight">
+          <span className="font-extrabold text-base uppercase block leading-tight">
             {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
           </span>
         </TableCell>
         <TableCell className="text-center py-3 whitespace-nowrap">
           {learner.birthdate ? (
-            <span className="text-base font-bold">{formatDate(learner.birthdate)}</span>
+            <span className="text-base font-extrabold">{formatDate(learner.birthdate)}</span>
           ) : (
             <span className="text-sm italic text-muted-foreground">Requires DOB Update</span>
           )}
         </TableCell>
-        <TableCell className="text-center font-bold text-base py-3">
+        <TableCell className="text-center font-extrabold text-base py-3">
           {age !== null ? age : "—"}
         </TableCell>
         <TableCell className="text-center py-3">
           {remark && (
-            <span className="text-sm font-bold uppercase text-foreground">
+            <span className="text-sm font-extrabold uppercase text-foreground">
               {remark}
             </span>
           )}
@@ -251,7 +251,7 @@ export default function ViewRoster() {
           <div className="flex w-full justify-end py-3 pr-2">
             <span
               onClick={() => setSelectedStudentId(learner.id)}
-              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold cursor-pointer"
+              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
             >
               <Eye className="w-4 h-4 mr-2" />
               View
@@ -269,7 +269,7 @@ export default function ViewRoster() {
         <div className="mb-4">
           <Link
             to="/sections"
-            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
           >
             ← Back to Class Sections Lobby
           </Link>
@@ -277,10 +277,10 @@ export default function ViewRoster() {
 
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold uppercase">
+            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase">
               {section?.gradeLevel} — {section?.name}
             </h1>
-            <p className="text-base leading-tight font-bold text-foreground">
+            <p className="text-base leading-tight font-extrabold text-foreground">
               {section ? getProgramTypeLabel(section.programType) : "—"}
             </p>
           </div>
@@ -292,15 +292,15 @@ export default function ViewRoster() {
         <CardHeader className="px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-base font-bold text-foreground whitespace-nowrap">
+              <span className="text-base font-extrabold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-black uppercase text-foreground">
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-extrabold uppercase text-foreground">
                 {section?.advisingTeacher ? section.advisingTeacher.name : "UNASSIGNED"}
               </span>
             </div>
 
-            <div className="flex items-center gap-6 text-base font-bold text-foreground tracking-wide">
+            <div className="flex items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
               <span className="text-foreground">
                 Total Seated: <span className="text-foreground">{roster.length} / {section?.maxCapacity || 0}</span>
               </span>
@@ -334,7 +334,7 @@ export default function ViewRoster() {
                       variant="default"
                       disabled={loading || (roster.length >= (section?.maxCapacity || 0))}
                       onClick={() => setShowDrawer(true)}
-                      className="h-9 font-bold text-sm bg-green-600 hover:bg-green-700 text-white border-none"
+                      className="h-9 font-extrabold text-sm bg-green-600 hover:bg-green-700 text-white border-none"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Add Learner to Roster
@@ -342,7 +342,7 @@ export default function ViewRoster() {
                   </span>
                 </TooltipTrigger>
                 {(roster.length >= (section?.maxCapacity || 0)) && (
-                  <TooltipContent className="bg-slate-900 text-white border-none text-sm font-bold p-3 shadow-xl">
+                  <TooltipContent className="bg-slate-900 text-white border-none text-sm font-extrabold p-3 shadow-xl">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-400" />
                       Maximum capacity reached.
@@ -356,7 +356,7 @@ export default function ViewRoster() {
               variant="outline"
               onClick={handleDownloadSf1}
               disabled={exportingSf1 || loading}
-              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               {exportingSf1 ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -368,7 +368,7 @@ export default function ViewRoster() {
             <Button
               variant="outline"
               onClick={() => window.print()}
-              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               <Printer className="h-4 w-4 mr-2" /> Print
             </Button>
@@ -378,7 +378,7 @@ export default function ViewRoster() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-base font-bold text-foreground">
+              <p className="text-base font-extrabold text-foreground">
                 Loading Roster Data...
               </p>
             </div>
@@ -390,7 +390,7 @@ export default function ViewRoster() {
                     <Users className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
-                    <p className="font-bold text-foreground text-lg">
+                    <p className="font-extrabold text-foreground text-lg">
                       No Enrolled Learners
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed px-4">
@@ -407,13 +407,13 @@ export default function ViewRoster() {
                   <Table className="relative min-w-[900px]">
                     <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
                       <TableRow className="hover:bg-muted border-none">
-                        <TableHead className="text-center font-bold text-foreground h-11 w-[60px] tracking-wide">#</TableHead>
-                        <TableHead className="text-center font-bold text-foreground h-11 w-[120px] tracking-wide">LRN</TableHead>
-                        <TableHead className="text-left font-bold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER NAME</TableHead>
-                        <TableHead className="text-center font-bold text-foreground h-11 w-[160px] tracking-wide">BIRTHDATE</TableHead>
-                        <TableHead className="text-center font-bold text-foreground h-11 w-[80px] tracking-wide">AGE</TableHead>
-                        <TableHead className="text-center font-bold text-foreground h-11 w-[140px] tracking-wide">REMARKS</TableHead>
-                        <TableHead className="text-right font-bold text-foreground h-11 w-[160px] pr-4">ACTION</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">#</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">LRN</TableHead>
+                        <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER NAME</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[160px] tracking-wide">BIRTHDATE</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[80px] tracking-wide">AGE</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[140px] tracking-wide">REMARKS</TableHead>
+                        <TableHead className="text-right font-extrabold text-foreground h-11 w-[160px] pr-4">ACTION</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -422,7 +422,7 @@ export default function ViewRoster() {
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-bold text-sm tracking-widest text-blue-700 uppercase px-2">
+                              <div className="flex justify-between font-extrabold text-sm tracking-widest text-blue-700 uppercase px-2">
                                 <span>MALE LEARNERS</span>
                                 <span>Total: {maleLearners.length}</span>
                               </div>
@@ -437,7 +437,7 @@ export default function ViewRoster() {
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-bold text-sm tracking-widest text-pink-700 uppercase px-2">
+                              <div className="flex justify-between font-extrabold text-sm tracking-widest text-pink-700 uppercase px-2">
                                 <span>FEMALE LEARNERS</span>
                                 <span>Total: {femaleLearners.length}</span>
                               </div>
@@ -449,7 +449,7 @@ export default function ViewRoster() {
 
                       {maleLearners.length === 0 && femaleLearners.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground font-bold">
+                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground font-extrabold">
                             No Learners Enrolled
                           </TableCell>
                         </TableRow>

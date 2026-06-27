@@ -72,13 +72,13 @@ export default function EnrollmentSuccess({
           <div className="flex justify-center mb-4">
             <CheckCircle2 className="w-16 h-16 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-black text-primary">
+          <CardTitle className="text-2xl font-extrabold text-primary">
             Application Submitted
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           <div className="text-center text-lg text-foreground font-semibold mb-6">
-            Your record is now <span className="font-bold text-primary">Pending Verification</span>.
+            Your record is now <span className="font-extrabold text-primary">Pending Verification</span>.
             <br /><br />
             Please proceed to the Hinigaran National High School Registrar&apos;s Office between <strong>June 1 and June 5, 2026</strong>, and bring your physical SF9 (Report Card) along with your PSA Birth Certificate.
           </div>
@@ -98,22 +98,22 @@ export default function EnrollmentSuccess({
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
             )}>
-            <p className="text-base text-foreground uppercase font-black">
+            <p className="text-base text-foreground uppercase font-extrabold">
               Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
-              <p className="text-xl sm:text-4xl font-black text-primary">
+              <p className="text-xl sm:text-4xl font-extrabold text-primary">
                 {trackingNumber}
               </p>
             </div>
             {learnerName && (
-              <p className="text-base leading-tight font-black text-foreground mt-2 uppercase">
+              <p className="text-base leading-tight font-extrabold text-foreground mt-2 uppercase">
                 Learner: {learnerName}
               </p>
             )}
             <p
               className={cn(
-                "text-base font-black transition-all duration-200 mt-2 print:hidden",
+                "text-base font-extrabold transition-all duration-200 mt-2 print:hidden",
                 copied ? "text-primary scale-110" : "text-foreground",
               )}>
               {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
@@ -123,7 +123,7 @@ export default function EnrollmentSuccess({
           <div className="pt-10 border-t border-border/60 flex justify-center print:hidden">
             <Button
               type="button"
-              className="w-full sm:w-full h-12 px-12 font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+              className="w-full sm:w-full h-12 px-12 font-extrabold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               onClick={() => setShowConfirmModal(true)}>
               <Home className="w-4 h-4" />
               Back to Home

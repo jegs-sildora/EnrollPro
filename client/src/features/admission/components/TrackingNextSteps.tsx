@@ -204,7 +204,7 @@ export default function TrackingNextSteps({
       {terminalNotice && (
         <div
           className={cn(
-            "rounded-xl border px-4 py-3 text-base leading-tight font-bold",
+            "rounded-xl border px-4 py-3 text-base leading-tight font-extrabold",
             terminalNotice.tone,
           )}>
           <div className="flex items-start gap-2">
@@ -233,11 +233,11 @@ export default function TrackingNextSteps({
                 className={cn(
                   "absolute left-0 top-1 flex h-8 w-8 items-center justify-center rounded-full border-2",
                   step.isCompleted &&
-                    "border-emerald-500 bg-emerald-50 text-emerald-700",
+                  "border-emerald-500 bg-emerald-50 text-emerald-700",
                   step.isActive && "border-blue-500 bg-blue-50 text-blue-700",
                   !step.isCompleted &&
-                    !step.isActive &&
-                    "border-muted bg-background text-foreground",
+                  !step.isActive &&
+                  "border-muted bg-background text-foreground",
                 )}>
                 {step.isCompleted ? (
                   <CheckCircle2 className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function TrackingNextSteps({
               <div className="space-y-1 pb-2">
                 <p
                   className={cn(
-                    "text-base leading-tight font-black uppercase ",
+                    "text-base leading-tight font-extrabold uppercase ",
                     step.isCompleted && "text-emerald-700",
                     step.isActive && "text-blue-700",
                     !step.isCompleted && !step.isActive && "text-foreground",

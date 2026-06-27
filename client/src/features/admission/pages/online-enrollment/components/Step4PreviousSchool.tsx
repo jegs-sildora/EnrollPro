@@ -82,7 +82,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-school"
-              className="text-base leading-tight font-bold text-foreground">
+              className="text-base leading-tight font-extrabold text-foreground">
               Last School Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -91,9 +91,9 @@ export default function Step4PreviousSchool() {
               {...register("lastSchoolName")}
               placeholder="e.g. Apolinario Mabini Elementary School"
               className={cn(
-                "h-11 font-bold uppercase",
+                "h-11 font-extrabold uppercase",
                 errors.lastSchoolName &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
               onInput={(e) => {
                 (e.target as HTMLInputElement).value = (
@@ -106,7 +106,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-school-id"
-              className="text-base leading-tight font-bold text-foreground">
+              className="text-base leading-tight font-extrabold text-foreground">
               School ID (Optional)
             </Label>
             <Input
@@ -114,7 +114,7 @@ export default function Step4PreviousSchool() {
               id="prev-school-id"
               {...register("lastSchoolId")}
               placeholder="6-digit DepEd ID"
-              className="h-11 font-bold uppercase"
+              className="h-11 font-extrabold uppercase"
               maxLength={6}
             />
           </div>
@@ -124,7 +124,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-grade"
-              className="text-base leading-tight font-bold text-foreground">
+              className="text-base leading-tight font-extrabold text-foreground">
               {isAls ? "ALS Qualification" : "Last Grade Completed"}{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -135,7 +135,7 @@ export default function Step4PreviousSchool() {
                 id="prev-grade"
                 readOnly
                 value="A&E Test Passer"
-                className="h-11 font-bold bg-muted text-foreground cursor-not-allowed"
+                className="h-11 font-extrabold bg-muted text-foreground cursor-not-allowed"
               />
             )}
 
@@ -145,9 +145,9 @@ export default function Step4PreviousSchool() {
                 <SelectTrigger
                   id="prev-grade"
                   className={cn(
-                    "h-11 font-bold text-foreground pointer-events-none uppercase",
+                    "h-11 font-extrabold text-foreground pointer-events-none uppercase",
                     errors.lastGradeCompleted &&
-                      "border-destructive focus-visible:ring-destructive",
+                    "border-destructive focus-visible:ring-destructive",
                   )}>
                   <SelectValue placeholder="Auto-filled from Grade Level" />
                 </SelectTrigger>
@@ -156,7 +156,7 @@ export default function Step4PreviousSchool() {
                     <SelectItem
                       key={g}
                       value={g}
-                      className="font-bold">
+                      className="font-extrabold">
                       {g}
                     </SelectItem>
                   ))}
@@ -176,9 +176,9 @@ export default function Step4PreviousSchool() {
                 <SelectTrigger
                   id="prev-grade"
                   className={cn(
-                    "h-11 font-bold",
+                    "h-11 font-extrabold",
                     errors.lastGradeCompleted &&
-                      "border-destructive focus-visible:ring-destructive",
+                    "border-destructive focus-visible:ring-destructive",
                   )}>
                   <SelectValue placeholder="Select last grade completed" />
                 </SelectTrigger>
@@ -187,7 +187,7 @@ export default function Step4PreviousSchool() {
                     <SelectItem
                       key={g}
                       value={g}
-                      className="font-bold">
+                      className="font-extrabold">
                       {g}
                     </SelectItem>
                   ))}
@@ -196,7 +196,7 @@ export default function Step4PreviousSchool() {
             )}
 
             {errors.lastGradeCompleted && (
-              <p className="text-base font-bold text-destructive">
+              <p className="text-base font-extrabold text-destructive">
                 {errors.lastGradeCompleted.message}
               </p>
             )}
@@ -205,7 +205,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="prev-sy"
-              className="text-base leading-tight font-bold text-foreground">
+              className="text-base leading-tight font-extrabold text-foreground">
               School Year Last Attended{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -215,9 +215,9 @@ export default function Step4PreviousSchool() {
               <SelectTrigger
                 id="prev-sy"
                 className={cn(
-                  "h-11 font-bold",
+                  "h-11 font-extrabold",
                   errors.schoolYearLastAttended &&
-                    "border-destructive focus-visible:ring-destructive",
+                  "border-destructive focus-visible:ring-destructive",
                 )}>
                 <SelectValue placeholder="Select School Year" />
               </SelectTrigger>
@@ -226,7 +226,7 @@ export default function Step4PreviousSchool() {
                   <SelectItem
                     key={sy}
                     value={sy}
-                    className="font-bold">
+                    className="font-extrabold">
                     {sy}
                   </SelectItem>
                 ))}
@@ -236,7 +236,7 @@ export default function Step4PreviousSchool() {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base leading-tight font-bold text-foreground">
+          <Label className="text-base leading-tight font-extrabold text-foreground">
             School Type <span className="text-destructive">*</span>
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -251,7 +251,7 @@ export default function Step4PreviousSchool() {
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
-                <span className="font-bold text-base leading-tight ">
+                <span className="font-extrabold text-base leading-tight ">
                   {lt.label}
                 </span>
               </button>
@@ -262,7 +262,7 @@ export default function Step4PreviousSchool() {
         <div className="space-y-2 pt-2">
           <Label
             htmlFor="prev-addr"
-            className="text-base leading-tight font-bold text-foreground">
+            className="text-base leading-tight font-extrabold text-foreground">
             School Address / Division (Optional)
           </Label>
           <Input
@@ -270,7 +270,7 @@ export default function Step4PreviousSchool() {
             id="prev-addr"
             {...register("lastSchoolAddress")}
             placeholder="City/Municipality, Province"
-            className="h-11 font-bold uppercase"
+            className="h-11 font-extrabold uppercase"
           />
         </div>
       </div>

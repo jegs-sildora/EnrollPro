@@ -543,9 +543,9 @@ export default function ClassRecordView() {
   };
 
   const handleScoreUpdate = async (
-    studentId: string, 
-    category: 'WW' | 'PT' | 'QA', 
-    index: number, 
+    studentId: string,
+    category: 'WW' | 'PT' | 'QA',
+    index: number,
     newValue: number
   ) => {
     await executeScoreUpdate({
@@ -568,8 +568,8 @@ export default function ClassRecordView() {
   };
 
   const handleHpsUpdate = async (
-    category: 'WW' | 'PT' | 'QA', 
-    index: number, 
+    category: 'WW' | 'PT' | 'QA',
+    index: number,
     newMax: number
   ) => {
     await executeHpsUpdate({
@@ -787,7 +787,7 @@ export default function ClassRecordView() {
   const [ecrProgress, setEcrProgress] = useState<string>('');
   const [ecrPercentage, setEcrPercentage] = useState<number>(0);
   const [showEcrGenerationDialog, setShowEcrGenerationDialog] = useState(false);
-  
+
   const downloadECR = async () => {
     if (!classAssignment) return;
     try {
@@ -796,7 +796,7 @@ export default function ClassRecordView() {
       setEcrProgress('Initializing compilation...');
       setEcrPercentage(20);
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       const token = sessionStorage.getItem("token");
       const response = await fetch(`${SERVER_URL}/api/ecr-templates/generate/${classAssignment.id}`, {
         method: 'POST',
@@ -805,15 +805,15 @@ export default function ClassRecordView() {
       });
 
       if (!response.ok) throw new Error('Failed to generate ECR');
-      
+
       setEcrPercentage(60);
       setEcrProgress('Injecting records...');
       const blob = await response.blob();
-      
+
       setEcrPercentage(90);
       setEcrProgress('Finalizing workbook...');
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -822,7 +822,7 @@ export default function ClassRecordView() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       setEcrPercentage(100);
       setEcrProgress('Download started!');
       setTimeout(() => setShowEcrGenerationDialog(false), 1500);
@@ -839,7 +839,7 @@ export default function ClassRecordView() {
           <div className="w-20 h-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
             <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
           </div>
-          <p className="text-slate-500 font-black text-xs uppercase tracking-widest">Fetching Class Records...</p>
+          <p className="text-slate-500 font-extrabold text-xs uppercase tracking-widest">Fetching Class Records...</p>
         </div>
       </div>
     );
@@ -863,7 +863,7 @@ export default function ClassRecordView() {
       {(error || success) && (
         <div className={`fixed top-20 right-6 z-[100] flex items-center gap-4 px-6 py-4 rounded-[1.5rem] shadow-2xl border-0 animate-slide-in-right ${error ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"}`}>
           {error ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-          <span className="text-sm font-black uppercase tracking-widest">{error || success}</span>
+          <span className="text-sm font-extrabold uppercase tracking-widest">{error || success}</span>
           <button onClick={() => { setError(''); setSuccess(''); }} className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
         </div>
       )}

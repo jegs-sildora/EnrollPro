@@ -63,7 +63,7 @@ export function AssessmentHeader({
                 {/* Inputs */}
                 <div className="flex-1 grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">
                       {categoryLabel} Description (optional)
                     </label>
                     <input
@@ -73,11 +73,11 @@ export function AssessmentHeader({
                         setMetaEditorDraft((prev) => ({ ...prev, description: e.target.value }))
                       }
                       placeholder={`e.g., Quiz ${selectedColumn.number}`}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-all"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm  text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">
                       Column Date (applies to all students)
                     </label>
                     <input
@@ -86,7 +86,7 @@ export function AssessmentHeader({
                       onChange={(e) =>
                         setMetaEditorDraft((prev) => ({ ...prev, date: e.target.value }))
                       }
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-all"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm  text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-all"
                     />
                   </div>
                 </div>
@@ -102,7 +102,7 @@ export function AssessmentHeader({
                   <button
                     onClick={saveColumnMeta}
                     disabled={savingMeta}
-                    className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-all disabled:opacity-50 shadow-sm"
+                    className="px-6 py-2.5 bg-slate-900 text-white text-sm font-extrabold rounded-xl hover:bg-slate-700 transition-all disabled:opacity-50 shadow-sm"
                   >
                     {savingMeta ? "Applying\u2026" : "Apply"}
                   </button>
@@ -119,7 +119,7 @@ export function AssessmentHeader({
           <div className="px-4 py-1.5">
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 px-4 pt-2.5 pb-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                   Optional Assessment Details
                 </span>
                 <div className="flex-1 h-px bg-slate-100" />
@@ -128,12 +128,12 @@ export function AssessmentHeader({
               <div className="grid grid-cols-3 gap-0 divide-x divide-slate-100">
                 {/* Written Work */}
                 <div className="px-4 py-2.5 space-y-2 flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1.5 mb-1.5">
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 flex items-center gap-1.5 mb-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
                     Written Work
                   </p>
                   <div className="mb-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5 ml-0.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase mb-0.5 ml-0.5">
                       WW 1 Date
                     </label>
                     <input
@@ -175,12 +175,12 @@ export function AssessmentHeader({
 
                 {/* Performance Tasks */}
                 <div className="px-4 py-2.5 space-y-2 flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-purple-600 flex items-center gap-1.5 mb-1.5">
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-purple-600 flex items-center gap-1.5 mb-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block" />
                     Performance Tasks
                   </p>
                   <div className="mb-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5 ml-0.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase mb-0.5 ml-0.5">
                       PT 1 Date
                     </label>
                     <input
@@ -222,12 +222,12 @@ export function AssessmentHeader({
 
                 {/* Term Assessment */}
                 <div className="px-4 py-2.5 space-y-2 flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5 mb-1.5">
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600 flex items-center gap-1.5 mb-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
                     Term Assessment
                   </p>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5 ml-0.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase mb-0.5 ml-0.5">
                       TA Date
                     </label>
                     <input
@@ -238,7 +238,7 @@ export function AssessmentHeader({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5 ml-0.5">
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase mb-0.5 ml-0.5">
                       TA Description
                     </label>
                     <input
@@ -251,7 +251,7 @@ export function AssessmentHeader({
                   </div>
                   <Button
                     onClick={saveAssessmentDetails}
-                    className="w-full h-8 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-700 transition-all shadow-sm mt-0.5"
+                    className="w-full h-8 rounded-lg text-[10px] font-extrabold uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-700 transition-all shadow-sm mt-0.5"
                   >
                     Save All Details
                   </Button>

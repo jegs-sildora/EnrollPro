@@ -4,13 +4,13 @@ import { badgeVariants } from './badge-variants';
 
 export interface BadgeProps
 	extends
-		React.HTMLAttributes<HTMLDivElement>,
-		VariantProps<typeof badgeVariants> {}
+	React.HTMLAttributes<HTMLDivElement>,
+	VariantProps<typeof badgeVariants> { }
 
 function Badge({ className, variant, ...props }: BadgeProps) {
 	return (
 		<div
-			className={cn(badgeVariants({ variant }), 'font-bold', className)}
+			className={cn(badgeVariants({ variant }), 'font-extrabold', className)}
 			{...props}
 		/>
 	);

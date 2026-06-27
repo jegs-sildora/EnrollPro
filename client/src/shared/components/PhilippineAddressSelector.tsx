@@ -173,7 +173,7 @@ export function PhilippineAddressSelector({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Region */}
       <div className="space-y-1.5">
-        <label className="text-base font-bold uppercase text-foreground">
+        <label className="text-base font-extrabold uppercase text-foreground">
           Region{requiredMark}
         </label>
         <AddressCombobox
@@ -185,7 +185,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.region}
         />
         {errors?.region && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1">
+          <p className="text-base text-destructive font-extrabold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.region}
           </p>
@@ -194,7 +194,7 @@ export function PhilippineAddressSelector({
 
       {/* Province */}
       <div className="space-y-1.5">
-        <label className="text-base font-bold uppercase text-foreground">
+        <label className="text-base font-extrabold uppercase text-foreground">
           Province{requiredMark}
         </label>
         <AddressCombobox
@@ -213,7 +213,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.province}
         />
         {errors?.province && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1">
+          <p className="text-base text-destructive font-extrabold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.province}
           </p>
@@ -222,7 +222,7 @@ export function PhilippineAddressSelector({
 
       {/* City / Municipality */}
       <div className="space-y-1.5">
-        <label className="text-base font-bold uppercase text-foreground">
+        <label className="text-base font-extrabold uppercase text-foreground">
           City / Municipality{requiredMark}
         </label>
         <AddressCombobox
@@ -241,7 +241,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.cityMunicipality}
         />
         {errors?.cityMunicipality && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1">
+          <p className="text-base text-destructive font-extrabold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.cityMunicipality}
           </p>
@@ -250,7 +250,7 @@ export function PhilippineAddressSelector({
 
       {/* Barangay */}
       <div className="space-y-1.5">
-        <label className="text-base font-bold uppercase text-foreground">
+        <label className="text-base font-extrabold uppercase text-foreground">
           Barangay{requiredMark}
         </label>
         <AddressCombobox
@@ -269,7 +269,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.barangay}
         />
         {errors?.barangay && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1">
+          <p className="text-base text-destructive font-extrabold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.barangay}
           </p>

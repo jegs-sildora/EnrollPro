@@ -293,20 +293,20 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
           {/* Sticky Header with Curated HSL Accent & Glassmorphism */}
           <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="size-14 rounded-2xl bg-primary-foreground/10 flex items-center justify-center font-black text-primary-foreground text-xl uppercase border border-primary-foreground/20 shadow-md">
+              <div className="size-14 rounded-2xl bg-primary-foreground/10 flex items-center justify-center font-extrabold text-primary-foreground text-xl uppercase border border-primary-foreground/20 shadow-md">
                 {initials}
               </div>
               <div className="space-y-0.5">
-                <h2 className="text-base font-black text-primary-foreground uppercase leading-none">
+                <h2 className="text-base font-extrabold text-primary-foreground uppercase leading-none">
                   {displayName}
                 </h2>
                 {user?.roles?.includes("LEARNER") ? (
-                  <p className="text-base leading-tight font-black text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+                  <p className="text-base leading-tight font-extrabold text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                     <Fingerprint className="size-3" />
                     LRN: {user.learnerProfile?.lrn || "NO LRN"}
                   </p>
                 ) : (
-                  <p className="text-base leading-tight font-black text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+                  <p className="text-base leading-tight font-extrabold text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                     <Fingerprint className="size-3" />
                     Employee ID: {formData.employeeId || "PENDING"}
                   </p>
@@ -317,7 +317,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
               <div className="flex items-center gap-3 shrink-0 pr-8">
                 <Badge
                   className={cn(
-                    "text-base leading-tight font-bold uppercase transition-all shadow-sm border",
+                    "text-base leading-tight font-extrabold uppercase transition-all shadow-sm border",
                     user.isActive
                       ? "bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20"
                       : "bg-destructive/80 text-destructive-foreground border-destructive hover:bg-destructive"
@@ -334,18 +334,18 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
               {/* 1. Access & Role Section */}
               {!(mode === "edit" && user?.roles.includes("LEARNER")) && (
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                  <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
                       1. Access & Permissions
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-[11px] text-foreground/70 font-bold mb-4">
+                    <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
                       Select the staff member's system access level.
                     </p>
                     <div className="space-y-2">
-                      <Label className="text-base leading-tight font-black uppercase text-foreground">
+                      <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                         SYSTEM ROLES & DESIGNATIONS *
                       </Label>
 
@@ -368,7 +368,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                                 onFieldChange("roles", newRoles);
                               }}
                             />
-                            <Label htmlFor={`role-${roleOption.value}`} className="text-base font-bold uppercase cursor-pointer flex-1">
+                            <Label htmlFor={`role-${roleOption.value}`} className="text-base font-extrabold uppercase cursor-pointer flex-1">
                               {roleOption.label}
                             </Label>
                           </div>
@@ -384,69 +384,69 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
               {mode === "create" && (
                 <>
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                    <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                       <span className="flex items-center gap-2">
                         <UserIcon className="h-4 w-4 text-primary" />
                         2. Personal Information
                       </span>
                     </div>
                     <div className="px-5 pb-5 pt-4">
-                      <p className="text-[11px] text-foreground/70 font-bold mb-4">
+                      <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
                         Legal name and basic identity details.
                       </p>
 
                       <div className="grid gap-4 sm:grid-cols-2 mb-4">
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             First Name *
                           </Label>
                           <Input
                             placeholder="REGINA"
                             value={formData.firstName}
                             onChange={(e) => onFieldChange("firstName", e.target.value.toUpperCase())}
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             Last Name *
                           </Label>
                           <Input
                             placeholder="CRUZ"
                             value={formData.lastName}
                             onChange={(e) => onFieldChange("lastName", e.target.value.toUpperCase())}
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2 mb-4">
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             Middle Name
                           </Label>
                           <Input
                             placeholder="OPTIONAL"
                             value={formData.middleName}
                             onChange={(e) => onFieldChange("middleName", e.target.value.toUpperCase())}
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             Suffix (e.g., Jr., III)
                           </Label>
                           <Input
                             placeholder="JR., III"
                             value={formData.suffix}
                             onChange={(e) => onFieldChange("suffix", e.target.value.toUpperCase())}
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-base leading-tight font-black uppercase text-foreground">
+                        <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                           Sex *
                         </Label>
                         <div className="flex gap-4">
@@ -461,7 +461,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                               type="button"
                               onClick={() => onFieldChange("sex", s.val)}
                               className={cn(
-                                "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-black uppercase",
+                                "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
                                 formData.sex === s.val
                                   ? "border-primary bg-primary/5 text-primary"
                                   : "border-border hover:bg-muted/50 text-foreground",
@@ -485,21 +485,21 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                   {/* 3. Employment Details Section (Conditional) */}
                   {showEmploymentDetails && (
                     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                      <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                         <span className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4 text-primary" />
                           3. PLANTILLA & ACADEMIC ASSIGNMENT
                         </span>
                       </div>
                       <div className="px-5 pb-5 pt-4">
-                        <p className="text-[11px] text-foreground/70 font-bold mb-4">
+                        <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
                           Official DepEd credentials and department assignment.
                         </p>
 
                         <div className="grid gap-4 sm:grid-cols-2 mb-4">
                           {needsEmployeeId && (
                             <div className="space-y-1.5">
-                              <Label className="text-base leading-tight font-black uppercase text-foreground flex items-center gap-1">
+                              <Label className="text-base leading-tight font-extrabold uppercase text-foreground flex items-center gap-1">
                                 <Fingerprint className="h-3 w-3" />
                                 Employee ID *
                               </Label>
@@ -508,23 +508,23 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                                 onChange={(e) => onFieldChange("employeeId", e.target.value.replace(/\D/g, "").toUpperCase())}
                                 maxLength={7}
                                 placeholder="7-digit ID"
-                                className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                                className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                               />
                             </div>
                           )}
 
                           {needsDepartment && (
                             <div className="space-y-1.5">
-                              <Label className="text-base leading-tight font-black uppercase text-foreground">
+                              <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                                 Department
                               </Label>
                               <Select
                                 value={formData.department || "__NONE__"}
                                 onValueChange={(v) => onFieldChange("department", v === "__NONE__" ? "" : v)}>
-                                <SelectTrigger className="font-bold text-base leading-tight bg-background text-foreground border-border h-10">
+                                <SelectTrigger className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-base leading-tight uppercase">
+                                <SelectContent className="bg-popover text-popover-foreground border-border font-extrabold text-base leading-tight uppercase">
                                   <SelectItem value="__NONE__">Not set</SelectItem>
                                   {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
                                     <SelectItem
@@ -540,7 +540,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             DepEd Position
                           </Label>
                           {formData.roles.includes("MRF") || designationPool.length === 0 ? (
@@ -548,7 +548,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                               value={formData.designation}
                               onChange={(e) => onFieldChange("designation", e.target.value.toUpperCase())}
                               placeholder="e.g. MASTER TEACHER II"
-                              className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                              className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                               readOnly={formData.roles.includes("MRF")}
                               aria-readonly={formData.roles.includes("MRF")}
                             />
@@ -557,10 +557,10 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                               value={formData.designation || "__NONE__"}
                               onValueChange={(v) => onFieldChange("designation", v === "__NONE__" ? "" : v)}
                             >
-                              <SelectTrigger className="font-bold text-base leading-tight bg-background text-foreground border-border h-10">
+                              <SelectTrigger className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10">
                                 <SelectValue placeholder="Select position" />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover text-popover-foreground border-border font-bold text-base leading-tight uppercase max-h-[300px]">
+                              <SelectContent className="bg-popover text-popover-foreground border-border font-extrabold text-base leading-tight uppercase max-h-[300px]">
                                 <SelectItem value="__NONE__">Not set</SelectItem>
                                 {designationPool.map((opt) => (
                                   <SelectItem key={opt} value={opt}>
@@ -571,7 +571,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                             </Select>
                           )}
                           {formData.roles.includes("MRF") && (
-                            <p className="text-[10px] text-foreground mt-1.5 leading-snug font-bold">
+                            <p className="text-[10px] text-foreground mt-1.5 leading-snug font-extrabold">
                               <strong className="text-foreground">Note:</strong> Designation is tied to the selected role for MRF accounts and cannot be edited here.
                             </p>
                           )}
@@ -582,20 +582,20 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
 
                   {/* 4. Contact Information Section */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                    <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                       <span className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-primary" />
                         4. Contact Information
                       </span>
                     </div>
                     <div className="px-5 pb-5 pt-4">
-                      <p className="text-[11px] text-foreground/70 font-bold mb-4">
+                      <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
                         Communication channels for notifications.
                       </p>
 
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                             Email Address *
                           </Label>
                           <Input
@@ -603,11 +603,11 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                             placeholder="regina.cruz@deped.edu.ph"
                             value={formData.email}
                             onChange={(e) => onFieldChange("email", e.target.value)}
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-base leading-tight font-black uppercase text-foreground flex items-center gap-1">
+                          <Label className="text-base leading-tight font-extrabold uppercase text-foreground flex items-center gap-1">
                             <Smartphone className="h-3 w-3" />
                             Mobile Number
                           </Label>
@@ -616,7 +616,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                             onChange={(e) => onFieldChange("mobileNumber", e.target.value.replace(/\D/g, ""))}
                             maxLength={11}
                             placeholder="09XXXXXXXXX"
-                            className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         </div>
                       </div>
@@ -628,7 +628,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
               {/* Security Management Section (Edit Mode) */}
               {mode === "edit" && user && (
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                  <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <ShieldAlert className="h-4 w-4 text-primary" />
                       Account Security
@@ -638,8 +638,8 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     {/* Active Status Switch - Radio Buttons */}
                     <div className="space-y-3 p-4 bg-background border rounded-lg">
                       <div className="space-y-1">
-                        <Label className="text-base leading-tight font-black uppercase">System Login Access</Label>
-                        <p className="text-[11px] font-bold text-foreground uppercase">
+                        <Label className="text-base leading-tight font-extrabold uppercase">System Login Access</Label>
+                        <p className="text-[11px] font-extrabold text-foreground uppercase">
                           Control whether this account can access the system.
                         </p>
                       </div>
@@ -648,7 +648,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                           type="button"
                           onClick={() => onFieldChange("isActive", true)}
                           className={cn(
-                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2.5 transition-colors text-base leading-tight font-black uppercase",
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2.5 transition-colors text-base leading-tight font-extrabold uppercase",
                             formData.isActive
                               ? "border-green-500 bg-green-50 text-green-700"
                               : "border-border hover:bg-muted/50 text-foreground",
@@ -666,7 +666,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                           type="button"
                           onClick={() => onFieldChange("isActive", false)}
                           className={cn(
-                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2.5 transition-colors text-base leading-tight font-black uppercase",
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2.5 transition-colors text-base leading-tight font-extrabold uppercase",
                             !formData.isActive
                               ? "border-red-500 bg-red-50 text-red-700"
                               : "border-border hover:bg-muted/50 text-foreground",
@@ -686,25 +686,25 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     {/* Customizable Password Reset */}
                     <div className="space-y-3 p-4 bg-background border rounded-lg">
                       <div className="space-y-1">
-                        <Label className="text-base leading-tight font-black uppercase">Password Reset</Label>
-                        <p className="text-[11px] font-bold text-foreground uppercase">
+                        <Label className="text-base leading-tight font-extrabold uppercase">Password Reset</Label>
+                        <p className="text-[11px] font-extrabold text-foreground uppercase">
                           Set the temporary password for this learner. Updating this field will also update the global default password displayed on the Learner Portal login screen. They will be forced to create a new password upon their next login.
                         </p>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-base font-black uppercase text-foreground">Customize Default Password</Label>
+                        <Label className="text-base font-extrabold uppercase text-foreground">Customize Default Password</Label>
                         <Input
                           type="text"
                           value={customPassword}
                           onChange={(e) => setCustomPassword(e.target.value)}
                           placeholder="DepEd2026!"
-                          className="font-bold text-base leading-tight bg-background h-10"
+                          className="font-extrabold text-base leading-tight bg-background h-10"
                         />
                       </div>
                       <Button
                         type="button"
                         variant="secondary"
-                        className="w-full font-black uppercase text-base leading-tight h-10"
+                        className="w-full font-extrabold uppercase text-base leading-tight h-10"
                         onClick={() => onResetToDefault?.(customPassword)}
                         disabled={submitting || !customPassword.trim()}
                       >
@@ -719,42 +719,42 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
               {/* 5. Security Section (Create Mode Only) */}
               {mode === "create" && (
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
-                  <div className="px-5 py-4 font-black uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                     <span className="flex items-center gap-2">
                       <ShieldAlert className="h-4 w-4 text-primary" />
                       5. Security & Onboarding
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-[11px] text-foreground/70 font-bold mb-4">
+                    <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
                       Initial access credentials.
                     </p>
 
                     {!needsEmployeeId && (
                       <div className="space-y-1.5 mb-4">
-                        <Label className="text-base leading-tight font-black uppercase text-foreground">
+                        <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                           System Username *
                         </Label>
                         <Input
                           value={formData.accountName || ""}
                           onChange={(e) => onFieldChange("accountName", e.target.value.replace(/\s+/g, ""))}
-                          className="font-bold text-base leading-tight bg-background text-foreground border-border h-10"
+                          className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                         />
-                        <p className="text-[10px] text-foreground/70 font-bold leading-snug">
+                        <p className="text-[10px] text-foreground/70 font-extrabold leading-snug">
                           Used for local portal authentication in lieu of a DepEd ID.
                         </p>
                       </div>
                     )}
 
                     <div className="space-y-1.5 mb-4">
-                      <Label className="text-base leading-tight font-black uppercase text-foreground">
+                      <Label className="text-base leading-tight font-extrabold uppercase text-foreground">
                         Temporary Password *
                       </Label>
                       <div className="flex gap-2">
                         <Input
                           value={formData.password}
                           readOnly
-                          className="font-bold text-base leading-tight bg-muted/30 text-foreground border-border h-10"
+                          className="font-extrabold text-base leading-tight bg-muted/30 text-foreground border-border h-10"
                         />
                         <Button
                           variant="outline"
@@ -778,7 +778,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         </Button>
                       </div>
                     </div>
-                    <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[10px] font-bold text-orange-800 leading-relaxed uppercase">
+                    <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[10px] font-extrabold text-orange-800 leading-relaxed uppercase">
                       <div className="flex items-center gap-1.5 mb-1 text-orange-900">
                         <ShieldAlert className="h-3 w-3" />
                         Governance Notice
@@ -795,7 +795,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
             <Button
               onClick={onSubmit}
               disabled={submitting || !canSubmit}
-              className="w-full sm:w-auto font-black uppercase px-8 shadow-lg shadow-primary/20">
+              className="w-full sm:w-auto font-extrabold uppercase px-8 shadow-lg shadow-primary/20">
               {submitting ? (
                 <>
                   <Check className="mr-2 h-4 w-4 animate-pulse" />

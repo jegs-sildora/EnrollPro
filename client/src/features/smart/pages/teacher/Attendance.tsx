@@ -70,7 +70,7 @@ export default function Attendance() {
     const fetchSections = async () => {
       try {
         const token = sessionStorage.getItem("token");
-        
+
         // Get class assignments
         const classResponse = await axios.get(`${SERVER_URL}/api/grades/my-classes`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -231,9 +231,9 @@ export default function Attendance() {
             <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-lg">
               <ClipboardCheck className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Daily Attendance</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Daily Attendance</h1>
           </div>
-          <p className="text-slate-500 font-medium">Manage and track student attendance records</p>
+          <p className="text-slate-500 ">Manage and track student attendance records</p>
         </div>
       </div>
 
@@ -242,9 +242,9 @@ export default function Attendance() {
         <CardContent className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <div className="space-y-2">
-              <Label htmlFor="section" className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Section</Label>
+              <Label htmlFor="section" className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pl-1">Target Section</Label>
               <Select value={selectedSection} onValueChange={setSelectedSection}>
-                <SelectTrigger id="section" className="h-12 bg-slate-50 border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all">
+                <SelectTrigger id="section" className="h-12 bg-slate-50 border-slate-100 rounded-xl text-xs font-extrabold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all">
                   <SelectValue placeholder="Select section">
                     {selectedSection && sections.length > 0 ? (
                       (() => {
@@ -256,7 +256,7 @@ export default function Attendance() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 shadow-xl">
                   {sections.map((section) => (
-                    <SelectItem key={section.id} value={section.id} className="text-xs font-bold uppercase">
+                    <SelectItem key={section.id} value={section.id} className="text-xs font-extrabold uppercase">
                       {gradeLevelLabels[section.gradeLevel]} - {section.name}
                     </SelectItem>
                   ))}
@@ -265,7 +265,7 @@ export default function Attendance() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Attendance Date</Label>
+              <Label htmlFor="date" className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pl-1">Attendance Date</Label>
               <div className="relative">
                 <Input
                   id="date"
@@ -273,7 +273,7 @@ export default function Attendance() {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   max={new Date().toISOString().split("T")[0]}
-                  className="h-12 bg-slate-50 border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all pl-10"
+                  className="h-12 bg-slate-50 border-slate-100 rounded-xl text-xs font-extrabold shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all pl-10"
                 />
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -283,7 +283,7 @@ export default function Attendance() {
               <Button
                 onClick={markAllPresent}
                 variant="outline"
-                className="flex-1 h-12 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-bold transition-all"
+                className="flex-1 h-12 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold transition-all"
                 disabled={!attendanceData || loading}
               >
                 <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
@@ -292,7 +292,7 @@ export default function Attendance() {
               <Button
                 onClick={saveAttendance}
                 disabled={saving || !attendanceData}
-                className="flex-1 h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 font-black text-[10px] tracking-widest uppercase transition-all"
+                className="flex-1 h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 font-extrabold text-[10px] tracking-widest uppercase transition-all"
               >
                 {saving ? (
                   <>
@@ -314,11 +314,10 @@ export default function Attendance() {
       {/* Messaging */}
       {message && (
         <div
-          className={`p-5 rounded-2xl border-0 shadow-lg animate-slide-up ${
-            message.type === "success"
-              ? "bg-emerald-50 text-emerald-700 shadow-emerald-100"
-              : "bg-rose-50 text-rose-700 shadow-rose-100"
-          }`}
+          className={`p-5 rounded-2xl border-0 shadow-lg animate-slide-up ${message.type === "success"
+            ? "bg-emerald-50 text-emerald-700 shadow-emerald-100"
+            : "bg-rose-50 text-rose-700 shadow-rose-100"
+            }`}
         >
           <div className="flex items-center gap-3">
             {message.type === "success" ? (
@@ -326,7 +325,7 @@ export default function Attendance() {
             ) : (
               <AlertCircle className="w-5 h-5" />
             )}
-            <span className="font-bold text-sm tracking-tight">{message.text}</span>
+            <span className="font-extrabold text-sm tracking-tight">{message.text}</span>
           </div>
         </div>
       )}
@@ -344,8 +343,8 @@ export default function Attendance() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                    <p className={`text-3xl font-black text-${stat.color}-600`}>{stat.value}</p>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                    <p className={`text-3xl font-extrabold text-${stat.color}-600`}>{stat.value}</p>
                   </div>
                   <div className={`p-3 rounded-2xl bg-${stat.color}-50 text-${stat.color}-500`}>
                     <stat.icon className="w-6 h-6" />
@@ -362,13 +361,13 @@ export default function Attendance() {
         <CardHeader className="p-8 border-b border-slate-50 bg-slate-50/30">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl font-black text-slate-900">
-                {attendanceData?.section 
+              <CardTitle className="text-xl font-extrabold text-slate-900">
+                {attendanceData?.section
                   ? `${gradeLevelLabels[attendanceData.section.gradeLevel]} - ${attendanceData.section.name}`
                   : "Attendance Roster"
                 }
               </CardTitle>
-              <CardDescription className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
+              <CardDescription className="text-slate-400 text-xs font-extrabold uppercase tracking-widest mt-1">
                 {attendanceData ? `${attendanceData.attendance.length} Learners Enrolled` : "Select filters to view list"}
               </CardDescription>
             </div>
@@ -378,31 +377,31 @@ export default function Attendance() {
           {loading ? (
             <div className="py-24 text-center">
               <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Pulling Records...</p>
+              <p className="text-slate-400 font-extrabold uppercase tracking-widest text-xs">Pulling Records...</p>
             </div>
           ) : attendanceData ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/50 hover:bg-transparent border-0">
-                    <TableHead className="px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">LRN</TableHead>
-                    <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Learner Name</TableHead>
-                    <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Attendance Status</TableHead>
-                    <TableHead className="px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Notes / Remarks</TableHead>
+                    <TableHead className="px-8 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">LRN</TableHead>
+                    <TableHead className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Learner Name</TableHead>
+                    <TableHead className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Attendance Status</TableHead>
+                    <TableHead className="px-8 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Notes / Remarks</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {attendanceData.attendance.map((student) => (
                     <TableRow key={student.studentId} className="hover:bg-slate-50/50 transition-all border-slate-50 group">
-                      <TableCell className="px-8 font-mono text-xs text-slate-400 font-bold group-hover:text-slate-900 transition-colors">
+                      <TableCell className="px-8 font-mono text-xs text-slate-400 font-extrabold group-hover:text-slate-900 transition-colors">
                         {student.lrn}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-extrabold text-xs">
                             {student.lastName.charAt(0)}
                           </div>
-                          <span className="font-bold text-slate-900 tracking-tight">
+                          <span className="font-extrabold text-slate-900 tracking-tight">
                             {student.lastName}, {student.firstName}
                           </span>
                         </div>
@@ -418,11 +417,10 @@ export default function Attendance() {
                             <button
                               key={option.id}
                               onClick={() => handleStatusChange(student.studentId, option.id as any)}
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                                student.status === option.id 
-                                  ? `bg-${option.color}-500 text-white shadow-lg shadow-${option.color}-200 scale-110` 
-                                  : `bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600`
-                              }`}
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${student.status === option.id
+                                ? `bg-${option.color}-500 text-white shadow-lg shadow-${option.color}-200 scale-110`
+                                : `bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600`
+                                }`}
                               title={option.id}
                             >
                               <option.icon className="w-4 h-4" />
@@ -435,7 +433,7 @@ export default function Attendance() {
                           placeholder="Add remark..."
                           value={student.remarks || ""}
                           onChange={(e) => handleRemarksChange(student.studentId, e.target.value)}
-                          className="h-10 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-0 rounded-none text-xs font-medium transition-all"
+                          className="h-10 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-0 rounded-none text-xs  transition-all"
                         />
                       </TableCell>
                     </TableRow>
@@ -448,8 +446,8 @@ export default function Attendance() {
               <div className="w-20 h-20 bg-white rounded-[2rem] shadow-sm flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-slate-200" />
               </div>
-              <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest mb-2">No Records Selected</h3>
-              <p className="text-slate-400 text-xs font-medium">Configure section and date to begin tracking attendance</p>
+              <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-widest mb-2">No Records Selected</h3>
+              <p className="text-slate-400 text-xs ">Configure section and date to begin tracking attendance</p>
             </div>
           )}
         </CardContent>

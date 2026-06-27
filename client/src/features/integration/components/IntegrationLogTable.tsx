@@ -37,7 +37,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
       header: "Timestamp",
       size: 180,
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 text-foreground font-bold">
+        <div className="flex items-center gap-2 text-foreground font-extrabold">
           <Clock3 className="h-3 w-3" />
           {new Date(row.original.timestamp).toLocaleString()}
         </div>
@@ -49,7 +49,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
       header: "Target System",
       size: 120,
       cell: ({ row }) => (
-        <Badge variant="outline" className="h-5 text-[9px] font-black uppercase px-2 border-primary/20 bg-primary/5 text-primary">
+        <Badge variant="outline" className="h-5 text-[9px] font-extrabold uppercase px-2 border-primary/20 bg-primary/5 text-primary">
           {row.original.system}
         </Badge>
       ),
@@ -60,7 +60,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
       header: "Entity Identity",
       size: 200,
       cell: ({ row }) => (
-        <span className="font-black uppercase text-foreground truncate">
+        <span className="font-extrabold uppercase text-foreground truncate">
           {row.original.entity}
         </span>
       ),
@@ -73,7 +73,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
         const { status, error } = row.original;
         if (status === "success") {
           return (
-            <div className="flex items-center gap-2 text-emerald-600 font-bold uppercase text-[10px]">
+            <div className="flex items-center gap-2 text-emerald-600 font-extrabold uppercase text-[10px]">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Synchronized Successfully
             </div>
@@ -81,12 +81,12 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
         }
         return (
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-rose-600 font-black uppercase text-[10px]">
+            <div className="flex items-center gap-2 text-rose-600 font-extrabold uppercase text-[10px]">
               <AlertCircle className="h-3.5 w-3.5" />
               {status === "pending" ? "Awaiting Sync" : "Sync Failed"}
             </div>
             {error && (
-              <p className="text-[10px] font-bold text-foreground/80 leading-tight line-clamp-2">
+              <p className="text-[10px] font-extrabold text-foreground/80 leading-tight line-clamp-2">
                 {error}
               </p>
             )}
@@ -104,7 +104,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-[10px] font-black uppercase px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+              className="h-7 text-[10px] font-extrabold uppercase px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
               onClick={() => onRetry?.(row.original)}
             >
               Retry Sync
@@ -120,11 +120,11 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2 text-base font-black uppercase text-foreground/70">
+        <div className="flex items-center gap-2 text-base font-extrabold uppercase text-foreground/70">
           <History className="h-4 w-4 text-primary" />
           Integration Audit & Resolution
         </div>
-        <Button variant="ghost" size="sm" className="h-8 font-black uppercase text-[10px] tracking-widest text-primary">
+        <Button variant="ghost" size="sm" className="h-8 font-extrabold uppercase text-[10px] tracking-widest text-primary">
           Export History
         </Button>
       </div>

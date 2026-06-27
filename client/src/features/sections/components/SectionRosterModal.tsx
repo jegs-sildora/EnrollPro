@@ -122,7 +122,7 @@ const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
       const r = row.original;
       if (r._kind === "divider") return null;
       return r.lrn ? (
-        <span className="text-[11px] font-bold">{r.lrn}</span>
+        <span className="text-[11px] font-extrabold">{r.lrn}</span>
       ) : (
         <span className="italic  -foreground text-[10px]">Pending</span>
       );
@@ -137,14 +137,14 @@ const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
       const r = row.original;
       if (r._kind === "divider") {
         return (
-          <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-foreground/80">
             {r.label}{" "}
             <span className="font-normal normal-case">({r.count})</span>
           </span>
         );
       }
       return (
-        <div className="text-left font-bold">
+        <div className="text-left font-extrabold">
           {r.lastName.toUpperCase()}, {r.firstName}
           {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
         </div>
@@ -159,7 +159,7 @@ const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
       const r = row.original;
       if (r._kind === "divider") return null;
       return (
-        <span className="font-bold text--foreground">
+        <span className="font-extrabold text--foreground">
           {r.sex === "MALE" ? "M" : "F"}
         </span>
       );
@@ -301,7 +301,7 @@ export default function SectionRosterModal({
 
             <div className="flex items-start justify-between gap-4">
               <div>
-                <DialogTitle className="text-base font-black uppercase tracking-wide">
+                <DialogTitle className="text-base font-extrabold uppercase tracking-wide">
                   {loading || !section ? (
                     <Skeleton className="h-5 w-48" />
                   ) : (
@@ -311,7 +311,7 @@ export default function SectionRosterModal({
                 {loading || !section ? (
                   <Skeleton className="h-3.5 w-64 mt-1.5" />
                 ) : (
-                  <p className="text-base text--foreground mt-1 font-bold">
+                  <p className="text-base text--foreground mt-1 font-extrabold">
                     {section.gradeLevel}
                     {programTrack ? ` — ${programTrack}` : ""}
                     {section.advisingTeacher
@@ -322,7 +322,7 @@ export default function SectionRosterModal({
               </div>
 
               {!loading && section && (
-                <div className="flex items-center gap-1 text-base text--foreground font-bold shrink-0">
+                <div className="flex items-center gap-1 text-base text--foreground font-extrabold shrink-0">
                   <Users className="size-3.5" />
                   <span>{totalLearners}/{section.maxCapacity}</span>
                 </div>
@@ -344,7 +344,7 @@ export default function SectionRosterModal({
               emptyStateContent={
                 <div className="flex flex-col items-center justify-center py-16 text--foreground">
                   <Users className="size-10 opacity-30 mb-3" />
-                  <p className="text-base leading-tight font-bold">No enrolled learners</p>
+                  <p className="text-base leading-tight font-extrabold">No enrolled learners</p>
                   <p className="text-base mt-1">This section has no active enrollment records.</p>
                 </div>
               }
@@ -354,7 +354,7 @@ export default function SectionRosterModal({
 
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
-            <p className="text-[11px] text--foreground font-bold">
+            <p className="text-[11px] text--foreground font-extrabold">
               {loading
                 ? "Loading roster…"
                 : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}
@@ -364,7 +364,7 @@ export default function SectionRosterModal({
                 variant="outline"
                 size="sm"
                 onClick={() => onOpenChange(false)}
-                className="text-base font-bold">
+                className="text-base font-extrabold">
                 Close
               </Button>
               {!isHistoricalReadOnly && (
@@ -372,7 +372,7 @@ export default function SectionRosterModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEnrollOpen(true)}
-                  className="text-base font-bold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800">
+                  className="text-base font-extrabold bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800">
                   + Enrol Learner
                 </Button>
               )}
@@ -380,7 +380,7 @@ export default function SectionRosterModal({
                 size="sm"
                 disabled={loading || totalLearners === 0 || generatingSf1}
                 onClick={() => void handleGenerateSf1()}
-                className="text-base font-bold gap-1.5">
+                className="text-base font-extrabold gap-1.5">
                 {generatingSf1 ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (

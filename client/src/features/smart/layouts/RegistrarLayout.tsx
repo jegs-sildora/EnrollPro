@@ -124,8 +124,8 @@ export default function RegistrarLayout() {
 
   const getCurrentPageTitle = () => {
     for (const group of navigationGroups) {
-      const currentNav = group.items.find(nav => 
-        location.pathname === nav.href || 
+      const currentNav = group.items.find(nav =>
+        location.pathname === nav.href ||
         (nav.href !== "/registrar" && location.pathname.startsWith(nav.href))
       );
       if (currentNav) return currentNav.name;
@@ -136,8 +136,8 @@ export default function RegistrarLayout() {
   if (!user) return null;
 
   const userEmail = user.email || `${user.username}@school.edu.ph`;
-  const userDisplayName = user.firstName && user.lastName 
-    ? `${user.firstName} ${user.lastName}` 
+  const userDisplayName = user.firstName && user.lastName
+    ? `${user.firstName} ${user.lastName}`
     : user.username;
 
   return (
@@ -194,7 +194,7 @@ export default function RegistrarLayout() {
                 </div>
               </div>
               <div className="ml-3 transition-all duration-200 origin-left flex-shrink-0">
-                <span className="font-bold text-sm leading-tight tracking-tight uppercase block max-w-[160px] text-[var(--theme-primary)]">
+                <span className="font-extrabold text-sm leading-tight tracking-tight uppercase block max-w-[160px] text-[var(--theme-primary)]">
                   {schoolName}
                 </span>
               </div>
@@ -213,15 +213,15 @@ export default function RegistrarLayout() {
           {navigationGroups.map((group) => (
             <div key={group.title} className="mb-5 first:mt-2">
               {!sidebarCollapsed && (
-                <span className="px-4 mb-1 text-[0.625rem] font-bold text-[#0F1729]/60 uppercase tracking-normal block whitespace-nowrap">
+                <span className="px-4 mb-1 text-[0.625rem] font-extrabold text-[#0F1729]/60 uppercase tracking-normal block whitespace-nowrap">
                   {group.title}
                 </span>
               )}
               <div className="space-y-1">
                 {group.items.map((item) => {
-                  const isActive = !item.disabled && (location.pathname === item.href || 
+                  const isActive = !item.disabled && (location.pathname === item.href ||
                     (item.href !== "/registrar" && location.pathname.startsWith(item.href)));
-                  
+
                   const linkContent = (
                     <div className={cn(
                       "flex items-center transition-all duration-200",
@@ -258,7 +258,7 @@ export default function RegistrarLayout() {
                       <div
                         key={item.name}
                         className={cn(
-                          "flex items-center rounded-full text-[14px] font-medium opacity-40 cursor-not-allowed select-none py-1.5 text-[#0F1729]",
+                          "flex items-center rounded-full text-[14px]  opacity-40 cursor-not-allowed select-none py-1.5 text-[#0F1729]",
                           sidebarCollapsed ? "px-0 justify-center h-10 w-10 mx-auto" : "px-4"
                         )}
                         title={`${item.name} (Unavailable)`}
@@ -273,10 +273,10 @@ export default function RegistrarLayout() {
                       key={item.name}
                       to={item.href}
                       className={cn(
-                        "flex items-center rounded-full text-[14px] font-medium transition-all duration-200 group overflow-hidden py-1.5",
+                        "flex items-center rounded-full text-[14px]  transition-all duration-200 group overflow-hidden py-1.5",
                         sidebarCollapsed ? "px-0 justify-center h-10 w-10 mx-auto" : "px-4",
-                        isActive 
-                          ? "text-white shadow-sm" 
+                        isActive
+                          ? "text-white shadow-sm"
                           : "text-[#0F1729] hover:bg-white/80"
                       )}
                       style={{
@@ -305,7 +305,7 @@ export default function RegistrarLayout() {
           )}>
             <div className="w-9 h-9 flex flex-shrink-0 items-center justify-center">
               <Avatar className="w-9 h-9 border border-white shadow-sm transition-transform duration-200" style={{ transform: sidebarCollapsed ? 'scale(0.9)' : 'scale(1)' }}>
-                <AvatarFallback className="bg-slate-100 text-slate-700 font-bold text-xs uppercase">
+                <AvatarFallback className="bg-slate-100 text-slate-700 font-extrabold text-xs uppercase">
                   {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -315,8 +315,8 @@ export default function RegistrarLayout() {
               sidebarCollapsed ? "opacity-0 scale-90 -translate-x-4 pointer-events-none w-0 m-0" : "opacity-100 scale-100 translate-x-0 ml-3"
             )}>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-[#0F1729] truncate leading-none mb-1">{userDisplayName}</p>
-                <p className="text-[10px] font-bold text-[#0F1729]/50 truncate uppercase tracking-tight">School Registrar</p>
+                <p className="text-xs font-extrabold text-[#0F1729] truncate leading-none mb-1">{userDisplayName}</p>
+                <p className="text-[10px] font-extrabold text-[#0F1729]/50 truncate uppercase tracking-tight">School Registrar</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -351,11 +351,11 @@ export default function RegistrarLayout() {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              
+
               {/* Page Title */}
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Registrar Portal</span>
-                <span className="text-base font-bold text-slate-900 -mt-1">
+                <span className="text-xs  text-slate-500 uppercase tracking-wider">Registrar Portal</span>
+                <span className="text-base font-extrabold text-slate-900 -mt-1">
                   {getCurrentPageTitle()}
                 </span>
               </div>
@@ -365,15 +365,15 @@ export default function RegistrarLayout() {
               {/* User Avatar and Name */}
               <div className="flex items-center gap-3 pl-3 border-l border-slate-100">
                 <div className="hidden sm:flex flex-col items-end mr-1">
-                  <span className="text-sm font-bold text-slate-900 leading-none">
+                  <span className="text-sm font-extrabold text-slate-900 leading-none">
                     {user.firstName || user.username}
                   </span>
-                  <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md mt-1">
+                  <span className="text-[10px]  text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md mt-1">
                     Registrar
                   </span>
                 </div>
                 <Avatar className="w-9 h-9 ring-2 ring-slate-100 ring-offset-2">
-                  <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-bold">
+                  <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-extrabold">
                     {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

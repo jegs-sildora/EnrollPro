@@ -8,10 +8,10 @@ import { cn } from '@/shared/lib/utils';
 const SheetContext = React.createContext<{ open: boolean }>({ open: false });
 const sheetEase = [0.16, 1, 0.3, 1] as const;
 const overlayEase = [0.22, 1, 0.36, 1] as const;
-const sheetTransition = { type: 'tween', duration: 0.38, ease: sheetEase } as const;
-const sheetReducedMotionTransition = { duration: 0.12, ease: 'linear' } as const;
-const overlayTransition = { duration: 0.24, ease: overlayEase } as const;
-const overlayReducedMotionTransition = { duration: 0.12, ease: 'linear' } as const;
+const sheetTransition = { type: 'tween', duration: 0.65, ease: sheetEase } as const;
+const sheetReducedMotionTransition = { duration: 0.2, ease: 'linear' } as const;
+const overlayTransition = { duration: 0.45, ease: overlayEase } as const;
+const overlayReducedMotionTransition = { duration: 0.2, ease: 'linear' } as const;
 
 const Sheet = ({
 	open,
@@ -34,30 +34,6 @@ const SheetTrigger = DialogPrimitive.Trigger;
 const SheetClose = DialogPrimitive.Close;
 const SheetPortal = DialogPrimitive.Portal;
 
-const SheetOverlay = React.forwardRef<
-	React.ComponentRef<typeof DialogPrimitive.Overlay>,
-	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => {
-	const reduceMotion = useReducedMotion();
-
-	return (
-		<DialogPrimitive.Overlay
-			asChild
-			ref={ref}
-			{...props}
-		>
-			<motion.div
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				exit={{ opacity: 0 }}
-				transition={reduceMotion ? overlayReducedMotionTransition : overlayTransition}
-				className={cn('fixed inset-0 z-50 bg-black/80', className)}
-			/>
-		</DialogPrimitive.Overlay>
-	);
-});
-SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
-
 const sheetVariants = cva(
 	'fixed z-50 gap-4 bg-[hsl(var(--background))] p-6 shadow-lg',
 	{
@@ -77,8 +53,8 @@ const sheetVariants = cva(
 
 interface SheetContentProps
 	extends
-		React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-		VariantProps<typeof sheetVariants> {
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+	VariantProps<typeof sheetVariants> {
 	showClose?: boolean;
 }
 
@@ -102,21 +78,32 @@ const SheetContent = React.forwardRef<
 	return (
 		<SheetPortal forceMount>
 			<AnimatePresence mode="sync">
-				{open && <SheetOverlay key="sheet-overlay" />}
 				{open && (
-					<DialogPrimitive.Content
-						key="sheet-content"
-						asChild
-						forceMount
-						ref={ref}
-						{...contentProps}
+					<motion.div
+						key="overlay"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={reduceMotion ? overlayReducedMotionTransition : overlayTransition}
+						className="fixed inset-0 z-50 bg-black/80"
 					>
-						<motion.div
-							initial={closedPosition}
-							animate={{ x: 0, y: 0, opacity: 1 }}
-							exit={closedPosition}
-							transition={reduceMotion ? sheetReducedMotionTransition : sheetTransition}
-							className={cn(sheetVariants({ side }), className)}
+						<DialogPrimitive.Overlay forceMount className="fixed inset-0 bg-transparent" />
+					</motion.div>
+				)}
+				{open && (
+					<motion.div
+						key="content"
+						initial={closedPosition}
+						animate={{ x: 0, y: 0, opacity: 1 }}
+						exit={closedPosition}
+						transition={reduceMotion ? sheetReducedMotionTransition : sheetTransition}
+						className={cn(sheetVariants({ side }), className)}
+					>
+						<DialogPrimitive.Content
+							forceMount
+							ref={ref}
+							className="h-full w-full outline-none flex flex-col"
+							{...contentProps}
 						>
 							{children}
 							{showClose ? (
@@ -125,8 +112,8 @@ const SheetContent = React.forwardRef<
 									<span className='sr-only'>Close</span>
 								</DialogPrimitive.Close>
 							) : null}
-						</motion.div>
-					</DialogPrimitive.Content>
+						</DialogPrimitive.Content>
+					</motion.div>
 				)}
 			</AnimatePresence>
 		</SheetPortal>
@@ -169,7 +156,7 @@ const SheetTitle = React.forwardRef<
 	<DialogPrimitive.Title
 		ref={ref}
 		className={cn(
-			'text-lg font-bold text-[hsl(var(--foreground))]',
+			'text-lg font-extrabold text-[hsl(var(--foreground))]',
 			className,
 		)}
 		{...props}
@@ -192,7 +179,6 @@ SheetDescription.displayName = DialogPrimitive.Description.displayName;
 export {
 	Sheet,
 	SheetPortal,
-	SheetOverlay,
 	SheetTrigger,
 	SheetClose,
 	SheetContent,

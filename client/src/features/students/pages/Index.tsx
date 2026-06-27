@@ -535,7 +535,7 @@ export default function Students() {
       <Badge
         variant="outline"
         className={cn(
-          "font-bold text-sm px-2.5 py-0.5 rounded-md uppercase tracking-wider",
+          "font-extrabold text-sm px-2.5 py-0.5 rounded-md uppercase tracking-wider",
           isEnrolled
             ? "bg-emerald-50 text-emerald-700 border-emerald-100"
             : isDropped
@@ -842,7 +842,7 @@ export default function Students() {
           cell: ({ row }) => {
             const initials = getInitials(row.original.firstName, row.original.lastName);
             return (
-              <div className="flex items-center gap-3 pl-2 py-3 min-w-[200px]">
+              <div className="flex items-center gap-3 pl-2 py-3 min-w-100">
                 <UserPhoto
                   photo={row.original.studentPhoto}
                   containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
@@ -855,12 +855,12 @@ export default function Students() {
                   }
                 />
                 <div className="flex flex-col text-left">
-                  <span className="font-bold text-base uppercase leading-tight">
+                  <span className="font-extrabold text-base uppercase leading-tight">
                     {row.original.fullName}
                   </span>
                   {row.original.applicantType === "LATE_ENROLLEE" && (
                     <div className="flex items-center gap-2 mt-0.5">
-                      <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                      <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
                         Late Enrollee
                       </Badge>
                     </div>
@@ -883,7 +883,7 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="font-bold text-base leading-tight text-center">{row.original.lrn}</span>
+              <span className="font-extrabold text-base leading-tight text-center">{row.original.lrn}</span>
             </div>
           ),
         },
@@ -909,7 +909,7 @@ export default function Students() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "font-bold text-sm px-2.5 py-0.5 rounded-md",
+                    "font-extrabold text-sm px-2.5 py-0.5 rounded-md",
                     isMale
                       ? "bg-blue-50 text-blue-700 border-blue-100"
                       : isFemale
@@ -939,7 +939,7 @@ export default function Students() {
               <Badge
                 variant="outline"
                 className={cn(
-                  "font-bold text-sm px-2.5 py-0.5 rounded-md",
+                  "font-extrabold text-sm px-2.5 py-0.5 rounded-md",
                   getGradeLevelBadgeStyles(row.original.gradeLevel)
                 )}
               >
@@ -961,7 +961,7 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="font-bold text-base leading-tight text-center">
+              <span className="font-extrabold text-base leading-tight text-center">
                 {formatSectionLabel(row.original.section)}
               </span>
             </div>
@@ -996,7 +996,7 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="text-base leading-tight font-bold text-center block">
+              <span className="text-base leading-tight font-extrabold text-center block">
                 {formatDate(row.original.dateEnrolled || row.original.createdAt)}
               </span>
             </div>
@@ -1014,7 +1014,7 @@ export default function Students() {
           ),
           cell: () => (
             <div className="flex w-full justify-center py-3">
-              <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold">
+              <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold">
                 <Eye className="w-4 h-4 mr-2" />
                 View
               </span>
@@ -1036,7 +1036,7 @@ export default function Students() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, ID, or LRN..."
-                className="pl-9 h-10 w-full text-base leading-tight font-bold"
+                className="pl-9 h-10 w-full text-base leading-tight font-extrabold"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -1052,18 +1052,18 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-bold">
+                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-extrabold">
                   <SelectValue placeholder="All Grades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
                     All Grades
                   </SelectItem>
                   {gradeLevels.map((gl) => (
                     <SelectItem
                       key={gl.id}
                       value={gl.id.toString()}
-                      className="text-base leading-tight font-bold">
+                      className="text-base leading-tight font-extrabold">
                       <div className="flex items-center gap-2">
                         <span className={cn("w-2.5 h-2.5 rounded-full border border-black/10 shrink-0", getGradeLevelColorDotClass(gl.name))} />
                         <span>{gl.name}</span>
@@ -1081,18 +1081,18 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-bold">
+                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-extrabold">
                   <SelectValue placeholder="All Programs" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
                     All Programs
                   </SelectItem>
                   {availablePrograms.map((option) => (
                     <SelectItem
                       key={option.value}
                       value={option.value}
-                      className="text-base leading-tight font-bold">
+                      className="text-base leading-tight font-extrabold">
                       {option.label}
                     </SelectItem>
                   ))}
@@ -1107,11 +1107,11 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-48 text-base leading-tight font-bold hover:bg-accent hover:text-accent-foreground transition-colors">
+                <SelectTrigger className="h-10 w-full sm:w-48 text-base leading-tight font-extrabold hover:bg-accent hover:text-accent-foreground transition-colors">
                   <SelectValue placeholder="All Sections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-bold">
+                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
                     All Sections
                   </SelectItem>
                   {gradeLevelFilter === "all" ? (
@@ -1120,12 +1120,12 @@ export default function Students() {
                       if (glSections.length === 0) return null;
                       return (
                         <SelectGroup key={gl.id}>
-                          <SelectLabel className={cn("text-base uppercase font-bold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
+                          <SelectLabel className={cn("text-base uppercase font-extrabold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
                           {glSections.map((sec) => (
                             <SelectItem
                               key={sec.id}
                               value={sec.id.toString()}
-                              className="text-base leading-tight font-bold">
+                              className="text-base leading-tight font-extrabold">
                               {formatSectionLabel(sec.name)}
                             </SelectItem>
                           ))}
@@ -1137,7 +1137,7 @@ export default function Students() {
                       <SelectItem
                         key={sec.id}
                         value={sec.id.toString()}
-                        className="text-base leading-tight font-bold">
+                        className="text-base leading-tight font-extrabold">
                         {formatSectionLabel(sec.name)}
                       </SelectItem>
                     ))
@@ -1152,7 +1152,7 @@ export default function Students() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  className="h-10 px-3 text-base leading-tight font-bold flex-1 sm:flex-none"
+                  className="h-10 px-3 text-base leading-tight font-extrabold flex-1 sm:flex-none"
                   onClick={() => {
                     void Promise.all([
                       queryClient.invalidateQueries({
@@ -1172,7 +1172,7 @@ export default function Students() {
 
                 <Button
                   variant="outline"
-                  className="h-10 px-3 text-base leading-tight font-bold flex-1 sm:flex-none"
+                  className="h-10 px-3 text-base leading-tight font-extrabold flex-1 sm:flex-none"
                   onClick={() => {
                     startTransition(() => {
                       clearSearch();
@@ -1279,7 +1279,7 @@ export default function Students() {
                 className="flex-1 flex flex-col overflow-hidden">
                 <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
                   {students.length === 0 ? (
-                    <div className="rounded-xl border p-6 text-center text-base leading-tight font-bold">
+                    <div className="rounded-xl border p-6 text-center text-base leading-tight font-extrabold">
                       No learners found for the selected filters.
                     </div>
                   ) : (
@@ -1301,17 +1301,17 @@ export default function Students() {
                               }
                             />
                             <div className="min-w-0">
-                              <p className="font-bold text-base uppercase leading-tight break-words">
+                              <p className="font-extrabold text-base uppercase leading-tight break-words">
                                 {student.fullName}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-base font-bold text-foreground leading-snug">
+                                <p className="text-base font-extrabold text-foreground leading-snug">
                                   {formatLearningProgramLabel(
                                     student.learningProgram,
                                   )}
                                 </p>
                                 {student.applicantType === "LATE_ENROLLEE" && (
-                                  <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                                  <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
                                     Late Enrolled
                                   </Badge>
                                 )}
@@ -1323,16 +1323,16 @@ export default function Students() {
 
                         <div className="mt-2 grid grid-cols-2 gap-2 text-base">
                           <div>
-                            <p className="text-base uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-extrabold text-foreground">
                               LRN
                             </p>
-                            <p className="font-bold">{student.lrn}</p>
+                            <p className="font-extrabold">{student.lrn}</p>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-extrabold text-foreground">
                               Sex
                             </p>
-                            <p className="font-bold uppercase">
+                            <p className="font-extrabold uppercase">
                               {student.sex === "MALE" || student.sex === "M"
                                 ? "M"
                                 : student.sex === "FEMALE" ||
@@ -1342,13 +1342,13 @@ export default function Students() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-extrabold text-foreground">
                               Grade Level
                             </p>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "font-bold text-sm px-2.5 py-0.5 mt-0.5 rounded-md",
+                                "font-extrabold text-sm px-2.5 py-0.5 mt-0.5 rounded-md",
                                 getGradeLevelBadgeStyles(student.gradeLevel)
                               )}
                             >
@@ -1356,16 +1356,16 @@ export default function Students() {
                             </Badge>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-bold text-foreground">
+                            <p className="text-base uppercase  font-extrabold text-foreground">
                               Section
                             </p>
-                            <p className="font-bold">
+                            <p className="font-extrabold">
                               {formatSectionLabel(student.section)}
                             </p>
                           </div>
                         </div>
 
-                        <p className="mt-2 text-[11px] font-bold text-foreground">
+                        <p className="mt-2 text-[11px] font-extrabold text-foreground">
                           {activeTab === "active" ? "Enrolled " : "Updated "}
                           {formatDate(
                             student.dateEnrolled || student.createdAt,
@@ -1376,7 +1376,7 @@ export default function Students() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-9 flex-1 text-base font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            className="h-9 flex-1 text-base font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                             onClick={() => handleViewDetails(student.id)}>
                             <Eye className="h-3.5 w-3.5 mr-1.5" />
                             View
@@ -1386,14 +1386,14 @@ export default function Students() {
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                className="h-9 w-10 px-0 text-base font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                                className="h-9 w-10 px-0 text-base font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                                 aria-label={`Open actions for ${student.fullName}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-56 font-bold">
+                              className="w-56 font-extrabold">
                               <DropdownMenuItem
                                 onClick={() =>
                                   handleOpenProfilePage(student.id)
@@ -1483,7 +1483,7 @@ export default function Students() {
               <CalendarDays className="h-6 w-6 text-foreground" />
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-foreground">
+              <p className="font-extrabold text-foreground">
                 No School Year Selected
               </p>
               <p className="text-base text-foreground leading-relaxed px-4">
@@ -1501,10 +1501,10 @@ export default function Students() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold">
+        <h1 className="text-2xl sm:text-3xl font-extrabold">
           Master Learner Registry (LIS)
         </h1>
-        <p className="text-base leading-tight font-bold text-foreground">
+        <p className="text-base leading-tight font-extrabold text-foreground">
           Manage officially enrolled demographic data, enrollment histories, and permanent records.
         </p>
       </div>
@@ -1518,7 +1518,7 @@ export default function Students() {
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-6 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="active"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "active" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1533,7 +1533,7 @@ export default function Students() {
           </TabsTrigger>
           <TabsTrigger
             value="completers"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "completers" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1548,7 +1548,7 @@ export default function Students() {
           </TabsTrigger>
           <TabsTrigger
             value="inactive"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "inactive" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1662,7 +1662,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-base font-bold">
+            <AlertDescription className="text-base font-extrabold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.
@@ -1709,7 +1709,7 @@ export default function Students() {
               Cancel
             </Button>
             <Button
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-extrabold"
               onClick={() => void submitTransferOut()}
               disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Transfer Out"}
@@ -1731,7 +1731,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-base font-bold">
+            <AlertDescription className="text-base font-extrabold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.
@@ -1794,7 +1794,7 @@ export default function Students() {
               Cancel
             </Button>
             <Button
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-extrabold"
               onClick={() => void submitDropout()}
               disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Dropout"}
@@ -1822,7 +1822,7 @@ export default function Students() {
             <div className="space-y-2">
               <Label
                 htmlFor="assignLrn"
-                className="font-bold">
+                className="font-extrabold">
                 Learner Reference Number (LRN)
               </Label>
               <Input
@@ -1834,11 +1834,11 @@ export default function Students() {
                   })
                 }
                 placeholder="e.g., 101234567890"
-                className="h-12 text-lg font-black  text-center"
+                className="h-12 text-lg font-extrabold  text-center"
                 inputMode="numeric"
                 maxLength={12}
               />
-              <p className="text-[11px] text-foreground font-bold text-center">
+              <p className="text-[11px] text-foreground font-extrabold text-center">
                 Must be exactly 12 digits as found in the DepEd LIS portal.
               </p>
             </div>
@@ -1852,7 +1852,7 @@ export default function Students() {
               Cancel
             </Button>
             <Button
-              className="bg-primary hover:bg-primary/90 font-bold"
+              className="bg-primary hover:bg-primary/90 font-extrabold"
               onClick={() => void submitAssignLrn()}
               disabled={actionSubmitting || lrnForm.lrn.length !== 12}>
               {actionSubmitting ? "Saving..." : "Save LRN"}

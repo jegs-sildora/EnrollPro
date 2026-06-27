@@ -48,10 +48,10 @@ export default function Settings() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground ">
+          <h1 className="text-3xl font-extrabold text-foreground ">
             Global System Configuration
           </h1>
-          <p className="text-base leading-tight font-bold">
+          <p className="text-base leading-tight font-extrabold">
             Define institutional branding, manage academic calendars, and execute official school year rollovers.
           </p>
         </div>
@@ -64,7 +64,7 @@ export default function Settings() {
         <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
           <TabsTrigger
             value="profile"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "profile" && (
               <motion.div
                 layoutId="settings-active-pill"
@@ -76,7 +76,7 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger
             value="school-year"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "school-year" && (
               <motion.div
                 layoutId="settings-active-pill"

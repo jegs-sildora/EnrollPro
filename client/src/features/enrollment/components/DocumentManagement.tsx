@@ -203,7 +203,7 @@ export function DocumentManagement({
     } finally {
       setIsUploading(false);
     }
-    };
+  };
 
   const handleDelete = useCallback(
     async (documentType: string) => {
@@ -223,7 +223,7 @@ export function DocumentManagement({
       }
     },
     [applicantId, endpointBase, onRefresh],
-    );
+  );
 
   // Merge checklist items and documents into audit rows
   // Showing only requirements that have been acted upon (uploaded, checked, or logged)
@@ -231,8 +231,8 @@ export function DocumentManagement({
     const doc = documents.find((d) => d.documentType === type.value);
     const isChecked = type.checklistKey
       ? !!(checklist as ChecklistData)?.[
-          type.checklistKey as keyof ChecklistData
-        ]
+      type.checklistKey as keyof ChecklistData
+      ]
       : false;
 
     // FIND RELEVANT AUDIT LOG
@@ -285,8 +285,8 @@ export function DocumentManagement({
         sessionUser,
       action: relevantLog
         ? ["DOCUMENT_REMOVED", "DOCUMENT_DELETED"].includes(
-            relevantLog.actionType,
-          )
+          relevantLog.actionType,
+        )
           ? "Removed"
           : "Added"
         : status,
@@ -319,11 +319,10 @@ export function DocumentManagement({
               )}
               <div className="flex flex-col">
                 <span
-                  className={`font-bold ${
-                    auditRow.status === "Removed"
+                  className={`font-extrabold ${auditRow.status === "Removed"
                       ? "text-foreground line-through decoration-1"
                       : ""
-                  }`}>
+                    }`}>
                   {auditRow.label}
                 </span>
                 {auditRow.document?.originalName && (
@@ -343,7 +342,7 @@ export function DocumentManagement({
           const auditRow = row.original;
           return (
             <div className="flex flex-col gap-1 text-center min-w-[150px]">
-              <span className="font-bold text-base">
+              <span className="font-extrabold text-base">
                 {auditRow.modifiedBy
                   ? `${auditRow.modifiedBy.firstName} ${auditRow.modifiedBy.lastName}`
                   : "N/A"}
@@ -366,12 +365,12 @@ export function DocumentManagement({
         id: "lastModified",
         header: "Last Modified",
         cell: ({ row }) => (
-          <span className="text-base font-bold min-w-[150px] block text-center">
+          <span className="text-base font-extrabold min-w-[150px] block text-center">
             {row.original.lastModified
               ? format(
-                  new Date(row.original.lastModified),
-                  "MMM dd, yyyy - hh:mm a",
-                )
+                new Date(row.original.lastModified),
+                "MMM dd, yyyy - hh:mm a",
+              )
               : "N/A"}
           </span>
         ),
@@ -384,21 +383,21 @@ export function DocumentManagement({
             {row.original.action === "Added" && (
               <Badge
                 variant="success"
-                className="text-[0.5625rem] font-bold uppercase">
+                className="text-[0.5625rem] font-extrabold uppercase">
                 Added
               </Badge>
             )}
             {row.original.action === "Removed" && (
               <Badge
                 variant="destructive"
-                className="text-[0.5625rem] font-bold uppercase">
+                className="text-[0.5625rem] font-extrabold uppercase">
                 Removed
               </Badge>
             )}
             {row.original.action === "Pending" && (
               <Badge
                 variant="outline"
-                className="text-[0.5625rem] font-bold uppercase">
+                className="text-[0.5625rem] font-extrabold uppercase">
                 Pending
               </Badge>
             )}
@@ -459,7 +458,7 @@ export function DocumentManagement({
       {!hideUpload && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base leading-tight font-bold uppercase ">
+            <CardTitle className="text-base leading-tight font-extrabold uppercase ">
               Upload New Document
             </CardTitle>
           </CardHeader>
@@ -511,7 +510,7 @@ export function DocumentManagement({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base leading-tight font-bold uppercase ">
+          <CardTitle className="text-base leading-tight font-extrabold uppercase ">
             Submitted Documents ({auditRows.length})
           </CardTitle>
         </CardHeader>

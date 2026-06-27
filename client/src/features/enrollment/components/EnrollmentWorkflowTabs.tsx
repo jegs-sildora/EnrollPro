@@ -26,7 +26,7 @@ export function EnrollmentWorkflowTabs({
           <TabsTrigger
             key={option.value}
             value={option.value}
-            className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="w-full min-w-0 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {value === option.value && (
               <motion.div
                 layoutId="enrollment-active-pill"

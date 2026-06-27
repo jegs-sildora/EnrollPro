@@ -83,7 +83,7 @@ function Calendar({
           defaultClassNames.month_caption,
         ),
         dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-bold",
+          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-extrabold",
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
@@ -92,7 +92,7 @@ function Calendar({
         ),
         dropdown: cn("hidden", defaultClassNames.dropdown),
         caption_label: cn(
-          "font-bold select-none",
+          "font-extrabold select-none",
           captionLayout === "label"
             ? "text-sm"
             : "flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-foreground",
@@ -137,7 +137,7 @@ function Calendar({
           "text-foreground aria-selected:text-foreground",
           defaultClassNames.outside,
         ),
-        dropdown_year: cn("text-sm font-bold px-2 cursor-default"),
+        dropdown_year: cn("text-sm font-extrabold px-2 cursor-default"),
         disabled: cn("text-foreground opacity-50", defaultClassNames.disabled),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
@@ -190,7 +190,7 @@ function Calendar({
 
           if (isYear && !showYearSelect) {
             return (
-              <span className="px-2 text-sm font-bold text-foreground">
+              <span className="px-2 text-sm font-extrabold text-foreground">
                 {selectedOption?.label || value}
               </span>
             );
@@ -208,7 +208,7 @@ function Calendar({
               onValueChange={(value) => handleChange(value)}>
               <SelectTrigger
                 className={cn(
-                  "h-8 py-1 font-bold  border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1",
+                  "h-8 py-1 font-extrabold  border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1",
                   className,
                 )}>
                 <SelectValue>{selectedOption?.label}</SelectValue>
@@ -220,7 +220,7 @@ function Calendar({
                   <SelectItem
                     key={option.value}
                     value={option.value.toString()}
-                    className="font-bold">
+                    className="font-extrabold">
                     {option.label}
                   </SelectItem>
                 ))}

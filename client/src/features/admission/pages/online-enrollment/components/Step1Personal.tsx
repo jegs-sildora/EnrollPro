@@ -60,7 +60,7 @@ export default function Step1Personal() {
     else if (bmiValue < 25) category = "Normal";
     else if (bmiValue < 30) category = "Overweight";
     else category = "Obese";
-    
+
     calculatedBmi = `${bmiValue.toFixed(2)} (${category})`;
   }
 
@@ -202,10 +202,10 @@ export default function Step1Personal() {
             <Search className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base leading-tight font-bold uppercase text-foreground">
+            <h3 className="text-base leading-tight font-extrabold uppercase text-foreground">
               Learner Reference Number (LRN)
             </h3>
-            <p className="text-base text-foreground font-bold">
+            <p className="text-base text-foreground font-extrabold">
               Enter your 12-digit LRN to continue enrollment.
             </p>
           </div>
@@ -220,7 +220,7 @@ export default function Step1Personal() {
             maxLength={12}
             disabled={hasNoLrn}
             className={cn(
-              "h-14 text-lg  font-black text-center border-2",
+              "h-14 text-lg  font-extrabold text-center border-2",
               hasNoLrn && "bg-muted cursor-not-allowed  text-base leading-tight",
               errors.lrn
                 ? "border-destructive"
@@ -235,7 +235,7 @@ export default function Step1Personal() {
           />
         </div>
 
-        <p className="text-base font-bold text-foreground">
+        <p className="text-base font-extrabold text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
@@ -265,14 +265,14 @@ export default function Step1Personal() {
             />
             <Label
               htmlFor="hasNoLrn"
-              className="text-base font-bold cursor-pointer">
+              className="text-base font-extrabold cursor-pointer">
               Learner has no LRN yet.
             </Label>
           </div>
         )}
 
         {errors.lrn && (
-          <p className="text-base text-destructive font-bold flex items-center gap-1 mt-1">
+          <p className="text-base text-destructive font-extrabold flex items-center gap-1 mt-1">
             <AlertCircle className="w-3 h-3" /> {errors.lrn.message}
           </p>
         )}
@@ -282,7 +282,7 @@ export default function Step1Personal() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
-          <Label className="text-base leading-tight font-bold self-start md:self-center">
+          <Label className="text-base leading-tight font-extrabold self-start md:self-center">
             Student Photo
           </Label>
           <div className="relative group">
@@ -297,7 +297,7 @@ export default function Step1Personal() {
               fallbackIcon={
                 <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
-                  <span className="text-[0.625rem] uppercase font-bold ">
+                  <span className="text-[0.625rem] uppercase font-extrabold ">
                     Upload 2x2
                   </span>
                 </div>
@@ -326,7 +326,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="lastName"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -335,13 +335,13 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. DELA CRUZ"
               className={cn(
-                "h-11 uppercase font-bold",
+                "h-11 uppercase font-extrabold",
                 errors.lastName &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
             />
             {errors.lastName && (
-              <p className="text-base text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.lastName.message}
               </p>
             )}
@@ -350,7 +350,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="firstName"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -359,13 +359,13 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. JUAN"
               className={cn(
-                "h-11 uppercase font-bold",
+                "h-11 uppercase font-extrabold",
                 errors.firstName &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
             />
             {errors.firstName && (
-              <p className="text-base text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.firstName.message}
               </p>
             )}
@@ -374,7 +374,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="middleName"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Middle Name
             </Label>
             <Input
@@ -383,7 +383,7 @@ export default function Step1Personal() {
               autoComplete="off"
               disabled={hasNoMiddleName}
               placeholder="e.g. BAUTISTA"
-              className={cn("h-11 uppercase font-bold", hasNoMiddleName && "bg-muted cursor-not-allowed opacity-50")}
+              className={cn("h-11 uppercase font-extrabold", hasNoMiddleName && "bg-muted cursor-not-allowed opacity-50")}
             />
             <div className="flex items-center gap-2 mt-1">
               <Checkbox
@@ -406,13 +406,13 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="extensionName"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Suffix (Extension)
             </Label>
             <Select
               onValueChange={(val) => setValue("extensionName", val === "NONE" ? "" : val)}
               value={watch("extensionName") || "NONE"}>
-              <SelectTrigger className="h-11 font-bold">
+              <SelectTrigger className="h-11 font-extrabold">
                 <SelectValue placeholder="Select Suffix" />
               </SelectTrigger>
               <SelectContent>
@@ -433,7 +433,7 @@ export default function Step1Personal() {
       {/* ─── DOB, Age, Sex Row ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         <div className="space-y-1.5">
-          <Label className="text-base leading-tight font-bold">
+          <Label className="text-base leading-tight font-extrabold">
             Date of Birth <span className="text-destructive">*</span>
           </Label>
           <Controller
@@ -450,9 +450,9 @@ export default function Step1Personal() {
                     handleDateTyping(e.target.value, field.onChange)
                   }
                   className={cn(
-                    "h-11 font-bold pr-12",
+                    "h-11 font-extrabold pr-12",
                     errors.birthdate &&
-                      "border-destructive focus-visible:ring-destructive",
+                    "border-destructive focus-visible:ring-destructive",
                   )}
                 />
                 <Popover
@@ -508,7 +508,7 @@ export default function Step1Personal() {
             )}
           />
           {errors.birthdate && (
-            <p className="text-base text-destructive font-bold flex items-center gap-1">
+            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.birthdate.message}
             </p>
           )}
@@ -517,7 +517,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="age"
-            className="text-base leading-tight font-bold">
+            className="text-base leading-tight font-extrabold">
             Age
           </Label>
           <Input
@@ -525,12 +525,12 @@ export default function Step1Personal() {
             {...register("age", { valueAsNumber: true })}
             autoComplete="off"
             disabled
-            className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+            className="h-11 font-extrabold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
           />
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base leading-tight font-bold">
+          <Label className="text-base leading-tight font-extrabold">
             Sex <span className="text-destructive">*</span>
           </Label>
           <div className="flex gap-4 pt-1">
@@ -552,7 +552,7 @@ export default function Step1Personal() {
                 className={cn(
                   "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight uppercase",
                   watch("sex") === sexOption.value
-                    ? "border-primary bg-primary/5 font-bold"
+                    ? "border-primary bg-primary/5 font-extrabold"
                     : errors.sex
                       ? "border-destructive hover:bg-destructive/10"
                       : "border-border hover:bg-muted/50",
@@ -565,12 +565,12 @@ export default function Step1Personal() {
                       : "text-foreground",
                   )}
                 />
-                <span className="font-bold">{sexOption.label}</span>
+                <span className="font-extrabold">{sexOption.label}</span>
               </button>
             ))}
           </div>
           {errors.sex && (
-            <p className="text-base text-destructive font-bold flex items-center gap-1">
+            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.sex.message}
             </p>
           )}
@@ -581,7 +581,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="placeOfBirth"
-            className="text-base leading-tight font-bold">
+            className="text-base leading-tight font-extrabold">
             Place of Birth <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -590,12 +590,12 @@ export default function Step1Personal() {
             autoComplete="off"
             placeholder="City/Municipality, Province"
             className={cn(
-              "h-11 font-bold uppercase",
+              "h-11 font-extrabold uppercase",
               errors.placeOfBirth && "border-destructive",
             )}
           />
           {errors.placeOfBirth && (
-            <p className="text-base text-destructive font-bold flex items-center gap-1">
+            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.placeOfBirth.message}
             </p>
           )}
@@ -604,7 +604,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="motherTongue"
-            className="text-base leading-tight font-bold">
+            className="text-base leading-tight font-extrabold">
             Mother Tongue
           </Label>
           <Input
@@ -612,7 +612,7 @@ export default function Step1Personal() {
             {...register("motherTongue")}
             autoComplete="off"
             placeholder="e.g. Hiligaynon, Cebuano, Tagalog"
-            className="h-11 font-bold uppercase"
+            className="h-11 font-extrabold uppercase"
           />
         </div>
       </div>
@@ -622,7 +622,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="religion"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Religion
             </Label>
             <Input
@@ -630,14 +630,14 @@ export default function Step1Personal() {
               {...register("religion")}
               autoComplete="off"
               placeholder="e.g. Roman Catholic, Iglesia ni Cristo, Islam"
-              className="h-11 font-bold uppercase"
+              className="h-11 font-extrabold uppercase"
             />
           </div>
 
           <div className="space-y-2">
             <Label
               htmlFor="psaBirthCertNumber"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               PSA Birth Certificate Number
             </Label>
             <Input
@@ -653,7 +653,7 @@ export default function Step1Personal() {
               }}
               autoComplete="off"
               placeholder="PSA BC Number"
-              className="h-11 font-bold uppercase"
+              className="h-11 font-extrabold uppercase"
             />
           </div>
         </div>
@@ -665,7 +665,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="intakeHeightCm"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Height (in cm) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -675,12 +675,12 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. 150"
               className={cn(
-                "h-11 font-bold",
+                "h-11 font-extrabold",
                 errors.intakeHeightCm && "border-destructive",
               )}
             />
             {errors.intakeHeightCm && (
-              <p className="text-base text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.intakeHeightCm.message}
               </p>
             )}
@@ -689,7 +689,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="intakeWeightKg"
-              className="text-base leading-tight font-bold">
+              className="text-base leading-tight font-extrabold">
               Weight (in kg) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -699,19 +699,19 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. 45"
               className={cn(
-                "h-11 font-bold",
+                "h-11 font-extrabold",
                 errors.intakeWeightKg && "border-destructive",
               )}
             />
             {errors.intakeWeightKg && (
-              <p className="text-base text-destructive font-bold flex items-center gap-1">
+              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.intakeWeightKg.message}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-base leading-tight font-bold">
+            <Label className="text-base leading-tight font-extrabold">
               Body Mass Index (BMI)
             </Label>
             <Input
@@ -719,7 +719,7 @@ export default function Step1Personal() {
               readOnly
               disabled
               placeholder="Auto-calculated"
-              className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+              className="h-11 font-extrabold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
             />
           </div>
         </div>

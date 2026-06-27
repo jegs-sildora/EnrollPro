@@ -211,131 +211,131 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-            {loading ? (
-              <MotionTableBody 
-                key="loading-body"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="relative">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={`skeleton-${i}`}>
-                    {columns.map((column, index) => {
-                      const meta = column.meta as
-                        | {
-                          skeletonClassName?: string;
-                          customSkeleton?: React.ReactNode;
-                        }
-                        | undefined;
-                      return (
-                        <TableCell
-                          key={index}
-                          className={dense ? "py-1.5 px-2" : "p-4"}>
-                          {meta?.customSkeleton ? (
-                            meta.customSkeleton
-                          ) : (
-                            <Skeleton
-                              className={cn(
-                                "h-5 w-full",
-                                meta?.skeletonClassName,
-                              )}
-                            />
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </MotionTableBody>
-            ) : !forceEmptyState && rows.length > 0 ? (
-              <MotionTableBody 
-                key="data-body"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="relative">
-                {prependBodyRow}
-                {virtualize
-                  ? [
-                    virtualItems.length > 0 && (
-                      <TableRow
-                        key="virtual-padding-top"
-                        style={{ height: `${virtualItems[0].start}px` }}
-                        className="hover:bg-transparent border-none">
-                        <TableCell
-                          colSpan={columns.length}
-                          className="p-0"
-                        />
-                      </TableRow>
-                    ),
-                    ...virtualItems.map((virtualRow) => (
-                      <TableRowComponent
-                        key={rows[virtualRow.index].id}
-                        ref={rowVirtualizer.measureElement}
-                        data-index={virtualRow.index}
-                        row={rows[virtualRow.index]}
-                        onRowClick={onRowClick}
-                        getRowClassName={getRowClassName}
-                        dense={dense}
-                        isRowClickable={isRowClickable}
-                      />
-                    )),
-                    virtualItems.length > 0 && (
-                      <TableRow
-                        key="virtual-padding-bottom"
-                        style={{
-                          height: `${rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end}px`,
-                        }}
-                        className="hover:bg-transparent border-none">
-                        <TableCell
-                          colSpan={columns.length}
-                          className="p-0"
-                        />
-                      </TableRow>
-                    ),
-                  ]
-                  : rows.map((row) => (
-                    <React.Fragment key={row.id}>
-                      <TableRowComponent
-                        row={row}
-                        onRowClick={onRowClick}
-                        getRowClassName={getRowClassName}
-                        dense={dense}
-                        isRowClickable={isRowClickable}
-                      />
-                      {renderRowAfter?.(row.original, row.index)}
-                    </React.Fragment>
-                  ))}
-              </MotionTableBody>
-            ) : prependBodyRow ? (
-              <MotionTableBody 
-                key="prepend-body"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="relative">
-                {prependBodyRow}
-              </MotionTableBody>
-            ) : (
-              <MotionTableBody 
-                key="empty-body"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="relative">
-                <TableRow key="no-results">
-                  <TableCell
-                    colSpan={columns.length}
-                    className="p-0">
-                    {emptyStateContent ?? (
-                      <div className="h-24 flex items-center justify-center text-center font-bold">
-                        {noResultsMessage}
-                      </div>
-                    )}
-                  </TableCell>
+          {loading ? (
+            <MotionTableBody
+              key="loading-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="relative">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {columns.map((column, index) => {
+                    const meta = column.meta as
+                      | {
+                        skeletonClassName?: string;
+                        customSkeleton?: React.ReactNode;
+                      }
+                      | undefined;
+                    return (
+                      <TableCell
+                        key={index}
+                        className={dense ? "py-1.5 px-2" : "p-4"}>
+                        {meta?.customSkeleton ? (
+                          meta.customSkeleton
+                        ) : (
+                          <Skeleton
+                            className={cn(
+                              "h-5 w-full",
+                              meta?.skeletonClassName,
+                            )}
+                          />
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
-              </MotionTableBody>
-            )}
+              ))}
+            </MotionTableBody>
+          ) : !forceEmptyState && rows.length > 0 ? (
+            <MotionTableBody
+              key="data-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="relative">
+              {prependBodyRow}
+              {virtualize
+                ? [
+                  virtualItems.length > 0 && (
+                    <TableRow
+                      key="virtual-padding-top"
+                      style={{ height: `${virtualItems[0].start}px` }}
+                      className="hover:bg-transparent border-none">
+                      <TableCell
+                        colSpan={columns.length}
+                        className="p-0"
+                      />
+                    </TableRow>
+                  ),
+                  ...virtualItems.map((virtualRow) => (
+                    <TableRowComponent
+                      key={rows[virtualRow.index].id}
+                      ref={rowVirtualizer.measureElement}
+                      data-index={virtualRow.index}
+                      row={rows[virtualRow.index]}
+                      onRowClick={onRowClick}
+                      getRowClassName={getRowClassName}
+                      dense={dense}
+                      isRowClickable={isRowClickable}
+                    />
+                  )),
+                  virtualItems.length > 0 && (
+                    <TableRow
+                      key="virtual-padding-bottom"
+                      style={{
+                        height: `${rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end}px`,
+                      }}
+                      className="hover:bg-transparent border-none">
+                      <TableCell
+                        colSpan={columns.length}
+                        className="p-0"
+                      />
+                    </TableRow>
+                  ),
+                ]
+                : rows.map((row) => (
+                  <React.Fragment key={row.id}>
+                    <TableRowComponent
+                      row={row}
+                      onRowClick={onRowClick}
+                      getRowClassName={getRowClassName}
+                      dense={dense}
+                      isRowClickable={isRowClickable}
+                    />
+                    {renderRowAfter?.(row.original, row.index)}
+                  </React.Fragment>
+                ))}
+            </MotionTableBody>
+          ) : prependBodyRow ? (
+            <MotionTableBody
+              key="prepend-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="relative">
+              {prependBodyRow}
+            </MotionTableBody>
+          ) : (
+            <MotionTableBody
+              key="empty-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="relative">
+              <TableRow key="no-results">
+                <TableCell
+                  colSpan={columns.length}
+                  className="p-0">
+                  {emptyStateContent ?? (
+                    <div className="h-24 flex items-center justify-center text-center font-extrabold">
+                      {noResultsMessage}
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            </MotionTableBody>
+          )}
         </Table>
       </div>
     </div>

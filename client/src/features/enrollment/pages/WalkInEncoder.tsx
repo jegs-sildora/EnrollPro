@@ -835,14 +835,14 @@ export default function WalkInEncoder() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-left">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-extrabold">
             Manual Basic Education Enrollment Forms (BEEF) Encoding
           </h1>
-          <p className="text-base leading-tight text-foreground font-bold">
+          <p className="text-base leading-tight text-foreground font-extrabold">
             Encode submitted Basic Education Enrollment Forms (BEEF) for late enrollees and transferees.
           </p>
         </div>
-        <div className="text-base font-bold text-foreground whitespace-nowrap bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 sm:mt-1">
+        <div className="text-base font-extrabold text-foreground whitespace-nowrap bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 sm:mt-1">
           Late Entry: S.Y. {activeSchoolYearLabel || "2026–2027"}
         </div>
       </div>
@@ -851,7 +851,7 @@ export default function WalkInEncoder() {
       <Card className="border border-slate-200 bg-white shadow-sm rounded-xl mb-6">
         <CardContent className="p-5 md:p-6 flex flex-col space-y-4 text-left">
           <div className="space-y-2">
-            <Label htmlFor="interceptorLrn" className="text-base font-bold text-foreground">
+            <Label htmlFor="interceptorLrn" className="text-base font-extrabold text-foreground">
               Learner Reference Number (LRN) *
             </Label>
             <div className="flex gap-3 w-full max-w-6.5xl items-start">
@@ -863,7 +863,7 @@ export default function WalkInEncoder() {
                   maxLength={12}
                   disabled={isSearchingLrn || isFormUnlocked}
                   placeholder="Type 12-digit LRN..."
-                  className="pl-11 h-12 text-lg font-bold tracking-wider text-foreground rounded-xl"
+                  className="pl-11 h-12 text-lg font-extrabold tracking-wider text-foreground rounded-xl"
                   onChange={(e) => {
                     setInterceptorLrn(e.target.value.replace(/[^\d]/g, "").slice(0, 12));
                   }}
@@ -879,7 +879,7 @@ export default function WalkInEncoder() {
                 type="button"
                 disabled={isSearchingLrn || isFormUnlocked}
                 onClick={() => { void handleInterceptorSearch(); }}
-                className="h-12 w-32 font-bold uppercase tracking-wider text-white border-none shadow-none rounded-xl shrink-0"
+                className="h-12 w-32 font-extrabold uppercase tracking-wider text-white border-none shadow-none rounded-xl shrink-0"
                 style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
               >
                 {isSearchingLrn ? (
@@ -889,7 +889,7 @@ export default function WalkInEncoder() {
                 )}
               </Button>
             </div>
-            <p className="text-base font-bold">
+            <p className="text-base font-extrabold">
               Checks local school records to prevent duplicate enrollment.
             </p>
           </div>
@@ -899,14 +899,14 @@ export default function WalkInEncoder() {
             <div className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-start sm:items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
-                <p className="text-base font-bold text-amber-900">
+                <p className="text-base font-extrabold text-amber-900">
                   LRN not found in database. Encode as a brand new learner profile?
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  className="h-9 px-4 font-bold bg-white text-slate-700 border-amber-200 hover:bg-amber-100 flex-1 sm:flex-none"
+                  className="h-9 px-4 font-extrabold bg-white text-slate-700 border-amber-200 hover:bg-amber-100 flex-1 sm:flex-none"
                   onClick={() => {
                     setShowNoLrnBanner(false);
                     setInterceptorLrn("");
@@ -915,7 +915,7 @@ export default function WalkInEncoder() {
                   Cancel
                 </Button>
                 <Button
-                  className="h-9 px-4 font-bold bg-amber-600 text-white hover:bg-amber-700 shadow-none border-none flex-1 sm:flex-none"
+                  className="h-9 px-4 font-extrabold bg-amber-600 text-white hover:bg-amber-700 shadow-none border-none flex-1 sm:flex-none"
                   onClick={() => {
                     setShowNoLrnBanner(false);
                     setIsFormUnlocked(true);
@@ -929,9 +929,9 @@ export default function WalkInEncoder() {
           {hydrationContext && isFormUnlocked && (
             <div className="w-full max-w-3xl p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-left flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-                <span className="text-emerald-700 font-bold text-xs">✓</span>
+                <span className="text-emerald-700 font-extrabold text-xs">✓</span>
               </div>
-              <p className="text-base font-bold text-emerald-900">
+              <p className="text-base font-extrabold text-emerald-900">
                 Verified LIS Profile: {formData.lastName}, {formData.firstName}
               </p>
             </div>
@@ -947,7 +947,7 @@ export default function WalkInEncoder() {
               {/* 3. SECTION 1: LEARNER INFORMATION */}
               <section className="space-y-6 text-left">
                 <h3
-                  className="text-xl font-bold pl-3 border-l-4"
+                  className="text-xl font-extrabold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -958,14 +958,14 @@ export default function WalkInEncoder() {
 
                 {hydrationContext && (
                   <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 mb-4">
-                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase">
+                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-extrabold uppercase">
                       Record Found: {hydrationContext.source === "ENROLLMENT" ? "Pending Queue Record" : "Early Registrant"}
                     </Badge>
-                    <p className="text-base font-bold uppercase text-emerald-800">
+                    <p className="text-base font-extrabold uppercase text-emerald-800">
                       Status: {hydrationContext.status.replace(/_/g, " ")}
                     </p>
                     {hydratedApplicantLabel && hydratedApplicantType !== "REGULAR" && (
-                      <p className="text-base leading-tight font-black text-emerald-955">
+                      <p className="text-base leading-tight font-extrabold text-emerald-955">
                         Curriculum: {hydratedApplicantLabel} {hydrationContext.status === "PENDING_BEEF" ? "- PASSER" : ""}
                       </p>
                     )}
@@ -975,37 +975,37 @@ export default function WalkInEncoder() {
                 {/* Row 1 (Academic Assignment) */}
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Learner Reference Number (LRN) *
                     </Label>
                     <Input
                       value={formData.lrn}
                       disabled={true}
-                      className="h-10 font-bold bg-slate-100 border-slate-200 text-slate-700 disabled:opacity-100"
+                      className="h-10 font-extrabold bg-slate-100 border-slate-200 text-slate-700 disabled:opacity-100"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Learner Type *
                     </Label>
                     <Select
                       value={formData.learnerType}
                       onValueChange={(val) => setField("learnerType", val as LearnerType)}
                     >
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="NEW_ENROLLEE" className="font-bold">New Enrollee (Grade 7 Entry)</SelectItem>
-                        <SelectItem value="TRANSFEREE" className="font-bold">Transferee (Move-In from Other School)</SelectItem>
-                        <SelectItem value="RETURNING" className="font-bold">Returning Learner (Balik-Aral)</SelectItem>
+                        <SelectItem value="NEW_ENROLLEE" className="font-extrabold">New Enrollee (Grade 7 Entry)</SelectItem>
+                        <SelectItem value="TRANSFEREE" className="font-extrabold">Transferee (Move-In from Other School)</SelectItem>
+                        <SelectItem value="RETURNING" className="font-extrabold">Returning Learner (Balik-Aral)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Grade Level *
                     </Label>
                     <Select
@@ -1013,12 +1013,12 @@ export default function WalkInEncoder() {
                       onValueChange={(val) => setField("gradeLevelId", val)}
                       disabled={loadingGradeLevels}
                     >
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder={loadingGradeLevels ? "Loading grades..." : "Select grade"} />
                       </SelectTrigger>
                       <SelectContent>
                         {gradeLevels.map((g) => (
-                          <SelectItem key={g.id} value={String(g.id)} className="font-bold">
+                          <SelectItem key={g.id} value={String(g.id)} className="font-extrabold">
                             {g.name}
                           </SelectItem>
                         ))}
@@ -1027,20 +1027,20 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Prior Academic Status *
                     </Label>
                     <Select
                       value={formData.academicStatus}
                       onValueChange={(val) => setField("academicStatus", val as AcademicStatus)}
                     >
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PROMOTED" className="font-bold">Promoted</SelectItem>
-                        <SelectItem value="CONDITIONALLY_PROMOTED" className="font-bold">Conditional (Irregular)</SelectItem>
-                        <SelectItem value="RETAINED" className="font-bold">Retained (Held Back)</SelectItem>
+                        <SelectItem value="PROMOTED" className="font-extrabold">Promoted</SelectItem>
+                        <SelectItem value="CONDITIONALLY_PROMOTED" className="font-extrabold">Conditional (Irregular)</SelectItem>
+                        <SelectItem value="RETAINED" className="font-extrabold">Retained (Held Back)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1049,58 +1049,58 @@ export default function WalkInEncoder() {
                 {/* Row 2 (Legal Identity) */}
                 <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Last Name *
                     </Label>
                     <Input
                       value={formData.lastName}
                       placeholder="LAST NAME"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(e) => setUpperField("lastName", e.target.value)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       First Name *
                     </Label>
                     <Input
                       value={formData.firstName}
                       placeholder="FIRST NAME"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(e) => setUpperField("firstName", e.target.value)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Middle Name
                     </Label>
                     <Input
                       value={formData.middleName}
                       placeholder="Leave blank if none"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(e) => setUpperField("middleName", e.target.value)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Extension Name
                     </Label>
                     <Select
                       value={formData.extensionName || "NONE"}
                       onValueChange={(val) => setField("extensionName", val === "NONE" ? "" : val)}
                     >
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder="None" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="NONE" className="font-bold">None</SelectItem>
-                        <SelectItem value="JR" className="font-bold">Jr.</SelectItem>
-                        <SelectItem value="II" className="font-bold">II</SelectItem>
-                        <SelectItem value="III" className="font-bold">III</SelectItem>
-                        <SelectItem value="IV" className="font-bold">IV</SelectItem>
+                        <SelectItem value="NONE" className="font-extrabold">None</SelectItem>
+                        <SelectItem value="JR" className="font-extrabold">Jr.</SelectItem>
+                        <SelectItem value="II" className="font-extrabold">II</SelectItem>
+                        <SelectItem value="III" className="font-extrabold">III</SelectItem>
+                        <SelectItem value="IV" className="font-extrabold">IV</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1109,7 +1109,7 @@ export default function WalkInEncoder() {
                 {/* Row 3 (Birthdate, Sex, Place of Birth) */}
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Birthdate *
                     </Label>
                     <div className="relative">
@@ -1124,7 +1124,7 @@ export default function WalkInEncoder() {
                           )
                         }
                         className={cn(
-                          "h-10 font-bold pr-10 bg-white",
+                          "h-10 font-extrabold pr-10 bg-white",
                           !formData.birthdate && "border-amber-200/60",
                         )}
                       />
@@ -1184,7 +1184,7 @@ export default function WalkInEncoder() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Sex *
                     </Label>
                     <div className="flex gap-4 pt-1">
@@ -1203,7 +1203,7 @@ export default function WalkInEncoder() {
                           className={cn(
                             "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight uppercase",
                             formData.sex === sexOption.value
-                              ? "border-primary bg-primary/5 font-bold"
+                              ? "border-primary bg-primary/5 font-extrabold"
                               : "border-border hover:bg-slate-50 text-foreground",
                           )}>
                           <sexOption.icon
@@ -1214,20 +1214,20 @@ export default function WalkInEncoder() {
                                 : "text-foreground",
                             )}
                           />
-                          <span className="font-bold">{sexOption.label}</span>
+                          <span className="font-extrabold">{sexOption.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Place of Birth
                     </Label>
                     <Input
                       value={formData.placeOfBirth}
                       placeholder="CITY / MUNICIPALITY"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("placeOfBirth", event.target.value);
                       }}
@@ -1239,7 +1239,7 @@ export default function WalkInEncoder() {
               {/* SECTION 2: PREVIOUS SCHOOL INFORMATION */}
               <section className="space-y-6 text-left">
                 <h3
-                  className="text-xl font-bold pl-3 border-l-4"
+                  className="text-xl font-extrabold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -1250,20 +1250,20 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
                   <div className="space-y-2 col-span-1 sm:col-span-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Last School Attended *
                     </Label>
                     <Input
                       value={formData.originSchoolName}
                       placeholder="SCHOOL NAME"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("originSchoolName", event.target.value);
                       }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       DepEd School ID (Optional)
                     </Label>
                     <Input
@@ -1271,7 +1271,7 @@ export default function WalkInEncoder() {
                       placeholder="6-DIGIT ID"
                       maxLength={6}
                       inputMode="numeric"
-                      className="h-10 font-bold bg-white"
+                      className="h-10 font-extrabold bg-white"
                       onChange={(event) => {
                         setField(
                           "lastSchoolId",
@@ -1281,7 +1281,7 @@ export default function WalkInEncoder() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Last Grade Completed *
                     </Label>
                     <Select
@@ -1289,7 +1289,7 @@ export default function WalkInEncoder() {
                       onValueChange={(value) => {
                         setField("lastGradeCompleted", value);
                       }}>
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder="SELECT GRADE" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1297,7 +1297,7 @@ export default function WalkInEncoder() {
                           <SelectItem
                             key={g}
                             value={g}
-                            className="font-bold">
+                            className="font-extrabold">
                             GRADE {g}
                           </SelectItem>
                         ))}
@@ -1305,7 +1305,7 @@ export default function WalkInEncoder() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       School Year Last Attended *
                     </Label>
                     <Select
@@ -1313,7 +1313,7 @@ export default function WalkInEncoder() {
                       onValueChange={(value) => {
                         setField("schoolYearLastAttended", value);
                       }}>
-                      <SelectTrigger className="h-10 font-bold bg-white">
+                      <SelectTrigger className="h-10 font-extrabold bg-white">
                         <SelectValue placeholder="Select year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1324,7 +1324,7 @@ export default function WalkInEncoder() {
                             <SelectItem
                               key={label}
                               value={label}
-                              className="font-bold">
+                              className="font-extrabold">
                               {label}
                             </SelectItem>
                           );
@@ -1338,7 +1338,7 @@ export default function WalkInEncoder() {
               {/* SECTION 3: LEARNER ADDRESS */}
               <section className="space-y-6 text-left">
                 <h3
-                  className="text-xl font-bold pl-3 border-l-4"
+                  className="text-xl font-extrabold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -1349,26 +1349,26 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground uppercase">
+                    <Label className="text-base font-extrabold text-foreground uppercase">
                       House No. / Street
                     </Label>
                     <Input
                       value={formData.currentAddressHouseNoStreet}
                       placeholder="HOUSE NO. / STREET"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("currentAddressHouseNoStreet", event.target.value);
                       }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-base font-bold text-foreground uppercase">
+                    <Label className="text-base font-extrabold text-foreground uppercase">
                       Purok / Sitio / Subdivision
                     </Label>
                     <Input
                       value={formData.currentAddressSitio}
                       placeholder="PUROK / Sitio / Subdivision"
-                      className="h-10 font-bold uppercase bg-white"
+                      className="h-10 font-extrabold uppercase bg-white"
                       onChange={(event) => {
                         setUpperField("currentAddressSitio", event.target.value);
                       }}
@@ -1419,7 +1419,7 @@ export default function WalkInEncoder() {
               {/* SECTION 4: PARENTS / GUARDIAN INFORMATION */}
               <section className="space-y-8 text-left">
                 <h3
-                  className="text-xl font-bold pl-3 border-l-4"
+                  className="text-xl font-extrabold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -1432,7 +1432,7 @@ export default function WalkInEncoder() {
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <div>
-                      <h4 className="font-bold text-foreground text-base uppercase">Mother's Maiden Details</h4>
+                      <h4 className="font-extrabold text-foreground text-base uppercase">Mother's Maiden Details</h4>
                       <p className="text-sm text-foreground/80">Provide the mother's name exactly as it appears on the birth certificate.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
@@ -1441,7 +1441,7 @@ export default function WalkInEncoder() {
                         checked={formData.hasNoMother}
                         onCheckedChange={(checked) => setField("hasNoMother", checked === true)}
                       />
-                      <Label htmlFor="hasNoMother" className="text-sm font-bold uppercase text-slate-700 cursor-pointer">
+                      <Label htmlFor="hasNoMother" className="text-sm font-extrabold uppercase text-slate-700 cursor-pointer">
                         Record Unknown / Deceased
                       </Label>
                     </div>
@@ -1449,32 +1449,32 @@ export default function WalkInEncoder() {
 
                   <div className={cn("grid gap-4 md:grid-cols-3 transition-opacity duration-200", formData.hasNoMother && "opacity-40 pointer-events-none")}>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">Maiden Last Name</Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">Maiden Last Name</Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.lastName}
                         disabled={formData.hasNoMother}
                         placeholder="LAST NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("mother", "lastName", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">First Name</Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.firstName}
                         disabled={formData.hasNoMother}
                         placeholder="FIRST NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("mother", "firstName", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.middleName}
                         disabled={formData.hasNoMother}
                         placeholder="MIDDLE NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("mother", "middleName", e.target.value.toUpperCase())}
                       />
                     </div>
@@ -1485,7 +1485,7 @@ export default function WalkInEncoder() {
                 <div className="space-y-4 pt-4 border-t border-slate-100">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <div>
-                      <h4 className="font-bold text-foreground text-base uppercase">Father's Details</h4>
+                      <h4 className="font-extrabold text-foreground text-base uppercase">Father's Details</h4>
                       <p className="text-sm text-foreground/80">Provide the father's full name.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
@@ -1494,7 +1494,7 @@ export default function WalkInEncoder() {
                         checked={formData.hasNoFather}
                         onCheckedChange={(checked) => setField("hasNoFather", checked === true)}
                       />
-                      <Label htmlFor="hasNoFather" className="text-sm font-bold uppercase text-slate-700 cursor-pointer">
+                      <Label htmlFor="hasNoFather" className="text-sm font-extrabold uppercase text-slate-700 cursor-pointer">
                         Record Unknown / Deceased
                       </Label>
                     </div>
@@ -1502,43 +1502,43 @@ export default function WalkInEncoder() {
 
                   <div className={cn("grid gap-4 md:grid-cols-4 transition-opacity duration-200", formData.hasNoFather && "opacity-40 pointer-events-none")}>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">Last Name</Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">Last Name</Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.lastName}
                         disabled={formData.hasNoFather}
                         placeholder="LAST NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("father", "lastName", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">First Name</Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.firstName}
                         disabled={formData.hasNoFather}
                         placeholder="FIRST NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("father", "firstName", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.middleName}
                         disabled={formData.hasNoFather}
                         placeholder="MIDDLE NAME"
-                        className="h-10 font-bold uppercase bg-white border-slate-300"
+                        className="h-10 font-extrabold uppercase bg-white border-slate-300"
                         onChange={(e) => setContactField("father", "middleName", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase text-slate-600">Suffix <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-xs font-extrabold uppercase text-slate-600">Suffix <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Select
                         value={formData.hasNoFather ? "" : formData.father.extensionName}
                         onValueChange={(val) => setContactField("father", "extensionName", val === "NONE" ? "" : val)}
                         disabled={formData.hasNoFather}
                       >
-                        <SelectTrigger className="h-10 bg-white font-bold text-foreground border-slate-300">
+                        <SelectTrigger className="h-10 bg-white font-extrabold text-foreground border-slate-300">
                           <SelectValue placeholder="SELECT" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1559,7 +1559,7 @@ export default function WalkInEncoder() {
                     {/* Primary Caregiver */}
                     <div>
                       <div className="mb-4">
-                        <Label className="text-base font-bold text-foreground uppercase">Primary Caregiver</Label>
+                        <Label className="text-base font-extrabold text-foreground uppercase">Primary Caregiver</Label>
                         <p className="text-sm text-foreground/80">Who does the learner permanently reside with?</p>
                       </div>
                       <div className="flex flex-wrap gap-3">
@@ -1568,7 +1568,7 @@ export default function WalkInEncoder() {
                             type="button"
                             onClick={() => setField("primaryContact", "MOTHER")}
                             className={cn(
-                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-extrabold uppercase text-sm transition-all",
                               formData.primaryContact === "MOTHER"
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
@@ -1583,7 +1583,7 @@ export default function WalkInEncoder() {
                             type="button"
                             onClick={() => setField("primaryContact", "FATHER")}
                             className={cn(
-                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                              "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-extrabold uppercase text-sm transition-all",
                               formData.primaryContact === "FATHER"
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
@@ -1597,7 +1597,7 @@ export default function WalkInEncoder() {
                           type="button"
                           onClick={() => setField("primaryContact", "GUARDIAN")}
                           className={cn(
-                            "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-bold uppercase text-sm transition-all",
+                            "flex items-center gap-2 px-5 py-3 rounded-full border-2 font-extrabold uppercase text-sm transition-all",
                             formData.primaryContact === "GUARDIAN"
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
@@ -1612,7 +1612,7 @@ export default function WalkInEncoder() {
                     {/* Master Contact Pipe */}
                     <div>
                       <div className="mb-4 space-y-1">
-                        <Label className="text-base font-bold text-foreground uppercase flex items-center gap-2">
+                        <Label className="text-base font-extrabold text-foreground uppercase flex items-center gap-2">
                           Primary Contact Number
                           <span className="text-destructive text-sm">*</span>
                         </Label>
@@ -1623,7 +1623,7 @@ export default function WalkInEncoder() {
                         placeholder="09XXXXXXXXX"
                         maxLength={11}
                         inputMode="numeric"
-                        className="h-12 max-w-sm text-lg font-bold bg-white border-2 border-slate-300 tracking-wider"
+                        className="h-12 max-w-sm text-lg font-extrabold bg-white border-2 border-slate-300 tracking-wider"
                         onChange={(event) => {
                           setField(
                             "contactNumber",
@@ -1638,31 +1638,31 @@ export default function WalkInEncoder() {
                 {/* Dynamic Guardian Shell */}
                 {formData.primaryContact === "GUARDIAN" && (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <h4 className="font-bold text-foreground text-sm uppercase mb-4">Guardian Identity Details</h4>
+                    <h4 className="font-extrabold text-foreground text-sm uppercase mb-4">Guardian Identity Details</h4>
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase text-slate-600">Last Name</Label>
+                        <Label className="text-xs font-extrabold uppercase text-slate-600">Last Name</Label>
                         <Input
                           value={formData.guardian.lastName}
                           placeholder="LAST NAME"
-                          className="h-10 font-bold uppercase bg-white border-slate-300"
+                          className="h-10 font-extrabold uppercase bg-white border-slate-300"
                           onChange={(e) => setContactField("guardian", "lastName", e.target.value.toUpperCase())}
                         />\n                      </div>\n                      {errors.birthdate && <p className="text-destructive text-sm mt-1">{errors.birthdate}</p>}
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase text-slate-600">First Name</Label>
+                        <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
                         <Input
                           value={formData.guardian.firstName}
                           placeholder="FIRST NAME"
-                          className="h-10 font-bold uppercase bg-white border-slate-300"
+                          className="h-10 font-extrabold uppercase bg-white border-slate-300"
                           onChange={(e) => setContactField("guardian", "firstName", e.target.value.toUpperCase())}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase text-slate-600">Relationship to Learner</Label>
+                        <Label className="text-xs font-extrabold uppercase text-slate-600">Relationship to Learner</Label>
                         <Input
                           value={formData.guardianRelationship}
                           placeholder="AUNT / GRANDPARENT"
-                          className="h-10 font-bold uppercase bg-white border-slate-300"
+                          className="h-10 font-extrabold uppercase bg-white border-slate-300"
                           onChange={(e) => setUpperField("guardianRelationship", e.target.value)}
                         />
                       </div>
@@ -1675,7 +1675,7 @@ export default function WalkInEncoder() {
               {/* SECTION 5: PHYSICAL REQUIREMENTS SUBMITTED */}
               <section className="space-y-6 text-left">
                 <h3
-                  className="text-xl font-bold pl-3 border-l-4"
+                  className="text-xl font-extrabold pl-3 border-l-4"
                   style={{
                     borderColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))",
                     color: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))"
@@ -1686,13 +1686,13 @@ export default function WalkInEncoder() {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2 md:col-span-3">
-                    <Label className="text-base font-bold text-foreground">
+                    <Label className="text-base font-extrabold text-foreground">
                       Final General Average (SF9) *
                     </Label>
                     <Input
                       value={formData.finalGeneralAverage}
                       placeholder="88.50"
-                      className="h-10 font-bold bg-white"
+                      className="h-10 font-extrabold bg-white"
                       inputMode="decimal"
                       onChange={(event) => {
                         const val = event.target.value;
@@ -1745,14 +1745,14 @@ export default function WalkInEncoder() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 px-6 font-bold bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                  className="h-11 px-6 font-extrabold bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
                   onClick={() => navigate("/dashboard")}
                   disabled={submitting}>
                   Cancel
                 </Button>
                 <Button
                   type="button"
-                  className="h-11 px-6 font-bold text-white shadow-none border-none animate-in fade-in zoom-in duration-200"
+                  className="h-11 px-6 font-extrabold text-white shadow-none border-none animate-in fade-in zoom-in duration-200"
                   style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
                   disabled={submitting || Boolean(duplicateInfo)}
                   onClick={() => { handleSubmit(); }}>
@@ -1776,7 +1776,7 @@ export default function WalkInEncoder() {
       <Dialog open={showSectionModal} onOpenChange={(open) => { if (!open) handleSkipSectionAssignment(); }}>
         <DialogContent className="sm:max-w-[460px] text-left p-6 bg-white rounded-xl shadow-lg border border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-foreground tracking-wide">
+            <DialogTitle className="text-xl font-extrabold text-foreground tracking-wide">
               Assign Late Enrollee to a Class Section
             </DialogTitle>
           </DialogHeader>
@@ -1786,24 +1786,24 @@ export default function WalkInEncoder() {
             </p>
 
             <div className="space-y-2">
-              <Label className="text-base font-bold text-slate-700">Official Enrollment Date *</Label>
+              <Label className="text-base font-extrabold text-slate-700">Official Enrollment Date *</Label>
               <Input
                 type="date"
                 value={lateEnrollmentDate}
                 max={format(new Date(), "yyyy-MM-dd")}
-                className="h-10 font-bold"
+                className="h-10 font-extrabold"
                 onChange={(e) => setLateEnrollmentDate(e.target.value)}
               />
             </div>
 
             <div className="space-y-3 max-h-[220px] overflow-y-auto border border-slate-100 rounded-lg p-3 bg-slate-50/50">
               {loadingModalSections ? (
-                <div className="flex items-center justify-center py-6 text-base text-slate-400 gap-2 font-bold">
+                <div className="flex items-center justify-center py-6 text-base text-slate-400 gap-2 font-extrabold">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading sections...
                 </div>
               ) : modalSections.length === 0 ? (
-                <p className="text-base text-slate-400 text-center py-4 font-bold">
+                <p className="text-base text-slate-400 text-center py-4 font-extrabold">
                   No active sections found for this grade level.
                 </p>
               ) : (
@@ -1832,13 +1832,13 @@ export default function WalkInEncoder() {
                           onChange={() => setSelectedModalSectionId(s.id)}
                           className="h-4 w-4 accent-slate-800 cursor-pointer"
                         />
-                        <span className="text-base font-bold text-foreground">
+                        <span className="text-base font-extrabold text-foreground">
                           Section {s.name}
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-foreground/80 font-mono">
+                      <span className="text-xs font-extrabold text-foreground/80 font-mono">
                         {isFull ? (
-                          <span className="text-rose-600 font-black">Full Capacity</span>
+                          <span className="text-rose-600 font-extrabold">Full Capacity</span>
                         ) : (
                           `${s.enrolledCount} / ${s.maxCapacity} Learners`
                         )}
@@ -1853,13 +1853,13 @@ export default function WalkInEncoder() {
             <Button
               variant="outline"
               onClick={handleSkipSectionAssignment}
-              className="h-11 font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 w-1/2">
+              className="h-11 font-extrabold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 w-1/2">
               Skip for Now
             </Button>
             <Button
               disabled={submitting || !selectedModalSectionId}
               onClick={handleConfirmSectionAssignment}
-              className="h-11 font-bold text-white w-1/2 shadow-none border-none"
+              className="h-11 font-extrabold text-white w-1/2 shadow-none border-none"
               style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
             >
               {submitting ? (
@@ -1885,23 +1885,23 @@ export default function WalkInEncoder() {
               <div className="p-2 bg-amber-100 rounded-lg text-amber-700">
                 <AlertTriangle className="h-5 w-5" />
               </div>
-              <DialogTitle className="text-base font-black uppercase text-amber-900">
+              <DialogTitle className="text-base font-extrabold uppercase text-amber-900">
                 Section Capacity Reached
               </DialogTitle>
             </div>
           </DialogHeader>
           <div className="px-6 py-5 bg-background space-y-3">
-            <p className="text-base leading-tight font-bold text-foreground">
+            <p className="text-base leading-tight font-extrabold text-foreground">
               The selected section has reached its maximum DepEd capacity. Are you sure you want to proceed with this assignment?
             </p>
-            <p className="text-base text-amber-700 font-bold">
+            <p className="text-base text-amber-700 font-extrabold">
               This action will create an over-capacity record. Ensure administrative approval has been obtained.
             </p>
           </div>
           <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2">
             <Button
               variant="outline"
-              className="font-bold uppercase text-base"
+              className="font-extrabold uppercase text-base"
               onClick={() => {
                 setIsCapacityOverrideOpen(false);
                 setPendingOverrideContext(null);
@@ -1909,7 +1909,7 @@ export default function WalkInEncoder() {
               Cancel
             </Button>
             <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-base px-6 shadow-none border-none"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold uppercase text-base px-6 shadow-none border-none"
               onClick={() => {
                 if (!pendingOverrideContext) return;
                 setIsCapacityOverrideOpen(false);
@@ -1933,52 +1933,52 @@ export default function WalkInEncoder() {
               <div className="p-2 bg-rose-100 rounded-lg text-rose-700">
                 <AlertTriangle className="h-5 w-5" />
               </div>
-              <DialogTitle className="text-base font-black uppercase text-rose-900">
+              <DialogTitle className="text-base font-extrabold uppercase text-rose-900">
                 Duplicate Profile Detected
               </DialogTitle>
             </div>
           </DialogHeader>
           <div className="px-6 py-5 bg-background space-y-4 text-left">
-            <p className="text-base leading-tight font-bold text-foreground">
+            <p className="text-base leading-tight font-extrabold text-foreground">
               A learner profile matching these credentials already exists in the system. Submission is blocked.
             </p>
             {duplicateInfo && (
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex justify-between text-base font-bold">
+                <div className="flex justify-between text-base font-extrabold">
                   <span className="text-muted-foreground">Name:</span>
                   <span className="text-foreground uppercase">
                     {duplicateInfo.lastName}, {duplicateInfo.firstName}
                   </span>
                 </div>
                 {duplicateInfo.lrn && (
-                  <div className="flex justify-between text-base font-bold">
+                  <div className="flex justify-between text-base font-extrabold">
                     <span className="text-muted-foreground">LRN:</span>
                     <span className="text-foreground font-mono">{duplicateInfo.lrn}</span>
                   </div>
                 )}
                 {duplicateInfo.activeEnrollment ? (
                   <>
-                    <div className="flex justify-between text-base font-bold">
+                    <div className="flex justify-between text-base font-extrabold">
                       <span className="text-muted-foreground">Tracking Number:</span>
                       <span className="text-foreground font-mono">
                         {duplicateInfo.activeEnrollment.trackingNumber || "N/A"}
                       </span>
                     </div>
-                    <div className="flex justify-between text-base font-bold">
+                    <div className="flex justify-between text-base font-extrabold">
                       <span className="text-muted-foreground">Active Section:</span>
                       <span className="text-foreground uppercase">
                         {duplicateInfo.activeEnrollment.sectionName || "Not assigned yet"}
                       </span>
                     </div>
-                    <div className="flex justify-between text-base font-bold">
+                    <div className="flex justify-between text-base font-extrabold">
                       <span className="text-muted-foreground">Status:</span>
-                      <Badge variant="outline" className="font-black bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
+                      <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
                         {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
                       </Badge>
                     </div>
                   </>
                 ) : (
-                  <div className="text-base text-amber-700 font-bold">
+                  <div className="text-base text-amber-700 font-extrabold">
                     No active enrollment application found for the current school year.
                   </div>
                 )}
@@ -1987,7 +1987,7 @@ export default function WalkInEncoder() {
           </div>
           <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end">
             <Button
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase text-base px-6 shadow-none border-none"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold uppercase text-base px-6 shadow-none border-none"
               onClick={() => setShowDuplicateModal(false)}
             >
               Close and Review

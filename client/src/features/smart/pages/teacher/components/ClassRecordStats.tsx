@@ -28,8 +28,8 @@ export function ClassRecordStats({ avg, passed, total, highest }: ClassRecordSta
               <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-              <p className="text-3xl font-black text-slate-900 leading-none">{stat.value}</p>
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <p className="text-3xl font-extrabold text-slate-900 leading-none">{stat.value}</p>
             </div>
           </CardContent>
         </Card>

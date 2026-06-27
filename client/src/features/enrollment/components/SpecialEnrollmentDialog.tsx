@@ -167,7 +167,7 @@ export function SpecialEnrollmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
+          <DialogTitle className="text-xl font-extrabold">
             Walk-in / Special Enrollment
           </DialogTitle>
           <DialogDescription>
@@ -179,7 +179,7 @@ export function SpecialEnrollmentDialog({
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="lrn" className="text-base font-bold uppercase">
+              <Label htmlFor="lrn" className="text-base font-extrabold uppercase">
                 LRN (12 Digits - Optional)
               </Label>
               <Input
@@ -189,13 +189,13 @@ export function SpecialEnrollmentDialog({
                 onChange={(e) =>
                   setFormData({ ...formData, lrn: e.target.value })
                 }
-                className="h-10 font-bold"
+                className="h-10 font-extrabold"
               />
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="learnerType"
-                className="text-base font-bold uppercase">
+                className="text-base font-extrabold uppercase">
                 Enrollment Type
               </Label>
               <Select
@@ -203,7 +203,7 @@ export function SpecialEnrollmentDialog({
                 onValueChange={(val) =>
                   setFormData({ ...formData, learnerType: val })
                 }>
-                <SelectTrigger className="h-10 font-bold">
+                <SelectTrigger className="h-10 font-extrabold">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,7 +226,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-0">
               <Label
                 htmlFor="originSchoolName"
-                className="text-base font-bold uppercase">
+                className="text-base font-extrabold uppercase">
                 Origin School Name *
               </Label>
               <Input
@@ -240,7 +240,7 @@ export function SpecialEnrollmentDialog({
                     originSchoolName: e.target.value.toUpperCase(),
                   })
                 }
-                className="h-10 font-bold uppercase"
+                className="h-10 font-extrabold uppercase"
               />
             </div>
           )}
@@ -250,7 +250,7 @@ export function SpecialEnrollmentDialog({
               <div className="space-y-2">
                 <Label
                   htmlFor="peptCertificateNumber"
-                  className="text-base font-bold uppercase">
+                  className="text-base font-extrabold uppercase">
                   PEPT Cert No. *
                 </Label>
                 <Input
@@ -264,13 +264,13 @@ export function SpecialEnrollmentDialog({
                       peptCertificateNumber: e.target.value,
                     })
                   }
-                  className="h-10 font-bold"
+                  className="h-10 font-extrabold"
                 />
               </div>
               <div className="space-y-2">
                 <Label
                   htmlFor="peptPassingDate"
-                  className="text-base font-bold uppercase">
+                  className="text-base font-extrabold uppercase">
                   Passing Date *
                 </Label>
                 <Input
@@ -284,7 +284,7 @@ export function SpecialEnrollmentDialog({
                       peptPassingDate: e.target.value,
                     })
                   }
-                  className="h-10 font-bold"
+                  className="h-10 font-extrabold"
                 />
               </div>
             </div>
@@ -294,7 +294,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="firstName"
-                className="text-base font-bold uppercase">
+                className="text-base font-extrabold uppercase">
                 First Name *
               </Label>
               <Input
@@ -308,11 +308,11 @@ export function SpecialEnrollmentDialog({
                     firstName: e.target.value.toUpperCase(),
                   })
                 }
-                className="h-10 font-bold uppercase"
+                className="h-10 font-extrabold uppercase"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-base font-bold uppercase">
+              <Label htmlFor="lastName" className="text-base font-extrabold uppercase">
                 Last Name *
               </Label>
               <Input
@@ -326,7 +326,7 @@ export function SpecialEnrollmentDialog({
                     lastName: e.target.value.toUpperCase(),
                   })
                 }
-                className="h-10 font-bold uppercase"
+                className="h-10 font-extrabold uppercase"
               />
             </div>
           </div>
@@ -335,7 +335,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="birthdate"
-                className="text-base font-bold uppercase">
+                className="text-base font-extrabold uppercase">
                 Birthdate *
               </Label>
               <Input
@@ -346,17 +346,17 @@ export function SpecialEnrollmentDialog({
                 onChange={(e) =>
                   setFormData({ ...formData, birthdate: e.target.value })
                 }
-                className="h-10 font-bold"
+                className="h-10 font-extrabold"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sex" className="text-base font-bold uppercase">
+              <Label htmlFor="sex" className="text-base font-extrabold uppercase">
                 Sex *
               </Label>
               <Select
                 value={formData.sex}
                 onValueChange={(val) => setFormData({ ...formData, sex: val })}>
-                <SelectTrigger className="h-10 font-bold">
+                <SelectTrigger className="h-10 font-extrabold">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -368,7 +368,7 @@ export function SpecialEnrollmentDialog({
             <div className="space-y-2">
               <Label
                 htmlFor="gradeLevel"
-                className="text-base font-bold uppercase">
+                className="text-base font-extrabold uppercase">
                 Grade to Enroll *
               </Label>
               <Select
@@ -376,7 +376,7 @@ export function SpecialEnrollmentDialog({
                 onValueChange={(val) =>
                   setFormData({ ...formData, gradeLevelId: val })
                 }>
-                <SelectTrigger className="h-10 font-bold">
+                <SelectTrigger className="h-10 font-extrabold">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -403,13 +403,13 @@ export function SpecialEnrollmentDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-10 font-bold">
+              className="h-10 font-extrabold">
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="h-10 font-bold bg-primary px-8">
+              className="h-10 font-extrabold bg-primary px-8">
               {loading ? "Creating..." : "Create Enrollment Application"}
             </Button>
           </DialogFooter>

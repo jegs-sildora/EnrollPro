@@ -397,7 +397,7 @@
 
 @layer utilities {
   .font-normal {
-    @apply font-bold;
+    @apply font-semibold;
   }
 
   .rdp-day_button[aria-selected="true"]:hover,

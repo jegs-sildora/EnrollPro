@@ -93,7 +93,7 @@ export default function TemplateManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [formFilter, setFormFilter] = useState('ALL');
-  
+
   // Upload form state
   const [uploadFormType, setUploadFormType] = useState('');
   const [uploadFormName, setUploadFormName] = useState('');
@@ -218,10 +218,10 @@ export default function TemplateManager() {
       });
 
       setUploadSuccess(response.data.message || 'Template uploaded successfully');
-      
+
       // Refresh template list
       await fetchTemplates();
-      
+
       // Reset form
       setTimeout(() => {
         setUploadDialogOpen(false);
@@ -237,13 +237,13 @@ export default function TemplateManager() {
       console.error('Upload failed:', error);
       const errorData = error.response?.data;
       let errorMessage = errorData?.error || 'Failed to upload template';
-      
+
       if (errorData?.missingForms && errorData?.availableSheets) {
         errorMessage += `\n\nCould not map: ${errorData.missingForms.join(', ')}`;
         errorMessage += `\n\nAvailable sheets in file: ${errorData.availableSheets.join(', ')}`;
         errorMessage += '\n\nPlease ensure your workbook sheet names clearly identify each form (e.g., "SF8", "Nutritional Status", "SF9", "front/back" for SF10).';
       }
-      
+
       setUploadError(errorMessage);
     } finally {
       setUploading(false);
@@ -395,7 +395,7 @@ export default function TemplateManager() {
       setPreviewScale(0.7);
 
       const token = sessionStorage.getItem('token');
-      
+
       // Load styled preview first (pixel-perfect rendering)
       try {
         const styledResponse = await axios.get(`${SERVER_URL}/api/templates/${template.id}/styled-preview`, {
@@ -407,7 +407,7 @@ export default function TemplateManager() {
         console.warn('Styled preview not available, falling back to simple view:', styledError);
         setViewMode('simple');
       }
-      
+
       // Also load simple preview as fallback
       const response = await axios.get(`${SERVER_URL}/api/templates/${template.id}/preview`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -485,7 +485,7 @@ export default function TemplateManager() {
       {/* Header Section */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Excel Template Manager</h1>
+          <h1 className="text-3xl font-extrabold">Excel Template Manager</h1>
           <p className="text-muted-foreground mt-1">
             Upload, review, and maintain DepEd School Form templates
           </p>
@@ -511,16 +511,16 @@ export default function TemplateManager() {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-5 hover:shadow-md transition-shadow">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Templates</p>
-          <p className="text-3xl font-bold mt-2">{templates.length}</p>
+          <p className="text-xs  text-muted-foreground uppercase tracking-wide">Total Templates</p>
+          <p className="text-3xl font-extrabold mt-2">{templates.length}</p>
         </Card>
         <Card className="p-5 hover:shadow-md transition-shadow">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Active</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{templates.filter((t) => t.isActive).length}</p>
+          <p className="text-xs  text-muted-foreground uppercase tracking-wide">Active</p>
+          <p className="text-3xl font-extrabold text-green-600 mt-2">{templates.filter((t) => t.isActive).length}</p>
         </Card>
         <Card className="p-5 hover:shadow-md transition-shadow">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Filtered Results</p>
-          <p className="text-3xl font-bold mt-2">{filteredTemplates.length}</p>
+          <p className="text-xs  text-muted-foreground uppercase tracking-wide">Filtered Results</p>
+          <p className="text-3xl font-extrabold mt-2">{filteredTemplates.length}</p>
         </Card>
       </div>
 
@@ -560,24 +560,24 @@ export default function TemplateManager() {
           </div>
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by form, template name, file, or uploader..."
-              className="pl-9"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-            className="px-3 py-2 border rounded-md text-sm bg-white"
-          >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by form, template name, file, or uploader..."
+                className="pl-9"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
+              className="px-3 py-2 border rounded-md text-sm bg-white"
+            >
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
             <select
               value={formFilter}
               onChange={(e) => setFormFilter(e.target.value)}
@@ -607,147 +607,147 @@ export default function TemplateManager() {
           </div>
         )}
         <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12 text-center">
-                <input
-                  type="checkbox"
-                  checked={
-                    filteredTemplates.length > 0 &&
-                    filteredTemplates.every((template) => selectedTemplateIds.includes(template.id))
-                  }
-                  onChange={handleToggleSelectAll}
-                  disabled={filteredTemplates.length === 0 || bulkDeleting}
-                  aria-label="Select all templates"
-                />
-              </TableHead>
-              <TableHead>Form Type</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>File</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Uploaded By</TableHead>
-              <TableHead>Updated</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
-                  Loading templates...
-                </TableCell>
+                <TableHead className="w-12 text-center">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteredTemplates.length > 0 &&
+                      filteredTemplates.every((template) => selectedTemplateIds.includes(template.id))
+                    }
+                    onChange={handleToggleSelectAll}
+                    disabled={filteredTemplates.length === 0 || bulkDeleting}
+                    aria-label="Select all templates"
+                  />
+                </TableHead>
+                <TableHead>Form Type</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>File</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Uploaded By</TableHead>
+                <TableHead>Updated</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : filteredTemplates.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
-                  <FileSpreadsheet className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    {templates.length === 0 ? 'No templates uploaded yet' : 'No templates match your current filters'}
-                  </p>
-                  {templates.length === 0 ? (
-                    <Button onClick={() => setUploadDialogOpen(true)} variant="link">
-                      Upload your first template
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setStatusFilter('ALL');
-                        setFormFilter('ALL');
-                      }}
-                      variant="link"
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTemplates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell className="text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedTemplateIds.includes(template.id)}
-                      onChange={() => toggleTemplateSelection(template.id)}
-                      disabled={bulkDeleting}
-                      aria-label={`Select ${template.formType} template`}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{template.formType}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{template.formName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4" />
-                      {template.fileName}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{formatFileSize(template.fileSize)}</TableCell>
-                  <TableCell className="text-sm">{template.uploadedByName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(template.updatedAt)}
-                  </TableCell>
-                  <TableCell>
-                    {template.isActive ? (
-                      <Badge variant="default" className="bg-green-600">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleViewTemplate(template)}
-                        title="View Template"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => showInfo(template)}
-                        title="View Details"
-                      >
-                        <Info className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDownload(template)}
-                        title="Download Template"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleToggleActive(template)}
-                        title={template.isActive ? 'Deactivate' : 'Activate'}
-                      >
-                        <Power className={`w-4 h-4 ${template.isActive ? 'text-green-600' : 'text-gray-400'}`} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(template)}
-                        title="Delete Template"
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8">
+                    Loading templates...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : filteredTemplates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8">
+                    <FileSpreadsheet className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      {templates.length === 0 ? 'No templates uploaded yet' : 'No templates match your current filters'}
+                    </p>
+                    {templates.length === 0 ? (
+                      <Button onClick={() => setUploadDialogOpen(true)} variant="link">
+                        Upload your first template
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('ALL');
+                          setFormFilter('ALL');
+                        }}
+                        variant="link"
+                      >
+                        Clear filters
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTemplates.map((template) => (
+                  <TableRow key={template.id}>
+                    <TableCell className="text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedTemplateIds.includes(template.id)}
+                        onChange={() => toggleTemplateSelection(template.id)}
+                        disabled={bulkDeleting}
+                        aria-label={`Select ${template.formType} template`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{template.formType}</Badge>
+                    </TableCell>
+                    <TableCell className="">{template.formName}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <FileSpreadsheet className="w-4 h-4" />
+                        {template.fileName}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{formatFileSize(template.fileSize)}</TableCell>
+                    <TableCell className="text-sm">{template.uploadedByName}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(template.updatedAt)}
+                    </TableCell>
+                    <TableCell>
+                      {template.isActive ? (
+                        <Badge variant="default" className="bg-green-600">Active</Badge>
+                      ) : (
+                        <Badge variant="secondary">Inactive</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewTemplate(template)}
+                          title="View Template"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => showInfo(template)}
+                          title="View Details"
+                        >
+                          <Info className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownload(template)}
+                          title="Download Template"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleToggleActive(template)}
+                          title={template.isActive ? 'Deactivate' : 'Activate'}
+                        >
+                          <Power className={`w-4 h-4 ${template.isActive ? 'text-green-600' : 'text-gray-400'}`} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(template)}
+                          title="Delete Template"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </Card>
 
@@ -1044,29 +1044,29 @@ export default function TemplateManager() {
                   {/* Sheet Selection */}
                   {((viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.length > 1) ||
                     (viewMode === 'simple' && previewData?.sheets.length > 1)) && (
-                    <div className="space-y-2">
-                      <Label htmlFor="previewSheet" className="text-sm font-semibold">Worksheet</Label>
-                      <select
-                        id="previewSheet"
-                        value={selectedPreviewSheet}
-                        onChange={(e) => setSelectedPreviewSheet(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md text-sm bg-white"
-                      >
-                        {viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.map((sheet: any) => (
-                          <option key={sheet.name} value={sheet.name}>
-                            {sheet.name}
-                            {styledPreviewData.mappedSheetName === sheet.name ? ' (Mapped)' : ''}
-                          </option>
-                        ))}
-                        {viewMode === 'simple' && previewData?.sheets.map((sheet) => (
-                          <option key={sheet.sheetName} value={sheet.sheetName}>
-                            {sheet.sheetName}
-                            {sheet.isMappedSheet ? ' (Mapped)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                      <div className="space-y-2">
+                        <Label htmlFor="previewSheet" className="text-sm font-semibold">Worksheet</Label>
+                        <select
+                          id="previewSheet"
+                          value={selectedPreviewSheet}
+                          onChange={(e) => setSelectedPreviewSheet(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md text-sm bg-white"
+                        >
+                          {viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.map((sheet: any) => (
+                            <option key={sheet.name} value={sheet.name}>
+                              {sheet.name}
+                              {styledPreviewData.mappedSheetName === sheet.name ? ' (Mapped)' : ''}
+                            </option>
+                          ))}
+                          {viewMode === 'simple' && previewData?.sheets.map((sheet) => (
+                            <option key={sheet.sheetName} value={sheet.sheetName}>
+                              {sheet.sheetName}
+                              {sheet.isMappedSheet ? ' (Mapped)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                 </div>
 
                 {/* Preview Content */}
@@ -1074,8 +1074,8 @@ export default function TemplateManager() {
                   {viewMode === 'styled' && styledPreviewData ? (
                     (() => {
                       const activeSheet = styledPreviewData.parsedStructure.sheets.find((sheet: any) => sheet.name === selectedPreviewSheet) ||
-                                          styledPreviewData.parsedStructure.sheets[0];
-                      
+                        styledPreviewData.parsedStructure.sheets[0];
+
                       if (!activeSheet) {
                         return <p className="p-4 text-sm text-muted-foreground">No worksheet data available.</p>;
                       }
@@ -1093,8 +1093,8 @@ export default function TemplateManager() {
                   ) : (
                     (() => {
                       const activeSheet = previewData?.sheets.find((sheet) => sheet.sheetName === selectedPreviewSheet) ||
-                                          previewData?.sheets[0];
-                      
+                        previewData?.sheets[0];
+
                       if (!activeSheet) {
                         return <p className="p-4 text-sm text-muted-foreground">No worksheet data available.</p>;
                       }
@@ -1106,7 +1106,7 @@ export default function TemplateManager() {
                               {activeSheet.isMappedSheet ? 'Mapped Sheet' : 'Unmapped Sheet'}
                             </Badge>
                             <p className="text-xs text-muted-foreground">
-                              Total rows: {activeSheet.totalRows} | 
+                              Total rows: {activeSheet.totalRows} |
                               Showing: {Math.min(activeSheet.previewRows.length, previewData?.maxRows || 0)} rows × {previewData?.maxCols || 0} columns
                             </p>
                           </div>
@@ -1125,7 +1125,7 @@ export default function TemplateManager() {
                               <tbody>
                                 {activeSheet.previewRows.map((row, rowIndex) => (
                                   <tr key={rowIndex}>
-                                    <td className="border px-2 py-1 bg-gray-50 font-medium">{rowIndex + 1}</td>
+                                    <td className="border px-2 py-1 bg-gray-50 ">{rowIndex + 1}</td>
                                     {row.map((cell, colIndex) => (
                                       <td key={colIndex} className="border px-2 py-1 align-top whitespace-pre-wrap">
                                         {cell}

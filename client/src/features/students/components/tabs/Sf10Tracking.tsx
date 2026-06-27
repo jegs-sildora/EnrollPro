@@ -123,7 +123,7 @@ export function Sf10Tracking({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-bold flex items-center gap-2">
+          <h3 className="text-lg font-extrabold flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Permanent Record (SF10) Tracking
           </h3>
@@ -146,7 +146,7 @@ export function Sf10Tracking({
               <div className="p-4 bg-muted rounded-full mb-4">
                 <School className="h-8 w-8 text-foreground" />
               </div>
-              <h4 className="font-bold">No requests logged yet</h4>
+              <h4 className="font-extrabold">No requests logged yet</h4>
               <p className="text-base leading-tight text-foreground max-w-xs mt-1">
                 When a Senior High School requests this learner's permanent
                 records, log it here to track the release.
@@ -184,7 +184,7 @@ export function Sf10Tracking({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-lg">
+                      <h4 className="font-extrabold text-lg">
                         {req.requestingSchoolName}
                       </h4>
                       <Badge
@@ -217,7 +217,7 @@ export function Sf10Tracking({
                         </span>
                       )}
                       {req.sentDate && (
-                        <span className="flex items-center gap-1 text-emerald-700 font-bold">
+                        <span className="flex items-center gap-1 text-emerald-700 font-extrabold">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Sent: {format(new Date(req.sentDate), "MMM d, yyyy")}
                         </span>

@@ -56,17 +56,17 @@ export function ClassRecordHero({
             </Link>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Badge className={`${getGradeColors(classAssignment.section.gradeLevel)} text-[10px] font-black uppercase tracking-widest px-3`}>
+                <Badge className={`${getGradeColors(classAssignment.section.gradeLevel)} text-[10px] font-extrabold uppercase tracking-widest px-3`}>
                   {gradeLevelLabels[classAssignment.section.gradeLevel]}
                 </Badge>
                 <div className="h-4 w-px bg-slate-200" />
-                <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                <span className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">
                   Section {classAssignment.section.name}
                 </span>
               </div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{classAssignment.subject.name}</h1>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">{classAssignment.subject.name}</h1>
               {effectiveWeightsSource === "generic-fallback" && !isHGClass && (
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mt-2">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600 mt-2">
                   Generic WW/PT/TA fallback active (no exact ECR template for this subject)
                 </p>
               )}
@@ -78,7 +78,7 @@ export function ClassRecordHero({
               <>
                 <Button
                   variant="outline"
-                  className="h-12 px-6 rounded-2xl border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all shadow-sm"
+                  className="h-12 px-6 rounded-2xl border-slate-200 text-slate-600 font-extrabold hover:bg-slate-50 transition-all shadow-sm"
                   onClick={onExportEcr}
                 >
                   <Download className="w-4 h-4 mr-2" />EXPORT ECR
@@ -93,7 +93,7 @@ export function ClassRecordHero({
                 <input type="file" ref={fileInputRef} onChange={onImportSelect} accept=".xlsx,.xls" className="hidden" />
               </>
             ) : (
-              <Badge className="h-9 px-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold">
+              <Badge className="h-9 px-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 font-extrabold">
                 Qualitative Grading Mode
               </Badge>
             )}
@@ -104,8 +104,8 @@ export function ClassRecordHero({
       {(classAssignment.isActive === false || !!classAssignment.archivedAt) && (
         <Card className="border-0 shadow-lg shadow-rose-100/50 rounded-[2rem] overflow-hidden bg-rose-50/60 border border-rose-100">
           <CardContent className="p-6 flex flex-col gap-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-600">Archived from Atlas</p>
-            <p className="text-sm font-bold text-slate-700">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-rose-600">Archived from Atlas</p>
+            <p className="text-sm font-extrabold text-slate-700">
               This subject was removed from the current Atlas load. SMART keeps the grade history for recovery, but this class is no longer active on the dashboard.
             </p>
             {classAssignment.archivedReason && (
@@ -113,7 +113,7 @@ export function ClassRecordHero({
                 Reason: {classAssignment.archivedReason}
               </p>
             )}
-            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">
+            <p className="text-[10px] font-extrabold text-rose-500 uppercase tracking-widest">
               If this was not intended, contact the EnrollPro/Atlas admin to restore the subject assignment.
             </p>
           </CardContent>

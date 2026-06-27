@@ -21,10 +21,10 @@ export default function EnrollmentManagement() {
       {/* ── Top Header ── */}
       <div className="flex items-center justify-between pb-6 flex-shrink-0">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-extrabold">
             Sectioning & School Form 1 (SF1) Preparation
           </h1>
-          <p className="text-base leading-tight font-bold text-foreground">
+          <p className="text-base leading-tight font-extrabold text-foreground">
             Validate submitted credentials and execute batch sectioning to generate official class registers.
           </p>
         </div>
@@ -34,7 +34,7 @@ export default function EnrollmentManagement() {
         <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
           <TabsTrigger
             value="verification"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             {activeTab === "verification" && (
               <motion.div
@@ -49,7 +49,7 @@ export default function EnrollmentManagement() {
           </TabsTrigger>
           <TabsTrigger
             value="sectioning"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             {activeTab === "sectioning" && (
               <motion.div
@@ -76,7 +76,7 @@ export default function EnrollmentManagement() {
             <TabsContent value="verification" className="h-full m-0 data-[state=inactive]:hidden outline-none">
               <VerificationWorkspace />
             </TabsContent>
-            
+
             <TabsContent value="sectioning" className="h-full m-0 data-[state=inactive]:hidden outline-none">
               <SectioningWorkspace />
             </TabsContent>

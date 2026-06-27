@@ -21,7 +21,7 @@ import { useTheme } from "@/features/smart/contexts/ThemeContext";
 
 export default function EOSYFinalization() {
   const { colors } = useTheme();
-  
+
   const [schoolYearsLoading, setSchoolYearsLoading] = useState(true);
   const [schoolYears, setSchoolYears] = useState<any[]>([]);
   const [selectedSchoolYearId, setSelectedSchoolYearId] = useState<string>("");
@@ -43,7 +43,7 @@ export default function EOSYFinalization() {
       const res = await registrarApi.getEosySchoolYears();
       const years = (res.data as any) || [];
       setSchoolYears(years);
-      
+
       // Select the active one by default if available
       const active = years.find((y: any) => y.status === "ACTIVE");
       if (active) {
@@ -92,7 +92,7 @@ export default function EOSYFinalization() {
         const l = rec.enrollmentApplication?.learner ?? rec.learner ?? rec;
         const rawSex = (l.sex ?? rec.sex ?? "").toString().trim().toUpperCase();
         const sex = rawSex === "MALE" || rawSex === "M" ? "Male" : rawSex === "FEMALE" || rawSex === "F" ? "Female" : "";
-        
+
         // Determine the source of the grade
         const isCurrentYear = rec.finalAverage != null || rec.finalGrade != null || l.finalAverage != null;
         const finalAverage = rec.finalAverage ?? rec.finalGrade ?? l.finalAverage ?? l.previousGenAve ?? null;
@@ -124,7 +124,7 @@ export default function EOSYFinalization() {
   };
 
   useEffect(() => { void loadSchoolYears(); }, []);
-  
+
   useEffect(() => {
     if (selectedSchoolYearId) void loadSections(selectedSchoolYearId);
   }, [selectedSchoolYearId]);
@@ -133,7 +133,7 @@ export default function EOSYFinalization() {
     if (selectedSectionId) void loadRecords(selectedSectionId);
   }, [selectedSectionId]);
 
-  const filteredRecords = records.filter(r => 
+  const filteredRecords = records.filter(r =>
     `${r.firstName} ${r.lastName} ${r.lrn}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -149,17 +149,17 @@ export default function EOSYFinalization() {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex flex-col gap-3">
               <div>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <CardTitle className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
                   <div className="p-2 rounded-lg text-white" style={{ backgroundColor: colors.primary }}>
                     <GraduationCap className="w-5 h-5" />
                   </div>
                   EOSY Section List
                 </CardTitle>
-                <CardDescription className="mt-2 font-medium text-slate-500">
+                <CardDescription className="mt-2  text-slate-500">
                   Hinigaran National High School — End of School Year Monitoring
                 </CardDescription>
               </div>
-              
+
               {/* Read-only notice integrated into header */}
               <div className="bg-amber-50/80 border border-amber-100 rounded-lg px-4 py-2 inline-flex items-center gap-3 mt-1 w-fit">
                 <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
@@ -168,7 +168,7 @@ export default function EOSYFinalization() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Button onClick={() => void loadSections()} variant="outline" className="rounded-xl shadow-sm">
                 <RefreshCw className="w-4 h-4 mr-2" /> Refresh
@@ -235,7 +235,7 @@ export default function EOSYFinalization() {
                     )}
 
                     {/* Status Text */}
-                    <span className="text-sm font-medium text-slate-500">
+                    <span className="text-sm  text-slate-500">
                       {sections.length} section(s) available
                     </span>
                   </div>
@@ -243,8 +243,8 @@ export default function EOSYFinalization() {
                   {/* Search Bar */}
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input 
-                      placeholder="Search learners..." 
+                    <Input
+                      placeholder="Search learners..."
                       className="pl-9 rounded-xl border-slate-200 bg-white shadow-sm focus:ring-primary/20"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -261,7 +261,7 @@ export default function EOSYFinalization() {
               {recordsLoading ? (
                 <div className="flex flex-col items-center justify-center py-32 text-center">
                   <Loader2 className="w-10 h-10 animate-spin text-slate-300 mb-4" />
-                  <p className="text-slate-500 font-medium">Fetching learner records...</p>
+                  <p className="text-slate-500 ">Fetching learner records...</p>
                 </div>
               ) : recordsError ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center px-4">
@@ -276,7 +276,7 @@ export default function EOSYFinalization() {
                   <div className="px-6 py-4 bg-white border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="text-sm">
                       <span className="text-slate-500">Learner records for </span>
-                      <span className="font-bold text-slate-900">
+                      <span className="font-extrabold text-slate-900">
                         {sectionMeta?.name ?? sections.find((s) => String(s.id) === selectedSectionId)?.name ?? "Section"}
                       </span>
                       {searchTerm && (
@@ -285,7 +285,7 @@ export default function EOSYFinalization() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-medium">
+                    <div className="flex items-center gap-4 text-xs ">
                       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                         <span>{promotedCount} Promoted</span>
@@ -303,13 +303,13 @@ export default function EOSYFinalization() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                          <TableHead className="font-bold text-gray-700 w-12 pl-6">#</TableHead>
-                          <TableHead className="font-bold text-gray-700">LRN</TableHead>
-                          <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
-                          <TableHead className="font-bold text-gray-700">Sex</TableHead>
-                          <TableHead className="font-bold text-gray-700">Final Average</TableHead>
-                          <TableHead className="font-bold text-gray-700">Status</TableHead>
-                          <TableHead className="font-bold text-gray-700 pr-6">Promoted To</TableHead>
+                          <TableHead className="font-extrabold text-gray-700 w-12 pl-6">#</TableHead>
+                          <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
+                          <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
+                          <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
+                          <TableHead className="font-extrabold text-gray-700">Final Average</TableHead>
+                          <TableHead className="font-extrabold text-gray-700">Status</TableHead>
+                          <TableHead className="font-extrabold text-gray-700 pr-6">Promoted To</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -326,7 +326,7 @@ export default function EOSYFinalization() {
                               <TableRow key={rec.enrollmentRecordId ?? rec.learnerId ?? i} className="hover:bg-slate-50/50 transition-colors">
                                 <TableCell className="text-gray-400 text-sm pl-6">{i + 1}</TableCell>
                                 <TableCell className="font-mono text-sm text-gray-600">{rec.lrn ?? "—"}</TableCell>
-                                <TableCell className="font-medium text-gray-900">
+                                <TableCell className=" text-gray-900">
                                   {rec.lastName}, {rec.firstName} {rec.middleName ?? ""}
                                 </TableCell>
                                 <TableCell>
@@ -380,11 +380,11 @@ export default function EOSYFinalization() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-40 text-center px-4 bg-slate-50/10 border-t border-slate-100">
-               <GraduationCap className="w-16 h-16 text-slate-200 mb-6" />
-               <p className="text-slate-500 font-semibold text-xl">No Section Selected</p>
-               <p className="text-slate-400 text-sm mt-2 max-w-sm">
-                 Please select a section and academic year from the filters above to view the End of School Year records.
-               </p>
+              <GraduationCap className="w-16 h-16 text-slate-200 mb-6" />
+              <p className="text-slate-500 font-semibold text-xl">No Section Selected</p>
+              <p className="text-slate-400 text-sm mt-2 max-w-sm">
+                Please select a section and academic year from the filters above to view the End of School Year records.
+              </p>
             </div>
           )}
         </CardContent>

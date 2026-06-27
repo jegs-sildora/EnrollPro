@@ -31,7 +31,7 @@ export function PreFlightBlockerModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-red-700 flex items-center">
+          <DialogTitle className="text-xl font-extrabold text-red-700 flex items-center">
             <AlertCircle className="w-5 h-5 mr-2" /> Cannot Finalize {targetScopeName}
           </DialogTitle>
           <DialogDescription className="text-foreground pt-2">
@@ -66,7 +66,7 @@ export function PreFlightBlockerModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto font-bold">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto font-extrabold">
             Close & Review
           </Button>
         </DialogFooter>

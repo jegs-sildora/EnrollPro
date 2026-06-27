@@ -333,20 +333,20 @@ function SectionCard({
       }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-black text-base text-foreground truncate uppercase">
+          <p className="font-extrabold text-base text-foreground truncate uppercase">
             {toTitleCase(section.name)}
           </p>
           {section.programType !== "REGULAR" && (
             <Badge
               variant="outline"
-              className="mt-1 text-sm font-bold uppercase">
+              className="mt-1 text-sm font-extrabold uppercase">
               {scpTypeLabels[section.programType] ?? section.programType}
             </Badge>
           )}
           {section.isHomogeneous && section.programType === "REGULAR" && (
             <Badge
               variant="outline"
-              className="mt-1 text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border-blue-200">
+              className="mt-1 text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200">
               Pilot
             </Badge>
           )}
@@ -356,7 +356,7 @@ function SectionCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-sm font-bold"
+              className="h-8 px-2 text-sm font-extrabold"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
@@ -366,7 +366,7 @@ function SectionCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="h-8 px-2 text-sm font-extrabold text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
@@ -381,7 +381,7 @@ function SectionCard({
         <div className="flex items-center justify-between border-t border-border/50 pt-4">
           <div className="flex items-center gap-2 w-full">
             <div className="flex flex-col w-full min-w-0 pr-2">
-              <span className="text-sm font-bold uppercase text-foreground mb-0.5">
+              <span className="text-sm font-extrabold uppercase text-foreground mb-0.5">
                 Adviser
               </span>
               {canMutate ? (
@@ -389,10 +389,10 @@ function SectionCard({
                   <Select
                     value={selectedAdviser}
                     onValueChange={setSelectedAdviser}>
-                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 text-sm font-bold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
+                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 text-sm font-extrabold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
                       <SelectValue placeholder="UNASSIGNED" />
                     </SelectTrigger>
-                    <SelectContent className="font-bold uppercase max-h-[300px]">
+                    <SelectContent className="font-extrabold uppercase max-h-[300px]">
                       <SelectItem value="none" className="text-xs text-foreground">UNASSIGNED</SelectItem>
                       {section.advisingTeacher && !teachers.some(t => t.id === section.advisingTeacher!.id) && (
                         <SelectItem value={String(section.advisingTeacher.id)} className="text-xs">
@@ -410,7 +410,7 @@ function SectionCard({
               ) : (
                 <span
                   className={cn(
-                    "text-sm font-bold uppercase truncate",
+                    "text-sm font-extrabold uppercase truncate",
                     !section.advisingTeacher ? "text-primary italic" : "text-foreground",
                   )}>
                   {section.advisingTeacher
@@ -423,7 +423,7 @@ function SectionCard({
         </div>
 
         <div className="space-y-1.5 border-t border-border/50 pt-4">
-          <div className="flex items-center justify-between text-xs font-bold">
+          <div className="flex items-center justify-between text-xs font-extrabold">
             <span className="text-muted-foreground uppercase tracking-wider">
               Enrolled
             </span>
@@ -450,7 +450,7 @@ function SectionCard({
           {hasPendingAdviserChange ? (
             <div className="flex items-center gap-2 mt-4 w-full">
               <Button
-                className="flex-1 font-bold"
+                className="flex-1 font-extrabold"
                 variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -459,7 +459,7 @@ function SectionCard({
                 Cancel
               </Button>
               <Button
-                className="flex-1 font-bold"
+                className="flex-1 font-extrabold"
                 variant="default"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -470,7 +470,7 @@ function SectionCard({
             </div>
           ) : (
             <Button
-              className="w-full mt-4 font-bold"
+              className="w-full mt-4 font-extrabold"
               variant="default"
               onClick={(e) => {
                 e.stopPropagation();
@@ -499,7 +499,7 @@ export default function Homerooms() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
-          <h3 className="text-lg font-black uppercase text-foreground/80 tracking-tight flex items-center gap-2">
+          <h3 className="text-lg font-extrabold uppercase text-foreground/80 tracking-tight flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
             {title}
           </h3>
@@ -533,7 +533,7 @@ export default function Homerooms() {
               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
               </div>
-              <span className="font-bold uppercase text-sm mt-2">Add Section</span>
+              <span className="font-extrabold uppercase text-sm mt-2">Add Section</span>
             </div>
           )}
         </div>
@@ -1084,7 +1084,7 @@ export default function Homerooms() {
               <CalendarDays className="h-6 w-6 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-foreground">
+              <p className="font-extrabold text-foreground">
                 No School Year Selected
               </p>
               <p className="text-base text-foreground leading-relaxed px-4">
@@ -1102,8 +1102,8 @@ export default function Homerooms() {
     <div className="space-y-6 ">
       <div className="flex flex-col md:flex-row md:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold ">Class Advisership & Section Management</h1>
-          <p className="text-base leading-tight text-foreground font-bold">
+          <h1 className="text-3xl font-extrabold ">Class Advisership & Section Management</h1>
+          <p className="text-base leading-tight text-foreground font-extrabold">
             Manage grade level sections and advising teachers
           </p>
         </div>
@@ -1115,7 +1115,7 @@ export default function Homerooms() {
             size="sm"
             onClick={() => setViewMode("heatmap")}
             className={cn(
-              "flex-1 md:min-w-58 font-bold transition-all relative z-10 h-10",
+              "flex-1 md:min-w-58 font-extrabold transition-all relative z-10 h-10",
               viewMode === "heatmap"
                 ? "text-primary-foreground hover:text-primary-foreground"
                 : "text-foreground hover:bg-transparent",
@@ -1136,7 +1136,7 @@ export default function Homerooms() {
             size="sm"
             onClick={() => setViewMode("list")}
             className={cn(
-              "flex-1 md:min-w-58 font-bold transition-all relative z-10 h-10",
+              "flex-1 md:min-w-58 font-extrabold transition-all relative z-10 h-10",
               viewMode === "list"
                 ? "text-primary-foreground hover:text-primary-foreground"
                 : "text-foreground hover:bg-transparent",
@@ -1184,7 +1184,7 @@ export default function Homerooms() {
             <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-0 p-1 bg-white border border-border rounded-lg relative">
               <TabsTrigger
                 value="all"
-                className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                 {heatmapGradeFilter === "all" && (
                   <motion.div
                     layoutId="heatmap-grade-pill"
@@ -1210,7 +1210,7 @@ export default function Homerooms() {
                 <TabsTrigger
                   key={option.value}
                   value={option.value}
-                  className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                  className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                   {heatmapGradeFilter === option.value && (
                     <motion.div
                       layoutId="heatmap-grade-pill"
@@ -1280,7 +1280,7 @@ export default function Homerooms() {
                           {fillEmoji(fillPercent)}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-base leading-tight font-bold truncate group-hover:text-primary transition-colors">
+                          <p className="text-base leading-tight font-extrabold truncate group-hover:text-primary transition-colors">
                             {formatHeatmapLabel(
                               group.gradeLevelName,
                               buildSectionDisplayName(
@@ -1304,9 +1304,9 @@ export default function Homerooms() {
                         </div>
                         <span
                           className={cn(
-                            "text-base font-bold whitespace-nowrap",
+                            "text-base font-extrabold whitespace-nowrap",
                             isOverCapacity
-                              ? "text-red-700 font-black"
+                              ? "text-red-700 font-extrabold"
                               : "text-foreground",
                           )}>
                           {section.enrolledCount}/{section.maxCapacity}
@@ -1341,7 +1341,7 @@ export default function Homerooms() {
               <TabsTrigger
                 key={g.gradeLevelId}
                 value={String(g.gradeLevelId)}
-                className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                 {activeGradeId === String(g.gradeLevelId) && (
                   <motion.div
                     layoutId="grade-active-pill"
@@ -1376,7 +1376,7 @@ export default function Homerooms() {
                     <Card className="border-border shadow-sm">
                       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
                         <div>
-                          <CardTitle className="text-xl font-black uppercase">
+                          <CardTitle className="text-xl font-extrabold uppercase">
                             {g.gradeLevelName}
                           </CardTitle>
                         </div>
@@ -1384,7 +1384,7 @@ export default function Homerooms() {
                       <CardContent className="space-y-6">
                         {g.sections.length === 0 && !canMutate ? (
                           <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
-                            <p className="text-base leading-tight font-bold uppercase ">
+                            <p className="text-base leading-tight font-extrabold uppercase ">
                               No Sections Configured
                             </p>
                           </div>

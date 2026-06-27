@@ -89,16 +89,16 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border-border shadow-xl">
         <DialogHeader className="p-6 border-b border-border bg-muted/30">
-          <DialogTitle className="text-xl font-black uppercase tracking-wide flex items-center gap-2">
+          <DialogTitle className="text-xl font-extrabold uppercase tracking-wide flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             {section?.name || "Loading Roster..."}
             {section && (
-              <Badge variant="outline" className="ml-2 bg-background font-bold">
+              <Badge variant="outline" className="ml-2 bg-background font-extrabold">
                 {learners.length} / {section.maxCapacity}
               </Badge>
             )}
           </DialogTitle>
-          <DialogDescription className="text-base font-bold text-muted-foreground uppercase tracking-widest mt-1">
+          <DialogDescription className="text-base font-extrabold text-muted-foreground uppercase tracking-widest mt-1">
             {section?.gradeLevel} • {section?.programType}
           </DialogDescription>
         </DialogHeader>
@@ -107,12 +107,12 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
           {isLoading ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-base leading-tight font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Roster...</span>
+              <span className="text-base leading-tight font-extrabold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Roster...</span>
             </div>
           ) : learners.length === 0 ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3 text-muted-foreground">
               <ShieldAlert className="h-10 w-10 opacity-50" />
-              <span className="font-bold text-base leading-tight">No learners assigned to this section yet.</span>
+              <span className="font-extrabold text-base leading-tight">No learners assigned to this section yet.</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -123,38 +123,38 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
                 return (
                   <div key={l.id} className="flex items-center justify-between p-3 border border-border rounded-lg bg-background hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">
-                      <span className="font-black text-base leading-tight uppercase text-foreground">
+                      <span className="font-extrabold text-base leading-tight uppercase text-foreground">
                         {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                       </span>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
-                        <Badge variant="outline" className="text-[9px] uppercase font-black px-1.5 py-0 h-4">{l.sex}</Badge>
+                        <span className="text-[10px] font-extrabold text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
+                        <Badge variant="outline" className="text-[9px] uppercase font-extrabold px-1.5 py-0 h-4">{l.sex}</Badge>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <Select 
+                        <Select
                           value={selectedTarget}
                           onValueChange={(val) => setTargetSectionMap(prev => ({ ...prev, [l.enrollmentApplicationId]: val }))}
                           disabled={isProcessing}
                         >
-                          <SelectTrigger className="w-[180px] h-8 text-base font-bold bg-background">
+                          <SelectTrigger className="w-[180px] h-8 text-base font-extrabold bg-background">
                             <SelectValue placeholder="Select destination..." />
                           </SelectTrigger>
                           <SelectContent>
                             {compatibleSections.map((s: any) => (
-                              <SelectItem key={s.id} value={String(s.id)} className="text-base font-bold uppercase">
+                              <SelectItem key={s.id} value={String(s.id)} className="text-base font-extrabold uppercase">
                                 {s.name} ({s.currentCount}/{s.maxCapacity})
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="secondary" 
-                          className="h-8 text-base font-bold uppercase"
+
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 text-base font-extrabold uppercase"
                           disabled={!selectedTarget || isProcessing}
                           onClick={() => handleTransfer(l.enrollmentApplicationId, selectedTarget)}
                         >
@@ -165,10 +165,10 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
 
                       <div className="w-px h-6 bg-border mx-1"></div>
 
-                      <Button 
-                        size="sm" 
-                        variant="destructive" 
-                        className="h-8 text-base font-bold uppercase"
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-base font-extrabold uppercase"
                         disabled={isProcessing}
                         onClick={() => handleUnassign(l.enrollmentApplicationId)}
                         title="Return to Unassigned Pool"

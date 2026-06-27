@@ -70,7 +70,7 @@ export default function ApplicationTracker() {
       console.log("[ApplicationTracker] payload received:", payload);
       const apps = payload.applications ?? payload.data ?? payload.items ?? [];
       setApplications(apps);
-      
+
       // The backend now returns a normalized meta object, but we handle fallbacks just in case
       setMeta(payload.meta ?? payload.pagination ?? {
         total: payload.total ?? apps.length,
@@ -94,22 +94,22 @@ export default function ApplicationTracker() {
       void load(1, limit, search);
     }, search ? 500 : 0);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, gradeFilter, limit, search]);
 
   // Separate effect: reload when page changes (but not when filters change)
   useEffect(() => {
     void load(page, limit, search);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Keep client-side filter as a secondary "instant" filter for the current page
   const filtered = search
     ? applications.filter((a) => {
-        const name = `${a.learner?.firstName ?? a.firstName ?? ""} ${a.learner?.lastName ?? a.lastName ?? ""}`.toLowerCase();
-        const lrn = String(a.learner?.lrn ?? a.lrn ?? "");
-        return name.includes(search.toLowerCase()) || lrn.includes(search);
-      })
+      const name = `${a.learner?.firstName ?? a.firstName ?? ""} ${a.learner?.lastName ?? a.lastName ?? ""}`.toLowerCase();
+      const lrn = String(a.learner?.lrn ?? a.lrn ?? "");
+      return name.includes(search.toLowerCase()) || lrn.includes(search);
+    })
     : applications;
 
   return (
@@ -118,7 +118,7 @@ export default function ApplicationTracker() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Enrollment Applications</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Enrollment Applications</h1>
           <p className="text-gray-600 mt-1">
             Enrollment application tracker — read from EnrollPro. Verification actions must be done in EnrollPro directly.
           </p>
@@ -186,7 +186,7 @@ export default function ApplicationTracker() {
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-              <p className="text-gray-700 font-medium">Unable to load applications</p>
+              <p className="text-gray-700 ">Unable to load applications</p>
               <p className="text-gray-500 text-sm mt-1">{error}</p>
               <Button onClick={() => void load(page, limit)} variant="outline" className="mt-4 rounded-xl">
                 Try Again
@@ -197,12 +197,12 @@ export default function ApplicationTracker() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-bold text-gray-700">Applicant</TableHead>
-                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-bold text-gray-700">Grade Applied</TableHead>
-                    <TableHead className="font-bold text-gray-700">Type</TableHead>
-                    <TableHead className="font-bold text-gray-700">Status</TableHead>
-                    <TableHead className="font-bold text-gray-700">Submitted</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Applicant</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Grade Applied</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Type</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Status</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Submitted</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -218,7 +218,7 @@ export default function ApplicationTracker() {
                       const status = app.status ?? "PENDING";
                       return (
                         <TableRow key={app.id ?? i}>
-                          <TableCell className="font-medium text-gray-900">
+                          <TableCell className=" text-gray-900">
                             {learner.lastName}, {learner.firstName} {learner.middleName ?? ""}
                           </TableCell>
                           <TableCell className="font-mono text-sm text-gray-600">{learner.lrn ?? "—"}</TableCell>
@@ -289,11 +289,11 @@ export default function ApplicationTracker() {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
+
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-bold shadow-sm"
+                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-extrabold shadow-sm"
                 >
                   {page}
                 </Button>

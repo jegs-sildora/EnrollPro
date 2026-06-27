@@ -148,13 +148,13 @@ export function ConfirmationModal({
 
         {/* ── Header — centred ───────────────────────────────────────── */}
         <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-2xl font-bold ">{title}</DialogTitle>
+          <DialogTitle className="text-2xl font-extrabold ">{title}</DialogTitle>
           <div className="space-y-4">
             <DialogDescription className="text-base leading-relaxed text-center">
               {description}
             </DialogDescription>
             {footerWarning && (
-              <div className="text-base font-semibold text-destructive mt-2 p-3 bg-destructive/5 rounded-md outline-2 outline-destructive">
+              <div className="text-base font-semibold text-red-800 mt-2 p-3 bg-red-100 rounded-md outline-1 outline-red-800">
                 {footerWarning}
               </div>
             )}
@@ -169,7 +169,7 @@ export function ConfirmationModal({
             onClick={() => onOpenChange(false)}
             disabled={loading}
             className={cn(
-              "flex-1 h-12 rounded-lg font-bold text-sm",
+              "flex-1 h-12 rounded-lg font-extrabold text-sm",
               "border border-gray-200 bg-white text-gray-700",
               "hover:bg-gray-50 active:bg-gray-100",
               "transition-all duration-150 active:scale-[0.97]",
@@ -186,7 +186,7 @@ export function ConfirmationModal({
             }}
             disabled={loading}
             className={cn(
-              "flex-1 h-12 rounded-lg font-bold text-sm",
+              "flex-1 h-12 rounded-lg font-extrabold text-sm",
               "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
               "hover:bg-[hsl(var(--primary)/0.9)]",
               "shadow-md",

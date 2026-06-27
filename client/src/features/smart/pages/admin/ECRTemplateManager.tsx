@@ -43,18 +43,18 @@ interface BulkUploadItem {
 const extractSubjectName = (filename: string): string => {
   // Remove extension
   let name = filename.replace(/\.(xlsx|xls)$/i, '');
-  
+
   // Remove grade level prefixes like "GRADE 7-10_", "GRADE_7_", etc.
   name = name.replace(/^GRADE[\s_-]*\d+[\s_-]*(?:\d+)?[\s_-]*/i, '');
-  
+
   // Replace underscores and hyphens with spaces
   name = name.replace(/[_-]/g, ' ');
-  
+
   // Convert to title case
   name = name.split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-  
+
   return name.trim();
 };
 
@@ -80,10 +80,10 @@ export default function ECRTemplateManager() {
   const [selectedTemplate, setSelectedTemplate] = useState<ECRTemplate | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  
+
   // Upload mode: 'single' or 'bulk'
   const [uploadMode, setUploadMode] = useState<'single' | 'bulk'>('single');
-  
+
   // Single upload form state
   const [uploadSubjectName, setUploadSubjectName] = useState('');
   const [uploadSubjectType, setUploadSubjectType] = useState('');
@@ -94,7 +94,7 @@ export default function ECRTemplateManager() {
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [loadError, setLoadError] = useState('');
-  
+
   // Bulk upload state
   const [bulkUploadItems, setBulkUploadItems] = useState<BulkUploadItem[]>([]);
   const [bulkUploading, setBulkUploading] = useState(false);
@@ -181,10 +181,10 @@ export default function ECRTemplateManager() {
       });
 
       setUploadSuccess(response.data.message || 'ECR template uploaded successfully');
-      
+
       // Refresh template list
       await fetchTemplates();
-      
+
       // Reset form
       setTimeout(() => {
         setUploadDialogOpen(false);
@@ -226,7 +226,7 @@ export default function ECRTemplateManager() {
 
   // Update bulk upload item
   const updateBulkUploadItem = (index: number, field: 'editedSubject' | 'subjectType' | 'description', value: string) => {
-    setBulkUploadItems(prev => 
+    setBulkUploadItems(prev =>
       prev.map((item, i) => i === index ? { ...item, [field]: value } : item)
     );
   };
@@ -262,9 +262,9 @@ export default function ECRTemplateManager() {
       // Upload each file sequentially
       for (let i = 0; i < bulkUploadItems.length; i++) {
         const item = bulkUploadItems[i];
-        
+
         // Update status to uploading
-        setBulkUploadItems(prev => 
+        setBulkUploadItems(prev =>
           prev.map((it, idx) => idx === i ? { ...it, status: 'uploading' as const } : it)
         );
 
@@ -283,14 +283,14 @@ export default function ECRTemplateManager() {
           });
 
           // Update status to success
-          setBulkUploadItems(prev => 
+          setBulkUploadItems(prev =>
             prev.map((it, idx) => idx === i ? { ...it, status: 'success' as const } : it)
           );
           successCount++;
         } catch (error: any) {
           // Update status to error
           const errorMessage = error.response?.data?.error || 'Upload failed';
-          setBulkUploadItems(prev => 
+          setBulkUploadItems(prev =>
             prev.map((it, idx) => idx === i ? { ...it, status: 'error' as const, error: errorMessage } : it)
           );
           errorCount++;
@@ -327,7 +327,7 @@ export default function ECRTemplateManager() {
   const handleToggleActive = async (template: ECRTemplate) => {
     try {
       const token = sessionStorage.getItem('token');
-      await axios.put(`${SERVER_URL}/api/ecr-templates/${template.id}`, 
+      await axios.put(`${SERVER_URL}/api/ecr-templates/${template.id}`,
         { isActive: !template.isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -404,7 +404,7 @@ export default function ECRTemplateManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">ECR Template Manager</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">ECR Template Manager</h1>
           <p className="text-sm text-slate-600 mt-1">
             Manage Electronic Class Record templates for teachers
           </p>
@@ -422,10 +422,10 @@ export default function ECRTemplateManager() {
             <BookOpen className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-blue-900 mb-2">What are ECR Templates?</h3>
+            <h3 className="text-lg font-extrabold text-blue-900 mb-2">What are ECR Templates?</h3>
             <p className="text-sm text-blue-800 mb-3">
-              Electronic Class Record (ECR) templates are Excel files that automatically fill in student names, 
-              grades, sections, and other class information for teachers. This saves time and ensures consistency 
+              Electronic Class Record (ECR) templates are Excel files that automatically fill in student names,
+              grades, sections, and other class information for teachers. This saves time and ensures consistency
               across all subjects.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -530,7 +530,7 @@ export default function ECRTemplateManager() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileSpreadsheet className="w-5 h-5 text-green-600" />
-                        <span className="font-medium text-slate-900">{template.subjectName}</span>
+                        <span className=" text-slate-900">{template.subjectName}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -642,11 +642,10 @@ export default function ECRTemplateManager() {
                   setBulkUploadItems([]);
                   setUploadError('');
                 }}
-                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  uploadMode === 'single'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`flex-1 px-4 py-2 rounded-md text-sm  transition-colors ${uploadMode === 'single'
+                  ? 'bg-white shadow-sm text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 disabled={uploading || bulkUploading}
               >
                 Single Upload
@@ -658,11 +657,10 @@ export default function ECRTemplateManager() {
                   setUploadSubjectName('');
                   setUploadError('');
                 }}
-                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  uploadMode === 'bulk'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`flex-1 px-4 py-2 rounded-md text-sm  transition-colors ${uploadMode === 'bulk'
+                  ? 'bg-white shadow-sm text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 disabled={uploading || bulkUploading}
               >
                 Bulk Upload (Auto-detect)
@@ -778,7 +776,7 @@ export default function ECRTemplateManager() {
                             <div className="flex-1 space-y-2">
                               <div>
                                 <p className="text-xs text-slate-500 mb-1">File</p>
-                                <p className="text-sm font-medium text-slate-900">{item.file.name}</p>
+                                <p className="text-sm  text-slate-900">{item.file.name}</p>
                               </div>
                               <div>
                                 <Label className="text-xs">Subject Name *</Label>
@@ -852,16 +850,16 @@ export default function ECRTemplateManager() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setUploadDialogOpen(false)} 
+            <Button
+              variant="outline"
+              onClick={() => setUploadDialogOpen(false)}
               disabled={uploading || bulkUploading}
             >
               Cancel
             </Button>
             {uploadMode === 'single' ? (
-              <Button 
-                onClick={handleUpload} 
+              <Button
+                onClick={handleUpload}
                 disabled={uploading || !uploadSubjectName || !uploadFile}
               >
                 {uploading ? (
@@ -877,8 +875,8 @@ export default function ECRTemplateManager() {
                 )}
               </Button>
             ) : (
-              <Button 
-                onClick={handleBulkUpload} 
+              <Button
+                onClick={handleBulkUpload}
                 disabled={bulkUploading || bulkUploadItems.length === 0}
               >
                 {bulkUploading ? (

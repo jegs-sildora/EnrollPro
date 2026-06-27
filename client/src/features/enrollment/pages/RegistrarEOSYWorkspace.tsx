@@ -228,8 +228,8 @@ export default function RegistrarEOSYWorkspace() {
               <Building2 className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight uppercase">{section.gradeLevel.name} - {section.name}</h1>
-              <p className="text-base leading-tight text-slate-500 font-bold">EOSY Status Batch Updating Workspace</p>
+              <h1 className="text-2xl font-extrabold tracking-tight uppercase">{section.gradeLevel.name} - {section.name}</h1>
+              <p className="text-base leading-tight text-slate-500 font-extrabold">EOSY Status Batch Updating Workspace</p>
             </div>
           </div>
         </div>
@@ -237,10 +237,10 @@ export default function RegistrarEOSYWorkspace() {
         <div className="flex items-center gap-2">
           {!isLocked && (
             <>
-              <Button variant="outline" size="sm" onClick={handleMarkAllPromoted} className="font-bold border-2 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100">
+              <Button variant="outline" size="sm" onClick={handleMarkAllPromoted} className="font-extrabold border-2 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100">
                 <TrendingUp className="mr-2 h-4 w-4" /> 🚀 Mark All Promoted
               </Button>
-              <Button size="sm" onClick={() => setShowSummary(true)} className="font-bold shadow-lg shadow-primary/20">
+              <Button size="sm" onClick={() => setShowSummary(true)} className="font-extrabold shadow-lg shadow-primary/20">
                 <Save className="mr-2 h-4 w-4" /> Save Batch Updates
               </Button>
             </>
@@ -250,7 +250,7 @@ export default function RegistrarEOSYWorkspace() {
             size="sm"
             onClick={handleToggleLock}
             disabled={finalizing}
-            className="font-bold"
+            className="font-extrabold"
           >
             {finalizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : isLocked ? <Unlock className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
             {isLocked ? "Re-open Section" : "Finalize & Lock"}
@@ -271,8 +271,8 @@ export default function RegistrarEOSYWorkspace() {
               <Lock className="h-6 w-6" />
             </div>
             <div>
-              <p className="font-black uppercase tracking-tight">🔒 SECTION IS FINALIZED AND LOCKED FOR THE SUMMER</p>
-              <p className="text-base leading-tight opacity-90 font-bold text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
+              <p className="font-extrabold uppercase tracking-tight">🔒 SECTION IS FINALIZED AND LOCKED FOR THE SUMMER</p>
+              <p className="text-base leading-tight opacity-90 font-extrabold text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
             </div>
           </motion.div>
         )}
@@ -283,13 +283,13 @@ export default function RegistrarEOSYWorkspace() {
         <CardHeader className="bg-slate-50 border-b space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-black uppercase text-slate-800">Section Roster (SF5 Flow)</CardTitle>
-              <CardDescription className="font-bold">Direct promotion entry based on Teacher SF5 submissions</CardDescription>
+              <CardTitle className="text-lg font-extrabold uppercase text-slate-800">Section Roster (SF5 Flow)</CardTitle>
+              <CardDescription className="font-extrabold">Direct promotion entry based on Teacher SF5 submissions</CardDescription>
             </div>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
-                className="w-full bg-white border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-base leading-tight font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full bg-white border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-base leading-tight font-extrabold focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Filter by name or LRN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -317,10 +317,10 @@ export default function RegistrarEOSYWorkspace() {
                       <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
                         <Search className="h-10 w-10 animate-pulse text-slate-400" />
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-slate-500">
+                          <p className="text-lg font-extrabold text-slate-500">
                             Searching...
                           </p>
-                          <p className="text-base leading-tight font-bold text-slate-400">
+                          <p className="text-base leading-tight font-extrabold text-slate-400">
                             Scanning EOSY records...
                           </p>
                         </div>
@@ -335,20 +335,20 @@ export default function RegistrarEOSYWorkspace() {
                         "hover:bg-slate-50 transition-colors border-b",
                         isLocked && "opacity-60 grayscale"
                       )}>
-                        <TableCell className="text-center font-bold text-slate-400">{index + 1}</TableCell>
-                        <TableCell className="text-base leading-tight font-bold text-slate-600">
+                        <TableCell className="text-center font-extrabold text-slate-400">{index + 1}</TableCell>
+                        <TableCell className="text-base leading-tight font-extrabold text-slate-600">
                           {record.enrollmentApplication.learner.lrn || "NO LRN"}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-black text-slate-800 uppercase tracking-tight">
+                            <span className="font-extrabold text-slate-800 uppercase tracking-tight">
                               {record.enrollmentApplication.learner.lastName}, {record.enrollmentApplication.learner.firstName}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
-                            "font-black text-[10px]",
+                            "font-extrabold text-[10px]",
                             record.enrollmentApplication.learner.sex === "MALE" ? "border-blue-200 text-blue-700 bg-blue-50" : "border-pink-200 text-pink-700 bg-pink-50"
                           )}>
                             {record.enrollmentApplication.learner.sex === "MALE" ? "M" : "F"}
@@ -361,7 +361,7 @@ export default function RegistrarEOSYWorkspace() {
                             disabled={isLocked}
                           >
                             <SelectTrigger className={cn(
-                              "h-10 border-2 font-black uppercase text-base",
+                              "h-10 border-2 font-extrabold uppercase text-base",
                               status === "PROMOTED" && "border-emerald-200 text-emerald-700 bg-emerald-50/50",
                               status === "RETAINED" && "border-red-200 text-red-700 bg-red-50/50",
                               status === "DROPPED_OUT" && "border-slate-300 text-slate-600 bg-slate-50/50",
@@ -371,11 +371,11 @@ export default function RegistrarEOSYWorkspace() {
                               <SelectValue placeholder="SET STATUS..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="PROMOTED" className="font-bold">PROMOTED</SelectItem>
-                              <SelectItem value="CONDITIONALLY_PROMOTED" className="font-bold">CONDITIONALLY PROMOTED</SelectItem>
-                              <SelectItem value="RETAINED" className="font-bold">RETAINED</SelectItem>
-                              <SelectItem value="DROPPED_OUT" className="font-bold">DROPPED OUT</SelectItem>
-                              <SelectItem value="TRANSFERRED_OUT" className="font-bold">TRANSFERRED OUT</SelectItem>
+                              <SelectItem value="PROMOTED" className="font-extrabold">PROMOTED</SelectItem>
+                              <SelectItem value="CONDITIONALLY_PROMOTED" className="font-extrabold">CONDITIONALLY PROMOTED</SelectItem>
+                              <SelectItem value="RETAINED" className="font-extrabold">RETAINED</SelectItem>
+                              <SelectItem value="DROPPED_OUT" className="font-extrabold">DROPPED OUT</SelectItem>
+                              <SelectItem value="TRANSFERRED_OUT" className="font-extrabold">TRANSFERRED OUT</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -397,47 +397,47 @@ export default function RegistrarEOSYWorkspace() {
       <Dialog open={showSummary} onOpenChange={setShowSummary}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase tracking-tight">Confirm Batch Submission</DialogTitle>
-            <DialogDescription className="font-bold text-slate-600 pt-2">
-              You are about to finalize the EOSY statuses for <span className="text-primary font-bold">{records.length} learners</span> in section <span className="text-primary font-bold">{section.name}</span>.
+            <DialogTitle className="text-xl font-extrabold uppercase tracking-tight">Confirm Batch Submission</DialogTitle>
+            <DialogDescription className="font-extrabold text-slate-600 pt-2">
+              You are about to finalize the EOSY statuses for <span className="text-primary font-extrabold">{records.length} learners</span> in section <span className="text-primary font-extrabold">{section.name}</span>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
             <div className="bg-slate-50 p-4 rounded-xl border-2 border-slate-100 space-y-2">
-              <div className="flex items-center justify-between font-bold text-base leading-tight">
+              <div className="flex items-center justify-between font-extrabold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Promoted</span>
                 <span className="text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded text-base">{summary.PROMOTED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-base leading-tight">
+              <div className="flex items-center justify-between font-extrabold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Conditionally Promoted</span>
                 <span className="text-amber-700 bg-amber-100 px-2.5 py-1 rounded text-base">{summary.CONDITIONALLY_PROMOTED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-base leading-tight">
+              <div className="flex items-center justify-between font-extrabold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Retained</span>
                 <span className="text-red-700 bg-red-100 px-2.5 py-1 rounded text-base">{summary.RETAINED}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-base leading-tight">
+              <div className="flex items-center justify-between font-extrabold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Dropped Out</span>
                 <span className="text-slate-700 bg-slate-200 px-2.5 py-1 rounded text-base">{summary.DROPPED_OUT}</span>
               </div>
-              <div className="flex items-center justify-between font-bold text-base leading-tight">
+              <div className="flex items-center justify-between font-extrabold text-base leading-tight">
                 <span className="text-slate-500 uppercase tracking-widest text-[10px]">Transferred Out</span>
                 <span className="text-orange-700 bg-orange-100 px-2.5 py-1 rounded text-base">{summary.TRANSFERRED_OUT}</span>
               </div>
             </div>
 
-            <p className="text-[10px] text-slate-400 font-bold uppercase text-center tracking-tighter italic">
+            <p className="text-[10px] text-slate-400 font-extrabold uppercase text-center tracking-tighter italic">
               ⚠️ This action will generate individual audit trail entries for each learner.
             </p>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSummary(false)} className="font-bold rounded-lg border-2">Cancel</Button>
+            <Button variant="outline" onClick={() => setShowSummary(false)} className="font-extrabold rounded-lg border-2">Cancel</Button>
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="font-black rounded-lg shadow-lg shadow-primary/20"
+              className="font-extrabold rounded-lg shadow-lg shadow-primary/20"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               COMMIT STATUSES

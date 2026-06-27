@@ -80,7 +80,7 @@ export function RemedialResolutionModal({
       onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-black uppercase text-base leading-tight">
+          <DialogTitle className="font-extrabold uppercase text-base leading-tight">
             Resolve Remedial Grade
           </DialogTitle>
           <DialogDescription className="text-base">
@@ -92,12 +92,12 @@ export function RemedialResolutionModal({
 
         <div className="space-y-4 py-2">
           <div className="space-y-1">
-            <Label className="text-base font-black uppercase text-foreground">
+            <Label className="text-base font-extrabold uppercase text-foreground">
               Learner
             </Label>
-            <p className="font-bold text-base leading-tight">{learnerName}</p>
+            <p className="font-extrabold text-base leading-tight">{learnerName}</p>
             {lrn && (
-              <p className="text-base text-foreground font-bold">
+              <p className="text-base text-foreground font-extrabold">
                 LRN: {lrn}
               </p>
             )}
@@ -106,7 +106,7 @@ export function RemedialResolutionModal({
           <div className="space-y-2">
             <Label
               htmlFor="remedial-grade"
-              className="text-base font-black uppercase text-foreground">
+              className="text-base font-extrabold uppercase text-foreground">
               Final Remedial Grade (0–100)
             </Label>
             <Input
@@ -118,12 +118,12 @@ export function RemedialResolutionModal({
               value={remedialGrade}
               onChange={(e) => setRemedialGrade(e.target.value)}
               placeholder="e.g. 75.00"
-              className="font-bold"
+              className="font-extrabold"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-black uppercase text-foreground">
+            <Label className="text-base font-extrabold uppercase text-foreground">
               Outcome
             </Label>
             <RadioGroup
@@ -137,7 +137,7 @@ export function RemedialResolutionModal({
                 />
                 <Label
                   htmlFor="outcome-promoted"
-                  className="font-bold text-base leading-tight text-emerald-700 cursor-pointer">
+                  className="font-extrabold text-base leading-tight text-emerald-700 cursor-pointer">
                   Promoted
                 </Label>
               </div>
@@ -148,7 +148,7 @@ export function RemedialResolutionModal({
                 />
                 <Label
                   htmlFor="outcome-retained"
-                  className="font-bold text-base leading-tight text-amber-700 cursor-pointer">
+                  className="font-extrabold text-base leading-tight text-amber-700 cursor-pointer">
                   Retained
                 </Label>
               </div>
@@ -166,7 +166,7 @@ export function RemedialResolutionModal({
           </Button>
           <Button
             size="sm"
-            className="font-black uppercase text-base"
+            className="font-extrabold uppercase text-base"
             disabled={!isGradeValid || loading}
             onClick={() => void handleSubmit()}>
             {loading && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}

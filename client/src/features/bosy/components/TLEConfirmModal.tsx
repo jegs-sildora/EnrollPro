@@ -56,12 +56,12 @@ export function TLEConfirmModal({
       onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-black uppercase text-base leading-tight">
+          <DialogTitle className="font-extrabold uppercase text-base leading-tight">
             Confirm Return — TLE Selection Required
           </DialogTitle>
           {item && (
             <DialogDescription className="text-base leading-tight">
-              <span className="font-bold">
+              <span className="font-extrabold">
                 {item.lastName}, {item.firstName}
               </span>{" "}
               ({item.gradeLevelName}) must select a TLE specialization before
@@ -71,7 +71,7 @@ export function TLEConfirmModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-2 py-2">
-          <p className="text-base font-bold uppercase text-foreground">
+          <p className="text-base font-extrabold uppercase text-foreground">
             TLE Specialization
           </p>
           <Select

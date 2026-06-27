@@ -143,10 +143,10 @@ function readingLabel(level: string | null) {
 }
 
 function readingColor(level: string | null) {
-  if (level === "NON_READER") return "text-red-600 font-black";
-  if (level === "FRUSTRATION") return "text-amber-600 font-bold";
-  if (level === "INSTRUCTIONAL") return "text-blue-600 font-bold";
-  if (level === "INDEPENDENT") return "text-emerald-600 font-bold";
+  if (level === "NON_READER") return "text-red-600 font-extrabold";
+  if (level === "FRUSTRATION") return "text-amber-600 font-extrabold";
+  if (level === "INSTRUCTIONAL") return "text-blue-600 font-extrabold";
+  if (level === "INDEPENDENT") return "text-emerald-600 font-extrabold";
   return "text-foreground italic";
 }
 
@@ -294,7 +294,7 @@ function PreListingTab({
     <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-lg p-6">
         <div className="space-y-1 mb-5">
-          <h3 className="text-base font-black text-slate-900">Register Walk-In Applicant</h3>
+          <h3 className="text-base font-extrabold text-slate-900">Register Walk-In Applicant</h3>
           <p className="text-base leading-tight text-slate-600">
             Manually add incoming Grade 7 or Transferee students to the intake pipeline.
           </p>
@@ -303,7 +303,7 @@ function PreListingTab({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Learner Type</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Learner Type</Label>
               <Controller
                 control={control}
                 name="learnerType"
@@ -319,12 +319,12 @@ function PreListingTab({
                 )}
               />
               {errors.learnerType ? (
-                <p className="text-base text-destructive font-bold">{errors.learnerType.message}</p>
+                <p className="text-base text-destructive font-extrabold">{errors.learnerType.message}</p>
               ) : null}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Grade Level</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Grade Level</Label>
               <Controller
                 control={control}
                 name="gradeLevel"
@@ -340,12 +340,12 @@ function PreListingTab({
                 )}
               />
               {errors.gradeLevel ? (
-                <p className="text-base text-destructive font-bold">{errors.gradeLevel.message}</p>
+                <p className="text-base text-destructive font-extrabold">{errors.gradeLevel.message}</p>
               ) : null}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">
                 LRN {selectedLearnerType === "TRANSFEREE" ? "(Required)" : "(Optional)"}
               </Label>
               <Input
@@ -359,28 +359,28 @@ function PreListingTab({
                 })}
               />
               {errors.lrn ? (
-                <p className="text-base text-destructive font-bold">{errors.lrn.message}</p>
+                <p className="text-base text-destructive font-extrabold">{errors.lrn.message}</p>
               ) : null}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Last Name</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Last Name</Label>
               <Input placeholder="LAST NAME" {...register("lastName")} />
               {errors.lastName ? (
-                <p className="text-base text-destructive font-bold">{errors.lastName.message}</p>
+                <p className="text-base text-destructive font-extrabold">{errors.lastName.message}</p>
               ) : null}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">First Name</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">First Name</Label>
               <Input placeholder="FIRST NAME" {...register("firstName")} />
               {errors.firstName ? (
-                <p className="text-base text-destructive font-bold">{errors.firstName.message}</p>
+                <p className="text-base text-destructive font-extrabold">{errors.firstName.message}</p>
               ) : null}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Middle Name (Optional)</Label>
+              <Label className="text-[10px] font-extrabold uppercase tracking-widest">Middle Name (Optional)</Label>
               <Input placeholder="MIDDLE NAME" {...register("middleName")} />
             </div>
           </div>
@@ -389,7 +389,7 @@ function PreListingTab({
             <Button
               type="submit"
               disabled={!isValid || createListingMutation.isPending}
-              className="font-black uppercase text-base tracking-normal"
+              className="font-extrabold uppercase text-base tracking-normal"
             >
               {createListingMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -410,19 +410,19 @@ function PreListingTab({
               <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-base leading-tight font-bold text-destructive">
+            <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load pre-listing entries.
             </div>
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <ClipboardList className="h-8 w-8" />
-              <p className="text-base leading-tight font-bold">No entries yet for this school year.</p>
+              <p className="text-base leading-tight font-extrabold">No entries yet for this school year.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-base leading-tight">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -433,11 +433,11 @@ function PreListingTab({
                 <tbody>
                   {listings.map((l) => (
                     <tr key={l.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-bold">{formatName(l.lastName, l.firstName, l.middleName)}</td>
+                      <td className="px-4 py-3 font-extrabold">{formatName(l.lastName, l.firstName, l.middleName)}</td>
                       <td className="px-4 py-3 text-base">{l.gradeLevel}</td>
                       <td className="px-4 py-3 text-base">{LEARNER_TYPES.find((t) => t.value === l.learnerType)?.label ?? "-"}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-wide">{l.status}</Badge>
+                        <Badge variant="secondary" className="text-[10px] font-extrabold uppercase tracking-wide">{l.status}</Badge>
                       </td>
                       <td className="px-4 py-3 text-center">
                         {l.status === "LISTED" && (
@@ -529,19 +529,19 @@ function ReadingAssessmentTab({
               <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-base leading-tight font-bold text-destructive">
+            <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the reading queue.
             </div>
           ) : queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <BookOpen className="h-8 w-8" />
-              <p className="text-base leading-tight font-bold">No learners pending reading assessment.</p>
+              <p className="text-base leading-tight font-extrabold">No learners pending reading assessment.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-base leading-tight">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -551,12 +551,12 @@ function ReadingAssessmentTab({
                 <tbody>
                   {queue.map((row) => (
                     <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-bold">{rowName(row)}</td>
+                      <td className="px-4 py-3 font-extrabold">{rowName(row)}</td>
                       <td className="px-4 py-3 text-base">{rowGrade(row)}</td>
                       <td className="px-4 py-3 text-base">{LEARNER_TYPES.find((t) => t.value === rowLearnerType(row))?.label ?? "-"}</td>
                       <td className="px-4 py-3 text-center">
                         <Button size="sm" onClick={() => { setTarget(row); setReadingLevel(""); }}
-                          className="h-8 text-base font-bold uppercase tracking-normal">
+                          className="h-8 text-base font-extrabold uppercase tracking-normal">
                           <BookOpen className="h-3 w-3 mr-1" /> Assess
                         </Button>
                       </td>
@@ -572,14 +572,14 @@ function ReadingAssessmentTab({
       <Dialog open={!!target} onOpenChange={(o) => { if (!o) { setTarget(null); setReadingLevel(""); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base leading-tight font-black uppercase tracking-wide">Phil-IRI Reading Assessment</DialogTitle>
+            <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">Phil-IRI Reading Assessment</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest">Reading Level</Label>
+            <Label className="text-[10px] font-extrabold uppercase tracking-widest">Reading Level</Label>
             <div className="grid grid-cols-2 gap-2">
               {READING_LEVELS.map((r) => (
                 <button key={r.value} type="button" onClick={() => setReadingLevel(r.value)}
-                  className={`rounded-md border px-3 py-2 text-base font-bold text-left ${readingLevel === r.value ? "border-primary bg-primary/10" : "border-border"} ${r.color}`}>
+                  className={`rounded-md border px-3 py-2 text-base font-extrabold text-left ${readingLevel === r.value ? "border-primary bg-primary/10" : "border-border"} ${r.color}`}>
                   {r.label}
                 </button>
               ))}
@@ -588,7 +588,7 @@ function ReadingAssessmentTab({
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setTarget(null)}>Cancel</Button>
             <Button size="sm" disabled={!readingLevel || assessMutation.isPending} onClick={saveAssessment}
-              className="font-black uppercase text-base">
+              className="font-extrabold uppercase text-base">
               {assessMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
             </Button>
           </DialogFooter>
@@ -668,19 +668,19 @@ function ConfirmationTab({
               <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-base leading-tight font-bold text-destructive">
+            <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the confirmation queue.
             </div>
           ) : rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <FileCheck2 className="h-8 w-8" />
-              <p className="text-base leading-tight font-bold">No learners pending confirmation.</p>
+              <p className="text-base leading-tight font-extrabold">No learners pending confirmation.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-base leading-tight">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -691,10 +691,10 @@ function ConfirmationTab({
                 <tbody>
                   {rows.map((row) => (
                     <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-bold">{rowName(row)}</td>
+                      <td className="px-4 py-3 font-extrabold">{rowName(row)}</td>
                       <td className="px-4 py-3 text-base">{rowGrade(row)}</td>
                       <td className="px-4 py-3">
-                        <Badge className={`text-[10px] font-black uppercase ${row.source === "application" && row.data.learnerType === "RETURNING" ? "bg-purple-100 text-purple-700" : "bg-sky-100 text-sky-700"}`}>
+                        <Badge className={`text-[10px] font-extrabold uppercase ${row.source === "application" && row.data.learnerType === "RETURNING" ? "bg-purple-100 text-purple-700" : "bg-sky-100 text-sky-700"}`}>
                           {row.source === "application" && row.data.learnerType === "RETURNING"
                             ? "Continuing"
                             : "Incoming"}
@@ -705,7 +705,7 @@ function ConfirmationTab({
                       </td>
                       <td className="px-4 py-3 text-center">
                         <Button size="sm" onClick={() => setTarget(row)}
-                          className="h-8 text-base font-bold uppercase tracking-normal bg-emerald-600 hover:bg-emerald-700 text-white">
+                          className="h-8 text-base font-extrabold uppercase tracking-normal bg-emerald-600 hover:bg-emerald-700 text-white">
                           <CheckCircle2 className="h-3 w-3 mr-1" /> Confirm Enrollment
                         </Button>
                       </td>
@@ -776,7 +776,7 @@ export default function IntakeDashboard() {
   if (!schoolYearId) {
     return (
       <div className="flex items-center justify-center py-20 text-foreground">
-        <p className="text-base leading-tight font-bold">No active school year configured.</p>
+        <p className="text-base leading-tight font-extrabold">No active school year configured.</p>
       </div>
     );
   }
@@ -784,7 +784,7 @@ export default function IntakeDashboard() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-black uppercase tracking-tight">Intake Dashboard</h1>
+        <h1 className="text-2xl font-extrabold uppercase tracking-tight">Intake Dashboard</h1>
         <p className="text-base leading-tight text-foreground mt-1">
           School Year {yearLabel} - Pre-Listing, Reading Assessment, and Confirmation
         </p>
@@ -792,7 +792,7 @@ export default function IntakeDashboard() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3">
-          <TabsTrigger value="pre-listing" className="text-base font-bold uppercase tracking-normal relative">
+          <TabsTrigger value="pre-listing" className="text-base font-extrabold uppercase tracking-normal relative">
             {activeTab === "pre-listing" && (
               <motion.div
                 layoutId="intake-tab-pill"
@@ -804,7 +804,7 @@ export default function IntakeDashboard() {
               <ClipboardList className="h-3 w-3 mr-1" /> Pre-Listing
             </span>
           </TabsTrigger>
-          <TabsTrigger value="reading" className="text-base font-bold uppercase tracking-normal relative">
+          <TabsTrigger value="reading" className="text-base font-extrabold uppercase tracking-normal relative">
             {activeTab === "reading" && (
               <motion.div
                 layoutId="intake-tab-pill"
@@ -819,7 +819,7 @@ export default function IntakeDashboard() {
               )}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="confirmation" className="text-base font-bold uppercase tracking-normal relative">
+          <TabsTrigger value="confirmation" className="text-base font-extrabold uppercase tracking-normal relative">
             {activeTab === "confirmation" && (
               <motion.div
                 layoutId="intake-tab-pill"

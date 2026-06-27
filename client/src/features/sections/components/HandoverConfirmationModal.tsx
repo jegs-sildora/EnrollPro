@@ -78,10 +78,10 @@ export function HandoverConfirmationModal({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <DialogTitle className="text-base font-black uppercase text-amber-900">
+              <DialogTitle className="text-base font-extrabold uppercase text-amber-900">
                 Handover Confirmation Required
               </DialogTitle>
-              <DialogDescription className="text-base font-bold text-amber-800">
+              <DialogDescription className="text-base font-extrabold text-amber-800">
                 You are replacing an active class adviser. This action must be logged for audit compliance.
               </DialogDescription>
             </div>
@@ -90,16 +90,16 @@ export function HandoverConfirmationModal({
 
         <div className="px-6 py-5 space-y-5">
           <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-4">
-            <p className="text-[11px] font-black uppercase tracking-wide text-amber-900 mb-3">
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-amber-900 mb-3">
               Adviser Transfer Summary
             </p>
-            <div className="flex items-center gap-2 text-base font-bold">
+            <div className="flex items-center gap-2 text-base font-extrabold">
               <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
                 Current Adviser
               </Badge>
               <span className="text-foreground">{currentAdviserName}</span>
             </div>
-            <div className="flex items-center gap-2 text-base font-bold mt-2">
+            <div className="flex items-center gap-2 text-base font-extrabold mt-2">
               <ArrowRightLeft className="h-3.5 w-3.5 text-amber-700" />
               <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50">
                 New Adviser
@@ -109,16 +109,16 @@ export function HandoverConfirmationModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-black uppercase text-foreground">
+            <Label className="text-base font-extrabold uppercase text-foreground">
               REASON FOR HANDOVER (Required for Audit Log)
             </Label>
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger className="h-11 font-bold">
+              <SelectTrigger className="h-11 font-extrabold">
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
                 {HANDOVER_REASONS.map((item) => (
-                  <SelectItem key={item} value={item} className="font-bold text-base uppercase">
+                  <SelectItem key={item} value={item} className="font-extrabold text-base uppercase">
                     {item}
                   </SelectItem>
                 ))}
@@ -128,14 +128,14 @@ export function HandoverConfirmationModal({
 
           {reason === "Other" && (
             <div className="space-y-2">
-              <Label className="text-base font-black uppercase text-foreground">
+              <Label className="text-base font-extrabold uppercase text-foreground">
                 Additional Details
               </Label>
               <Textarea
                 value={customReason}
                 onChange={(event) => setCustomReason(event.target.value)}
                 placeholder="Describe the reason for handover..."
-                className="min-h-24 font-bold"
+                className="min-h-24 font-extrabold"
               />
             </div>
           )}
@@ -144,7 +144,7 @@ export function HandoverConfirmationModal({
         <DialogFooter className="px-6 py-4 border-t bg-muted/20 flex-row items-center justify-between">
           <Button
             variant="ghost"
-            className="font-bold uppercase text-base"
+            className="font-extrabold uppercase text-base"
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
@@ -154,7 +154,7 @@ export function HandoverConfirmationModal({
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              "font-black uppercase text-base",
+              "font-extrabold uppercase text-base",
               !canConfirm && "cursor-not-allowed opacity-60",
             )}
           >

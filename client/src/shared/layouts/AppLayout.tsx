@@ -140,14 +140,14 @@ function UserNav() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-sm">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-extrabold text-sm">
               {initials}
             </div>
             <div className="flex flex-col items-start leading-tight">
-              <span className="text-sm font-black text-gray-900">
+              <span className="text-sm font-extrabold text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="inline-flex mt-0.5 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
+              <span className="inline-flex mt-0.5 px-2 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
                 {formatUserRole(user?.roles?.[0])}
               </span>
             </div>
@@ -159,7 +159,7 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-base font-bold leading-none">
+              <p className="text-base font-extrabold leading-none">
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="text-sm leading-none text-foreground">
@@ -169,7 +169,7 @@ function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm"
+            className="cursor-pointer font-extrabold text-sm"
             asChild>
             <Link to="/admin/users">
               <Settings className="mr-2 h-4 w-4" />
@@ -178,7 +178,7 @@ function UserNav() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm text-destructive focus:text-primary-foreground"
+            className="cursor-pointer font-extrabold text-sm text-destructive focus:text-primary-foreground"
             onClick={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -275,7 +275,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-[11px] font-black uppercase tracking-wider whitespace-nowrap rounded-full",
+          "inline-flex px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wider whitespace-nowrap rounded-full",
           badge.className,
         )}>
         {badge.label}
@@ -308,7 +308,7 @@ function SYSwitcher() {
               className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
               <Calendar className="text-gray-500 w-4 h-4" />
-              <span className="text-sm font-bold text-gray-900">
+              <span className="text-sm font-extrabold text-gray-900">
                 {currentLabel}
               </span>
               {renderStatusBadge(currentYear?.status)}
@@ -327,9 +327,9 @@ function SYSwitcher() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
+            className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-popover font-extrabold shadow-lg overflow-hidden">
             <div className="py-2">
-              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-extrabold text-slate-500 mb-2 px-2 uppercase tracking-wide">
                 Current School Year
               </div>
               {currentAcademicYear ? (
@@ -339,7 +339,7 @@ function SYSwitcher() {
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
                     currentAcademicYear.id === currentId
-                      ? "bg-slate-100 font-bold text-slate-900"
+                      ? "bg-slate-100 font-extrabold text-slate-900"
                       : "hover:bg-slate-50 text-slate-700",
                   )}>
                   <span className="w-4 text-slate-600">
@@ -356,7 +356,7 @@ function SYSwitcher() {
 
               <div className="border-b border-slate-100 my-2" />
 
-              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-extrabold text-slate-500 mb-2 px-2 uppercase tracking-wide">
                 Archived Records
               </div>
               {archivedYears.length > 0 ? (
@@ -367,7 +367,7 @@ function SYSwitcher() {
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
                       y.id === currentId
-                        ? "bg-slate-50 font-bold text-slate-900"
+                        ? "bg-slate-50 font-extrabold text-slate-900"
                         : "hover:bg-slate-50 text-slate-700",
                     )}>
                     <span className="w-4 text-slate-600">
@@ -396,7 +396,7 @@ function renderNavBadge(badge: NavBadge | undefined) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 rounded px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wide",
+        "inline-flex shrink-0 rounded px-1.5 py-0.5 text-[0.5rem] font-extrabold uppercase tracking-wide",
         badge.className,
       )}>
       {badge.label}
@@ -667,13 +667,13 @@ function NavBrand({
       )}
       <div className="grid min-w-0 text-left leading-tight">
         {schoolName ? (
-          <span className="text-sm font-black uppercase leading-[1.1] text-primary sm:text-base md:text-lg tracking-tight">
+          <span className="text-sm font-extrabold uppercase leading-[1.1] text-primary sm:text-base md:text-lg tracking-tight">
             {schoolName}
           </span>
         ) : (
           <Skeleton className="my-0.5 h-4 w-36" />
         )}
-        <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        <span className="text-[11px] font-extrabold uppercase tracking-wide text-foreground">
           {workspaceName || "School Records Workspace"}
         </span>
       </div>
@@ -695,7 +695,7 @@ function NavLinkContent({
       <Icon className={cn("size-4 shrink-0", isActive ? "text-primary" : "text-slate-500")} />
       <span className="flex min-w-0 flex-1 flex-col items-start">
         <span className="flex w-full min-w-0 items-center gap-2">
-          <span className="truncate font-black leading-tight">{item.label}</span>
+          <span className="truncate font-extrabold leading-tight">{item.label}</span>
           {item.urgent ? <span className="size-2 shrink-0 rounded-full bg-rose-500" /> : null}
           {renderNavBadge(item.badge)}
         </span>
@@ -735,7 +735,7 @@ const DesktopTopNavigation = memo(function DesktopTopNavigation({
             <NavigationMenuItem key={group.label}>
               <NavigationMenuTrigger
                 className={cn(
-                  "gap-1.5 rounded-md px-3 text-sm font-black text-foreground",
+                  "gap-1.5 rounded-md px-3 text-sm font-extrabold text-foreground",
                   hasActiveItem && "bg-primary/10 text-primary",
                 )}
                 style={
@@ -797,7 +797,7 @@ function MobileNavLinks({
           key={group.label}
           className="space-y-2">
           <div className="flex items-center gap-2 px-1">
-            <h3 className="text-[11px] font-black uppercase tracking-wide text-foreground">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-wide text-foreground">
               {group.label}
             </h3>
             {renderNavBadge(group.badge)}
@@ -886,7 +886,7 @@ function MobileNavigationDrawer({
         <div className="space-y-4 border-t border-border p-4">
           <SYSwitcher />
           <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-            <span className="text-sm font-bold text-slate-700">Accessibility</span>
+            <span className="text-sm font-extrabold text-slate-700">Accessibility</span>
             <AccessibilityMenu />
           </div>
           <UserNav />
@@ -1220,16 +1220,16 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
       <Dialog open={showBlockedModal} onOpenChange={(open) => { if (!open) handleConfirmRedirect(); }}>
         <DialogContent className="sm:max-w-[420px] text-center p-6 bg-white rounded-xl shadow-lg border border-border">
           <DialogHeader className="flex flex-col items-center">
-            <DialogTitle className="text-xl font-black text-rose-600 tracking-wide uppercase flex items-center gap-1.5">
+            <DialogTitle className="text-xl font-extrabold text-rose-600 tracking-wide uppercase flex items-center gap-1.5">
               [Module Out of Season]
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-3">
-            <p className="text-base font-bold text-slate-800 leading-tight">
+            <p className="text-base font-extrabold text-slate-800 leading-tight">
               The {blockedInfo?.moduleName} module is closed.
             </p>
             <p className="text-sm text-slate-500 font-semibold leading-relaxed">
-              The active school phase is currently set to <span className="font-bold text-slate-700">{formatPhaseName(blockedInfo?.activePhase ?? null)}</span>.
+              The active school phase is currently set to <span className="font-extrabold text-slate-700">{formatPhaseName(blockedInfo?.activePhase ?? null)}</span>.
             </p>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative">
               <div
@@ -1237,14 +1237,14 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
                 style={{ width: `${(redirectCountdown / 3) * 100}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+            <p className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Auto-redirecting in {redirectCountdown}s...
             </p>
           </div>
           <DialogFooter className="sm:justify-center">
             <Button
               onClick={handleConfirmRedirect}
-              className="w-full h-10 font-bold uppercase tracking-wide bg-rose-600 hover:bg-rose-700 text-white border-none shadow-none">
+              className="w-full h-10 font-extrabold uppercase tracking-wide bg-rose-600 hover:bg-rose-700 text-white border-none shadow-none">
               {blockedInfo?.redirectLabel}
             </Button>
           </DialogFooter>

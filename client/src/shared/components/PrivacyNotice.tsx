@@ -45,10 +45,10 @@ export default function PrivacyNotice({
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold ">
+            <CardTitle className="text-2xl font-extrabold ">
               Data Privacy Notice
             </CardTitle>
-            <p className="text-base text-foreground font-bold">
+            <p className="text-base text-foreground font-extrabold">
               Republic Act No. 10173
             </p>
           </div>
@@ -61,7 +61,7 @@ export default function PrivacyNotice({
               className="max-h-80 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
               {/* Header Section */}
               <section>
-                <h3 className="font-bold text-foreground mb-1 text-base uppercase">
+                <h3 className="font-extrabold text-foreground mb-1 text-base uppercase">
                   {schoolName} - DATA PRIVACY NOTICE ({variant})
                 </h3>
                 <p className="text-foreground text-base mb-2">
@@ -90,7 +90,7 @@ export default function PrivacyNotice({
 
               {/* Why we collect Section */}
               <section>
-                <h4 className="font-bold text-foreground mb-2">
+                <h4 className="font-extrabold text-foreground mb-2">
                   Why we collect your information
                 </h4>
                 <ul className="list-disc pl-5 space-y-2 text-foreground text-base">
@@ -142,7 +142,7 @@ export default function PrivacyNotice({
 
               {/* What information Section */}
               <section>
-                <h4 className="font-bold text-foreground mb-2">
+                <h4 className="font-extrabold text-foreground mb-2">
                   What information we collect
                 </h4>
                 <div className="space-y-3 text-base text-foreground">
@@ -162,7 +162,7 @@ export default function PrivacyNotice({
 
               {/* Protection Section */}
               <section className="pb-4 border-b">
-                <h4 className="font-bold text-foreground mb-2">
+                <h4 className="font-extrabold text-foreground mb-2">
                   How we protect your information
                 </h4>
                 <p className="text-foreground text-base">
@@ -175,7 +175,7 @@ export default function PrivacyNotice({
 
               {/* Rights Section */}
               <section>
-                <h4 className="font-bold text-foreground mb-2">
+                <h4 className="font-extrabold text-foreground mb-2">
                   Your rights under RA 10173
                 </h4>
                 <p className="text-foreground text-base">
@@ -191,7 +191,7 @@ export default function PrivacyNotice({
 
             <div
               className={cn(
-                "flex items-center justify-center gap-2 text-[0.6875rem] font-bold uppercase  transition-all duration-500 py-1",
+                "flex items-center justify-center gap-2 text-[0.6875rem] font-extrabold uppercase  transition-all duration-500 py-1",
                 hasScrolledNotice
                   ? "text-primary"
                   : "text-primary/60 animate-pulse",
@@ -224,7 +224,7 @@ export default function PrivacyNotice({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-base font-bold leading-relaxed cursor-pointer select-none">
+              className="text-base font-extrabold leading-relaxed cursor-pointer select-none">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}
@@ -235,7 +235,7 @@ export default function PrivacyNotice({
           <Button
             onClick={onAccept}
             disabled={!agreed}
-            className="w-full h-12 text-base font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
+            className="w-full h-12 text-base font-extrabold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
             Continue to {isBeerf ? "Registration" : "Enrollment"} Form
           </Button>
         </CardFooter>

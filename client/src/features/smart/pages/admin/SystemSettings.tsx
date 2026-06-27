@@ -330,7 +330,7 @@ export default function SystemSettings() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-12 h-12 text-amber-500" />
-          <p className="text-gray-700 font-medium">{error || "No settings found"}</p>
+          <p className="text-gray-700 ">{error || "No settings found"}</p>
           <Button onClick={fetchSettings} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -345,7 +345,7 @@ export default function SystemSettings() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
             System Settings
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -367,7 +367,7 @@ export default function SystemSettings() {
       {saveSuccess && (
         <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ backgroundColor: `${themeColors.primary}15`, borderColor: `${themeColors.primary}40` }}>
           <CheckCircle2 className="w-5 h-5" style={{ color: themeColors.primary }} />
-          <p className="text-sm font-medium" style={{ color: themeColors.primary }}>System settings saved successfully!</p>
+          <p className="text-sm " style={{ color: themeColors.primary }}>System settings saved successfully!</p>
         </div>
       )}
 
@@ -530,7 +530,7 @@ export default function SystemSettings() {
                 {syncSuccess && (
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                    <p className="text-xs text-green-700 font-medium">Branding synced successfully!</p>
+                    <p className="text-xs text-green-700 ">Branding synced successfully!</p>
                   </div>
                 )}
               </div>
@@ -583,21 +583,21 @@ export default function SystemSettings() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-600">Primary</Label>
+                <Label className="text-sm  text-gray-600">Primary</Label>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="w-10 h-10 rounded-lg border border-gray-200 shrink-0" style={{ backgroundColor: settings.primaryColor }} />
                   <span className="text-sm font-mono text-gray-700">{settings.primaryColor}</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-600">Secondary</Label>
+                <Label className="text-sm  text-gray-600">Secondary</Label>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="w-10 h-10 rounded-lg border border-gray-200 shrink-0" style={{ backgroundColor: settings.secondaryColor }} />
                   <span className="text-sm font-mono text-gray-700">{settings.secondaryColor}</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-600">Accent</Label>
+                <Label className="text-sm  text-gray-600">Accent</Label>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="w-10 h-10 rounded-lg border border-gray-200 shrink-0" style={{ backgroundColor: settings.accentColor }} />
                   <span className="text-sm font-mono text-gray-700">{settings.accentColor}</span>
@@ -607,7 +607,7 @@ export default function SystemSettings() {
 
             {/* Color Preview */}
             <div className="mt-6 p-4 rounded-xl bg-gray-50">
-              <Label className="text-sm font-medium text-gray-600 mb-3 block">Preview</Label>
+              <Label className="text-sm  text-gray-600 mb-3 block">Preview</Label>
               <div className="flex items-center gap-4">
                 <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm" style={{ backgroundColor: settings.primaryColor }}>
                   Primary
@@ -706,10 +706,10 @@ export default function SystemSettings() {
               {/* 1st Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.primary }}>1</div>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.primary }}>1</div>
                   <span className="font-semibold text-gray-700">1st Term</span>
                   {settings.currentTerm === "T1" && (
-                    <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
+                    <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -737,10 +737,10 @@ export default function SystemSettings() {
               {/* 2nd Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.secondary }}>2</div>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.secondary }}>2</div>
                   <span className="font-semibold text-gray-700">2nd Term</span>
                   {settings.currentTerm === "T2" && (
-                    <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
+                    <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -768,10 +768,10 @@ export default function SystemSettings() {
               {/* 3rd Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.accent }}>3</div>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.accent }}>3</div>
                   <span className="font-semibold text-gray-700">3rd Term</span>
                   {settings.currentTerm === "T3" && (
-                    <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
+                    <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">

@@ -58,7 +58,7 @@ export default function SystemRolloverModal({ disabled, activeYearLabel }: Syste
             "w-full min-w-max",
             disabled
               ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 shadow-none !opacity-100"
-              : "bg-maroon-700 text-white font-medium px-4 py-2 rounded-md shadow-sm transition-all hover:bg-maroon-800"
+              : "bg-maroon-700 text-white  px-4 py-2 rounded-md shadow-sm transition-all hover:bg-maroon-800"
           )}
         >
           Finalize EOSY & Open New School Year

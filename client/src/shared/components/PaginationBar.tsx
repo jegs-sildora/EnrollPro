@@ -35,10 +35,10 @@ export function PaginationBar({
   className,
 }: PaginationBarProps) {
   const totalPages = Math.ceil(total / limit) || 1;
-  
+
   // Use a clamped page number for display calculation to handle stale state during limit changes
   const displayPage = Math.min(Math.max(1, page), totalPages);
-  
+
   const start = total === 0 ? 0 : (displayPage - 1) * limit + 1;
   const end = Math.min(displayPage * limit, total);
 
@@ -70,7 +70,7 @@ export function PaginationBar({
         className,
       )}>
       {/* Zone A & B: Contextual Metrics & Density Control */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-base font-bold text-foreground w-full md:w-auto justify-center md:justify-start">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-base font-extrabold text-foreground w-full md:w-auto justify-center md:justify-start">
         <span className="whitespace-nowrap">
           Showing {start} to {end} of {total} {itemName}
         </span>
@@ -82,7 +82,7 @@ export function PaginationBar({
             onValueChange={(val: string) => {
               onLimitChange(Number(val));
             }}>
-            <SelectTrigger className="h-8 w-22 text-sm font-black border-2 focus:ring-0">
+            <SelectTrigger className="h-8 w-22 text-sm font-extrabold border-2 focus:ring-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -128,7 +128,7 @@ export function PaginationBar({
         </Button>
 
         {visiblePages[0] > 1 && (
-          <span className="text-foreground px-1 font-black">...</span>
+          <span className="text-foreground px-1 font-extrabold">...</span>
         )}
 
         {visiblePages.map((p) => (
@@ -137,7 +137,7 @@ export function PaginationBar({
             variant={page === p ? 'default' : 'ghost'}
             size="icon"
             className={cn(
-              'h-8 w-8 text-base font-black transition-all shrink-0 border-2 border-transparent active:translate-y-0',
+              'h-8 w-8 text-base font-extrabold transition-all shrink-0 border-2 border-transparent active:translate-y-0',
               page === p
                 ? 'bg-primary text-primary-foreground shadow-md border-primary/20 hover:bg-primary'
                 : 'text-foreground hover:bg-muted hover:border-border',
@@ -154,7 +154,7 @@ export function PaginationBar({
         ))}
 
         {visiblePages[visiblePages.length - 1] < totalPages && (
-          <span className="text-foreground px-1 font-black">...</span>
+          <span className="text-foreground px-1 font-extrabold">...</span>
         )}
 
         <Button

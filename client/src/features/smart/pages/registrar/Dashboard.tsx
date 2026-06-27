@@ -115,7 +115,7 @@ export default function RegistrarDashboardPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Registrar Dashboard</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Registrar Dashboard</h1>
           <p className="text-gray-600 mt-1">
             Real-time enrollment oversight with EnrollPro-backed student metrics.
           </p>
@@ -141,7 +141,7 @@ export default function RegistrarDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase text-slate-500 font-semibold">Total Students</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.stats.totalStudents}</p>
+                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.stats.totalStudents}</p>
               </div>
               <Users className="w-7 h-7" style={{ color: colors.primary }} />
             </div>
@@ -156,7 +156,7 @@ export default function RegistrarDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase text-slate-500 font-semibold">Sections</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.stats.totalSections}</p>
+                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.stats.totalSections}</p>
               </div>
               <Server className="w-7 h-7 text-slate-700" />
             </div>
@@ -169,7 +169,7 @@ export default function RegistrarDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase text-slate-500 font-semibold">Male / Female</p>
-                <p className="text-2xl font-bold text-slate-900 mt-1">
+                <p className="text-2xl font-extrabold text-slate-900 mt-1">
                   {dashboard.stats.maleCount} / {dashboard.stats.femaleCount}
                 </p>
               </div>
@@ -184,7 +184,7 @@ export default function RegistrarDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase text-slate-500 font-semibold">Data Issues</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.dataCompleteness.totalIssues}</p>
+                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.dataCompleteness.totalIssues}</p>
               </div>
               <AlertTriangle className="w-7 h-7 text-amber-600" />
             </div>
@@ -204,7 +204,7 @@ export default function RegistrarDashboardPage() {
           <CardContent className="space-y-3">
             {Object.entries(dashboard.stats.gradeStats).map(([grade, count]) => (
               <div key={grade} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                <span className="text-sm font-medium text-slate-700">{gradeLevelLabels[grade] || grade}</span>
+                <span className="text-sm  text-slate-700">{gradeLevelLabels[grade] || grade}</span>
                 <Badge style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>{count}</Badge>
               </div>
             ))}

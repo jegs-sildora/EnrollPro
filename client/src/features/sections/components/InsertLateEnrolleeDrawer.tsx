@@ -183,21 +183,12 @@ export default function InsertLateEnrolleeDrawer({
     onOpenChange(false);
   };
 
-  const handleSheetOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      onOpenChange(true);
-    }
-  };
-
   return (
     <Sheet
       open={open}
-      onOpenChange={handleSheetOpenChange}>
+      onOpenChange={onOpenChange}>
       <SheetContent
         showClose={false}
-        onPointerDownOutside={(event) => event.preventDefault()}
-        onInteractOutside={(event) => event.preventDefault()}
-        onEscapeKeyDown={(event) => event.preventDefault()}
         className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl flex flex-col h-full bg-background">
         <SheetHeader className="px-6 py-4 bg-primary shrink-0 border-b border-primary/20 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-3">
@@ -208,7 +199,7 @@ export default function InsertLateEnrolleeDrawer({
               <SheetTitle className="text-lg font-black uppercase text-primary-foreground">
                 Insert Late Enrollee
               </SheetTitle>
-              <SheetDescription className="text-base text-primary-foreground uppercase font-bold mt-0.5">
+              <SheetDescription className="text-base text-primary-foreground uppercase font-extrabold mt-0.5">
                 {gradeLevelName} — {sectionName}
               </SheetDescription>
             </div>
@@ -233,7 +224,7 @@ export default function InsertLateEnrolleeDrawer({
                   placeholder="Search unsectioned learners by LRN or Last Name..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 h-11 font-bold border-border shadow-sm focus:ring-primary/20"
+                  className="pl-10 h-11 font-extrabold border-border shadow-sm focus:ring-primary/20"
                   autoFocus
                 />
               </div>
@@ -250,10 +241,10 @@ export default function InsertLateEnrolleeDrawer({
                   <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
-                      <p className="text-lg font-bold text-slate-500">
+                      <p className="text-lg font-extrabold text-slate-500">
                         Searching...
                       </p>
-                      <p className="text-base leading-tight font-bold text-slate-400">
+                      <p className="text-base leading-tight font-extrabold text-slate-400">
                         Scanning unsectioned records...
                       </p>
                     </div>
@@ -261,7 +252,7 @@ export default function InsertLateEnrolleeDrawer({
                 ) : filteredPool.length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center px-6">
                     <AlertCircle className="h-8 w-8 text-foreground/30 mb-2" />
-                    <p className="text-base leading-tight font-bold text-foreground">
+                    <p className="text-base leading-tight font-extrabold text-foreground">
                       No unsectioned learners found
                     </p>
                     <p className="text-base text-foreground/60 mt-1 max-w-[240px]">
@@ -290,7 +281,7 @@ export default function InsertLateEnrolleeDrawer({
                             <span className="font-black text-base leading-tight uppercase group-hover:text-primary transition-colors">
                               {learner.lastName}, {learner.firstName}
                             </span>
-                            <span className="text-base font-bold text-foreground ">
+                            <span className="text-base font-extrabold text-foreground ">
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
@@ -300,7 +291,7 @@ export default function InsertLateEnrolleeDrawer({
                                 GEN AVE: {learner.promotionGenAve.toFixed(2)}
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold uppercase text-foreground/40">
+                              <span className="text-[10px] font-extrabold uppercase text-foreground/40">
                                 GEN AVE: —
                               </span>
                             )}
@@ -340,7 +331,7 @@ export default function InsertLateEnrolleeDrawer({
                     <h3 className="font-black text-lg uppercase leading-none">
                       {selectedLearner.lastName}, {selectedLearner.firstName}
                     </h3>
-                    <p className="text-base font-bold text-foreground uppercase  mt-1">
+                    <p className="text-base font-extrabold text-foreground uppercase  mt-1">
                       LRN: {selectedLearner.lrn || "PENDING LRN"}
                     </p>
                   </div>
@@ -349,7 +340,7 @@ export default function InsertLateEnrolleeDrawer({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedLearner(null)}
-                  className="text-base font-bold uppercase text-foreground hover:text-foreground">
+                  className="text-base font-extrabold uppercase text-foreground hover:text-foreground">
                   Change
                 </Button>
               </div>
@@ -360,7 +351,7 @@ export default function InsertLateEnrolleeDrawer({
                     Target Section
                   </p>
                   <p className="font-black text-base leading-tight uppercase">{sectionName}</p>
-                  <p className="text-base font-bold text-foreground mt-0.5">
+                  <p className="text-base font-extrabold text-foreground mt-0.5">
                     {gradeLevelName}
                   </p>
                 </div>
@@ -371,7 +362,7 @@ export default function InsertLateEnrolleeDrawer({
                   <p className="font-black text-base leading-tight uppercase">
                     {enrolledCount} / {maxCapacity}
                   </p>
-                  <p className="text-base font-bold text-emerald-600 mt-0.5">
+                  <p className="text-base font-extrabold text-emerald-600 mt-0.5">
                     Available Slots: {maxCapacity - enrolledCount}
                   </p>
                 </div>
@@ -384,7 +375,7 @@ export default function InsertLateEnrolleeDrawer({
                     <p className="text-base font-black text-red-900 uppercase">
                       Attendance Risk
                     </p>
-                    <p className="text-[11px] leading-relaxed text-red-800 font-bold">
+                    <p className="text-[11px] leading-relaxed text-red-800 font-extrabold">
                       {elapsedSchoolDays} school days have already passed.
                       Learner may struggle to meet the 80% DepEd attendance
                       requirement. Ensure catch-up interventions are planned.
@@ -399,7 +390,7 @@ export default function InsertLateEnrolleeDrawer({
                   <p className="text-base font-black text-amber-900 uppercase">
                     Inline Slotting Protection
                   </p>
-                  <p className="text-[11px] leading-relaxed text-amber-800 font-bold">
+                  <p className="text-[11px] leading-relaxed text-amber-800 font-extrabold">
                     This action will bypass the Batch Algorithm. The learner
                     will be added directly to the SF1 roster and synced to the
                     grading microservice.
@@ -409,7 +400,7 @@ export default function InsertLateEnrolleeDrawer({
 
               {/* Official Enrollment Date — required for SF10/dateSectioned */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase text-foreground">
+                <label className="text-[11px] font-extrabold uppercase text-foreground">
                   Official Enrollment Date *
                 </label>
                 <input
@@ -417,9 +408,9 @@ export default function InsertLateEnrolleeDrawer({
                   value={officialEnrollmentDate}
                   max={format(new Date(), "yyyy-MM-dd")}
                   onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base leading-tight font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base leading-tight font-extrabold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
                 />
-                <p className="text-[10px] text-amber-700 font-bold">
+                <p className="text-[10px] text-amber-700 font-extrabold">
                   Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
                 </p>
               </div>
@@ -431,13 +422,13 @@ export default function InsertLateEnrolleeDrawer({
           <Button
             variant="outline"
             onClick={closeDrawer}
-            className="font-bold uppercase text-sm h-10 px-4">
+            className="font-extrabold uppercase text-sm h-10 px-4">
             Cancel
           </Button>
           <Button
             disabled={!selectedLearner || isSubmitting}
             onClick={handleSlotting}
-            className="font-bold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
+            className="font-extrabold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (

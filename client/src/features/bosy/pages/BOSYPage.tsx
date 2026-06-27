@@ -67,7 +67,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     accessorKey: "lrn",
     header: ({ column }) => <DataTableColumnHeader column={column} title="LRN" />,
     cell: ({ row }) => (
-      <span className="font-mono font-bold text-base text-foreground">
+      <span className="font-mono font-extrabold text-base text-foreground">
         {row.original.lrn ?? <em className="opacity-50 not-italic">No LRN</em>}
       </span>
     ),
@@ -79,7 +79,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     cell: ({ row }) => {
       const { lastName, firstName } = row.original;
       return (
-        <span className="font-bold text-base leading-tight">
+        <span className="font-extrabold text-base leading-tight">
           {[lastName, firstName].filter(Boolean).join(", ")}
         </span>
       );
@@ -89,7 +89,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     accessorKey: "gradeLevelName",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Grade" />,
     cell: ({ row }) => (
-      <Badge variant="secondary" className="text-base font-bold">
+      <Badge variant="secondary" className="text-base font-extrabold">
         {row.original.gradeLevelName}
       </Badge>
     ),
@@ -101,7 +101,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
     cell: ({ row }) => (
       <Badge
         variant="outline"
-        className="text-base font-bold border-amber-300 text-amber-700 bg-amber-50"
+        className="text-base font-extrabold border-amber-300 text-amber-700 bg-amber-50"
       >
         {formatNoShowStatus(row.original.status)}
       </Badge>
@@ -359,12 +359,12 @@ export default function BOSYPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold">Confirmation of Continuing Learners</h1>
-          <p className="text-base leading-tight font-bold">
+          <h1 className="text-3xl font-extrabold">Confirmation of Continuing Learners</h1>
+          <p className="text-base leading-tight font-extrabold">
             Verify returning Junior High School learners and roll their records over to the live S.Y. {ayLabel || "2026–2027"} masterlist.
           </p>
           {isHistoricalReadOnly && (
-            <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
+            <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}
         </div>
       </div>
@@ -409,19 +409,19 @@ export default function BOSYPage() {
             )}>
             <CardContent className="p-4 flex flex-row h-full justify-between gap-4">
               <div className="flex flex-col justify-between">
-                <p className="text-base font-bold leading-tight text-foreground">
+                <p className="text-base font-extrabold leading-tight text-foreground">
                   {label}
                 </p>
                 <div className="mt-4">
                   <p
-                    className={cn("text-4xl font-black leading-none", isPrimaryMetric && value > 0 ? "" : "text-foreground")}
+                    className={cn("text-4xl font-extrabold leading-none", isPrimaryMetric && value > 0 ? "" : "text-foreground")}
                     style={isPrimaryMetric && value > 0 ? { color: "hsl(var(--primary))" } : undefined}
                   >
                     {value}
                   </p>
                   <p className="text-sm font-semibold text-foreground mt-0.5">{subBadge}</p>
                 </div>
-              </div> 
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -431,7 +431,7 @@ export default function BOSYPage() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
             <div className="relative w-full lg:w-1/2 shrink-0">
-              <span className="text-base font-bold text-foreground">Search Learner</span>
+              <span className="text-base font-extrabold text-foreground">Search Learner</span>
               <Search className="absolute left-2.5 h-4 w-4 bottom-3.5 text-foreground" />
               <Input
                 placeholder="Search by LRN, Last Name, or First Name..."
@@ -459,7 +459,7 @@ export default function BOSYPage() {
               ) : (
                 <>
                   <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-base font-bold text-foreground">Target Grade</span>
+                    <span className="text-base font-extrabold text-foreground">Target Grade</span>
                     <Select
                       value={targetGrade}
                       onValueChange={(val) => {
@@ -481,7 +481,7 @@ export default function BOSYPage() {
                   </div>
 
                   <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-base font-bold text-foreground">Prior Section</span>
+                    <span className="text-base font-extrabold text-foreground">Prior Section</span>
                     <Select
                       value={previousSectionName}
                       onValueChange={(val) => {
@@ -559,18 +559,18 @@ export default function BOSYPage() {
           </DialogHeader>
           {confirmSingleTarget && (
             <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5">
-              <p className="text-base leading-tight font-bold uppercase">
+              <p className="text-base leading-tight font-extrabold uppercase">
                 {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
                 {confirmSingleTarget.middleName
                   ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
                   : ""}
               </p>
-              <p className="text-base text-foreground font-bold">
+              <p className="text-base text-foreground font-extrabold">
                 LRN: {confirmSingleTarget.lrn ?? "No LRN"}
               </p>
               <Badge
                 variant="outline"
-                className="text-[10px] font-black uppercase">
+                className="text-[10px] font-extrabold uppercase">
                 {confirmSingleTarget.gradeLevelName}
               </Badge>
             </div>
@@ -618,10 +618,10 @@ export default function BOSYPage() {
               value={revertReason}
               onChange={(e) => setRevertReason(e.target.value)}
               rows={3}
-              className="resize-none font-bold text-base leading-tight"
+              className="resize-none font-extrabold text-base leading-tight"
             />
             {revertReason.length > 0 && revertReason.trim().length < 5 && (
-              <p className="text-base text-destructive font-bold">
+              <p className="text-base text-destructive font-extrabold">
                 Reason must be at least 5 characters.
               </p>
             )}
@@ -688,13 +688,13 @@ export default function BOSYPage() {
                   containerHeight="14rem"
                   estimatedRowHeight={32}
                 />
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-bold">
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-extrabold">
                   This is a destructive bulk operation. Only proceed if these
                   learners have confirmed they will not be attending.
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-bold gap-2">
+              <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-extrabold gap-2">
                 <CheckCircle2 className="h-4 w-4 opacity-50" />
                 No no-show applicants found.
               </div>

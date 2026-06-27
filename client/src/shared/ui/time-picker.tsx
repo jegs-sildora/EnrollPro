@@ -205,7 +205,7 @@ export function TimePicker({
         )}>
         <Clock className="mr-2 h-3 w-3" />
         <input
-          className="w-6 border-none bg-transparent p-0 text-center text-sm font-bold focus:outline-none"
+          className="w-6 border-none bg-transparent p-0 text-center text-sm font-extrabold focus:outline-none"
           value={hour}
           onChange={handleHourChange}
           onBlur={handleHourBlur}
@@ -215,7 +215,7 @@ export function TimePicker({
         />
         <span className=" mx-0.5">:</span>
         <input
-          className="w-6 border-none bg-transparent p-0 text-center text-sm font-bold focus:outline-none"
+          className="w-6 border-none bg-transparent p-0 text-center text-sm font-extrabold focus:outline-none"
           value={minute}
           onChange={handleMinuteChange}
           onBlur={handleMinuteBlur}
@@ -228,14 +228,14 @@ export function TimePicker({
         value={period}
         disabled={disabled}
         onValueChange={(v: string) => handlePeriodChange(v as "AM" | "PM")}>
-        <SelectTrigger className="h-8 w-[72px] text-sm font-bold px-2">
+        <SelectTrigger className="h-8 w-[72px] text-sm font-extrabold px-2">
           <SelectValue placeholder="AM/PM" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="AM" className="text-sm font-bold">
+          <SelectItem value="AM" className="text-sm font-extrabold">
             AM
           </SelectItem>
-          <SelectItem value="PM" className="text-sm font-bold">
+          <SelectItem value="PM" className="text-sm font-extrabold">
             PM
           </SelectItem>
         </SelectContent>

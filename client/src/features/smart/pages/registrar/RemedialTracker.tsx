@@ -41,10 +41,10 @@ export default function RemedialTracker() {
 
   const filtered = search
     ? items.filter((item) => {
-        const name = `${item.lastName ?? ""} ${item.firstName ?? ""}`.toLowerCase();
-        const lrn = String(item.lrn ?? "");
-        return name.includes(search.toLowerCase()) || lrn.includes(search);
-      })
+      const name = `${item.lastName ?? ""} ${item.firstName ?? ""}`.toLowerCase();
+      const lrn = String(item.lrn ?? "");
+      return name.includes(search.toLowerCase()) || lrn.includes(search);
+    })
     : items;
 
   return (
@@ -53,7 +53,7 @@ export default function RemedialTracker() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Remedial Tracker</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Remedial Tracker</h1>
           <p className="text-gray-600 mt-1">
             Learners enrolled in remedial classes — read-only view from EnrollPro. Actions must be done in EnrollPro.
           </p>
@@ -91,7 +91,7 @@ export default function RemedialTracker() {
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-              <p className="text-gray-700 font-medium">Unable to load remedial data</p>
+              <p className="text-gray-700 ">Unable to load remedial data</p>
               <p className="text-gray-500 text-sm mt-1">{error}</p>
               <Button onClick={() => void load(page)} variant="outline" className="mt-4 rounded-xl">Try Again</Button>
             </div>
@@ -100,13 +100,13 @@ export default function RemedialTracker() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
-                    <TableHead className="font-bold text-gray-700">Sex</TableHead>
-                    <TableHead className="font-bold text-gray-700">Grade / Section</TableHead>
-                    <TableHead className="font-bold text-gray-700">Subject(s)</TableHead>
-                    <TableHead className="font-bold text-gray-700">Failing Grade</TableHead>
-                    <TableHead className="font-bold text-gray-700">Status</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Grade / Section</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Subject(s)</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Failing Grade</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -121,7 +121,7 @@ export default function RemedialTracker() {
                     filtered.map((item, i) => (
                       <TableRow key={item.enrollmentRecordId ?? item.learnerId ?? i}>
                         <TableCell className="font-mono text-sm text-gray-600">{item.lrn ?? "—"}</TableCell>
-                        <TableCell className="font-medium text-gray-900">
+                        <TableCell className=" text-gray-900">
                           {item.lastName}, {item.firstName} {item.middleName ?? ""}
                         </TableCell>
                         <TableCell>

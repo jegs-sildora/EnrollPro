@@ -212,7 +212,7 @@ export function WalkInEncodePanel() {
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button className="h-14 px-6 text-lg font-bold gap-2">
+        <Button className="h-14 px-6 text-lg font-extrabold gap-2">
           <Plus className="w-5 h-5" />
           Encode Walk-In
         </Button>
@@ -227,10 +227,10 @@ export function WalkInEncodePanel() {
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-h-14">
             <div className="space-y-0.5">
-              <SheetTitle className="text-base font-black text-primary-foreground uppercase leading-none">
+              <SheetTitle className="text-base font-extrabold text-primary-foreground uppercase leading-none">
                 Walk-In Direct Encode
               </SheetTitle>
-              <SheetDescription className="text-base font-black text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+              <SheetDescription className="text-base font-extrabold text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 Bypass verification and enter Unassigned Pool
               </SheetDescription>
             </div>
@@ -254,7 +254,7 @@ export function WalkInEncodePanel() {
               <div className="space-y-4">
                 {/* LEARNER PROFILE BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <User className="h-4 w-4 text-primary" />
                       1. Learner Profile
@@ -313,12 +313,12 @@ export function WalkInEncodePanel() {
                             }
                           }}
                         />
-                        <label htmlFor="noLrn" className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-600">
+                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-600">
                           Learner has no LRN yet
                         </label>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 font-bold">
+                      <div className="grid grid-cols-2 gap-4 font-extrabold">
                         <FormField
                           control={form.control}
                           name="firstName"
@@ -444,7 +444,7 @@ export function WalkInEncodePanel() {
 
                 {/* PREVIOUS SCHOOL BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
                       2. Previous School Data
@@ -495,7 +495,7 @@ export function WalkInEncodePanel() {
 
                 {/* EMERGENCY CONTACT BLOCK */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-primary" />
                       3. Emergency Contact
@@ -541,7 +541,7 @@ export function WalkInEncodePanel() {
 
                 {/* CHECKLIST */}
                 <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-black uppercase text-base tracking-wide text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
+                  <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
                     <span className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       4. Document Checklist
@@ -587,14 +587,14 @@ export function WalkInEncodePanel() {
                 type="button"
                 onClick={requestClosePanel}
                 disabled={isSubmitting}
-                className="font-bold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
+                className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className={`font-bold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
+                className={`font-extrabold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

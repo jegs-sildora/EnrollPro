@@ -77,7 +77,7 @@ export function PinResetHandoverModal({
       if (!val) handleClose();
       else onOpenChange(val);
     }}>
-      <DialogContent 
+      <DialogContent
         className={cn(
           "sm:max-w-[500px] border-t-4 transition-all duration-300"
         )}
@@ -91,11 +91,11 @@ export function PinResetHandoverModal({
         {step === 1 ? (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl font-black uppercase text-amber-700 flex items-center gap-2">
+              <DialogTitle className="text-xl font-extrabold uppercase text-amber-700 flex items-center gap-2">
                 <AlertTriangle className="h-6 w-6" />
                 Initiate PIN Reset
               </DialogTitle>
-              <DialogDescription className="font-bold text-foreground pt-2">
+              <DialogDescription className="font-extrabold text-foreground pt-2">
                 You are about to reset the Learner Portal PIN for:
                 <div className="mt-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-foreground uppercase">
                   {studentName} ({gradeLevel})
@@ -105,8 +105,8 @@ export function PinResetHandoverModal({
 
             <div className="py-4">
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-base font-bold text-red-800 leading-relaxed">
-                  WARNING: Generating a new PIN will immediately invalidate the current one. 
+                <p className="text-base font-extrabold text-red-800 leading-relaxed">
+                  WARNING: Generating a new PIN will immediately invalidate the current one.
                   The learner will be locked out until you provide them with the new credential.
                 </p>
               </div>
@@ -116,10 +116,10 @@ export function PinResetHandoverModal({
               <Button variant="ghost" onClick={handleClose} disabled={isGenerating}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleReset} 
+              <Button
+                onClick={handleReset}
                 disabled={isGenerating}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-black uppercase "
+                className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold uppercase "
               >
                 {isGenerating ? (
                   <>
@@ -138,23 +138,23 @@ export function PinResetHandoverModal({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl font-black uppercase text-emerald-700 flex items-center gap-2">
+              <DialogTitle className="text-xl font-extrabold uppercase text-emerald-700 flex items-center gap-2">
                 <CheckCircle2 className="h-6 w-6" />
                 Portal PIN Reset Successful
               </DialogTitle>
-              <DialogDescription className="font-bold text-foreground pt-2">
+              <DialogDescription className="font-extrabold text-foreground pt-2">
                 The previous PIN has been invalidated.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6 py-4">
               <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-                <p className="text-base font-black uppercase text-foreground ">
+                <p className="text-base font-extrabold uppercase text-foreground ">
                   New Portal PIN:
                 </p>
-                
+
                 <div className="flex items-center justify-center gap-4">
-                  <span className="text-4xl font-black  text-foreground">
+                  <span className="text-4xl font-extrabold  text-foreground">
                     {newPin.split("").join(" ")}
                   </span>
                   <Button
@@ -166,11 +166,11 @@ export function PinResetHandoverModal({
                     {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                   </Button>
                 </div>
-                <Button 
-                  variant="link" 
-                  size="sm" 
+                <Button
+                  variant="link"
+                  size="sm"
                   onClick={handleCopy}
-                  className="text-base font-bold uppercase text-foreground hover:text-emerald-600"
+                  className="text-base font-extrabold uppercase text-foreground hover:text-emerald-600"
                 >
                   {copied ? "PIN Copied!" : "📋 Copy to Clipboard"}
                 </Button>
@@ -178,8 +178,8 @@ export function PinResetHandoverModal({
 
               <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-base font-bold text-amber-900 leading-relaxed">
-                  IMPORTANT: For security reasons, this PIN will not be shown again. 
+                <p className="text-base font-extrabold text-amber-900 leading-relaxed">
+                  IMPORTANT: For security reasons, this PIN will not be shown again.
                   Please ensure you have securely transmitted this to the guardian.
                 </p>
               </div>
@@ -193,7 +193,7 @@ export function PinResetHandoverModal({
                 />
                 <Label
                   htmlFor="pin-transmitted"
-                  className="text-base font-black uppercase text-foreground leading-snug cursor-pointer select-none"
+                  className="text-base font-extrabold uppercase text-foreground leading-snug cursor-pointer select-none"
                 >
                   I have copied and securely forwarded this new PIN.
                 </Label>
@@ -205,7 +205,7 @@ export function PinResetHandoverModal({
                 onClick={handleClose}
                 disabled={!hasCopiedPin}
                 className={cn(
-                  "w-full h-12 font-black uppercase  transition-all",
+                  "w-full h-12 font-extrabold uppercase  transition-all",
                   hasCopiedPin
                     ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100"
                     : "bg-slate-200 text-foreground cursor-not-allowed border-none shadow-none"

@@ -21,11 +21,11 @@ interface SectionProps {
 function DataSection({ title, icon, children }: SectionProps) {
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
         {icon && <span className="text-primary">{icon}</span>}
         <span className="uppercase">{title}</span>
       </div>
-      <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
+      <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-extrabold">
         {children}
       </div>
     </div>
@@ -60,7 +60,7 @@ function DataItem({
       <span className="text-foreground">{label}:</span>
       <span
         className={
-          !valid ? "text-gray-300 font-bold" : "uppercase"
+          !valid ? "text-gray-300 font-extrabold" : "uppercase"
         }>
         {valid ? String(value) : "—"}
       </span>
@@ -262,14 +262,14 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
             <>
               <span className="uppercase">{c.fullName}</span>
               {c.details && (
-                <span className="text-base font-bold text-foreground">
+                <span className="text-base font-extrabold text-foreground">
                   {c.details}
                   {c.relationship && ` (${c.relationship})`}
                 </span>
               )}
             </>
           ) : (
-            <span className="text-gray-300 font-bold">—</span>
+            <span className="text-gray-300 font-extrabold">—</span>
           )}
         </div>
       </React.Fragment>
@@ -283,11 +283,6 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
       {renderContact(mother)}
       {renderContact(father)}
       {renderContact(guardian)}
-      <DataItem
-        label="Primary Email"
-        value={applicant.emailAddress}
-        mutedIfInvalid
-      />
     </DataSection>
   );
 }

@@ -20,8 +20,8 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
   return (
     <div className="space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold">Master Enrollment Dashboard</h1>
-        <p className="text-base leading-tight font-bold text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-extrabold">Master Enrollment Dashboard</h1>
+        <p className="text-base leading-tight font-extrabold text-foreground">
           Beginning of School Year (BOSY) • {ayLabel}
         </p>
       </div>
@@ -34,7 +34,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         }
       >
         <AlertTitle
-          className="font-black"
+          className="font-extrabold"
           style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
         >
           {isEnrollmentOpen
@@ -42,7 +42,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
             : "Academic Phase: Official Beginning of School Year (BOSY) Enrollment is Closed"}
         </AlertTitle>
         <AlertDescription
-          className="font-bold"
+          className="font-extrabold"
           style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
         >
           {isEnrollmentOpen
@@ -55,24 +55,24 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         <Alert style={{ backgroundColor: "#FEF2F2", borderColor: "#FEE2E2" }}>
           <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-left">
-            <AlertTitle className="font-black text-rose-955 flex items-center gap-2">
+            <AlertTitle className="font-extrabold text-rose-955 flex items-center gap-2">
               Classroom Seating Deficit Warning
             </AlertTitle>
-            <AlertDescription className="text-rose-700 font-bold">
+            <AlertDescription className="text-rose-700 font-extrabold">
               The total enrolled student headcount across all class homerooms exceeds the sum of all sections' capacities. Reallocate classrooms or provision new sections to prevent over-capacity compliance alerts.
             </AlertDescription>
           </div>
         </Alert>
       )}
-      
+
       <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col w-full">
         <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
           <div className="flex flex-col items-center gap-1">
-            <h3 className="text-base sm:text-lg font-black text-foreground">Total Official Enrollment</h3>
-            <div className="text-5xl sm:text-6xl font-black" style={{ color: "hsl(var(--primary))" }}>
+            <h3 className="text-base sm:text-lg font-extrabold text-foreground">Total Official Enrollment</h3>
+            <div className="text-5xl sm:text-6xl font-extrabold" style={{ color: "hsl(var(--primary))" }}>
               <AnimatedNumber value={stats?.kpiHeader?.enrolledTotal ?? 0} />
             </div>
-            <p className="text-base font-bold text-foreground">Officially Enrolled JHS Learners</p>
+            <p className="text-base font-extrabold text-foreground">Officially Enrolled JHS Learners</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 border-t pt-4">
@@ -80,14 +80,14 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               const b = stats?.gradeLevelBreakdown?.at(idx);
               return (
                 <div key={grade} className="text-center">
-                  <p className="text-base font-bold text-foreground mb-1">Grade {grade}</p>
-                  <p className="text-3xl font-black text-foreground">
+                  <p className="text-base font-extrabold text-foreground mb-1">Grade {grade}</p>
+                  <p className="text-3xl font-extrabold text-foreground">
                     <AnimatedNumber value={b?.current ?? 0} />
                   </p>
                   <p className="text-base text-foreground mt-1 font-semibold flex justify-center gap-1.5">
-                    <span className="text-blue-700 font-bold">{b?.male ?? 0} M</span>
-                    <span className="font-bold">|</span>
-                    <span className="text-pink-700 font-bold">{b?.female ?? 0} F</span>
+                    <span className="text-blue-700 font-extrabold">{b?.male ?? 0} M</span>
+                    <span className="font-extrabold">|</span>
+                    <span className="text-pink-700 font-extrabold">{b?.female ?? 0} F</span>
                   </p>
                 </div>
               );
@@ -99,10 +99,10 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
           <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-bold text-foreground">New Enrollees to Check</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">New Enrollees to Check</CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-black text-primary">
+            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
               <AnimatedNumber value={pendingTotal} />
             </div>
             <div className="mt-2">
@@ -139,10 +139,10 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
 
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
           <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-bold text-foreground">Needs Class Section</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Needs Class Section</CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-black text-primary">
+            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
               <AnimatedNumber value={unassignedTotal} />
             </div>
             <div className="mt-2">
@@ -171,10 +171,10 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
 
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
           <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-bold text-foreground">Incomplete Documents</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Incomplete Documents</CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-black text-primary">
+            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
               <AnimatedNumber value={deficientTotal} />
             </div>
             <div className="mt-2">

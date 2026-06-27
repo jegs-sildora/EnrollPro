@@ -250,10 +250,10 @@ export function AssignAdviserModal({
       <DialogContent className="sm:max-w-3xl p-0 overflow-hidden">
         {/* ── Header ── */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/20">
-          <DialogTitle className="text-lg font-black uppercase">
+          <DialogTitle className="text-lg font-extrabold uppercase">
             {step === 2 ? "Handover Audit — Confirm Transfer" : "Assign Class Adviser"}
           </DialogTitle>
-          <DialogDescription className="text-base font-bold text-foreground">
+          <DialogDescription className="text-base font-extrabold text-foreground">
             {section ? `Target: ${section.gradeLevelName} — ${section.name}` : "Select a section"}
           </DialogDescription>
         </DialogHeader>
@@ -268,17 +268,17 @@ export function AssignAdviserModal({
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">
                       Current Adviser
                     </p>
-                    <p className="text-base font-black uppercase leading-tight truncate text-slate-800">
+                    <p className="text-base font-extrabold uppercase leading-tight truncate text-slate-800">
                       {currentAdviserFull?.name ?? section.currentAdviser.name}
                     </p>
-                    <p className="text-base font-bold text-slate-500">
+                    <p className="text-base font-extrabold text-slate-500">
                       Employee ID: {currentAdviserFull?.employeeId ?? "N/A"}
                     </p>
                     {currentAdviserFull?.specialization && (
-                      <p className="text-base font-bold text-slate-400 truncate">
+                      <p className="text-base font-extrabold text-slate-400 truncate">
                         {currentAdviserFull.specialization}
                       </p>
                     )}
@@ -287,7 +287,7 @@ export function AssignAdviserModal({
                     <Lock className="h-3.5 w-3.5 text-slate-400" />
                     <Badge
                       variant="outline"
-                      className="text-[10px] font-black border-red-200 text-red-700 bg-red-50"
+                      className="text-[10px] font-extrabold border-red-200 text-red-700 bg-red-50"
                     >
                       Active
                     </Badge>
@@ -297,7 +297,7 @@ export function AssignAdviserModal({
             )}
 
             {/* Section label (TASK 2) */}
-            <p className="text-[10px] font-black uppercase tracking-widest text-foreground">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
               Available Replacements
             </p>
 
@@ -309,7 +309,7 @@ export function AssignAdviserModal({
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search teacher name, ID, department, specialization..."
-                  className="pl-9 h-11 font-bold"
+                  className="pl-9 h-11 font-extrabold"
                 />
               </div>
               <label className="flex items-center gap-2 cursor-pointer shrink-0 select-none group">
@@ -327,7 +327,7 @@ export function AssignAdviserModal({
                     )}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
+                <span className="text-[11px] font-extrabold text-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
                   Show assigned
                   {lockedCount > 0 && (
                     <span className="ml-1 text-[10px] text-slate-400">({lockedCount})</span>
@@ -347,8 +347,8 @@ export function AssignAdviserModal({
                   <div className="h-44 flex flex-col items-center justify-center gap-3 text-center">
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
-                      <p className="text-lg font-bold text-slate-500">Searching...</p>
-                      <p className="text-base leading-tight font-bold text-slate-400">
+                      <p className="text-lg font-extrabold text-slate-500">Searching...</p>
+                      <p className="text-base leading-tight font-extrabold text-slate-400">
                         Scanning adviser directory...
                       </p>
                     </div>
@@ -357,11 +357,11 @@ export function AssignAdviserModal({
                   /* TASK 3 — Empty state */
                   <div className="h-36 flex flex-col items-center justify-center gap-2 text-center px-4">
                     <SearchX className="h-8 w-8 text-slate-300" />
-                    <p className="text-base leading-tight font-bold text-foreground">
+                    <p className="text-base leading-tight font-extrabold text-foreground">
                       No available personnel match this search criteria.
                     </p>
                     {!showAssigned && lockedCount > 0 && !normalizedSearch && (
-                      <p className="text-base font-bold text-slate-400">
+                      <p className="text-base font-extrabold text-slate-400">
                         Toggle &quot;Show assigned&quot; to view locked personnel.
                       </p>
                     )}
@@ -390,18 +390,18 @@ export function AssignAdviserModal({
                             <span className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-full border-2 border-slate-300 bg-slate-100" />
                             <div className="flex-1 flex items-start justify-between gap-3 min-w-0">
                               <div className="space-y-0.5 min-w-0">
-                                <p className="text-base font-black uppercase leading-none truncate">
+                                <p className="text-base font-extrabold uppercase leading-none truncate">
                                   {teacher.name}
                                 </p>
-                                <p className="text-base font-bold text-foreground">
+                                <p className="text-base font-extrabold text-foreground">
                                   Employee ID: {teacher.employeeId || "N/A"}
                                 </p>
-                                <p className="text-base font-bold text-foreground/80 truncate">
+                                <p className="text-base font-extrabold text-foreground/80 truncate">
                                   {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                   {teacher.specialization || "No specialization"}
                                 </p>
                                 {teacher.assignedSection && (
-                                  <p className="text-[11px] font-bold text-slate-500 flex items-center gap-1 mt-0.5">
+                                  <p className="text-[11px] font-extrabold text-slate-500 flex items-center gap-1 mt-0.5">
                                     <Lock className="h-2.5 w-2.5" />
                                     {teacher.assignedSection.gradeLevelName
                                       ? `${teacher.assignedSection.gradeLevelName} — `
@@ -412,7 +412,7 @@ export function AssignAdviserModal({
                               </div>
                               <Badge
                                 variant="outline"
-                                className="text-[10px] font-black border-slate-400 text-slate-600 bg-slate-100 shrink-0"
+                                className="text-[10px] font-extrabold border-slate-400 text-slate-600 bg-slate-100 shrink-0"
                               >
                                 LOCKED
                               </Badge>
@@ -443,16 +443,16 @@ export function AssignAdviserModal({
                             <div className="space-y-0.5 min-w-0">
                               <p
                                 className={cn(
-                                  "text-base font-black uppercase leading-none truncate",
+                                  "text-base font-extrabold uppercase leading-none truncate",
                                   isSelected ? "text-red-800" : "text-foreground",
                                 )}
                               >
                                 {teacher.name}
                               </p>
-                              <p className="text-base font-bold text-foreground">
+                              <p className="text-base font-extrabold text-foreground">
                                 Employee ID: {teacher.employeeId || "N/A"}
                               </p>
-                              <p className="text-base font-bold text-foreground/80 truncate">
+                              <p className="text-base font-extrabold text-foreground/80 truncate">
                                 {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                 {teacher.specialization || "No specialization"}
                               </p>
@@ -460,7 +460,7 @@ export function AssignAdviserModal({
                             {fitScore > 0 && (
                               <Badge
                                 variant="outline"
-                                className="text-[9px] font-black border-blue-300 text-blue-700 bg-blue-50 shrink-0"
+                                className="text-[9px] font-extrabold border-blue-300 text-blue-700 bg-blue-50 shrink-0"
                               >
                                 Program Match
                               </Badge>
@@ -485,7 +485,7 @@ export function AssignAdviserModal({
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 text-base font-bold text-foreground hover:text-foreground transition-colors group"
+              className="flex items-center gap-1.5 text-base font-extrabold text-foreground hover:text-foreground transition-colors group"
             >
               <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
               Back to Selection
@@ -495,14 +495,14 @@ export function AssignAdviserModal({
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
               {/* From */}
               <div className="flex-1 space-y-1 min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                   Transferring From
                 </p>
-                <p className="text-base leading-tight font-black uppercase truncate text-red-700 line-through decoration-red-400">
+                <p className="text-base leading-tight font-extrabold uppercase truncate text-red-700 line-through decoration-red-400">
                   {section?.currentAdviser?.name ?? "Unknown"}
                 </p>
                 {currentAdviserFull?.employeeId && (
-                  <p className="text-base font-bold text-slate-400">
+                  <p className="text-base font-extrabold text-slate-400">
                     ID: {currentAdviserFull.employeeId}
                   </p>
                 )}
@@ -513,14 +513,14 @@ export function AssignAdviserModal({
 
               {/* To */}
               <div className="flex-1 space-y-1 min-w-0 text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                   Transferring To
                 </p>
-                <p className="text-base leading-tight font-black uppercase truncate text-emerald-700">
+                <p className="text-base leading-tight font-extrabold uppercase truncate text-emerald-700">
                   {selectedTeacher?.name ?? "—"}
                 </p>
                 {selectedTeacher?.employeeId && (
-                  <p className="text-base font-bold text-slate-400">
+                  <p className="text-base font-extrabold text-slate-400">
                     ID: {selectedTeacher.employeeId}
                   </p>
                 )}
@@ -531,14 +531,14 @@ export function AssignAdviserModal({
             <div className="space-y-4">
               {/* Reason Category */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                   Reason Category <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={reasonCategory}
                   onChange={(e) => setReasonCategory(e.target.value)}
                   className={cn(
-                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-bold",
+                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-extrabold",
                     "ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     !reasonCategory && "text-foreground",
@@ -557,7 +557,7 @@ export function AssignAdviserModal({
 
               {/* Specific Justification */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                   Specific Justification <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -566,13 +566,13 @@ export function AssignAdviserModal({
                   placeholder="Provide a detailed justification for this adviser transfer for audit and record purposes..."
                   rows={4}
                   className={cn(
-                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-bold resize-none",
+                    "w-full rounded-md border border-input bg-background px-3 py-2 text-base leading-tight font-extrabold resize-none",
                     "placeholder:text-foreground placeholder:font-normal ring-offset-background",
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                 />
-                <p className="text-[10px] font-bold text-foreground text-right">
+                <p className="text-[10px] font-extrabold text-foreground text-right">
                   {justification.trim().length} characters
                 </p>
               </div>
@@ -584,7 +584,7 @@ export function AssignAdviserModal({
         <DialogFooter className="px-6 py-4 border-t bg-muted/20 flex-row items-center justify-between">
           <Button
             variant="ghost"
-            className="font-bold uppercase text-base"
+            className="font-extrabold uppercase text-base"
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -596,7 +596,7 @@ export function AssignAdviserModal({
               onClick={handleStep1Action}
               disabled={step1Disabled}
               className={cn(
-                "font-black uppercase text-base min-w-48 transition-all duration-150",
+                "font-extrabold uppercase text-base min-w-48 transition-all duration-150",
                 step1Disabled
                   ? "bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-100 cursor-not-allowed"
                   : section?.currentAdviser
@@ -626,7 +626,7 @@ export function AssignAdviserModal({
               onClick={() => void executeHandover()}
               disabled={step2Disabled}
               className={cn(
-                "font-black uppercase text-base min-w-56 transition-all duration-150",
+                "font-extrabold uppercase text-base min-w-56 transition-all duration-150",
                 step2Disabled
                   ? "bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-100 cursor-not-allowed"
                   : "bg-red-700 hover:bg-red-800 text-white border-transparent",

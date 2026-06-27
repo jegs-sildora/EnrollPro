@@ -73,7 +73,7 @@ export default function RegistrarLoginPage() {
   };
 
   return (
-    <div 
+    <div
       className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-[#f8fafc] via-primary/8 to-accent/6"
       style={{
         '--primary': 'var(--theme-primary)',
@@ -114,34 +114,34 @@ export default function RegistrarLoginPage() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-[55%] xl:w-3/5 relative overflow-hidden bg-primary shrink-0">
         {/* Animated gradient background */}
-        <div 
-          className="absolute inset-0 login-gradient" 
-          style={{ 
-            background: `linear-gradient(to bottom right, var(--theme-primary), rgba(var(--theme-primary-rgb), 0.88), rgba(var(--theme-accent-rgb), 0.88))`, 
-          }} 
+        <div
+          className="absolute inset-0 login-gradient"
+          style={{
+            background: `linear-gradient(to bottom right, var(--theme-primary), rgba(var(--theme-primary-rgb), 0.88), rgba(var(--theme-accent-rgb), 0.88))`,
+          }}
         />
-        
+
         {/* Decorative patterns */}
         <div className="absolute inset-0">
           {/* Floating orbs */}
           <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl login-float" />
-          <div 
-            className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float" 
-            style={{ 
+          <div
+            className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float"
+            style={{
               backgroundColor: 'var(--theme-accent)',
               opacity: 0.18,
-              animationDelay: '2s' 
-            }} 
+              animationDelay: '2s'
+            }}
           />
-          <div 
-            className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full blur-2xl login-float" 
-            style={{ 
+          <div
+            className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full blur-2xl login-float"
+            style={{
               backgroundColor: 'var(--theme-primary)',
               opacity: 0.2,
-              animationDelay: '4s' 
-            }} 
+              animationDelay: '4s'
+            }}
           />
-          
+
           {/* Grid pattern overlay */}
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -160,21 +160,21 @@ export default function RegistrarLoginPage() {
           <div className="flex items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-4xl font-bold tracking-tight text-white">{acronym}</h1>
-                <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500 text-white shadow-sm">REGISTRAR</span>
+                <h1 className="text-4xl font-extrabold tracking-tight text-white">{acronym}</h1>
+                <span className="px-2 py-0.5 text-xs font-extrabold rounded bg-emerald-500 text-white shadow-sm">REGISTRAR</span>
               </div>
-              <p className="text-white text-sm font-bold max-w-md">Registrar's Portal</p>
+              <p className="text-white text-sm font-extrabold max-w-md">Registrar's Portal</p>
             </div>
           </div>
 
           {/* School Name + Details */}
           <div className="space-y-3 mb-6">
-            <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight text-white">
+            <h2 className="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-white">
               {schoolName}
             </h2>
-            <p className="text-white text-sm font-bold">Junior High School (Grades 7-10)</p>
+            <p className="text-white text-sm font-extrabold">Junior High School (Grades 7-10)</p>
             <div className="flex flex-col gap-1.5 mt-3">
-              <p className="text-white text-sm font-bold">
+              <p className="text-white text-sm font-extrabold">
                 DepEd Public School Student Management and Records Tracking Portal
               </p>
             </div>
@@ -188,7 +188,7 @@ export default function RegistrarLoginPage() {
               { icon: FolderOpen, title: "Document Management", desc: "Organize academic records" },
               { icon: ClipboardCheck, title: "Enrollment Processing", desc: "Handle student registrations" }
             ].map((feature, i) => (
-              <div 
+              <div
                 key={i}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 group transition-all duration-300"
               >
@@ -196,7 +196,7 @@ export default function RegistrarLoginPage() {
                   <feature.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">{feature.title}</h3>
+                  <h3 className="font-extrabold text-white">{feature.title}</h3>
                   <p className="text-white text-sm font-semibold">{feature.desc}</p>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function RegistrarLoginPage() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div 
+      <div
         className="relative w-full lg:w-[45%] xl:w-2/5 flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto"
       >
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -295,7 +295,7 @@ export default function RegistrarLoginPage() {
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-            <div 
+            <div
               className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg overflow-hidden bg-white border border-slate-200"
             >
               {fullLogoUrl ? (
@@ -306,8 +306,8 @@ export default function RegistrarLoginPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-gray-900">{acronym}</span>
-                <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500 text-white">REGISTRAR</span>
+                <span className="text-xl font-extrabold text-gray-900">{acronym}</span>
+                <span className="px-2 py-0.5 text-xs font-extrabold rounded bg-emerald-500 text-white">REGISTRAR</span>
               </div>
               <p className="text-xs text-gray-500">{schoolName}</p>
             </div>
@@ -316,9 +316,9 @@ export default function RegistrarLoginPage() {
           {/* Login card with premium styling */}
           <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
-              <div 
-                className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden" 
-                style={{ 
+              <div
+                className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"
+                style={{
                   background: fullLogoUrl
                     ? 'white'
                     : 'linear-gradient(to bottom right, var(--theme-primary), var(--theme-accent))',
@@ -332,14 +332,14 @@ export default function RegistrarLoginPage() {
                   <Sparkles className="w-5 h-5 text-white" />
                 )}
               </div>
-              <CardTitle className="text-xl font-bold text-gray-900 pt-2">
+              <CardTitle className="text-xl font-extrabold text-gray-900 pt-2">
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm">
                 Sign in to your Registrar account to manage <span className="font-semibold text-primary">{acronym}</span>
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="px-6 pb-5 pt-4">
               {/* Error Message */}
               {error && (
@@ -347,7 +347,7 @@ export default function RegistrarLoginPage() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-sm font-bold text-red-700">{error}</span>
+                  <span className="text-sm font-extrabold text-red-700">{error}</span>
                 </div>
               )}
 
@@ -385,7 +385,7 @@ export default function RegistrarLoginPage() {
                         setEmail(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
+                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold"
                       autoComplete="username"
                       required
                     />
@@ -412,7 +412,7 @@ export default function RegistrarLoginPage() {
                         setPassword(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
+                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold"
                       autoComplete="current-password"
                       required
                     />
@@ -441,7 +441,7 @@ export default function RegistrarLoginPage() {
                         </svg>
                       </div>
                     </div>
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-sm select-none">Remember me</span>
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-extrabold text-sm select-none">Remember me</span>
                   </label>
                   <a href="#" className="font-semibold text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
                     Forgot password?

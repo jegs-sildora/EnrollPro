@@ -1046,10 +1046,10 @@ export default function SchoolYearTab() {
 
             <div className="relative z-10 w-full max-w-3xl px-6">
               <div className="text-center mb-5">
-                <h3 className="text-md font-black text-foreground uppercase">
+                <h3 className="text-md font-extrabold text-foreground uppercase">
                   Processing School Year Rollover
                 </h3>
-                <p className="text-md font-bold text-foreground">
+                <p className="text-md font-extrabold text-foreground">
                   Please keep this window open while records are being updated.
                 </p>
               </div>
@@ -1071,17 +1071,17 @@ export default function SchoolYearTab() {
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
               <School className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-black  mb-3 text-foreground uppercase">
+            <h3 className="text-2xl font-extrabold  mb-3 text-foreground uppercase">
               Active School Year Required
             </h3>
-            <p className="text-foreground font-bold max-w-lg mb-8 leading-relaxed">
+            <p className="text-foreground font-extrabold max-w-lg mb-8 leading-relaxed">
               Before the system can process official enrollments, accept Early
               Registration data, or generate School Form 1 (SF1) rosters, a
               primary academic year must be established.
             </p>
             <Button
               size="lg"
-              className="font-bold shadow-md bg-[#800000] hover:bg-[#600000] text-white border-none"
+              className="font-extrabold shadow-md bg-[#800000] hover:bg-[#600000] text-white border-none"
               onClick={handlePrepareRollover}>
               <Plus className="mr-2 h-5 w-5" /> Configure S.Y.{" "}
               {nextRolloverYearLabel}
@@ -1100,7 +1100,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-3 mb-1">
                     <CardTitle
-                      className="text-xl font-black text-foreground"
+                      className="text-xl font-extrabold text-foreground"
                     >
                       {activeYear ? (
                         <>School Year {activeYear.yearLabel}</>
@@ -1109,13 +1109,13 @@ export default function SchoolYearTab() {
                       )}
                     </CardTitle>
                     {activeYear && (
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">
                         {activeYear.sections?.length === 0 ? "Initialization Phase" : "Current SY"}
                       </span>
                     )}
                   </div>
                   {activeYear && (
-                    <p className="font-bold text-foreground">
+                    <p className="font-extrabold text-foreground">
                       {(() => {
                         const firstDay = localCalendarState.term1Start;
                         const isQuarters = localCalendarState.termFormat === "QUARTERS";
@@ -1143,11 +1143,11 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
+                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide">
                             System Academic Phase
                           </h4>
                         </div>
-                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-extrabold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
                           Control the current phase of the academic year. This affects how late enrollments are processed.
                         </p>
                       </div>
@@ -1160,21 +1160,21 @@ export default function SchoolYearTab() {
                       <div className="flex items-start space-x-2">
                         <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
                         <div>
-                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-bold cursor-pointer text-foreground block">Official Enrollment</Label>
+                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-extrabold cursor-pointer text-foreground block">Official Enrollment</Label>
                           <p className="text-sm text-foreground mt-1">Opens the public enrollment forms and processes normal verify/confirm workflows.</p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-2">
                         <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
                         <div>
-                          <Label htmlFor="CLASSES_ONGOING" className="font-bold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
+                          <Label htmlFor="CLASSES_ONGOING" className="font-extrabold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
                           <p className="text-sm text-foreground mt-1">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-2">
                         <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
                         <div>
-                          <Label htmlFor="EOSY_CLOSING" className="font-bold cursor-pointer text-foreground block">EOSY Closing</Label>
+                          <Label htmlFor="EOSY_CLOSING" className="font-extrabold cursor-pointer text-foreground block">EOSY Closing</Label>
                           <p className="text-sm text-foreground mt-1">Locks public enrollment forms and readies the database for end-of-year grade finalization.</p>
                         </div>
                       </div>
@@ -1195,7 +1195,7 @@ export default function SchoolYearTab() {
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                      <h4 className="font-extrabold text-base text-foreground uppercase tracking-wide">
                         DepEd Term Configuration
                       </h4>
                     </div>
@@ -1208,11 +1208,11 @@ export default function SchoolYearTab() {
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="TRIMESTER" id="TRIMESTER" />
-                        <Label htmlFor="TRIMESTER" className="font-bold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
+                        <Label htmlFor="TRIMESTER" className="font-extrabold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="QUARTERS" id="QUARTERS" />
-                        <Label htmlFor="QUARTERS" className="font-bold cursor-pointer text-foreground">4-Quarter System</Label>
+                        <Label htmlFor="QUARTERS" className="font-extrabold cursor-pointer text-foreground">4-Quarter System</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -1220,7 +1220,7 @@ export default function SchoolYearTab() {
                   {/* Term Date rows */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                      <h4 className="font-extrabold text-base text-foreground uppercase tracking-wide">
                         Term Dates
                       </h4>
                     </div>
@@ -1232,7 +1232,7 @@ export default function SchoolYearTab() {
                       ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => (
                       <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
-                        <div className="w-24 shrink-0 font-bold text-primary">{term.label}</div>
+                        <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
                         <div className="flex items-center gap-3 flex-1 w-full">
                           <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
                             <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
@@ -1241,11 +1241,11 @@ export default function SchoolYearTab() {
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
                               }}
-                              className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
                               placeholder="MM/DD/YYYY"
                             />
                           </div>
-                          <span className="text-foreground font-bold">to</span>
+                          <span className="text-foreground font-extrabold">to</span>
                           <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
                             <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
                             <HybridDatePicker
@@ -1253,7 +1253,7 @@ export default function SchoolYearTab() {
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
                               }}
-                              className="border-none shadow-none p-0 h-auto font-bold text-base bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
                               placeholder="MM/DD/YYYY"
                             />
                           </div>
@@ -1268,11 +1268,11 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
+                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide">
                             Official Intake Period (BOSY)
                           </h4>
                         </div>
-                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-extrabold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
                           Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
                         </p>
                       </div>
@@ -1285,7 +1285,7 @@ export default function SchoolYearTab() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                         <div className="space-y-2 relative">
-                          <Label className="text-base font-bold uppercase text-foreground">
+                          <Label className="text-base font-extrabold uppercase text-foreground">
                             Opens On
                           </Label>
                           <HybridDatePicker
@@ -1298,7 +1298,7 @@ export default function SchoolYearTab() {
                           />
                         </div>
                         <div className="space-y-2 relative">
-                          <Label className="text-base font-bold uppercase text-foreground">
+                          <Label className="text-base font-extrabold uppercase text-foreground">
                             Closes On
                           </Label>
                           <HybridDatePicker
@@ -1317,7 +1317,7 @@ export default function SchoolYearTab() {
                       {localCalendarState.enrollOpenDate !== "" &&
                         localCalendarState.enrollCloseDate !== "" &&
                         toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
-                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
+                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-extrabold text-destructive">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                             <p>
                               Closes On date cannot be earlier than Opens On.
@@ -1341,7 +1341,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-4">
-                  <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-extrabold max-w-lg mx-auto leading-relaxed">
                     No active school year has been set for the system. Prepare a
                     draft school year below to begin.
                   </p>
@@ -1442,7 +1442,7 @@ export default function SchoolYearTab() {
                   <TableBody>
                     {archivedYears.map((year) => (
                       <TableRow key={year.id}>
-                        <TableCell className="font-bold text-left">
+                        <TableCell className="font-extrabold text-left">
                           S.Y. {year.yearLabel}
                         </TableCell>
                         <TableCell className="text-left">
@@ -1509,15 +1509,15 @@ export default function SchoolYearTab() {
                     id="rolloverYearLabel"
                     value={editYearLabel ? `S.Y. ${editYearLabel}` : ""}
                     readOnly
-                    className="font-bold bg/50 cursor-not-allowed pl-9"
+                    className="font-extrabold bg/50 cursor-not-allowed pl-9"
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-sm text-foreground font-bold">
+                <p className="text-sm text-foreground font-extrabold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
-                  <p className="text-[0.7rem] font-bold text-destructive flex items-center gap-1 mt-1">
+                  <p className="text-[0.7rem] font-extrabold text-destructive flex items-center gap-1 mt-1">
                     <AlertTriangle className="h-3 w-3" />A school year with this
                     label already exists.
                   </p>
@@ -1531,7 +1531,7 @@ export default function SchoolYearTab() {
                   timeZone={MANILA_TIME_ZONE}
                   minDate={openingMinDate}
                   maxDate={openingMaxDate}
-                  className="font-bold"
+                  className="font-extrabold"
                 />
               </div>
               <div className="space-y-2">
@@ -1542,14 +1542,14 @@ export default function SchoolYearTab() {
                   timeZone={MANILA_TIME_ZONE}
                   minDate={classEndMinDate}
                   maxDate={classEndMaxDate}
-                  className="font-bold"
+                  className="font-extrabold"
                 />
               </div>
             </div>
 
             {activeYear && (
               <div className="p-4 border rounded-lg space-y-3">
-                <p className="text-base font-bold">
+                <p className="text-base font-extrabold">
                   Rollover options from {activeYear.yearLabel}
                 </p>
                 <p className="text-sm text-foreground">
@@ -1596,11 +1596,11 @@ export default function SchoolYearTab() {
             )}
 
             <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 space-y-4">
-              <div className="flex items-center gap-2 text-destructive font-black text-sm  uppercase">
+              <div className="flex items-center gap-2 text-destructive font-extrabold text-sm  uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>
-              <p className="text-base font-bold leading-relaxed">
+              <p className="text-base font-extrabold leading-relaxed">
                 {activeYear
                   ? "Executing rollover will archive the current academic cycle. This action cannot be reversed."
                   : "Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database."}
@@ -1616,7 +1616,7 @@ export default function SchoolYearTab() {
                 />
                 <label
                   htmlFor="agreed-to-activation"
-                  className="text-base font-bold leading-tight cursor-pointer select-none">
+                  className="text-base font-extrabold leading-tight cursor-pointer select-none">
                   I confirm that these dates align with the official DepEd
                   School Calendar Memorandum and I am authorized to activate the
                   system.
@@ -1627,7 +1627,7 @@ export default function SchoolYearTab() {
             <div className="flex items-center justify-end gap-2 pt-4 border-t">
               <Button
                 variant="outline"
-                className="font-bold"
+                className="font-extrabold"
                 onClick={() => {
                   if (isRolloverLoaderOpen) {
                     return;
@@ -1641,7 +1641,7 @@ export default function SchoolYearTab() {
               {activeYear && (
                 <Button
                   variant="default"
-                  className="font-bold"
+                  className="font-extrabold"
                   onClick={handleUpdateRolloverDraft}
                   disabled={
                     creating ||
@@ -1659,7 +1659,7 @@ export default function SchoolYearTab() {
               <Button
                 onClick={handleActivateNext}
                 className={cn(
-                  "font-bold transition-all shadow-md border-none",
+                  "font-extrabold transition-all shadow-md border-none",
                   isAgreedToActivation
                     ? "bg-[#800000] hover:bg-[#600000] text-white"
                     : "bg text-foreground grayscale",
@@ -1685,7 +1685,7 @@ export default function SchoolYearTab() {
               </Button>
             </div>
             {activeYear && !isRolloverReady && (
-              <div className="flex items-center justify-end gap-1 text-sm font-bold text-amber-700">
+              <div className="flex items-center justify-end gap-1 text-sm font-extrabold text-amber-700">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Waiting for EOSY Finalization.</span>
               </div>

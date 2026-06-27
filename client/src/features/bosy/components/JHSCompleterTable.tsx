@@ -30,11 +30,11 @@ export function JHSCompleterTable({
           const r = row.original;
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
-              <span className="font-bold uppercase truncate">
+              <span className="font-extrabold uppercase truncate">
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
               </span>
-              <span className="text-base text-foreground font-bold">
+              <span className="text-base text-foreground font-extrabold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -55,7 +55,7 @@ export function JHSCompleterTable({
           <div className="text-center">
             <Badge
               variant="outline"
-              className="text-[10px] font-black uppercase">
+              className="text-[10px] font-extrabold uppercase">
               {row.original.lastGradeLevel ?? "—"}
             </Badge>
           </div>
@@ -73,7 +73,7 @@ export function JHSCompleterTable({
           />
         ),
         cell: ({ row }) => (
-          <div className="text-center text-base text-foreground font-bold">
+          <div className="text-center text-base text-foreground font-extrabold">
             {row.original.lastYearEnrolled ?? "—"}
           </div>
         ),
@@ -86,7 +86,7 @@ export function JHSCompleterTable({
           <DataTableColumnHeader column={column} title="LAST SECTION" />
         ),
         cell: ({ row }) => (
-          <div className="text-base font-bold">
+          <div className="text-base font-extrabold">
             {row.original.lastSectionName ?? (
               <span className="text-foreground">—</span>
             )}
@@ -96,13 +96,13 @@ export function JHSCompleterTable({
       {
         id: "status",
         header: () => (
-          <div className="text-center font-bold text-base uppercase">Status</div>
+          <div className="text-center font-extrabold text-base uppercase">Status</div>
         ),
         cell: () => (
           <div className="flex justify-center">
             <Badge
               variant="outline"
-              className="text-[10px] font-black uppercase bg-violet-50 border-violet-200 text-violet-700">
+              className="text-[10px] font-extrabold uppercase bg-violet-50 border-violet-200 text-violet-700">
               JHS Completer
             </Badge>
           </div>
@@ -128,7 +128,7 @@ export function JHSCompleterTable({
       data={items}
       forceEmptyState={Boolean(isSearching)}
       rowSelection={{}}
-      onRowSelectionChange={() => {}}
+      onRowSelectionChange={() => { }}
       prependBodyRow={isSearching ? <TableSearchIndicator colSpan={5} /> : null}
     />
   );

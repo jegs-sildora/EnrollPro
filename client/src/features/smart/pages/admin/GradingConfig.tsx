@@ -87,7 +87,7 @@ export default function GradingConfig() {
   // Check if there are changes by comparing configs deeply
   useEffect(() => {
     if (originalConfigs.length === 0) return;
-    
+
     const hasAnyChange = configs.some((config) => {
       const original = originalConfigs.find(c => c.subjectType === config.subjectType);
       if (!original) return true;
@@ -124,17 +124,17 @@ export default function GradingConfig() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       // Update each changed config
       for (const config of configs) {
         const original = originalConfigs.find(c => c.subjectType === config.subjectType);
         if (!original) continue;
-        
-        const hasChanged = 
+
+        const hasChanged =
           config.writtenWorkWeight !== original.writtenWorkWeight ||
           config.performanceTaskWeight !== original.performanceTaskWeight ||
           config.quarterlyAssessWeight !== original.quarterlyAssessWeight;
-        
+
         if (hasChanged) {
           await adminApi.updateGradingConfig(config.subjectType, {
             writtenWorkWeight: config.writtenWorkWeight,
@@ -143,22 +143,22 @@ export default function GradingConfig() {
           });
         }
       }
-      
+
       // Refresh configs from server
       const response = await adminApi.getGradingConfig();
       setConfigs(response.data.configs);
       setOriginalConfigs(response.data.configs);
-      
+
       setHasChanges(false);
       setSaveSuccess(true);
-      
+
       // Add to history
       setConfigHistory(prev => [{
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Updated grading weights'
       }, ...prev.slice(0, 4)]);
-      
+
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error("Failed to save grading config:", err);
@@ -176,14 +176,14 @@ export default function GradingConfig() {
       setOriginalConfigs(response.data.configs);
       setHasChanges(false);
       setSaveSuccess(true);
-      
+
       // Add to history
       setConfigHistory(prev => [{
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Reset all weights to DepEd default values'
       }, ...prev.slice(0, 4)]);
-      
+
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error("Failed to reset grading config:", err);
@@ -211,7 +211,7 @@ export default function GradingConfig() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-12 h-12 text-amber-500" />
-          <p className="text-gray-700 font-medium">{error}</p>
+          <p className="text-gray-700 ">{error}</p>
           <Button onClick={fetchConfigs} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -226,7 +226,7 @@ export default function GradingConfig() {
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
             Grading Configuration
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -259,14 +259,14 @@ export default function GradingConfig() {
       {saveSuccess && (
         <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }}>
           <CheckCircle2 className="w-5 h-5" style={{ color: colors.primary }} />
-          <p className="text-sm font-medium" style={{ color: colors.primary }}>Grading configuration saved successfully!</p>
+          <p className="text-sm " style={{ color: colors.primary }}>Grading configuration saved successfully!</p>
         </div>
       )}
 
       {hasChanges && !allValid && (
         <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
           <AlertCircle className="w-5 h-5 text-amber-600" />
-          <p className="text-sm font-medium text-amber-700">All weights must add up to exactly 100% before saving.</p>
+          <p className="text-sm  text-amber-700">All weights must add up to exactly 100% before saving.</p>
         </div>
       )}
 
@@ -284,11 +284,11 @@ export default function GradingConfig() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="bg-white rounded-lg px-3 py-2 border border-white/80">
-                  <span className="text-xs text-gray-500 font-medium block">Core, Math &amp; Science</span>
+                  <span className="text-xs text-gray-500  block">Core, Math &amp; Science</span>
                   <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 50% · TA 30%</span>
                 </div>
                 <div className="bg-white rounded-lg px-3 py-2 border border-white/80">
-                  <span className="text-xs text-gray-500 font-medium block">MAPEH &amp; TLE</span>
+                  <span className="text-xs text-gray-500  block">MAPEH &amp; TLE</span>
                   <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 60% · TA 20%</span>
                 </div>
               </div>
@@ -331,18 +331,18 @@ export default function GradingConfig() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   {config.isDepEdDefault && (
-                    <Badge className="border-0 text-xs font-medium" style={{ backgroundColor: `${colors.primary}18`, color: colors.primary }}>
+                    <Badge className="border-0 text-xs " style={{ backgroundColor: `${colors.primary}18`, color: colors.primary }}>
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       DepEd Default
                     </Badge>
                   )}
                   {isValid && !config.isDepEdDefault && (
-                    <Badge className="border-0 text-xs font-medium bg-amber-100 text-amber-700">
+                    <Badge className="border-0 text-xs  bg-amber-100 text-amber-700">
                       Custom
                     </Badge>
                   )}
                   {!isValid && (
-                    <Badge className="border-0 text-xs font-medium bg-red-100 text-red-700">
+                    <Badge className="border-0 text-xs  bg-red-100 text-red-700">
                       <AlertCircle className="w-3 h-3 mr-1" />
                       {total}% / 100%
                     </Badge>
@@ -366,7 +366,7 @@ export default function GradingConfig() {
                         max="100"
                         value={config.writtenWorkWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "writtenWorkWeight", e.target.value)}
-                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
                     </div>
@@ -386,7 +386,7 @@ export default function GradingConfig() {
                         max="100"
                         value={config.performanceTaskWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "performanceTaskWeight", e.target.value)}
-                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
                     </div>
@@ -406,7 +406,7 @@ export default function GradingConfig() {
                         max="100"
                         value={config.quarterlyAssessWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "quarterlyAssessWeight", e.target.value)}
-                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
                     </div>
@@ -419,7 +419,7 @@ export default function GradingConfig() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Weight Distribution</span>
                     <span
-                      className={`text-sm font-bold ${!isValid ? "text-red-600" : ""}`}
+                      className={`text-sm font-extrabold ${!isValid ? "text-red-600" : ""}`}
                       style={isValid ? { color: colors.primary } : undefined}
                     >
                       {total}% total
@@ -483,7 +483,7 @@ export default function GradingConfig() {
                     <Sliders className="w-3.5 h-3.5" style={{ color: colors.primary }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{log.change}</p>
+                    <p className="text-sm  text-gray-800 truncate">{log.change}</p>
                     <p className="text-xs text-gray-400">{log.date} · by {log.user}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />

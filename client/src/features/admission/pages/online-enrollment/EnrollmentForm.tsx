@@ -294,7 +294,7 @@ export default function EnrollmentForm({
         : String(data.lrn ?? "").trim() || null;
       const normalizedEarlyRegistrationId =
         typeof earlyRegistrationId === "number" &&
-        Number.isFinite(earlyRegistrationId)
+          Number.isFinite(earlyRegistrationId)
           ? earlyRegistrationId
           : null;
 
@@ -418,7 +418,7 @@ export default function EnrollmentForm({
       {onBack && (
         <Button
           onClick={onBack}
-          className="mb-6 group font-black uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
+          className="mb-6 group font-extrabold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Selection
         </Button>
@@ -439,18 +439,18 @@ export default function EnrollmentForm({
               We found an existing pending application for this Learner. Would you like to update the existing record or submit a new one?
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex flex-col gap-4 py-4">
             {!duplicateAction ? (
               <div className="flex flex-col gap-3">
-                <Button 
+                <Button
                   onClick={() => setDuplicateAction("update")}
                   className="w-full justify-start"
                   variant="outline"
                 >
                   Update Existing Application
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     setDuplicateAction("new");
                     setDuplicateModalOpen(false);
@@ -467,9 +467,9 @@ export default function EnrollmentForm({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Original Tracking Number</Label>
-                  <Input 
-                    value={trackingNumberInput} 
-                    onChange={(e) => setTrackingNumberInput(e.target.value)} 
+                  <Input
+                    value={trackingNumberInput}
+                    onChange={(e) => setTrackingNumberInput(e.target.value)}
                     placeholder="Enter Tracking Number (e.g., EN-26-XXXXXX)"
                   />
                   <p className="text-base text-muted-foreground">You can find this in the email sent or success screen from your original application.</p>
@@ -487,7 +487,7 @@ export default function EnrollmentForm({
                     try {
                       const data = methods.getValues();
                       const uppercaseData = toUpperCaseRecursive(data);
-                      
+
                       const mother = { ...uppercaseData.mother };
                       const father = { ...uppercaseData.father };
                       const guardian = uppercaseData.guardian ? { ...uppercaseData.guardian } : null;
@@ -546,7 +546,7 @@ export default function EnrollmentForm({
         <CardContent className="p-6 md:p-10">
           <div className="mb-8 pb-6 border-b border-border/50">
             <div>
-              <h2 className="text-xl font-bold  text-foreground leading-tight">
+              <h2 className="text-xl font-extrabold  text-foreground leading-tight">
                 Learner Enrollment Form
               </h2>
               <p className="text-base leading-tight text-foreground mt-0.5">
@@ -556,56 +556,56 @@ export default function EnrollmentForm({
           </div>
 
           {submitError && (
-            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-bold">
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-extrabold">
               {submitError}
             </div>
           )}
 
           <FormProvider {...methods}>
             <form onSubmit={(e) => { e.preventDefault(); setIsConfirmDialogOpen(true); }} className="space-y-16">
-              
+
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-bold uppercase text-primary">I. Personal Information</h3>
+                  <h3 className="text-lg font-extrabold uppercase text-primary">I. Personal Information</h3>
                 </div>
                 <Step1Personal />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-bold uppercase text-primary">II. Family Information</h3>
+                  <h3 className="text-lg font-extrabold uppercase text-primary">II. Family Information</h3>
                 </div>
                 <Step2Family />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-bold uppercase text-primary">III. Background & Special Categories</h3>
+                  <h3 className="text-lg font-extrabold uppercase text-primary">III. Background & Special Categories</h3>
                 </div>
                 <Step3Background />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-bold uppercase text-primary">IV. Enrollment Preferences</h3>
+                  <h3 className="text-lg font-extrabold uppercase text-primary">IV. Enrollment Preferences</h3>
                 </div>
                 <Step5Enrollment />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-bold uppercase text-primary">V. Previous School</h3>
+                  <h3 className="text-lg font-extrabold uppercase text-primary">V. Previous School</h3>
                 </div>
                 <Step4PreviousSchool />
               </div>
 
               {validationIssues.length > 0 && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
-                  <div className="flex items-center gap-2 text-destructive font-bold text-base leading-tight">
+                  <div className="flex items-center gap-2 text-destructive font-extrabold text-base leading-tight">
                     <AlertCircle className="w-4 h-4" />
                     Please review and complete the following fields to proceed:
                   </div>
-                  <ul className="list-disc pl-6 text-base font-bold text-destructive/80 space-y-1">
+                  <ul className="list-disc pl-6 text-base font-extrabold text-destructive/80 space-y-1">
                     {validationIssues.map((issue, index) => (
                       <li key={`${issue.fieldPath}-${index}`}>
                         <a
@@ -628,7 +628,7 @@ export default function EnrollmentForm({
                 <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
                   <div className="flex items-center gap-2 mb-2">
                     <ShieldCheck className="w-5 h-5 text-primary" />
-                    <h3 className="text-base leading-tight font-bold uppercase  text-primary">
+                    <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
                       Accuracy Certification
                     </h3>
                   </div>
@@ -648,7 +648,7 @@ export default function EnrollmentForm({
                             />
                             <Label
                               htmlFor="certify-check"
-                              className="text-base font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
+                              className="text-base font-extrabold leading-relaxed cursor-pointer select-none space-y-3 block">
                               <p>
                                 I certify that all information in this enrollment form
                                 is true, correct, and complete to the best of my
@@ -658,7 +658,7 @@ export default function EnrollmentForm({
                             </Label>
                           </div>
                           {errors.isCertifiedTrue?.message && (
-                            <p className="text-[0.6875rem] text-destructive font-bold pl-14">
+                            <p className="text-[0.6875rem] text-destructive font-extrabold pl-14">
                               {errors.isCertifiedTrue.message}
                             </p>
                           )}
@@ -671,7 +671,7 @@ export default function EnrollmentForm({
                 <div className="flex flex-col items-center gap-4">
                   <Button
                     type="button"
-                    className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    className="w-full h-14 text-lg font-extrabold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
                     disabled={isSubmitting}
                     onClick={async () => {
                       const isValid = await trigger();
@@ -683,7 +683,7 @@ export default function EnrollmentForm({
                     }}>
                     Submit Registration
                   </Button>
-                  <p className="text-base text-foreground flex items-center gap-1.5 font-bold italic">
+                  <p className="text-base text-foreground flex items-center gap-1.5 font-extrabold italic">
                     <Info className="w-3.5 h-3.5" />
                     Privacy consent was recorded before this submission.
                   </p>

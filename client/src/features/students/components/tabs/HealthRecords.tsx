@@ -66,7 +66,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         id: "schoolYear",
         header: "School Year",
         cell: ({ row }) => (
-          <span className="font-bold text-left block">
+          <span className="font-extrabold text-left block">
             {row.original.schoolYear?.yearLabel || "N/A"}
           </span>
         ),
@@ -177,7 +177,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-bold">
+          <h2 className="text-lg font-extrabold">
             Nutritional Status Assessment (SF8)
           </h2>
           <p className="text-base leading-tight text-foreground">
@@ -213,13 +213,13 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-extrabold flex items-center gap-2">
                 <Scale className="h-4 w-4 text-primary" />
                 Latest Weight & Height
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-extrabold">
                 {latestRecord.weightKg} kg / {latestRecord.heightCm} cm
               </div>
               <p className="text-base text-foreground mt-1">
@@ -231,7 +231,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
 
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-extrabold flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary" />
                 BMI Status
               </CardTitle>
@@ -246,7 +246,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
                 );
                 return (
                   <>
-                    <div className="text-2xl font-bold">{bmi} kg/m²</div>
+                    <div className="text-2xl font-extrabold">{bmi} kg/m²</div>
                     <Badge
                       className="mt-1"
                       style={{
@@ -274,7 +274,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
 
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base leading-tight font-bold flex items-center gap-2">
+              <CardTitle className="text-base leading-tight font-extrabold flex items-center gap-2">
                 <Ruler className="h-4 w-4 text-primary" />
                 Height-for-Age (HFA)
               </CardTitle>
@@ -288,7 +288,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
                 );
                 return (
                   <>
-                    <div className="text-2xl font-bold">{category}</div>
+                    <div className="text-2xl font-extrabold">{category}</div>
                     <p className="text-base text-foreground mt-1">
                       Nutritional classification based on WHO 2007
                     </p>

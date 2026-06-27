@@ -121,7 +121,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 </div>
               ))
             ) : paginatedTeachers.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-base leading-tight text-foreground italic font-bold">
+              <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-base leading-tight text-foreground italic font-extrabold">
                 No faculty or staff records found.
               </div>
             ) : (
@@ -136,12 +136,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     teacher.isActive ? "border-l-green-500" : "border-l-gray-300"
                   )}>
                   <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 text-lg font-black text-primary-foreground rounded-xl bg-primary shadow-sm uppercase shrink-0">
+                    <div className="flex items-center justify-center w-12 h-12 text-lg font-extrabold text-primary-foreground rounded-xl bg-primary shadow-sm uppercase shrink-0">
                       {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-black text-foreground group-hover:text-slate-700 transition-colors leading-tight">
+                        <h3 className="text-lg font-extrabold text-foreground group-hover:text-slate-700 transition-colors leading-tight">
                           {formatDisplayName(teacher)}
                         </h3>
                         {formatServiceStatus(teacher) !== "Active" && (
@@ -150,12 +150,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                           </Badge>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-foreground/70">
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-extrabold text-foreground/70">
                         <span className="bg-muted px-2 py-0.5 rounded text-xs uppercase tracking-wider text-foreground/80">
                           {teacher.employeeId ? `Employee ID: ${teacher.employeeId}` : "Employee ID not set"}
                         </span>
                         <span className="hidden sm:inline">•</span>
-                        <span className="text-slate-600 tracking-wide text-xs font-black">
+                        <span className="text-slate-600 tracking-wide text-xs font-extrabold">
                           {getJobTitle(teacher)}
                         </span>
                       </div>
@@ -164,7 +164,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
                   <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(180px,0.7fr)_minmax(280px,1.3fr)]">
                     {teacher.department ? (
-                      <Badge variant="outline" className="font-bold truncate max-w-[200px]">
+                      <Badge variant="outline" className="font-extrabold truncate max-w-[200px]">
                         <BookOpen className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                         <span className="truncate">
                           {DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === teacher.department)?.label || teacher.department}
@@ -176,7 +176,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       const advisory = formatAdvisorySectionSummary(teacher.designation?.advisorySection);
                       if (advisory !== "-") {
                         return (
-                          <div className="flex min-w-[280px] items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-bold leading-snug text-slate-700">
+                          <div className="flex min-w-[280px] items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-extrabold leading-snug text-slate-700">
                             <Users className="mt-0.5 w-3.5 h-3.5 shrink-0 text-slate-500" />
                             <span className="whitespace-normal break-words">
                               Homeroom Adviser: {advisory}
@@ -188,7 +188,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                     })()}
 
                   </div>
-                  <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm font-medium text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-bold pointer-events-none">
+                  <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold pointer-events-none">
                     <Eye className="w-4 h-4 mr-2" />
                     View
                   </span>
