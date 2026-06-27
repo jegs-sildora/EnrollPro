@@ -189,7 +189,11 @@ export default function ViewRoster() {
 
   const formatDate = (d: string) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
   };
 
   const calculateAgeAsOfJuneFirst = (birthdateStr?: string | null) => {
@@ -334,7 +338,7 @@ export default function ViewRoster() {
                       variant="default"
                       disabled={loading || (roster.length >= (section?.maxCapacity || 0))}
                       onClick={() => setShowDrawer(true)}
-                      className="h-9 font-extrabold text-sm bg-green-600 hover:bg-green-700 text-white border-none"
+                      className="h-9 font-extrabold text-sm bg-primary text-primary-foreground border-none"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Add Learner to Roster
@@ -364,13 +368,6 @@ export default function ViewRoster() {
                 <FileDown className="h-4 w-4 mr-2" />
               )}
               Export SF1
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
-            >
-              <Printer className="h-4 w-4 mr-2" /> Print
             </Button>
           </div>
         </CardHeader>
@@ -422,7 +419,7 @@ export default function ViewRoster() {
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold text-sm tracking-widest text-blue-700 uppercase px-2">
+                              <div className="flex justify-between font-extrabold tracking-widest text-blue-700 uppercase px-2">
                                 <span>MALE LEARNERS</span>
                                 <span>Total: {maleLearners.length}</span>
                               </div>
@@ -437,7 +434,7 @@ export default function ViewRoster() {
                         <>
                           <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
                             <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold text-sm tracking-widest text-pink-700 uppercase px-2">
+                              <div className="flex justify-between font-extrabold tracking-widest text-pink-700 uppercase px-2">
                                 <span>FEMALE LEARNERS</span>
                                 <span>Total: {femaleLearners.length}</span>
                               </div>

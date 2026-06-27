@@ -10,7 +10,7 @@ import {
   GraduationCap,
   Loader2,
   Venus,
-  Mars
+  Mars,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -157,8 +157,12 @@ export interface StudentDropoutPayload {
   interventionNotes: string;
 }
 
-const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined): string => {
-  const normalized = String(gradeLevel || "").trim().toLowerCase();
+const getGradeLevelBadgeStyles = (
+  gradeLevel: string | null | undefined,
+): string => {
+  const normalized = String(gradeLevel || "")
+    .trim()
+    .toLowerCase();
   if (normalized.includes("7") || normalized.includes("g7")) {
     return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
   }
@@ -191,7 +195,8 @@ export function StudentDetailPanel({
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
 
   const [dropoutDate, setDropoutDate] = useState("");
-  const [dropoutReasonCode, setDropoutReasonCode] = useState<string>("LACK_OF_INTEREST");
+  const [dropoutReasonCode, setDropoutReasonCode] =
+    useState<string>("LACK_OF_INTEREST");
   const [dropoutInterventionNotes, setDropoutInterventionNotes] = useState("");
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
 
@@ -272,8 +277,8 @@ export function StudentDetailPanel({
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response
-            .data?.message
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
           : "Failed to load student details";
       setError(message || "An unexpected error occurred.");
       toastApiError(err as never);
@@ -300,8 +305,11 @@ export function StudentDetailPanel({
       middleName: student.middleName || "",
       suffix: student.suffix || "",
       sex: student.sex || "FEMALE",
-      birthDate: student.birthDate ? format(new Date(student.birthDate), "yyyy-MM-dd") : "",
-      contactNumber: student.contactNumber || student.parentGuardianContact || "",
+      birthDate: student.birthDate
+        ? format(new Date(student.birthDate), "yyyy-MM-dd")
+        : "",
+      contactNumber:
+        student.contactNumber || student.parentGuardianContact || "",
       motherFirstName: student.motherName?.firstName || "",
       motherLastName: student.motherName?.lastName || "",
       motherMiddleName: student.motherName?.middleName || "",
@@ -312,7 +320,8 @@ export function StudentDetailPanel({
       guardianLastName: student.guardianInfo?.lastName || "",
       guardianMiddleName: student.guardianInfo?.middleName || "",
       houseNoStreet: student.currentAddress?.houseNoStreet || "",
-      sitioPurok: student.currentAddress?.sitio || student.currentAddress?.street || "",
+      sitioPurok:
+        student.currentAddress?.sitio || student.currentAddress?.street || "",
       region: student.currentAddress?.region || "Negros Island Region (NIR)",
       province: student.currentAddress?.province || "Negros Occidental",
       cityMunicipality: student.currentAddress?.cityMunicipality || "",
@@ -321,13 +330,25 @@ export function StudentDetailPanel({
       ipGroupName: student.ipGroupName || "",
       is4PsBeneficiary: student.is4PsBeneficiary ? "YES" : "NO",
       isBalikAral: student.isBalikAral ? "YES" : "NO",
-      disabilityType: student.isLearnerWithDisability && student.disabilityTypes && student.disabilityTypes.length > 0 ? student.disabilityTypes[0] : "NONE",
+      disabilityType:
+        student.isLearnerWithDisability &&
+        student.disabilityTypes &&
+        student.disabilityTypes.length > 0
+          ? student.disabilityTypes[0]
+          : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
-      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER"
-        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER"
-          : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN"
-            : "MOTHER",
+      primaryContact:
+        student.contactNumber === student.motherName?.contactNumber &&
+        student.motherName?.contactNumber
+          ? "MOTHER"
+          : student.contactNumber === student.fatherName?.contactNumber &&
+              student.fatherName?.contactNumber
+            ? "FATHER"
+            : student.contactNumber === student.guardianInfo?.contactNumber &&
+                student.guardianInfo?.contactNumber
+              ? "GUARDIAN"
+              : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
       fatherContactNumber: student.fatherName?.contactNumber || "",
       guardianContactNumber: student.guardianInfo?.contactNumber || "",
@@ -345,8 +366,11 @@ export function StudentDetailPanel({
       middleName: student.middleName || "",
       suffix: student.suffix || "",
       sex: student.sex || "FEMALE",
-      birthDate: student.birthDate ? format(new Date(student.birthDate), "yyyy-MM-dd") : "",
-      contactNumber: student.contactNumber || student.parentGuardianContact || "",
+      birthDate: student.birthDate
+        ? format(new Date(student.birthDate), "yyyy-MM-dd")
+        : "",
+      contactNumber:
+        student.contactNumber || student.parentGuardianContact || "",
       motherFirstName: student.motherName?.firstName || "",
       motherLastName: student.motherName?.lastName || "",
       motherMiddleName: student.motherName?.middleName || "",
@@ -357,7 +381,8 @@ export function StudentDetailPanel({
       guardianLastName: student.guardianInfo?.lastName || "",
       guardianMiddleName: student.guardianInfo?.middleName || "",
       houseNoStreet: student.currentAddress?.houseNoStreet || "",
-      sitioPurok: student.currentAddress?.sitio || student.currentAddress?.street || "",
+      sitioPurok:
+        student.currentAddress?.sitio || student.currentAddress?.street || "",
       region: student.currentAddress?.region || "Negros Island Region (NIR)",
       province: student.currentAddress?.province || "Negros Occidental",
       cityMunicipality: student.currentAddress?.cityMunicipality || "",
@@ -366,13 +391,25 @@ export function StudentDetailPanel({
       ipGroupName: student.ipGroupName || "",
       is4PsBeneficiary: student.is4PsBeneficiary ? "YES" : "NO",
       isBalikAral: student.isBalikAral ? "YES" : "NO",
-      disabilityType: student.isLearnerWithDisability && student.disabilityTypes && student.disabilityTypes.length > 0 ? student.disabilityTypes[0] : "NONE",
+      disabilityType:
+        student.isLearnerWithDisability &&
+        student.disabilityTypes &&
+        student.disabilityTypes.length > 0
+          ? student.disabilityTypes[0]
+          : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
-      primaryContact: (student.contactNumber === student.motherName?.contactNumber && student.motherName?.contactNumber) ? "MOTHER"
-        : (student.contactNumber === student.fatherName?.contactNumber && student.fatherName?.contactNumber) ? "FATHER"
-          : (student.contactNumber === student.guardianInfo?.contactNumber && student.guardianInfo?.contactNumber) ? "GUARDIAN"
-            : "MOTHER",
+      primaryContact:
+        student.contactNumber === student.motherName?.contactNumber &&
+        student.motherName?.contactNumber
+          ? "MOTHER"
+          : student.contactNumber === student.fatherName?.contactNumber &&
+              student.fatherName?.contactNumber
+            ? "FATHER"
+            : student.contactNumber === student.guardianInfo?.contactNumber &&
+                student.guardianInfo?.contactNumber
+              ? "GUARDIAN"
+              : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
       fatherContactNumber: student.fatherName?.contactNumber || "",
       guardianContactNumber: student.guardianInfo?.contactNumber || "",
@@ -383,24 +420,32 @@ export function StudentDetailPanel({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!profileForm.firstName.trim()) newErrors.firstName = "First Name is required.";
-    if (!profileForm.lastName.trim()) newErrors.lastName = "Last Name is required.";
-    if (!profileForm.birthDate) newErrors.birthDate = "Date of Birth is required.";
+    if (!profileForm.firstName.trim())
+      newErrors.firstName = "First Name is required.";
+    if (!profileForm.lastName.trim())
+      newErrors.lastName = "Last Name is required.";
+    if (!profileForm.birthDate)
+      newErrors.birthDate = "Date of Birth is required.";
     if (!profileForm.sex) newErrors.sex = "Sex is required.";
 
-    const selectedContactNo = profileForm.primaryContact === "MOTHER" ? profileForm.motherContactNumber
-      : profileForm.primaryContact === "FATHER" ? profileForm.fatherContactNumber
-        : profileForm.guardianContactNumber;
+    const selectedContactNo =
+      profileForm.primaryContact === "MOTHER"
+        ? profileForm.motherContactNumber
+        : profileForm.primaryContact === "FATHER"
+          ? profileForm.fatherContactNumber
+          : profileForm.guardianContactNumber;
 
     if (!selectedContactNo.trim()) {
-      newErrors.contactNumber = "Primary Contact No. is required for the selected Emergency Contact.";
+      newErrors.contactNumber =
+        "Primary Contact No. is required for the selected Emergency Contact.";
     } else if (selectedContactNo.trim().length !== 11) {
       newErrors.contactNumber = "Contact No. must be exactly 11 digits.";
     }
 
     if (!profileForm.region) newErrors.region = "Region is required.";
     if (!profileForm.province) newErrors.province = "Province is required.";
-    if (!profileForm.cityMunicipality) newErrors.cityMunicipality = "City / Municipality is required.";
+    if (!profileForm.cityMunicipality)
+      newErrors.cityMunicipality = "City / Municipality is required.";
     if (!profileForm.barangay) newErrors.barangay = "Barangay is required.";
 
     setErrors(newErrors);
@@ -431,11 +476,17 @@ export function StudentDetailPanel({
         contactNumber: profileForm.contactNumber?.trim() || null, // Keeping for fallback
 
         isIpCommunity: profileForm.isIpCommunity === "YES",
-        ipGroupName: profileForm.isIpCommunity === "YES" ? (profileForm.ipGroupName.trim() || null) : null,
+        ipGroupName:
+          profileForm.isIpCommunity === "YES"
+            ? profileForm.ipGroupName.trim() || null
+            : null,
         is4PsBeneficiary: profileForm.is4PsBeneficiary === "YES",
         isBalikAral: profileForm.isBalikAral === "YES",
         isLearnerWithDisability: profileForm.disabilityType !== "NONE",
-        disabilityTypes: profileForm.disabilityType !== "NONE" ? [profileForm.disabilityType] : [],
+        disabilityTypes:
+          profileForm.disabilityType !== "NONE"
+            ? [profileForm.disabilityType]
+            : [],
         motherTongue: profileForm.motherTongue.trim() || null,
         religion: profileForm.religion.trim() || null,
         primaryContact: profileForm.primaryContact,
@@ -443,16 +494,22 @@ export function StudentDetailPanel({
           region: profileForm.region.trim().toUpperCase() || null,
           barangay: profileForm.barangay.trim().toUpperCase() || null,
           province: profileForm.province.trim().toUpperCase() || null,
-          cityMunicipality: profileForm.cityMunicipality.trim().toUpperCase() || null,
+          cityMunicipality:
+            profileForm.cityMunicipality.trim().toUpperCase() || null,
           sitio: profileForm.sitioPurok.trim().toUpperCase() || null,
           houseNoStreet: profileForm.houseNoStreet.trim().toUpperCase() || null,
         },
       };
 
-      if (profileForm.motherFirstName.trim() || profileForm.motherLastName.trim()) {
+      if (
+        profileForm.motherFirstName.trim() ||
+        profileForm.motherLastName.trim()
+      ) {
         payload.motherName = {
-          firstName: profileForm.motherFirstName.trim().toUpperCase() || "Unknown",
-          lastName: profileForm.motherLastName.trim().toUpperCase() || "Unknown",
+          firstName:
+            profileForm.motherFirstName.trim().toUpperCase() || "Unknown",
+          lastName:
+            profileForm.motherLastName.trim().toUpperCase() || "Unknown",
           middleName: profileForm.motherMiddleName.trim().toUpperCase() || null,
           contactNumber: profileForm.motherContactNumber.trim() || null,
         };
@@ -460,10 +517,15 @@ export function StudentDetailPanel({
         payload.motherName = null;
       }
 
-      if (profileForm.fatherFirstName.trim() || profileForm.fatherLastName.trim()) {
+      if (
+        profileForm.fatherFirstName.trim() ||
+        profileForm.fatherLastName.trim()
+      ) {
         payload.fatherName = {
-          firstName: profileForm.fatherFirstName.trim().toUpperCase() || "Unknown",
-          lastName: profileForm.fatherLastName.trim().toUpperCase() || "Unknown",
+          firstName:
+            profileForm.fatherFirstName.trim().toUpperCase() || "Unknown",
+          lastName:
+            profileForm.fatherLastName.trim().toUpperCase() || "Unknown",
           middleName: profileForm.fatherMiddleName.trim().toUpperCase() || null,
           contactNumber: profileForm.fatherContactNumber.trim() || null,
         };
@@ -471,11 +533,17 @@ export function StudentDetailPanel({
         payload.fatherName = null;
       }
 
-      if (profileForm.guardianFirstName.trim() || profileForm.guardianLastName.trim()) {
+      if (
+        profileForm.guardianFirstName.trim() ||
+        profileForm.guardianLastName.trim()
+      ) {
         payload.guardianInfo = {
-          firstName: profileForm.guardianFirstName.trim().toUpperCase() || "Unknown",
-          lastName: profileForm.guardianLastName.trim().toUpperCase() || "Unknown",
-          middleName: profileForm.guardianMiddleName.trim().toUpperCase() || null,
+          firstName:
+            profileForm.guardianFirstName.trim().toUpperCase() || "Unknown",
+          lastName:
+            profileForm.guardianLastName.trim().toUpperCase() || "Unknown",
+          middleName:
+            profileForm.guardianMiddleName.trim().toUpperCase() || null,
           contactNumber: profileForm.guardianContactNumber.trim() || null,
         };
       } else {
@@ -486,7 +554,8 @@ export function StudentDetailPanel({
 
       sileo.success({
         title: "Profile Updated",
-        description: "Learner contact and address details were saved successfully.",
+        description:
+          "Learner contact and address details were saved successfully.",
       });
 
       setIsEditing(false);
@@ -617,7 +686,6 @@ export function StudentDetailPanel({
             <User className="h-5 w-5" />
             Enrolled Learner Details
           </SheetTitle>
-
         </div>
       </div>
 
@@ -635,15 +703,25 @@ export function StudentDetailPanel({
               fallbackIcon={
                 <div className="w-full h-full rounded-full flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl bg-primary">
                   {((f, l) => `${f}${l}`)(
-                    String(student.firstName || "").trim().charAt(0).toUpperCase(),
-                    String(student.lastName || "").trim().charAt(0).toUpperCase()
+                    String(student.firstName || "")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase(),
+                    String(student.lastName || "")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase(),
                   ) || "?"}
                 </div>
               }
             />
             <div className="text-center mt-4">
               <h3 className="font-extrabold text-lg sm:text-xl uppercase  break-words">
-                {isEditing ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`.trim().replace(/^[,\s]+|[,\s]+$/g, '') || student.fullName : student.fullName}
+                {isEditing
+                  ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`
+                      .trim()
+                      .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
+                  : student.fullName}
               </h3>
               <div className="flex items-center justify-center gap-2 mt-1 font-extrabold">
                 <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-3 py-1 rounded-full text-[11px] uppercase  shadow-sm">
@@ -679,14 +757,13 @@ export function StudentDetailPanel({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "font-extrabold text-sm px-2.5 py-0.5 rounded-md",
-                    getGradeLevelBadgeStyles(student.gradeLevel)
-                  )}
-                >
+                    "font-extrabold px-2.5 py-0.5 rounded-md",
+                    getGradeLevelBadgeStyles(student.gradeLevel),
+                  )}>
                   {student.gradeLevel}
                 </Badge>
                 {student.enrollment?.section && (
-                  <span className="text-base font-extrabold text-muted-foreground">
+                  <span className="text-base font-extrabold text-foreground">
                     - {student.enrollment.section}
                   </span>
                 )}
@@ -704,11 +781,20 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4 mt-4">
             <div>
-              <p className="text-base uppercase text-foreground">
-                Address
-              </p>
+              <p className="text-base uppercase text-foreground">Address</p>
               <p className="text-base leading-tight pr-2">
-                {isEditing ? [profileForm.houseNoStreet, profileForm.sitioPurok, profileForm.barangay, profileForm.cityMunicipality, profileForm.province].filter(Boolean).join(", ").toUpperCase() || "N/A" : student.address || "N/A"}
+                {isEditing
+                  ? [
+                      profileForm.houseNoStreet,
+                      profileForm.sitioPurok,
+                      profileForm.barangay,
+                      profileForm.cityMunicipality,
+                      profileForm.province,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")
+                      .toUpperCase() || "N/A"
+                  : student.address || "N/A"}
               </p>
             </div>
             <div className="text-left sm:text-right mt-2 sm:mt-0">
@@ -716,7 +802,15 @@ export function StudentDetailPanel({
                 Primary Contact
               </p>
               <p className="text-base leading-tight">
-                {isEditing ? (profileForm.primaryContact === "MOTHER" ? profileForm.motherContactNumber : profileForm.primaryContact === "FATHER" ? profileForm.fatherContactNumber : profileForm.guardianContactNumber) || "N/A" : student.contactNumber || student.parentGuardianContact || "N/A"}
+                {isEditing
+                  ? (profileForm.primaryContact === "MOTHER"
+                      ? profileForm.motherContactNumber
+                      : profileForm.primaryContact === "FATHER"
+                        ? profileForm.fatherContactNumber
+                        : profileForm.guardianContactNumber) || "N/A"
+                  : student.contactNumber ||
+                    student.parentGuardianContact ||
+                    "N/A"}
               </p>
             </div>
           </div>
@@ -809,7 +903,10 @@ export function StudentDetailPanel({
 
         {/* Main Body content: Either Edit Form or Read-only BeefSections */}
         {isEditing ? (
-          <form id="learner-edit-form" onSubmit={submitProfileUpdate} className="space-y-6 bg-card border rounded-lg p-5 mt-4 shadow-sm">
+          <form
+            id="learner-edit-form"
+            onSubmit={submitProfileUpdate}
+            className="space-y-6 bg-card border rounded-lg p-5 mt-4 shadow-sm">
             <h3 className="font-extrabold text-lg text-primary flex items-center gap-2 mb-2">
               <UserRoundPen className="h-5 w-5" />
               Update Learner Profile
@@ -818,26 +915,104 @@ export function StudentDetailPanel({
             {/* Step I: Personal Information */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">I. Personal Information</h3>
+                <h3 className="text-lg font-extrabold uppercase text-primary">
+                  I. Personal Information
+                </h3>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-extrabold text-base uppercase flex gap-1">First Name <span className="text-destructive">*</span></Label>
-                  <Input id="firstName" value={profileForm.firstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, firstName: e.target.value }))} className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.firstName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.firstName && <p className="text-base text-destructive font-extrabold">{errors.firstName}</p>}
+                  <Label
+                    htmlFor="firstName"
+                    className="font-extrabold text-base uppercase flex gap-1">
+                    First Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={profileForm.firstName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        firstName: e.target.value,
+                      }))
+                    }
+                    className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {errors.firstName && (
+                    <p className="text-base text-destructive font-extrabold">
+                      {errors.firstName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-extrabold text-base uppercase flex gap-1">Last Name <span className="text-destructive">*</span></Label>
-                  <Input id="lastName" value={profileForm.lastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, lastName: e.target.value }))} className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.lastName ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.lastName && <p className="text-base text-destructive font-extrabold">{errors.lastName}</p>}
+                  <Label
+                    htmlFor="lastName"
+                    className="font-extrabold text-base uppercase flex gap-1">
+                    Last Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={profileForm.lastName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        lastName: e.target.value,
+                      }))
+                    }
+                    className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {errors.lastName && (
+                    <p className="text-base text-destructive font-extrabold">
+                      {errors.lastName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="middleName" className="font-extrabold text-base uppercase">Middle Name</Label>
-                  <Input id="middleName" value={profileForm.middleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, middleName: e.target.value }))} className="font-extrabold text-base leading-tight bg-background uppercase" />
+                  <Label
+                    htmlFor="middleName"
+                    className="font-extrabold text-base uppercase">
+                    Middle Name
+                  </Label>
+                  <Input
+                    id="middleName"
+                    value={profileForm.middleName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        middleName: e.target.value,
+                      }))
+                    }
+                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="suffix" className="font-extrabold text-base uppercase">Extension Name</Label>
-                  <Select value={profileForm.suffix || "NONE"} onValueChange={(val) => setProfileForm(p => ({ ...p, suffix: val === "NONE" ? "" : val }))}>
+                  <Label
+                    htmlFor="suffix"
+                    className="font-extrabold text-base uppercase">
+                    Extension Name
+                  </Label>
+                  <Select
+                    value={profileForm.suffix || "NONE"}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        suffix: val === "NONE" ? "" : val,
+                      }))
+                    }>
                     <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
                       <SelectValue placeholder="Select Extension" />
                     </SelectTrigger>
@@ -853,14 +1028,37 @@ export function StudentDetailPanel({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="birthDate" className="font-extrabold text-base uppercase flex gap-1">Date of Birth <span className="text-destructive">*</span></Label>
-                  <HybridDatePicker value={profileForm.birthDate} onChange={(val) => setProfileForm(p => ({ ...p, birthDate: val }))} className={`font-extrabold text-base leading-tight bg-background ${errors.birthDate ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
-                  {errors.birthDate && <p className="text-base text-destructive font-extrabold">{errors.birthDate}</p>}
+                  <Label
+                    htmlFor="birthDate"
+                    className="font-extrabold text-base uppercase flex gap-1">
+                    Date of Birth <span className="text-destructive">*</span>
+                  </Label>
+                  <HybridDatePicker
+                    value={profileForm.birthDate}
+                    onChange={(val) =>
+                      setProfileForm((p) => ({ ...p, birthDate: val }))
+                    }
+                    className={`font-extrabold text-base leading-tight bg-background ${errors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {errors.birthDate && (
+                    <p className="text-base text-destructive font-extrabold">
+                      {errors.birthDate}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sex" className="font-extrabold text-base uppercase flex gap-1">Sex <span className="text-destructive">*</span></Label>
-                  <Select value={profileForm.sex} onValueChange={(val) => setProfileForm(p => ({ ...p, sex: val }))}>
-                    <SelectTrigger className={`bg-background font-extrabold text-base leading-tight ${errors.sex ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
+                  <Label
+                    htmlFor="sex"
+                    className="font-extrabold text-base uppercase flex gap-1">
+                    Sex <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={profileForm.sex}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({ ...p, sex: val }))
+                    }>
+                    <SelectTrigger
+                      className={`bg-background font-extrabold text-base leading-tight ${errors.sex ? "border-destructive focus-visible:ring-destructive" : ""}`}>
                       <SelectValue placeholder="Select Sex" />
                     </SelectTrigger>
                     <SelectContent>
@@ -868,21 +1066,66 @@ export function StudentDetailPanel({
                       <SelectItem value="FEMALE">FEMALE</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.sex && <p className="text-base text-destructive font-extrabold">{errors.sex}</p>}
+                  {errors.sex && (
+                    <p className="text-base text-destructive font-extrabold">
+                      {errors.sex}
+                    </p>
+                  )}
                 </div>
               </div>
 
-
               <div className="pt-4 mt-4 border-t border-border/40">
-                <h4 className="text-base font-extrabold uppercase text-foreground mb-4">Address</h4>
+                <h4 className="text-base font-extrabold uppercase text-foreground mb-4">
+                  Address
+                </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                   <div className="space-y-2">
-                    <Label htmlFor="houseNoStreet" className="font-extrabold text-base uppercase">House No. / Street</Label>
-                    <Input id="houseNoStreet" value={profileForm.houseNoStreet} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, houseNoStreet: e.target.value }))} placeholder="e.g. 123 OR RIZAL STREET" className="font-extrabold text-base leading-tight bg-background uppercase" />
+                    <Label
+                      htmlFor="houseNoStreet"
+                      className="font-extrabold text-base uppercase">
+                      House No. / Street
+                    </Label>
+                    <Input
+                      id="houseNoStreet"
+                      value={profileForm.houseNoStreet}
+                      onInput={(e) => {
+                        (e.target as HTMLInputElement).value = (
+                          e.target as HTMLInputElement
+                        ).value.toUpperCase();
+                      }}
+                      onChange={(e) =>
+                        setProfileForm((p) => ({
+                          ...p,
+                          houseNoStreet: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. 123 OR RIZAL STREET"
+                      className="font-extrabold text-base leading-tight bg-background uppercase"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sitioPurok" className="font-extrabold text-base uppercase">Sitio / Purok</Label>
-                    <Input id="sitioPurok" value={profileForm.sitioPurok} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, sitioPurok: e.target.value }))} placeholder="e.g. PUROK 1" className="font-extrabold text-base leading-tight bg-background uppercase" />
+                    <Label
+                      htmlFor="sitioPurok"
+                      className="font-extrabold text-base uppercase">
+                      Sitio / Purok
+                    </Label>
+                    <Input
+                      id="sitioPurok"
+                      value={profileForm.sitioPurok}
+                      onInput={(e) => {
+                        (e.target as HTMLInputElement).value = (
+                          e.target as HTMLInputElement
+                        ).value.toUpperCase();
+                      }}
+                      onChange={(e) =>
+                        setProfileForm((p) => ({
+                          ...p,
+                          sitioPurok: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. PUROK 1"
+                      className="font-extrabold text-base leading-tight bg-background uppercase"
+                    />
                   </div>
                 </div>
                 <PhilippineAddressSelector
@@ -903,8 +1146,12 @@ export function StudentDetailPanel({
                     setProfileForm((prev) => ({
                       ...prev,
                       [field]: val,
-                      ...(field === "region" ? { province: "", cityMunicipality: "", barangay: "" } : {}),
-                      ...(field === "province" ? { cityMunicipality: "", barangay: "" } : {}),
+                      ...(field === "region"
+                        ? { province: "", cityMunicipality: "", barangay: "" }
+                        : {}),
+                      ...(field === "province"
+                        ? { cityMunicipality: "", barangay: "" }
+                        : {}),
                       ...(field === "cityMunicipality" ? { barangay: "" } : {}),
                     }));
                     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -916,40 +1163,68 @@ export function StudentDetailPanel({
             {/* Step II: Family Information */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">II. Family Information</h3>
+                <h3 className="text-lg font-extrabold uppercase text-primary">
+                  II. Family Information
+                </h3>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary flex gap-1">Primary Emergency Contact <span className="text-destructive">*</span></Label>
+                <Label className="font-extrabold text-base uppercase text-primary flex gap-1">
+                  Primary Emergency Contact{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {(
                     [
-                      { value: "MOTHER", label: "Mother", icon: Venus, firstName: profileForm.motherFirstName },
-                      { value: "FATHER", label: "Father", icon: Mars, firstName: profileForm.fatherFirstName },
-                      { value: "GUARDIAN", label: "Guardian", icon: User, firstName: profileForm.guardianFirstName },
+                      {
+                        value: "MOTHER",
+                        label: "Mother",
+                        icon: Venus,
+                        firstName: profileForm.motherFirstName,
+                      },
+                      {
+                        value: "FATHER",
+                        label: "Father",
+                        icon: Mars,
+                        firstName: profileForm.fatherFirstName,
+                      },
+                      {
+                        value: "GUARDIAN",
+                        label: "Guardian",
+                        icon: User,
+                        firstName: profileForm.guardianFirstName,
+                      },
                     ] as const
                   ).map((option) => {
-                    const displayLabel = option.firstName && option.firstName.trim() !== "" && option.firstName.trim() !== "N/A"
-                      ? `${option.label} (${option.firstName})`
-                      : option.label;
+                    const displayLabel =
+                      option.firstName &&
+                      option.firstName.trim() !== "" &&
+                      option.firstName.trim() !== "N/A"
+                        ? `${option.label} (${option.firstName})`
+                        : option.label;
 
                     return (
                       <button
                         key={option.value}
                         type="button"
-                        onClick={() => setProfileForm((p) => ({ ...p, primaryContact: option.value }))}
+                        onClick={() =>
+                          setProfileForm((p) => ({
+                            ...p,
+                            primaryContact: option.value,
+                          }))
+                        }
                         className={cn(
                           "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
                           profileForm.primaryContact === option.value
                             ? "border-primary bg-primary/5 shadow-md"
-                            : "border-border bg-card hover:bg-muted/50"
+                            : "border-border bg-card hover:bg-muted/50",
                         )}>
                         <div
                           className={cn(
                             "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
                             profileForm.primaryContact === option.value
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                              : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary",
                           )}>
                           <option.icon className="w-6 h-6" />
                         </div>
@@ -958,7 +1233,7 @@ export function StudentDetailPanel({
                             "font-extrabold text-base leading-tight uppercase text-center",
                             profileForm.primaryContact === option.value
                               ? "text-primary"
-                              : "text-foreground"
+                              : "text-foreground",
                           )}>
                           {displayLabel}
                         </span>
@@ -966,36 +1241,232 @@ export function StudentDetailPanel({
                     );
                   })}
                 </div>
-                {errors.contactNumber && <p className="text-base text-destructive font-extrabold">{errors.contactNumber}</p>}
+                {errors.contactNumber && (
+                  <p className="text-base text-destructive font-extrabold">
+                    {errors.contactNumber}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">Mother's Maiden Name</Label>
+                <Label className="font-extrabold text-base uppercase text-primary">
+                  Mother's Maiden Name
+                </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Input value={profileForm.motherFirstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherFirstName: e.target.value }))} placeholder="FIRST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.motherMiddleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherMiddleName: e.target.value }))} placeholder="MIDDLE NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.motherLastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherLastName: e.target.value }))} placeholder="LAST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input maxLength={11} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ""); }} value={profileForm.motherContactNumber} onChange={(e) => setProfileForm(p => ({ ...p, motherContactNumber: e.target.value }))} placeholder="CONTACT NO. (09XXXXXXXXX)" className="font-extrabold text-base leading-tight bg-background h-11" />
+                  <Input
+                    value={profileForm.motherFirstName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        motherFirstName: e.target.value,
+                      }))
+                    }
+                    placeholder="FIRST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.motherMiddleName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        motherMiddleName: e.target.value,
+                      }))
+                    }
+                    placeholder="MIDDLE NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.motherLastName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        motherLastName: e.target.value,
+                      }))
+                    }
+                    placeholder="LAST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    maxLength={11}
+                    onInput={(e) => {
+                      e.currentTarget.value = e.currentTarget.value.replace(
+                        /[^0-9]/g,
+                        "",
+                      );
+                    }}
+                    value={profileForm.motherContactNumber}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        motherContactNumber: e.target.value,
+                      }))
+                    }
+                    placeholder="CONTACT NO. (09XXXXXXXXX)"
+                    className="font-extrabold text-base leading-tight bg-background h-11"
+                  />
                 </div>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">Father's Name</Label>
+                <Label className="font-extrabold text-base uppercase text-primary">
+                  Father's Name
+                </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Input value={profileForm.fatherFirstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, fatherFirstName: e.target.value }))} placeholder="FIRST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.fatherMiddleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, fatherMiddleName: e.target.value }))} placeholder="MIDDLE NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.fatherLastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, fatherLastName: e.target.value }))} placeholder="LAST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input maxLength={11} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ""); }} value={profileForm.fatherContactNumber} onChange={(e) => setProfileForm(p => ({ ...p, fatherContactNumber: e.target.value }))} placeholder="CONTACT NO. (09XXXXXXXXX)" className="font-extrabold text-base leading-tight bg-background h-11" />
+                  <Input
+                    value={profileForm.fatherFirstName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        fatherFirstName: e.target.value,
+                      }))
+                    }
+                    placeholder="FIRST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.fatherMiddleName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        fatherMiddleName: e.target.value,
+                      }))
+                    }
+                    placeholder="MIDDLE NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.fatherLastName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        fatherLastName: e.target.value,
+                      }))
+                    }
+                    placeholder="LAST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    maxLength={11}
+                    onInput={(e) => {
+                      e.currentTarget.value = e.currentTarget.value.replace(
+                        /[^0-9]/g,
+                        "",
+                      );
+                    }}
+                    value={profileForm.fatherContactNumber}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        fatherContactNumber: e.target.value,
+                      }))
+                    }
+                    placeholder="CONTACT NO. (09XXXXXXXXX)"
+                    className="font-extrabold text-base leading-tight bg-background h-11"
+                  />
                 </div>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">Guardian's Name</Label>
+                <Label className="font-extrabold text-base uppercase text-primary">
+                  Guardian's Name
+                </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Input value={profileForm.guardianFirstName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, guardianFirstName: e.target.value }))} placeholder="FIRST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.guardianMiddleName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, guardianMiddleName: e.target.value }))} placeholder="MIDDLE NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input value={profileForm.guardianLastName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, guardianLastName: e.target.value }))} placeholder="LAST NAME" className="font-extrabold text-base leading-tight bg-background uppercase h-11" />
-                  <Input maxLength={11} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ""); }} value={profileForm.guardianContactNumber} onChange={(e) => setProfileForm(p => ({ ...p, guardianContactNumber: e.target.value }))} placeholder="CONTACT NO. (09XXXXXXXXX)" className="font-extrabold text-base leading-tight bg-background h-11" />
+                  <Input
+                    value={profileForm.guardianFirstName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        guardianFirstName: e.target.value,
+                      }))
+                    }
+                    placeholder="FIRST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.guardianMiddleName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        guardianMiddleName: e.target.value,
+                      }))
+                    }
+                    placeholder="MIDDLE NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    value={profileForm.guardianLastName}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        guardianLastName: e.target.value,
+                      }))
+                    }
+                    placeholder="LAST NAME"
+                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                  />
+                  <Input
+                    maxLength={11}
+                    onInput={(e) => {
+                      e.currentTarget.value = e.currentTarget.value.replace(
+                        /[^0-9]/g,
+                        "",
+                      );
+                    }}
+                    value={profileForm.guardianContactNumber}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        guardianContactNumber: e.target.value,
+                      }))
+                    }
+                    placeholder="CONTACT NO. (09XXXXXXXXX)"
+                    className="font-extrabold text-base leading-tight bg-background h-11"
+                  />
                 </div>
               </div>
             </div>
@@ -1003,62 +1474,176 @@ export function StudentDetailPanel({
             {/* Step III: Background & Special Categories */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">III. Background & Special Categories</h3>
+                <h3 className="text-lg font-extrabold uppercase text-primary">
+                  III. Background & Special Categories
+                </h3>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">IP Community</Label>
-                  <Select value={profileForm.isIpCommunity} onValueChange={(val) => setProfileForm(p => ({ ...p, isIpCommunity: val }))}>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
+                  <Label className="font-extrabold text-base uppercase">
+                    IP Community
+                  </Label>
+                  <Select
+                    value={profileForm.isIpCommunity}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({ ...p, isIpCommunity: val }))
+                    }>
+                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YES">YES</SelectItem>
+                      <SelectItem value="NO">NO</SelectItem>
+                    </SelectContent>
                   </Select>
                   {profileForm.isIpCommunity === "YES" && (
                     <div className="mt-2">
-                      <Input value={profileForm.ipGroupName} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, ipGroupName: e.target.value }))} placeholder="SPECIFY IP GROUP" className="font-extrabold text-base leading-tight bg-background uppercase" />
+                      <Input
+                        value={profileForm.ipGroupName}
+                        onInput={(e) => {
+                          (e.target as HTMLInputElement).value = (
+                            e.target as HTMLInputElement
+                          ).value.toUpperCase();
+                        }}
+                        onChange={(e) =>
+                          setProfileForm((p) => ({
+                            ...p,
+                            ipGroupName: e.target.value,
+                          }))
+                        }
+                        placeholder="SPECIFY IP GROUP"
+                        className="font-extrabold text-base leading-tight bg-background uppercase"
+                      />
                     </div>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">4Ps Beneficiary</Label>
-                  <Select value={profileForm.is4PsBeneficiary} onValueChange={(val) => setProfileForm(p => ({ ...p, is4PsBeneficiary: val }))}>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">Balik-Aral</Label>
-                  <Select value={profileForm.isBalikAral} onValueChange={(val) => setProfileForm(p => ({ ...p, isBalikAral: val }))}>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="YES">YES</SelectItem><SelectItem value="NO">NO</SelectItem></SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">Disability Type</Label>
-                  <Select value={profileForm.disabilityType} onValueChange={(val) => setProfileForm(p => ({ ...p, disabilityType: val }))}>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight"><SelectValue /></SelectTrigger>
+                  <Label className="font-extrabold text-base uppercase">
+                    4Ps Beneficiary
+                  </Label>
+                  <Select
+                    value={profileForm.is4PsBeneficiary}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({ ...p, is4PsBeneficiary: val }))
+                    }>
+                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="NONE">None</SelectItem>
-                      <SelectItem value="Visual Impairment">Visual Impairment</SelectItem>
-                      <SelectItem value="Hearing Impairment">Hearing Impairment</SelectItem>
-                      <SelectItem value="Intellectual Disability">Intellectual Disability</SelectItem>
-                      <SelectItem value="Learning Disability">Learning Disability</SelectItem>
-                      <SelectItem value="Autism Spectrum Disorder">Autism Spectrum Disorder</SelectItem>
-                      <SelectItem value="Emotional-Behavioral Disorder">Emotional-Behavioral Disorder</SelectItem>
-                      <SelectItem value="Orthopedic/Physical Handicap">Orthopedic/Physical Handicap</SelectItem>
-                      <SelectItem value="Speech/Language Disorder">Speech/Language Disorder</SelectItem>
-                      <SelectItem value="Cerebral Palsy">Cerebral Palsy</SelectItem>
-                      <SelectItem value="Special Health Problem">Special Health Problem</SelectItem>
-                      <SelectItem value="Multiple Disabilities">Multiple Disabilities</SelectItem>
+                      <SelectItem value="YES">YES</SelectItem>
+                      <SelectItem value="NO">NO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">Mother Tongue</Label>
-                  <Input value={profileForm.motherTongue} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, motherTongue: e.target.value }))} placeholder="e.g. HILIGAYNON" className="font-extrabold text-base leading-tight bg-background uppercase" />
+                  <Label className="font-extrabold text-base uppercase">
+                    Balik-Aral
+                  </Label>
+                  <Select
+                    value={profileForm.isBalikAral}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({ ...p, isBalikAral: val }))
+                    }>
+                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YES">YES</SelectItem>
+                      <SelectItem value="NO">NO</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">Religion</Label>
-                  <Input value={profileForm.religion} onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.toUpperCase(); }} onChange={(e) => setProfileForm(p => ({ ...p, religion: e.target.value }))} placeholder="e.g. ROMAN CATHOLIC" className="font-extrabold text-base leading-tight bg-background uppercase" />
+                  <Label className="font-extrabold text-base uppercase">
+                    Disability Type
+                  </Label>
+                  <Select
+                    value={profileForm.disabilityType}
+                    onValueChange={(val) =>
+                      setProfileForm((p) => ({ ...p, disabilityType: val }))
+                    }>
+                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">None</SelectItem>
+                      <SelectItem value="Visual Impairment">
+                        Visual Impairment
+                      </SelectItem>
+                      <SelectItem value="Hearing Impairment">
+                        Hearing Impairment
+                      </SelectItem>
+                      <SelectItem value="Intellectual Disability">
+                        Intellectual Disability
+                      </SelectItem>
+                      <SelectItem value="Learning Disability">
+                        Learning Disability
+                      </SelectItem>
+                      <SelectItem value="Autism Spectrum Disorder">
+                        Autism Spectrum Disorder
+                      </SelectItem>
+                      <SelectItem value="Emotional-Behavioral Disorder">
+                        Emotional-Behavioral Disorder
+                      </SelectItem>
+                      <SelectItem value="Orthopedic/Physical Handicap">
+                        Orthopedic/Physical Handicap
+                      </SelectItem>
+                      <SelectItem value="Speech/Language Disorder">
+                        Speech/Language Disorder
+                      </SelectItem>
+                      <SelectItem value="Cerebral Palsy">
+                        Cerebral Palsy
+                      </SelectItem>
+                      <SelectItem value="Special Health Problem">
+                        Special Health Problem
+                      </SelectItem>
+                      <SelectItem value="Multiple Disabilities">
+                        Multiple Disabilities
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-extrabold text-base uppercase">
+                    Mother Tongue
+                  </Label>
+                  <Input
+                    value={profileForm.motherTongue}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        motherTongue: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. HILIGAYNON"
+                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-extrabold text-base uppercase">
+                    Religion
+                  </Label>
+                  <Input
+                    value={profileForm.religion}
+                    onInput={(e) => {
+                      (e.target as HTMLInputElement).value = (
+                        e.target as HTMLInputElement
+                      ).value.toUpperCase();
+                    }}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({
+                        ...p,
+                        religion: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. ROMAN CATHOLIC"
+                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                  />
                 </div>
               </div>
             </div>
@@ -1093,16 +1678,14 @@ export function StudentDetailPanel({
             type="button"
             onClick={() => setIsEditing(false)}
             disabled={isSubmitting}
-            className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
-          >
+            className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted">
             Cancel
           </Button>
           <Button
             type="submit"
             form="learner-edit-form"
             disabled={isSubmitting || !isProfileFormDirty}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold uppercase text-base px-6 cursor-pointer"
-          >
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold uppercase text-base px-6 cursor-pointer">
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
@@ -1114,7 +1697,9 @@ export function StudentDetailPanel({
       ) : (
         <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
           <div className="flex gap-2">
-            <Dialog open={showTransferOutDialog} onOpenChange={setShowTransferOutDialog}>
+            <Dialog
+              open={showTransferOutDialog}
+              onOpenChange={setShowTransferOutDialog}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -1126,15 +1711,21 @@ export function StudentDetailPanel({
               <DialogContent className="p-0 overflow-hidden sm:max-w-[425px]">
                 <div className="p-6 pb-2">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-extrabold text-foreground">Transfer Learner Record</DialogTitle>
+                    <DialogTitle className="text-lg font-extrabold text-foreground">
+                      Transfer Learner Record
+                    </DialogTitle>
                   </DialogHeader>
                 </div>
                 <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6 mb-6">
-                  This will permanently remove the learner from the active homeroom roster.
+                  This will permanently remove the learner from the active
+                  homeroom roster.
                 </div>
                 <div className="space-y-4 px-6 pb-0">
                   <div className="space-y-2">
-                    <Label>Destination School <span className="text-red-500 ml-1">*</span></Label>
+                    <Label>
+                      Destination School{" "}
+                      <span className="text-red-500 ml-1">*</span>
+                    </Label>
                     <Input
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
                       placeholder="e.g., Bacolod City National High School"
@@ -1143,7 +1734,10 @@ export function StudentDetailPanel({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Official Date of Transfer <span className="text-red-500 ml-1">*</span></Label>
+                    <Label>
+                      Official Date of Transfer{" "}
+                      <span className="text-red-500 ml-1">*</span>
+                    </Label>
                     <HybridDatePicker
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none"
                       value={transferOutDate}
@@ -1161,7 +1755,12 @@ export function StudentDetailPanel({
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
-                  <Button className="bg-white text-gray-700" variant="outline" onClick={() => setShowTransferOutDialog(false)}>Cancel</Button>
+                  <Button
+                    className="bg-white text-gray-700"
+                    variant="outline"
+                    onClick={() => setShowTransferOutDialog(false)}>
+                    Cancel
+                  </Button>
                   <Button
                     variant="default"
                     className="!bg-amber-600 hover:!bg-amber-700 !text-white font-extrabold px-5 py-2 shadow-sm border-none"
@@ -1173,7 +1772,9 @@ export function StudentDetailPanel({
               </DialogContent>
             </Dialog>
 
-            <Dialog open={showDropoutDialog} onOpenChange={setShowDropoutDialog}>
+            <Dialog
+              open={showDropoutDialog}
+              onOpenChange={setShowDropoutDialog}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -1185,15 +1786,22 @@ export function StudentDetailPanel({
               <DialogContent className="p-0 overflow-hidden sm:max-w-[425px]">
                 <div className="p-6 pb-2">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-extrabold text-red-700">Process Learner Drop Out</DialogTitle>
+                    <DialogTitle className="text-lg font-extrabold text-red-700">
+                      Process Learner Drop Out
+                    </DialogTitle>
                   </DialogHeader>
                 </div>
                 <div className="text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded-md mx-6 mb-6">
-                  Warning: Dropping out a learner requires recorded intervention history. This action will finalize their status for the current School Year.
+                  Warning: Dropping out a learner requires recorded intervention
+                  history. This action will finalize their status for the
+                  current School Year.
                 </div>
                 <div className="space-y-4 px-6 pb-0">
                   <div className="space-y-2">
-                    <Label>Date of Last Attendance <span className="text-red-500 ml-1">*</span></Label>
+                    <Label>
+                      Date of Last Attendance{" "}
+                      <span className="text-red-500 ml-1">*</span>
+                    </Label>
                     <HybridDatePicker
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none"
                       value={dropoutDate}
@@ -1201,18 +1809,29 @@ export function StudentDetailPanel({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Official Reason <span className="text-red-500 ml-1">*</span></Label>
-                    <Select value={dropoutReasonCode} onValueChange={setDropoutReasonCode}>
+                    <Label>
+                      Official Reason{" "}
+                      <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={dropoutReasonCode}
+                      onValueChange={setDropoutReasonCode}>
                       <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="FINANCIAL_MATTERS">Financial</SelectItem>
+                        <SelectItem value="FINANCIAL_MATTERS">
+                          Financial
+                        </SelectItem>
                         <SelectItem value="ILLNESS">Illness</SelectItem>
-                        <SelectItem value="FAMILY_MATTERS">Family Matters</SelectItem>
+                        <SelectItem value="FAMILY_MATTERS">
+                          Family Matters
+                        </SelectItem>
                         <SelectItem value="CHILD_LABOR">Child Labor</SelectItem>
                         <SelectItem value="RELOCATION">Relocation</SelectItem>
-                        <SelectItem value="LACK_OF_INTEREST">Lack of Interest</SelectItem>
+                        <SelectItem value="LACK_OF_INTEREST">
+                          Lack of Interest
+                        </SelectItem>
                         <SelectItem value="OTHERS">Others</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1223,12 +1842,19 @@ export function StudentDetailPanel({
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
                       placeholder="Brief details on home visitations/counseling done"
                       value={dropoutInterventionNotes}
-                      onChange={(e) => setDropoutInterventionNotes(e.target.value)}
+                      onChange={(e) =>
+                        setDropoutInterventionNotes(e.target.value)
+                      }
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
-                  <Button className="bg-white text-gray-700" variant="outline" onClick={() => setShowDropoutDialog(false)}>Cancel</Button>
+                  <Button
+                    className="bg-white text-gray-700"
+                    variant="outline"
+                    onClick={() => setShowDropoutDialog(false)}>
+                    Cancel
+                  </Button>
                   <Button
                     variant="default"
                     className="!bg-red-600 hover:!bg-red-700 !text-white font-extrabold px-5 py-2 shadow-sm border-none"

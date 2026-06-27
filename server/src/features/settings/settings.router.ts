@@ -5,6 +5,7 @@ import { authorize } from "../../middleware/authorize.js";
 import { validate } from "../../middleware/validate.js";
 import { secureUpload } from "../../lib/multer.js";
 import {
+  getActiveAcademicPrograms,
   getPublicSettings,
   getScpConfig,
   removeLogo,
@@ -22,6 +23,12 @@ const router: Router = Router();
 // Public
 router.get("/public", getPublicSettings);
 router.get("/scp-config", getScpConfig);
+router.get(
+  "/programs",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  getActiveAcademicPrograms,
+);
 
 // Protected - SYSTEM_ADMIN
 router.put(

@@ -155,23 +155,17 @@ interface ApiGradeLevelGroup {
   sections: ApiSection[];
 }
 
+interface ProgramOptionsResponse {
+  programs: string[];
+}
 
+interface ProgramFilterOption {
+  value: string;
+  label: string;
+}
 
 const VALID_TABS = ["active", "completers", "inactive"] as const;
 type StudentTab = (typeof VALID_TABS)[number];
-
-const PROGRAM_FILTER_OPTIONS = [
-  { value: "REGULAR", label: "Regular" },
-  { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
-  { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
-  { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
-  { value: "SPECIAL_PROGRAM_IN_JOURNALISM", label: "SPJ" },
-  { value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE", label: "SPFL" },
-  {
-    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
-    label: "SPTVE",
-  },
-];
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
 
@@ -438,6 +432,17 @@ export default function Students() {
   const total = studentsQuery.data?.pagination.total ?? 0;
   const loading = studentsQuery.isPending || studentsQuery.isFetching;
 
+  const programOptionsQuery = useQuery({
+    queryKey: queryKeys.activeAcademicPrograms,
+    queryFn: async (): Promise<ProgramOptionsResponse> => {
+      const response = await api.get<ProgramOptionsResponse>(
+        "/settings/programs",
+      );
+      return response.data;
+    },
+    enabled: Boolean(ayId),
+  });
+
   // Fetch grade levels and sections
   useEffect(() => {
     const fetchFilters = async () => {
@@ -487,16 +492,27 @@ export default function Students() {
     setSectionFilter("all");
   }, [gradeLevelFilter, programFilter, sections]);
 
-  const availablePrograms = useMemo(() => {
-    const relevantSections =
-      gradeLevelFilter === "all"
-        ? sections
-        : sections.filter(
-          (s) => s.gradeLevelId === parseInt(gradeLevelFilter, 10)
-        );
-    const availableTypes = new Set(relevantSections.map((s) => s.programType));
-    return PROGRAM_FILTER_OPTIONS.filter((p) => availableTypes.has(p.value));
-  }, [sections, gradeLevelFilter]);
+  const availablePrograms = useMemo<ProgramFilterOption[]>(
+    () =>
+      (programOptionsQuery.data?.programs ?? []).map((programType) => ({
+        value: programType,
+        label:
+          programType === "REGULAR"
+            ? "Regular"
+            : SCP_ACRONYMS[programType] ?? formatScpType(programType),
+      })),
+    [programOptionsQuery.data?.programs],
+  );
+
+  useEffect(() => {
+    if (
+      programFilter !== "all" &&
+      programOptionsQuery.data &&
+      !programOptionsQuery.data.programs.includes(programFilter)
+    ) {
+      setProgramFilter("all");
+    }
+  }, [programFilter, programOptionsQuery.data]);
 
   useEffect(() => {
     void queryClient.invalidateQueries({
@@ -550,8 +566,8 @@ export default function Students() {
   const formatDate = (dateString: string) => {
     return formatManilaDate(dateString, {
       year: "numeric",
-      month: "long",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
   };
 
@@ -832,6 +848,9 @@ export default function Students() {
         {
           id: "lastName",
           accessorKey: "lastName",
+          size: 500,
+          minSize: 260,
+          maxSize: 400,
           meta: { skeletonClassName: "w-[200px]" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -842,7 +861,7 @@ export default function Students() {
           cell: ({ row }) => {
             const initials = getInitials(row.original.firstName, row.original.lastName);
             return (
-              <div className="flex items-center gap-3 pl-2 py-3 min-w-100">
+              <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
                 <UserPhoto
                   photo={row.original.studentPhoto}
                   containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
@@ -854,8 +873,8 @@ export default function Students() {
                     </div>
                   }
                 />
-                <div className="flex flex-col text-left">
-                  <span className="font-extrabold text-base uppercase leading-tight">
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="break-words text-base font-extrabold uppercase leading-tight">
                     {row.original.fullName}
                   </span>
                   {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -873,6 +892,9 @@ export default function Students() {
         {
           id: "lrn",
           accessorKey: "lrn",
+          size: 150,
+          minSize: 140,
+          maxSize: 170,
           meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -890,6 +912,9 @@ export default function Students() {
         {
           id: "sex",
           accessorKey: "sex",
+          size: 100,
+          minSize: 90,
+          maxSize: 110,
           meta: { skeletonClassName: "w-[40px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -926,6 +951,9 @@ export default function Students() {
         {
           id: "gradeLevel",
           accessorKey: "gradeLevel",
+          size: 130,
+          minSize: 120,
+          maxSize: 150,
           meta: { skeletonClassName: "w-[80px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -951,6 +979,9 @@ export default function Students() {
         {
           id: "section",
           accessorKey: "section",
+          size: 160,
+          minSize: 140,
+          maxSize: 190,
           meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -969,6 +1000,9 @@ export default function Students() {
         },
         {
           id: "status",
+          size: 150,
+          minSize: 140,
+          maxSize: 170,
           meta: { className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -986,6 +1020,9 @@ export default function Students() {
         {
           id: "dateEnrolled",
           accessorKey: "dateEnrolled",
+          size: 145,
+          minSize: 135,
+          maxSize: 155,
           meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -1004,6 +1041,9 @@ export default function Students() {
         },
         {
           id: "actions",
+          size: 120,
+          minSize: 110,
+          maxSize: 130,
           meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -1032,7 +1072,7 @@ export default function Students() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
             {/* Search Input */}
-            <div className="relative w-full lg:w-64 shrink-0">
+            <div className="relative w-full lg:min-w-64 lg:flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, ID, or LRN..."
@@ -1043,7 +1083,7 @@ export default function Students() {
             </div>
 
             {/* Dropdowns */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 lg:justify-end">
+            <div className="flex w-full flex-wrap items-center gap-3 lg:w-auto lg:flex-none lg:flex-nowrap">
               <Select
                 value={gradeLevelFilter}
                 onValueChange={(value) => {
@@ -1052,7 +1092,7 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-extrabold">
+                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold sm:w-40">
                   <SelectValue placeholder="All Grades" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1081,13 +1121,23 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-40 text-base leading-tight font-extrabold">
+                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold sm:w-40">
                   <SelectValue placeholder="All Programs" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-base leading-tight font-extrabold">
                     All Programs
                   </SelectItem>
+                  {programOptionsQuery.isPending && (
+                    <SelectItem value="__loading" disabled>
+                      Loading programs...
+                    </SelectItem>
+                  )}
+                  {programOptionsQuery.isError && (
+                    <SelectItem value="__error" disabled>
+                      Programs could not be loaded
+                    </SelectItem>
+                  )}
                   {availablePrograms.map((option) => (
                     <SelectItem
                       key={option.value}
@@ -1107,7 +1157,7 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full sm:w-48 text-base leading-tight font-extrabold hover:bg-accent hover:text-accent-foreground transition-colors">
+                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold transition-colors sm:w-48">
                   <SelectValue placeholder="All Sections" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1161,6 +1211,11 @@ export default function Students() {
                       ayId
                         ? queryClient.invalidateQueries({
                           queryKey: queryKeys.studentsSummary(ayId),
+                        })
+                        : Promise.resolve(),
+                      ayId
+                        ? queryClient.invalidateQueries({
+                          queryKey: queryKeys.activeAcademicPrograms,
                         })
                         : Promise.resolve(),
                     ]);
@@ -1261,6 +1316,7 @@ export default function Students() {
                     virtualize={true}
                     estimatedRowHeight={60}
                     className="border-none rounded-none h-full"
+                    tableClassName="min-w-[980px] table-fixed"
                     containerHeight="100%"
                     sorting={sorting}
                     onSortingChange={onSortingChange}
@@ -1444,6 +1500,7 @@ export default function Students() {
                     virtualize={true}
                     estimatedRowHeight={60}
                     className="border-none rounded-none h-full"
+                    tableClassName="min-w-[980px] table-fixed"
                     containerHeight="100%"
                     prependBodyRow={
                       isSearching ? (

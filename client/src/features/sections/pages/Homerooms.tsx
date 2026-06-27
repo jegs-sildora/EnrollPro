@@ -79,9 +79,52 @@ interface GradeLevelGroup {
   sections: SectionItem[];
 }
 
+type SectionCategory =
+  | "SCP"
+  | "BEC_TOP_5"
+  | "BEC_HETEROGENEOUS";
+
+interface SectionCategoryConfig {
+  title: string;
+  curriculumProgram: "REGULAR_HOMO" | "REGULAR_HETERO" | null;
+  isHomogeneous: boolean;
+  addDescription: string;
+}
+
+const SECTION_CATEGORY_CONFIG: Record<
+  SectionCategory,
+  SectionCategoryConfig
+> = {
+  SCP: {
+    title: "Special Curricular Programs (SCP)",
+    curriculumProgram: null,
+    isHomogeneous: false,
+    addDescription: "Add a section under an enabled special program.",
+  },
+  BEC_TOP_5: {
+    title: "Basic Education Curriculum (BEC) — Top 5",
+    curriculumProgram: "REGULAR_HOMO",
+    isHomogeneous: true,
+    addDescription: "Add a ranked Top 5 BEC section.",
+  },
+  BEC_HETEROGENEOUS: {
+    title: "Basic Education Curriculum (BEC) — Heterogeneous",
+    curriculumProgram: "REGULAR_HETERO",
+    isHomogeneous: false,
+    addDescription: "Add a mixed-ability BEC section.",
+  },
+};
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
 const TLE_SECTION_DISPLAY_ORDERS = [9, 10];
+
+function isScpProgram(programType: string): boolean {
+  return ![
+    "REGULAR",
+    "REGULAR_HOMO",
+    "REGULAR_HETERO",
+  ].includes(programType);
+}
 
 function formatSectionLabel(rawSection: string | null | undefined): string {
   if (!rawSection) return "-";
@@ -488,20 +531,24 @@ function SectionCard({
 export default function Homerooms() {
   const navigate = useNavigate();
   const renderSectionGroup = (
-    title: string,
+    category: SectionCategory,
     sections: SectionItem[],
     glName: string,
     glId: number,
     glDisplayOrder: number,
-    defaultProgramType: string = "REGULAR",
-    defaultIsHomogeneous: boolean = false
   ) => {
+    const categoryConfig = SECTION_CATEGORY_CONFIG[category];
+    const canAddCategory =
+      canMutate &&
+      (category !== "SCP" ||
+        programOptions.some((option) => isScpProgram(option.value)));
+
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
           <h3 className="text-lg font-extrabold uppercase text-foreground/80 tracking-tight flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
-            {title}
+            {categoryConfig.title}
           </h3>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 pb-4">
@@ -521,21 +568,32 @@ export default function Homerooms() {
               canMutate={canMutate}
             />
           ))}
-          {canMutate && (
-            <div
-              onClick={() => handleOpenCreate(glId, glName, glDisplayOrder, defaultProgramType, defaultIsHomogeneous)}
-              className="rounded-lg border-2 border-dashed border-border bg-transparent p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary cursor-pointer group min-h-[180px]"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") handleOpenCreate(glId, glName, glDisplayOrder, defaultProgramType, defaultIsHomogeneous);
-              }}>
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
-              </div>
-              <span className="font-extrabold uppercase text-sm mt-2">Add Section</span>
+          <button
+            type="button"
+            onClick={() =>
+              handleOpenCreate(
+                glId,
+                glName,
+                glDisplayOrder,
+                category,
+              )
+            }
+            disabled={!canAddCategory}
+            className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-muted-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+              <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
             </div>
-          )}
+            <span className="mt-2 text-sm font-extrabold uppercase">
+              + Add Section
+            </span>
+            <span className="max-w-xs text-center text-xs font-semibold normal-case">
+              {!canMutate
+                ? "Section changes are unavailable during EOSY closing or in an archived school year."
+                : canAddCategory
+                  ? categoryConfig.addDescription
+                  : "Enable an SCP in System Configuration first."}
+            </span>
+          </button>
         </div>
       </div>
     );
@@ -545,7 +603,9 @@ export default function Homerooms() {
   const { activeSchoolYearId, viewingSchoolYearId, systemPhase, enableHomogeneousSections, steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
-  const canMutate = (!isHistoricalReadOnly || hasOverride) && systemPhase !== "CLASSES_ONGOING" && systemPhase !== "EOSY_CLOSING";
+  const canMutate =
+    (!isHistoricalReadOnly || hasOverride) &&
+    systemPhase !== "EOSY_CLOSING";
 
   const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
   const [activeGradeId, setActiveGradeId] = useState<string>("");
@@ -598,6 +658,8 @@ export default function Homerooms() {
   const [createGlId, setCreateGlId] = useState<number | null>(null);
   const [createGlName, setCreateGlName] = useState("");
   const [createGlDisplayOrder, setCreateGlDisplayOrder] = useState<number>(0);
+  const [createCategory, setCreateCategory] =
+    useState<SectionCategory | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>(
@@ -605,6 +667,31 @@ export default function Homerooms() {
   );
   const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
   const [offeredScpTypeLabels, setOfferedScpTypeLabels] = useState<Record<string, string>>({});
+
+  const sectionFormProgramOptions = useMemo(() => {
+    if (formSheetMode === "edit" || !createCategory) {
+      return programOptions;
+    }
+
+    if (createCategory === "SCP") {
+      return programOptions.filter((option) =>
+        isScpProgram(option.value),
+      );
+    }
+
+    const categoryProgram =
+      SECTION_CATEGORY_CONFIG[createCategory].curriculumProgram;
+
+    return categoryProgram
+      ? [
+        {
+          value: categoryProgram,
+          label: SECTION_CATEGORY_CONFIG[createCategory].title,
+        },
+      ]
+      : [];
+  }, [createCategory, formSheetMode, programOptions]);
+
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteName, setDeleteName] = useState("");
@@ -872,17 +959,39 @@ export default function Homerooms() {
   }, [availableTeachers, isFormSheetOpen, sectionFormData.adviserId]);
 
   const handleOpenCreate = useCallback(
-    (glId: number, glName: string, glDisplayOrder: number, defaultProgramType: string = "REGULAR", defaultIsHomogeneous: boolean = false) => {
+    (
+      glId: number,
+      glName: string,
+      glDisplayOrder: number,
+      category: SectionCategory,
+    ) => {
+      const categoryConfig = SECTION_CATEGORY_CONFIG[category];
+      const selectedCurriculumProgram =
+        category === "SCP"
+          ? programOptions.find((option) => isScpProgram(option.value))?.value
+          : categoryConfig.curriculumProgram;
+
+      if (!selectedCurriculumProgram) {
+        sileo.error({
+          title: "No Active Special Program",
+          description:
+            "Enable at least one Special Curricular Program in System Configuration before adding an SCP section.",
+        });
+        return;
+      }
+
       setFormSheetMode("create");
       setEditingSectionId(null);
       setCreateGlId(glId);
       setCreateGlName(glName);
       setCreateGlDisplayOrder(glDisplayOrder);
+      setCreateCategory(category);
       setSectionFormData({
         name: "",
-        curriculumProgram: defaultProgramType === "REGULAR_HOMO" ? "REGULAR_HOMO" : defaultProgramType === "REGULAR_HETERO" ? "REGULAR_HETERO" : defaultProgramType,
-        programType: defaultProgramType,
-        isHomogeneous: defaultIsHomogeneous,
+        curriculumProgram: selectedCurriculumProgram,
+        programType:
+          category === "SCP" ? selectedCurriculumProgram : "REGULAR",
+        isHomogeneous: categoryConfig.isHomogeneous,
         sectionType: "HOME_ROOM",
         adviserId: "none",
         maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
@@ -890,13 +999,14 @@ export default function Homerooms() {
       });
       setIsFormSheetOpen(true);
     },
-    [],
+    [programOptions],
   );
 
   const handleOpenEdit = useCallback(
     async (section: SectionItem, glName: string, glDisplayOrder: number) => {
       setFormSheetMode("edit");
       setEditingSectionId(section.id);
+      setCreateCategory(null);
       setCreateGlName(glName);
       setCreateGlDisplayOrder(glDisplayOrder);
       setSectionFormData({
@@ -1038,7 +1148,7 @@ export default function Homerooms() {
       }
 
       setIsFormSheetOpen(false);
-      fetchData();
+      await fetchData();
     } catch (err) {
       showSectionsErrorToast(
         formSheetMode === "create" ? "create" : "update",
@@ -1382,45 +1492,31 @@ export default function Homerooms() {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        {g.sections.length === 0 && !canMutate ? (
-                          <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
-                            <p className="text-base leading-tight font-extrabold uppercase ">
-                              No Sections Configured
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-8 pb-4">
-                            {renderSectionGroup(
-                              "Special Curricular Programs (SCP)",
-                              g.sections.filter((s) => s.programType !== "REGULAR"),
-                              g.gradeLevelName,
-                              g.gradeLevelId,
-                              g.displayOrder,
-                              "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-                              false
-                            )}
+                        <div className="space-y-8 pb-4">
+                          {renderSectionGroup(
+                            "SCP",
+                            g.sections.filter((s) => s.programType !== "REGULAR"),
+                            g.gradeLevelName,
+                            g.gradeLevelId,
+                            g.displayOrder,
+                          )}
 
-                            {renderSectionGroup(
-                              "Basic Education Curriculum (BEC) — Top 5",
-                              g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous),
-                              g.gradeLevelName,
-                              g.gradeLevelId,
-                              g.displayOrder,
-                              "REGULAR_HOMO",
-                              true
-                            )}
+                          {renderSectionGroup(
+                            "BEC_TOP_5",
+                            g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous),
+                            g.gradeLevelName,
+                            g.gradeLevelId,
+                            g.displayOrder,
+                          )}
 
-                            {renderSectionGroup(
-                              "Basic Education Curriculum (BEC) —  Heterogeneous",
-                              g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous),
-                              g.gradeLevelName,
-                              g.gradeLevelId,
-                              g.displayOrder,
-                              "REGULAR_HETERO",
-                              false
-                            )}
-                          </div>
-                        )}
+                          {renderSectionGroup(
+                            "BEC_HETEROGENEOUS",
+                            g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous),
+                            g.gradeLevelName,
+                            g.gradeLevelId,
+                            g.displayOrder,
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -1437,7 +1533,11 @@ export default function Homerooms() {
         title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
         description={
           formSheetMode === "create"
-            ? `Configure a new section roster for ${createGlName}.`
+            ? `Add a ${
+              createCategory
+                ? SECTION_CATEGORY_CONFIG[createCategory].title
+                : "section"
+            } roster for ${createGlName}.`
             : `Update configuration for section ${sectionFormData.name}.`
         }
         formData={sectionFormData}
@@ -1451,7 +1551,7 @@ export default function Homerooms() {
             sectionFormData.sectionType === "HOME_ROOM" ||
             !!sectionFormData.tleProgramId)
         }
-        programOptions={programOptions}
+        programOptions={sectionFormProgramOptions}
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}
         gradeLevelName={createGlName}

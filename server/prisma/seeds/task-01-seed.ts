@@ -27,6 +27,89 @@ const DEPARTMENTS = [
   { name: 'TECHNOLOGY AND LIVELIHOOD EDUCATION', code: 'TLE' }
 ];
 const POSITIONS = ['TEACHER I', 'TEACHER II', 'TEACHER III', 'MASTER TEACHER I', 'MASTER TEACHER II'];
+const FILIPINO_MALE_FIRST_NAMES = [
+  "JUAN MIGUEL",
+  "JOSE GABRIEL",
+  "MARK ANGELO",
+  "CARLO MIGUEL",
+  "JOHN PAOLO",
+  "MIGUEL ANDRE",
+  "JOSHUA LUIS",
+  "PAOLO BENJAMIN",
+  "ANGELO RAFAEL",
+  "CHRISTIAN PAUL",
+  "JEROME ANTONIO",
+  "NATHANIEL JOSE",
+  "GABRIEL ENZO",
+  "VINCENT LORENZO",
+  "DANIEL MARTIN",
+  "FRANCIS MIGUEL",
+];
+const FILIPINO_FEMALE_FIRST_NAMES = [
+  "MARIA ANGELA",
+  "ANNA PATRICIA",
+  "CAMILLE JOY",
+  "MARY GRACE",
+  "JANELLA MARIE",
+  "SOFIA ISABEL",
+  "ANGELICA MAE",
+  "BEATRIZ ANNE",
+  "CLARISSE JOY",
+  "DANIELA ROSE",
+  "ELAINE MARIE",
+  "FRANCESCA MAE",
+  "GABRIELA LUZ",
+  "HANNAH THERESE",
+  "ISABELLA JOY",
+  "KATRINA MAE",
+];
+const FILIPINO_SURNAMES = [
+  "SANTOS",
+  "REYES",
+  "CRUZ",
+  "GARCIA",
+  "MENDOZA",
+  "BAUTISTA",
+  "NAVARRO",
+  "RAMOS",
+  "FLORES",
+  "AQUINO",
+  "CASTILLO",
+  "DELA CRUZ",
+  "VILLANUEVA",
+  "FERNANDEZ",
+  "DE LEON",
+  "MERCADO",
+  "SALAZAR",
+  "VALDEZ",
+  "AGUILAR",
+  "DOMINGO",
+];
+
+interface FilipinoName {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+}
+
+function getFilipinoName(sex: Sex, index: number): FilipinoName {
+  const firstNames =
+    sex === Sex.MALE
+      ? FILIPINO_MALE_FIRST_NAMES
+      : FILIPINO_FEMALE_FIRST_NAMES;
+
+  return {
+    firstName: firstNames[index % firstNames.length],
+    middleName:
+      FILIPINO_SURNAMES[(index * 2 + 3) % FILIPINO_SURNAMES.length],
+    lastName:
+      FILIPINO_SURNAMES[(index * 3 + 1) % FILIPINO_SURNAMES.length],
+  };
+}
+
+function getFilipinoParentName(sex: Sex, index: number): FilipinoName {
+  return getFilipinoName(sex, index + 7);
+}
 
 function generateLRN(): string {
   return faker.string.numeric(12);
@@ -142,6 +225,8 @@ export const seedDatabase = async () => {
 
     // 6. Create Sections and Learners
     let teacherIdx = 0;
+    let maleLearnerIndex = 0;
+    let femaleLearnerIndex = 0;
     for (const grade of grades) {
       const gNum = parseInt(grade.name.replace("Grade ", ""), 10);
       const names = SECTION_NAMES[gNum] || PROGRAMS.map(p => p.nameSuffix);
@@ -190,16 +275,20 @@ export const seedDatabase = async () => {
           }
         });
 
-        for (let l = 0; l < 10; l++) {
-          const lSex = faker.helpers.arrayElement(['Male', 'Female']);
-          const prismaLSex = lSex === 'Male' ? Sex.MALE : Sex.FEMALE;
+        for (let l = 0; l < 4; l++) {
+          const prismaLSex = l < 2 ? Sex.MALE : Sex.FEMALE;
+          const learnerNameIndex =
+            prismaLSex === Sex.MALE
+              ? maleLearnerIndex++
+              : femaleLearnerIndex++;
           
           const baseAge = 12 + (grade.displayOrder - 7);
           const birthdate = faker.date.birthdate({ min: baseAge, max: baseAge + 1, mode: 'age' });
 
-          const learnerFirstName = faker.person.firstName(lSex === 'Male' ? 'male' : 'female').toUpperCase();
-          const learnerLastName = faker.person.lastName().toUpperCase();
-          const learnerMiddleName = faker.person.lastName().toUpperCase();
+          const learnerName = getFilipinoName(
+            prismaLSex,
+            learnerNameIndex,
+          );
 
           const isIp = faker.helpers.arrayElement([true, false, false, false]);
           const ipGroupName = isIp ? faker.helpers.arrayElement(["ATI", "AETA", "BADJAO", "MAMANWA"]) : null;
@@ -209,9 +298,9 @@ export const seedDatabase = async () => {
           const learner = await prisma.learner.create({
             data: {
               lrn: generateLRN(),
-              firstName: learnerFirstName,
-              lastName: learnerLastName,
-              middleName: learnerMiddleName,
+              firstName: learnerName.firstName,
+              lastName: learnerName.lastName,
+              middleName: learnerName.middleName,
               birthdate,
               sex: prismaLSex,
               status: "ACTIVE",
@@ -222,20 +311,45 @@ export const seedDatabase = async () => {
             }
           });
 
-          const contactNo = '09' + faker.string.numeric(9);
-          const fatherFirstName = faker.person.firstName("male").toUpperCase();
-          const fatherLastName = learnerLastName;
-          const fatherMiddleName = faker.person.lastName().toUpperCase();
-
-          const motherFirstName = faker.person.firstName("female").toUpperCase();
-          const motherLastName = faker.person.lastName().toUpperCase();
-          const motherMiddleName = faker.person.lastName().toUpperCase();
-          const motherMaidenName = faker.person.lastName().toUpperCase();
-
-          const guardianFirstName = faker.person.firstName().toUpperCase();
-          const guardianLastName = faker.person.lastName().toUpperCase();
-          const guardianMiddleName = faker.person.lastName().toUpperCase();
-          const guardianRelationship = faker.helpers.arrayElement(["UNCLE", "AUNT", "GRANDMOTHER", "GRANDFATHER", "BROTHER", "SISTER"]);
+          const generatedFatherName = getFilipinoParentName(
+            Sex.MALE,
+            learnerNameIndex * 3,
+          );
+          const fatherName: FilipinoName = {
+            ...generatedFatherName,
+            lastName: learnerName.lastName,
+          };
+          const motherName = getFilipinoParentName(
+            Sex.FEMALE,
+            learnerNameIndex * 3 + 1,
+          );
+          const guardianSex =
+            learnerNameIndex % 2 === 0 ? Sex.FEMALE : Sex.MALE;
+          const guardianName = getFilipinoParentName(
+            guardianSex,
+            learnerNameIndex * 3 + 2,
+          );
+          const fatherContactNumber = '09' + faker.string.numeric(9);
+          const motherContactNumber = '09' + faker.string.numeric(9);
+          const guardianContactNumber = '09' + faker.string.numeric(9);
+          const familyContacts = [
+            {
+              relationship: FamilyRelationship.FATHER,
+              name: fatherName,
+              contactNumber: fatherContactNumber,
+            },
+            {
+              relationship: FamilyRelationship.MOTHER,
+              name: motherName,
+              contactNumber: motherContactNumber,
+            },
+            {
+              relationship: FamilyRelationship.GUARDIAN,
+              name: guardianName,
+              contactNumber: guardianContactNumber,
+            },
+          ] as const;
+          const primaryContact = familyContacts[l % familyContacts.length];
 
           const currentPurok = "PUROK " + faker.person.lastName().toUpperCase() + " " + faker.string.numeric(2);
           const currentBarangay = faker.helpers.arrayElement(["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"]);
@@ -254,9 +368,9 @@ export const seedDatabase = async () => {
               gradeLevelId: grade.id,
               applicantType: prog.type,
               status: "SECTIONED",
-              contactNumber: contactNo,
-              guardianName: `${guardianLastName}, ${guardianFirstName} ${guardianMiddleName}`.trim(),
-              guardianRelationship,
+              contactNumber: primaryContact.contactNumber,
+              guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
+              guardianRelationship: primaryContact.relationship,
               addresses: {
                 createMany: {
                   data: [
@@ -286,25 +400,25 @@ export const seedDatabase = async () => {
                   data: [
                     {
                       relationship: FamilyRelationship.FATHER,
-                      firstName: fatherFirstName,
-                      lastName: fatherLastName,
-                      middleName: fatherMiddleName,
-                      contactNumber: '09' + faker.string.numeric(9),
+                      firstName: fatherName.firstName,
+                      lastName: fatherName.lastName,
+                      middleName: fatherName.middleName,
+                      contactNumber: fatherContactNumber,
                     },
                     {
                       relationship: FamilyRelationship.MOTHER,
-                      firstName: motherFirstName,
-                      lastName: motherLastName,
-                      middleName: motherMiddleName,
-                      maidenName: motherMaidenName,
-                      contactNumber: '09' + faker.string.numeric(9),
+                      firstName: motherName.firstName,
+                      lastName: motherName.lastName,
+                      middleName: motherName.middleName,
+                      maidenName: motherName.lastName,
+                      contactNumber: motherContactNumber,
                     },
                     {
                       relationship: FamilyRelationship.GUARDIAN,
-                      firstName: guardianFirstName,
-                      lastName: guardianLastName,
-                      middleName: guardianMiddleName,
-                      contactNumber: '09' + faker.string.numeric(9),
+                      firstName: guardianName.firstName,
+                      lastName: guardianName.lastName,
+                      middleName: guardianName.middleName,
+                      contactNumber: guardianContactNumber,
                     }
                   ]
                 }
@@ -325,7 +439,7 @@ export const seedDatabase = async () => {
       }
     }
 
-    console.log("✅ Seeding complete: 20 Teachers, 20 Sections, 200 Learners.");
+    console.log("✅ Seeding complete: 20 Teachers, 16 Sections, 64 Learners (2 male and 2 female per section).");
   } catch (error) {
     console.error("❌ Error during seeding:", error);
     throw error;

@@ -1,6 +1,7 @@
 export const queryKeys = {
   publicSettings: ["settings", "public"] as const,
   studentsFilters: (schoolYearId: number) => ["students", "filters", schoolYearId] as const,
+  activeAcademicPrograms: ["settings", "programs"] as const,
   studentsSummary: (schoolYearId: number) => ["students", "summary", schoolYearId] as const,
   studentsList: (params: Record<string, string | number>) => ["students", "list", params] as const,
   studentDetail: (studentId: number) => ["students", "detail", studentId] as const,

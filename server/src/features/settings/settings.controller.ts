@@ -335,6 +335,26 @@ export async function getScpConfig(req: Request, res: Response): Promise<void> {
   res.json({ scpProgramConfigs: [] });
 }
 
+export async function getActiveAcademicPrograms(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  const settings = await getOrCreateSettings();
+  const programs: string[] = ["REGULAR"];
+
+  if (settings.steEnabled) {
+    programs.push("SCIENCE_TECHNOLOGY_AND_ENGINEERING");
+  }
+  if (settings.spaEnabled) {
+    programs.push("SPECIAL_PROGRAM_IN_THE_ARTS");
+  }
+  if (settings.spsEnabled) {
+    programs.push("SPECIAL_PROGRAM_IN_SPORTS");
+  }
+
+  res.json({ programs });
+}
+
 export async function updatePrograms(req: Request, res: Response): Promise<void> {
   const { steEnabled, spaEnabled, spsEnabled } = req.body;
 

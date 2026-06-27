@@ -58,6 +58,20 @@ interface TableRowComponentProps<TData> {
   isRowClickable?: (row: TData) => boolean;
 }
 
+function getColumnIdentifier<TData, TValue>(
+  column: ColumnDef<TData, TValue>,
+): string | undefined {
+  if ("id" in column && typeof column.id === "string") {
+    return column.id;
+  }
+
+  if ("accessorKey" in column && typeof column.accessorKey === "string") {
+    return column.accessorKey;
+  }
+
+  return undefined;
+}
+
 function TableRowComponentInner<TData>(
   {
     row,
@@ -86,18 +100,27 @@ function TableRowComponentInner<TData>(
         }
       }}
       className={cn(
-        "text-center text-xs transition-colors",
+        "text-center text-xs transition-colors bg-background",
         isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
-        row.getIsSelected() ? "bg-muted/80" : "",
+        row.getIsSelected() ? "bg-muted/80 hover:bg-muted/80" : "",
         customClassName,
         className,
       )}>
       {row.getVisibleCells().map((cell) => {
         const meta = cell.column.columnDef.meta as { className?: string } | undefined;
+        const isPinned = cell.column.getIsPinned();
+        const isLeftPinned = isPinned === "left";
+        const isRightPinned = isPinned === "right";
         return (
           <TableCell
             key={cell.id}
-            className={cn(dense ? "py-1.5 px-2" : "p-3", meta?.className)}
+            className={cn(
+              dense ? "py-1.5 px-2" : "p-3",
+              meta?.className,
+              isPinned ? "sticky bg-inherit z-10" : "",
+              isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+              isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
+            )}
             style={{ width: cell.column.getSize() }}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>
@@ -141,6 +164,13 @@ export function DataTable<TData, TValue>({
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const leftPinned = columns[0]
+    ? getColumnIdentifier(columns[0])
+    : undefined;
+  const rightPinned = columns.length > 1
+    ? getColumnIdentifier(columns[columns.length - 1])
+    : undefined;
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -151,6 +181,12 @@ export function DataTable<TData, TValue>({
     onSortingChange: externalOnSortingChange ?? setInternalSorting,
     onRowSelectionChange:
       externalOnRowSelectionChange ?? setInternalRowSelection,
+    initialState: {
+      columnPinning: {
+        left: leftPinned ? [leftPinned] : [],
+        right: rightPinned ? [rightPinned] : [],
+      },
+    },
     state: {
       sorting: externalSorting ?? internalSorting,
       rowSelection: externalRowSelection ?? internalRowSelection,
@@ -186,12 +222,18 @@ export function DataTable<TData, TValue>({
                 className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as { headerClassName?: string; className?: string } | undefined;
+                  const isPinned = header.column.getIsPinned();
+                  const isLeftPinned = isPinned === "left";
+                  const isRightPinned = isPinned === "right";
                   return (
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "text-center font-extrabold text-foreground dark:text-slate-200 text-xs px-3 sticky top-0 z-20 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
+                        "text-center font-extrabold text-foreground dark:text-slate-200 text-xs px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
                         dense ? "h-8" : "h-11",
+                        isPinned ? "z-30" : "z-20",
+                        isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+                        isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
                         meta?.headerClassName || meta?.className
                       )}
                       style={{
@@ -219,18 +261,26 @@ export function DataTable<TData, TValue>({
               transition={{ duration: 0.2 }}
               className="relative">
               {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {columns.map((column, index) => {
-                    const meta = column.meta as
+                <TableRow key={`skeleton-${i}`} className="bg-background">
+                  {table.getAllLeafColumns().map((column, index) => {
+                    const meta = column.columnDef.meta as
                       | {
                         skeletonClassName?: string;
                         customSkeleton?: React.ReactNode;
                       }
                       | undefined;
+                    const isPinned = column.getIsPinned();
+                    const isLeftPinned = isPinned === "left";
+                    const isRightPinned = isPinned === "right";
                     return (
                       <TableCell
                         key={index}
-                        className={dense ? "py-1.5 px-2" : "p-4"}>
+                        className={cn(
+                          dense ? "py-1.5 px-2" : "p-4",
+                          isPinned ? "sticky bg-inherit z-10" : "",
+                          isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
+                          isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""
+                        )}>
                         {meta?.customSkeleton ? (
                           meta.customSkeleton
                         ) : (

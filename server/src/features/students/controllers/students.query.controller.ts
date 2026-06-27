@@ -6,7 +6,10 @@ import {
 import { prisma } from "../../../lib/prisma.js";
 import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
-import { findStudents, getStudentsSummary as fetchStudentsSummary } from "../students.service.js";
+import {
+  findStudents,
+  getStudentsSummary as fetchStudentsSummary,
+} from "../students.service.js";
 
 type FamilyMemberLike = {
   relationship: string;
@@ -560,4 +563,3 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
     }
   };
 
-  
