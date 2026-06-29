@@ -192,6 +192,7 @@ export async function findStudents(query: {
     const learners = await prisma.learner.findMany({
       where: learnerWhere,
       include: {
+        user: { select: { isActive: true } },
         enrollmentApplications: {
           orderBy: { schoolYear: { yearLabel: "desc" } },
           take: 1,
@@ -291,7 +292,11 @@ export async function findStudents(query: {
   const applications = await prisma.enrollmentApplication.findMany({
     where,
     include: {
-      learner: true,
+      learner: {
+        include: {
+          user: { select: { isActive: true } },
+        },
+      },
       gradeLevel: true,
       enrollmentRecord: {
         include: {

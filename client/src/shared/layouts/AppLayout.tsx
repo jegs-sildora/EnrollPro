@@ -153,9 +153,9 @@ function UserNav() {
           <DropdownMenuItem
             className="cursor-pointer font-bold text-sm"
             asChild>
-            <Link to="/admin/users">
+            <Link to="/change-password">
               <Settings className="mr-2 h-4 w-4" />
-              Account Settings
+              Change Password
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -656,12 +656,6 @@ function AppSidebar() {
 
                     <NavDivider label="System Administration" badge={isEosyArchivedState ? activeBadge : undefined} />
                     <NavItem
-                      to="/admin/users"
-                      icon={UserCog}
-                      label="Account Access"
-                      pathname={pathname}
-                    />
-                    <NavItem
                       to="/audit-logs"
                       icon={History}
                       label="Activity Logs"
@@ -844,7 +838,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   const selectedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const isSchoolYearBypassRoute =
     location.pathname === "/dashboard" ||
-    location.pathname.startsWith("/admin/users") ||
     location.pathname.startsWith("/admin/system") ||
     location.pathname.startsWith("/settings") ||
     // BOSY rollover always targets the active year ΓÇö intentional bypass

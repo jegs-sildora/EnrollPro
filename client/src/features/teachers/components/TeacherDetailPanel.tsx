@@ -43,6 +43,7 @@ import type { Teacher } from "../types";
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
+import { useSettingsStore } from "@/store/settings.slice";
 import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
   getDesignationPool,
@@ -91,7 +92,6 @@ const formSchema = z
       .nullable(),
     plantillaPosition: z.string(),
     department: z.string().optional().nullable(),
-    prcLicenseNumber: z.string().optional().nullable(),
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
     roles: z.array(z.string()),
@@ -100,13 +100,6 @@ const formSchema = z
       .string()
       .trim()
       .regex(/^09\d{9}$/, "Enter an 11-digit mobile number starting with 09.")
-      .or(z.literal(""))
-      .nullable(),
-    email: z
-      .string()
-      .trim()
-      .min(1, "Enter the DepEd email address.")
-      .email("Enter a valid email address.")
       .or(z.literal(""))
       .nullable(),
 
@@ -121,17 +114,10 @@ const formSchema = z
       .optional(),
     serviceEffectiveDate: z.string().optional().nullable(),
     serviceRemarks: z.string().optional().nullable(),
+    portalActive: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.personnelType === "TEACHING") {
-      if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Enter the 7-digit PRC License Number for teaching personnel.",
-          path: ["prcLicenseNumber"],
-        });
-      }
-    } else if (data.personnelType === "NON_TEACHING") {
+    if (data.personnelType === "NON_TEACHING") {
       if (!data.functionalAssignment || data.functionalAssignment.trim().length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -178,6 +164,46 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
+  const [isPortalActionSubmitting, setIsPortalActionSubmitting] = useState(false);
+  const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
+
+  const globalDefaultPassword = useSettingsStore((s) => s.globalDefaultPassword);
+
+  useEffect(() => {
+    setDefaultPasswordInput(globalDefaultPassword || "");
+  }, [globalDefaultPassword]);
+
+  const handleResetPassword = () => {
+    setShowResetPasswordConfirm(true);
+  };
+
+  const handleResetPasswordConfirm = async () => {
+    if (!teacher) return;
+    if (!defaultPasswordInput.trim()) {
+      sileo.error({
+        title: "Validation Error",
+        description: "Default password cannot be empty.",
+      });
+      return;
+    }
+    setShowResetPasswordConfirm(false);
+    setIsPortalActionSubmitting(true);
+    try {
+      await api.post(`/teachers/${teacher.id}/reset-password`, { password: defaultPasswordInput });
+      sileo.success({
+        title: "Password Reset Success",
+        description: "Teacher portal password has been reset.",
+      });
+    } catch (err: unknown) {
+      sileo.error({
+        title: "Failed to Reset Password",
+        description: getApiErrorMessage(err, "An error occurred while resetting password."),
+      });
+    } finally {
+      setIsPortalActionSubmitting(false);
+    }
+  };
 
   const {
     control,
@@ -199,15 +225,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       employeeId: null,
       plantillaPosition: "",
       department: "",
-      prcLicenseNumber: "",
       functionalAssignment: "",
       specialization: "",
       roles: [],
       contactNumber: "",
-      email: "",
       serviceStatus: "ACTIVE",
       serviceEffectiveDate: new Date().toISOString().slice(0, 10),
       serviceRemarks: "",
+      portalActive: true,
     },
   });
 
@@ -219,8 +244,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   }, [formRoles]);
 
   useEffect(() => {
+    setValue("personnelType", isFormTeachingStaff ? "TEACHING" : "NON_TEACHING", { shouldValidate: true });
     if (!isFormTeachingStaff) {
-      setValue("department", "", { shouldDirty: true });
+      setValue("department", "");
     }
   }, [isFormTeachingStaff, setValue]);
 
@@ -250,15 +276,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         employeeId: teacher.employeeId || null,
         plantillaPosition: isMRF ? "MRF STAFF" : (teacher.plantillaPosition || ""),
         department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
-        prcLicenseNumber: teacher.prcLicenseNumber || "",
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
         roles: teacher.userAccount?.roles || [],
         contactNumber: teacher.contactNumber || "",
-        email: teacher.email || "",
         serviceStatus: teacher.serviceStatus || "ACTIVE",
         serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
         serviceRemarks: serviceMetadata.serviceRemarks || "",
+        portalActive: teacher.userAccount?.isActive ?? teacher.isActive ?? true,
       });
     } else {
       reset({
@@ -272,15 +297,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         employeeId: null,
         plantillaPosition: "",
         department: "",
-        prcLicenseNumber: "",
         functionalAssignment: "",
         specialization: "",
         roles: [],
         contactNumber: "",
-        email: "",
         serviceStatus: "ACTIVE",
         serviceEffectiveDate: new Date().toISOString().slice(0, 10),
         serviceRemarks: "",
+        portalActive: true,
       });
     }
   }, [teacher, reset, open]);
@@ -348,12 +372,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         employeeId: data.employeeId,
         plantillaPosition: (data.plantillaPosition === "__NONE__" || data.plantillaPosition === "MRF STAFF") ? "" : data.plantillaPosition,
         department: data.department === "__NONE__" ? "" : data.department,
-        prcLicenseNumber: data.personnelType === "TEACHING" ? data.prcLicenseNumber : null,
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
         roles: data.roles,
         contactNumber: data.contactNumber,
-        email: data.email,
         serviceStatus: data.serviceStatus,
         serviceEffectiveDate: data.serviceEffectiveDate,
         serviceRemarks: data.serviceRemarks,
@@ -364,6 +386,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         sileo.success({ title: "Faculty/Staff Record Created", description: "The faculty or staff record has been saved." });
       } else {
         await api.patch(`/teachers/${teacher!.id}`, profilePayload);
+        
+        const originalPortalActive = teacher!.userAccount?.isActive ?? teacher!.isActive ?? true;
+        if (data.portalActive !== undefined && data.portalActive !== originalPortalActive) {
+          try {
+            await api.patch(`/teachers/${teacher!.id}/portal-access`, { isActive: data.portalActive });
+          } catch (err: unknown) {
+            sileo.error({ title: "Portal Update Failed", description: getApiErrorMessage(err, "Profile saved, but portal status failed to update.") });
+          }
+        }
+
         sileo.success({ title: "Profile Updated", description: "The faculty/staff profile has been saved." });
       }
 
@@ -379,9 +411,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       setIsSubmitting(false);
     }
   };
-
-  if (!open) return null;
-
   return (
     <>
       <Sheet open={open} onOpenChange={handleCloseAttempt}>
@@ -595,31 +624,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 <div className="px-5 pb-5 pt-4 space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Staff Type *</Label>
-                      <Controller
-                        name="personnelType"
-                        control={control}
-                        render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value || undefined}>
-                            <SelectTrigger className={cn("font-extrabold text-base leading-tight h-10", errors.personnelType && "border-destructive")}>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="TEACHING">Teaching Personnel</SelectItem>
-                              <SelectItem value="NON_TEACHING">Non-Teaching Staff</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      {errors.personnelType && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.personnelType.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5">
                       <Label className="text-base font-extrabold uppercase text-foreground">DepEd Employee ID *</Label>
                       <Controller
                         name="employeeId"
@@ -645,14 +649,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         </p>
                       )}
                     </div>
-                  </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 mt-4">
                     <div className="space-y-1.5">
                       <Label className="text-base font-extrabold uppercase text-foreground">DepEd Position (Plantilla)</Label>
-                      <p className="text-xs font-extrabold leading-tight text-foreground/60">
-                        Plantilla or official position title.
-                      </p>
                       <Controller
                         name="plantillaPosition"
                         control={control}
@@ -689,33 +688,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                   {formPersonnelType === "TEACHING" && (
                     <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t border-border">
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1">PRC License Number *</Label>
-                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
-                          Required for teaching personnel.
-                        </p>
-                        <Controller
-                          name="prcLicenseNumber"
-                          control={control}
-                          render={({ field }) => (
-                            <Input
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                              maxLength={7}
-                              placeholder="7 digits"
-                              className={cn("font-extrabold text-base leading-tight h-10", errors.prcLicenseNumber && "border-destructive")}
-                            />
-                          )}
-                        />
-                        {errors.prcLicenseNumber && (
-                          <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                            <ShieldAlert className="w-3.5 h-3.5" />
-                            {errors.prcLicenseNumber.message}
-                          </p>
-                        )}
-                      </div>
-
                       <div className="space-y-1.5">
                         <Label className="text-base font-extrabold uppercase text-foreground">Subject Area / Major</Label>
                         <Controller
@@ -829,12 +801,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                 </div>
               </div>
 
-              {/* Card 3: Contact Details & Login Access */}
+              {/* Card 3: Contact Details & Portal Security */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <Smartphone className="h-4 w-4 text-primary" />
-                    3. Contact Details & Login Access
+                    3. Contact Details & Portal Security
                   </span>
                 </div>
                 <div className="px-5 pb-5 pt-4 space-y-4">
@@ -862,31 +834,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
                           <ShieldAlert className="w-3.5 h-3.5" />
                           {errors.contactNumber.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1">
-                        <Mail className="size-3" />
-                        Email Address *
-                      </Label>
-                      <Controller
-                        name="email"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            value={field.value || ""}
-                            type="email"
-                            placeholder="juan@deped.edu.ph"
-                            className={cn("font-extrabold text-base leading-tight h-10", errors.email && "border-destructive")}
-                          />
-                        )}
-                      />
-                      {errors.email && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.email.message}
                         </p>
                       )}
                     </div>
@@ -931,6 +878,81 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       )}
                     />
                   </div>
+
+                  {!isAdding && (
+                    <div className="space-y-4 pt-4 border-t border-border">
+                      <div className="space-y-2">
+                        <Label className="text-base font-extrabold uppercase text-foreground">
+                          Portal Access Status
+                        </Label>
+                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                          Toggle whether this teacher can sign in to the portal.
+                        </p>
+                        <Controller
+                          name="portalActive"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="flex gap-4">
+                              <button
+                                type="button"
+                                disabled={isPortalActionSubmitting}
+                                onClick={() => field.onChange(true)}
+                                className={cn(
+                                  "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                  field.value
+                                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                    : "border-border hover:bg-muted/50 text-foreground"
+                                )}
+                              >
+                                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value ? "bg-emerald-500" : "bg-muted-foreground")} />
+                                Allow Login (Active)
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isPortalActionSubmitting}
+                                onClick={() => field.onChange(false)}
+                                className={cn(
+                                  "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                  field.value === false
+                                    ? "border-amber-500 bg-amber-50 text-amber-700"
+                                    : "border-border hover:bg-muted/50 text-foreground"
+                                )}
+                              >
+                                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value === false ? "bg-amber-500" : "bg-muted-foreground")} />
+                                Block Login (Disabled)
+                              </button>
+                            </div>
+                          )}
+                        />
+                      </div>
+
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-base font-extrabold uppercase text-foreground">
+                          Password Control
+                        </Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            value={defaultPasswordInput}
+                            onChange={(e) => setDefaultPasswordInput(e.target.value)}
+                            placeholder="Enter default password"
+                            className="h-11 font-extrabold text-base bg-background"
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                            onClick={handleResetPassword}
+                            className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                          >
+                            Reset to Default Password
+                          </Button>
+                        </div>
+                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                          This will reset the teacher's portal password to the value above and force a password change on next login.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1048,6 +1070,17 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           setShowUnsavedModal(false);
           onOpenChange(false);
         }}
+        variant="danger"
+      />
+
+      <ConfirmationModal
+        open={showResetPasswordConfirm}
+        onOpenChange={setShowResetPasswordConfirm}
+        title="Confirm Password Reset"
+        description="Are you sure you want to reset this password?"
+        confirmText="Reset Password"
+        cancelText="Cancel"
+        onConfirm={handleResetPasswordConfirm}
         variant="danger"
       />
     </>

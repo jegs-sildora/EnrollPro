@@ -226,19 +226,18 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
     const isLearnerEdit = mode === "edit" && user?.roles.includes("LEARNER");
 
     if (isLearnerEdit) {
-      return formData.firstName.trim().length > 0 && formData.lastName.trim().length > 0;
+      return (formData.firstName || "").trim().length > 0 && (formData.lastName || "").trim().length > 0;
     }
 
     const basic =
-      formData.firstName.trim().length > 0 &&
-      formData.lastName.trim().length > 0 &&
-      formData.email.trim().length > 0;
+      (formData.firstName || "").trim().length > 0 &&
+      (formData.lastName || "").trim().length > 0;
 
     if (mode === "create") {
       return basic && !!formData.password && formData.password.length >= 8;
     }
     return basic;
-  }, [formData.firstName, formData.lastName, formData.email, formData.password, mode, user]);
+  }, [formData.firstName, formData.lastName, formData.password, mode, user]);
 
   const needsEmployeeId = useMemo(() => {
     return (

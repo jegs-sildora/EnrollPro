@@ -26,6 +26,28 @@ function getUniqueConstraintFields(error: unknown): string[] {
   return [];
 }
 
+export async function getRoles(req: Request, res: Response) {
+  try {
+    const roles = Object.values(Role).filter((r) => r !== "LEARNER");
+    const roleLabels: Record<string, string> = {
+      SYSTEM_ADMIN: "System Admin",
+      HEAD_REGISTRAR: "Registrar",
+      TEACHER: "Teacher",
+      CLASS_ADVISER: "Class Adviser",
+      MRF: "MRF Staff",
+    };
+    
+    const formattedRoles = roles.map(role => ({
+      value: role,
+      label: roleLabels[role] || role
+    }));
+
+    return res.json({ roles: formattedRoles });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch roles" });
+  }
+}
+
 export async function index(req: Request, res: Response) {
   try {
     const {

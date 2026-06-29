@@ -55,7 +55,7 @@ model Teacher {
   lastName            String               @map("last_name")
   middleName          String?              @map("middle_name")
   suffix              String?
-  email               String               @unique(map: "uq_teachers_email") @map("email")
+  email               String?              @unique(map: "uq_teachers_email") @map("email")
   contactNumber       String?              @map("contact_number")
   specialization      String?
   isActive            Boolean              @default(true) @map("is_active")
@@ -70,7 +70,6 @@ model Teacher {
   serviceStatus       String               @default("ACTIVE") @map("service_status")
   birthdate           DateTime?            @db.Date
   personnelType       String?              @map("personnel_type")
-  prcLicenseNumber    String?              @map("prc_license_number")
   functionalAssignment String?             @map("functional_assignment")
   advisoryHistory     SectionAdviser[]
   teacherDesignations TeacherDesignation[]

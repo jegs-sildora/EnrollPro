@@ -187,7 +187,6 @@ export const seedDatabase = async () => {
       const firstName = faker.person.firstName(sex === 'Male' ? 'male' : 'female').toUpperCase();
       const lastName = faker.person.lastName().toUpperCase();
       const middleName = faker.person.middleName().toUpperCase();
-      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@deped.edu.ph`;
       const employeeId = generateEmployeeId();
       const contactNumber = '09' + faker.string.numeric(9);
       
@@ -197,7 +196,6 @@ export const seedDatabase = async () => {
           lastName,
           middleName,
           sex: prismaSex,
-          email,
           employeeId,
           password: defaultPassword,
           roles: ["TEACHER", "CLASS_ADVISER"],
@@ -211,7 +209,6 @@ export const seedDatabase = async () => {
           firstName,
           lastName,
           middleName,
-          email,
           contactNumber,
           sex: prismaSex,
           userId: user.id,

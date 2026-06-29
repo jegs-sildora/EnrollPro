@@ -30,7 +30,6 @@ import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
 
 // Admin Pages
-import AdminUsers from "@/features/admin/pages/Users";
 import SystemHealth from "@/features/admin/pages/SystemHealth";
 import Teachers from "@/features/teachers/pages/Index";
 import IntakeDashboard from "@/features/intake/pages/IntakeDashboard";
@@ -214,10 +213,6 @@ export const router = createBrowserRouter([
                   {
                     path: "/teachers",
                     element: <Teachers />,
-                  },
-                  {
-                    path: "/admin/users",
-                    element: <AdminUsers />,
                   },
                   {
                     path: "/admin/system",

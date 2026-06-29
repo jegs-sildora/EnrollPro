@@ -80,7 +80,6 @@ export interface Teacher {
   photoPath: string | null;
   birthdate: string | null;
   personnelType: string | null;
-  prcLicenseNumber: string | null;
   functionalAssignment: string | null;
   sectionCount: number;
   designation: TeacherDesignation | null;
@@ -101,7 +100,6 @@ export interface TeacherFormState {
   lastName: string;
   middleName: string;
   suffix: string;
-  email: string;
   employeeId: string;
   contactNumber: string;
   sex: "MALE" | "FEMALE";

@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { SectionAdviserStatus } from "../../generated/prisma/index.js";
+import { SectionAdviserStatus, Role } from "../../generated/prisma/index.js";
 
 // Helper functions for data normalization
 function formatTeacherName(teacher: {
@@ -35,6 +35,11 @@ function normalizeRequiredUpperText(val: unknown): string {
 
 function normalizeRequiredLowerEmail(val: unknown): string {
   if (val === undefined || val === null || val === "") return "";
+  return String(val).normalize("NFC").trim().toLowerCase();
+}
+
+function normalizeOptionalLowerEmail(val: unknown): string | null {
+  if (val === undefined || val === null || val === "") return null;
   return String(val).normalize("NFC").trim().toLowerCase();
 }
 
@@ -258,7 +263,6 @@ interface TeacherUpsertPayload {
   plantillaPosition?: string | null;
   birthdate?: string | null;
   personnelType?: string | null;
-  prcLicenseNumber?: string | null;
   functionalAssignment?: string | null;
 }
 
@@ -278,25 +282,23 @@ export async function store(req: Request, res: Response) {
       plantillaPosition,
       birthdate,
       personnelType,
-      prcLicenseNumber,
       functionalAssignment,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
     const normalizedLastName = normalizeRequiredUpperText(lastName);
     const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
-    const normalizedEmail = normalizeRequiredLowerEmail(email);
+    const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
 
     if (
       !normalizedFirstName ||
       !normalizedLastName ||
-      !normalizedEmployeeId ||
-      !normalizedEmail
+      !normalizedEmployeeId
     ) {
       return res.status(400).json({
         message:
-          "First name, last name, employee ID, and DepEd email are required",
+          "First name, last name, and employee ID are required",
       });
     }
 
@@ -369,7 +371,6 @@ export async function store(req: Request, res: Response) {
           user: { connect: { id: upsertedUser.id } },
           birthdate: parseDateOnly(birthdate),
           personnelType: normalizeOptionalUpperText(personnelType),
-          prcLicenseNumber: normalizeOptionalText(prcLicenseNumber),
           functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
         },
       });
@@ -430,7 +431,6 @@ export async function update(req: Request, res: Response) {
       serviceRemarks,
       birthdate,
       personnelType,
-      prcLicenseNumber,
       functionalAssignment,
     } = req.body;
 
@@ -442,18 +442,17 @@ export async function update(req: Request, res: Response) {
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
     const normalizedLastName = normalizeRequiredUpperText(lastName);
     const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
-    const normalizedEmail = normalizeRequiredLowerEmail(email);
+    const normalizedEmail = normalizeOptionalLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
 
     if (
       !normalizedFirstName ||
       !normalizedLastName ||
-      !normalizedEmployeeId ||
-      !normalizedEmail
+      !normalizedEmployeeId
     ) {
       return res.status(400).json({
         message:
-          "First name, last name, employee ID, and DepEd email are required",
+          "First name, last name, and employee ID are required",
       });
     }
 
@@ -502,7 +501,6 @@ export async function update(req: Request, res: Response) {
           ...(serviceStatus ? { serviceStatus, isActive: serviceStatus === "ACTIVE" } : {}),
           birthdate: parseDateOnly(birthdate),
           personnelType: normalizeOptionalUpperText(personnelType),
-          prcLicenseNumber: normalizeOptionalText(prcLicenseNumber),
           functionalAssignment: normalizeOptionalUpperText(functionalAssignment),
         },
       });
@@ -1009,6 +1007,152 @@ export async function upsertDesignation(req: Request, res: Response) {
           : null,
       },
     });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const idStr = String(req.params.id);
+  const id = parseInt(idStr);
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid teacher ID" });
+  }
+  try {
+    const teacher = await prisma.teacher.findUnique({ where: { id } });
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const { password } = req.body;
+    let defaultPassword = password;
+    if (!defaultPassword) {
+      const settings = await prisma.schoolSetting.findFirst();
+      defaultPassword = settings?.globalDefaultPassword || "DepEd2026!";
+    }
+    const hashedPassword = await bcrypt.hash(defaultPassword, 12);
+
+    let userId = teacher.userId;
+    if (!userId) {
+      const email = teacher.email || `${teacher.employeeId}@noemail.deped.local`;
+      const upsertedUser = await prisma.user.upsert({
+        where: { employeeId: teacher.employeeId },
+        update: {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          middleName: teacher.middleName,
+          email,
+          sex: teacher.sex,
+          isActive: true,
+        },
+        create: {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          middleName: teacher.middleName,
+          email,
+          employeeId: teacher.employeeId,
+          accountName: teacher.employeeId,
+          password: hashedPassword,
+          roles: [Role.TEACHER],
+          sex: teacher.sex,
+          isActive: true,
+          mustChangePassword: true,
+        },
+      });
+      userId = upsertedUser.id;
+      await prisma.teacher.update({ where: { id }, data: { userId } });
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword, mustChangePassword: true },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "ADMIN_PASSWORD_RESET",
+      description: `Admin reset teacher portal password for: ${teacher.lastName}, ${teacher.firstName}`,
+      subjectType: "Teacher",
+      recordId: id,
+      req,
+    });
+
+    res.json({ message: "Teacher portal password reset successfully" });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
+export async function togglePortalAccess(req: Request, res: Response) {
+  const idStr = String(req.params.id);
+  const id = parseInt(idStr);
+  const { isActive } = req.body;
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid teacher ID" });
+  }
+  if (typeof isActive !== "boolean") {
+    return res.status(400).json({ message: "isActive is required and must be boolean" });
+  }
+  try {
+    const teacher = await prisma.teacher.findUnique({ where: { id } });
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    let userId = teacher.userId;
+    if (!userId) {
+      const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
+      const email = teacher.email || `${teacher.employeeId}@noemail.deped.local`;
+      const upsertedUser = await prisma.user.upsert({
+        where: { employeeId: teacher.employeeId },
+        update: {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          middleName: teacher.middleName,
+          email,
+          sex: teacher.sex,
+          isActive,
+        },
+        create: {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          middleName: teacher.middleName,
+          email,
+          employeeId: teacher.employeeId,
+          accountName: teacher.employeeId,
+          password: defaultPasswordHash,
+          roles: [Role.TEACHER],
+          sex: teacher.sex,
+          isActive,
+          mustChangePassword: true,
+        },
+      });
+      userId = upsertedUser.id;
+      await prisma.teacher.update({ where: { id }, data: { userId } });
+    } else {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isActive },
+      });
+    }
+
+    const updatedTeacher = await prisma.teacher.update({
+      where: { id },
+      data: { isActive },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: isActive ? "ADMIN_USER_REACTIVATED" : "ADMIN_USER_DEACTIVATED",
+      description: `Admin updated teacher portal status to ${isActive ? "ACTIVE" : "LOCKED"} for: ${teacher.lastName}, ${teacher.firstName}`,
+      subjectType: "Teacher",
+      recordId: id,
+      req,
+    });
+
+    res.json({ teacher: updatedTeacher });
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: err.message });

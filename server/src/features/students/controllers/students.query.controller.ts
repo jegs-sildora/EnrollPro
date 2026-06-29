@@ -250,6 +250,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           sectionId: applicant.enrollmentRecord?.sectionId || null,
           tleSpecialization: null,
           studentPhoto: applicant.learner?.studentPhoto || null,
+          portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
         };
@@ -302,7 +303,19 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const applicant = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: {
-          learner: true,
+          learner: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  isActive: true,
+                  lastLoginAt: true,
+                  mustChangePassword: true,
+                  roles: true,
+                },
+              },
+            },
+          },
           gradeLevel: true,
           schoolYear: true,
           addresses: true,
@@ -381,6 +394,19 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         contactNumber: applicant.contactNumber,
         religion: applicant.learner?.religion,
         learnerStatus: applicant.learner?.status || "ACTIVE",
+        userId: applicant.learner?.userId || null,
+        userAccount: applicant.learner?.user
+          ? {
+              id: applicant.learner.user.id,
+              isActive: applicant.learner.user.isActive,
+              lastLoginAt: applicant.learner.user.lastLoginAt
+                ? applicant.learner.user.lastLoginAt.toISOString()
+                : null,
+              mustChangePassword: applicant.learner.user.mustChangePassword,
+              roles: applicant.learner.user.roles,
+            }
+          : null,
+        portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
         isIpCommunity: applicant.learner?.isIpCommunity,
         is4PsBeneficiary: applicant.learner?.is4PsBeneficiary,
         isLearnerWithDisability: applicant.learner?.isLearnerWithDisability,

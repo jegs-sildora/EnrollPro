@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { prisma } from "../../../lib/prisma.js";
 import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
@@ -620,6 +621,149 @@ const getRequestUserId = (req: Request): number | null => {
     } catch (error) {
       console.error("Error marking transfer out:", error);
       res.status(500).json({ message: "Failed to mark transfer out" });
+    }
+  };
+
+  export const resetPortalPassword = async (req: Request, res: Response) => {
+    try {
+      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(parsedId)) {
+        return res.status(400).json({ message: "Invalid student id" });
+      }
+
+      const applicant = await prisma.enrollmentApplication.findUnique({
+        where: { id: parsedId },
+        include: { learner: true },
+      });
+
+      if (!applicant || !applicant.learner) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const { password } = req.body;
+
+      let newPassword = password;
+      if (!newPassword) {
+        const settings = await prisma.schoolSetting.findFirst();
+        newPassword = settings?.globalDefaultPassword || "DepEd2026!";
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      let userId = applicant.learner.userId;
+
+      if (!userId) {
+        const accountName = `LRN-${applicant.learner.lrn}`;
+        const createdUser = await prisma.user.create({
+          data: {
+            firstName: applicant.learner.firstName,
+            lastName: applicant.learner.lastName,
+            accountName,
+            password: hashedPassword,
+            roles: ["LEARNER"],
+            mustChangePassword: true,
+            sex: applicant.learner.sex,
+            isActive: true,
+          },
+        });
+        userId = createdUser.id;
+        await prisma.learner.update({
+          where: { id: applicant.learnerId },
+          data: { userId },
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { password: hashedPassword, mustChangePassword: true },
+        });
+      }
+
+      const registrarId = getRequestUserId(req);
+      await prisma.auditLog.create({
+        data: {
+          userId: registrarId || 1,
+          actionType: "STUDENT_PASSWORD_RESET",
+          description: `Admin reset portal password for student: ${applicant.learner.firstName} ${applicant.learner.lastName} (LRN: ${applicant.learner.lrn})`,
+          subjectType: "EnrollmentApplication",
+          recordId: parsedId,
+          ipAddress: req.ip || "unknown",
+          userAgent: req.headers["user-agent"] || null,
+        },
+      });
+
+      res.json({ message: "Student portal password reset successfully" });
+    } catch (error: unknown) {
+      const err = error as Error;
+      res.status(500).json({ message: err.message });
+    }
+  };
+
+  export const togglePortalAccess = async (req: Request, res: Response) => {
+    try {
+      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(parsedId)) {
+        return res.status(400).json({ message: "Invalid student id" });
+      }
+
+      const { isActive } = req.body as { isActive: boolean };
+      if (typeof isActive !== "boolean") {
+        return res.status(400).json({ message: "isActive is required and must be boolean" });
+      }
+
+      const applicant = await prisma.enrollmentApplication.findUnique({
+        where: { id: parsedId },
+        include: { learner: true },
+      });
+
+      if (!applicant || !applicant.learner) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      let userId = applicant.learner.userId;
+      if (!userId) {
+        const lrn = applicant.learner.lrn || "123456789012";
+        const accountName = `LRN-${lrn}`;
+        const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 12);
+        const createdUser = await prisma.user.create({
+          data: {
+            firstName: applicant.learner.firstName,
+            lastName: applicant.learner.lastName,
+            accountName,
+            password: defaultPasswordHash,
+            roles: ["LEARNER"],
+            mustChangePassword: true,
+            sex: applicant.learner.sex,
+            isActive,
+          },
+        });
+        userId = createdUser.id;
+        await prisma.learner.update({
+          where: { id: applicant.learnerId },
+          data: { userId },
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isActive },
+        });
+      }
+
+      const registrarId = getRequestUserId(req);
+      await prisma.auditLog.create({
+        data: {
+          userId: registrarId || 1,
+          actionType: isActive ? "STUDENT_PORTAL_ACTIVATED" : "STUDENT_PORTAL_DEACTIVATED",
+          description: `Admin updated portal status to ${isActive ? "ACTIVE" : "LOCKED"} for student: ${applicant.learner.firstName} ${applicant.learner.lastName} (LRN: ${applicant.learner.lrn})`,
+          subjectType: "EnrollmentApplication",
+          recordId: parsedId,
+          ipAddress: req.ip || "unknown",
+          userAgent: req.headers["user-agent"] || null,
+        },
+      });
+
+      res.json({ message: `Portal access status updated to ${isActive ? "ACTIVE" : "LOCKED"}` });
+    } catch (error: unknown) {
+      const err = error as Error;
+      res.status(500).json({ message: err.message });
     }
   };
 

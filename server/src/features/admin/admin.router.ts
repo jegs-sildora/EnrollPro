@@ -25,6 +25,7 @@ router.post("/system/unlock-bosy", sysCtrl.unlockBosy);
 
 // User Management
 router.get("/users/metrics", userCtrl.metrics);
+router.get("/users/roles", userCtrl.getRoles);
 router.get("/users", userCtrl.index);
 router.post("/users", validate(createUserSchema), userCtrl.store);
 router.patch("/users/:id", validate(updateUserSchema), userCtrl.update);

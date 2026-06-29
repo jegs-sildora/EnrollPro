@@ -31,6 +31,8 @@ router.put(
 router.get("/:id", teachersCtrl.show);
 router.post("/", validate(teacherSchema), teachersCtrl.store);
 router.patch("/:id", validate(updateTeacherSchema), teachersCtrl.update);
+router.patch("/:id/portal-access", teachersCtrl.togglePortalAccess);
+router.post("/:id/reset-password", teachersCtrl.resetPassword);
 router.patch(
   "/:id/deactivate",
   validate(deactivateTeacherSchema),

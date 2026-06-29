@@ -212,7 +212,7 @@ function getEnrollmentWindowStatus(
 
   if (todayToken < startToken) {
     return {
-      label: `🔵 SCHEDULED`,
+      label: `SCHEDULED`,
       color: "bg-blue-100 text-blue-700",
     };
   }
@@ -971,7 +971,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <div className="space-y-6 pb-24 relative">
+    <div className="space-y-6 relative">
       <AnimatePresence>
         {isRolloverLoaderOpen && (
           <motion.div
@@ -1108,31 +1108,13 @@ export default function SchoolYearTab() {
                       </div>
                       <div>
                         {activeYear ? (
-                          <>School Year {activeYear.yearLabel}</>
+                          <>Current School Year: {activeYear.yearLabel}</>
                         ) : (
                           <>No Active School Year</>
                         )}
                       </div>
                     </CardTitle>
-                    {activeYear && (
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider whitespace-nowrap text-green-700 bg-green-50 border border-green-200 rounded-full">
-                        {activeYear.sections?.length === 0 ? "Initialization Phase" : "Current SY"}
-                      </span>
-                    )}
                   </div>
-                  {activeYear && (
-                    <p className="font-extrabold text-foreground text-lg">
-                      {(() => {
-                        const firstDay = localCalendarState.term1Start;
-                        const isQuarters = localCalendarState.termFormat === "QUARTERS";
-                        const lastDay = isQuarters ? localCalendarState.term4End : localCalendarState.term3End;
-
-                        return firstDay && lastDay
-                          ? `Official School Calendar: ${formatManilaDate(firstDay)} – ${formatManilaDate(lastDay)}`
-                          : "Official School Calendar: Dates not fully configured";
-                      })()}
-                    </p>
-                  )}
                 </div>
 
                 {activeYear && activeYear._count?.sections > 0 && activeYear.sections?.length === 0 && (
@@ -1153,7 +1135,7 @@ export default function SchoolYearTab() {
                             System Academic Phase
                           </h4>
                         </div>
-                        <p className="text-base font-extrabold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-bold text-foreground rounded-md inline-block">
                           Control the current phase of the academic year. This affects how late enrollments are processed.
                         </p>
                       </div>
@@ -1161,29 +1143,32 @@ export default function SchoolYearTab() {
                     <RadioGroup
                       value={selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT"}
                       onValueChange={(value: string) => setSelectedPhase(value)}
-                      className="flex flex-col space-y-4"
+                      className="grid grid-cols-1 md:grid-cols-3 gap-4"
                     >
-                      <div className="flex items-start space-x-2">
-                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="mt-1" />
-                        <div>
-                          <Label htmlFor="OFFICIAL_ENROLLMENT" className="font-extrabold cursor-pointer text-foreground block">Official Enrollment</Label>
-                          <p className="text-sm text-foreground mt-1">Opens the public enrollment forms and processes normal verify/confirm workflows.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-2">
-                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="mt-1" />
-                        <div>
-                          <Label htmlFor="CLASSES_ONGOING" className="font-extrabold cursor-pointer text-foreground block">Classes Ongoing (Late Enrollment)</Label>
-                          <p className="text-sm text-foreground mt-1">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-2">
-                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="mt-1" />
-                        <div>
-                          <Label htmlFor="EOSY_CLOSING" className="font-extrabold cursor-pointer text-foreground block">EOSY Closing</Label>
-                          <p className="text-sm text-foreground mt-1">Locks public enrollment forms and readies the database for end-of-year grade finalization.</p>
-                        </div>
-                      </div>
+                      <Label
+                        htmlFor="OFFICIAL_ENROLLMENT"
+                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                      >
+                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="sr-only" />
+                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">Official Enrollment</span>
+                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Opens the public enrollment forms and processes normal verify/confirm workflows.</span>
+                      </Label>
+                      <Label
+                        htmlFor="CLASSES_ONGOING"
+                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                      >
+                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="sr-only" />
+                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">Classes Ongoing (Late)</span>
+                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</span>
+                      </Label>
+                      <Label
+                        htmlFor="EOSY_CLOSING"
+                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                      >
+                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="sr-only" />
+                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">EOSY Closing</span>
+                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Locks public enrollment forms and readies the database for end-of-year grade finalization.</span>
+                      </Label>
                     </RadioGroup>
 
                     {selectedPhase && selectedPhase !== systemPhase && (
@@ -1210,16 +1195,24 @@ export default function SchoolYearTab() {
                       onValueChange={(value: string) => {
                         setLocalCalendarState(prev => ({ ...prev, termFormat: value }));
                       }}
-                      className="flex flex-col space-y-2"
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                     >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" />
-                        <Label htmlFor="TRIMESTER" className="font-extrabold cursor-pointer text-foreground">3-Term System (Mandated DO 9, s. 2026)</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="QUARTERS" id="QUARTERS" />
-                        <Label htmlFor="QUARTERS" className="font-extrabold cursor-pointer text-foreground">4-Quarter System</Label>
-                      </div>
+                      <Label
+                        htmlFor="TRIMESTER"
+                        className="group relative flex flex-col justify-center cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                      >
+                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" className="sr-only" />
+                        <span className="font-extrabold text-foreground block group-[&:has([data-state=checked])]:text-primary">3-Term System</span>
+                        <span className="text-sm font-bold text-foreground mt-1 block group-[&:has([data-state=checked])]:text-primary">Mandated DO 9, s. 2026</span>
+                      </Label>
+                      <Label
+                        htmlFor="QUARTERS"
+                        className="group relative flex flex-col justify-center cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                      >
+                        <RadioGroupItem value="QUARTERS" id="QUARTERS" className="sr-only" />
+                        <span className="font-extrabold text-foreground block group-[&:has([data-state=checked])]:text-primary">4-Quarter System</span>
+                        <span className="text-sm font-bold text-foreground mt-1 block group-[&:has([data-state=checked])]:text-primary">Traditional academic calendar</span>
+                      </Label>
                     </RadioGroup>
                   </div>
 
@@ -1283,7 +1276,7 @@ export default function SchoolYearTab() {
                         </p>
                       </div>
                       <span
-                        className={`inline-flex items-center px-3 py-1 text-sm font-semibold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
+                        className={`inline-flex items-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
                         {enrollmentPhaseStatus.label}
                       </span>
                     </div>
@@ -1373,8 +1366,8 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Pilot Sectioning (Homogeneous)</Label>
-                      <p className="text-base text-foreground">Automatically group highest-performing learners into top sections.</p>
+                      <Label className="text-base">Top Basic Education Curriculum (BEC) Sectioning</Label>
+                      <p className="text-base text-foreground">Group top-performing learners into dedicated sections based on General Average.</p>
                     </div>
                     <Switch
                       checked={enableHomogeneousSections}
@@ -1385,12 +1378,12 @@ export default function SchoolYearTab() {
                   {enableHomogeneousSections && (
                     <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
                       <div className="max-w-xs space-y-2">
-                        <Label>Number of Homogeneous Sections</Label>
+                        <Label>Number of Top BEC Sections</Label>
                         <Input
                           type="number"
                           min="1"
                           placeholder="5"
-                          className="h-10 py-2 px-3"
+                          className="h-10 py-2 px-3 font-bold"
                           value={homogeneousSectionCount}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
@@ -1409,8 +1402,8 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Standard Sectioning (Heterogeneous)</Label>
-                      <p className="text-base text-foreground">Distribute remaining learners equally across regular sections to balance academic capabilities.</p>
+                      <Label className="text-base">Standard BEC Sectioning (Heterogeneous)</Label>
+                      <p className="text-base text-foreground">Evenly distribute remaining learners to ensure balanced sections.</p>
                     </div>
                     <Switch
                       checked={heterogeneousRoundRobin}

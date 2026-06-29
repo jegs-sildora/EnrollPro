@@ -15,7 +15,7 @@ import {
   FileBadge2,
   Fingerprint,
   CalendarDays,
-  RefreshCw,
+  FilterXIcon,
   AlertTriangle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -123,6 +123,7 @@ interface Student {
   createdAt: string;
   updatedAt: string;
   studentPhoto?: string | null;
+  portalStatus?: string;
 }
 
 
@@ -874,76 +875,20 @@ export default function Students() {
                   }
                 />
                 <div className="flex min-w-0 flex-col text-left">
-                  <span className="break-words text-base font-extrabold uppercase leading-tight">
+                  <span className="break-words font-extrabold uppercase leading-tight">
                     {row.original.fullName}
                   </span>
-                  {row.original.applicantType === "LATE_ENROLLEE" && (
-                    <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                    <span className="font-bold">
+                      LRN: {row.original.lrn}
+                    </span>
+                    {row.original.applicantType === "LATE_ENROLLEE" && (
                       <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
                         Late Enrollee
                       </Badge>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          },
-        },
-        {
-          id: "lrn",
-          accessorKey: "lrn",
-          size: 150,
-          minSize: 140,
-          maxSize: 170,
-          meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="LRN"
-              className="justify-center [&_button]:!m-0"
-            />
-          ),
-          cell: ({ row }) => (
-            <div className="flex w-full justify-center py-3">
-              <span className="font-extrabold text-base leading-tight text-center">{row.original.lrn}</span>
-            </div>
-          ),
-        },
-        {
-          id: "sex",
-          accessorKey: "sex",
-          size: 100,
-          minSize: 90,
-          maxSize: 110,
-          meta: { skeletonClassName: "w-[40px] mx-auto", className: "text-center", headerClassName: "text-center" },
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Sex"
-              className="justify-center [&_button]:!m-0"
-            />
-          ),
-          cell: ({ row }) => {
-            const normalized = row.original.sex?.trim().toUpperCase();
-            const isMale = normalized === "MALE" || normalized === "M";
-            const isFemale = normalized === "FEMALE" || normalized === "F";
-            const display = isMale ? "Male" : isFemale ? "Female" : row.original.sex || "—";
-
-            return (
-              <div className="flex w-full justify-center py-3">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "font-extrabold text-sm px-2.5 py-0.5 rounded-md",
-                    isMale
-                      ? "bg-blue-50 text-blue-700 border-blue-100"
-                      : isFemale
-                        ? "bg-pink-50 text-pink-700 border-pink-100"
-                        : "bg-slate-50 text-slate-600 border-slate-200"
-                  )}
-                >
-                  {display}
-                </Badge>
               </div>
             );
           },
@@ -992,12 +937,13 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="font-extrabold text-base leading-tight text-center">
+              <span className="font-extrabold leading-tight text-center uppercase">
                 {formatSectionLabel(row.original.section)}
               </span>
             </div>
           ),
         },
+
         {
           id: "status",
           size: 150,
@@ -1033,7 +979,7 @@ export default function Students() {
           ),
           cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="text-base leading-tight font-extrabold text-center block">
+              <span className="leading-tight font-extrabold text-center block">
                 {formatDate(row.original.dateEnrolled || row.original.createdAt)}
               </span>
             </div>
@@ -1041,23 +987,31 @@ export default function Students() {
         },
         {
           id: "actions",
-          size: 120,
-          minSize: 110,
-          maxSize: 130,
-          meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          size: 150,
+          minSize: 140,
+          maxSize: 170,
+          meta: { className: "text-center hover:bg-transparent", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Action"
-              className="justify-center"
+              title="Actions"
+              className="justify-center [&_button]:!m-0"
             />
           ),
-          cell: () => (
+          cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <span className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewDetails(row.original.id);
+                }}
+              >
                 <Eye className="w-4 h-4 mr-2" />
                 View
-              </span>
+              </Button>
             </div>
           ),
         },
@@ -1067,23 +1021,25 @@ export default function Students() {
 
   const renderContent = () => (
     <div className="space-y-6">
-      {/* Search and Filters */}
+
+      {/* Student List */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-        <CardHeader className="px-3 sm:px-6 pb-3">
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative w-full lg:min-w-64 lg:flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, ID, or LRN..."
-                className="pl-9 h-10 w-full text-base leading-tight font-extrabold"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+        {/* Control Bar (Filters) */}
+        <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div className="w-full lg:w-110 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by name, ID, or LRN..."
+                  className="w-full h-10 pl-9 bg-white border-gray-300 uppercase font-extrabold"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Dropdowns */}
-            <div className="flex w-full flex-wrap items-center gap-3 lg:w-auto lg:flex-none lg:flex-nowrap">
+            <div className="flex flex-row flex-wrap lg:flex-nowrap items-center justify-end gap-3 w-full">
               <Select
                 value={gradeLevelFilter}
                 onValueChange={(value) => {
@@ -1092,18 +1048,18 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold sm:w-40">
+                <SelectTrigger className="h-10 w-full leading-tight font-extrabold sm:w-40">
                   <SelectValue placeholder="All Grades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
+                  <SelectItem value="all" className="leading-tight font-extrabold">
                     All Grades
                   </SelectItem>
                   {gradeLevels.map((gl) => (
                     <SelectItem
                       key={gl.id}
                       value={gl.id.toString()}
-                      className="text-base leading-tight font-extrabold">
+                      className="leading-tight font-extrabold">
                       <div className="flex items-center gap-2">
                         <span className={cn("w-2.5 h-2.5 rounded-full border border-black/10 shrink-0", getGradeLevelColorDotClass(gl.name))} />
                         <span>{gl.name}</span>
@@ -1121,11 +1077,11 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold sm:w-40">
+                <SelectTrigger className="h-10 w-full leading-tight font-extrabold sm:w-40">
                   <SelectValue placeholder="All Programs" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
+                  <SelectItem value="all" className="leading-tight font-extrabold">
                     All Programs
                   </SelectItem>
                   {programOptionsQuery.isPending && (
@@ -1142,7 +1098,7 @@ export default function Students() {
                     <SelectItem
                       key={option.value}
                       value={option.value}
-                      className="text-base leading-tight font-extrabold">
+                      className="leading-tight font-extrabold">
                       {option.label}
                     </SelectItem>
                   ))}
@@ -1157,11 +1113,11 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full text-base leading-tight font-extrabold transition-colors sm:w-48">
+                <SelectTrigger className="h-10 w-full leading-tight font-extrabold transition-colors sm:w-48">
                   <SelectValue placeholder="All Sections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-base leading-tight font-extrabold">
+                  <SelectItem value="all" className="leading-tight font-extrabold">
                     All Sections
                   </SelectItem>
                   {gradeLevelFilter === "all" ? (
@@ -1170,12 +1126,12 @@ export default function Students() {
                       if (glSections.length === 0) return null;
                       return (
                         <SelectGroup key={gl.id}>
-                          <SelectLabel className={cn("text-base uppercase font-extrabold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
+                          <SelectLabel className={cn("uppercase font-extrabold", getGradeLevelTextClass(gl.name))}>{gl.name}</SelectLabel>
                           {glSections.map((sec) => (
                             <SelectItem
                               key={sec.id}
                               value={sec.id.toString()}
-                              className="text-base leading-tight font-extrabold">
+                              className="leading-tight font-extrabold">
                               {formatSectionLabel(sec.name)}
                             </SelectItem>
                           ))}
@@ -1187,7 +1143,7 @@ export default function Students() {
                       <SelectItem
                         key={sec.id}
                         value={sec.id.toString()}
-                        className="text-base leading-tight font-extrabold">
+                        className="leading-tight font-extrabold">
                         {formatSectionLabel(sec.name)}
                       </SelectItem>
                     ))
@@ -1199,65 +1155,25 @@ export default function Students() {
               <div className="hidden lg:block w-px h-6 bg-border mx-1" />
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 text-base leading-tight font-extrabold flex-1 sm:flex-none"
-                  onClick={() => {
-                    void Promise.all([
-                      queryClient.invalidateQueries({
-                        queryKey: queryKeys.studentsList(studentsQueryParams),
-                      }),
-                      ayId
-                        ? queryClient.invalidateQueries({
-                          queryKey: queryKeys.studentsSummary(ayId),
-                        })
-                        : Promise.resolve(),
-                      ayId
-                        ? queryClient.invalidateQueries({
-                          queryKey: queryKeys.activeAcademicPrograms,
-                        })
-                        : Promise.resolve(),
-                    ]);
-                  }}
-                  disabled={loading || !ayId}>
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                  Refresh
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 text-base leading-tight font-extrabold flex-1 sm:flex-none"
-                  onClick={() => {
-                    startTransition(() => {
-                      clearSearch();
-                      setGradeLevelFilter("all");
-                      setProgramFilter("all");
-                      setSectionFilter("all");
-                      setSortBy("dateEnrolled");
-                      setSortOrder("desc");
-                      setPage(1);
-                    });
-                  }}>
-                  Clear
-                </Button>
-              </div>
+              <Button
+                className="h-10 px-3 text-gray-600 hover:text-gray-900 shrink-0 font-extrabold"
+                variant="ghost"
+                onClick={() => {
+                  startTransition(() => {
+                    clearSearch();
+                    setGradeLevelFilter("all");
+                    setProgramFilter("all");
+                    setSectionFilter("all");
+                    setSortBy("dateEnrolled");
+                    setSortOrder("desc");
+                    setPage(1);
+                  });
+                }}>
+                <FilterXIcon className="w-4 h-4 mr-2" /> Clear
+              </Button>
             </div>
           </div>
-        </CardHeader>
-      </Card>
-
-      {/* Student List */}
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-        <CardHeader className="px-3 sm:px-6 pb-2">
-          <CardTitle className="text-base sm:text-lg font-extrabold">
-            {activeTab === "active"
-              ? "Enrolled Learner Records"
-              : activeTab === "completers"
-                ? "JHS Completer Records"
-                : "Inactive / Transferred Records"}
-          </CardTitle>
-        </CardHeader>
+        </div>
         <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
           <AnimatePresence mode="wait">
             {loading ? (
@@ -1320,7 +1236,6 @@ export default function Students() {
                     containerHeight="100%"
                     sorting={sorting}
                     onSortingChange={onSortingChange}
-                    onRowClick={(row) => handleViewDetails(row.id)}
                     getRowClassName={() => "group"}
                   />
                 </div>
@@ -1335,7 +1250,7 @@ export default function Students() {
                 className="flex-1 flex flex-col overflow-hidden">
                 <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
                   {students.length === 0 ? (
-                    <div className="rounded-xl border p-6 text-center text-base leading-tight font-extrabold">
+                    <div className="rounded-xl border p-6 text-center leading-tight font-extrabold">
                       No learners found for the selected filters.
                     </div>
                   ) : (
@@ -1357,11 +1272,11 @@ export default function Students() {
                               }
                             />
                             <div className="min-w-0">
-                              <p className="font-extrabold text-base uppercase leading-tight break-words">
+                              <p className="font-extrabold uppercase leading-tight break-words">
                                 {student.fullName}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-base font-extrabold text-foreground leading-snug">
+                                <p className="font-extrabold text-foreground leading-snug">
                                   {formatLearningProgramLabel(
                                     student.learningProgram,
                                   )}
@@ -1379,13 +1294,13 @@ export default function Students() {
 
                         <div className="mt-2 grid grid-cols-2 gap-2 text-base">
                           <div>
-                            <p className="text-base uppercase  font-extrabold text-foreground">
+                            <p className="uppercase  font-extrabold text-foreground">
                               LRN
                             </p>
                             <p className="font-extrabold">{student.lrn}</p>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-extrabold text-foreground">
+                            <p className="uppercase  font-extrabold text-foreground">
                               Sex
                             </p>
                             <p className="font-extrabold uppercase">
@@ -1398,7 +1313,7 @@ export default function Students() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-extrabold text-foreground">
+                            <p className="uppercase  font-extrabold text-foreground">
                               Grade Level
                             </p>
                             <Badge
@@ -1412,7 +1327,7 @@ export default function Students() {
                             </Badge>
                           </div>
                           <div>
-                            <p className="text-base uppercase  font-extrabold text-foreground">
+                            <p className="uppercase  font-extrabold text-foreground">
                               Section
                             </p>
                             <p className="font-extrabold">
@@ -1432,7 +1347,7 @@ export default function Students() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-9 flex-1 text-base font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            className="h-9 flex-1 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                             onClick={() => handleViewDetails(student.id)}>
                             <Eye className="h-3.5 w-3.5 mr-1.5" />
                             View
@@ -1442,7 +1357,7 @@ export default function Students() {
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                className="h-9 w-10 px-0 text-base font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                                className="h-9 w-10 px-0 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                                 aria-label={`Open actions for ${student.fullName}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -1510,7 +1425,6 @@ export default function Students() {
                     noResultsMessage="No learners found for the selected filters."
                     sorting={sorting}
                     onSortingChange={onSortingChange}
-                    onRowClick={(row) => handleViewDetails(row.id)}
                     getRowClassName={() => "group"}
                   />
                 </div>
@@ -1543,7 +1457,7 @@ export default function Students() {
               <p className="font-extrabold text-foreground">
                 No School Year Selected
               </p>
-              <p className="text-base text-foreground leading-relaxed px-4">
+              <p className="text-foreground leading-relaxed px-4">
                 Please set an active year or choose one from the header switcher
                 to manage records for this period.
               </p>
@@ -1561,7 +1475,7 @@ export default function Students() {
         <h1 className="text-2xl sm:text-3xl font-extrabold">
           Master Learner Registry (LIS)
         </h1>
-        <p className="text-base leading-tight font-extrabold text-foreground">
+        <p className="leading-tight font-extrabold text-foreground">
           Manage officially enrolled demographic data, enrollment histories, and permanent records.
         </p>
       </div>
@@ -1719,7 +1633,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-base font-extrabold">
+            <AlertDescription className="font-extrabold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.
@@ -1788,7 +1702,7 @@ export default function Students() {
 
           <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-base font-extrabold">
+            <AlertDescription className="font-extrabold">
               Warning: This action will permanently alter the student's status
               on the official School Form 1 (SF1) and School Form 4 (SF4)
               reports.

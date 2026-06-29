@@ -108,7 +108,7 @@ const SECTION_CATEGORY_CONFIG: Record<
     title: "Basic Education Curriculum (BEC) — Heterogeneous",
     curriculumProgram: "REGULAR_HETERO",
     isHomogeneous: false,
-    addDescription: "Add a mixed-ability BEC section.",
+    addDescription: "Add a heterogeneous BEC section.",
   },
 };
 
@@ -510,7 +510,7 @@ export default function Homerooms() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
-          <h3 className="text-lg font-extrabold uppercase text-foreground/80 tracking-tight flex items-center gap-2">
+          <h3 className="text-lg font-extrabold uppercase text-foreground tracking-tight flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
             {categoryConfig.title}
           </h3>
@@ -543,14 +543,14 @@ export default function Homerooms() {
               )
             }
             disabled={!canAddCategory}
-            className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-muted-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
+            className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
               <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
             </div>
             <span className="mt-2 text-sm font-extrabold uppercase">
-              + Add Section
+              Add Section
             </span>
-            <span className="max-w-xs text-center text-xs font-semibold normal-case">
+            <span className="max-w-xs text-center text-sm font-semibold normal-case">
               {!canMutate
                 ? "Section changes are unavailable during EOSY closing or in an archived school year."
                 : canAddCategory

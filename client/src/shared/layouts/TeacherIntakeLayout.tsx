@@ -91,9 +91,9 @@ function TeacherUserNav() {
             className="cursor-pointer font-extrabold text-sm"
             asChild
           >
-            <Link to="/admin/users">
+            <Link to="/change-password">
               <Settings className="mr-2 h-4 w-4" />
-              Account Settings
+              Change Password
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

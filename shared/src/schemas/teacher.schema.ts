@@ -67,14 +67,14 @@ export const teacherSchemaBase = z
       .nullable()
       .optional(),
     personnelType: z.enum(["TEACHING", "NON_TEACHING"]).optional().nullable(),
-    prcLicenseNumber: z.string().optional().nullable(),
     functionalAssignment: z.string().optional().nullable(),
     email: z
       .string()
       .trim()
-      .min(1, "DepEd email address is required")
       .email("Invalid email address")
-      .transform((value) => value.normalize("NFC").toLowerCase()),
+      .transform((value) => value.normalize("NFC").toLowerCase())
+      .optional()
+      .nullable(),
     employeeId: z
       .string()
       .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits"),
@@ -130,17 +130,7 @@ export const teacherSchemaBase = z
   })
   .strict();
 
-export const teacherSchema = teacherSchemaBase.superRefine((data, ctx) => {
-  if (data.personnelType === "TEACHING") {
-    if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["prcLicenseNumber"],
-        message: "PRC License Number must be exactly 7 digits",
-      });
-    }
-  }
-});
+export const teacherSchema = teacherSchemaBase;
 
 // PUT semantics: full profile replacement contract.
 export const updateTeacherSchema = teacherSchemaBase.extend({
@@ -162,16 +152,6 @@ export const updateTeacherSchema = teacherSchemaBase.extend({
     .optional()
     .nullable(),
   roles: z.array(z.string()).optional(),
-}).superRefine((data, ctx) => {
-  if (data.personnelType === "TEACHING") {
-    if (!data.prcLicenseNumber || !/^\d{7}$/.test(data.prcLicenseNumber)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["prcLicenseNumber"],
-        message: "PRC License Number must be exactly 7 digits",
-      });
-    }
-  }
 });
 
 const optionalDateOnly = z

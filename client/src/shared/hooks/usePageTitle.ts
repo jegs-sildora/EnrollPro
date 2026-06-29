@@ -34,7 +34,6 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/audit-logs": "Activity Logs",
     "/settings": "System Configuration",
     "/teachers": "Faculty & Staff",
-    "/admin/users": "Account Access",
     "/admin/system": "System Health",
     "/smart": "SMART",
     "/monitoring/enrollment/requirements": "Documentary Requirements",

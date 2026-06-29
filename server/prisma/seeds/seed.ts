@@ -47,6 +47,9 @@ async function main() {
     schoolWebsite: "",
     selectedAccentHsl: "221 83% 53%",
     activeSchoolYearId: sy.id,
+    spaEnabled: true,
+    spsEnabled: true,
+    steEnabled: true,
   };
 
   const existingSettings = await prisma.schoolSetting.findFirst();
@@ -67,9 +70,8 @@ async function main() {
     {
       firstName: "Jose",
       lastName: "Rizal",
-      email: "jrizal.admin@deped.edu.ph",
       employeeId: "1234501", // 7-digit
-      roles: ["SYSTEM_ADMIN"],
+      roles: ["SYSTEM_ADMIN" as Role],
       designation: "School Head",
       sex: "MALE" as Sex,
       mobileNumber: "09171234501",
@@ -91,7 +93,6 @@ async function main() {
       create: {
         firstName: u.firstName,
         lastName: u.lastName,
-        email: u.email,
         employeeId: u.employeeId,
         accountName: u.employeeId,
         password: hashedPassword,
@@ -109,7 +110,6 @@ async function main() {
       update: {
         firstName: u.firstName,
         lastName: u.lastName,
-        email: u.email,
         contactNumber: u.mobileNumber,
         designation: u.designation,
         sex: u.sex,
@@ -120,7 +120,6 @@ async function main() {
         employeeId: u.employeeId,
         firstName: u.firstName,
         lastName: u.lastName,
-        email: u.email,
         contactNumber: u.mobileNumber,
         designation: u.designation,
         sex: u.sex,

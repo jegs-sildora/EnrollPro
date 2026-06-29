@@ -41,6 +41,8 @@ import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
 import { getImageUrl, formatEosyStatus, cn } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { useSettingsStore } from "@/store/settings.slice";
 import {
   PersonalInfo,
   AddressInfo,
@@ -132,6 +134,7 @@ export interface StudentDetail {
   isBalikAral?: boolean;
   motherTongue?: string | null;
   religion?: string | null;
+  portalStatus?: string;
 }
 
 interface Props {
@@ -229,6 +232,68 @@ export function StudentDetailPanel({
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [portalActive, setPortalActive] = useState(true);
+  const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
+  const [isPortalActionSubmitting, setIsPortalActionSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (student) {
+      setPortalActive(student.portalStatus === "ACTIVE");
+    }
+  }, [student]);
+
+  const handleTogglePortalAccess = async (active: boolean) => {
+    if (!student) return;
+    setIsPortalActionSubmitting(true);
+    try {
+      await api.patch(`/students/${student.id}/portal-access`, { isActive: active });
+      setPortalActive(active);
+      sileo.success({
+        title: "Portal Access Updated",
+        description: `Student portal has been ${active ? "activated" : "locked"}.`,
+      });
+      if (onRefreshData) onRefreshData();
+    } catch (err: unknown) {
+      sileo.error({
+        title: "Failed to Update Portal Access",
+        description: "An error occurred while updating portal status.",
+      });
+    } finally {
+      setIsPortalActionSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = () => {
+    setShowResetPasswordConfirm(true);
+  };
+
+  const handleResetPasswordConfirm = async () => {
+    if (!student) return;
+    if (!defaultPasswordInput.trim()) {
+      sileo.error({
+        title: "Validation Error",
+        description: "Default password cannot be empty.",
+      });
+      return;
+    }
+    setShowResetPasswordConfirm(false);
+    setIsPortalActionSubmitting(true);
+    try {
+      await api.post(`/students/${student.id}/reset-password`, { password: defaultPasswordInput });
+      sileo.success({
+        title: "Password Reset Success",
+        description: "Student portal password has been reset.",
+      });
+    } catch (err: unknown) {
+      sileo.error({
+        title: "Failed to Reset Password",
+        description: "An error occurred while resetting password.",
+      });
+    } finally {
+      setIsPortalActionSubmitting(false);
+    }
+  };
   const [profileForm, setProfileForm] = useState({
     firstName: "",
     lastName: "",
@@ -265,6 +330,7 @@ export function StudentDetailPanel({
     guardianContactNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
 
   const showSkeleton = useDelayedLoading(loading);
 
@@ -294,6 +360,12 @@ export function StudentDetailPanel({
       setErrors({}); // Reset errors
     }
   }, [id, fetchStudent]);
+
+  const globalDefaultPassword = useSettingsStore((s) => s.globalDefaultPassword);
+
+  useEffect(() => {
+    setDefaultPasswordInput(globalDefaultPassword || "");
+  }, [globalDefaultPassword]);
 
   // Derived check for form dirty state
   const isProfileFormDirty = useMemo(() => {
@@ -1656,6 +1728,75 @@ export function StudentDetailPanel({
             <PreviousSchool applicant={typedStudentShim} />
             <Classifications applicant={typedStudentShim} />
 
+            <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-sm p-5 space-y-4">
+              <div className="font-extrabold uppercase text-base leading-tight tracking-wide text-foreground flex items-center gap-2 border-b border-border/40 pb-3">
+                <FileBadge2 className="h-4 w-4 text-primary" />
+                PORTAL ACCESS & SECURITY
+              </div>
+
+              <div className="space-y-2 ">
+                <Label className="text-base font-extrabold uppercase text-foreground">
+                  Student Portal Access
+                </Label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    disabled={isPortalActionSubmitting}
+                    onClick={() => handleTogglePortalAccess(true)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                      portalActive
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : "border-border hover:bg-muted/50 text-foreground"
+                    )}
+                  >
+                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
+                    Allow Login (Active)
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isPortalActionSubmitting}
+                    onClick={() => handleTogglePortalAccess(false)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                      !portalActive
+                        ? "border-amber-500 bg-amber-50 text-amber-700"
+                        : "border-border hover:bg-muted/50 text-foreground"
+                    )}
+                  >
+                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
+                    Block Login (Disabled)
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <Label className="text-base font-extrabold uppercase text-foreground">
+                  Password Control
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={defaultPasswordInput}
+                    onChange={(e) => setDefaultPasswordInput(e.target.value)}
+                    placeholder="Enter default password"
+                    className="h-11 font-extrabold text-base bg-background"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                    onClick={handleResetPassword}
+                    className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                  >
+                    Reset to Default Password
+                  </Button>
+                </div>
+                <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                  This will reset the learner's portal password to the value above and force a password change on next login.
+                </p>
+              </div>
+            </div>
+
             <div className="pt-4 border-t text-base uppercase text-foreground flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
@@ -1877,6 +2018,17 @@ export function StudentDetailPanel({
           alt={`${student.lastName} profile photo`}
         />
       )}
+
+      <ConfirmationModal
+        open={showResetPasswordConfirm}
+        onOpenChange={setShowResetPasswordConfirm}
+        title="Confirm Password Reset"
+        description="Are you sure you want to reset this password?"
+        confirmText="Reset Password"
+        cancelText="Cancel"
+        onConfirm={handleResetPasswordConfirm}
+        variant="danger"
+      />
     </div>
   );
 }

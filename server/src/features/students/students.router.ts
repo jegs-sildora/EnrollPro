@@ -15,6 +15,8 @@ import {
   updateLrn,
   markDropout,
   markTransferredOut,
+  togglePortalAccess,
+  resetPortalPassword,
 } from "./controllers/students.profile.controller.js";
 import {
   getHealthRecords as getStudentHealthRecords,
@@ -90,6 +92,20 @@ router.post(
   resetPortalPin,
 );
 
+// Portal Access Toggle
+router.patch(
+  "/:id/portal-access",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  togglePortalAccess,
+);
+
+// Portal Password Reset
+router.post(
+  "/:id/reset-password",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  resetPortalPassword,
+);
+
 // Clear Deficiency
 router.post(
   "/:id/clear-deficiency",
@@ -104,25 +120,23 @@ router.post(
   verifyPsa,
 );
 
-
 // Lifecycle & LRN Management
 router.post(
   "/:id/lifecycle/dropout",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  markDropout
+  markDropout,
 );
 
 router.post(
   "/:id/lifecycle/transfer-out",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  markTransferredOut
+  markTransferredOut,
 );
 
 router.post(
   "/:id/lrn",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  updateLrn
+  updateLrn,
 );
 
 export default router;
-

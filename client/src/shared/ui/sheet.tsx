@@ -2,47 +2,38 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { cn } from '@/shared/lib/utils';
 
-const SheetContext = React.createContext<{ open: boolean }>({ open: false });
-const sheetEase = [0.16, 1, 0.3, 1] as const;
-const overlayEase = [0.22, 1, 0.36, 1] as const;
-const sheetTransition = { type: 'tween', duration: 0.65, ease: sheetEase } as const;
-const sheetReducedMotionTransition = { duration: 0.2, ease: 'linear' } as const;
-const overlayTransition = { duration: 0.45, ease: overlayEase } as const;
-const overlayReducedMotionTransition = { duration: 0.2, ease: 'linear' } as const;
-
-const Sheet = ({
-	open,
-	onOpenChange,
-	children,
-	...props
-}: DialogPrimitive.DialogProps) => (
-	<SheetContext.Provider value={{ open: !!open }}>
-		<DialogPrimitive.Root
-			open={open}
-			onOpenChange={onOpenChange}
-			{...props}
-		>
-			{children}
-		</DialogPrimitive.Root>
-	</SheetContext.Provider>
-);
+const Sheet = DialogPrimitive.Root;
 
 const SheetTrigger = DialogPrimitive.Trigger;
 const SheetClose = DialogPrimitive.Close;
 const SheetPortal = DialogPrimitive.Portal;
 
+const SheetOverlay = React.forwardRef<
+	React.ComponentRef<typeof DialogPrimitive.Overlay>,
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Overlay
+		ref={ref}
+		className={cn(
+			"fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+			className
+		)}
+		{...props}
+	/>
+));
+SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
 const sheetVariants = cva(
-	'fixed z-50 gap-4 bg-[hsl(var(--background))] p-6 shadow-lg',
+	'fixed z-50 gap-4 bg-[hsl(var(--background))] p-6 shadow-lg transition ease-in-out',
 	{
 		variants: {
 			side: {
-				top: 'inset-x-0 top-0 border-b',
-				bottom: 'inset-x-0 bottom-0 border-t',
-				left: 'inset-y-0 left-0 h-full w-[50vw] border-r sm:max-w-[50vw]',
-				right: 'inset-y-0 right-0 h-full w-[50vw] border-l sm:max-w-[50vw]',
+				top: 'inset-x-0 top-0 border-b data-[state=open]:animate-sheet-in-top data-[state=closed]:animate-sheet-out-top',
+				bottom: 'inset-x-0 bottom-0 border-t data-[state=open]:animate-sheet-in-bottom data-[state=closed]:animate-sheet-out-bottom',
+				left: 'inset-y-0 left-0 h-full w-[50vw] border-r sm:max-w-[50vw] data-[state=open]:animate-sheet-in-left data-[state=closed]:animate-sheet-out-left',
+				right: 'inset-y-0 right-0 h-full w-[50vw] border-l sm:max-w-[50vw] data-[state=open]:animate-sheet-in-right data-[state=closed]:animate-sheet-out-right',
 			},
 		},
 		defaultVariants: {
@@ -61,61 +52,23 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
 	React.ComponentRef<typeof DialogPrimitive.Content>,
 	SheetContentProps
->(({ side = 'right', className, children, ...props }, ref) => {
-	const { showClose = true, ...contentProps } = props;
-	const { open } = React.useContext(SheetContext);
-	const reduceMotion = useReducedMotion();
-	const isRight = side === 'right';
-	const isLeft = side === 'left';
-	const isTop = side === 'top';
-	const isBottom = side === 'bottom';
-	const closedPosition = {
-		x: reduceMotion ? 0 : isRight ? '100%' : isLeft ? '-100%' : 0,
-		y: reduceMotion ? 0 : isTop ? '-100%' : isBottom ? '100%' : 0,
-		opacity: reduceMotion ? 0 : 1,
-	};
-
+>(({ side = 'right', className, children, showClose = true, ...props }, ref) => {
 	return (
-		<SheetPortal forceMount>
-			<AnimatePresence mode="sync">
-				{open && (
-					<motion.div
-						key="overlay"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={reduceMotion ? overlayReducedMotionTransition : overlayTransition}
-						className="fixed inset-0 z-50 bg-black/80"
-					>
-						<DialogPrimitive.Overlay forceMount className="fixed inset-0 bg-transparent" />
-					</motion.div>
-				)}
-				{open && (
-					<motion.div
-						key="content"
-						initial={closedPosition}
-						animate={{ x: 0, y: 0, opacity: 1 }}
-						exit={closedPosition}
-						transition={reduceMotion ? sheetReducedMotionTransition : sheetTransition}
-						className={cn(sheetVariants({ side }), className)}
-					>
-						<DialogPrimitive.Content
-							forceMount
-							ref={ref}
-							className="h-full w-full outline-none flex flex-col"
-							{...contentProps}
-						>
-							{children}
-							{showClose ? (
-								<DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
-									<X className='h-5 w-5' />
-									<span className='sr-only'>Close</span>
-								</DialogPrimitive.Close>
-							) : null}
-						</DialogPrimitive.Content>
-					</motion.div>
-				)}
-			</AnimatePresence>
+		<SheetPortal>
+			<SheetOverlay />
+			<DialogPrimitive.Content
+				ref={ref}
+				className={cn(sheetVariants({ side }), className, "outline-none flex flex-col")}
+				{...props}
+			>
+				{children}
+				{showClose ? (
+					<DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
+						<X className='h-5 w-5' />
+						<span className='sr-only'>Close</span>
+					</DialogPrimitive.Close>
+				) : null}
+			</DialogPrimitive.Content>
 		</SheetPortal>
 	);
 });
