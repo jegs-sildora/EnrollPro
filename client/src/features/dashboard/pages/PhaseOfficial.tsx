@@ -27,19 +27,27 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       </div>
 
       <Alert
-        style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}
+        style={
+          isEnrollmentOpen
+            ? { backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }
+            : { backgroundColor: "#F1F5F9", borderColor: "#E2E8F0" }
+        }
       >
         <AlertTitle
           className="font-extrabold"
-          style={{ color: "#1E3A8A" }}
+          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
         >
-          BOSY Enrollment Active
+          {isEnrollmentOpen
+            ? "BOSY Enrollment Active"
+            : "BOSY Enrollment Closed"}
         </AlertTitle>
         <AlertDescription
           className="font-extrabold"
-          style={{ color: "#1E3A8A" }}
+          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
         >
-          Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY {ayLabel || "2026-2027"}.
+          {isEnrollmentOpen
+            ? `Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY ${ayLabel || "2026-2027"}.`
+            : `Regular encoding for SY ${ayLabel || "2026-2027"} is locked. Late enrollments require School Head override. Access restricted to SF1 preparation.`}
         </AlertDescription>
       </Alert>
 

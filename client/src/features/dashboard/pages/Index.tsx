@@ -51,7 +51,7 @@ export default function DashboardIndex() {
 
   const phase = stats?.systemPhase;
 
-  if (phase === "OFFICIAL_ENROLLMENT" || phase === "BOSY_ENROLLMENT") {
+  if (phase === "OFFICIAL_ENROLLMENT") {
     return <PhaseOfficial stats={stats} />;
   }
   

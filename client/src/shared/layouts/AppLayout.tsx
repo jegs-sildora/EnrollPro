@@ -460,8 +460,8 @@ function AppSidebar() {
   const isEosyArchivedState = systemStatus === "ARCHIVED";
   const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
   let officialEnrollmentBadge;
-  if (systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment Active</span>;
+  if (systemPhase === "OFFICIAL_ENROLLMENT") {
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY ENROLLMENT</span>;
   } else if (systemPhase === "CLASSES_ONGOING") {
     officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
   }
