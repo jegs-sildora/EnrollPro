@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
-
+import { broadcastEosyUpdate } from "./eosy-events.service.js";
 /**
  * GET /api/teacher-eosy/advisory
  * Fetches the active advisory section for the logged-in teacher (by user ID)
@@ -105,8 +105,8 @@ export async function submitTeacherAdvisory(
     for (const update of updates) {
       if (update.finalAverage !== undefined && update.finalAverage !== null) {
         const genAve = Number(update.finalAverage);
-        if (!Number.isInteger(genAve) || genAve < 60 || genAve > 100) {
-          throw new AppError(400, `Invalid general average: ${update.finalAverage}. Must be an integer between 60 and 100.`);
+        if (Number.isNaN(genAve) || genAve < 60 || genAve > 100) {
+          throw new AppError(400, `Invalid general average: ${update.finalAverage}. Must be a number between 60 and 100.`);
         }
       }
     }
@@ -266,8 +266,10 @@ export async function submitTeacherAdvisory(
         },
       });
     });
-
     res.json({ success: true, message: "EOSY Grades and Statuses submitted successfully." });
+
+    // Broadcast real-time update
+    broadcastEosyUpdate({ type: "TEACHER_EOSY_SUBMITTED", sectionId: section.id });
   } catch (error) {
     next(error);
   }

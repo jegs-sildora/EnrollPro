@@ -314,7 +314,7 @@ export default function ChangePassword() {
 
         const roles = res.data.user?.roles ?? [];
         const finalHome = roles.some((r: string) => r === "TEACHER" || r === "MRF")
-          ? "/reading-assessment"
+          ? "/teacher/eosy"
           : "/dashboard";
         setTimeout(() => {
           window.location.replace(finalHome);

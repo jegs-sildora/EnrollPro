@@ -16,11 +16,11 @@ systemRoutes.get(
   getRolloverReadiness,
 );
 
-// Only SYSTEM_ADMIN should be able to execute EOSY finalization
+// Only SYSTEM_ADMIN and HEAD_REGISTRAR should be able to execute EOSY finalization
 systemRoutes.post(
   "/finalize-eosy",
   authenticate,
-  authorize("SYSTEM_ADMIN"),
+  authorize("SYSTEM_ADMIN", "HEAD_REGISTRAR"),
   executeSystemRollover,
 );
 

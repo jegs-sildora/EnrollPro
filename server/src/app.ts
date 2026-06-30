@@ -143,6 +143,15 @@ const apiRouter = express.Router();
 // Resolve the school year ID for all API requests (from header or active settings)
 apiRouter.use(schoolYearContext);
 
+// Prevent aggressive browser caching of API GET requests (crucial for SSE triggers)
+apiRouter.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 // Debug endpoint
 apiRouter.get("/debug-server", (req, res) => {
   res.json({

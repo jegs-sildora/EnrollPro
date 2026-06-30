@@ -5,7 +5,7 @@ import {
   createSection,
   updateSection,
   deleteSection,
-  getSectionRoster,
+  getSectionMasterlist,
   exportSectionSf1,
   getUnsectionedPool,
   inlineSlotLearner,
@@ -108,14 +108,14 @@ router.delete(
 );
 
 router.get(
-	'/:id/roster',
+	'/:id/masterlist',
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
-	getSectionRoster,
+	getSectionMasterlist,
 );
 
 router.get(
-	'/:id/roster/sf1',
+	'/:id/masterlist/sf1',
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
 	exportSectionSf1,

@@ -120,7 +120,7 @@ async function fetchAimsLearnerRows(
 }
 
 /**
- * SMART roster rows — active + dropped students, minimum fields for grade encoding.
+ * SMART masterlist rows — active + dropped students, minimum fields for grade encoding.
  * Excludes birthdate, sex, userId, portal account, and parent data per DPA minimization.
  */
 async function fetchSmartLearnerRows(

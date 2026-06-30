@@ -283,7 +283,7 @@ export default function RegistrarEOSYWorkspace() {
         <CardHeader className="bg-slate-50 border-b space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-extrabold uppercase text-slate-800">Section Roster (SF5 Flow)</CardTitle>
+              <CardTitle className="text-lg font-extrabold uppercase text-slate-800">Section Masterlist (SF5 Flow)</CardTitle>
               <CardDescription className="font-extrabold">Direct promotion entry based on Teacher SF5 submissions</CardDescription>
             </div>
             <div className="relative w-full md:w-72">
@@ -448,3 +448,4 @@ export default function RegistrarEOSYWorkspace() {
     </div>
   );
 }
+

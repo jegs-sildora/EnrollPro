@@ -6,6 +6,13 @@ import * as ctrl from "./eosy.controller.js";
 const router: Router = Router();
 
 router.get(
+  "/stream",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
+  ctrl.streamEosyUpdates,
+);
+
+router.get(
   "/sections",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
@@ -24,6 +31,13 @@ router.patch(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.updateEosyRecord,
+);
+
+router.post(
+  "/records/:id/override",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.overrideEosyRecord,
 );
 
 router.post(
@@ -94,6 +108,13 @@ router.post(
   authenticate,
   authorize("SYSTEM_ADMIN"),
   ctrl.unlockSchoolYearEosy,
+);
+
+router.post(
+  "/sections/:id/unlock",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.unlockSectionEosy,
 );
 
 router.get(

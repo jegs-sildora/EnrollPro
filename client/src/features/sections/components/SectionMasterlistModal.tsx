@@ -32,7 +32,7 @@ const SCP_SHORT_LABELS: Record<string, string> = {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface RosterLearner {
+interface MasterlistLearner {
   id: number;
   enrollmentApplicationId: number;
   lrn: string | null;
@@ -44,7 +44,7 @@ interface RosterLearner {
   enrolledAt: string | null;
 }
 
-interface RosterSection {
+interface MasterlistSection {
   id: number;
   name: string;
   maxCapacity: number;
@@ -53,9 +53,9 @@ interface RosterSection {
   advisingTeacher: { id: number; name: string } | null;
 }
 
-interface RosterResponse {
-  section: RosterSection;
-  learners: RosterLearner[];
+interface MasterlistResponse {
+  section: MasterlistSection;
+  learners: MasterlistLearner[];
 }
 
 // Flat row union for DataTable (divider group headers + learner rows share ColumnDef[])
@@ -66,7 +66,7 @@ type DividerRow = {
   count: number;
 };
 
-type LearnerRow = RosterLearner & {
+type LearnerRow = MasterlistLearner & {
   _kind: "learner";
   rowIndex: number; // SF1-compliant continuous row number
 };
@@ -103,7 +103,7 @@ function EnrollmentBadge({ status }: { status: string }) {
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
+const MASTERLIST_COLUMNS: ColumnDef<TableRow>[] = [
   {
     id: "num",
     size: 40,
@@ -179,7 +179,7 @@ const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
-interface SectionRosterModalProps {
+interface SectionMasterlistModalProps {
   sectionId: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -187,12 +187,12 @@ interface SectionRosterModalProps {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function SectionRosterModal({
+export default function SectionMasterlistModal({
   sectionId,
   open,
   onOpenChange,
-}: SectionRosterModalProps) {
-  const [data, setData] = useState<RosterResponse | null>(null);
+}: SectionMasterlistModalProps) {
+  const [data, setData] = useState<MasterlistResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatingSf1, setGeneratingSf1] = useState(false);
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
@@ -200,16 +200,16 @@ export default function SectionRosterModal({
   const { isHistoricalReadOnly, isArchivedYear } = useHistoricalReadOnly();
   const { viewingSchoolYearLabel } = useSettingsStore();
 
-  const fetchRoster = useCallback(async (id: number) => {
+  const fetchMasterlist = useCallback(async (id: number) => {
     setLoading(true);
     setData(null);
     try {
-      const res = await api.get<RosterResponse>(`/sections/${id}/roster`);
+      const res = await api.get<MasterlistResponse>(`/sections/${id}/masterlist`);
       setData(res.data);
     } catch {
       sileo.error({
-        title: "Failed to load roster",
-        description: "Could not retrieve the section roster. Please try again.",
+        title: "Failed to load masterlist",
+        description: "Could not retrieve the section masterlist. Please try again.",
       });
       onOpenChange(false);
     } finally {
@@ -219,15 +219,15 @@ export default function SectionRosterModal({
 
   useEffect(() => {
     if (open && sectionId !== null) {
-      void fetchRoster(sectionId);
+      void fetchMasterlist(sectionId);
     }
-  }, [open, sectionId, fetchRoster]);
+  }, [open, sectionId, fetchMasterlist]);
 
   const handleGenerateSf1 = async () => {
     if (!sectionId) return;
     setGeneratingSf1(true);
     try {
-      const res = await api.get(`/sections/${sectionId}/roster/sf1`, {
+      const res = await api.get(`/sections/${sectionId}/masterlist/sf1`, {
         responseType: "blob",
       });
       const url = URL.createObjectURL(new Blob([res.data as BlobPart]));
@@ -257,7 +257,7 @@ export default function SectionRosterModal({
   const allLearners = data?.learners ?? [];
 
   // ── SF1 ordering: Males first, then Females — each group sorted by last name
-  const sortByLastName = (a: RosterLearner, b: RosterLearner) =>
+  const sortByLastName = (a: MasterlistLearner, b: MasterlistLearner) =>
     a.lastName.localeCompare(b.lastName);
   const sortedMales = allLearners.filter((l) => l.sex === "MALE").sort(sortByLastName);
   const sortedFemales = allLearners.filter((l) => l.sex !== "MALE").sort(sortByLastName);
@@ -333,7 +333,7 @@ export default function SectionRosterModal({
           {/* ── Body ── */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <DataTable
-              columns={ROSTER_COLUMNS}
+              columns={MASTERLIST_COLUMNS}
               data={rows}
               loading={loading}
               virtualize={false}
@@ -356,7 +356,7 @@ export default function SectionRosterModal({
           <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
             <p className="text-[11px] text--foreground font-extrabold">
               {loading
-                ? "Loading roster…"
+                ? "Loading masterlist…"
                 : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}
             </p>
             <div className="flex items-center gap-2">
@@ -399,10 +399,11 @@ export default function SectionRosterModal({
         sectionName={section?.name || ""}
         onEnrollSuccess={() => {
           if (sectionId) {
-            void fetchRoster(sectionId);
+            void fetchMasterlist(sectionId);
           }
         }}
       />
     </>
   );
 }
+

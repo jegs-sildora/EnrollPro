@@ -111,7 +111,15 @@ export async function login(req: Request, res: Response): Promise<void> {
   const accountName = String(req.body.accountName).trim();
   const { password } = req.body as { password: string };
 
-  const user = await prisma.user.findUnique({ where: { accountName } });
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { accountName: accountName },
+        { employeeId: accountName },
+        { email: accountName },
+      ]
+    }
+  });
   if (!user) {
     res.status(401).json({ message: "Invalid employee ID or password" });
     return;

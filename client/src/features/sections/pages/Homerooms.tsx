@@ -272,7 +272,7 @@ function showSectionsErrorToast(
   });
 }
 
-interface RosterLearner {
+interface MasterlistLearner {
   id: number;
   lrn: string | null;
   firstName: string;
@@ -297,7 +297,7 @@ function SectionCard({
   section,
   onEdit,
   onDelete,
-  onViewRoster,
+  onViewMasterlist,
   canMutate,
   scpTypeLabels,
   teachers,
@@ -306,7 +306,7 @@ function SectionCard({
   section: SectionItem;
   onEdit: () => void;
   onDelete: () => void;
-  onViewRoster: () => void;
+  onViewMasterlist: () => void;
   canMutate: boolean;
   scpTypeLabels: Record<string, string>;
   teachers: Teacher[];
@@ -332,11 +332,11 @@ function SectionCard({
   return (
     <div
       className="rounded-lg border bg-card p-5 space-y-4 hover:border-primary/40 transition-colors cursor-pointer group flex flex-col h-full"
-      onClick={onViewRoster}
+      onClick={onViewMasterlist}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onViewRoster();
+        if (e.key === "Enter" || e.key === " ") onViewMasterlist();
       }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -481,7 +481,7 @@ function SectionCard({
               variant="default"
               onClick={(e) => {
                 e.stopPropagation();
-                onViewRoster();
+                onViewMasterlist();
               }}>
               Open SF1 Masterlist →
             </Button>
@@ -528,7 +528,7 @@ export default function Homerooms() {
                 setDeleteId(s.id);
                 setDeleteName(s.name);
               }}
-              onViewRoster={() => navigate(`/sections/view-roster/${s.id}`)}
+              onViewMasterlist={() => navigate(`/sections/view-masterlist/${s.id}`)}
               canMutate={canMutate}
             />
           ))}
@@ -670,8 +670,8 @@ export default function Homerooms() {
     advisingTeacher: { id: number; name: string } | null;
   } | null>(null);
 
-  // Roster view state
-  const [roster, setRoster] = useState<RosterLearner[]>([]);
+  // Masterlist view state
+  const [masterlist, setMasterlist] = useState<MasterlistLearner[]>([]);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
 
   const resolveTleProgramName = useCallback(
@@ -687,14 +687,14 @@ export default function Homerooms() {
 
 
   const { maleLearners, femaleLearners } = useMemo(() => {
-    const males = roster
+    const males = masterlist
       .filter((l) => l.sex === "MALE")
       .sort(
         (a, b) =>
           (a.lastName || "").localeCompare(b.lastName || "") ||
           (a.firstName || "").localeCompare(b.firstName || ""),
       );
-    const females = roster
+    const females = masterlist
       .filter((l) => l.sex === "FEMALE")
       .sort(
         (a, b) =>
@@ -702,7 +702,7 @@ export default function Homerooms() {
           (a.firstName || "").localeCompare(b.firstName || ""),
       );
     return { maleLearners: males, femaleLearners: females };
-  }, [roster]);
+  }, [masterlist]);
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -1247,7 +1247,7 @@ export default function Homerooms() {
               createCategory
                 ? SECTION_CATEGORY_CONFIG[createCategory].title
                 : "section"
-            } roster for ${createGlName}.`
+            } masterlist for ${createGlName}.`
             : `Update configuration for section ${sectionFormData.name}.`
         }
         formData={sectionFormData}
@@ -1295,3 +1295,4 @@ export default function Homerooms() {
     </div>
   );
 }
+

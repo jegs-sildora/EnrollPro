@@ -1077,7 +1077,7 @@ export default function SchoolYearTab() {
             </h3>
             <p className="text-foreground font-extrabold max-w-lg mb-8 leading-relaxed">
               Before the system can process official enrollments, accept Early
-              Registration data, or generate School Form 1 (SF1) rosters, a
+              Registration data, or generate School Form 1 (SF1) masterlists, a
               primary academic year must be established.
             </p>
             <Button
@@ -1790,3 +1790,4 @@ export default function SchoolYearTab() {
     </div>
   );
 }
+

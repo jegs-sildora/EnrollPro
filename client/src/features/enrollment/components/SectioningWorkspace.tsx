@@ -37,7 +37,7 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { SectionRosterModal } from "./SectionRosterModal";
+import { SectionMasterlistModal } from "./SectionMasterlistModal";
 
 interface SectionSummary {
   id: number;
@@ -87,7 +87,7 @@ export function SectioningWorkspace() {
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
   const [isAutoDistributeModalOpen, setIsAutoDistributeModalOpen] = useState(false);
-  const [rosterModalSectionId, setRosterModalSectionId] = useState<number | null>(null);
+  const [masterlistModalSectionId, setMasterlistModalSectionId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -310,7 +310,7 @@ export function SectioningWorkspace() {
 
       {/* ── Workspace ── */}
       <div className="flex-1 min-h-0">
-        <div className="h-full flex gap-6 pb-6 min-h-0">
+        <div className="h-full flex gap-6 min-h-0">
           {/* LEFT PANE: UNSECTIONED POOL */}
           <Card className="flex-[1.2] flex flex-col shadow-sm border border-border overflow-hidden bg-card">
             <CardHeader className="border-b border-border bg-muted/20">
@@ -320,13 +320,13 @@ export function SectioningWorkspace() {
                     <Users className="h-5 w-5 text-primary" />
                     Unassigned Learners
                   </CardTitle>
-                  <CardDescription className="text-base font-extrabold text-muted-foreground">Unassigned learners awaiting placement.</CardDescription>
+                  <CardDescription className="text-sm font-extrabold text-foreground">Unassigned learners awaiting placement.</CardDescription>
                 </div>
                 <Badge variant="outline" className="font-extrabold bg-background border-border">{selectedAppIds.length} Selected</Badge>
               </div>
               <div className="flex gap-2 mt-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
                     placeholder="Search LRN or Name..."
                     className="pl-9 h-10 border-border focus:ring-primary/20 bg-background"
@@ -374,7 +374,7 @@ export function SectioningWorkspace() {
                 <tbody className="divide-y divide-border text-base leading-tight bg-card">
                   {filteredAndSortedPool.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="p-12 text-center text-muted-foreground font-extrabold">
+                      <td colSpan={3} className="p-12 text-center text-foreground font-extrabold">
                         No learners match your criteria.
                       </td>
                     </tr>
@@ -417,13 +417,13 @@ export function SectioningWorkspace() {
                                 )}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
+                                <span className="text-[10px] font-extrabold uppercase text-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
                                 <Badge variant="outline" className="text-[9px] uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
                               </div>
                             </div>
                           </td>
                           <td className="p-4 font-extrabold text-foreground/80">
-                            {l.genAve ? l.genAve.toFixed(2) : <span className="text-muted-foreground/50">--</span>}
+                            {l.genAve ? l.genAve.toFixed(2) : <span className="text-foreground/50">--</span>}
                           </td>
                         </tr>
                       );
@@ -443,7 +443,7 @@ export function SectioningWorkspace() {
                     <LayoutGrid className="h-5 w-5 text-primary" />
                     Available Sections
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground text-base font-extrabold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+                  <CardDescription className="text-foreground text-sm font-extrabold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
                 </div>
                 <Button
                   size="sm"
@@ -459,7 +459,7 @@ export function SectioningWorkspace() {
             </CardHeader>
             <div className="flex-1 overflow-auto p-4 space-y-3 relative">
               {currentGradeSections.length === 0 ? (
-                <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground">
+                <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                   <Info className="h-8 w-8" />
                   <span className="font-extrabold text-base leading-tight">No sections defined for this grade.</span>
                 </div>
@@ -491,30 +491,30 @@ export function SectioningWorkspace() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              className="h-6 w-6 text-foreground hover:text-primary hover:bg-primary/10"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setRosterModalSectionId(s.id);
+                                setMasterlistModalSectionId(s.id);
                               }}
-                              title="View Section Roster"
+                              title="View Section Masterlist"
                             >
                               <Users className="h-4 w-4" />
                             </Button>
                           </h4>
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
                             {s.adviser || "No Adviser Assigned"}
                           </span>
                         </div>
                         <Badge variant="outline" className={cn(
                           "text-[9px] font-extrabold uppercase bg-background",
-                          s.programType === "REGULAR" ? "text-muted-foreground border-border" : "text-primary border-primary/30"
+                          s.programType === "REGULAR" ? "text-foreground border-border" : "text-primary border-primary/30"
                         )}>
                           {SCP_SHORT_LABELS[s.programType] ?? s.programType}
                         </Badge>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-base font-extrabold">
-                          <span className="text-muted-foreground uppercase tracking-widest text-[10px]">Capacity Fill</span>
+                          <span className="text-foreground uppercase tracking-widest text-[10px]">Capacity Fill</span>
                           <span className={cn(isOverCapacity ? "text-destructive font-extrabold" : "text-foreground/70")}>
                             {s.currentCount} / {s.maxCapacity} {isOverCapacity && <AlertTriangle className="inline h-3 w-3 ml-1" />}
                           </span>
@@ -544,7 +544,7 @@ export function SectioningWorkspace() {
                   "w-full h-12 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
                   selectedAppIds.length > 0 && targetSectionId
                     ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted"
+                    : "bg-muted text-foreground hover:bg-muted"
                 )}
               >
                 {processing ? (
@@ -571,12 +571,13 @@ export function SectioningWorkspace() {
         variant="danger"
       />
 
-      {rosterModalSectionId !== null && (
-        <SectionRosterModal
-          sectionId={rosterModalSectionId}
-          onClose={() => setRosterModalSectionId(null)}
+      {masterlistModalSectionId !== null && (
+        <SectionMasterlistModal
+          sectionId={masterlistModalSectionId}
+          onClose={() => setMasterlistModalSectionId(null)}
         />
       )}
     </div>
   );
 }
+

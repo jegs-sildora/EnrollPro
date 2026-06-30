@@ -99,7 +99,7 @@ export async function lockBosy(req: Request, res: Response) {
     });
 
     res.json({
-      message: "BOSY successfully locked. SF1 rosters finalized.",
+      message: "BOSY successfully locked. SF1 masterlists finalized.",
       status: updated.status,
       lockedAt: updated.bosyLockedAt,
     });

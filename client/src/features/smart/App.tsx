@@ -29,7 +29,7 @@ const SchoolForms = lazy(() => import('./pages/registrar/SchoolForms'))
 const ApplicationTracker = lazy(() => import('./pages/registrar/ApplicationTracker'))
 const BOSYQueue = lazy(() => import('./pages/registrar/BOSYQueue'))
 const RemedialTracker = lazy(() => import('./pages/registrar/RemedialTracker'))
-const SectionRosterViewer = lazy(() => import('./pages/registrar/SectionRosterViewer'))
+const SectionMasterlistViewer = lazy(() => import('./pages/registrar/SectionMasterlistViewer'))
 const EOSYFinalization = lazy(() => import('./pages/registrar/EOSYFinalization'))
 const TeachingLoad = lazy(() => import('./pages/registrar/TeachingLoad'))
 
@@ -82,7 +82,7 @@ function App() {
         <Route path="applications" element={<ApplicationTracker />} />
         <Route path="bosy" element={<BOSYQueue />} />
         <Route path="remedial" element={<RemedialTracker />} />
-        <Route path="roster" element={<SectionRosterViewer />} />
+        <Route path="masterlist" element={<SectionMasterlistViewer />} />
         <Route path="eosy" element={<EOSYFinalization />} />
         <Route path="teaching-load" element={<TeachingLoad />} />
       </Route>
@@ -110,3 +110,4 @@ function App() {
 }
 
 export default App
+

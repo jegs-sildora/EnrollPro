@@ -62,7 +62,7 @@ const FORM_TYPES = [
     description: 'Upload one workbook containing sheets for SF1 to SF10',
     isBundle: true
   },
-  { value: 'SF1', label: 'SF1 - School Register (Student Master List)', description: 'Complete roster of all enrolled students' },
+  { value: 'SF1', label: 'SF1 - School Register (Student Master List)', description: 'Complete masterlist of all enrolled students' },
   { value: 'SF2', label: 'SF2 - Daily Attendance Record', description: 'Daily attendance tracking with P/A/L/E marks' },
   { value: 'SF3', label: 'SF3 - Individual Learner Monitoring', description: 'Track individual student progress' },
   { value: 'SF4', label: 'SF4 - Quarterly Assessment Report', description: 'Quarter exam results and assessments' },
@@ -1157,3 +1157,4 @@ export default function TemplateManager() {
     </div>
   );
 }
+

@@ -912,7 +912,7 @@ export default function Students() {
               <Badge
                 variant="outline"
                 className={cn(
-                  "font-extrabold text-sm px-2.5 py-0.5 rounded-md",
+                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase text-base",
                   getGradeLevelBadgeStyles(row.original.gradeLevel)
                 )}
               >
@@ -1026,8 +1026,8 @@ export default function Students() {
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         {/* Control Bar (Filters) */}
         <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            <div className="w-full lg:w-110 shrink-0">
+          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+            <div className="flex-1 w-full min-w-[200px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -1039,7 +1039,7 @@ export default function Students() {
               </div>
             </div>
 
-            <div className="flex flex-row flex-wrap lg:flex-nowrap items-center justify-end gap-3 w-full">
+            <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
               <Select
                 value={gradeLevelFilter}
                 onValueChange={(value) => {
@@ -1152,7 +1152,7 @@ export default function Students() {
               </Select>
 
               {/* Vertical Divider (Hidden on small screens when wrapped) */}
-              <div className="hidden lg:block w-px h-6 bg-border mx-1" />
+              <div className="hidden xl:block w-px h-6 bg-border mx-1" />
 
               {/* Action Buttons */}
               <Button
@@ -1313,13 +1313,13 @@ export default function Students() {
                             </p>
                           </div>
                           <div>
-                            <p className="uppercase  font-extrabold text-foreground">
+                            <p className="uppercase font-extrabold text-foreground">
                               Grade Level
                             </p>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "font-extrabold text-sm px-2.5 py-0.5 mt-0.5 rounded-md",
+                                "font-extrabold px-2.5 py-0.5 mt-0.5 rounded-md",
                                 getGradeLevelBadgeStyles(student.gradeLevel)
                               )}
                             >
@@ -1498,7 +1498,7 @@ export default function Students() {
               />
             )}
             <span className={cn("relative z-20 uppercase", activeTab === "active" ? "text-primary-foreground" : "text-foreground")}>
-              <span className="hidden sm:inline">Active Roster</span>
+              <span className="hidden sm:inline">Active Masterlist</span>
               <span className="sm:hidden">Active</span>
             </span>
           </TabsTrigger>

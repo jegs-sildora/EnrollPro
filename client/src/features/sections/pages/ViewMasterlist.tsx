@@ -73,7 +73,7 @@ interface SectionDetails {
   advisingTeacher: { id: number; name: string } | null;
 }
 
-interface RosterResponse {
+interface MasterlistResponse {
   section: SectionDetails;
   learners: LearnerRecord[];
 }
@@ -87,7 +87,7 @@ interface SectionTeachersResponse {
   teachers: SectionTeacherOption[];
 }
 
-export default function ViewRoster() {
+export default function ViewMasterlist() {
   const { sectionId } = useParams();
 
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -100,32 +100,32 @@ export default function ViewRoster() {
   const [showDrawer, setShowDrawer] = useState(false);
 
   const [section, setSection] = useState<SectionDetails | null>(null);
-  const [roster, setRoster] = useState<LearnerRecord[]>([]);
+  const [masterlist, setMasterlist] = useState<LearnerRecord[]>([]);
   const [teachers, setTeachers] = useState<SectionTeacherOption[]>([]);
   const retainedStudentId = useRetainedSheetValue(selectedStudentId);
 
-  const fetchRosterData = useCallback(async () => {
+  const fetchMasterlistData = useCallback(async () => {
     if (!sectionId || !ayId) return;
     setLoading(true);
     try {
-      const [rosterRes, teachersRes] = await Promise.all([
-        api.get<RosterResponse>(`/sections/${sectionId}/roster`),
+      const [masterlistRes, teachersRes] = await Promise.all([
+        api.get<MasterlistResponse>(`/sections/${sectionId}/masterlist`),
         api.get<SectionTeachersResponse>(`/sections/teachers?schoolYearId=${ayId}`)
       ]);
-      setSection(rosterRes.data.section);
-      setRoster(rosterRes.data.learners);
+      setSection(masterlistRes.data.section);
+      setMasterlist(masterlistRes.data.learners);
       setTeachers(teachersRes.data.teachers);
     } catch (err: unknown) {
       console.error(err);
-      sileo.error({ title: "Error", description: "Failed to load roster data." });
+      sileo.error({ title: "Error", description: "Failed to load masterlist data." });
     } finally {
       setLoading(false);
     }
   }, [sectionId, ayId]);
 
   useEffect(() => {
-    void fetchRosterData();
-  }, [fetchRosterData]);
+    void fetchMasterlistData();
+  }, [fetchMasterlistData]);
 
   const handleInlineAdviserChange = async (newAdviserId: string) => {
     if (!sectionId) return;
@@ -144,7 +144,7 @@ export default function ViewRoster() {
     if (!sectionId) return;
     setExportingSf1(true);
     try {
-      const res = await api.get(`/sections/${sectionId}/roster/sf1`, {
+      const res = await api.get(`/sections/${sectionId}/masterlist/sf1`, {
         responseType: "blob",
       });
       const blob = new Blob([res.data], {
@@ -167,12 +167,12 @@ export default function ViewRoster() {
     }
   };
   const maleLearners = useMemo(
-    () => [...roster].filter((l) => l.sex === "MALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
-    [roster]
+    () => [...masterlist].filter((l) => l.sex === "MALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
+    [masterlist]
   );
   const femaleLearners = useMemo(
-    () => [...roster].filter((l) => l.sex === "FEMALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
-    [roster]
+    () => [...masterlist].filter((l) => l.sex === "FEMALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
+    [masterlist]
   );
 
   const getProgramTypeLabel = (pt: string) => {
@@ -306,7 +306,7 @@ export default function ViewRoster() {
 
             <div className="flex items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
               <span className="text-foreground">
-                Total Seated: <span className="text-foreground">{roster.length} / {section?.maxCapacity || 0}</span>
+                Total Seated: <span className="text-foreground">{masterlist.length} / {section?.maxCapacity || 0}</span>
               </span>
               <div className="w-px h-4 bg-border" />
               <span className="flex items-center gap-1.5 text-blue-600">
@@ -321,7 +321,7 @@ export default function ViewRoster() {
         </CardHeader>
       </Card>
 
-      {/* Roster Table Card */}
+      {/* Masterlist Table Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
           <div>
@@ -336,16 +336,16 @@ export default function ViewRoster() {
                   <span className="inline-block">
                     <Button
                       variant="default"
-                      disabled={loading || (roster.length >= (section?.maxCapacity || 0))}
+                      disabled={loading || (masterlist.length >= (section?.maxCapacity || 0))}
                       onClick={() => setShowDrawer(true)}
                       className="h-9 font-extrabold text-sm bg-primary text-primary-foreground border-none"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Add Learner to Roster
+                      Add Learner to Masterlist
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {(roster.length >= (section?.maxCapacity || 0)) && (
+                {(masterlist.length >= (section?.maxCapacity || 0)) && (
                   <TooltipContent className="bg-slate-900 text-white border-none text-sm font-extrabold p-3 shadow-xl">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-400" />
@@ -376,10 +376,10 @@ export default function ViewRoster() {
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <p className="text-base font-extrabold text-foreground">
-                Loading Roster Data...
+                Loading Masterlist Data...
               </p>
             </div>
-          ) : roster.length === 0 ? (
+          ) : masterlist.length === 0 ? (
             <div className="flex py-16 w-full items-center justify-center">
               <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
                 <CardContent className="pt-10 pb-10 text-center space-y-3">
@@ -391,7 +391,7 @@ export default function ViewRoster() {
                       No Enrolled Learners
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed px-4">
-                      This class section has no enrolled learners yet. Click "+ Add Learner to Roster" above to encode students individually.
+                      This class section has no enrolled learners yet. Click "+ Add Learner to Masterlist" above to encode students individually.
                     </p>
                   </div>
                 </CardContent>
@@ -469,11 +469,11 @@ export default function ViewRoster() {
           gradeLevelId={section.gradeLevelId}
           gradeLevelName={section.gradeLevel}
           maxCapacity={section.maxCapacity}
-          enrolledCount={roster.length}
+          enrolledCount={masterlist.length}
           programType={section.programType}
           schoolYearId={section.schoolYearId}
           onSuccess={() => {
-            void fetchRosterData();
+            void fetchMasterlistData();
           }}
         />
       )}
@@ -492,7 +492,7 @@ export default function ViewRoster() {
               <StudentDetailPanel
                 id={retainedStudentId}
                 onClose={() => setSelectedStudentId(null)}
-                onRefreshData={fetchRosterData}
+                onRefreshData={fetchMasterlistData}
                 onTransferOut={() => { }}
                 onDropout={() => { }}
                 canEditProfile={false}
@@ -505,3 +505,4 @@ export default function ViewRoster() {
     </div>
   );
 }
+

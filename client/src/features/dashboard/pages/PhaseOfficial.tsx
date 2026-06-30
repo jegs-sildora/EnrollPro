@@ -27,27 +27,19 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       </div>
 
       <Alert
-        style={
-          isEnrollmentOpen
-            ? { backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }
-            : { backgroundColor: "#F1F5F9", borderColor: "#E2E8F0" }
-        }
+        style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}
       >
         <AlertTitle
           className="font-extrabold"
-          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
+          style={{ color: "#1E3A8A" }}
         >
-          {isEnrollmentOpen
-            ? "Academic Phase: Official Beginning of School Year (BOSY) Enrollment is Ongoing"
-            : "Academic Phase: Official Beginning of School Year (BOSY) Enrollment is Closed"}
+          BOSY Enrollment Active
         </AlertTitle>
         <AlertDescription
           className="font-extrabold"
-          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
+          style={{ color: "#1E3A8A" }}
         >
-          {isEnrollmentOpen
-            ? `The official intake period for incoming Grade 7, Transferees, and Returning Learners for School Year ${ayLabel || "2026–2027"} is actively ongoing.`
-            : `The official intake period for School Year ${ayLabel || "2026–2027"} has closed based on your active system calendar settings. Standard learner encoding is locked. Any new admission strictly requires a Principal-approved Late Enrollee override. Existing records remain accessible for SF1 preparation and clerical auditing.`}
+          Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY {ayLabel || "2026-2027"}.
         </AlertDescription>
       </Alert>
 

@@ -728,9 +728,9 @@ export const registrarApi = {
   getRemedialPending: (params?: { page?: number; limit?: number; search?: string; gradeLevel?: string }) =>
     api.get("/registrar/remedial/pending", { params }),
 
-  // Section Roster (Phase 1)
-  getSectionRoster: (sectionId: number) =>
-    api.get(`/registrar/section-roster/${sectionId}`),
+  // Section Masterlist (Phase 1)
+  getSectionMasterlist: (sectionId: number) =>
+    api.get(`/registrar/section-masterlist/${sectionId}`),
 
   // EOSY (Phase 2)
   getEosySchoolYears: () =>
@@ -1055,3 +1055,4 @@ export const adminApi = {
 };
 
 export default api;
+

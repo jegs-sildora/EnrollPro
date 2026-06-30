@@ -364,7 +364,7 @@ export default function Attendance() {
               <CardTitle className="text-xl font-extrabold text-slate-900">
                 {attendanceData?.section
                   ? `${gradeLevelLabels[attendanceData.section.gradeLevel]} - ${attendanceData.section.name}`
-                  : "Attendance Roster"
+                  : "Attendance Masterlist"
                 }
               </CardTitle>
               <CardDescription className="text-slate-400 text-xs font-extrabold uppercase tracking-widest mt-1">
@@ -455,3 +455,4 @@ export default function Attendance() {
     </div>
   );
 }
+

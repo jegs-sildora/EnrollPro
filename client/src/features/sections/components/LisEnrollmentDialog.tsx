@@ -188,7 +188,7 @@ export function LisEnrollmentDialog({
 
       sileo.success({
         title: "Prospective Learners Enrolled",
-        description: `Successfully enrolled ${selectedAppIds.length} continuing learner(s) in LIS. SF1 Roster updated.`,
+        description: `Successfully enrolled ${selectedAppIds.length} continuing learner(s) in LIS. SF1 Masterlist updated.`,
       });
 
       onEnrollSuccess();
@@ -600,3 +600,4 @@ export function LisEnrollmentDialog({
     </Dialog>
   );
 }
+

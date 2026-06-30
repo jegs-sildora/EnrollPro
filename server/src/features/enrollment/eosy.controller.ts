@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
+import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -1417,4 +1418,129 @@ export async function finalizeGradeLevel(
   } catch (error) {
     next(error);
   }
+}
+
+export async function unlockSectionEosy(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const sectionId = parseInt(String(id), 10);
+
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: { schoolYear: { select: { isEosyFinalized: true } } },
+    });
+
+    if (!section) throw new AppError(404, "Section not found.");
+    if (section.schoolYear.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Cannot unlock section. School year EOSY is already finalized globally.",
+      );
+    }
+    if (!section.isEosyFinalized) {
+      throw new AppError(400, "Section is already unlocked.");
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.section.update({
+        where: { id: sectionId },
+        data: { isEosyFinalized: false },
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "EOSY_SECTION_UNLOCKED",
+        description: `Unlocked section ${section.name} to revert control back to Class Adviser for corrections.`,
+        subjectType: "Section",
+        recordId: sectionId,
+        req,
+      });
+    });
+
+    res.json({ success: true, message: "Section roster successfully unlocked." });
+
+    broadcastEosyUpdate({ type: "SECTION_UNLOCKED", sectionId: section.id });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function overrideEosyRecord(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const recordId = parseInt(String(id), 10);
+    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } = req.body;
+
+    const record = await prisma.enrollmentRecord.findUnique({
+      where: { id: recordId },
+      include: { section: { include: { schoolYear: true } } },
+    });
+
+    if (!record) throw new AppError(404, "Enrollment record not found.");
+    if (record.section.schoolYear.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Cannot override status. School year EOSY is finalized globally.",
+      );
+    }
+
+    const updated = await prisma.enrollmentRecord.update({
+      where: { id: recordId },
+      data: {
+        eosyStatus: eosyStatus as EosyStatus,
+        dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
+        transferOutDate:
+          eosyStatus === "TRANSFERRED_OUT"
+            ? transferOutDate
+              ? new Date(transferOutDate)
+              : null
+            : null,
+        finalAverage:
+          finalAverage !== undefined && finalAverage !== null
+            ? parseFloat(String(finalAverage))
+            : undefined,
+      },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EOSY_EMERGENCY_OVERRIDE",
+      description: `Registrar emergency override of EOSY promotion data for Learner ID ${record.learnerId}`,
+      subjectType: "EnrollmentRecord",
+      recordId: record.id,
+      oldValue: record.eosyStatus || "PENDING",
+      newValue: eosyStatus,
+      metadata: {
+        previousFinalAverage: record.finalAverage,
+        newFinalAverage: finalAverage,
+        registrarIp: req.ip
+      },
+      req,
+    });
+
+    res.json({ success: true, record: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function streamEosyUpdates(req: Request, res: Response) {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  addEosyClient(res);
+
+  // Send an initial heartbeat
+  res.write(":\n\n");
 }

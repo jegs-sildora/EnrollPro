@@ -141,8 +141,8 @@ interface Props {
   id: number;
   onClose: () => void;
   onRefreshData?: () => void;
-  onTransferOut: (payload: StudentTransferOutPayload) => void;
-  onDropout: (payload: StudentDropoutPayload) => void;
+  onTransferOut?: (payload: StudentTransferOutPayload) => void;
+  onDropout?: (payload: StudentDropoutPayload) => void;
   canEditProfile?: boolean;
 }
 
@@ -206,7 +206,7 @@ export function StudentDetailPanel({
   const handleTransferOutSubmit = () => {
     if (!student) return;
 
-    onTransferOut({
+    onTransferOut?.({
       student,
       transferDate: transferOutDate,
       destinationSchool: transferOutSchoolName,
@@ -218,7 +218,7 @@ export function StudentDetailPanel({
   const handleDropoutSubmit = () => {
     if (!student) return;
 
-    onDropout({
+    onDropout?.({
       student,
       dropOutDate: dropoutDate,
       reasonCode: dropoutReasonCode,
@@ -1835,7 +1835,7 @@ export function StudentDetailPanel({
             Save Changes
           </Button>
         </div>
-      ) : (
+      ) : canEditProfile ? (
         <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
           <div className="flex gap-2">
             <Dialog
@@ -1859,7 +1859,7 @@ export function StudentDetailPanel({
                 </div>
                 <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6 mb-6">
                   This will permanently remove the learner from the active
-                  homeroom roster.
+                  homeroom masterlist.
                 </div>
                 <div className="space-y-4 px-6 pb-0">
                   <div className="space-y-2">
@@ -2008,7 +2008,7 @@ export function StudentDetailPanel({
             </Dialog>
           </div>
         </div>
-      )}
+      ) : null}
 
       {student.studentPhoto && (
         <ImageEnlarger

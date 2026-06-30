@@ -61,7 +61,7 @@ const navigationGroups: NavGroup[] = [
   {
     title: "OFFICIAL ENROLLMENT",
     items: [
-      { name: "Section Roster", href: "/registrar/roster", icon: Layers },
+      { name: "Section Masterlist", href: "/registrar/masterlist", icon: Layers },
     ]
   },
   {
@@ -390,3 +390,4 @@ export default function RegistrarLayout() {
     </div>
   );
 }
+

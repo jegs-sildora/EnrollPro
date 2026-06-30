@@ -13,6 +13,7 @@ const GRADES = [7, 8, 9, 10];
 const PROGRAMS = [
   { nameSuffix: "SPA", type: ApplicantType.SPECIAL_PROGRAM_IN_THE_ARTS, homo: false },
   { nameSuffix: "STE", type: ApplicantType.SCIENCE_TECHNOLOGY_AND_ENGINEERING, homo: false },
+  { nameSuffix: "SPS", type: ApplicantType.SPECIAL_PROGRAM_IN_SPORTS, homo: false },
   { nameSuffix: "Pilot", type: ApplicantType.REGULAR, homo: true },
   { nameSuffix: "Regular", type: ApplicantType.REGULAR, homo: false },
 ];
@@ -199,7 +200,8 @@ export const seedDatabase = async () => {
           employeeId,
           password: defaultPassword,
           roles: ["TEACHER", "CLASS_ADVISER"],
-          mobileNumber: contactNumber
+          mobileNumber: contactNumber,
+          isActive: true
         }
       });
 
@@ -292,9 +294,24 @@ export const seedDatabase = async () => {
           const religion = faker.helpers.arrayElement(["ROMAN CATHOLIC", "ISLAM", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "BIBLE BAPTIST"]);
           const motherTongue = faker.helpers.arrayElement(["TAGALOG", "CEBUANO", "HILIGAYNON", "ILOCANO", "WARAY"]);
           
+          const lrn = generateLRN();
+          const learnerUser = await prisma.user.create({
+            data: {
+              firstName: learnerName.firstName,
+              lastName: learnerName.lastName,
+              middleName: learnerName.middleName,
+              sex: prismaLSex,
+              password: defaultPassword,
+              roles: ["LEARNER"],
+              isActive: true,
+              accountName: lrn
+            }
+          });
+
           const learner = await prisma.learner.create({
             data: {
-              lrn: generateLRN(),
+              lrn,
+              userId: learnerUser.id,
               firstName: learnerName.firstName,
               lastName: learnerName.lastName,
               middleName: learnerName.middleName,

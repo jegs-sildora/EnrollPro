@@ -14,18 +14,18 @@ import { registrarApi } from "@/features/smart/lib/api";
 import { Breadcrumb } from "@/features/smart/components/ui/breadcrumb";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
 
-export default function SectionRosterViewer() {
+export default function SectionMasterlistViewer() {
   const { colors } = useTheme();
   const [sections, setSections] = useState<any[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   const [sectionsError, setSectionsError] = useState<string | null>(null);
 
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
-  // enrollProId is the numeric EnrollPro section ID needed for the roster API
+  // enrollProId is the numeric EnrollPro section ID needed for the masterlist API
   const [selectedEnrollProId, setSelectedEnrollProId] = useState<number | null>(null);
-  const [rosterLoading, setRosterLoading] = useState(false);
-  const [rosterError, setRosterError] = useState<string | null>(null);
-  const [roster, setRoster] = useState<{ section: any; learners: any[]; total: number } | null>(null);
+  const [masterlistLoading, setMasterlistLoading] = useState(false);
+  const [masterlistError, setMasterlistError] = useState<string | null>(null);
+  const [masterlist, setMasterlist] = useState<{ section: any; learners: any[]; total: number } | null>(null);
 
   const loadSections = async () => {
     setSectionsLoading(true);
@@ -42,12 +42,12 @@ export default function SectionRosterViewer() {
     }
   };
 
-  const loadRoster = async (enrollProId: number) => {
-    setRosterLoading(true);
-    setRosterError(null);
-    setRoster(null);
+  const loadMasterlist = async (enrollProId: number) => {
+    setMasterlistLoading(true);
+    setMasterlistError(null);
+    setMasterlist(null);
     try {
-      const res = await registrarApi.getSectionRoster(enrollProId);
+      const res = await registrarApi.getSectionMasterlist(enrollProId);
       const payload = res.data as any;
       // Normalise the learner fields from integration v1 shape:
       // data.learners[].learner.{lrn, firstName, lastName, middleName, sex}
@@ -64,46 +64,46 @@ export default function SectionRosterViewer() {
           motherTongue: l.motherTongue ?? row.motherTongue,
         };
       });
-      setRoster({ section: payload.section, learners, total: payload.total ?? learners.length });
+      setMasterlist({ section: payload.section, learners, total: payload.total ?? learners.length });
     } catch (err: any) {
-      setRosterError(err?.response?.data?.message ?? "Failed to load roster from EnrollPro.");
+      setMasterlistError(err?.response?.data?.message ?? "Failed to load masterlist from EnrollPro.");
     } finally {
-      setRosterLoading(false);
+      setMasterlistLoading(false);
     }
   };
 
   useEffect(() => { void loadSections(); }, []);
   useEffect(() => {
-    if (selectedEnrollProId) void loadRoster(selectedEnrollProId);
+    if (selectedEnrollProId) void loadMasterlist(selectedEnrollProId);
   }, [selectedEnrollProId]);
 
   const handleSectionChange = (smartId: string) => {
     setSelectedSectionId(smartId);
-    setRoster(null);
-    setRosterError(null);
+    setMasterlist(null);
+    setMasterlistError(null);
     const sec = sections.find((s: any) => String(s.id) === smartId);
     const epId: number | null = sec?.enrollProId ?? null;
     setSelectedEnrollProId(epId);
-    if (epId) void loadRoster(epId);
-    else setRosterError("This section has no EnrollPro ID — try refreshing the page to re-sync.");
+    if (epId) void loadMasterlist(epId);
+    else setMasterlistError("This section has no EnrollPro ID — try refreshing the page to re-sync.");
   };
 
   const selectedSection = sections.find((s) => String(s.id) === selectedSectionId);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Section Roster" }]} />
+      <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Section Masterlist" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Section Roster Viewer</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Section Masterlist Viewer</h1>
           <p className="text-gray-600 mt-1">
             View the official learner list for any section from EnrollPro — read-only.
           </p>
         </div>
         {selectedSectionId && selectedEnrollProId && (
-          <Button onClick={() => void loadRoster(selectedEnrollProId)} variant="outline" className="rounded-xl">
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh Roster
+          <Button onClick={() => void loadMasterlist(selectedEnrollProId)} variant="outline" className="rounded-xl">
+            <RefreshCw className="w-4 h-4 mr-2" /> Refresh Masterlist
           </Button>
         )}
       </div>
@@ -117,7 +117,7 @@ export default function SectionRosterViewer() {
             </div>
             <div>
               <CardTitle>Select Section</CardTitle>
-              <CardDescription>Choose a section to view its official learner roster</CardDescription>
+              <CardDescription>Choose a section to view its official learner masterlist</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -153,7 +153,7 @@ export default function SectionRosterViewer() {
         </CardContent>
       </Card>
 
-      {/* Roster table */}
+      {/* Masterlist table */}
       {selectedSectionId && (
         <Card className="border border-slate-200">
           <CardHeader className="border-b border-slate-100 pb-4">
@@ -162,27 +162,27 @@ export default function SectionRosterViewer() {
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle>{selectedSection?.name ?? "Section Roster"}</CardTitle>
+                <CardTitle>{selectedSection?.name ?? "Section Masterlist"}</CardTitle>
                 <CardDescription>
                   {selectedSection?.gradeLevel?.name ?? selectedSection?.schoolYear ?? ""}{" "}
-                  {roster ? `— ${roster.total} learner(s)` : ""}
+                  {masterlist ? `— ${masterlist.total} learner(s)` : ""}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {rosterLoading ? (
+            {masterlistLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin" style={{ color: colors.primary }} />
               </div>
-            ) : rosterError ? (
+            ) : masterlistError ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
                 <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-                <p className="text-gray-700 ">Unable to load roster</p>
-                <p className="text-gray-500 text-sm mt-1">{rosterError}</p>
-                <Button onClick={() => void loadRoster(selectedSectionId)} variant="outline" className="mt-4 rounded-xl">Try Again</Button>
+                <p className="text-gray-700 ">Unable to load masterlist</p>
+                <p className="text-gray-500 text-sm mt-1">{masterlistError}</p>
+                <Button onClick={() => void loadMasterlist(selectedSectionId)} variant="outline" className="mt-4 rounded-xl">Try Again</Button>
               </div>
-            ) : roster ? (
+            ) : masterlist ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -195,14 +195,14 @@ export default function SectionRosterViewer() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {roster.learners.length === 0 ? (
+                    {masterlist.learners.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                           No learners in this section
                         </TableCell>
                       </TableRow>
                     ) : (
-                      roster.learners.map((l: any, i: number) => (
+                      masterlist.learners.map((l: any, i: number) => (
                         <TableRow key={l.lrn ?? l.enrollmentRecordId ?? i}>
                           <TableCell className="text-gray-500 text-sm">{i + 1}</TableCell>
                           <TableCell className="font-mono text-sm text-gray-600">{l.lrn ?? "—"}</TableCell>
@@ -228,3 +228,4 @@ export default function SectionRosterViewer() {
     </div>
   );
 }
+

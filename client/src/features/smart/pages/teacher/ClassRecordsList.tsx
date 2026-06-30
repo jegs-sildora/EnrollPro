@@ -285,7 +285,7 @@ export default function ClassRecordsList() {
               style={{ borderColor: colors.primary, borderTopColor: "transparent" }}
             />
           </div>
-          <p className="text-gray-500  text-lg">Loading class rosters...</p>
+          <p className="text-gray-500  text-lg">Loading class masterlists...</p>
         </div>
       </div>
     );
@@ -690,3 +690,4 @@ export default function ClassRecordsList() {
     </div>
   );
 }
+

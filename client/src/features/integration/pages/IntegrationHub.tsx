@@ -220,7 +220,7 @@ function IntegrationHub() {
 
       sileo.success({
         title: "Broadcast Successful",
-        description: res.data.message || `System synchronization for ${phase === "phase1" ? "Early Registration" : "Official Roster"} complete.`,
+        description: res.data.message || `System synchronization for ${phase === "phase1" ? "Early Registration" : "Official Masterlist"} complete.`,
       });
 
       await fetchData();
@@ -339,7 +339,7 @@ function IntegrationHub() {
           </CardHeader>
           <CardContent className="py-6 space-y-6">
             <div className="space-y-3">
-              <p className="text-base font-extrabold text-foreground leading-relaxed">Deploy official class rosters to grading and LMS environments.</p>
+              <p className="text-base font-extrabold text-foreground leading-relaxed">Deploy official class masterlists to grading and LMS environments.</p>
               <ul className="space-y-2">
                 {[
                   { target: "SMART", action: "Official Grading Sheet Distribution" },
@@ -360,7 +360,7 @@ function IntegrationHub() {
               disabled={isSyncing !== null}
             >
               {isSyncing === "phase2" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Push Official Rosters
+              Push Official Masterlists
             </Button>
           </CardContent>
         </Card>
@@ -380,3 +380,4 @@ function IntegrationHub() {
 }
 
 export default IntegrationHub;
+

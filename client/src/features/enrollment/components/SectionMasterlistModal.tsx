@@ -9,19 +9,19 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { Badge } from "@/shared/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 
-interface SectionRosterModalProps {
+interface SectionMasterlistModalProps {
   sectionId: number;
   onClose: () => void;
 }
 
-export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalProps) {
+export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlistModalProps) {
   const queryClient = useQueryClient();
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [targetSectionMap, setTargetSectionMap] = useState<Record<number, string>>({});
 
-  const { data: rosterData, isLoading } = useQuery({
-    queryKey: ["section-roster", sectionId],
-    queryFn: () => api.get(`/sections/${sectionId}/roster`).then((r) => r.data),
+  const { data: masterlistData, isLoading } = useQuery({
+    queryKey: ["section-masterlist", sectionId],
+    queryFn: () => api.get(`/sections/${sectionId}/masterlist`).then((r) => r.data),
     refetchInterval: 5000,
   });
 
@@ -30,8 +30,8 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
     queryFn: () => api.get("/sectioning/sections-summary").then((r) => r.data),
   });
 
-  const learners = rosterData?.learners || [];
-  const section = rosterData?.section;
+  const learners = masterlistData?.learners || [];
+  const section = masterlistData?.section;
 
   // Find compatible sections for transfer (same grade level, active)
   const compatibleSections = useMemo(() => {
@@ -50,7 +50,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
         reason: "Manual unassignment to pool",
       });
       sileo.success({ title: "Unassigned", description: "Learner returned to unassigned pool." });
-      void queryClient.invalidateQueries({ queryKey: ["section-roster", sectionId] });
+      void queryClient.invalidateQueries({ queryKey: ["section-masterlist", sectionId] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
     } catch (err: any) {
@@ -70,7 +70,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
         reason: "Manual transfer",
       });
       sileo.success({ title: "Transferred", description: "Learner moved to another section." });
-      void queryClient.invalidateQueries({ queryKey: ["section-roster", sectionId] });
+      void queryClient.invalidateQueries({ queryKey: ["section-masterlist", sectionId] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
     } catch (err: any) {
@@ -91,7 +91,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
         <DialogHeader className="p-6 border-b border-border bg-muted/30">
           <DialogTitle className="text-xl font-extrabold uppercase tracking-wide flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            {section?.name || "Loading Roster..."}
+            {section?.name || "Loading Masterlist..."}
             {section && (
               <Badge variant="outline" className="ml-2 bg-background font-extrabold">
                 {learners.length} / {section.maxCapacity}
@@ -107,7 +107,7 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
           {isLoading ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-base leading-tight font-extrabold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Roster...</span>
+              <span className="text-base leading-tight font-extrabold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Masterlist...</span>
             </div>
           ) : learners.length === 0 ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3 text-muted-foreground">
@@ -186,3 +186,4 @@ export function SectionRosterModal({ sectionId, onClose }: SectionRosterModalPro
     </Dialog>
   );
 }
+

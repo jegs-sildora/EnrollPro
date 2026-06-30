@@ -558,8 +558,8 @@ export default function Teachers() {
 
   const controlBar = useMemo(
     () => (
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div className="w-full lg:w-110 shrink-0">
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+        <div className="flex-1 w-full min-w-[200px]">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -572,8 +572,8 @@ export default function Teachers() {
           </div>
         </div>
 
-        <div className="flex flex-row flex-wrap lg:flex-nowrap items-center justify-end gap-3 w-full font-extrabold">
-          <div className="w-50 ">
+        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-extrabold shrink-0">
+          <div className="w-full sm:w-48">
             <Select
               value={statusFilter}
               onValueChange={(value) =>
@@ -591,7 +591,7 @@ export default function Teachers() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-50">
+          <div className="w-full sm:w-48">
             <Select
               value={designationFilter}
               onValueChange={(value) =>
@@ -613,7 +613,7 @@ export default function Teachers() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-50">
+          <div className="w-full sm:w-48">
             <Select
               value={departmentFilter}
               onValueChange={setDepartmentFilter}>
@@ -634,7 +634,7 @@ export default function Teachers() {
             </Select>
           </div>
 
-          <div className="hidden lg:block w-px h-6 bg-gray-300 mx-1 shrink-0"></div>
+          <div className="hidden xl:block w-px h-6 bg-gray-300 mx-1 shrink-0"></div>
 
           <Button
             className="h-10 px-3  text-gray-600 hover:text-gray-900 shrink-0"
@@ -682,7 +682,7 @@ export default function Teachers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-extrabold text-balance text-foreground">
-            Faculty & Staff Roster
+            Faculty & Staff Masterlist
           </h1>
           <p className="text-base leading-tight text-foreground text-balance font-extrabold">
             Manage faculty and staff records, school roles, advisory classes,

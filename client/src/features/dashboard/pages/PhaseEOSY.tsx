@@ -129,7 +129,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
       </div>
 
       <div className="mt-6">
-        {/* Grade Level Roster Finalization progress bars */}
+        {/* Grade Level Masterlist Finalization progress bars */}
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="px-3 sm:px-6 pb-2 text-left">
             <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">
@@ -159,3 +159,4 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
     </div>
   );
 }
+

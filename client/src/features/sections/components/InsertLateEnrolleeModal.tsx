@@ -379,7 +379,7 @@ export function InsertLateEnrolleeModal({
                   </p>
                   <p className="text-[11px] leading-relaxed text-amber-800 font-extrabold">
                     This action will bypass the Batch Algorithm. The learner
-                    will be added directly to the SF1 roster and synced to the
+                    will be added directly to the SF1 masterlist and synced to the
                     grading microservice.
                   </p>
                 </div>

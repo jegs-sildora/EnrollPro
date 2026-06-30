@@ -14,7 +14,7 @@ import { cn } from '@/shared/lib/utils';
 import { SidebarContext, useSidebar } from '@/shared/ui/use-sidebar';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
-const SIDEBAR_WIDTH = '16rem';
+const SIDEBAR_WIDTH = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 

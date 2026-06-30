@@ -121,7 +121,7 @@ interface Section {
   name: string;
 }
 
-const RosterRowComponent = React.forwardRef<
+const MasterlistRowComponent = React.forwardRef<
   HTMLTableRowElement,
   {
     row: ProposedAssignment;
@@ -249,10 +249,10 @@ const RosterRowComponent = React.forwardRef<
     </TableRow>
   );
 });
-RosterRowComponent.displayName = "RosterRowComponent";
+MasterlistRowComponent.displayName = "MasterlistRowComponent";
 
-// 3.3 Wrap RosterRowComponent in React.memo with a custom comparison
-const MemoizedRosterRow = React.memo(RosterRowComponent, (prev, next) => {
+// 3.3 Wrap MasterlistRowComponent in React.memo with a custom comparison
+const MemoizedMasterlistRow = React.memo(MasterlistRowComponent, (prev, next) => {
   return (
     prev.row.applicationId === next.row.applicationId &&
     prev.row.sectionId === next.row.sectionId &&
@@ -813,7 +813,7 @@ export function BatchSectioningWizard({
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-5 w-5 text-green-600" />
                           <h3 className="text-lg font-extrabold uppercase  text-foreground">
-                            Proposed Roster Preview
+                            Proposed Masterlist Preview
                           </h3>
                           <Badge
                             variant="outline"
@@ -862,7 +862,7 @@ export function BatchSectioningWizard({
                               <SelectItem
                                 value="all"
                                 className="font-extrabold uppercase text-base">
-                                All Sections (Full Roster)
+                                All Sections (Full Masterlist)
                               </SelectItem>
 
                               {programFilter === "REGULAR" ||
@@ -1048,7 +1048,7 @@ export function BatchSectioningWizard({
                                     }
 
                                     return (
-                                      <MemoizedRosterRow
+                                      <MemoizedMasterlistRow
                                         key={virtualRow.key}
                                         ref={rowVirtualizer.measureElement}
                                         data-index={virtualRow.index}
@@ -1144,12 +1144,12 @@ export function BatchSectioningWizard({
                     <AlertTriangle className="h-6 w-6" />
                   </div>
                   <DialogTitle className="text-xl font-extrabold">
-                    Unsaved Batch Roster
+                    Unsaved Batch Masterlist
                   </DialogTitle>
                 </div>
                 <DialogDescription className="text-base font-extrabold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
-                  rosters for S.Y. {ayLabel || "2026-2027"} have not been finalized.
+                  masterlists for S.Y. {ayLabel || "2026-2027"} have not been finalized.
                   <br />
                   <br />
                   Don't worry, your progress is paused. You can safely return to
@@ -1192,12 +1192,12 @@ export function BatchSectioningWizard({
                     <AlertTriangle className="h-6 w-6" />
                   </div>
                   <DialogTitle className="text-xl font-extrabold">
-                    Unsaved Batch Roster
+                    Unsaved Batch Masterlist
                   </DialogTitle>
                 </div>
                 <DialogDescription className="text-base font-extrabold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
-                  rosters for S.Y. {ayLabel || "2026-2027"} have not been finalized.
+                  masterlists for S.Y. {ayLabel || "2026-2027"} have not been finalized.
                   <br />
                   <br />
                   Don't worry, your progress is paused. You can safely return to
@@ -1336,3 +1336,4 @@ export function BatchSectioningWizard({
     </AnimatePresence>
   );
 }
+

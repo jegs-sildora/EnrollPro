@@ -27,7 +27,7 @@ const SchoolForms = lazy(() => import('./pages/registrar/SchoolForms'));
 const ApplicationTracker = lazy(() => import('./pages/registrar/ApplicationTracker'));
 const BOSYQueue = lazy(() => import('./pages/registrar/BOSYQueue'));
 const RemedialTracker = lazy(() => import('./pages/registrar/RemedialTracker'));
-const SectionRosterViewer = lazy(() => import('./pages/registrar/SectionRosterViewer'));
+const SectionMasterlistViewer = lazy(() => import('./pages/registrar/SectionMasterlistViewer'));
 const EOSYFinalization = lazy(() => import('./pages/registrar/EOSYFinalization'));
 const TeachingLoad = lazy(() => import('./pages/registrar/TeachingLoad'));
 
@@ -88,7 +88,7 @@ export const smartRoutes: RouteObject[] = [
       { path: "applications", element: <ApplicationTracker /> },
       { path: "bosy", element: <BOSYQueue /> },
       { path: "remedial", element: <RemedialTracker /> },
-      { path: "roster", element: <SectionRosterViewer /> },
+      { path: "masterlist", element: <SectionMasterlistViewer /> },
       { path: "eosy", element: <EOSYFinalization /> },
       { path: "teaching-load", element: <TeachingLoad /> },
     ],
@@ -117,3 +117,4 @@ export const smartRoutes: RouteObject[] = [
     element: <SMARTRedirector />,
   },
 ];
+

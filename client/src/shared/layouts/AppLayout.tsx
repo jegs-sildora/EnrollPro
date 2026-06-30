@@ -141,7 +141,7 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-base font-bold leading-none">
+              <p className="font-bold leading-none">
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="text-sm leading-none text-foreground">
@@ -289,15 +289,15 @@ function SYSwitcher() {
             <button
               className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
-              <Calendar className="text-gray-500 w-4 h-4" />
-              <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+              <Calendar className="text-foreground w-4 h-4" />
+              <span className="text-sm text-foreground whitespace-nowrap font-extrabold">
                 {currentLabel}
               </span>
               {renderStatusBadge(currentYear?.status)}
-              <ChevronsUpDown className="text-gray-500 w-4 h-4" />
+              <ChevronsUpDown className="text-foreground w-4 h-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
+          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base "text-foreground>
             Switch School Year
           </TooltipContent>
         </Tooltip>
@@ -311,7 +311,7 @@ function SYSwitcher() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
             <div className="py-2">
-              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-bold text-foreground mb-2 px-2 uppercase tracking-wide">
                 Current School Year
               </div>
               {currentAcademicYear ? (
@@ -319,7 +319,7 @@ function SYSwitcher() {
                   key={currentAcademicYear.id}
                   onClick={() => handleSelectYear(currentAcademicYear)}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
+                    "flex w-full items-center gap-2 px-3 py-2 transition-colors",
                     currentAcademicYear.id === currentId
                       ? "bg-slate-100 font-bold text-slate-900"
                       : "hover:bg-slate-50 text-slate-700",
@@ -338,7 +338,7 @@ function SYSwitcher() {
 
               <div className="border-b border-slate-100 my-2" />
 
-              <div className="text-sm font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-sm font-bold text-foreground mb-2 px-2 uppercase tracking-wide">
                 Archived Records
               </div>
               {archivedYears.length > 0 ? (
@@ -360,7 +360,7 @@ function SYSwitcher() {
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-sm text-slate-500">No archived records available.</div>
+                <div className="px-3 py-2 text-sm text-foreground">No archived records available.</div>
               )}
             </div>
           </motion.div>
@@ -415,12 +415,12 @@ const NavItem = memo(function NavItem({
 
   if (
     to === "/sections" &&
-    pathname.startsWith("/sections/view-roster")
+    pathname.startsWith("/sections/view-masterlist")
   ) {
     isActive = true;
   }
 
-  // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
+  // Surgical exclusion for EOSY updating overlapping with Sectioning & Masterlists
   if (
     to === "/monitoring/enrollment" &&
     pathname.startsWith("/eosy")
@@ -458,17 +458,17 @@ function AppSidebar() {
   const { clearAuth } = useAuthStore();
   const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
   let officialEnrollmentBadge;
-  if (systemPhase === "OFFICIAL_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+  if (systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT") {
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment Active</span>;
   } else if (systemPhase === "CLASSES_ONGOING") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide">CLASSES ONGOING</span>;
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
   }
 
   let closingOperationsBadge;
   if (systemPhase === "EOSY_CLOSING") {
-    closingOperationsBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
+    closingOperationsBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-slate-600 text-white uppercase tracking-wide whitespace-nowrap shrink-0">EOSY ARCHIVING</span>;
   }
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -497,10 +497,10 @@ function AppSidebar() {
     <>
       <Sidebar collapsible="icon">
         {/* ΓöÇΓöÇ Header: School Identity ΓöÇΓöÇ */}
-        <SidebarHeader className="h-20 justify-center group-data-[state=expanded]:px-4 group-data-[state=collapsed]:px-0">
+        <SidebarHeader className="h-20 justify-center transition-all duration-300 ease-in-out group-data-[state=expanded]:px-4 group-data-[state=collapsed]:px-1.5">
           <SidebarMenu>
             <SidebarMenuItem>
-              <div className="flex items-center gap-3 group-data-[state=collapsed]:justify-center">
+              <div className="flex items-center transition-all duration-300 ease-in-out group-data-[state=expanded]:gap-3 group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:justify-center">
                 {logoUrl ? (
                   <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-white p-1">
                     <img
@@ -514,7 +514,7 @@ function AppSidebar() {
                     <School className="size-5 text-primary" />
                   </div>
                 )}
-                <div className="grid flex-1 text-left text-base leading-tight overflow-hidden group-data-[state=collapsed]:hidden group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:w-0 group-data-[collapsible=icon]:hidden">
+                <div className="grid flex-1 text-left leading-tight overflow-hidden transition-all duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:m-0">
                   {schoolName ? (
                     <span className="font-black leading-[1.1] uppercase text-primary block text-wrap">
                       {schoolName}
@@ -589,8 +589,7 @@ function AppSidebar() {
                           icon={ArrowUpRightSquare}
                           label={
                             <div className="flex items-center justify-between w-full">
-                              <span>EOSY Grade Finalization</span>
-                              <span className="size-2 bg-rose-500 rounded-full animate-pulse ml-2 shrink-0" />
+                              <span>EOSY Promotion Update</span>
                             </div>
                           }
                           pathname={pathname}
@@ -746,7 +745,7 @@ const ROUTE_PHASES: Record<string, {
   },
   "/eosy": {
     allowedPhases: ["EOSY_CLOSING"],
-    moduleName: "EOSY Grade Finalization",
+    moduleName: "EOSY Promotion Update",
     redirectTo: "/dashboard",
     redirectLabel: "Take me to Dashboard"
   }
@@ -995,7 +994,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-3">
-            <p className="text-base font-bold text-slate-800 leading-tight">
+            <p className="font-bold text-slate-800 leading-tight">
               The {blockedInfo?.moduleName} module is closed.
             </p>
             <p className="text-sm text-slate-500 font-semibold leading-relaxed">

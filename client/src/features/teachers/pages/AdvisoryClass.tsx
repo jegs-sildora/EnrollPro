@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/shared/api/axiosInstance";
-import { Loader2, MapPin, Phone, UserSquare } from "lucide-react";
+import { sileo } from "sileo";
+import { 
+  Users,
+  FileDown,
+  Loader2,
+  Venus,
+  Mars,
+  Eye
+} from "lucide-react";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 import {
   Table,
   TableBody,
@@ -13,40 +24,42 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
 } from "@/shared/ui/sheet";
+import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 interface AdvisoryLearner {
+  id: number;
   lrn: string | null;
   firstName: string;
   lastName: string;
   middleName: string | null;
   sex: string;
-  streetAddress: string | null;
-  barangay: string | null;
-  cityMunicipality: string | null;
-  province: string | null;
-  contactNumber: string | null;
-  guardianName: string | null;
-  guardianContact: string | null;
-  guardianRelationship: string | null;
+  birthdate?: string | null;
 }
 
 interface AdvisoryRecord {
   id: number;
+  sf1Remarks?: string | null;
   enrollmentApplication: {
     learner: AdvisoryLearner;
   };
 }
 
 interface AdvisorySection {
+  id: number;
   name: string;
+  maxCapacity: number;
+  programType: string;
+  schoolYearId: number;
   gradeLevel: {
     displayOrder: number;
+    name: string;
   };
+  advisingTeacher?: {
+    name: string;
+  } | null;
 }
 
 interface AdvisoryResponse {
@@ -55,15 +68,149 @@ interface AdvisoryResponse {
 }
 
 export default function AdvisoryClass() {
-  const [selectedLearner, setSelectedLearner] = useState<AdvisoryLearner | null>(null);
-  const retainedLearner = useRetainedSheetValue(selectedLearner);
+  const { ayLabel } = useSchoolYearContext();
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const retainedStudentId = useRetainedSheetValue(selectedStudentId);
+  const [exportingSf1, setExportingSf1] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ["teacher", "advisory"],
     queryFn: () => api.get<AdvisoryResponse>("/teacher-eosy/advisory").then(res => res.data),
   });
 
-  if (isLoading) {
+  const section = data?.section;
+  const records = data?.records || [];
+
+  const handleDownloadSf1 = async () => {
+    if (!section) return;
+    try {
+      setExportingSf1(true);
+      const res = await api.get(`/reports/sf1/${section.id}`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SF1_${section.gradeLevel.name}_${section.name}_${ayLabel?.replace("/", "-") || "2026-2027"}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      sileo.success({ title: "Success", description: "SF1 exported successfully." });
+    } catch (err: unknown) {
+      console.error("Failed to download SF1 template", err);
+      sileo.error({ title: "Error", description: "Failed to download SF1." });
+    } finally {
+      setExportingSf1(false);
+    }
+  };
+
+  const maleLearners = useMemo(
+    () => [...records].filter((r) => r.enrollmentApplication.learner.sex === "MALE").sort((a, b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName)),
+    [records]
+  );
+  
+  const femaleLearners = useMemo(
+    () => [...records].filter((r) => r.enrollmentApplication.learner.sex === "FEMALE").sort((a, b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName)),
+    [records]
+  );
+
+  const getProgramTypeLabel = (pt: string) => {
+    switch (pt) {
+      case "REGULAR": return "Basic Education Curriculum — Regular / Heterogeneous";
+      case "SCIENCE_TECHNOLOGY_AND_ENGINEERING":
+      case "STE": return "Special Curricular Program — Science, Technology, and Engineering (STE)";
+      case "SPA": return "Special Program in the Arts (SPA)";
+      case "SPS": return "Special Program in Sports (SPS)";
+      case "BEC_HOMO": return "Basic Education Curriculum — Homogeneous";
+      default: return pt;
+    }
+  };
+
+  const formatDate = (d?: string | null) => {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const calculateAgeAsOfJuneFirst = (birthdateStr?: string | null) => {
+    if (!birthdateStr) return null;
+    const bDate = new Date(birthdateStr);
+    if (isNaN(bDate.getTime())) return null;
+    let startYear = 2026;
+    if (ayLabel) {
+      const match = ayLabel.match(/^(\d{4})/);
+      if (match) startYear = parseInt(match[1]);
+    }
+    const juneFirst = new Date(startYear, 5, 1);
+    let age = juneFirst.getFullYear() - bDate.getFullYear();
+    const m = juneFirst.getMonth() - bDate.getMonth();
+    if (m < 0 || (m === 0 && juneFirst.getDate() < bDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const renderLearnerRow = (record: AdvisoryRecord, index: number) => {
+    const learner = record.enrollmentApplication.learner;
+    const age = calculateAgeAsOfJuneFirst(learner.birthdate);
+    let remark = "";
+    if (record.sf1Remarks) {
+      remark = record.sf1Remarks;
+    }
+
+    return (
+      <TableRow key={record.id} className="hover:bg-muted/50 transition-colors group">
+        <TableCell className="text-center font-extrabold text-base text-muted-foreground py-3">
+          {index}
+        </TableCell>
+        <TableCell className="text-center font-extrabold text-base py-3">
+          {learner.lrn || "—"}
+        </TableCell>
+        <TableCell className="py-3 pl-2 min-w-[200px]">
+          <span className="font-extrabold text-base uppercase block leading-tight">
+            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
+          </span>
+        </TableCell>
+        <TableCell className="text-center py-3 whitespace-nowrap">
+          {learner.birthdate ? (
+            <span className="text-base font-extrabold">{formatDate(learner.birthdate)}</span>
+          ) : (
+            <span className="text-sm italic text-muted-foreground">Requires DOB Update</span>
+          )}
+        </TableCell>
+        <TableCell className="text-center font-extrabold text-base py-3">
+          {age !== null ? age : "—"}
+        </TableCell>
+        <TableCell className="text-center py-3">
+          {remark && (
+            <span className="text-sm font-extrabold uppercase text-foreground">
+              {remark}
+            </span>
+          )}
+        </TableCell>
+        <TableCell className="text-right py-3 pr-2">
+          <div className="flex w-full justify-end py-3 pr-2">
+            <span
+              onClick={() => setSelectedStudentId(learner.id)}
+              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View
+            </span>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  if (loading) {
     return (
       <div className="flex justify-center p-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -71,135 +218,184 @@ export default function AdvisoryClass() {
     );
   }
 
-  const { section, records } = data || {};
+  if (!section) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">My Advisory Class</h1>
+          <p className="text-muted-foreground">
+            View your currently assigned advisory class and enrolled learners.
+          </p>
+        </div>
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground shadow-sm">
+          <p className="text-lg text-foreground">No Active Advisory Section</p>
+          <p className="mt-1">You are not currently assigned as an adviser to any section for this school year.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">My Advisory Class</h1>
-        <p className="text-muted-foreground">
-          View your currently assigned advisory class and enrolled learners.
-        </p>
-      </div>
-
-      {!section ? (
-        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground shadow-sm">
-          <p className="text-lg  text-foreground">No Active Advisory Section</p>
-          <p className="mt-1">You are not currently assigned as an adviser to any section for this school year.</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border bg-card shadow-sm">
-          <div className="border-b p-6">
-            <h2 className="text-lg ">
-              Grade {section.gradeLevel.displayOrder} - {section.name}
-            </h2>
-            <p className="text-base leading-tight text-muted-foreground">
-              {records?.length || 0} Learners Enrolled
+      {/* Header */}
+      <div className="space-y-1">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase">
+              {section.gradeLevel.name} — {section.name}
+            </h1>
+            <p className="text-base leading-tight font-extrabold text-foreground">
+              {getProgramTypeLabel(section.programType || "REGULAR")}
             </p>
           </div>
-          <div className="p-0 sm:p-2">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-primary/90 border-b-0">
-                  <TableHead className="text-left w-12">#</TableHead>
-                  <TableHead className="text-left">Learner Name</TableHead>
-                  <TableHead className="text-left w-24">Sex</TableHead>
-                  <TableHead className="text-left w-48">LRN</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records?.map((record, idx) => {
-                  const learner = record.enrollmentApplication.learner;
-                  return (
-                    <TableRow
-                      key={record.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setSelectedLearner(learner)}
-                    >
-                      <TableCell className="text-muted-foreground  text-left">{idx + 1}</TableCell>
-                      <TableCell className="font-extrabold text-left uppercase">
-                        {learner.lastName}, {learner.firstName}
-                      </TableCell>
-                      <TableCell className="text-left uppercase ">{learner.sex}</TableCell>
-                      <TableCell className="text-muted-foreground font-extrabold text-left">{learner.lrn || "NO LRN"}</TableCell>
-                    </TableRow>
-                  );
-                })}
-                {records?.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground ">
-                      No learners found in this section.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
         </div>
-      )}
+      </div>
 
-      <Sheet open={!!selectedLearner} onOpenChange={(open) => !open && setSelectedLearner(null)}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-2xl font-extrabold uppercase tracking-tight text-primary">Learner Profile</SheetTitle>
-            <SheetDescription className="font-extrabold">
-              Basic DepEd profile and emergency contact information.
-            </SheetDescription>
-          </SheetHeader>
+      {/* Toolbar Card */}
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <CardHeader className="px-6 py-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-base font-extrabold text-foreground whitespace-nowrap">
+                Class Adviser:
+              </span>
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-extrabold uppercase text-foreground">
+                {section.advisingTeacher ? section.advisingTeacher.name : "ASSIGNED (YOU)"}
+              </span>
+            </div>
 
-          {retainedLearner && (
-            <div className="mt-8 space-y-8">
-              <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-xl border border-border">
-                <div className="h-16 w-16 bg-primary/10 text-primary flex items-center justify-center rounded-full shrink-0">
-                  <UserSquare className="h-8 w-8" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-extrabold uppercase text-foreground leading-tight">
-                    {retainedLearner.lastName}, {retainedLearner.firstName} {retainedLearner.middleName}
-                  </h3>
-                  <p className="text-base leading-tight font-extrabold text-muted-foreground mt-1">
-                    LRN: {retainedLearner.lrn || "Not Assigned"}
-                  </p>
+            <div className="flex items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
+              <span className="text-foreground">
+                Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
+              </span>
+              <div className="w-px h-4 bg-border" />
+              <span className="flex items-center gap-1.5 text-blue-600">
+                <Mars className="h-4 w-4" /> Male: {maleLearners.length}
+              </span>
+              <div className="w-px h-4 bg-border" />
+              <span className="flex items-center gap-1.5 text-pink-600">
+                <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Masterlist Table Card */}
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
+          <div>
+            <CardTitle className="text-base sm:text-lg font-extrabold">
+              Enrolled Learner Records
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={handleDownloadSf1}
+              disabled={exportingSf1 || loading}
+              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+            >
+              {exportingSf1 ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4 mr-2" />
+              )}
+              Export SF1
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+          {records.length === 0 ? (
+            <div className="flex py-16 w-full items-center justify-center">
+              <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+                <CardContent className="pt-10 pb-10 text-center space-y-3">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center mb-2">
+                    <Users className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-foreground text-lg">
+                      No Enrolled Learners
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                      This class section has no enrolled learners yet.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-auto bg-muted/5 relative min-h-[500px] flex flex-col p-4">
+              <div className="flex flex-col rounded-lg overflow-hidden border border-border shadow-sm max-h-full">
+                <div className="bg-background overflow-auto flex-1 relative">
+                  <Table className="relative min-w-[900px]">
+                    <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
+                      <TableRow className="hover:bg-muted border-none">
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">#</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">LRN</TableHead>
+                        <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER NAME</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[160px] tracking-wide">BIRTHDATE</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[80px] tracking-wide">AGE</TableHead>
+                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[140px] tracking-wide">REMARKS</TableHead>
+                        <TableHead className="text-right font-extrabold text-foreground h-11 w-[160px] pr-4">ACTION</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Male Learners */}
+                      {maleLearners.length > 0 && (
+                        <>
+                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
+                            <TableCell colSpan={7} className="py-3">
+                              <div className="flex justify-between font-extrabold tracking-widest text-blue-700 uppercase px-2">
+                                <span>MALE LEARNERS</span>
+                                <span>Total: {maleLearners.length}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {maleLearners.map((record, idx) => renderLearnerRow(record, idx + 1))}
+                        </>
+                      )}
+
+                      {/* Female Learners */}
+                      {femaleLearners.length > 0 && (
+                        <>
+                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
+                            <TableCell colSpan={7} className="py-3">
+                              <div className="flex justify-between font-extrabold tracking-widest text-pink-700 uppercase px-2">
+                                <span>FEMALE LEARNERS</span>
+                                <span>Total: {femaleLearners.length}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {femaleLearners.map((record, idx) => renderLearnerRow(record, idx + 1))}
+                        </>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-              <div className="space-y-4">
-                <h4 className="font-extrabold text-base leading-tight uppercase text-primary/80 tracking-wide">Contact & Address</h4>
-                <div className="bg-card border border-border rounded-xl p-4 space-y-4 shadow-sm">
-                  <div className="flex items-start gap-3 text-base leading-tight">
-                    <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span className=" text-foreground leading-relaxed">
-                      {retainedLearner.streetAddress || "No street address"}, {retainedLearner.barangay}, {retainedLearner.cityMunicipality}, {retainedLearner.province}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-base leading-tight">
-                    <Phone className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-extrabold text-foreground">
-                      {retainedLearner.contactNumber || "No contact number"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-extrabold text-base leading-tight uppercase text-primary/80 tracking-wide">Guardian Info</h4>
-                <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm">
-                  <div>
-                    <p className="text-base font-extrabold text-muted-foreground uppercase tracking-normal mb-1">Name</p>
-                    <p className="font-extrabold text-foreground">{retainedLearner.guardianName || "No guardian listed"}</p>
-                  </div>
-                  <div>
-                    <p className="text-base font-extrabold text-muted-foreground uppercase tracking-normal mb-1">Contact</p>
-                    <p className="font-extrabold text-foreground">{retainedLearner.guardianContact || "No contact provided"}</p>
-                  </div>
-                  {retainedLearner.guardianRelationship && (
-                    <div>
-                      <p className="text-base font-extrabold text-muted-foreground uppercase tracking-normal mb-1">Relationship</p>
-                      <p className="font-extrabold text-foreground capitalize">{retainedLearner.guardianRelationship}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+      {/* Student Detail Panel */}
+      <Sheet
+        open={selectedStudentId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedStudentId(null);
+        }}>
+        <SheetContent
+          side="right"
+          className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
+          {retainedStudentId && (
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              <StudentDetailPanel
+                id={retainedStudentId}
+                onClose={() => setSelectedStudentId(null)}
+                onRefreshData={() => refetch()}
+                canEditProfile={false}
+              />
             </div>
           )}
         </SheetContent>

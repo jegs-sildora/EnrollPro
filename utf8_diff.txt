@@ -1,0 +1,633 @@
+﻿diff --git a/client/src/features/enrollment/pages/EosyIndex.tsx b/client/src/features/enrollment/pages/EosyIndex.tsx
+index 78cc154..59dbccf 100644
+--- a/client/src/features/enrollment/pages/EosyIndex.tsx
++++ b/client/src/features/enrollment/pages/EosyIndex.tsx
+@@ -1,4 +1,7 @@
+ import { useState, useEffect, useCallback, useMemo } from "react";
++import { useNavigate } from "react-router";
++import { useQueryClient } from "@tanstack/react-query";
++import { queryKeys } from "@/shared/lib/queryKeys";
+ import { motion, AnimatePresence } from "motion/react";
+ import { PhaseBanner } from "@/shared/components/PhaseBanner";
+ import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
+@@ -26,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+ import {
+   CheckCircle2,
+   Lock,
++  Unlock,
+   Loader2,
+   AlertTriangle,
+   AlertCircle,
+@@ -42,10 +46,11 @@ import type { EosyStatus } from "@enrollpro/shared";
+ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
+ import { sileo } from "sileo";
+ 
+-interface EnrollmentRecord {
++export interface EnrollmentRecord {
+   id: number;
+   eosyStatus: EosyStatus | null;
+   dropOutReason: string | null;
++  transferOutDate: string | null;
+   finalAverage: number | null;
+   nextYearCurriculum: string | null;
+   isScpDemoted?: boolean;
+@@ -139,6 +144,8 @@ export default function EosyUpdating() {
+     systemStatus,
+     systemPhase,
+   } = useSettingsStore();
++  const navigate = useNavigate();
++  const queryClient = useQueryClient();
+   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+   const isEosyPhase = systemPhase === "EOSY_CLOSING";
+   const isEosyArchivedState = systemStatus === "ARCHIVED";
+@@ -161,6 +168,13 @@ export default function EosyUpdating() {
+   const [sf5WatermarkOpen, setSf5WatermarkOpen] = useState(false);
+   const [finalizeLoading, setFinalizeLoading] = useState(false);
+ 
++  const [transitionModalOpen, setTransitionModalOpen] = useState(false);
++  const [transitionChecked, setTransitionChecked] = useState(false);
++  const [transitionLoading, setTransitionLoading] = useState(false);
++  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
++  const [unlockLoading, setUnlockLoading] = useState(false);
++  const [forceShowTabs, setForceShowTabs] = useState(false);
++
+   useEffect(() => {
+     if (!ayId) return;
+     getBOSYReadiness(ayId).catch(() => { });
+@@ -371,6 +385,52 @@ export default function EosyUpdating() {
+     }
+   };
+ 
++  const handleUnlockSection = async () => {
++    setUnlockLoading(true);
++    try {
++      const sectionRecord = records.find(r => r.section.name === sectionFilter);
++      if (!sectionRecord) return;
++      await api.post(`/eosy/grade/${activeTab}/unlock`, {
++        schoolYearId: ayId,
++        section_id: sectionRecord.section.id
++      });
++      sileo.success({
++        title: "Section Unlocked",
++        description: `Section ${sectionFilter} has been successfully unlocked.`,
++      });
++      void fetchExportLockState();
++      void fetchSectionsAndGrades();
++      void fetchGradeRecords(activeTab);
++    } catch (err) {
++      toastApiError(err as never);
++    } finally {
++      setUnlockLoading(false);
++      setUnlockModalOpen(false);
++    }
++  };
++
++  const handleTransitionRollover = async () => {
++    setTransitionLoading(true);
++    try {
++      await api.post("/system/finalize-eosy");
++      sileo.success({
++        title: "System Rollover Executed",
++        description: "The system has successfully transitioned to the new school year.",
++      });
++      setTransitionModalOpen(false);
++      
++      // Invalidate public settings query to update the global phase state
++      await queryClient.invalidateQueries({ queryKey: queryKeys.publicSettings });
++      
++      // Immediately redirect to Master Dashboard
++      navigate("/dashboard");
++    } catch (err) {
++      toastApiError(err as never);
++    } finally {
++      setTransitionLoading(false);
++    }
++  };
++
+   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
+   const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
+ 
+@@ -723,140 +783,154 @@ export default function EosyUpdating() {
+               End of School Year (EOSY) Finalization
+             </h1>
+             <p className="text-base leading-tight font-extrabold text-foreground">
+-              Review submitted grades, verify promotion or retention status, and officially lock records for the End of School Year.
++              Review submitted General Averages, verify promotion status, and officially lock records for the End of School Year.
+             </p>
+           </div>
+         </div>
+ 
+-        {isAllFinalized && !shouldShowFinalizedView && (
+-          <div className="mt-6 mb-6 rounded-md border border-emerald-200 bg-emerald-50 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+-            <div className="space-y-1 text-emerald-800">
+-              <h3 className="font-extrabold flex items-center gap-2">
+-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+-                School Year Finalization Complete
+-              </h3>
+-              <p className="text-base leading-tight">All grade levels are officially locked. You may now advance the system to the next School Year.</p>
++        {isAllFinalized && !shouldShowFinalizedView && !forceShowTabs ? (
++          <div className="flex flex-col items-center justify-center py-16 px-4 bg-white border border-slate-200 rounded-none shadow-sm text-center space-y-6 flex-1 min-h-0">
++            <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center border border-emerald-200">
++              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
++            </div>
++            <div className="space-y-2">
++              <h2 className="text-2xl font-black uppercase text-emerald-800">
++                End of School Year (EOSY) Updating Complete
++              </h2>
++              <p className="text-base text-muted-foreground max-w-md mx-auto">
++                All grade levels (Grade 7, 8, 9, and 10) have officially completed their End of School Year finalization.
++              </p>
++            </div>
++            <div className="flex flex-col items-center gap-3">
++              <Button
++                onClick={() => setTransitionModalOpen(true)}
++                className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-6 py-2 shadow-md"
++              >
++                Transition to New School Year
++              </Button>
++              <Button
++                variant="link"
++                onClick={() => setForceShowTabs(true)}
++                className="text-rose-800 hover:text-rose-900 hover:underline font-extrabold h-11 px-6 flex items-center justify-center gap-1 transition-all bg-transparent border-none uppercase text-sm"
++              >
++                Reopen EOSY Updating &rarr;
++              </Button>
+             </div>
+-            <Button asChild className="bg-green-700 hover:bg-green-800 text-white font-extrabold shadow-sm">
+-              <a href="/settings">Proceed to School Year Setup &rarr;</a>
+-            </Button>
+           </div>
+-        )}
+-
+-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
+-          <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
+-            {gradeLevels.map((gl) => (
+-              <TabsTrigger
+-                key={gl.id}
+-                value={String(gl.id)}
+-                className={cn(
+-                  "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+-                )}
++        ) : (
++          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
++            <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
++              {gradeLevels.map((gl) => (
++                <TabsTrigger
++                  key={gl.id}
++                  value={String(gl.id)}
++                  className={cn(
++                    "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
++                  )}
++                >
++                  {activeTab === String(gl.id) && (
++                    <motion.div
++                      layoutId="enrollment-eosy-grade-pill"
++                      className="absolute inset-0 bg-primary rounded-md"
++                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
++                    />
++                  )}
++                  <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
++                    {gl.name.replace(/grade\s*/i, "Grade ")}
++                  </span>
++                </TabsTrigger>
++              ))}
++            </TabsList>
++
++            <AnimatePresence mode="wait">
++              <motion.div
++                key={activeTab}
++                initial={{ opacity: 0, y: 10 }}
++                animate={{ opacity: 1, y: 0 }}
++                exit={{ opacity: 0, y: -10 }}
++                transition={{ duration: 0.2 }}
++                className="flex-1 w-full h-full min-h-0"
+               >
+-                {activeTab === String(gl.id) && (
+-                  <motion.div
+-                    layoutId="enrollment-eosy-grade-pill"
+-                    className="absolute inset-0 bg-primary rounded-md"
+-                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+-                  />
+-                )}
+-                <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+-                  {gl.name.replace(/grade\s*/i, "Grade ")}
+-                </span>
+-              </TabsTrigger>
+-            ))}
+-          </TabsList>
+-
+-          <AnimatePresence mode="wait">
+-            <motion.div
+-              key={activeTab}
+-              initial={{ opacity: 0, y: 10 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              exit={{ opacity: 0, y: -10 }}
+-              transition={{ duration: 0.2 }}
+-              className="flex-1 w-full h-full min-h-0"
+-            >
+-              <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
+-                <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
+-                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-card p-4 rounded-xl border border-border shadow-sm flex-shrink-0 w-full">
+-                    {/* Left Side Actions */}
+-                    <div className="flex flex-wrap items-center gap-3">
+-                      <Select
+-                        value={sectionFilter}
+-                        onValueChange={setSectionFilter}
+-                      >
+-                        <SelectTrigger className="w-56 bg-background border-border font-extrabold">
+-                          <SelectValue placeholder="Filter by Section / Adviser" />
+-                        </SelectTrigger>
+-                        <SelectContent>
+-                          <SelectItem value="ALL" className="font-extrabold">All Sections</SelectItem>
+-                          {sectionOptions.map(sec => (
+-                            <SelectItem key={sec} value={sec}>{sec}</SelectItem>
+-                          ))}
+-                        </SelectContent>
+-                      </Select>
+-
+-                      <div className="w-px h-8 bg-border mx-1 hidden sm:block"></div>
+-
+-                      {isScopeFinalized ? (
+-                        <div className="flex flex-wrap gap-2">
+-                          <Button variant="outline" className="font-extrabold border-border hover:bg-accent" onClick={() => {
+-                            if (pendingCount > 0) {
+-                              setSf5WatermarkOpen(true);
+-                            } else {
+-                              sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
+-                            }
+-                          }}>
+-                            ≡ƒôÑ Download SF5
+-                          </Button>
+-                          <Button variant="outline" className="font-extrabold border-border hover:bg-accent" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
+-                            ≡ƒôÑ Download SF6
+-                          </Button>
+-                        </div>
+-                      ) : (
+-                        <div className="flex flex-wrap items-center gap-2">
+-                          <Select
+-                            value={batchActionStatus}
+-                            onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+-                            disabled={Object.keys(rowSelection).length === 0}
+-                          >
+-                            <SelectTrigger className="w-48 bg-background border-border font-extrabold">
+-                              <SelectValue placeholder="Select New Status..." />
+-                            </SelectTrigger>
+-                            <SelectContent>
+-                              <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+-                              <SelectItem value="RETAINED">RETAINED</SelectItem>
+-                              <SelectItem value="CONDITIONALLY_PROMOTED">PROMOTED (TO BEC)</SelectItem>
+-                              <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+-                              <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+-                            </SelectContent>
+-                          </Select>
+-                          <Button
+-                            onClick={handleBatchUpdate}
+-                            disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+-                            variant={batchActionStatus ? "default" : "outline"}
+-                            className={cn(
+-                              "transition-all font-extrabold px-6",
+-                              batchActionStatus && Object.keys(rowSelection).length > 0
+-                                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+-                                : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
+-                            )}
+-                          >
+-                            {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+-                            Apply to Selected
+-                          </Button>
+-                        </div>
+-                      )}
+-                    </div>
++                <Card className="flex flex-col shadow-sm border border-border overflow-hidden bg-card h-full">
++                  <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 space-y-4">
++                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-card p-4 rounded-xl border border-border shadow-sm flex-shrink-0 w-full">
++                      {/* Left Side Actions */}
++                      <div className="flex flex-wrap items-center gap-3">
++                        <Select
++                          value={sectionFilter}
++                          onValueChange={setSectionFilter}
++                        >
++                          <SelectTrigger className="w-56 bg-background border-border font-extrabold">
++                            <SelectValue placeholder="Filter by Section / Adviser" />
++                          </SelectTrigger>
++                          <SelectContent>
++                            <SelectItem value="ALL" className="font-extrabold">All Sections</SelectItem>
++                            {sectionOptions.map(sec => (
++                              <SelectItem key={sec} value={sec}>{sec}</SelectItem>
++                            ))}
++                          </SelectContent>
++                        </Select>
++
++                        <div className="w-px h-8 bg-border mx-1 hidden sm:block"></div>
++
++                        {isScopeFinalized ? (
++                          <div className="flex flex-wrap gap-2">
++                            <Button variant="outline" className="font-extrabold border-border hover:bg-accent" onClick={() => {
++                              if (pendingCount > 0) {
++                                setSf5WatermarkOpen(true);
++                              } else {
++                                sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
++                              }
++                            }}>
++                              ≡ƒôÑ Download SF5
++                            </Button>
++                            <Button variant="outline" className="font-extrabold border-border hover:bg-accent" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
++                              ≡ƒôÑ Download SF6
++                            </Button>
++                          </div>
++                        ) : (
++                          <div className="flex flex-wrap items-center gap-2">
++                            <Select
++                              value={batchActionStatus}
++                              onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
++                              disabled={Object.keys(rowSelection).length === 0}
++                            >
++                              <SelectTrigger className="w-48 bg-background border-border font-extrabold">
++                                <SelectValue placeholder="Select New Status..." />
++                              </SelectTrigger>
++                              <SelectContent>
++                                <SelectItem value="PROMOTED">PROMOTED</SelectItem>
++                                <SelectItem value="RETAINED">RETAINED</SelectItem>
++                                <SelectItem value="CONDITIONALLY_PROMOTED">PROMOTED (TO BEC)</SelectItem>
++                                <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
++                                <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
++                              </SelectContent>
++                            </Select>
++                            <Button
++                              onClick={handleBatchUpdate}
++                              disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
++                              variant={batchActionStatus ? "default" : "outline"}
++                              className={cn(
++                                "transition-all font-extrabold px-6",
++                                batchActionStatus && Object.keys(rowSelection).length > 0
++                                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
++                                  : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
++                              )}
++                            >
++                              {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
++                              Apply to Selected
++                            </Button>
++                          </div>
++                        )}
++                      </div>
+ 
+-                    {/* Right Side Status & Finalize */}
+-                    <div className="flex flex-wrap items-center gap-4 xl:justify-end">
+-                      {/* Status Indicators */}
+-                      <div className="flex items-center gap-3">
++                      {/* Right Side Actions */}
++                      <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
++                        {/* Status Badges */}
+                         {pendingCount > 0 && !isScopeFinalized && (
+-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
+-                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+-                            {pendingCount} Pending Submissions
++                          <div className="flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1 text-sm font-extrabold">
++                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
++                            {pendingCount} Pending Advisers
+                           </div>
+                         )}
+ 
+@@ -864,12 +938,12 @@ export default function EosyUpdating() {
+                           <TooltipProvider delayDuration={200}>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
++                                <div className="flex items-center gap-1 text-destructive bg-destructive/10 border border-destructive/20 rounded px-2.5 py-1 text-sm font-extrabold cursor-help">
+                                   <AlertCircle className="w-3.5 h-3.5" />
+                                   {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
+                                 </div>
+                               </TooltipTrigger>
+-                              <TooltipContent className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
++                              <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
+                                 <p className="font-extrabold mb-2 flex items-center gap-2">
+                                   <AlertCircle className="w-4 h-4" />
+                                   Pending Requirements
+@@ -882,54 +956,67 @@ export default function EosyUpdating() {
+                             </Tooltip>
+                           </TooltipProvider>
+                         )}
+-                      </div>
+ 
+-                      {/* Finalize Button */}
+-                      {!isScopeFinalized && blockersCount === 0 && (
+-                        <Button
+-                          onClick={() => setFinalizeModalOpen(true)}
+-                          disabled={records.length === 0}
+-                          size="lg"
+-                          className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
+-                        >
+-                          Finalize & Lock {targetScopeName}
+-                        </Button>
+-                      )}
+-                    </div>
+-                  </div>
+-
+-                  {isScopeFinalized && (
+-                    <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 mb-4 shrink-0">
+-                      <Lock className="text-amber-700 w-5 h-5 mr-2" />
+-                      <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
+-                        EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER EDITS ALLOWED.
+-                      </span>
++                        {/* Finalize Button */}
++                        {!isScopeFinalized && blockersCount === 0 && (
++                          <Button
++                            onClick={() => setFinalizeModalOpen(true)}
++                            disabled={records.length === 0}
++                            size="lg"
++                            className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
++                          >
++                            Finalize & Lock {targetScopeName}
++                          </Button>
++                        )}
++                        
++                        {isScopeFinalized && sectionFilter !== "ALL" && !isSchoolYearFinalized && (
++                          <Button
++                            onClick={() => setUnlockModalOpen(true)}
++                            disabled={unlockLoading}
++                            size="lg"
++                            variant="outline"
++                            className="font-extrabold shadow-md transition-all uppercase border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
++                          >
++                            {unlockLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Unlock className="w-4 h-4 mr-2" />}
++                            Unlock Section Roster
++                          </Button>
++                        )}
++                      </div>
+                     </div>
+-                  )}
+ 
+-                  <div className="flex-1 min-h-0 bg-card rounded-md border flex flex-col">
+-                    {loadingRecords ? (
+-                      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
+-                        <Loader2 className="h-8 w-8 animate-spin" />
+-                        <p className="text-base leading-tight ">Loading {activeGradeName} records...</p>
+-                      </div>
+-                    ) : (
+-                      <div className="flex-1 overflow-auto">
+-                        <DataTable
+-                          columns={columns}
+-                          data={filteredRecords}
+-                          rowSelection={rowSelection}
+-                          onRowSelectionChange={setRowSelection}
+-                          getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "opacity-50 pointer-events-none hover:bg-transparent" : ""}
+-                        />
++                    {isScopeFinalized && (
++                      <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 mb-4 shrink-0">
++                        <Lock className="text-amber-700 w-5 h-5 mr-2" />
++                        <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
++                          EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER EDITS ALLOWED.
++                        </span>
+                       </div>
+                     )}
++
++                    <div className="flex-1 min-h-0 bg-card rounded-md border flex flex-col">
++                      {loadingRecords ? (
++                        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
++                          <Loader2 className="h-8 w-8 animate-spin" />
++                          <p className="text-base leading-tight ">Loading {activeGradeName} records...</p>
++                        </div>
++                      ) : (
++                        <div className="flex-1 overflow-auto">
++                          <DataTable
++                            columns={columns}
++                            data={filteredRecords}
++                            rowSelection={rowSelection}
++                            onRowSelectionChange={setRowSelection}
++                            getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "opacity-50 pointer-events-none hover:bg-transparent" : ""}
++                          />
++                        </div>
++                      )}
++                    </div>
+                   </div>
+-                </div>
+-              </Card>
+-            </motion.div>
+-          </AnimatePresence>
+-        </Tabs>
++                </Card>
++              </motion.div>
++            </AnimatePresence>
++          </Tabs>
++        )}
+       </div>
+ 
+       <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
+@@ -1071,6 +1158,118 @@ export default function EosyUpdating() {
+         </DialogContent>
+       </Dialog>
+ 
++      <Dialog
++        open={transitionModalOpen}
++        onOpenChange={(open) => {
++          if (!open) return;
++          setTransitionModalOpen(open);
++        }}
++      >
++        <DialogContent 
++          className="max-w-md bg-white p-6 rounded-lg shadow-2xl border"
++          onPointerDownOutside={(e) => e.preventDefault()}
++          onEscapeKeyDown={(e) => e.preventDefault()}
++        >
++          <DialogHeader>
++            <DialogTitle className="text-xl font-extrabold text-destructive flex items-center gap-2">
++              <AlertTriangle className="h-5 w-5 text-destructive" />
++              School Year Transition
++            </DialogTitle>
++            <DialogDescription className="text-foreground pt-2 text-base font-semibold">
++              You are about to officially close SY 2026-2027. This action will permanently archive Grade 10 Completers, queue promoted learners, and clear all section advisories.
++            </DialogDescription>
++          </DialogHeader>
++
++          <div className="space-y-4 py-4">
++            <div className="bg-amber-50 border border-amber-200 rounded p-4 text-amber-900 text-base space-y-2">
++              <p className="font-extrabold text-amber-955">The following automated updates will occur:</p>
++              <ul className="list-disc pl-5 space-y-1">
++                <li>Grade 10 learners will be permanently archived as JHS Completers.</li>
++                <li>Promoted Grade 7 to 9 learners will be updated for the next grade level.</li>
++                <li>All previous Section assignments will be cleared for the incoming school year.</li>
++              </ul>
++            </div>
++
++            <div className="flex items-start space-x-3 pt-2">
++              <Checkbox
++                id="transition-confirm"
++                checked={transitionChecked}
++                onCheckedChange={(checked) => setTransitionChecked(!!checked)}
++                className="mt-1"
++              />
++              <label
++                htmlFor="transition-confirm"
++                className="text-base font-extrabold text-foreground leading-tight cursor-pointer select-none"
++              >
++                I confirm that all EOSY records are accurate and I am ready to close this school year.
++              </label>
++            </div>
++          </div>
++
++          <DialogFooter className="flex flex-row gap-3 pt-4 sm:justify-end">
++            <Button
++              variant="outline"
++              onClick={() => {
++                setTransitionModalOpen(false);
++                setTransitionChecked(false);
++              }}
++              disabled={transitionLoading}
++            >
++              Cancel
++            </Button>
++            <Button
++              onClick={handleTransitionRollover}
++              disabled={!transitionChecked || transitionLoading}
++              className={cn(
++                "font-extrabold px-6 shadow-md transition-all active:scale-[0.97]",
++                transitionChecked
++                  ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
++                  : "bg-muted text-muted-foreground cursor-not-allowed border"
++              )}
++            >
++              {transitionLoading ? (
++                <span className="flex items-center gap-2">
++                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
++                  Processing...
++                </span>
++              ) : (
++                "Lock Records and Open New School Year"
++              )}
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++
++      <Dialog open={unlockModalOpen} onOpenChange={setUnlockModalOpen}>
++        <DialogContent className="max-w-md bg-white p-6 rounded-lg shadow-2xl border">
++          <DialogHeader>
++            <DialogTitle className="text-xl font-extrabold text-amber-700 flex items-center gap-2">
++              <AlertTriangle className="h-5 w-5 text-amber-600" />
++              Unlock Section Roster?
++            </DialogTitle>
++            <DialogDescription className="text-foreground pt-2 text-base font-semibold">
++              Are you sure you want to unlock section {sectionFilter}? This will allow the class adviser to modify grades again.
++            </DialogDescription>
++          </DialogHeader>
++          <DialogFooter className="flex flex-row gap-3 pt-4 sm:justify-end">
++            <Button
++              variant="outline"
++              onClick={() => setUnlockModalOpen(false)}
++              disabled={unlockLoading}
++            >
++              Cancel
++            </Button>
++            <Button
++              onClick={handleUnlockSection}
++              disabled={unlockLoading}
++              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-6 shadow-md"
++            >
++              {unlockLoading ? "Processing..." : "Unlock Section"}
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++
+     </>
+   );
+ }

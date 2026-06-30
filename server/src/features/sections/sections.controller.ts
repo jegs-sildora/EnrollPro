@@ -791,7 +791,7 @@ export async function deleteSection(
   res.json({ message: "Section deleted successfully" });
 }
 
-export async function getSectionRoster(
+export async function getSectionMasterlist(
   req: Request,
   res: Response,
 ): Promise<void> {
