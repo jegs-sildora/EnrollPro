@@ -50,6 +50,7 @@ interface Section {
   id: number;
   name: string;
   isEosyFinalized: boolean;
+  programType?: string;
   gradeLevel: {
     name: string;
   };
@@ -238,8 +239,10 @@ export default function TeacherEosyDashboard() {
           const statusLabel = formatStatusLabel(r.eosyStatus);
 
           const ave = r.finalAverage;
-          const applicantType = r.enrollmentApplication.applicantType;
-          const isScpWarning = applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE" && ave !== null && ave >= 75 && ave < 85;
+          const isScp = Boolean(section?.programType && section.programType !== "REGULAR");
+          const isScpWarning = isScp && ave !== null && ave !== undefined && ave >= 75 && ave < 85;
+          const isFailing = ave !== null && ave !== undefined && ave > 0 && ave < 75;
+          const hasZeroOrBlankGrade = ave === 0 || ave === null || ave === undefined || isNaN(ave);
 
           const renderStatusContent = () => (
             <div
@@ -292,12 +295,13 @@ export default function TeacherEosyDashboard() {
                   if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
                   else handleStatusChange(r.id, val);
                 }}
+                disabled={isScpWarning}
               >
                 {isScpWarning ? (
                   renderTooltip(
                     <SelectTrigger
                       className={cn(
-                        "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border",
+                        "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
@@ -307,7 +311,7 @@ export default function TeacherEosyDashboard() {
                 ) : (
                   <SelectTrigger
                     className={cn(
-                      "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border",
+                      "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
                       !r.eosyStatus || r.eosyStatus === "PROMOTED"
                         ? "text-green-700 bg-green-50 border-green-200"
                         : "text-amber-700 bg-amber-50 border-amber-200",
@@ -316,12 +320,15 @@ export default function TeacherEosyDashboard() {
                   </SelectTrigger>
                 )}
                 <SelectContent>
-                  {isScpWarning ? (
-                    <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
-                  ) : (
+                  {!hasZeroOrBlankGrade && !isFailing && !isScpWarning && (
                     <SelectItem value="PROMOTED">PROMOTED</SelectItem>
                   )}
-                  <SelectItem value="RETAINED">RETAINED</SelectItem>
+                  {isScp && !hasZeroOrBlankGrade && !isFailing && (
+                    <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
+                  )}
+                  {!hasZeroOrBlankGrade && (
+                    <SelectItem value="RETAINED">RETAINED</SelectItem>
+                  )}
                   <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
                 </SelectContent>
               </Select>

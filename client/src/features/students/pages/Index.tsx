@@ -38,7 +38,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   formatManilaDate,
   formatScpType,
-
+  getGradeLevelBadgeStyles,
   SCP_ACRONYMS,
   cn,
 } from "@/shared/lib/utils";
@@ -59,6 +59,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import {
   DropdownMenu,
@@ -137,6 +143,7 @@ interface Section {
   name: string;
   gradeLevelId: number;
   programType: string;
+  isHomogeneous?: boolean;
 }
 
 interface ApiSection {
@@ -147,6 +154,7 @@ interface ApiSection {
   enrolledCount: number;
   fillPercent: number;
   advisingTeacher: { id: number; name: string } | null;
+  isHomogeneous?: boolean;
 }
 
 interface ApiGradeLevelGroup {
@@ -163,6 +171,17 @@ interface ProgramOptionsResponse {
 interface ProgramFilterOption {
   value: string;
   label: string;
+}
+
+function matchesProgramFilter(
+  section: Section,
+  programFilter: string,
+): boolean {
+  if (programFilter === "all") return true;
+  if (programFilter === "REGULAR_TOP") {
+    return section.programType === "REGULAR" && section.isHomogeneous === true;
+  }
+  return section.programType === programFilter;
 }
 
 const VALID_TABS = ["active", "completers", "inactive"] as const;
@@ -240,23 +259,6 @@ const formatLearningProgramLabel = (
     : displayName;
 };
 
-const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined): string => {
-  const normalized = String(gradeLevel || "").trim().toLowerCase();
-  if (normalized.includes("7") || normalized.includes("g7")) {
-    return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
-  }
-  if (normalized.includes("8") || normalized.includes("g8")) {
-    return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/50";
-  }
-  if (normalized.includes("9") || normalized.includes("g9")) {
-    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50";
-  }
-  if (normalized.includes("10") || normalized.includes("g10")) {
-    return "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/50";
-  }
-  return "bg-primary/10 text-primary border-primary/20";
-};
-
 const getGradeLevelColorDotClass = (gradeLevel: string | null | undefined): string => {
   const normalized = String(gradeLevel || "").trim().toLowerCase();
   if (normalized.includes("7") || normalized.includes("g7")) {
@@ -322,8 +324,8 @@ export default function Students() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
-  const [sortBy, setSortBy] = useState<string>("dateEnrolled");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = useState<string>("lastName");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const sorting = useMemo<SortingState>(
     () => [{ id: sortBy, desc: sortOrder === "desc" }],
@@ -340,8 +342,8 @@ export default function Students() {
         setSortBy(newSorting[0].id);
         setSortOrder(newSorting[0].desc ? "desc" : "asc");
       } else {
-        setSortBy("dateEnrolled");
-        setSortOrder("desc");
+        setSortBy("lastName");
+        setSortOrder("asc");
       }
       setPage(1);
     },
@@ -379,6 +381,11 @@ export default function Students() {
     lrn: "",
   });
 
+  const {
+    enableHomogeneousSections,
+    homogeneousSectionCount,
+  } = useSettingsStore();
+
   const studentsQueryParams = useMemo(() => {
     const params: Record<string, string | number> = {
       page,
@@ -399,8 +406,18 @@ export default function Students() {
 
     if (debouncedSearch) params.search = debouncedSearch;
     if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
-    if (programFilter !== "all") params.programType = programFilter;
     if (sectionFilter !== "all") params.sectionId = sectionFilter;
+
+    if (programFilter !== "all") {
+      if (programFilter === "REGULAR_TOP") {
+        params.programType = "REGULAR";
+        params.isHomogeneous = "true";
+      } else if (programFilter === "REGULAR") {
+        params.programType = "REGULAR";
+      } else {
+        params.programType = programFilter;
+      }
+    }
 
     return params;
   }, [
@@ -481,15 +498,16 @@ export default function Students() {
       setFilteredSections(
         programFilter === "all"
           ? sections
-          : sections.filter((s) => s.programType === programFilter),
+          : sections.filter((section) =>
+            matchesProgramFilter(section, programFilter),
+          ),
       );
     } else {
       setFilteredSections(
         sections.filter((s) => {
           const isGradeMatch =
             s.gradeLevelId === parseInt(gradeLevelFilter, 10);
-          const isProgramMatch =
-            programFilter === "all" || s.programType === programFilter;
+          const isProgramMatch = matchesProgramFilter(s, programFilter);
           return isGradeMatch && isProgramMatch;
         }),
       );
@@ -498,22 +516,53 @@ export default function Students() {
   }, [gradeLevelFilter, programFilter, sections]);
 
   const availablePrograms = useMemo<ProgramFilterOption[]>(
-    () =>
-      (programOptionsQuery.data?.programs ?? []).map((programType) => ({
-        value: programType,
-        label:
-          programType === "REGULAR"
-            ? "Regular"
-            : SCP_ACRONYMS[programType] ?? formatScpType(programType),
-      })),
-    [programOptionsQuery.data?.programs],
+    () => {
+      const programs = programOptionsQuery.data?.programs ?? [];
+      const opts: ProgramFilterOption[] = [];
+      const hasTopBecSection = sections.some(
+        (section) =>
+          section.programType === "REGULAR" &&
+          section.isHomogeneous === true,
+      );
+      programs.forEach((programType) => {
+        if (programType === "REGULAR") {
+          if (
+            hasTopBecSection ||
+            (enableHomogeneousSections && homogeneousSectionCount > 0)
+          ) {
+            opts.push({
+              value: "REGULAR_TOP",
+              label: `BEC (Top ${homogeneousSectionCount})`,
+            });
+          }
+          opts.push({
+            value: "REGULAR",
+            label: "BEC",
+          });
+        } else {
+          opts.push({
+            value: programType,
+            label: SCP_ACRONYMS[programType] ?? formatScpType(programType),
+          });
+        }
+      });
+      return opts;
+    },
+    [
+      programOptionsQuery.data?.programs,
+      enableHomogeneousSections,
+      homogeneousSectionCount,
+      sections,
+    ],
   );
 
   useEffect(() => {
     if (
       programFilter !== "all" &&
       programOptionsQuery.data &&
-      !programOptionsQuery.data.programs.includes(programFilter)
+      !programOptionsQuery.data.programs.includes(
+        programFilter === "REGULAR_TOP" ? "REGULAR" : programFilter,
+      )
     ) {
       setProgramFilter("all");
     }
@@ -900,48 +949,29 @@ export default function Students() {
         {
           id: "gradeLevel",
           accessorKey: "gradeLevel",
-          size: 130,
-          minSize: 120,
-          maxSize: 150,
-          meta: { skeletonClassName: "w-[80px] mx-auto", className: "text-center", headerClassName: "text-center" },
+          size: 180,
+          minSize: 150,
+          maxSize: 180,
+          meta: { skeletonClassName: "w-[120px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Grade Level"
-              className="justify-center [&_button]:!m-0"
+              title="GRADE LEVEL & SECTION"
+              className="justify-center [&_button]:!m-0 text-center"
             />
           ),
           cell: ({ row }) => (
-            <div className="flex w-full justify-center py-3">
+            <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
               <Badge
                 variant="outline"
                 className={cn(
-                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase text-base",
+                  "font-extrabold px-2.5 py-0.5 rounded-full uppercase",
                   getGradeLevelBadgeStyles(row.original.gradeLevel)
                 )}
               >
-                {row.original.gradeLevel}
+                {row.original.gradeLevel || "Grade"}
               </Badge>
-            </div>
-          ),
-        },
-        {
-          id: "section",
-          accessorKey: "section",
-          size: 160,
-          minSize: 140,
-          maxSize: 190,
-          meta: { skeletonClassName: "w-[100px] mx-auto", className: "text-center", headerClassName: "text-center" },
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Section"
-              className="justify-center [&_button]:!m-0"
-            />
-          ),
-          cell: ({ row }) => (
-            <div className="flex w-full justify-center py-3">
-              <span className="font-extrabold leading-tight text-center uppercase">
+              <span className="font-extrabold text-sm leading-tight text-center uppercase">
                 {formatSectionLabel(row.original.section)}
               </span>
             </div>
@@ -968,26 +998,54 @@ export default function Students() {
           ),
         },
         {
-          id: "dateEnrolled",
-          accessorKey: "dateEnrolled",
-          size: 145,
-          minSize: 135,
-          maxSize: 155,
+          id: "curriculumProgram",
+          accessorKey: "learningProgram",
+          size: 160,
+          minSize: 150,
+          maxSize: 180,
           meta: { skeletonClassName: "w-[140px] mx-auto", className: "text-center", headerClassName: "text-center" },
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Date Enrolled"
+              title="CURRICULUM PROGRAM"
               className="justify-center [&_button]:!m-0"
             />
           ),
-          cell: ({ row }) => (
-            <div className="flex w-full justify-center py-3">
-              <span className="leading-tight font-extrabold text-center block">
-                {formatDate(row.original.dateEnrolled || row.original.createdAt)}
-              </span>
-            </div>
-          ),
+          cell: ({ row }) => {
+            const normalizedProgram = String(row.original.learningProgram || "REGULAR")
+              .trim()
+              .toUpperCase();
+            const displayName = formatScpType(normalizedProgram).replace("Tech-Voc Education", "Tech-Voc");
+            let acronym = SCP_ACRONYMS[normalizedProgram] || displayName;
+
+            if (normalizedProgram === "REGULAR" && enableHomogeneousSections && homogeneousSectionCount > 0 && row.original.sectionId) {
+              const isTopBecSection = sections.some(
+                (section) =>
+                  section.id === row.original.sectionId &&
+                  section.isHomogeneous === true,
+              );
+              if (isTopBecSection) {
+                acronym = `BEC (Top ${homogeneousSectionCount})`;
+              }
+            }
+
+            return (
+              <div className="flex w-full justify-center py-3">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="leading-tight font-extrabold text-center block cursor-help">
+                        {acronym}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-800 text-white">
+                      <p className="font-semibold text-sm">{displayName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            );
+          },
         },
         {
           id: "actions",
@@ -1021,7 +1079,12 @@ export default function Students() {
         },
       ];
       return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
-    }, [activeTab]);
+    }, [
+      activeTab,
+      enableHomogeneousSections,
+      homogeneousSectionCount,
+      sections,
+    ]);
 
   const renderContent = () => (
     <div className="space-y-6">

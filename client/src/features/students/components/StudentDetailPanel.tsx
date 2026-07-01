@@ -38,7 +38,7 @@ import {
 } from "@/shared/ui/select";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { getImageUrl, formatEosyStatus, cn } from "@/shared/lib/utils";
+import { getImageUrl, formatEosyStatus, cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -165,27 +165,6 @@ export interface StudentDropoutPayload {
   reasonCode: string;
   interventionNotes: string;
 }
-
-const getGradeLevelBadgeStyles = (
-  gradeLevel: string | null | undefined,
-): string => {
-  const normalized = String(gradeLevel || "")
-    .trim()
-    .toLowerCase();
-  if (normalized.includes("7") || normalized.includes("g7")) {
-    return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
-  }
-  if (normalized.includes("8") || normalized.includes("g8")) {
-    return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/50";
-  }
-  if (normalized.includes("9") || normalized.includes("g9")) {
-    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50";
-  }
-  if (normalized.includes("10") || normalized.includes("g10")) {
-    return "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/50";
-  }
-  return "bg-primary/10 text-primary border-primary/20";
-};
 
 export function StudentDetailPanel({
   id,
@@ -842,7 +821,7 @@ export function StudentDetailPanel({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "font-extrabold px-2.5 py-0.5 rounded-md",
+                    "font-extrabold px-2.5 py-0.5 rounded-full",
                     getGradeLevelBadgeStyles(student.gradeLevel),
                   )}>
                   {student.gradeLevel}
@@ -987,33 +966,39 @@ export function StudentDetailPanel({
         )}
 
         {/* Historical Final Averages */}
-        {student.historicalGrades && student.historicalGrades.length > 0 && (
+        {student.historicalGrades && (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
             <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
               <FileBadge2 className="h-4 w-4 text-primary" />
               Historical Final Averages
             </div>
             <div className="p-4 text-base leading-tight">
-              <table className="w-full text-center border-collapse">
-                <thead>
-                  <tr className="font-extrabold border-b">
-                    <th className="text-foreground pb-2 font-extrabold text-center">Grade Level</th>
-                    <th className="text-foreground pb-2 font-extrabold text-center">Final Gen Ave</th>
-                    <th className="text-foreground pb-2 font-extrabold text-center">School Year</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {student.historicalGrades.map((hg, idx) => (
-                    <tr key={idx} className="font-extrabold">
-                      <td className="py-2">{hg.gradeLevel}</td>
-                      <td className="py-2">
-                        {hg.genAve != null ? hg.genAve.toFixed(2) : "N/A"}
-                      </td>
-                      <td className="py-2">{hg.schoolYear}</td>
+              {student.historicalGrades.length > 0 ? (
+                <table className="w-full text-center border-collapse">
+                  <thead>
+                    <tr className="font-extrabold border-b">
+                      <th className="text-foreground pb-2 font-extrabold text-center">Grade Level</th>
+                      <th className="text-foreground pb-2 font-extrabold text-center">Final Gen Ave</th>
+                      <th className="text-foreground pb-2 font-extrabold text-center">School Year</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {student.historicalGrades.map((hg, idx) => (
+                      <tr key={idx} className="font-extrabold">
+                        <td className="py-2">{hg.gradeLevel}</td>
+                        <td className="py-2">
+                          {hg.genAve != null ? hg.genAve.toFixed(2) : "N/A"}
+                        </td>
+                        <td className="py-2">{hg.schoolYear}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-muted-foreground text-center font-extrabold py-2">
+                  No historical grades available.
+                </p>
+              )}
             </div>
           </div>
         )}

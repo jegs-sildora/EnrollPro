@@ -162,6 +162,7 @@ export async function submitTeacherAdvisory(
           },
           include: {
             enrollmentApplication: true,
+            section: { select: { programType: true } },
           },
         });
 
@@ -169,18 +170,28 @@ export async function submitTeacherAdvisory(
 
         // DepEd Cutoff Enforcer for Special Programs
         const finalAverage = update.finalAverage;
-        const applicantType = record.enrollmentApplication.applicantType;
 
         let eosyStatus = update.eosyStatus as EosyStatus;
         let nextYearCurriculum: any = null;
+        
+        const isScp = record.section?.programType && record.section.programType !== "REGULAR";
 
-        if (finalAverage !== null && finalAverage !== undefined) {
-          if (finalAverage < 75) {
+        if (finalAverage === 0 || finalAverage === null || isNaN(finalAverage!)) {
+          if (eosyStatus === "PROMOTED" || eosyStatus === "RETAINED" || eosyStatus === "CONDITIONALLY_PROMOTED") {
+            throw new AppError(400, "Learner with 0.00 or blank Final Average cannot be assigned an academic evaluation status. Must be DROPPED OUT or TRANSFERRED OUT.");
+          }
+        } else if (finalAverage! < 75) {
+          if (eosyStatus === "PROMOTED") {
+            throw new AppError(400, "Learner with Final Average below 75 cannot be promoted.");
+          }
+          if (eosyStatus !== "DROPPED_OUT" && eosyStatus !== "TRANSFERRED_OUT") {
             eosyStatus = "RETAINED";
-            // Retained SCP students automatically drop to BEC (REGULAR)
-            nextYearCurriculum = "REGULAR";
-          } else if (finalAverage >= 75 && finalAverage < 85 && applicantType !== "REGULAR" && applicantType !== "LATE_ENROLLEE") {
-            // SCP Lateral Demotion
+            if (isScp) {
+              nextYearCurriculum = "REGULAR";
+            }
+          }
+        } else if (isScp && finalAverage! < 85) {
+          if (eosyStatus !== "DROPPED_OUT" && eosyStatus !== "TRANSFERRED_OUT") {
             eosyStatus = "PROMOTED";
             nextYearCurriculum = "REGULAR";
 

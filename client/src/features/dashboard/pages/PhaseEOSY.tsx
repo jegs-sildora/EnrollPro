@@ -137,7 +137,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-6 space-y-6 flex flex-col justify-center">
-            {((stats?.eosyStats?.gradeLevelFinalization ?? new Array()) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => (
+            {((stats?.eosyStats?.gradeLevelFinalization ?? []) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => (
               <div key={g.id} className="space-y-2 text-left">
                 <div className="flex justify-between text-sm font-extrabold text-foreground">
                   <span>{g.name}</span>

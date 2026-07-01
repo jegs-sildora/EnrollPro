@@ -200,6 +200,9 @@ export async function updateEosyRecord(
     const record = await prisma.enrollmentRecord.findUnique({
       where: { id: recordId },
       include: {
+        enrollmentApplication: {
+          select: { applicantType: true }
+        },
         section: {
           include: {
             schoolYear: {
@@ -213,34 +216,63 @@ export async function updateEosyRecord(
     });
 
     if (!record) throw new AppError(404, "Enrollment record not found.");
-    if (record.section.schoolYear.isEosyFinalized) {
+    if (record.section?.schoolYear?.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot update status. School year EOSY is finalized and export lock is active.",
       );
     }
-    if (record.section.isEosyFinalized) {
+    if (record.section?.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot update status. Section is already finalized.",
       );
     }
 
+    const ave = finalAverage !== undefined ? parseFloat(String(finalAverage)) : null;
+    const isScp = record.section?.programType && record.section.programType !== "REGULAR";
+
+    let targetStatus = eosyStatus;
+    let nextYearCurriculum: any = undefined;
+
+    if (ave === 0 || ave === null || isNaN(ave)) {
+      if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
+        throw new AppError(400, "Learner with 0.00 or blank Final Average cannot be assigned an academic evaluation status. Must be DROPPED OUT or TRANSFERRED OUT.");
+      }
+    } else if (ave < 75) {
+      if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC") {
+         throw new AppError(400, "Learner with Final Average below 75 cannot be promoted.");
+      }
+      targetStatus = "RETAINED";
+      if (isScp) {
+        nextYearCurriculum = "REGULAR";
+      }
+    } else if (isScp && ave < 85) {
+      if (targetStatus === "PROMOTED") {
+        throw new AppError(400, "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy must be assigned 'Promoted (To BEC)'.");
+      }
+      targetStatus = "PROMOTED";
+      nextYearCurriculum = "REGULAR";
+    }
+
+    if (targetStatus === "PROMOTED_TO_BEC") {
+      targetStatus = "PROMOTED";
+      nextYearCurriculum = "REGULAR";
+    }
+
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },
       data: {
-        eosyStatus: eosyStatus as EosyStatus,
-        dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
+        eosyStatus: targetStatus as EosyStatus,
+        nextYearCurriculum: nextYearCurriculum !== undefined ? nextYearCurriculum : undefined,
+        dropOutReason: targetStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
-          eosyStatus === "TRANSFERRED_OUT"
+          targetStatus === "TRANSFERRED_OUT"
             ? transferOutDate
               ? new Date(transferOutDate)
               : null
             : null,
-        finalAverage:
-          finalAverage !== undefined
-            ? parseFloat(String(finalAverage))
-            : undefined,
+        finalAverage: ave !== null ? ave : undefined,
       },
     });
 
@@ -1106,10 +1138,7 @@ export async function getGradeRecords(
     });
 
     const mappedRecords = records.map((record) => {
-      const applicantType = record.enrollmentApplication.applicantType;
-      const isScp = applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" || 
-                    applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS" || 
-                    applicantType === "SPECIAL_PROGRAM_IN_SPORTS";
+      const isScp = record.section?.programType && record.section.programType !== "REGULAR";
       const isScpDemoted = record.nextYearCurriculum === "REGULAR" && isScp;
 
       const finalAve = record.finalAverage !== null && record.finalAverage !== undefined
@@ -1203,35 +1232,38 @@ export async function batchUpdateGradeRecords(
 
         if (!current) continue;
 
-        const isScp = current.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ||
-                      current.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS" ||
-                      current.section.programType === "SPECIAL_PROGRAM_IN_SPORTS";
-        const ave = current.finalAverage !== null ? parseFloat(String(current.finalAverage)) : null;
+          const isScp = current.section.programType && current.section.programType !== "REGULAR";
+          const ave = current.finalAverage !== null ? parseFloat(String(current.finalAverage)) : null;
 
         let targetStatus = update.status;
         let dataToUpdate: any = {};
 
+        if (ave === 0 || ave === null || isNaN(ave!)) {
+          if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
+            throw new AppError(400, "Learner with 0.00 or blank Final Average cannot be assigned an academic evaluation status. Must be DROPPED OUT or TRANSFERRED OUT.");
+          }
+        } else if (ave! < 75) {
+          if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC") {
+             throw new AppError(400, `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average is below 75.`);
+          }
+          targetStatus = "RETAINED";
+          if (isScp) {
+            dataToUpdate.nextYearCurriculum = "REGULAR";
+          }
+        } else if (isScp && ave! < 85) {
+          if (targetStatus === "PROMOTED") {
+            throw new AppError(400, "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy must be assigned 'Promoted (To BEC)'.");
+          }
+          targetStatus = "PROMOTED";
+          dataToUpdate.nextYearCurriculum = "REGULAR";
+        }
+
         if (targetStatus === "PROMOTED_TO_BEC") {
           targetStatus = "PROMOTED";
-          dataToUpdate.eosyStatus = "PROMOTED";
           dataToUpdate.nextYearCurriculum = "REGULAR";
-        } else {
-          dataToUpdate.eosyStatus = targetStatus as EosyStatus;
         }
 
-        if (update.status === "PROMOTED" && isScp && ave !== null && ave < 85) {
-          throw new AppError(
-            400,
-            "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy (Math/Sci/Eng < 85, Others < 83, or Quarterly < 80) must be assigned 'Promoted (To BEC)'."
-          );
-        }
-
-        if (targetStatus === "PROMOTED" && (ave === null || ave < 75)) {
-          throw new AppError(
-            400,
-            `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average (${ave === null ? 'Pending' : ave}) is below 75.`
-          );
-        }
+        dataToUpdate.eosyStatus = targetStatus as EosyStatus;
 
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
@@ -1503,7 +1535,7 @@ export async function overrideEosyRecord(
     });
 
     if (!record) throw new AppError(404, "Enrollment record not found.");
-    if (record.section.schoolYear.isEosyFinalized) {
+    if (record.section?.schoolYear?.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot override status. School year EOSY is finalized globally.",

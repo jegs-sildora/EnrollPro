@@ -105,7 +105,7 @@ export async function executeScoreUpdate({
       const newRecord = { ...record, grades: [...record.grades] };
       const gradeIdx = newRecord.grades.findIndex((g) => g.term === selectedTerm);
 
-      let targetGrade =
+      const targetGrade =
         gradeIdx > -1
           ? { ...newRecord.grades[gradeIdx] }
           : ({
@@ -198,7 +198,7 @@ export async function executeHpsUpdate({
       const newRecord = { ...record, grades: [...record.grades] };
       const gradeIdx = newRecord.grades.findIndex((g) => g.term === selectedTerm);
 
-      let targetGrade =
+      const targetGrade =
         gradeIdx > -1
           ? { ...newRecord.grades[gradeIdx] }
           : ({

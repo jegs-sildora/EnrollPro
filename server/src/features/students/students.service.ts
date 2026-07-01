@@ -42,6 +42,30 @@ const normalizeProgramType = (value: unknown): ApplicantType | undefined => {
   return PROGRAM_TYPES.includes(upper) ? upper : undefined;
 };
 
+const normalizeBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return undefined;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return undefined;
+};
+
+const buildSectionFilter = (
+  programType: ApplicantType | undefined,
+  isHomogeneous: boolean | undefined,
+): Prisma.SectionWhereInput | undefined => {
+  if (programType === undefined && isHomogeneous === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(programType !== undefined ? { programType } : {}),
+    ...(isHomogeneous !== undefined ? { isHomogeneous } : {}),
+  };
+};
+
 const normalizeStatuses = (value: unknown): ApplicationStatus[] | undefined => {
   if (typeof value !== "string" && !Array.isArray(value)) {
     return undefined;
@@ -110,7 +134,9 @@ export async function findStudents(query: {
   search?: string;
   gradeLevelId?: number | string;
   sectionId?: number | string;
+  sectionIds?: string;
   programType?: ApplicantType | string;
+  isHomogeneous?: boolean | string;
   status?: ApplicationStatus | string | string[];
   learnerStatus?: string;
   page?: number | string;
@@ -124,7 +150,9 @@ export async function findStudents(query: {
     search,
     gradeLevelId,
     sectionId,
+    sectionIds,
     programType,
+    isHomogeneous,
     status,
     learnerStatus,
     page,
@@ -139,7 +167,13 @@ export async function findStudents(query: {
   const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 1000000);
   const resolvedGradeLevelId = parsePositiveInt(gradeLevelId);
   const resolvedSectionId = parsePositiveInt(sectionId);
+  const resolvedSectionIds = sectionIds ? sectionIds.split(',').map(s => parseInt(s, 10)).filter(n => !isNaN(n)) : undefined;
   const resolvedProgramType = normalizeProgramType(programType);
+  const resolvedIsHomogeneous = normalizeBoolean(isHomogeneous);
+  const resolvedSectionFilter = buildSectionFilter(
+    resolvedProgramType,
+    resolvedIsHomogeneous,
+  );
   const resolvedStatuses = normalizeStatuses(status) ?? (resolvedSchoolYearId ? ACTIVE_STATUS_DEFAULTS : undefined);
   const resolvedSortOrder = normalizeSortOrder(sortOrder);
   
@@ -184,7 +218,10 @@ export async function findStudents(query: {
     
     const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
     if (resolvedSectionId) enrollmentRecordFilters.sectionId = resolvedSectionId;
-    if (resolvedProgramType) enrollmentRecordFilters.section = { programType: resolvedProgramType };
+    if (resolvedSectionIds && resolvedSectionIds.length > 0) enrollmentRecordFilters.sectionId = { in: resolvedSectionIds };
+    if (resolvedSectionFilter) {
+      enrollmentRecordFilters.section = resolvedSectionFilter;
+    }
     
     if (Object.keys(enrollmentRecordFilters).length > 0) {
       applicationWhere.enrollmentRecord = enrollmentRecordFilters;
@@ -251,7 +288,10 @@ export async function findStudents(query: {
 
     if (resolvedGradeLevelId) historyWhere.gradeLevelId = resolvedGradeLevelId;
     if (resolvedSectionId) historyWhere.sectionId = resolvedSectionId;
-    if (resolvedProgramType) historyWhere.section = { programType: resolvedProgramType as any };
+    if (resolvedSectionIds && resolvedSectionIds.length > 0) historyWhere.sectionId = { in: resolvedSectionIds };
+    if (resolvedSectionFilter) {
+      historyWhere.section = resolvedSectionFilter;
+    }
 
     const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
       (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus as ApplicationStatus),
@@ -377,7 +417,10 @@ export async function findStudents(query: {
 
   if (resolvedGradeLevelId) where.gradeLevelId = resolvedGradeLevelId;
   if (resolvedSectionId) enrollmentRecordFilters.sectionId = resolvedSectionId;
-  if (resolvedProgramType) enrollmentRecordFilters.section = { programType: resolvedProgramType };
+  if (resolvedSectionIds && resolvedSectionIds.length > 0) enrollmentRecordFilters.sectionId = { in: resolvedSectionIds };
+  if (resolvedSectionFilter) {
+    enrollmentRecordFilters.section = resolvedSectionFilter;
+  }
 
   if (Object.keys(enrollmentRecordFilters).length > 0) {
     where.enrollmentRecord = enrollmentRecordFilters;

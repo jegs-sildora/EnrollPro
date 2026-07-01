@@ -5,6 +5,23 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined): string => {
+  const normalized = String(gradeLevel || "").trim().toLowerCase();
+  if (normalized.includes("7") || normalized.includes("g7")) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50";
+  }
+  if (normalized.includes("8") || normalized.includes("g8")) {
+    return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/50";
+  }
+  if (normalized.includes("9") || normalized.includes("g9")) {
+    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50";
+  }
+  if (normalized.includes("10") || normalized.includes("g10")) {
+    return "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/50";
+  }
+  return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100/50";
+};
+
 export const MANILA_TIME_ZONE = "Asia/Manila";
 
 export const SCP_LABELS: Record<string, string> = {
@@ -15,7 +32,7 @@ export const SCP_LABELS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
     "Special Program in Tech-Voc Education",
-  REGULAR: "Regular",
+  REGULAR: "Basic Education Curriculum",
   LATE_ENROLLEE: "Late Enrollee",
 };
 
@@ -26,7 +43,7 @@ export const SCP_ACRONYMS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
-  REGULAR: "Regular",
+  REGULAR: "BEC",
   LATE_ENROLLEE: "Late",
 };
 

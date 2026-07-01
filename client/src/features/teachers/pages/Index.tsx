@@ -12,7 +12,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { Eye, BookOpen } from "lucide-react";
 
 import {
@@ -471,12 +471,31 @@ export default function Teachers() {
           />
         ),
         cell: ({ row }) => {
-          const adv = formatAdvisorySectionSummary(row.original.designation?.advisorySection);
-          const display = adv !== "-" ? adv : "None";
+          const adv = row.original.designation?.advisorySection;
+
+          if (!adv) {
+            return (
+              <div className="flex w-full justify-center py-3">
+                <span className="font-extrabold text-base leading-tight text-center uppercase">
+                  None
+                </span>
+              </div>
+            );
+          }
+
           return (
-            <div className="flex w-full justify-center py-3">
-              <span className="font-extrabold text-base leading-tight text-center uppercase">
-                {display}
+            <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "font-extrabold px-2.5 py-0.5 rounded-full uppercase",
+                  getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
+                )}
+              >
+                {adv.gradeLevelName || "Grade"}
+              </Badge>
+              <span className="font-extrabold text-sm leading-tight text-center uppercase">
+                {adv.name}
               </span>
             </div>
           );

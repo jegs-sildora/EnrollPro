@@ -746,8 +746,8 @@ export default function AuditLogs() {
                               </thead>
                               <tbody className="divide-y">
                                 {allKeys.map(key => {
-                                  let oldVal = diff.old[key];
-                                  let newVal = diff.new[key];
+                                  const oldVal = diff.old[key];
+                                  const newVal = diff.new[key];
                                   if (JSON.stringify(oldVal) === JSON.stringify(newVal)) return null;
 
                                   const isIsoDate = (str: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(str);
