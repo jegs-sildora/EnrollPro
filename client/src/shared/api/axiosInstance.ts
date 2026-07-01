@@ -77,7 +77,7 @@ api.interceptors.request.use((config) => {
   }
 
   const learnerToken = useLearnerAuthStore.getState().token;
-  if (learnerToken) {
+  if (learnerToken && config.url?.startsWith("/learner")) {
     config.headers.Authorization = `Bearer ${learnerToken}`;
   }
   return config;

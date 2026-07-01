@@ -242,6 +242,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const sy = await prisma.schoolYear.findUnique({ where: { id: ayId } });
+  const isArchived = sy?.status === "ARCHIVED";
+
   if (gradeLevelId) {
     const where: {
       gradeLevelId: number;
@@ -261,7 +264,11 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           include: { teacher: true },
         },
         _count: {
-          select: {
+          select: isArchived ? {
+            enrollmentHistories: {
+              where: activeEnrollmentFilter,
+            },
+          } : {
             enrollmentRecords: {
               where: activeEnrollmentFilter,
             },
@@ -281,7 +288,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords,
+          enrolledCount: isArchived ? (s._count as any).enrollmentHistories : s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -314,7 +321,11 @@ export async function listSections(req: Request, res: Response): Promise<void> {
             include: { teacher: true },
           },
           _count: {
-            select: {
+            select: isArchived ? {
+              enrollmentHistories: {
+                where: activeEnrollmentFilter,
+              },
+            } : {
               enrollmentRecords: {
                 where: activeEnrollmentFilter,
               },
@@ -341,7 +352,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords,
+          enrolledCount: isArchived ? (s._count as any).enrollmentHistories : s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -800,6 +811,7 @@ export async function getSectionMasterlist(
   const section = await prisma.section.findUnique({
     where: { id },
     include: {
+      schoolYear: true,
       gradeLevel: true,
       advisers: {
         where: { status: SectionAdviserStatus.ACTIVE },
@@ -815,6 +827,12 @@ export async function getSectionMasterlist(
           },
         },
       },
+      enrollmentHistories: {
+        where: activeEnrollmentFilter,
+        include: {
+          learner: true,
+        },
+      },
     },
   });
 
@@ -824,23 +842,41 @@ export async function getSectionMasterlist(
   }
 
   const activeAdviser = section.advisers[0]?.teacher ?? null;
-  const records = section.enrollmentRecords;
-  const learners = records.map((record) => ({
-    id: record.enrollmentApplication.learner.id,
-    enrollmentApplicationId: record.enrollmentApplication.id,
-    lrn: record.enrollmentApplication.learner.lrn,
-    firstName: record.enrollmentApplication.learner.firstName,
-    lastName: record.enrollmentApplication.learner.lastName,
-    middleName: record.enrollmentApplication.learner.middleName,
-    sex: record.enrollmentApplication.learner.sex,
-    birthdate: record.enrollmentApplication.learner.birthdate?.toISOString() ?? null,
-    status: record.enrollmentApplication.status,
-    applicantType: record.enrollmentApplication.applicantType,
-    enrolledAt: record.enrolledAt,
-    sectioningMethod: record.sectioningMethod,
-    dateSectioned: record.dateSectioned?.toISOString() ?? null,
-    sf1Remarks: record.sf1Remarks ?? null,
-  }));
+  const isArchived = section.schoolYear.status === "ARCHIVED";
+  
+  const learners = isArchived
+    ? section.enrollmentHistories.map((hist) => ({
+        id: hist.learner.id,
+        enrollmentApplicationId: 0,
+        lrn: hist.learner.lrn,
+        firstName: hist.learner.firstName,
+        lastName: hist.learner.lastName,
+        middleName: hist.learner.middleName,
+        sex: hist.learner.sex,
+        birthdate: hist.learner.birthdate?.toISOString() ?? null,
+        status: "VERIFIED",
+        applicantType: "NEW_ENROLLEE",
+        enrolledAt: hist.createdAt,
+        sectioningMethod: "MANUAL",
+        dateSectioned: hist.createdAt?.toISOString() ?? null,
+        sf1Remarks: null,
+      }))
+    : section.enrollmentRecords.map((record) => ({
+        id: record.enrollmentApplication.learner.id,
+        enrollmentApplicationId: record.enrollmentApplication.id,
+        lrn: record.enrollmentApplication.learner.lrn,
+        firstName: record.enrollmentApplication.learner.firstName,
+        lastName: record.enrollmentApplication.learner.lastName,
+        middleName: record.enrollmentApplication.learner.middleName,
+        sex: record.enrollmentApplication.learner.sex,
+        birthdate: record.enrollmentApplication.learner.birthdate?.toISOString() ?? null,
+        status: record.enrollmentApplication.status,
+        applicantType: record.enrollmentApplication.applicantType,
+        enrolledAt: record.enrolledAt,
+        sectioningMethod: record.sectioningMethod,
+        dateSectioned: record.dateSectioned?.toISOString() ?? null,
+        sf1Remarks: record.sf1Remarks ?? null,
+      }));
 
   res.json({
     section: {

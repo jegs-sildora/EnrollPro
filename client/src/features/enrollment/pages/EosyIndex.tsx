@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
@@ -42,6 +42,7 @@ import {
   MoreHorizontal,
   Pencil,
   Search,
+  MapPin,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -55,6 +56,7 @@ import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 
 export interface EnrollmentRecord {
   id: number;
@@ -71,6 +73,7 @@ export interface EnrollmentRecord {
     requiredGrade: number;
     violationType: string;
   } | null;
+  sectionId: number;
   section: {
     id: number;
     name: string;
@@ -82,6 +85,7 @@ export interface EnrollmentRecord {
     id: number;
     trackingNumber: string;
     applicantType: string;
+    reportedGrades?: Record<string, any> | null;
     learner: {
       id: number;
       lrn: string | null;
@@ -147,12 +151,128 @@ const getNextGradeName = (currentName: string) => {
   return "the next grade level";
 };
 
+interface GeofencingPopoverProps {
+  latitude: number | null | undefined;
+  longitude: number | null | undefined;
+  onChange: (lat: number, lng: number) => void;
+  isChanged: boolean;
+  disabled: boolean;
+}
+
+function GeofencingPopover({
+  latitude,
+  longitude,
+  onChange,
+  isChanged,
+  disabled,
+}: GeofencingPopoverProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const lat = latitude ?? 10.6765;
+  const lng = longitude ?? 122.9510;
+
+  const pinX = 120 + (lng - 122.9510) / 0.0001;
+  const pinY = 90 - (lat - 10.6765) / 0.0001;
+
+  const xClamped = Math.max(0, Math.min(240, pinX));
+  const yClamped = Math.max(0, Math.min(180, pinY));
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (disabled) return;
+    const rect = mapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const updateCoords = (clientX: number, clientY: number) => {
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const newLat = 10.6765 - (y - 90) * 0.0001;
+      const newLng = 122.9510 + (x - 120) * 0.0001;
+      onChange(Number(newLat.toFixed(6)), Number(newLng.toFixed(6)));
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      updateCoords(moveEvent.clientX, moveEvent.clientY);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    updateCoords(e.clientX, e.clientY);
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            "h-8 px-2 flex gap-1 items-center font-extrabold cursor-pointer transition-colors shrink-0",
+            isChanged ? "border-amber-500 bg-amber-50 text-amber-900" : "text-muted-foreground"
+          )}
+          disabled={disabled}
+        >
+          <MapPin className={cn("h-4 w-4", isChanged ? "text-amber-500" : "text-muted-foreground")} />
+          <span className="text-[10px]">
+            {lat.toFixed(4)}, {lng.toFixed(4)}
+          </span>
+          {isChanged && <span className="text-[9px] text-amber-600 font-black uppercase">Unsaved</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-4 text-center space-y-3" align="end">
+        <h4 className="text-sm font-extrabold uppercase text-foreground leading-none border-b pb-2">
+          Residency Geofence Coordinates
+        </h4>
+        <p className="text-[11px] text-muted-foreground leading-normal">
+          Click on the map or drag the pin to correct past geofencing coordinates.
+        </p>
+        
+        <div
+          ref={mapRef}
+          onMouseDown={handleMouseDown}
+          className="relative w-[240px] h-[180px] mx-auto bg-slate-100 border border-slate-200 rounded-md overflow-hidden cursor-crosshair select-none"
+        >
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <circle cx="120" cy="90" r="50" fill="rgba(14, 165, 233, 0.05)" stroke="rgba(14, 165, 233, 0.3)" strokeDasharray="3 3" strokeWidth="1.5" />
+            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-[9px] font-extrabold font-sans uppercase">School Geofence Radius (1km)</text>
+            <line x1="120" y1="0" x2="120" y2="180" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
+            <line x1="0" y1="90" x2="240" y2="90" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
+            <text x="24" y="20" fill="#64748b" className="text-[8px] font-bold">Brgy. San Jose</text>
+            <text x="175" y="160" fill="#64748b" className="text-[8px] font-bold">Brgy. Taculing</text>
+          </svg>
+
+          <div
+            style={{ left: `${xClamped}px`, top: `${yClamped}px` }}
+            className="absolute -translate-x-1/2 -translate-y-full pointer-events-none transition-all duration-75"
+          >
+            <MapPin className="h-6 w-6 text-red-600 drop-shadow-md animate-bounce" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-red-600 rounded-full border border-white opacity-40 shrink-0" />
+          </div>
+          
+          <div className="absolute top-[90px] left-[120px] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-sky-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
+            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+          </div>
+        </div>
+
+        <div className="bg-slate-50 border p-2 rounded text-[11px] font-mono flex flex-col items-center">
+          <span className="font-extrabold text-foreground">Lat: {lat.toFixed(6)}° N</span>
+          <span className="font-extrabold text-foreground">Lng: {lng.toFixed(6)}° E</span>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function EosyUpdating() {
   const {
     activeSchoolYearId,
     viewingSchoolYearId,
     systemStatus,
     systemPhase,
+    setHistoricalCorrectionToken,
   } = useSettingsStore();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const isEosyPhase = systemPhase === "EOSY_CLOSING";
@@ -179,6 +299,141 @@ export default function EosyUpdating() {
   const [sf5WatermarkOpen, setSf5WatermarkOpen] = useState(false);
   const [finalizeLoading, setFinalizeLoading] = useState(false);
 
+  const [reopenModalOpen, setReopenModalOpen] = useState<boolean>(false);
+  const [reopenPin, setReopenPin] = useState<string>("");
+  const [reopenJustification, setReopenJustification] = useState<string>("");
+  const [reopenLoading, setReopenLoading] = useState<boolean>(false);
+
+  const [dismissSuccessCard, setDismissSuccessCard] = useState<boolean>(false);
+  const [transitionModalOpen, setTransitionModalOpen] = useState<boolean>(false);
+  const [transitionChecked, setTransitionChecked] = useState<boolean>(false);
+  const [transitionLoading, setTransitionLoading] = useState<boolean>(false);
+
+  const [allSections, setAllSections] = useState<Section[]>([]);
+  const [unsavedChanges, setUnsavedChanges] = useState<Record<number, {
+    lrn?: string;
+    firstName?: string;
+    lastName?: string;
+    sectionId?: number;
+    finalAverage?: number | null;
+    eosyStatus?: EosyStatus;
+    latitude?: number;
+    longitude?: number;
+  }>>({});
+  const [isCommitting, setIsCommitting] = useState(false);
+
+  const handleFieldChange = useCallback((recordId: number, field: string, value: any) => {
+    setUnsavedChanges(prev => {
+      const existing = prev[recordId] || {};
+      return {
+        ...prev,
+        [recordId]: {
+          ...existing,
+          [field]: value
+        }
+      };
+    });
+  }, []);
+
+  // Listen for commit triggers from HistoricalBanner
+  useEffect(() => {
+    const handleCommit = async () => {
+      if (isCommitting) return;
+      setIsCommitting(true);
+
+      try {
+        const validUpdates: Record<number, any> = {};
+        const revertedRecords: number[] = [];
+
+        for (const [idStr, changes] of Object.entries(unsavedChanges)) {
+          const recordId = Number(idStr);
+          const original = records.find(r => r.id === recordId);
+          if (!original) continue;
+
+          let hasInvalidField = false;
+
+          // LRN validation (Philippines LRN must be 12 digits)
+          if (changes.hasOwnProperty("lrn") && changes.lrn !== original.enrollmentApplication.learner.lrn) {
+            if (!/^\d{12}$/.test(changes.lrn || "")) {
+              hasInvalidField = true;
+            }
+          }
+
+          // Names validation (Must not be empty)
+          if (changes.hasOwnProperty("firstName") && !changes.firstName?.trim()) {
+            hasInvalidField = true;
+          }
+          if (changes.hasOwnProperty("lastName") && !changes.lastName?.trim()) {
+            hasInvalidField = true;
+          }
+
+          // General average validation (60-100)
+          if (changes.hasOwnProperty("finalAverage") && changes.finalAverage !== original.finalAverage) {
+            const avg = changes.finalAverage;
+            if (avg !== null && avg !== undefined && (avg < 60 || avg > 100)) {
+              hasInvalidField = true;
+            }
+          }
+
+          // DepEd Status Logic: General Average < 75 cannot be PROMOTED
+          const resolvedStatus = changes.hasOwnProperty("eosyStatus") ? changes.eosyStatus : original.eosyStatus;
+          const resolvedAvg = changes.hasOwnProperty("finalAverage") ? changes.finalAverage : original.finalAverage;
+          if (resolvedStatus === "PROMOTED" && resolvedAvg !== null && resolvedAvg !== undefined && resolvedAvg < 75) {
+            hasInvalidField = true;
+          }
+
+          if (hasInvalidField) {
+            revertedRecords.push(recordId);
+          } else {
+            validUpdates[recordId] = changes;
+          }
+        }
+
+        if (revertedRecords.length > 0) {
+          sileo.warning({
+            title: "Validation Reverted",
+            description: `${revertedRecords.length} record(s) failed validation (invalid LRN, empty name, average out of 60-100, or average below 75 while Promoted) and were reverted.`,
+          });
+        }
+
+        const validEntries = Object.entries(validUpdates);
+        if (validEntries.length > 0) {
+          const promises = validEntries.map(([idStr, changes]) => {
+            return api.post(`/eosy/records/${idStr}/override`, changes);
+          });
+          await Promise.all(promises);
+        }
+
+        // Manually trigger relock
+        if (ayId) {
+          await api.post("/admin/historical-correction/relock", { schoolYearId: ayId });
+        }
+
+        setHistoricalCorrectionToken(null);
+        setUnsavedChanges({});
+        
+        sileo.success({
+          title: "Changes Saved & Session Locked",
+          description: "All valid historical corrections have been committed and audit logs recorded.",
+        });
+
+        setTimeout(() => window.location.reload(), 100);
+      } catch (err) {
+        sileo.error({
+          title: "Commit Error",
+          description: "Failed to commit historical corrections. Please try again.",
+        });
+      } finally {
+        setIsCommitting(false);
+      }
+    };
+
+    window.addEventListener("historical-correction:trigger-commit", handleCommit);
+    return () => {
+      window.removeEventListener("historical-correction:trigger-commit", handleCommit);
+    };
+  }, [unsavedChanges, records, ayId, setHistoricalCorrectionToken, isCommitting]);
+
   useEffect(() => {
     if (!ayId) return;
     getBOSYReadiness(ayId).catch(() => { });
@@ -189,6 +444,7 @@ export default function EosyUpdating() {
     try {
       const res = await api.get(`/eosy/sections?schoolYearId=${ayId}&_t=${Date.now()}`);
       const rawSections: Section[] = res.data.sections || [];
+      setAllSections(rawSections);
 
       const glMap = new Map<number, GradeLevel>();
       rawSections.forEach(s => {
@@ -430,10 +686,73 @@ export default function EosyUpdating() {
       setUnlockModalOpen(false);
     }
   };
+
+  const handleReopenEosySubmit = async () => {
+    setReopenLoading(true);
+    try {
+      await api.post("/eosy/school-year/unlock", {
+        schoolYearId: ayId,
+        pin: reopenPin,
+        justification: reopenJustification,
+      });
+
+      sileo.success({
+        title: "EOSY Reopened",
+        description: "The End of School Year updating has been reopened successfully.",
+      });
+
+      setReopenModalOpen(false);
+      setReopenPin("");
+      setReopenJustification("");
+
+      void fetchExportLockState();
+      void fetchSectionsAndGrades();
+      if (activeTab) {
+        void fetchGradeRecords(activeTab);
+      }
+    } catch (err) {
+      toastApiError(err as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setReopenLoading(false);
+    }
+  };
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
   const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
 
   const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
+
+  const shouldShowSuccessCard = (isAllFinalized || isSchoolYearFinalized || isEosyArchivedState) && !dismissSuccessCard;
+
+  const handleTransitionSubmit = async () => {
+    setTransitionLoading(true);
+    try {
+      await api.post("/system/finalize-eosy");
+      sileo.success({
+        title: "EOSY Finalized",
+        description: "The school year has been finalized successfully."
+      });
+      setTransitionModalOpen(false);
+      setTransitionChecked(false);
+
+      // Force settings store update
+      const pubRes = await api.get("/settings/public");
+      useSettingsStore.getState().setSettings(pubRes.data);
+
+      // Immediately redirect to Master Dashboard
+      window.location.href = "/dashboard";
+    } catch (err) {
+      toastApiError(err as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setTransitionLoading(false);
+    }
+  };
+
+  // Reset success card dismissal when the finalization status of the school year changes
+  useEffect(() => {
+    if (!isAllFinalized) {
+      setDismissSuccessCard(false);
+    }
+  }, [isAllFinalized]);
 
   const activeGradeName = gradeLevels.find(g => String(g.id) === activeTab)?.name || "Grade Level";
 
@@ -563,8 +882,73 @@ export default function EosyUpdating() {
         accessorKey: "enrollmentApplication.learner.lastName",
         header: ({ column }) => <DataTableColumnHeader column={column} title="LEARNER" className="justify-center" />,
         cell: ({ row }) => {
-          const sex = row.original.enrollmentApplication.learner.sex;
+          const r = row.original;
+          const recordId = r.id;
+          const sex = r.enrollmentApplication.learner.sex;
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
+
+          const unsaved = unsavedChanges[recordId] || {};
+          const currentLrn = unsaved.hasOwnProperty("lrn") ? unsaved.lrn : r.enrollmentApplication.learner.lrn;
+          const currentFirstName = unsaved.hasOwnProperty("firstName") ? unsaved.firstName : r.enrollmentApplication.learner.firstName;
+          const currentLastName = unsaved.hasOwnProperty("lastName") ? unsaved.lastName : r.enrollmentApplication.learner.lastName;
+
+          const isLrnChanged = unsaved.hasOwnProperty("lrn") && unsaved.lrn !== r.enrollmentApplication.learner.lrn;
+          const isNameChanged = (unsaved.hasOwnProperty("firstName") && unsaved.firstName !== r.enrollmentApplication.learner.firstName) ||
+                                (unsaved.hasOwnProperty("lastName") && unsaved.lastName !== r.enrollmentApplication.learner.lastName);
+
+          const reportedGrades = (r.enrollmentApplication.reportedGrades as Record<string, any>) || {};
+          const geofencing = reportedGrades.geofencing || {};
+          const currentLat = unsaved.hasOwnProperty("latitude") ? unsaved.latitude : geofencing.latitude;
+          const currentLng = unsaved.hasOwnProperty("longitude") ? unsaved.longitude : geofencing.longitude;
+          const isCoordsChanged = unsaved.hasOwnProperty("latitude") || unsaved.hasOwnProperty("longitude");
+
+          if (hasOverride) {
+            return (
+              <div className="flex flex-col gap-2 p-1 text-left">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    value={currentLastName || ""}
+                    onChange={(e) => handleFieldChange(recordId, "lastName", e.target.value)}
+                    disabled={isCommitting}
+                    className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                    placeholder="Last Name"
+                  />
+                  <Input
+                    value={currentFirstName || ""}
+                    onChange={(e) => handleFieldChange(recordId, "firstName", e.target.value)}
+                    disabled={isCommitting}
+                    className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                    placeholder="First Name"
+                  />
+                  {isNameChanged && <span className="text-[10px] text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 flex gap-1 items-center">
+                    <span className="text-xs font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
+                    <Input
+                      value={currentLrn || ""}
+                      onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
+                      disabled={isCommitting}
+                      className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      placeholder="12-digit LRN"
+                    />
+                    {isLrnChanged && <span className="text-[10px] text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                  </div>
+                  
+                  <GeofencingPopover
+                    latitude={currentLat}
+                    longitude={currentLng}
+                    onChange={(latVal, lngVal) => {
+                      handleFieldChange(recordId, "latitude", latVal);
+                      handleFieldChange(recordId, "longitude", lngVal);
+                    }}
+                    isChanged={isCoordsChanged}
+                    disabled={isCommitting}
+                  />
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
@@ -588,9 +972,41 @@ export default function EosyUpdating() {
         id: "section",
         accessorKey: "section.name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="SECTION" className="justify-center" />,
-        cell: ({ row }) => (
-          <span className="text-base font-extrabold">{row.original.section.name}</span>
-        ),
+        cell: ({ row }) => {
+          const r = row.original;
+          const recordId = r.id;
+          const unsaved = unsavedChanges[recordId] || {};
+          const currentSectionId = unsaved.hasOwnProperty("sectionId") ? unsaved.sectionId : r.sectionId;
+          const isSectionChanged = unsaved.hasOwnProperty("sectionId") && unsaved.sectionId !== r.sectionId;
+
+          const gradeSections = allSections.filter(s => String(s.gradeLevelId) === activeTab);
+
+          if (hasOverride) {
+            return (
+              <div className="flex flex-col gap-1 items-start">
+                <Select
+                  value={currentSectionId ? String(currentSectionId) : ""}
+                  onValueChange={(val) => handleFieldChange(recordId, "sectionId", Number(val))}
+                  disabled={isCommitting}
+                >
+                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-36", isSectionChanged && "border-amber-500 focus:ring-amber-500")}>
+                    <SelectValue placeholder="Select Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gradeSections.map(s => (
+                      <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isSectionChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+              </div>
+            );
+          }
+
+          return (
+            <span className="text-base font-extrabold">{row.original.section.name}</span>
+          );
+        },
         meta: { className: "min-w-[150px] text-left" }
       },
       {
@@ -599,7 +1015,31 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
+          const recordId = r.id;
           const ave = r.finalAverage;
+
+          const unsaved = unsavedChanges[recordId] || {};
+          const currentAve = unsaved.hasOwnProperty("finalAverage") ? unsaved.finalAverage : ave;
+          const isAveChanged = unsaved.hasOwnProperty("finalAverage") && unsaved.finalAverage !== ave;
+
+          if (hasOverride) {
+            return (
+              <div className="flex flex-col gap-1 items-center">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="60"
+                  max="100"
+                  value={currentAve !== null && currentAve !== undefined ? currentAve : ""}
+                  onChange={(e) => handleFieldChange(recordId, "finalAverage", e.target.value === "" ? null : parseFloat(e.target.value))}
+                  disabled={isCommitting}
+                  className={cn("h-8 w-20 text-center text-sm font-extrabold", isAveChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                />
+                {isAveChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+              </div>
+            );
+          }
+
           if (ave === null || ave === undefined) {
             return (
               <span className="font-extrabold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
@@ -628,11 +1068,16 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
+          const recordId = r.id;
           const isScpDemoted = r.isScpDemoted || !!r.scpViolation;
           const scpViolation = r.scpViolation;
 
-          const resolvedStatus = r.eosyStatus ?? "PROMOTED";
-          const statusLabel = formatStatusLabel(r.eosyStatus);
+          const unsaved = unsavedChanges[recordId] || {};
+          const currentStatus = unsaved.hasOwnProperty("eosyStatus") ? unsaved.eosyStatus : r.eosyStatus;
+          const isStatusChanged = unsaved.hasOwnProperty("eosyStatus") && unsaved.eosyStatus !== r.eosyStatus;
+
+          const resolvedStatus = currentStatus ?? "PROMOTED";
+          const statusLabel = formatStatusLabel(resolvedStatus);
           const isSectionFinalized = r.section.isEosyFinalized;
 
           const renderStatusContent = () => (
@@ -641,7 +1086,7 @@ export default function EosyUpdating() {
                 "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border transition-colors",
                 isScpDemoted && resolvedStatus === "PROMOTED"
                   ? "text-amber-700 bg-amber-50 border-amber-200"
-                  : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                  : !resolvedStatus || resolvedStatus === "PROMOTED"
                     ? "text-green-700 bg-green-50 border-green-200"
                     : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
@@ -678,6 +1123,30 @@ export default function EosyUpdating() {
               </Tooltip>
             </TooltipProvider>
           );
+
+          if (hasOverride) {
+            return (
+              <div className="flex flex-col gap-1 items-center">
+                <Select
+                  value={resolvedStatus}
+                  onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
+                  disabled={isCommitting}
+                >
+                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-40", isStatusChanged && "border-amber-500 focus:ring-amber-500")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+                    <SelectItem value="RETAINED">RETAINED</SelectItem>
+                    <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
+                    <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+                    <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                  </SelectContent>
+                </Select>
+                {isStatusChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+              </div>
+            );
+          }
 
           if (isSectionFinalized || isScopeFinalized) {
             return (
@@ -733,7 +1202,7 @@ export default function EosyUpdating() {
         meta: { className: "w-[150px] text-center" }
       },
     ],
-    [isScopeFinalized, handleStatusChange],
+    [isScopeFinalized, handleStatusChange, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange],
   );
 
   const columns = useMemo(() => {
@@ -741,21 +1210,7 @@ export default function EosyUpdating() {
     return cols;
   }, [baseColumns, isScopeFinalized]);
 
-  if (shouldShowFinalizedView) {
-    return (
-      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
-        <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center border border-emerald-200">
-          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-        </div>
-        <div className="text-center space-y-3 max-w-lg">
-          <h2 className="text-xl font-extrabold uppercase text-emerald-700">EOSY Successfully Finalized</h2>
-          <p className="text-base font-extrabold text-foreground leading-relaxed">
-            All academic records for this school year are sealed and locked.
-          </p>
-        </div>
-      </div>
-    );
-  }
+
 
   if (!isEosyPhase && !isHistoricalReadOnly) {
     return (
@@ -786,27 +1241,55 @@ export default function EosyUpdating() {
               End of School Year (EOSY) Promotion Update
             </h1>
             <p className="text-base leading-tight font-extrabold text-foreground">
-              Review submitted General Averages, verify promotion status, and lock section rosters for the End of School Year.
+              Review submitted General Averages, verify promotion status, and officially lock records for the End of School Year.
             </p>
           </div>
         </div>
 
-        {isAllFinalized && !shouldShowFinalizedView && (
-          <div className="mt-6 mb-6 rounded-md border border-emerald-200 bg-emerald-50 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1 text-emerald-800">
-              <h3 className="font-extrabold flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                School Year Finalization Complete
-              </h3>
-              <p className="text-base leading-tight">All grade levels are officially locked. You may now advance the system to the next School Year.</p>
+        {shouldShowSuccessCard ? (
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-10 w-full h-[calc(100vh-250px)] min-h-[600px] flex flex-col items-center justify-center gap-6 text-center">
+            <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center border border-emerald-200">
+              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
             </div>
-            <Button asChild className="bg-green-700 hover:bg-green-800 text-white font-extrabold shadow-sm">
-              <a href="/settings">Proceed to School Year Setup &rarr;</a>
-            </Button>
+            <div className="space-y-3 max-w-xl flex flex-col items-center">
+              <h2 className="text-2xl font-extrabold text-emerald-700">
+                End of School Year (EOSY) Updating Complete
+              </h2>
+              <p className="text-base font-extrabold text-foreground leading-relaxed mb-6">
+                All academic records for this school year are sealed and locked.
+              </p>
+              <div className="flex flex-col items-center gap-4 w-full">
+                <Button
+                  onClick={() => {
+                    if (isSchoolYearFinalized) {
+                      window.location.href = "/settings";
+                    } else {
+                      setTransitionModalOpen(true);
+                    }
+                  }}
+                  size="lg"
+                  className="bg-green-700 hover:bg-green-800 text-white font-extrabold shadow-sm px-8 py-3 h-auto"
+                >
+                  Transition to New School Year
+                </Button>
+                
+                <button
+                  onClick={() => {
+                    if (isSchoolYearFinalized || isEosyArchivedState) {
+                      setReopenModalOpen(true);
+                    } else {
+                      setDismissSuccessCard(true);
+                    }
+                  }}
+                  className="text-red-800 hover:text-red-900 hover:bg-red-50/50 font-semibold px-6 py-3 rounded-md transition-colors cursor-pointer text-sm min-h-[44px]"
+                >
+                  Reopen EOSY Updating
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
           <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
             {gradeLevels.map((gl) => (
               <TabsTrigger
@@ -967,10 +1450,9 @@ export default function EosyUpdating() {
                       </div>
 
                       {/* Finalize Button */}
-                      {!isScopeFinalized && blockersCount === 0 && (
+                      {!isScopeFinalized && blockersCount === 0 && filteredRecords.length > 0 && (
                         <Button
                           onClick={() => setFinalizeModalOpen(true)}
-                          disabled={records.length === 0}
                           size="lg"
                           className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
                         >
@@ -1017,6 +1499,7 @@ export default function EosyUpdating() {
             </motion.div>
           </AnimatePresence>
         </Tabs>
+        )}
       </div>
 
       <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
@@ -1179,6 +1662,163 @@ export default function EosyUpdating() {
         variant="warning"
         icon={Unlock}
       />
+
+      <Dialog open={reopenModalOpen} onOpenChange={setReopenModalOpen}>
+        <DialogContent className={cn("w-[calc(100%-2rem)] sm:max-w-xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
+          <DialogHeader className="space-y-2 text-center items-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
+              <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
+            </div>
+            <DialogTitle className="text-center text-xl font-extrabold">Reopen EOSY Updating</DialogTitle>
+            <DialogDescription className="text-center pt-2 font-semibold text-md">
+              Are you sure you want to reopen End of School Year (EOSY) updates? This will unlock the global lock and revert the system phase to allow roster corrections.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 my-4 text-left">
+            <div className="space-y-1">
+              <label className="text-sm font-extrabold text-foreground">Security PIN</label>
+              <Input
+                type="password"
+                placeholder="Enter 6-digit Security PIN"
+                value={reopenPin}
+                onChange={(e) => setReopenPin(e.target.value)}
+                className="bg-white border-border"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-extrabold text-foreground">Justification</label>
+              <Input
+                type="text"
+                placeholder="Reason for reopening (min. 10 characters)"
+                value={reopenJustification}
+                onChange={(e) => setReopenJustification(e.target.value)}
+                className="bg-white border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReopenModalOpen(false);
+                setReopenPin("");
+                setReopenJustification("");
+              }}
+              disabled={reopenLoading}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "border border-gray-200 bg-white text-foreground",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleReopenEosySubmit}
+              disabled={reopenLoading || !reopenPin || reopenJustification.trim().length < 10}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
+                "hover:bg-[hsl(var(--primary)/0.9)]",
+                "shadow-md",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
+            >
+              {reopenLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Processing...
+                </span>
+              ) : (
+                "Confirm Reopen"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={transitionModalOpen} onOpenChange={(open) => {
+        if (!open) return;
+      }}>
+        <DialogContent 
+          className={cn("w-[calc(100%-2rem)] sm:max-w-xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="space-y-2 text-center items-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
+              <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
+            </div>
+            <DialogTitle className="text-center text-xl font-extrabold">Transition to New School Year</DialogTitle>
+            <DialogDescription className="text-center pt-2 font-semibold text-md">
+              You are initiating the highest level of system transition. Please review the following DepEd rules:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground space-y-2 my-2 border border-[hsl(var(--primary)/0.2)] text-left">
+            <p>• Grade 10 learners will be permanently archived as JHS Completers.</p>
+            <p>• Promoted Grade 7 to 9 learners will be updated for the next grade level.</p>
+            <p>• All previous Section assignments will be cleared for the incoming school year.</p>
+          </div>
+
+          <div className="flex items-start gap-2 my-4 text-left">
+            <Checkbox
+              id="acknowledgment-toggle"
+              checked={transitionChecked}
+              onCheckedChange={(checked) => setTransitionChecked(!!checked)}
+              className="mt-1"
+            />
+            <label 
+              htmlFor="acknowledgment-toggle"
+              className="text-sm font-extrabold text-foreground cursor-pointer select-none"
+            >
+              I confirm that all EOSY records are accurate and I am ready to close this school year.
+            </label>
+          </div>
+
+          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTransitionModalOpen(false);
+                setTransitionChecked(false);
+              }}
+              disabled={transitionLoading}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "border border-gray-200 bg-white text-foreground",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleTransitionSubmit}
+              disabled={transitionLoading || !transitionChecked}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
+                "hover:bg-[hsl(var(--primary)/0.9)]",
+                "shadow-md",
+                "transition-all duration-150 active:scale-[0.97]"
+              )}
+            >
+              {transitionLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Processing...
+                </span>
+              ) : (
+                "Lock Records and Open New School Year"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

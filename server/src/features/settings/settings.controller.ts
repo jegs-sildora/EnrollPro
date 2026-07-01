@@ -10,6 +10,7 @@ import {
 } from "./logo-color.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { getEnrollmentPhase, isRegularEnrollmentWindowOpen } from "./enrollment-gate.service.js";
+import { activeLocks } from "../admin/historical-correction.controller.js";
 
 async function getOrCreateSettings() {
   let settings = await prisma.schoolSetting.findFirst({
@@ -57,6 +58,13 @@ export async function getPublicSettings(
       ? isRegularEnrollmentWindowOpen(contextSy)
       : false;
 
+    const lock = contextSy ? activeLocks.get(contextSy.id) : null;
+    const activeCorrection = lock && lock.expiresAt > Date.now() ? {
+      userId: lock.userId,
+      userName: lock.userName,
+      expiresAt: lock.expiresAt,
+    } : null;
+
     res.json({
       schoolName: settings.schoolName,
       depedSchoolId: settings.depedSchoolId,
@@ -88,10 +96,11 @@ export async function getPublicSettings(
       enableHomogeneousSections: settings.enableHomogeneousSections,
       homogeneousSectionCount: settings.homogeneousSectionCount,
       heterogeneousRoundRobin: settings.heterogeneousRoundRobin,
-          enrollmentPhase,
+      enrollmentPhase,
       isBosyEnrollmentOpen,
       systemPhase: settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
+      activeCorrection,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);

@@ -30,6 +30,7 @@ export function useEosyStream(onEvent?: (payload: EosyEventPayload) => void) {
 
       eventSource.onopen = () => {
         setIsConnected(true);
+        backoffRef.current = INITIAL_BACKOFF_MS;
       };
 
       eventSource.onmessage = (event) => {
@@ -45,8 +46,10 @@ export function useEosyStream(onEvent?: (payload: EosyEventPayload) => void) {
         setIsConnected(false);
         eventSource?.close();
         
-        // Reconnect after 2 seconds
-        timerId = setTimeout(connect, 2000);
+        // Reconnect with exponential backoff
+        const currentBackoff = backoffRef.current;
+        backoffRef.current = Math.min(currentBackoff * 1.5, MAX_BACKOFF_MS);
+        timerId = setTimeout(connect, currentBackoff);
       };
     };
 

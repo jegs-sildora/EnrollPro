@@ -1,7 +1,7 @@
 import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link, Outlet } from "react-router";
-import { Toaster } from "sileo";
+import { Toaster, sileo } from "sileo";
 import {
   LayoutDashboard,
   Users,
@@ -184,6 +184,7 @@ function UserNav() {
 function SYSwitcher() {
   const { activeSchoolYearId, viewingSchoolYearId, setViewingSY } =
     useSettingsStore();
+  const { hasOverride } = useHistoricalReadOnly();
   const [years, setYears] = useState<SchoolYearItem[]>([]);
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -266,6 +267,13 @@ function SYSwitcher() {
   };
 
   const handleSelectYear = (y: SchoolYearItem) => {
+    if (hasOverride) {
+      sileo.error({
+        title: "Historical Correction Active",
+        description: "Please lock the historical session before switching school years.",
+      });
+      return;
+    }
     setViewingSY(
       y.id === activeSchoolYearId ? null : y.id,
       y.id === activeSchoolYearId ? null : y.status,
@@ -461,7 +469,7 @@ function AppSidebar() {
   const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
   let officialEnrollmentBadge;
   if (systemPhase === "OFFICIAL_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY ENROLLMENT</span>;
+    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment</span>;
   } else if (systemPhase === "CLASSES_ONGOING") {
     officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
   }
@@ -755,8 +763,8 @@ function formatPhaseName(phase: string | null): string {
   if (!phase) return "Unknown Phase";
   const map: Record<string, string> = {
     PRE_REGISTRATION: "Pre-Registration",
-    OFFICIAL_ENROLLMENT: "Official Enrollment",
-    BOSY_ENROLLMENT: "BOSY Enrollment",
+    OFFICIAL_ENROLLMENT: "BOSY Enrollment Active",
+    BOSY_ENROLLMENT: "BOSY Enrollment Active",
     CLASSES_ONGOING: "Classes Ongoing",
     EOSY_CLOSING: "EOSY Closing"
   };

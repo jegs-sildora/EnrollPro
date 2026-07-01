@@ -201,7 +201,8 @@ export const seedDatabase = async () => {
           password: defaultPassword,
           roles: ["TEACHER", "CLASS_ADVISER"],
           mobileNumber: contactNumber,
-          isActive: true
+          isActive: true,
+          mustChangePassword: true
         }
       });
 

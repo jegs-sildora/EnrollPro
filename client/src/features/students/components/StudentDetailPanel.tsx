@@ -135,10 +135,16 @@ export interface StudentDetail {
   motherTongue?: string | null;
   religion?: string | null;
   portalStatus?: string;
+  historicalGrades?: {
+    gradeLevel: string;
+    genAve: number;
+    schoolYear: string;
+  }[];
 }
 
 interface Props {
   id: number;
+  schoolYearId?: number | null;
   onClose: () => void;
   onRefreshData?: () => void;
   onTransferOut?: (payload: StudentTransferOutPayload) => void;
@@ -183,6 +189,7 @@ const getGradeLevelBadgeStyles = (
 
 export function StudentDetailPanel({
   id,
+  schoolYearId,
   onClose,
   onRefreshData,
   onTransferOut,
@@ -338,13 +345,19 @@ export function StudentDetailPanel({
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get(`/students/${id}`);
-      setStudent(res.data.student);
+      const res = await api.get(`/students/${id}`, {
+        params: { schoolYearId: schoolYearId || undefined }
+      });
+      const { student, historicalGrades } = res.data;
+      if (student) {
+        student.historicalGrades = historicalGrades;
+      }
+      setStudent(student);
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
           ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
+            ?.message
           : "Failed to load student details";
       setError(message || "An unexpected error occurred.");
       toastApiError(err as never);
@@ -404,21 +417,21 @@ export function StudentDetailPanel({
       isBalikAral: student.isBalikAral ? "YES" : "NO",
       disabilityType:
         student.isLearnerWithDisability &&
-        student.disabilityTypes &&
-        student.disabilityTypes.length > 0
+          student.disabilityTypes &&
+          student.disabilityTypes.length > 0
           ? student.disabilityTypes[0]
           : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
       primaryContact:
         student.contactNumber === student.motherName?.contactNumber &&
-        student.motherName?.contactNumber
+          student.motherName?.contactNumber
           ? "MOTHER"
           : student.contactNumber === student.fatherName?.contactNumber &&
-              student.fatherName?.contactNumber
+            student.fatherName?.contactNumber
             ? "FATHER"
             : student.contactNumber === student.guardianInfo?.contactNumber &&
-                student.guardianInfo?.contactNumber
+              student.guardianInfo?.contactNumber
               ? "GUARDIAN"
               : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
@@ -465,21 +478,21 @@ export function StudentDetailPanel({
       isBalikAral: student.isBalikAral ? "YES" : "NO",
       disabilityType:
         student.isLearnerWithDisability &&
-        student.disabilityTypes &&
-        student.disabilityTypes.length > 0
+          student.disabilityTypes &&
+          student.disabilityTypes.length > 0
           ? student.disabilityTypes[0]
           : "NONE",
       motherTongue: student.motherTongue || "",
       religion: student.religion || "",
       primaryContact:
         student.contactNumber === student.motherName?.contactNumber &&
-        student.motherName?.contactNumber
+          student.motherName?.contactNumber
           ? "MOTHER"
           : student.contactNumber === student.fatherName?.contactNumber &&
-              student.fatherName?.contactNumber
+            student.fatherName?.contactNumber
             ? "FATHER"
             : student.contactNumber === student.guardianInfo?.contactNumber &&
-                student.guardianInfo?.contactNumber
+              student.guardianInfo?.contactNumber
               ? "GUARDIAN"
               : "MOTHER",
       motherContactNumber: student.motherName?.contactNumber || "",
@@ -791,8 +804,8 @@ export function StudentDetailPanel({
               <h3 className="font-extrabold text-lg sm:text-xl uppercase  break-words">
                 {isEditing
                   ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`
-                      .trim()
-                      .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
+                    .trim()
+                    .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
                   : student.fullName}
               </h3>
               <div className="flex items-center justify-center gap-2 mt-1 font-extrabold">
@@ -857,15 +870,15 @@ export function StudentDetailPanel({
               <p className="text-base leading-tight pr-2">
                 {isEditing
                   ? [
-                      profileForm.houseNoStreet,
-                      profileForm.sitioPurok,
-                      profileForm.barangay,
-                      profileForm.cityMunicipality,
-                      profileForm.province,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")
-                      .toUpperCase() || "N/A"
+                    profileForm.houseNoStreet,
+                    profileForm.sitioPurok,
+                    profileForm.barangay,
+                    profileForm.cityMunicipality,
+                    profileForm.province,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")
+                    .toUpperCase() || "N/A"
                   : student.address || "N/A"}
               </p>
             </div>
@@ -876,13 +889,13 @@ export function StudentDetailPanel({
               <p className="text-base leading-tight">
                 {isEditing
                   ? (profileForm.primaryContact === "MOTHER"
-                      ? profileForm.motherContactNumber
-                      : profileForm.primaryContact === "FATHER"
-                        ? profileForm.fatherContactNumber
-                        : profileForm.guardianContactNumber) || "N/A"
+                    ? profileForm.motherContactNumber
+                    : profileForm.primaryContact === "FATHER"
+                      ? profileForm.fatherContactNumber
+                      : profileForm.guardianContactNumber) || "N/A"
                   : student.contactNumber ||
-                    student.parentGuardianContact ||
-                    "N/A"}
+                  student.parentGuardianContact ||
+                  "N/A"}
               </p>
             </div>
           </div>
@@ -969,6 +982,38 @@ export function StudentDetailPanel({
                   {student.enrollment.dropOutReason}
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Historical Final Averages */}
+        {student.historicalGrades && student.historicalGrades.length > 0 && (
+          <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
+            <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+              <FileBadge2 className="h-4 w-4 text-primary" />
+              Historical Final Averages
+            </div>
+            <div className="p-4 text-base leading-tight">
+              <table className="w-full text-center border-collapse">
+                <thead>
+                  <tr className="font-extrabold border-b">
+                    <th className="text-foreground pb-2 font-extrabold text-center">Grade Level</th>
+                    <th className="text-foreground pb-2 font-extrabold text-center">Final Gen Ave</th>
+                    <th className="text-foreground pb-2 font-extrabold text-center">School Year</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {student.historicalGrades.map((hg, idx) => (
+                    <tr key={idx} className="font-extrabold">
+                      <td className="py-2">{hg.gradeLevel}</td>
+                      <td className="py-2">
+                        {hg.genAve != null ? hg.genAve.toFixed(2) : "N/A"}
+                      </td>
+                      <td className="py-2">{hg.schoolYear}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -1270,8 +1315,8 @@ export function StudentDetailPanel({
                   ).map((option) => {
                     const displayLabel =
                       option.firstName &&
-                      option.firstName.trim() !== "" &&
-                      option.firstName.trim() !== "N/A"
+                        option.firstName.trim() !== "" &&
+                        option.firstName.trim() !== "N/A"
                         ? `${option.label} (${option.firstName})`
                         : option.label;
 
@@ -1849,7 +1894,7 @@ export function StudentDetailPanel({
                   Transferred Out
                 </Button>
               </DialogTrigger>
-              <DialogContent className="p-0 overflow-hidden sm:max-w-[425px]">
+              <DialogContent aria-describedby={undefined} className="p-0 overflow-hidden sm:max-w-[425px]">
                 <div className="p-6 pb-2">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-extrabold text-foreground">
@@ -1924,7 +1969,7 @@ export function StudentDetailPanel({
                   Dropped Out
                 </Button>
               </DialogTrigger>
-              <DialogContent className="p-0 overflow-hidden sm:max-w-[425px]">
+              <DialogContent aria-describedby={undefined} className="p-0 overflow-hidden sm:max-w-[425px]">
                 <div className="p-6 pb-2">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-extrabold text-red-700">

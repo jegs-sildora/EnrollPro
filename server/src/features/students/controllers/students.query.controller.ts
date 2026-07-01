@@ -227,7 +227,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
             "REGULAR",
           dateEnrolled:
             applicant.enrollmentRecord?.enrolledAt || applicant.createdAt,
-          id: applicant.id,
+          id: applicant.id || applicant.learner?.id,
           lrn: applicant.learner?.lrn,
           fullName: applicant.learner ? buildFullName(applicant.learner) : "",
           firstName: applicant.learner?.firstName,
@@ -300,7 +300,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      const applicant = await prisma.enrollmentApplication.findUnique({
+      let applicant: any = await prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: {
           learner: {
@@ -353,12 +353,112 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         },
       });
 
-      if (!applicant) {
-        return res.status(404).json({ message: "Student not found" });
+      const schoolYearId = Number(req.query.schoolYearId) || req.schoolYearId;
+
+      // Prevent ID collision: if parsedId is actually a Learner ID, findUnique on EnrollmentApplication 
+      // might find a completely unrelated application for a different school year.
+      if (applicant && applicant.schoolYearId !== schoolYearId) {
+        applicant = null;
       }
 
+      let actualLearnerId = applicant?.learnerId;
+
+      if (!applicant) {
+        // Fallback: If no application matches the ID, parsedId might actually be a Learner ID.
+        // This happens for archived years where the student only exists in EnrollmentHistory.
+        const fallbackLearner = await prisma.learner.findUnique({
+          where: { id: parsedId },
+          include: {
+            user: {
+              select: { id: true, isActive: true, lastLoginAt: true, mustChangePassword: true, roles: true },
+            },
+          },
+        });
+        
+        if (!fallbackLearner) {
+          return res.status(404).json({ message: "Student not found" });
+        }
+        
+        actualLearnerId = fallbackLearner.id;
+
+        // Fetch history for the specific selected school year to populate the dummy applicant
+        const historyForYear = await prisma.enrollmentHistory.findFirst({
+          where: { learnerId: actualLearnerId, schoolYearId },
+          include: {
+            gradeLevel: true,
+            schoolYear: true,
+            section: {
+              include: {
+                advisers: {
+                  where: { status: "ACTIVE" },
+                  include: {
+                    teacher: {
+                      select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }
+        });
+
+        // Fetch application for the selected school year to strictly isolate data
+        const appForYear = await prisma.enrollmentApplication.findFirst({
+          where: { learnerId: actualLearnerId, schoolYearId },
+          include: { addresses: true, familyMembers: true, previousSchool: true }
+        });
+
+        // Create a dummy applicant-like object to satisfy the frontend mapped type
+        applicant = {
+          id: fallbackLearner.id, // Fake ID for the UI
+          learnerId: fallbackLearner.id,
+          learner: fallbackLearner,
+          firstName: fallbackLearner.firstName,
+          lastName: fallbackLearner.lastName,
+          middleName: fallbackLearner.middleName,
+          extensionName: fallbackLearner.extensionName,
+          status: historyForYear?.eosyStatus === "DROPPED_OUT" ? "DROPPED" : historyForYear?.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "ENROLLED",
+          applicantType: "REGULAR" as any,
+          gradeLevelId: historyForYear?.gradeLevelId || 0,
+          schoolYearId,
+          addresses: appForYear?.addresses || [],
+          familyMembers: appForYear?.familyMembers || [],
+          previousSchool: appForYear?.previousSchool || null,
+          enrollmentRecord: historyForYear ? {
+            section: historyForYear.section,
+            enrolledAt: historyForYear.createdAt,
+            eosyStatus: historyForYear.eosyStatus,
+          } : null,
+          gradeLevel: historyForYear?.gradeLevel || null,
+          schoolYear: historyForYear?.schoolYear || null,
+          createdAt: historyForYear?.createdAt || fallbackLearner.createdAt,
+          updatedAt: fallbackLearner.updatedAt,
+        } as any;
+      }
+      // Fetch historical grades up to the selected school year
+      const histories = await prisma.enrollmentHistory.findMany({
+        where: { 
+          learnerId: actualLearnerId,
+          schoolYearId: { lte: schoolYearId },
+          gradeLevel: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } }
+        },
+        include: { gradeLevel: true, schoolYear: true },
+        orderBy: { schoolYearId: 'asc' }
+      });
+      
+      const historicalGrades = histories.map(h => ({
+        gradeLevel: h.gradeLevel.name,
+        genAve: h.genAve,
+        schoolYear: h.schoolYear.yearLabel
+      }));
+
       const activeAdviser =
-        applicant.enrollmentRecord?.section.advisers[0]?.teacher ?? null;
+        applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher ?? null;
 
       const addresses = (applicant.addresses || []) as AddressLike[];
       const familyMembers = (applicant.familyMembers ||
@@ -424,20 +524,20 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         enrollment: applicant.enrollmentRecord
           ? {
               id: applicant.enrollmentRecord.id,
-              section: applicant.enrollmentRecord.section.name,
+              section: applicant.enrollmentRecord.section?.name || null,
               sectionId: applicant.enrollmentRecord.sectionId,
               advisingTeacher: activeAdviser
                 ? buildFullName(activeAdviser)
                 : null,
               enrolledAt: applicant.enrollmentRecord.enrolledAt,
-              enrolledBy: `${applicant.enrollmentRecord.enrolledBy.lastName}, ${applicant.enrollmentRecord.enrolledBy.firstName}`,
+              enrolledBy: applicant.enrollmentRecord.enrolledBy ? `${applicant.enrollmentRecord.enrolledBy.lastName}, ${applicant.enrollmentRecord.enrolledBy.firstName}` : "System / Unknown",
             }
           : null,
         createdAt: applicant.createdAt,
         updatedAt: applicant.updatedAt,
       };
 
-      res.json({ student });
+      res.json({ student, historicalGrades });
     } catch (error) {
       console.error("[getStudentById] Error:", error);
       res.status(500).json({

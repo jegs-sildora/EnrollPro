@@ -5,10 +5,16 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 
+export interface LockDetails {
+  userId: number;
+  userName: string;
+  expiresAt: number;
+}
+
+export const activeLocks = new Map<number, LockDetails>();
+
 const authorizeSchema = z.object({
-  password: z.string().min(1),
   schoolYearId: z.number().int().positive(),
-  reason: z.string().min(20, "Reason must be at least 20 characters"),
 });
 
 /** POST /api/admin/historical-correction/authorize */
@@ -22,8 +28,9 @@ export async function authorize(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { password, schoolYearId, reason } = parsed.data;
-  const adminUserId = (req as Request & { user?: { id: number } }).user?.id;
+  const { schoolYearId } = parsed.data;
+  const adminUserId = (req as Request & { user?: { userId: number } }).user?.userId;
+  console.log(`[HistoricalCorrectionCtrl] Authorize request. adminUserId: ${adminUserId}, schoolYearId: ${schoolYearId}`);
 
   if (!adminUserId) {
     res
@@ -34,7 +41,7 @@ export async function authorize(req: Request, res: Response): Promise<void> {
 
   const user = await prisma.user.findUnique({
     where: { id: adminUserId },
-    select: { id: true, password: true },
+    select: { id: true, firstName: true, lastName: true },
   });
 
   if (!user) {
@@ -42,14 +49,25 @@ export async function authorize(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
-  if (!passwordMatch) {
-    res.status(401).json({
-      code: "INVALID_PASSWORD",
-      message: "Password is incorrect.",
+  // Check global concurrency lock
+  const currentLock = activeLocks.get(schoolYearId);
+  if (currentLock && currentLock.expiresAt > Date.now() && currentLock.userId !== adminUserId) {
+    res.status(403).json({
+      code: "CONCURRENCY_LOCK",
+      message: `S.Y. ${schoolYearId} is currently undergoing active correction by ${currentLock.userName}. Records are temporarily locked.`,
+      lock: currentLock,
     });
     return;
   }
+
+  // Set or extend lock for 10 minutes
+  const userName = `${user.firstName} ${user.lastName}`.trim();
+  const expiresAt = Date.now() + 10 * 60 * 1000;
+  activeLocks.set(schoolYearId, {
+    userId: adminUserId,
+    userName,
+    expiresAt,
+  });
 
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -70,9 +88,36 @@ export async function authorize(req: Request, res: Response): Promise<void> {
   await auditLog({
     userId: adminUserId,
     actionType: "HISTORICAL_CORRECTION_AUTHORIZED",
-    description: `System admin authorized historical correction for school year ID ${schoolYearId}. Reason: ${reason}`,
+    description: `System admin authorized historical correction for school year ID ${schoolYearId}. Lock set for user ${userName}.`,
     req,
   });
 
-  res.json({ overrideToken });
+  res.json({ overrideToken, expiresAt });
+}
+
+/** POST /api/admin/historical-correction/relock */
+export async function relock(req: Request, res: Response): Promise<void> {
+  const { schoolYearId } = req.body;
+  if (!schoolYearId) {
+    res.status(400).json({
+      code: "VALIDATION_ERROR",
+      message: "schoolYearId is required.",
+    });
+    return;
+  }
+
+  const syId = Number(schoolYearId);
+  activeLocks.delete(syId);
+
+  const adminUserId = (req as Request & { user?: { userId: number } }).user?.userId;
+  if (adminUserId) {
+    await auditLog({
+      userId: adminUserId,
+      actionType: "HISTORICAL_CORRECTION_RELOCKED",
+      description: `Historical records for school year ID ${syId} have been manually relocked.`,
+      req,
+    });
+  }
+
+  res.json({ success: true });
 }

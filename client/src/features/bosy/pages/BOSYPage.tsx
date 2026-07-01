@@ -114,6 +114,17 @@ export default function BOSYPage() {
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const { ayLabel } = useSchoolYearContext();
+  let priorSyLabel = "25-26";
+  if (ayLabel) {
+    const parts = ayLabel.split("-");
+    if (parts.length === 2) {
+      const start = parseInt(parts[0], 10);
+      const end = parseInt(parts[1], 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        priorSyLabel = `${start - 1}-${end - 1}`;
+      }
+    }
+  }
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const syId =
     typeof resolvedSchoolYearId === "number" &&
@@ -515,6 +526,7 @@ export default function BOSYPage() {
         <CardContent className="p-0 flex flex-col min-h-0">
           <div className="overflow-auto bg-muted/5 w-full max-w-full">
             <QueueTable
+              priorSyLabel={priorSyLabel}
               items={queueItems}
               loading={queueLoading}
               isSearching={isSearching}

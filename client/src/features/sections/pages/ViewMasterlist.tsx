@@ -491,6 +491,7 @@ export default function ViewMasterlist() {
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
                 id={retainedStudentId}
+                schoolYearId={section?.schoolYearId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={fetchMasterlistData}
                 onTransferOut={() => { }}

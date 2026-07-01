@@ -37,7 +37,7 @@ export function BulkConfirmBar({
             ) : (
               <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
             )}
-            [ Bulk Confirm Selected Learners ]
+            Confirm Selected Learners
           </Button>
           <Button
             size="icon"

@@ -188,7 +188,7 @@ async function carryOverEligibleLearners(
         gradeLevelId: targetGradeLevel.id,
         applicantType: record.enrollmentApplication.applicantType,
         learnerType: "CONTINUING",
-        status: "VERIFIED",
+        status: "PENDING_VERIFICATION",
         admissionChannel: "F2F",
         isPrivacyConsentGiven:
           record.enrollmentApplication.isPrivacyConsentGiven,

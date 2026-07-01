@@ -43,6 +43,10 @@ router.post(
   "/historical-correction/authorize",
   historicalCorrectionCtrl.authorize,
 );
+router.post(
+  "/historical-correction/relock",
+  historicalCorrectionCtrl.relock,
+);
 
 // System Health
 router.get("/system/health", sysCtrl.health);

@@ -15,6 +15,7 @@ import type { BOSYQueueItem } from "../types";
 import { formatApplicationStatus, cn } from "@/shared/lib/utils";
 
 interface QueueTableProps {
+  priorSyLabel: string;
   items: BOSYQueueItem[];
   loading: boolean;
   isSearching?: boolean;
@@ -30,24 +31,21 @@ function statusBadge(status: string) {
   if (status === "PENDING_VERIFICATION")
     return (
       <Badge
-        variant="outline"
-        className="text-[10px] font-extrabold uppercase bg-amber-50 border-amber-200 text-amber-700">
-        [Pending Review]
+        className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-700 border-transparent hover:bg-amber-200">
+        Pending
       </Badge>
     );
   if (status === "READY_FOR_SECTIONING")
     return (
       <Badge
-        variant="outline"
-        className="text-[10px] font-extrabold uppercase bg-emerald-50 border-emerald-200 text-emerald-700">
-        [Confirmed]
+        className="text-[10px] font-extrabold uppercase bg-blue-600 text-white border-transparent hover:bg-blue-700">
+        Confirmed
       </Badge>
     );
   if (status === "ENROLLED" || status === "OFFICIALLY_ENROLLED")
     return (
       <Badge
-        variant="outline"
-        className="text-[10px] font-extrabold uppercase bg-blue-50 border-blue-200 text-blue-700">
+        className="text-[10px] font-extrabold uppercase bg-emerald-600 text-white border-transparent hover:bg-emerald-700">
         Enrolled
       </Badge>
     );
@@ -61,6 +59,7 @@ function statusBadge(status: string) {
 }
 
 export function QueueTable({
+  priorSyLabel,
   items,
   loading,
   isSearching,
@@ -147,7 +146,7 @@ export function QueueTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Prior Section (S.Y. 25-26)"
+            title={`Prior Section (S.Y. ${priorSyLabel})`}
           />
         ),
         cell: ({ row }) => (
@@ -182,10 +181,9 @@ export function QueueTable({
           return (
             <div className="text-center">
               <Badge
-                variant="outline"
-                className={cn("text-[10px] font-extrabold uppercase", s === "PROMOTED" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700")}
+                className={cn("text-[10px] font-extrabold uppercase text-white border-transparent", s === "PROMOTED" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700")}
               >
-                {s === "PROMOTED" ? "[Promoted]" : "[Retained]"}
+                {s === "PROMOTED" ? "Promoted" : "Retained"}
               </Badge>
             </div>
           );
@@ -247,7 +245,7 @@ export function QueueTable({
 
 
     return base;
-  }, [showConfirmAction, onConfirmSingle, confirmingIds, onRevertSingle]);
+  }, [showConfirmAction, onConfirmSingle, confirmingIds, onRevertSingle, priorSyLabel]);
 
   if (loading) {
     return (

@@ -1,25 +1,38 @@
-# SYSTEM DIRECTIVE: EOSY Revert Mechanism and Dead-End Resolution (v82.0)
+# SYSTEM DIRECTIVE: Comprehensive Full-Stack Historical Ecosystem Freezing (v97.0)
 
-**Context Persona:** Act as a Senior GovTech Enterprise Architect and a Chief Philippine Department of Education (DepEd) High School Registrar. Your standard is high data-density, high-security, offline-first administrative software. You must completely avoid UX trapdoors and ensure users always have a safe retreat path before destructive system actions. Strictly use DepEd terminology. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
+**Context Persona:** Act as a Senior GovTech Enterprise Architect. Your standard is high data-density, high-security, offline-first administrative software. Archiving a school year freezes the entire institutional ecosystem, including personnel, curriculum frameworks, geofencing, and document signatories. Strictly use plain Department of Education (DepEd) terminology. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
 
-**Core Mandate:** The EOSY Updating Complete screen (image_47b67f.jpg) currently functions as a UX trapdoor, offering no way to undo the global lock if a last-minute clerical error is discovered. You must inject a secondary escape hatch to reopen the updating phase, and you must permanently scrub the lingering out-of-scope grading terminology from the page header.
+**Core Mandate:** The system's historical view currently exhibits temporal data leakage, where current active data (signatories, configurations, and statuses) bleeds into archived dashboards. You must implement a systemic temporal lock that freezes not just the student masterlists, but the entire structural framework of the school, ensuring historical form generation, grading logic, and personnel records remain legally accurate to their specific era.
 
-Execute the following three architectural UI/UX upgrades:
+Execute the following six full-stack architectural upgrades:
 
-## 1. Lingering Scope Scrub (Header Subtext)
-The system must not hallucinate grading features in its documentation or UI.
-* **Target Subtext:** "Review submitted grades, verify promotion or retention status..."
-* **New Subtext:** Overwrite this text strictly to read: Review submitted General Averages, verify promotion status, and officially lock records for the End of School Year.
+## 1. Absolute Server-Side Temporal Locking
+UI restrictions are easily bypassed; the database must actively defend its history.
+* Implement a temporal lock at the deepest routing layer.
+* Any unauthorized attempt to alter, delete, or append data to a closed school year must trigger an immediate rejection and a read-only security error.
+* All UI input elements (dropdowns, toggles, text fields) must render as flat, read-only typography across all modules.
 
-## 2. Injecting the Escape Hatch (Secondary Action)
-The Registrar needs a safe, non-destructive way to back out of the rollover screen.
-* Target the area directly below the primary "Transition to New School Year" button.
-* Inject a secondary action button. To ensure visual hierarchy, style this strictly as a subtle outline button or a plain text link (e.g., maroon text with no background fill).
-* Label this secondary button strictly as: Reopen EOSY Updating.
-* Ensure generous clickable padding (minimum 44px) so it is easily accessible but visually subordinate to the main transition button.
+## 2. Institutional Snapshot and System Configuration
+Global settings change over time; history must remember the old settings.
+* When viewing an archived year, the System Configuration module must switch to a read-only snapshot.
+* It must display the exact grading periods, institutional policies, and DepEd Division identifiers that were active during that specific temporal block.
 
-## 3. The Revert State Logic
-Clicking the escape hatch must safely restore the previous administrative environment.
-* When "Reopen EOSY Updating" is clicked, immediately dismiss the green success card.
-* Restore the standard Grade 7, 8, 9, and 10 tabbed data tables.
-* The system state remains "EOSY FINALIZED" for all levels, but the Registrar regains access to the "Unlock Section Roster" workflow (established in v77.0) to pinpoint and unlock the specific section that contains the error.
+## 3. Dynamic Signatories for Official DepEd Forms
+Historical documents require historical signatures for legal compliance.
+* Decouple the official form generation logic (SF1, SF5, SF9, SF10) from the active System Administrator configurations.
+* When printing an archived form, the system must query the frozen Faculty & Staff roster to retrieve the exact School Head, Registrar, and Class Adviser assigned during that specific school year.
+
+## 4. Curriculum and Academic Framework Preservation
+Grading algorithms must remain locked to the era's DepEd mandates.
+* The system must freeze the academic curriculum version (e.g., K-12 vs. MATATAG) active during the archived year.
+* If grading weights, subject names, or promotion criteria change in the current active year, the historical gradebooks must strictly render using the legacy logic to prevent historical grade recalculations.
+
+## 5. Temporal Learner States and Geofencing (Balik-Aral Isolation)
+A learner's past failures or locations must not be overwritten by their future successes.
+* The historical Learner Registry must lock the learner's demographic profile, geofencing coordinates, and enrollment status precisely as it was at the time of closure.
+* If a learner drops out in the archived year but returns to enroll currently as Balik-Aral, the historical database must permanently reflect their status as Dropped Out for accurate year-over-year statistical reporting.
+
+## 6. Faculty Roster Resurrection
+Teachers who resigned or transferred must still exist in the archives.
+* The historical Faculty & Staff masterlist must query employment date ranges.
+* Ensure retired, transferred, or inactive personnel are fully restored to their ACTIVE service status and assigned advisory roles strictly within the isolated context of that historical view.

@@ -22,32 +22,22 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-extrabold">Master Enrollment Dashboard</h1>
         <p className="text-base leading-tight font-extrabold text-foreground">
-          Beginning of School Year (BOSY) • {ayLabel}
+          BOSY Enrollment Active • {ayLabel}
         </p>
       </div>
 
       <Alert
-        style={
-          isEnrollmentOpen
-            ? { backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }
-            : { backgroundColor: "#F1F5F9", borderColor: "#E2E8F0" }
-        }
+        style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}
       >
         <AlertTitle
-          className="font-extrabold"
-          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
+          className="font-extrabold text-blue-900"
         >
-          {isEnrollmentOpen
-            ? "BOSY Enrollment Active"
-            : "BOSY Enrollment Closed"}
+          BOSY Enrollment Active
         </AlertTitle>
         <AlertDescription
-          className="font-extrabold"
-          style={isEnrollmentOpen ? { color: "#1E3A8A" } : { color: "#334155" }}
+          className="font-extrabold text-blue-900"
         >
-          {isEnrollmentOpen
-            ? `Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY ${ayLabel || "2026-2027"}.`
-            : `Regular encoding for SY ${ayLabel || "2026-2027"} is locked. Late enrollments require School Head override. Access restricted to SF1 preparation.`}
+          Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY {ayLabel || "2026-2027"}.
         </AlertDescription>
       </Alert>
 
@@ -106,8 +96,8 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={pendingTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
-                Incoming Grade 7 | Transferees
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
+                Incoming Grade 7 Learners
               </span>
             </div>
             <div className="mt-6 flex items-center justify-between mt-auto pt-4">
@@ -146,7 +136,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={unassignedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
                 Unassigned JHS Learners
               </span>
             </div>
@@ -178,7 +168,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={deficientTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
                 Missing PSA | Missing SF9
               </span>
             </div>

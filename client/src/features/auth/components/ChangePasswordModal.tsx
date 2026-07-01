@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useMemo } from "react";
-import { Navigate } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -237,7 +237,9 @@ export default function ChangePassword() {
   const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
 
-  const isLearner = Boolean(learnerAuth.user);
+  const [searchParams] = useSearchParams();
+  const origin = searchParams.get("origin");
+  const isLearner = origin === "staff" ? false : Boolean(learnerAuth.user);
   const auth = isLearner ? learnerAuth : staffAuth;
 
   const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";

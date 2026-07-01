@@ -1477,11 +1477,29 @@ export async function overrideEosyRecord(
   try {
     const { id } = req.params;
     const recordId = parseInt(String(id), 10);
-    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } = req.body;
+    const {
+      lrn,
+      firstName,
+      lastName,
+      sectionId,
+      finalAverage,
+      eosyStatus,
+      dropOutReason,
+      transferOutDate,
+      latitude,
+      longitude,
+    } = req.body;
 
     const record = await prisma.enrollmentRecord.findUnique({
       where: { id: recordId },
-      include: { section: { include: { schoolYear: true } } },
+      include: {
+        section: { include: { schoolYear: true } },
+        enrollmentApplication: {
+          include: {
+            learner: true,
+          },
+        },
+      },
     });
 
     if (!record) throw new AppError(404, "Enrollment record not found.");
@@ -1492,10 +1510,38 @@ export async function overrideEosyRecord(
       );
     }
 
+    // 1. Update Learner model
+    if (lrn !== undefined || firstName !== undefined || lastName !== undefined) {
+      await prisma.learner.update({
+        where: { id: record.learnerId },
+        data: {
+          lrn: lrn !== undefined ? lrn : undefined,
+          firstName: firstName !== undefined ? firstName : undefined,
+          lastName: lastName !== undefined ? lastName : undefined,
+        },
+      });
+    }
+
+    // 2. Update address coordinates inside reportedGrades JSON
+    if (latitude !== undefined || longitude !== undefined) {
+      const currentGrades = (record.enrollmentApplication.reportedGrades as Record<string, any>) || {};
+      await prisma.enrollmentApplication.update({
+        where: { id: record.enrollmentApplicationId },
+        data: {
+          reportedGrades: {
+            ...currentGrades,
+            geofencing: { latitude, longitude },
+          },
+        },
+      });
+    }
+
+    // 3. Update EnrollmentRecord
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },
       data: {
-        eosyStatus: eosyStatus as EosyStatus,
+        sectionId: sectionId !== undefined ? sectionId : undefined,
+        eosyStatus: eosyStatus !== undefined ? (eosyStatus as EosyStatus) : undefined,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
           eosyStatus === "TRANSFERRED_OUT"
@@ -1510,20 +1556,88 @@ export async function overrideEosyRecord(
       },
     });
 
+    // 4. Log detailed auditing details
+    const auditDetails = [];
+    if (lrn !== undefined && lrn !== record.enrollmentApplication.learner.lrn) auditDetails.push(`LRN: ${record.enrollmentApplication.learner.lrn} -> ${lrn}`);
+    if (firstName !== undefined && firstName !== record.enrollmentApplication.learner.firstName) auditDetails.push(`First Name: ${record.enrollmentApplication.learner.firstName} -> ${firstName}`);
+    if (lastName !== undefined && lastName !== record.enrollmentApplication.learner.lastName) auditDetails.push(`Last Name: ${record.enrollmentApplication.learner.lastName} -> ${lastName}`);
+    if (sectionId !== undefined && sectionId !== record.sectionId) auditDetails.push(`Section ID: ${record.sectionId} -> ${sectionId}`);
+    if (finalAverage !== undefined && finalAverage !== record.finalAverage) auditDetails.push(`Average: ${record.finalAverage} -> ${finalAverage}`);
+    if (eosyStatus !== undefined && eosyStatus !== record.eosyStatus) auditDetails.push(`Status: ${record.eosyStatus} -> ${eosyStatus}`);
+    if (latitude !== undefined || longitude !== undefined) auditDetails.push(`Coords: Lat ${latitude}, Lng ${longitude}`);
+
     await auditLog({
       userId: req.user!.userId,
-      actionType: "EOSY_EMERGENCY_OVERRIDE",
-      description: `Registrar emergency override of EOSY promotion data for Learner ID ${record.learnerId}`,
+      actionType: "HISTORICAL_CORRECTION_COMMITTED",
+      description: `Historical correction for Learner ID ${record.learnerId}. Changes: ${auditDetails.join(", ")}`,
       subjectType: "EnrollmentRecord",
       recordId: record.id,
       oldValue: record.eosyStatus || "PENDING",
-      newValue: eosyStatus,
+      newValue: eosyStatus || record.eosyStatus,
       metadata: {
-        previousFinalAverage: record.finalAverage,
-        newFinalAverage: finalAverage,
-        registrarIp: req.ip
+        changes: auditDetails,
+        registrarIp: req.ip,
       },
       req,
+    });
+
+    // 5. Data Realignment Ripple Effect (Forward Ripple)
+    if (eosyStatus !== undefined && eosyStatus !== record.eosyStatus) {
+      const activeSy = await prisma.schoolYear.findFirst({
+        where: { status: "ACTIVE" },
+      });
+      if (activeSy) {
+        const activeApp = await prisma.enrollmentApplication.findFirst({
+          where: {
+            learnerId: record.learnerId,
+            schoolYearId: activeSy.id,
+          },
+        });
+        if (activeApp) {
+          const histGradeLevel = await prisma.gradeLevel.findUnique({
+            where: { id: record.enrollmentApplication.gradeLevelId },
+          });
+          if (histGradeLevel) {
+            let targetGradeLevelId = histGradeLevel.id;
+            if (eosyStatus === "PROMOTED" || eosyStatus === "CONDITIONALLY_PROMOTED") {
+              const nextGradeLevel = await prisma.gradeLevel.findFirst({
+                where: { displayOrder: { gt: histGradeLevel.displayOrder } },
+                orderBy: { displayOrder: "asc" },
+              });
+              if (nextGradeLevel) {
+                targetGradeLevelId = nextGradeLevel.id;
+              }
+            }
+
+            const activeAppGrades = (activeApp.reportedGrades as Record<string, any>) || {};
+            await prisma.enrollmentApplication.update({
+              where: { id: activeApp.id },
+              data: {
+                gradeLevelId: targetGradeLevelId,
+                status: "VERIFIED",
+                reportedGrades: {
+                  ...activeAppGrades,
+                  sectionReassignmentRequired: true,
+                  reassignmentReason: `Historical promotion status changed to ${eosyStatus}`,
+                },
+              },
+            });
+
+            await prisma.enrollmentRecord.deleteMany({
+              where: {
+                enrollmentApplicationId: activeApp.id,
+                schoolYearId: activeSy.id,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // 6. Broadcast update
+    broadcastEosyUpdate({
+      type: "SECTION_FINALIZED",
+      sectionId: record.sectionId,
     });
 
     res.json({ success: true, record: updated });

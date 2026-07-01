@@ -146,6 +146,15 @@ export async function findStudents(query: {
   const skip = (resolvedPage - 1) * resolvedLimit;
   const orderBy = resolveStudentOrderBy(sortBy, resolvedSortOrder);
 
+  let isArchived = false;
+  if (resolvedSchoolYearId) {
+    const sy = await prisma.schoolYear.findUnique({
+      where: { id: resolvedSchoolYearId },
+      select: { status: true },
+    });
+    isArchived = sy?.status === "ARCHIVED";
+  }
+
   // Define filters for the Learner model
   const learnerWhere: Prisma.LearnerWhereInput = {};
   
@@ -234,6 +243,111 @@ export async function findStudents(query: {
   }
 
   // SCHOOL YEAR SEARCH (Active Enrolled)
+  if (isArchived) {
+    const historyWhere: Prisma.EnrollmentHistoryWhereInput = {
+      schoolYearId: resolvedSchoolYearId,
+      learner: learnerWhere,
+    };
+
+    if (resolvedGradeLevelId) historyWhere.gradeLevelId = resolvedGradeLevelId;
+    if (resolvedSectionId) historyWhere.sectionId = resolvedSectionId;
+    if (resolvedProgramType) historyWhere.section = { programType: resolvedProgramType as any };
+
+    const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
+      (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus as ApplicationStatus),
+    ) ?? false;
+
+    if (shouldExcludeInactiveOutcomes) {
+      historyWhere.OR = [
+        { eosyStatus: null },
+        { eosyStatus: { notIn: [...INACTIVE_OUTCOMES] } },
+      ];
+    }
+
+    if (learnerStatus === "DROPPED,TRANSFERRED_OUT") {
+      historyWhere.eosyStatus = { in: ["DROPPED_OUT", "TRANSFERRED_OUT"] };
+      delete learnerWhere.status;
+      delete historyWhere.OR;
+    } else if (learnerStatus === "DROPPED") {
+      historyWhere.eosyStatus = "DROPPED_OUT";
+      delete learnerWhere.status;
+      delete historyWhere.OR;
+    } else if (learnerStatus === "TRANSFERRED_OUT") {
+      historyWhere.eosyStatus = "TRANSFERRED_OUT";
+      delete learnerWhere.status;
+      delete historyWhere.OR;
+    } else if (learnerStatus === "JHS_COMPLETER") {
+      historyWhere.eosyStatus = "PROMOTED";
+      historyWhere.gradeLevel = { name: "Grade 10" };
+      delete learnerWhere.status;
+      delete historyWhere.OR;
+    }
+
+    if (search) {
+      const s = String(search);
+      const historySearch = {
+        OR: [
+          { learner: { lrn: { contains: s, mode: "insensitive" as const } } },
+          { learner: { firstName: { contains: s, mode: "insensitive" as const } } },
+          { learner: { lastName: { contains: s, mode: "insensitive" as const } } },
+        ],
+      };
+      historyWhere.AND = [{ learner: learnerWhere }, historySearch];
+      delete historyWhere.learner;
+    }
+
+    const total = await prisma.enrollmentHistory.count({ where: historyWhere });
+    const histories = await prisma.enrollmentHistory.findMany({
+      where: historyWhere,
+      include: {
+        learner: {
+          include: {
+            user: { select: { isActive: true } },
+            enrollmentApplications: {
+              where: { schoolYearId: resolvedSchoolYearId },
+              take: 1,
+              orderBy: { createdAt: "desc" },
+              include: {
+                addresses: true,
+                familyMembers: true,
+              },
+            },
+          },
+        },
+        gradeLevel: true,
+        section: { select: { id: true, name: true, programType: true } },
+      },
+      orderBy: sortBy === "lastName" ? { learner: { lastName: resolvedSortOrder } } : { createdAt: "desc" },
+      skip,
+      take: resolvedLimit,
+    });
+
+    const mappedApplications = histories.map((h) => {
+      const app = h.learner.enrollmentApplications?.[0] || {};
+      return {
+        ...app,
+        learner: h.learner,
+        status: h.eosyStatus === "DROPPED_OUT" ? "DROPPED" : h.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "ENROLLED",
+        gradeLevel: h.gradeLevel,
+        enrollmentRecord: {
+          section: h.section,
+          sectionId: h.sectionId,
+          enrolledAt: h.createdAt,
+          eosyStatus: h.eosyStatus,
+        },
+        familyMembers: (app as any).familyMembers || [],
+        addresses: (app as any).addresses || [],
+      } as any;
+    });
+
+    return {
+      applications: mappedApplications,
+      total,
+      page: resolvedPage,
+      limit: resolvedLimit,
+    };
+  }
+
   const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId: resolvedSchoolYearId,
     learner: learnerWhere,
@@ -331,41 +445,91 @@ export async function getStudentsSummary(query: {
   const resolvedStatuses =
     normalizeStatuses(query.status) ?? ACTIVE_STATUS_DEFAULTS;
 
-  const applications = await prisma.enrollmentApplication.findMany({
-    where: {
-      schoolYearId: resolvedSchoolYearId,
-      status:
-        resolvedStatuses.length === 1
-          ? resolvedStatuses[0]
-          : { in: resolvedStatuses },
-    },
-    select: {
-      learnerType: true,
-      learner: {
-        select: {
-          sex: true,
-          is4PsBeneficiary: true,
-          isBalikAral: true,
-        },
-      },
-      gradeLevel: {
-        select: {
-          name: true,
-        },
-      },
+  const sy = await prisma.schoolYear.findUnique({
+    where: { id: resolvedSchoolYearId },
+    select: { status: true },
+  });
+  const isArchived = sy?.status === "ARCHIVED";
 
+  let applications: any[] = [];
+
+  if (isArchived) {
+    const histories = await prisma.enrollmentHistory.findMany({
+      where: {
+        schoolYearId: resolvedSchoolYearId,
+      },
+      select: {
+        eosyStatus: true,
+        learner: {
+          select: {
+            sex: true,
+            is4PsBeneficiary: true,
+            isBalikAral: true,
+            enrollmentApplications: {
+              where: { schoolYearId: resolvedSchoolYearId },
+              take: 1,
+              select: { learnerType: true },
+            },
+          },
+        },
+        gradeLevel: {
+          select: {
+            name: true,
+          },
+        },
+        section: {
+          select: {
+            programType: true,
+          },
+        },
+      },
+    });
+
+    applications = histories.map((h) => ({
+      learnerType: h.learner?.enrollmentApplications?.[0]?.learnerType || "CONTINUING",
+      learner: h.learner,
+      gradeLevel: h.gradeLevel,
       enrollmentRecord: {
-        select: {
-          eosyStatus: true,
-          section: {
-            select: {
-              programType: true,
+        eosyStatus: h.eosyStatus,
+        section: h.section,
+      },
+    }));
+  } else {
+    applications = await prisma.enrollmentApplication.findMany({
+      where: {
+        schoolYearId: resolvedSchoolYearId,
+        status:
+          resolvedStatuses.length === 1
+            ? resolvedStatuses[0]
+            : { in: resolvedStatuses },
+      },
+      select: {
+        learnerType: true,
+        learner: {
+          select: {
+            sex: true,
+            is4PsBeneficiary: true,
+            isBalikAral: true,
+          },
+        },
+        gradeLevel: {
+          select: {
+            name: true,
+          },
+        },
+        enrollmentRecord: {
+          select: {
+            eosyStatus: true,
+            section: {
+              select: {
+                programType: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
+  }
 
   const genderBreakdown = {
     male: 0,
@@ -403,7 +567,7 @@ export async function getStudentsSummary(query: {
     }
 
     const programType =
-      application.enrollmentRecord?.section?.programType ||
+      (application.enrollmentRecord?.section?.programType as ApplicantType) ||
       "REGULAR";
 
     if (programBreakdown[programType] !== undefined) {

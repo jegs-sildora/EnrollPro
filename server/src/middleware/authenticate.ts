@@ -56,6 +56,7 @@ async function performAuth(
   const token = bearerToken ?? cookieToken ?? queryToken;
 
   if (!token) {
+    console.log(`[AuthDebug] No token found in request to ${req.path}. Cookie name: ${cookieName}, cookies:`, req.cookies);
     res.status(401).json({ code: "UNAUTHORIZED", message: "Unauthorized" });
     return;
   }
@@ -64,6 +65,7 @@ async function performAuth(
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
   } catch (err) {
+    console.log(`[AuthDebug] JWT verification failed for request to ${req.path} with token: ${token.substring(0, 15)}... Error:`, err);
     if (err instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         code: "TOKEN_EXPIRED",

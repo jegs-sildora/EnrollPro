@@ -67,9 +67,11 @@ export interface SettingsState {
   viewingSchoolYearLabel: string | null;
   /** Short-lived JWT allowing SYSTEM_ADMIN historical corrections — NOT persisted */
   historicalCorrectionToken: string | null;
+  historicalCorrectionExpiresAt: number | null;
   accentForeground: string | null;
   accentMutedForeground: string | null;
   fontSize: number; // 100 by default (percentage)
+  activeCorrection: { userId: number; userName: string; expiresAt: number; } | null;
   isHydrated: boolean;
   initialized: boolean;
   setSettings: (settings: Partial<SettingsState>) => void;
@@ -78,7 +80,7 @@ export interface SettingsState {
     status?: string | null,
     label?: string | null,
   ) => void;
-  setHistoricalCorrectionToken: (token: string | null) => void;
+  setHistoricalCorrectionToken: (token: string | null, expiresAt?: number | null) => void;
   setFontSize: (size: number) => void;
   setHydrated: () => void;
 }
@@ -121,9 +123,11 @@ export const useSettingsStore = create<SettingsState>()(
       viewingSchoolYearStatus: null,
       viewingSchoolYearLabel: null,
       historicalCorrectionToken: null,
+      historicalCorrectionExpiresAt: null,
       accentForeground: null,
       accentMutedForeground: null,
       fontSize: 100, // percentage
+      activeCorrection: null,
       isHydrated: false,
       initialized: false,
       setSettings: (settings) =>
@@ -134,8 +138,8 @@ export const useSettingsStore = create<SettingsState>()(
           viewingSchoolYearStatus: status ?? null,
           viewingSchoolYearLabel: label ?? null,
         }),
-      setHistoricalCorrectionToken: (token) =>
-        set({ historicalCorrectionToken: token }),
+      setHistoricalCorrectionToken: (token, expiresAt) =>
+        set({ historicalCorrectionToken: token, historicalCorrectionExpiresAt: expiresAt ?? null }),
       setFontSize: (size) => set({ fontSize: size }),
       setHydrated: () => set({ isHydrated: true }),
     }),
@@ -147,7 +151,7 @@ export const useSettingsStore = create<SettingsState>()(
       // historicalCorrectionToken is ephemeral — never persist across page loads
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { historicalCorrectionToken, ...rest } = state;
+        const { historicalCorrectionToken, historicalCorrectionExpiresAt, activeCorrection, ...rest } = state;
         return rest;
       },
     },

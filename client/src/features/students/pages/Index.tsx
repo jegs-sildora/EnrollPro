@@ -319,6 +319,7 @@ export default function Students() {
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [sortBy, setSortBy] = useState<string>("dateEnrolled");
@@ -386,12 +387,14 @@ export default function Students() {
       sortOrder,
     };
 
-    if (activeTab === "active" && ayId) {
+    if (ayId) {
       params.schoolYearId = ayId;
-    } else if (activeTab === "completers") {
+    }
+
+    if (activeTab === "completers") {
       params.learnerStatus = "JHS_COMPLETER";
     } else if (activeTab === "inactive") {
-      params.learnerStatus = "DROPPED,TRANSFERRED_OUT";
+      params.learnerStatus = statusFilter !== "all" ? statusFilter : "DROPPED,TRANSFERRED_OUT";
     }
 
     if (debouncedSearch) params.search = debouncedSearch;
@@ -411,6 +414,7 @@ export default function Students() {
     gradeLevelFilter,
     programFilter,
     sectionFilter,
+    statusFilter,
   ]);
 
   const studentsQuery = useQuery({
@@ -1151,6 +1155,32 @@ export default function Students() {
                 </SelectContent>
               </Select>
 
+              {activeTab === "inactive" && (
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => {
+                    startTransition(() => {
+                      setStatusFilter(value);
+                      setPage(1);
+                    });
+                  }}>
+                  <SelectTrigger className="h-10 w-full leading-tight font-extrabold transition-colors sm:w-48">
+                    <SelectValue placeholder="All Inactive" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="leading-tight font-extrabold">
+                      All Inactive
+                    </SelectItem>
+                    <SelectItem value="DROPPED" className="leading-tight font-extrabold text-red-600">
+                      Dropped Out
+                    </SelectItem>
+                    <SelectItem value="TRANSFERRED_OUT" className="leading-tight font-extrabold text-amber-600">
+                      Transferred Out
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
               {/* Vertical Divider (Hidden on small screens when wrapped) */}
               <div className="hidden xl:block w-px h-6 bg-border mx-1" />
 
@@ -1164,6 +1194,7 @@ export default function Students() {
                     setGradeLevelFilter("all");
                     setProgramFilter("all");
                     setSectionFilter("all");
+                    setStatusFilter("all");
                     setSortBy("dateEnrolled");
                     setSortOrder("desc");
                     setPage(1);
@@ -1254,9 +1285,9 @@ export default function Students() {
                       No learners found for the selected filters.
                     </div>
                   ) : (
-                    students.map((student) => (
+                    students.map((student, index) => (
                       <div
-                        key={student.id}
+                        key={`${student.id}-${index}`}
                         className="rounded-xl border bg-[hsl(var(--card))] p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-3 min-w-0">
@@ -1609,6 +1640,7 @@ export default function Students() {
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <StudentDetailPanel
                 id={retainedStudentId}
+                schoolYearId={ayId}
                 onClose={() => setSelectedStudentId(null)}
                 onRefreshData={refreshTables}
                 onTransferOut={handlePanelTransferOut}
