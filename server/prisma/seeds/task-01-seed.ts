@@ -140,7 +140,7 @@ export const seedDatabase = async () => {
     if (!setting) {
       setting = await prisma.schoolSetting.create({
         data: {
-          schoolName: "DepEd National High School",
+          schoolName: "Hinigaran National High School",
           activeSchoolYearId: sy.id,
           steEnabled: true,
           spaEnabled: true,

@@ -382,10 +382,9 @@ const NavDivider = memo(function NavDivider({ label, badge }: { label: string; b
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-300 ease-in-out group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
       <div className="flex items-center gap-2">
-        <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
+        <span className="text-[0.625rem] font-bold uppercase text-foreground whitespace-nowrap">
           {label}
         </span>
-        {badge}
       </div>
     </div>
   );
@@ -452,7 +451,7 @@ const NavItem = memo(function NavItem({
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
             <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-[9px] font-normal opacity-70 truncate w-full text-left leading-tight">{subtext}</span>}
+            {subtext && <span className="text-[9px] font-normal truncate w-full text-left leading-tight">{subtext}</span>}
           </div>
         </Link>
       </SidebarMenuButton>

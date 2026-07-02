@@ -174,14 +174,14 @@ export function HybridDatePicker({
         placeholder={placeholder}
         maxLength={isFocused ? 10 : 50}
         autoComplete="off"
-        className={cn("font-extrabold text-base pr-10", className)}
+        className={cn("font-extrabold text-base pr-10 disabled:opacity-100 disabled:!text-foreground", className)}
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="ghost"
-            className="absolute right-1 top-1/2 -translate-y-1/2 active:-translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted flex items-center justify-center shrink-0 cursor-pointer text-foreground"
+            className="absolute right-1 top-1/2 -translate-y-1/2 active:-translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted flex items-center justify-center shrink-0 cursor-pointer text-foreground disabled:opacity-100 disabled:!text-foreground"
           >
             <CalendarIcon className="h-4 w-4" />
           </Button>

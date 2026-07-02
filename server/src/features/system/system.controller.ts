@@ -122,9 +122,7 @@ export async function executeSystemRollover(
   next: NextFunction,
 ) {
   try {
-    const schoolSetting = await prisma.schoolSetting.findFirst({
-      select: { activeSchoolYearId: true },
-    });
+    const schoolSetting = await prisma.schoolSetting.findFirst();
 
     if (!schoolSetting?.activeSchoolYearId) {
       throw new AppError(400, "No active school year found.");
@@ -173,6 +171,12 @@ export async function executeSystemRollover(
     const currentRecords = await prisma.enrollmentRecord.findMany({
       where: { schoolYearId: activeSyId },
       include: {
+        enrolledBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
         section: {
           include: {
             advisers: { where: { status: "ACTIVE" }, take: 1 },
@@ -187,6 +191,10 @@ export async function executeSystemRollover(
             hasNoMother: true,
             hasNoFather: true,
             encodedById: true,
+            contactNumber: true,
+            guardianName: true,
+            addresses: true,
+            familyMembers: true,
           },
         },
       },
@@ -211,6 +219,10 @@ export async function executeSystemRollover(
           adviserId: record.section.advisers[0]?.teacherId ?? null,
           genAve: record.finalAverage !== null ? Number(record.finalAverage) : null,
           eosyStatus: record.eosyStatus,
+          learnerProfileSnapshot: record.enrollmentApplication ? {
+            ...JSON.parse(JSON.stringify(record.enrollmentApplication)),
+            enrolledBy: record.enrolledBy
+          } : null,
         }));
         await tx.enrollmentHistory.createMany({
           data: historyData,
@@ -239,10 +251,20 @@ export async function executeSystemRollover(
             },
           });
 
-      // Change old SY to ARCHIVED
+      // Change old SY to ARCHIVED and save settings snapshot
       await tx.schoolYear.update({
         where: { id: activeSyId },
-        data: { status: "ARCHIVED" },
+        data: { 
+          status: "ARCHIVED",
+          settingsSnapshot: {
+            steEnabled: schoolSetting.steEnabled,
+            spaEnabled: schoolSetting.spaEnabled,
+            spsEnabled: schoolSetting.spsEnabled,
+            enableHomogeneousSections: schoolSetting.enableHomogeneousSections,
+            homogeneousSectionCount: schoolSetting.homogeneousSectionCount,
+            heterogeneousRoundRobin: schoolSetting.heterogeneousRoundRobin,
+          }
+        },
       });
 
       // Update System Setting
@@ -311,6 +333,24 @@ export async function executeSystemRollover(
             encodedById: req.user?.userId ?? null,
             academicStatus,
             isRemedialRequired: eosyStatus === "CONDITIONALLY_PROMOTED",
+            contactNumber: record.enrollmentApplication.contactNumber,
+            guardianName: record.enrollmentApplication.guardianName,
+            addresses: record.enrollmentApplication.addresses?.length > 0 ? {
+              createMany: {
+                data: record.enrollmentApplication.addresses.map((a: any) => {
+                  const { id, enrollmentApplicationId, enrollmentId, createdAt, updatedAt, ...rest } = a;
+                  return rest;
+                })
+              }
+            } : undefined,
+            familyMembers: record.enrollmentApplication.familyMembers?.length > 0 ? {
+              createMany: {
+                data: record.enrollmentApplication.familyMembers.map((fm: any) => {
+                  const { id, enrollmentApplicationId, enrollmentId, createdAt, updatedAt, ...rest } = fm;
+                  return rest;
+                })
+              }
+            } : undefined,
           },
         });
 

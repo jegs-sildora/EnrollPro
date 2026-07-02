@@ -532,32 +532,34 @@ export default function Homerooms() {
               canMutate={canMutate}
             />
           ))}
-          <button
-            type="button"
-            onClick={() =>
-              handleOpenCreate(
-                glId,
-                glName,
-                glDisplayOrder,
-                category,
-              )
-            }
-            disabled={!canAddCategory}
-            className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
-            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-              <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
-            </div>
-            <span className="mt-2 text-sm font-extrabold uppercase">
-              Add Section
-            </span>
-            <span className="max-w-xs text-center text-sm font-semibold normal-case">
-              {!canMutate
-                ? "Section changes are unavailable during EOSY closing or in an archived school year."
-                : canAddCategory
-                  ? categoryConfig.addDescription
-                  : "Enable an SCP in System Configuration first."}
-            </span>
-          </button>
+          {(!isHistoricalReadOnly || hasOverride) && (
+            <button
+              type="button"
+              onClick={() =>
+                handleOpenCreate(
+                  glId,
+                  glName,
+                  glDisplayOrder,
+                  category,
+                )
+              }
+              disabled={!canAddCategory}
+              className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
+              </div>
+              <span className="mt-2 text-sm font-extrabold uppercase">
+                Add Section
+              </span>
+              <span className="max-w-xs text-center text-sm font-semibold normal-case">
+                {!canMutate
+                  ? "Section changes are unavailable during EOSY closing."
+                  : canAddCategory
+                    ? categoryConfig.addDescription
+                    : "Enable an SCP in System Configuration first."}
+              </span>
+            </button>
+          )}
         </div>
       </div>
     );

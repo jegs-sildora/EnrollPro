@@ -311,8 +311,13 @@ export default function SchoolYearTab() {
     systemPhase,
     enableHomogeneousSections,
     homogeneousSectionCount,
-    heterogeneousRoundRobin
+    heterogeneousRoundRobin,
+    viewingSchoolYearStatus,
+    systemStatus,
+    viewingSchoolYearId,
   } = useSettingsStore();
+
+  const isArchived = viewingSchoolYearStatus === "ARCHIVED" || systemStatus === "ARCHIVED";
   const [years, setYears] = useState<SYItem[]>([]);
   const [defaults, setDefaults] = useState<Defaults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -484,8 +489,9 @@ export default function SchoolYearTab() {
   }, [editClassEnd, editClassOpening]);
 
   const activeYear = useMemo(() => {
-    if (activeSchoolYearId) {
-      const match = years.find((y) => y.id === activeSchoolYearId);
+    const targetId = viewingSchoolYearId ?? activeSchoolYearId;
+    if (targetId) {
+      const match = years.find((y) => y.id === targetId);
       if (match) return match;
     }
 
@@ -971,7 +977,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <fieldset disabled={isArchived} className="space-y-6 relative pb-24 group">
       <AnimatePresence>
         {isRolloverLoaderOpen && (
           <motion.div
@@ -1141,9 +1147,10 @@ export default function SchoolYearTab() {
                       </div>
                     </div>
                     <RadioGroup
-                      value={selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT"}
+                      value={isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")}
                       onValueChange={(value: string) => setSelectedPhase(value)}
                       className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                      disabled={isArchived}
                     >
                       <Label
                         htmlFor="OFFICIAL_ENROLLMENT"
@@ -1176,6 +1183,7 @@ export default function SchoolYearTab() {
                         <Button
                           onClick={() => setShowPhaseModal(true)}
                           className="w-full sm:w-auto"
+                          disabled={isArchived || selectedPhase === systemPhase || !selectedPhase || isUpdatingPhase}
                         >
                           Apply Phase Change
                         </Button>
@@ -1325,7 +1333,7 @@ export default function SchoolYearTab() {
                         )}
                     </div>
 
-                    {isCalendarChanged && (
+                    {isCalendarChanged && !isArchived && (
                       <div className="mt-6 flex justify-end">
                         <Button
                           onClick={handleSaveCalendarSettings}
@@ -1372,7 +1380,7 @@ export default function SchoolYearTab() {
                     <Switch
                       checked={enableHomogeneousSections}
                       onCheckedChange={(checked) => handleUpdateAlgorithm({ enableHomogeneousSections: checked })}
-                      disabled={updatingAlgorithm}
+                      disabled={updatingAlgorithm || isArchived}
                     />
                   </div>
                   {enableHomogeneousSections && (
@@ -1392,7 +1400,7 @@ export default function SchoolYearTab() {
                             }
                           }}
                           onBlur={() => handleUpdateAlgorithm({ homogeneousSectionCount })}
-                          disabled={updatingAlgorithm}
+                          disabled={updatingAlgorithm || isArchived}
                         />
                       </div>
                     </div>
@@ -1408,7 +1416,7 @@ export default function SchoolYearTab() {
                     <Switch
                       checked={heterogeneousRoundRobin}
                       onCheckedChange={(checked) => handleUpdateAlgorithm({ heterogeneousRoundRobin: checked })}
-                      disabled={updatingAlgorithm}
+                      disabled={updatingAlgorithm || isArchived}
                     />
                   </div>
                 </div>
@@ -1433,33 +1441,32 @@ export default function SchoolYearTab() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-left">School Year</TableHead>
-                      <TableHead className="text-left">
+                      <TableHead className="text-center uppercase font-extrabold">School Year</TableHead>
+                      <TableHead className="text-center uppercase font-extrabold">
                         Beginning of School Year (BOSY)
                       </TableHead>
-                      <TableHead className="text-left">
+                      <TableHead className="text-center uppercase font-extrabold">
                         End of School Year (EOSY)
                       </TableHead>
-                      <TableHead className="text-left">Status</TableHead>
+                      <TableHead className="text-center uppercase font-extrabold">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {archivedYears.map((year) => (
                       <TableRow key={year.id}>
-                        <TableCell className="font-extrabold text-left">
+                        <TableCell className="font-extrabold text-center uppercase font-extrabold">
                           S.Y. {year.yearLabel}
                         </TableCell>
-                        <TableCell className="text-left">
+                        <TableCell className="text-center uppercase font-extrabold">
                           {formatManilaDate(year.classOpeningDate)}
                         </TableCell>
-                        <TableCell className="text-left">
+                        <TableCell className="text-center uppercase font-extrabold">
                           {formatManilaDate(year.classEndDate)}
                         </TableCell>
-                        <TableCell className="text-left">
+                        <TableCell className="text-center uppercase font-extrabold">
                           <Badge
                             variant="outline"
                             className="gap-1 border-slate-300 text-slate-700 bg-slate-100">
-                            <Lock className="h-3 w-3" />
                             Archived
                           </Badge>
                         </TableCell>
@@ -1714,7 +1721,7 @@ export default function SchoolYearTab() {
         variant="primary"
         confirmClassName="bg-primary text-primary-foreground"
         description={
-          <span className="block text-left text-foreground space-y-4">
+          <span className="block text-center uppercase font-extrabold text-foreground space-y-4">
             {selectedPhase === "OFFICIAL_ENROLLMENT" && (
               <>
                 <p>You are about to open the official enrollment portals for School Year {activeYear?.yearLabel || "2026–2027"}.</p>
@@ -1787,7 +1794,7 @@ export default function SchoolYearTab() {
           }
         }}
       />
-    </div>
+    </fieldset>
   );
 }
 

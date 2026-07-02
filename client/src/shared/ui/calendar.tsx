@@ -70,12 +70,12 @@ function Calendar({
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50",
+          "size-(--cell-size) p-0 select-none ",
           defaultClassNames.button_previous,
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50",
+          "size-(--cell-size) p-0 select-none ",
           defaultClassNames.button_next,
         ),
         month_caption: cn(
@@ -138,7 +138,7 @@ function Calendar({
           defaultClassNames.outside,
         ),
         dropdown_year: cn("text-sm font-extrabold px-2 cursor-default"),
-        disabled: cn("text-foreground opacity-50", defaultClassNames.disabled),
+        disabled: cn("text-foreground", defaultClassNames.disabled),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
       }}

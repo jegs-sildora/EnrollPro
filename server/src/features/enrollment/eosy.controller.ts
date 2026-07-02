@@ -1104,38 +1104,76 @@ export async function getGradeRecords(
       throw new AppError(400, "schoolYearId query parameter is required.");
     }
 
-    const records = await prisma.enrollmentRecord.findMany({
-      where: {
-        schoolYearId: parseInt(String(schoolYearId), 10),
-        section: {
-          gradeLevelId: parseInt(String(gradeLevelId), 10),
-        },
-      },
-      include: {
-        section: {
-          select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
-        },
-        enrollmentApplication: {
-          include: {
-            learner: true,
-            gradeLevel: true,
-            previousSchool: true,
-          },
-        },
-      },
-      orderBy: [
-        {
-          enrollmentApplication: {
-            learner: { lastName: "asc" },
-          },
-        },
-        {
-          enrollmentApplication: {
-            learner: { firstName: "asc" },
-          },
-        },
-      ],
+    const syId = parseInt(String(schoolYearId), 10);
+    const glId = parseInt(String(gradeLevelId), 10);
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: syId },
     });
+
+    let records: any[] = [];
+
+    if (schoolYear?.status === "ARCHIVED") {
+      const historyRecords = await prisma.enrollmentHistory.findMany({
+        where: {
+          schoolYearId: syId,
+          gradeLevelId: glId,
+        },
+        include: {
+          section: {
+            select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
+          },
+          learner: true,
+          gradeLevel: true,
+        },
+        orderBy: [
+          { learner: { lastName: "asc" } },
+          { learner: { firstName: "asc" } },
+        ],
+      });
+
+      records = historyRecords.map(h => ({
+        ...h,
+        finalAverage: h.genAve,
+        enrollmentApplication: {
+          learner: h.learner,
+          gradeLevel: h.gradeLevel,
+        }
+      }));
+    } else {
+      records = await prisma.enrollmentRecord.findMany({
+        where: {
+          schoolYearId: syId,
+          section: {
+            gradeLevelId: glId,
+          },
+        },
+        include: {
+          section: {
+            select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
+          },
+          enrollmentApplication: {
+            include: {
+              learner: true,
+              gradeLevel: true,
+              previousSchool: true,
+            },
+          },
+        },
+        orderBy: [
+          {
+            enrollmentApplication: {
+              learner: { lastName: "asc" },
+            },
+          },
+          {
+            enrollmentApplication: {
+              learner: { firstName: "asc" },
+            },
+          },
+        ],
+      });
+    }
 
     const mappedRecords = records.map((record) => {
       const isScp = record.section?.programType && record.section.programType !== "REGULAR";

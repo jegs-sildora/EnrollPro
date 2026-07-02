@@ -260,7 +260,8 @@ export async function listSections(req: Request, res: Response): Promise<void> {
       where,
       include: {
         advisers: {
-          where: { status: SectionAdviserStatus.ACTIVE },
+          where: isArchived ? undefined : { status: SectionAdviserStatus.ACTIVE },
+          orderBy: { createdAt: "desc" },
           include: { teacher: true },
         },
         _count: {
@@ -317,7 +318,8 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           : undefined,
         include: {
           advisers: {
-            where: { status: SectionAdviserStatus.ACTIVE },
+            where: isArchived ? undefined : { status: SectionAdviserStatus.ACTIVE },
+            orderBy: { createdAt: "desc" },
             include: { teacher: true },
           },
           _count: {
@@ -831,6 +833,7 @@ export async function getSectionMasterlist(
         where: activeEnrollmentFilter,
         include: {
           learner: true,
+          adviser: true,
         },
       },
     },
@@ -841,8 +844,10 @@ export async function getSectionMasterlist(
     return;
   }
 
-  const activeAdviser = section.advisers[0]?.teacher ?? null;
   const isArchived = section.schoolYear.status === "ARCHIVED";
+  const activeAdviser = isArchived
+    ? (section.enrollmentHistories.find(h => h.adviser)?.adviser ?? section.advisers[0]?.teacher ?? null)
+    : section.advisers[0]?.teacher ?? null;
   
   const learners = isArchived
     ? section.enrollmentHistories.map((hist) => ({

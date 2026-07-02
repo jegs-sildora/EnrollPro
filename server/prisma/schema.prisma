@@ -124,6 +124,7 @@ model SchoolYear {
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   isEosyFinalized        Boolean                 @default(false) @map("is_eosy_finalized")
   sectioningConfig       Json?                   @map("sectioning_config")
+  settingsSnapshot       Json?                   @map("settings_snapshot")
   bosyLockedAt           DateTime?               @map("bosy_locked_at") @db.Timestamptz(6)
   bosyLockedById         Int?                    @map("bosy_locked_by_id")
   term1End               DateTime?               @map("term1_end") @db.Date
@@ -843,6 +844,7 @@ model EnrollmentHistory {
   adviserId      Int?        @map("adviser_id")
   genAve         Float?      @map("gen_ave")
   eosyStatus     EosyStatus? @map("eosy_status")
+  learnerProfileSnapshot Json? @map("learner_profile_snapshot")
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
   learner        Learner     @relation(fields: [learnerId], references: [id], onDelete: Cascade)

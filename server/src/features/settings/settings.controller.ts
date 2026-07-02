@@ -65,6 +65,14 @@ export async function getPublicSettings(
       expiresAt: lock.expiresAt,
     } : null;
 
+    const effectiveSystemStatus = contextSy?.status ?? activeSy?.status ?? "DRAFT";
+
+    const isContextArchived = effectiveSystemStatus === "ARCHIVED" || contextSy?.status === "ARCHIVED";
+    const snapshotSettings = isContextArchived && contextSy?.settingsSnapshot
+      ? (contextSy.settingsSnapshot as any)
+      : null;
+
+
     res.json({
       schoolName: settings.schoolName,
       depedSchoolId: settings.depedSchoolId,
@@ -76,7 +84,7 @@ export async function getPublicSettings(
       activeSchoolYearLabel: activeSy?.yearLabel ?? null,
       viewingSchoolYearLabel: contextSy?.yearLabel ?? activeSy?.yearLabel ?? null,
       activeSchoolYearStatus: activeSy?.status ?? null,
-      systemStatus: contextSy?.status ?? activeSy?.status ?? "DRAFT",
+      systemStatus: effectiveSystemStatus,
       earlyRegOpenDate: null,
       earlyRegCloseDate: null,
       classOpeningDate: contextSy?.classOpeningDate ?? null,
@@ -90,15 +98,15 @@ export async function getPublicSettings(
       division: settings.division,
       schoolHeadName: settings.schoolHeadName,
       schoolHeadTitle: settings.schoolHeadTitle,
-      steEnabled: settings.steEnabled,
-      spaEnabled: settings.spaEnabled,
-      spsEnabled: settings.spsEnabled,
-      enableHomogeneousSections: settings.enableHomogeneousSections,
-      homogeneousSectionCount: settings.homogeneousSectionCount,
-      heterogeneousRoundRobin: settings.heterogeneousRoundRobin,
+      steEnabled: snapshotSettings?.steEnabled ?? settings.steEnabled,
+      spaEnabled: snapshotSettings?.spaEnabled ?? settings.spaEnabled,
+      spsEnabled: snapshotSettings?.spsEnabled ?? settings.spsEnabled,
+      enableHomogeneousSections: snapshotSettings?.enableHomogeneousSections ?? settings.enableHomogeneousSections,
+      homogeneousSectionCount: snapshotSettings?.homogeneousSectionCount ?? settings.homogeneousSectionCount,
+      heterogeneousRoundRobin: snapshotSettings?.heterogeneousRoundRobin ?? settings.heterogeneousRoundRobin,
       enrollmentPhase,
       isBosyEnrollmentOpen,
-      systemPhase: settings.systemPhase,
+      systemPhase: effectiveSystemStatus === "ARCHIVED" ? "EOSY_CLOSING" : settings.systemPhase,
       globalDefaultPassword: settings.globalDefaultPassword,
       activeCorrection,
     });

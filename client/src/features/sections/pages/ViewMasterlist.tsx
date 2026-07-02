@@ -22,6 +22,8 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { sileo } from "sileo";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { useNavigate } from "react-router";
 
 import {
   Select,
@@ -93,6 +95,8 @@ export default function ViewMasterlist() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
+  const isHistoricalReadOnly = useHistoricalReadOnly();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -112,6 +116,12 @@ export default function ViewMasterlist() {
         api.get<MasterlistResponse>(`/sections/${sectionId}/masterlist`),
         api.get<SectionTeachersResponse>(`/sections/teachers?schoolYearId=${ayId}`)
       ]);
+      
+      if (masterlistRes.data.section.schoolYearId !== ayId) {
+        navigate("/sections", { replace: true });
+        return;
+      }
+
       setSection(masterlistRes.data.section);
       setMasterlist(masterlistRes.data.learners);
       setTeachers(teachersRes.data.teachers);
@@ -330,31 +340,33 @@ export default function ViewMasterlist() {
             </CardTitle>
           </div>
           <div className="flex items-center gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-block">
-                    <Button
-                      variant="default"
-                      disabled={loading || (masterlist.length >= (section?.maxCapacity || 0))}
-                      onClick={() => setShowDrawer(true)}
-                      className="h-9 font-extrabold text-sm bg-primary text-primary-foreground border-none"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Add Learner to Masterlist
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {(masterlist.length >= (section?.maxCapacity || 0)) && (
-                  <TooltipContent className="bg-slate-900 text-white border-none text-sm font-extrabold p-3 shadow-xl">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-400" />
-                      Maximum capacity reached.
-                    </div>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            {!isHistoricalReadOnly && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button
+                        variant="default"
+                        disabled={loading || (masterlist.length >= (section?.maxCapacity || 0))}
+                        onClick={() => setShowDrawer(true)}
+                        className="h-9 font-extrabold text-sm bg-primary text-primary-foreground border-none"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Learner to Masterlist
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {(masterlist.length >= (section?.maxCapacity || 0)) && (
+                    <TooltipContent className="bg-slate-900 text-white border-none text-sm font-extrabold p-3 shadow-xl">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-400" />
+                        Maximum capacity reached.
+                      </div>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )}
 
             <Button
               variant="outline"

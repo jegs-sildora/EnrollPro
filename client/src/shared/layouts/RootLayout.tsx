@@ -45,18 +45,19 @@ function contrastForeground(hsl: string): string {
 }
 
 export default function RootLayout({ children }: { children?: ReactNode }) {
-  const { colorScheme, selectedAccentHsl, logoUrl, setSettings, initialized, isHydrated } =
+  const { colorScheme, selectedAccentHsl, logoUrl, setSettings, initialized, isHydrated, viewingSchoolYearId, activeSchoolYearId } =
     useSettingsStore();
 
   // Dynamically update document.title on every route change
   usePageTitle();
 
   const publicSettingsQuery = useQuery({
-    queryKey: queryKeys.publicSettings,
+    queryKey: [...queryKeys.publicSettings, viewingSchoolYearId ?? activeSchoolYearId],
     queryFn: async () => {
       const res = await api.get("/settings/public", { timeout: 10000 });
       return res.data;
     },
+    enabled: isHydrated,
   });
 
   useEffect(() => {
@@ -84,6 +85,12 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         depedEmail: data.depedEmail,
         schoolWebsite: data.schoolWebsite,
         isBosyEnrollmentOpen: Boolean(data.isBosyEnrollmentOpen),
+        steEnabled: data.steEnabled,
+        spaEnabled: data.spaEnabled,
+        spsEnabled: data.spsEnabled,
+        enableHomogeneousSections: data.enableHomogeneousSections,
+        homogeneousSectionCount: data.homogeneousSectionCount,
+        heterogeneousRoundRobin: data.heterogeneousRoundRobin,
       });
       return;
     }

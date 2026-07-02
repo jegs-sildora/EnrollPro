@@ -721,7 +721,7 @@ export default function EosyUpdating() {
 
   const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
 
-  const shouldShowSuccessCard = (isAllFinalized || isSchoolYearFinalized || isEosyArchivedState) && !dismissSuccessCard;
+  const shouldShowSuccessCard = !isEosyArchivedState && (isAllFinalized || isSchoolYearFinalized) && !dismissSuccessCard;
 
   const handleTransitionSubmit = async () => {
     setTransitionLoading(true);
@@ -754,7 +754,7 @@ export default function EosyUpdating() {
     }
   }, [isAllFinalized]);
 
-  const activeGradeName = gradeLevels.find(g => String(g.id) === activeTab)?.name || "Grade Level";
+  const activeGradeName = gradeLevels.find((g) => String(g.id) === activeTab)?.name || "Grade Level";
 
   const sectionOptions = useMemo(() => {
     const sectionsSet = new Set<string>();
@@ -1474,7 +1474,7 @@ export default function EosyUpdating() {
                           </Button>
                         )}
 
-                        {isScopeFinalized && sectionFilter !== "ALL" && !isSchoolYearFinalized && (
+                        {isScopeFinalized && sectionFilter !== "ALL" && !isSchoolYearFinalized && !isHistoricalReadOnly && (
                           <Button
                             onClick={() => setUnlockModalOpen(true)}
                             disabled={unlockLoading}
@@ -1504,7 +1504,7 @@ export default function EosyUpdating() {
                           containerHeight="100%"
                           rowSelection={rowSelection}
                           onRowSelectionChange={setRowSelection}
-                          getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "opacity-50 pointer-events-none hover:bg-transparent" : ""}
+                          getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
                         />
                       </div>
                     )}
