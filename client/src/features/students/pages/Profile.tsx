@@ -328,14 +328,14 @@ export default function StudentProfile() {
           setSearchParams(next, { replace: true });
         }}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border border-border relative rounded-lg">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="personal"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "personal" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -346,11 +346,11 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="academic"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "academic" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -361,11 +361,11 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="application"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "application" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -376,11 +376,11 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="classifications"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "classifications" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -391,11 +391,11 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="health"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "health" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -406,11 +406,11 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="documents"
-            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
             {activeTab === "documents" && (
               <motion.div
                 layoutId="profile-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -423,11 +423,11 @@ export default function StudentProfile() {
             student?.gradeLevel?.name.includes("10")) && (
               <TabsTrigger
                 value="sf10"
-                className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
                 {activeTab === "sf10" && (
                   <motion.div
                     layoutId="profile-active-pill"
-                    className="absolute inset-0 bg-primary rounded-md"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
@@ -440,11 +440,11 @@ export default function StudentProfile() {
           {canViewRecordHistory && (
             <TabsTrigger
               value="record-history"
-              className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
               {activeTab === "record-history" && (
                 <motion.div
                   layoutId="profile-active-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
+                  className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
@@ -463,7 +463,7 @@ export default function StudentProfile() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="mt-6">
+            className="mt-4">
             <TabsContent
               value="personal"
               className="m-0 focus-visible:outline-none ring-0">

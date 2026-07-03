@@ -435,26 +435,26 @@ export default function ReadingAssessmentPage() {
         }}
         className="w-full"
       >
-        <TabsList className="w-full flex h-auto gap-1 p-1 bg-white border border-border relative">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           {INTAKE_TABS.map((tab) => (
             <TabsTrigger
               key={tab.key}
               value={tab.key}
-              className="flex-1 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              className="flex-1 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
             >
               {activeTab === tab.key && (
                 <motion.div
                   layoutId="adviser-active-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
+                  className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className="relative z-20 inline-flex items-center gap-2 text-base sm:text-base leading-tight">
+              <span className={cn("relative z-20 inline-flex items-center gap-2 text-base leading-tight uppercase", activeTab === tab.key ? "text-primary-foreground" : "text-foreground")}>
                 {tab.label}
                 {tab.count > 0 && (
                   <Badge
                     variant={activeTab === tab.key ? "secondary" : "outline"}
-                    className="h-5 px-1.5 text-base font-extrabold"
+                    className="h-5 px-1.5 text-base font-extrabold border-0"
                   >
                     {tab.count}
                   </Badge>
@@ -465,75 +465,99 @@ export default function ReadingAssessmentPage() {
         </TabsList>
 
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="mt-3"
-          >
-            <TabsContent value="pending" className="mt-0 outline-none data-[state=inactive]:hidden">
-              <QueueCard
-                items={pendingPhilIriItems}
-                loading={isLoading}
-                isSearching={isSearching}
-                searchInput={searchInput}
-                onSearchChange={setSearchInput}
-                onSearchFocus={() => setIsSearchFocused(true)}
-                onSearchBlur={() => setIsSearchFocused(false)}
-                onTableHoverChange={setIsTableHovered}
-                onSelect={handleSelect}
-                emptyTitle="All Phil-IRI Assessments Complete"
-                emptyDescription={
-                  search
-                    ? "No learners match your search."
-                    : "All learners in your queue have been assessed."
-                }
-              />
-            </TabsContent>
+          {activeTab === "pending" && (
+            <motion.div
+              key="pending"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="mt-3 w-full"
+            >
+              <TabsContent value="pending" forceMount className="mt-0 focus-visible:outline-none ring-0">
+                <QueueCard
+                  items={pendingPhilIriItems}
+                  loading={isLoading}
+                  isSearching={isSearching}
+                  searchInput={searchInput}
+                  onSearchChange={setSearchInput}
+                  onSearchFocus={() => setIsSearchFocused(true)}
+                  onSearchBlur={() => setIsSearchFocused(false)}
+                  onTableHoverChange={setIsTableHovered}
+                  onSelect={handleSelect}
+                  emptyTitle="All Phil-IRI Assessments Complete"
+                  emptyDescription={
+                    search
+                      ? "No learners match your search."
+                      : "All learners in your queue have been assessed."
+                  }
+                />
+              </TabsContent>
+            </motion.div>
+          )}
 
-            <TabsContent value="ready" className="mt-0 outline-none data-[state=inactive]:hidden">
-              <QueueCard
-                items={readyToConfirmItems}
-                loading={isLoading}
-                isSearching={isSearching}
-                searchInput={searchInput}
-                onSearchChange={setSearchInput}
-                onSearchFocus={() => setIsSearchFocused(true)}
-                onSearchBlur={() => setIsSearchFocused(false)}
-                onTableHoverChange={setIsTableHovered}
-                onSelect={handleSelect}
-                emptyTitle={pendingPhilIriItems.length > 0 ? "No Learners Ready Yet" : "All Done!"}
-                emptyDescription={
-                  pendingPhilIriItems.length > 0
-                    ? "Complete Phil-IRI assessments first."
-                    : "All learners have been confirmed for this school year."
-                }
-              />
-            </TabsContent>
+          {activeTab === "ready" && (
+            <motion.div
+              key="ready"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="mt-3 w-full"
+            >
+              <TabsContent value="ready" forceMount className="mt-0 focus-visible:outline-none ring-0">
+                <QueueCard
+                  items={readyToConfirmItems}
+                  loading={isLoading}
+                  isSearching={isSearching}
+                  searchInput={searchInput}
+                  onSearchChange={setSearchInput}
+                  onSearchFocus={() => setIsSearchFocused(true)}
+                  onSearchBlur={() => setIsSearchFocused(false)}
+                  onTableHoverChange={setIsTableHovered}
+                  onSelect={handleSelect}
+                  emptyTitle={pendingPhilIriItems.length > 0 ? "No Learners Ready Yet" : "All Done!"}
+                  emptyDescription={
+                    pendingPhilIriItems.length > 0
+                      ? "Complete Phil-IRI assessments first."
+                      : "All learners have been confirmed for this school year."
+                  }
+                />
+              </TabsContent>
+            </motion.div>
+          )}
 
-            <TabsContent value="continuing" className="mt-0 outline-none data-[state=inactive]:hidden">
-              <ContinuingQueueCard
-                items={continuingItems}
-                loading={isContinuingLoading}
-                isSearching={isContinuingSearching}
-                searchInput={continuingSearchInput}
-                onSearchChange={setContinuingSearchInput}
-                onSearchFocus={() => setIsSearchFocused(true)}
-                onSearchBlur={() => setIsSearchFocused(false)}
-                onTableHoverChange={setIsTableHovered}
-                confirmingIds={confirmingIds}
-                onConfirm={handleConfirmContinuing}
-                emptyTitle="No Continuing Learners"
-                emptyDescription={
-                  search
-                    ? "No continuing learners match your search."
-                    : "There are no continuing learners in your advisory queue."
-                }
-              />
-            </TabsContent>
-          </motion.div>
+          {activeTab === "continuing" && (
+            <motion.div
+              key="continuing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="mt-3 w-full"
+            >
+              <TabsContent value="continuing" forceMount className="mt-0 focus-visible:outline-none ring-0">
+                <ContinuingQueueCard
+                  items={continuingItems}
+                  loading={isContinuingLoading}
+                  isSearching={isContinuingSearching}
+                  searchInput={continuingSearchInput}
+                  onSearchChange={setContinuingSearchInput}
+                  onSearchFocus={() => setIsSearchFocused(true)}
+                  onSearchBlur={() => setIsSearchFocused(false)}
+                  onTableHoverChange={setIsTableHovered}
+                  confirmingIds={confirmingIds}
+                  onConfirm={handleConfirmContinuing}
+                  emptyTitle="No Continuing Learners"
+                  emptyDescription={
+                    search
+                      ? "No continuing learners match your search."
+                      : "There are no continuing learners in your advisory queue."
+                  }
+                />
+              </TabsContent>
+            </motion.div>
+          )}
         </AnimatePresence>
       </Tabs>
 

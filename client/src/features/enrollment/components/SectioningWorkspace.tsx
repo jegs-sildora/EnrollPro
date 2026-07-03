@@ -326,21 +326,21 @@ export function SectioningWorkspace() {
       <Tabs value={activeGradeLevelId} onValueChange={(val) => {
         if (!isLockedIn) setActiveGradeLevelId(val);
       }} className="flex-shrink-0 mb-6">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 bg-white border-border relative">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger
               key={g.id}
               value={String(g.id)}
               disabled={isLockedIn && activeGradeLevelId !== String(g.id)}
               className={cn(
-                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg",
                 isLockedIn && activeGradeLevelId !== String(g.id) && "opacity-40 cursor-not-allowed bg-muted/20"
               )}
             >
               {activeGradeLevelId === String(g.id) && (
                 <motion.div
                   layoutId="enrollment-grade-pill"
-                  className="absolute inset-0 bg-primary rounded-md"
+                  className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}

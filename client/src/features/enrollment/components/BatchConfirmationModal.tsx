@@ -22,6 +22,7 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { AnimatePresence } from "motion/react";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { cn } from "@/shared/lib/utils";
@@ -289,20 +290,20 @@ export function BatchConfirmationModal({
           className="w-full">
           {/* Animated System Tabs */}
           <div className="px-8 pt-6 bg-background">
-            <TabsList className="bg-muted/50 h-auto p-1.5 gap-1.5 justify-start border border-border/60 relative rounded-xl w-full sm:w-auto">
+            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
               <TabsTrigger
                 value="scan"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-extrabold uppercase text-base  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-extrabold uppercase text-base relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all rounded-lg">
                 {activeTab === "scan" && (
                   <motion.div
                     layoutId="batch-tab-pill"
-                    className="absolute inset-0 bg-primary rounded-lg shadow-md"
+                    className="absolute inset-0 bg-primary rounded-lg shadow-sm"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
                 <span
                   className={cn(
-                    "relative z-20 flex items-center gap-2 transition-colors duration-200",
+                    "relative z-20 flex items-center gap-2 transition-colors duration-200 uppercase",
                     activeTab === "scan"
                       ? "text-primary-foreground"
                       : "text-foreground hover:text-foreground",
@@ -312,17 +313,17 @@ export function BatchConfirmationModal({
               </TabsTrigger>
               <TabsTrigger
                 value="csv"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-extrabold uppercase text-base  relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-extrabold uppercase text-base relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all rounded-lg">
                 {activeTab === "csv" && (
                   <motion.div
                     layoutId="batch-tab-pill"
-                    className="absolute inset-0 bg-primary rounded-lg shadow-md"
+                    className="absolute inset-0 bg-primary rounded-lg shadow-sm"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
                 <span
                   className={cn(
-                    "relative z-20 flex items-center gap-2 transition-colors duration-200",
+                    "relative z-20 flex items-center gap-2 transition-colors duration-200 uppercase",
                     activeTab === "csv"
                       ? "text-primary-foreground"
                       : "text-foreground hover:text-foreground",
@@ -334,69 +335,92 @@ export function BatchConfirmationModal({
           </div>
 
           <div className="p-8 pt-6 space-y-6">
-            <TabsContent
-              value="scan"
-              className="m-0 space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-extrabold uppercase  text-foreground flex justify-between items-center ml-1">
-                  <span>1. Scan or Type LRN & Hit Enter</span>
-                  {loading && (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-[9px]">Querying LIS...</span>
+            <AnimatePresence mode="wait">
+              {activeTab === "scan" && (
+                <motion.div
+                  key="scan"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full">
+                  <TabsContent
+                    value="scan"
+                    forceMount
+                    className="m-0 space-y-6 mt-0 focus-visible:outline-none ring-0">
+                    <div className="space-y-3">
+                      <Label className="text-base font-extrabold uppercase  text-foreground flex justify-between items-center ml-1">
+                        <span>1. Scan or Type LRN & Hit Enter</span>
+                        {loading && (
+                          <div className="flex items-center gap-2 text-primary animate-pulse">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span className="text-[9px]">Querying LIS...</span>
+                          </div>
+                        )}
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-foreground group-focus-within:text-primary transition-colors">
+                          <Search className="h-6 w-6" />
+                        </div>
+                        <Input
+                          ref={scanInputRef}
+                          value={lrnInput}
+                          onChange={(e) =>
+                            setLrnInput(
+                              e.target.value.replace(/\D/g, "").slice(0, 12),
+                            )
+                          }
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleLrnLookup(lrnInput)
+                          }
+                          placeholder="12-DIGIT LRN"
+                          className="h-20 pl-16 text-4xl font-extrabold  border-2 border-border focus-visible:ring-primary/20 focus-visible:border-primary bg-muted/10 shadow-inner rounded-2xl"
+                        />
+                      </div>
                     </div>
-                  )}
-                </Label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-foreground group-focus-within:text-primary transition-colors">
-                    <Search className="h-6 w-6" />
-                  </div>
-                  <Input
-                    ref={scanInputRef}
-                    value={lrnInput}
-                    onChange={(e) =>
-                      setLrnInput(
-                        e.target.value.replace(/\D/g, "").slice(0, 12),
-                      )
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleLrnLookup(lrnInput)
-                    }
-                    placeholder="12-DIGIT LRN"
-                    className="h-20 pl-16 text-4xl font-extrabold  border-2 border-border focus-visible:ring-primary/20 focus-visible:border-primary bg-muted/10 shadow-inner rounded-2xl"
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent
-              value="csv"
-              className="m-0">
-              <div className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 bg-muted/5 hover:bg-muted/10 transition-all cursor-pointer relative group">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCsvUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
-                />
-                <div className="p-5 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform duration-300">
-                  <Upload className="h-10 w-10" />
-                </div>
-                <div className="space-y-1">
-                  <p className="font-extrabold uppercase  text-xl text-foreground">
-                    Drop CSV Enrollment List
-                  </p>
-                  <p className="text-base font-extrabold text-foreground uppercase ">
-                    Required: LRN, GUARDIAN, CONTACT, CONSENT
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="font-extrabold uppercase text-base  px-8 shadow-sm">
-                  Browse Files
-                </Button>
-              </div>
-            </TabsContent>
+                  </TabsContent>
+                </motion.div>
+              )}
+              {activeTab === "csv" && (
+                <motion.div
+                  key="csv"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full">
+                  <TabsContent
+                    value="csv"
+                    forceMount
+                    className="m-0 mt-0 focus-visible:outline-none ring-0">
+                    <div className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 bg-muted/5 hover:bg-muted/10 transition-all cursor-pointer relative group">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCsvUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                      />
+                      <div className="p-5 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform duration-300">
+                        <Upload className="h-10 w-10" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-extrabold uppercase  text-xl text-foreground">
+                          Drop CSV Enrollment List
+                        </p>
+                        <p className="text-base font-extrabold text-foreground uppercase ">
+                          Required: LRN, GUARDIAN, CONTACT, CONSENT
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="font-extrabold uppercase text-base  px-8 shadow-sm">
+                        Browse Files
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Staging Queue Table (SF1 Style) */}
             <div className="space-y-4 mt-6">

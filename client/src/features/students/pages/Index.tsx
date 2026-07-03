@@ -1579,7 +1579,7 @@ export default function Students() {
         value={activeTab}
         onValueChange={handleTabChange}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-6 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="active"
             className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">

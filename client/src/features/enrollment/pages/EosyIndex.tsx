@@ -1256,50 +1256,49 @@ export default function EosyUpdating() {
         <PhaseBanner />
 
 
-        {/* ── Top Header ── */}
-        <div className="flex items-center justify-between pb-6 flex-shrink-0">
 
-          {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
-            <Button
-              onClick={() => {
-                if (isSchoolYearFinalized) {
-                  window.location.href = "/settings";
-                } else {
-                  setTransitionModalOpen(true);
-                }
-              }}
-              size="lg"
-              className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto"
-            >
-              Transition to New School Year
-            </Button>
-          )}
-        </div>
-
-
+        {/* ── Grade Tabs + Transition Button Row ── */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
-          <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative flex-shrink-0">
-            {gradeLevels.map((gl) => (
-              <TabsTrigger
-                key={gl.id}
-                value={String(gl.id)}
-                className={cn(
-                  "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                )}
+          <div className="flex items-center gap-4 mb-4 flex-shrink-0">
+            <TabsList className="flex-1 flex flex-wrap sm:flex-nowrap h-auto gap-1 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+              {gradeLevels.map((gl) => (
+                <TabsTrigger
+                  key={gl.id}
+                  value={String(gl.id)}
+                  className={cn(
+                    "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+                  )}
+                >
+                  {activeTab === String(gl.id) && (
+                    <motion.div
+                      layoutId="enrollment-eosy-grade-pill"
+                      className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                    {gl.name.replace(/grade\s*/i, "Grade ")}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
+              <Button
+                onClick={() => {
+                  if (isSchoolYearFinalized) {
+                    window.location.href = "/settings";
+                  } else {
+                    setTransitionModalOpen(true);
+                  }
+                }}
+                size="lg"
+                className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
               >
-                {activeTab === String(gl.id) && (
-                  <motion.div
-                    layoutId="enrollment-eosy-grade-pill"
-                    className="absolute inset-0 bg-primary rounded-md"
-                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                  />
-                )}
-                <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
-                  {gl.name.replace(/grade\s*/i, "Grade ")}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                Transition to New School Year
+              </Button>
+            )}
+          </div>
 
           <AnimatePresence mode="wait">
             <motion.div

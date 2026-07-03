@@ -28,15 +28,15 @@ export default function EnrollmentManagement() {
       <PhaseBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="verification"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
           >
             {activeTab === "verification" && (
               <motion.div
                 layoutId="enrollment-main-tab-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -46,12 +46,12 @@ export default function EnrollmentManagement() {
           </TabsTrigger>
           <TabsTrigger
             value="sectioning"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
           >
             {activeTab === "sectioning" && (
               <motion.div
                 layoutId="enrollment-main-tab-pill"
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
@@ -62,22 +62,35 @@ export default function EnrollmentManagement() {
         </TabsList>
 
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex-1 w-full h-full min-h-0"
-          >
-            <TabsContent value="verification" className="h-full m-0 data-[state=inactive]:hidden outline-none">
-              <VerificationWorkspace />
-            </TabsContent>
+          {activeTab === "verification" && (
+            <motion.div
+              key="verification"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 w-full h-full min-h-0"
+            >
+              <TabsContent value="verification" forceMount className="h-full m-0 mt-0 focus-visible:outline-none ring-0">
+                <VerificationWorkspace />
+              </TabsContent>
+            </motion.div>
+          )}
 
-            <TabsContent value="sectioning" className="h-full m-0 data-[state=inactive]:hidden outline-none">
-              <SectioningWorkspace />
-            </TabsContent>
-          </motion.div>
+          {activeTab === "sectioning" && (
+            <motion.div
+              key="sectioning"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 w-full h-full min-h-0"
+            >
+              <TabsContent value="sectioning" forceMount className="h-full m-0 mt-0 focus-visible:outline-none ring-0">
+                <SectioningWorkspace />
+              </TabsContent>
+            </motion.div>
+          )}
         </AnimatePresence>
       </Tabs>
     </div>

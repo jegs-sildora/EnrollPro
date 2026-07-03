@@ -25,7 +25,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { cn } from "@/shared/lib/utils";
 
 interface PhaseDataRow {
   feature: string;
@@ -51,6 +53,7 @@ interface SpecialDataRow {
 
 export default function DocumentaryRequirements() {
   usePageTitle();
+  const [activeTab, setActiveTab] = useState("jhs");
 
   const phaseColumns = useMemo<ColumnDef<PhaseDataRow>[]>(
     () => [
@@ -417,32 +420,82 @@ export default function DocumentaryRequirements() {
         </CardHeader>
         <CardContent>
           <Tabs
-            defaultValue="jhs"
+            value={activeTab}
+            onValueChange={setActiveTab}
             className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="jhs">Junior High (7-10)</TabsTrigger>
-              <TabsTrigger value="special">Special Categories</TabsTrigger>
+            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+              <TabsTrigger
+                value="jhs"
+                className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+                {activeTab === "jhs" && (
+                  <motion.div
+                    layoutId="doc-req-tab-pill"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span className={cn("relative z-20 uppercase", activeTab === "jhs" ? "text-primary-foreground" : "text-foreground")}>
+                  Junior High (7-10)
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="special"
+                className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+                {activeTab === "special" && (
+                  <motion.div
+                    layoutId="doc-req-tab-pill"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span className={cn("relative z-20 uppercase", activeTab === "special" ? "text-primary-foreground" : "text-foreground")}>
+                  Special Categories
+                </span>
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent
-              value="jhs"
-              className="space-y-4">
-              <DataTable
-                columns={jhsColumns}
-                data={jhsData}
-                className="rounded-md border overflow-hidden"
-              />
-            </TabsContent>
-
-            <TabsContent
-              value="special"
-              className="space-y-4">
-              <DataTable
-                columns={specialColumns}
-                data={specialData}
-                className="rounded-md border overflow-hidden"
-              />
-            </TabsContent>
+            <AnimatePresence mode="wait">
+              {activeTab === "jhs" && (
+                <motion.div
+                  key="jhs"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full">
+                  <TabsContent
+                    value="jhs"
+                    forceMount
+                    className="space-y-4 mt-0 focus-visible:outline-none ring-0">
+                    <DataTable
+                      columns={jhsColumns}
+                      data={jhsData}
+                      className="rounded-md border overflow-hidden"
+                    />
+                  </TabsContent>
+                </motion.div>
+              )}
+              {activeTab === "special" && (
+                <motion.div
+                  key="special"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full">
+                  <TabsContent
+                    value="special"
+                    forceMount
+                    className="space-y-4 mt-0 focus-visible:outline-none ring-0">
+                    <DataTable
+                      columns={specialColumns}
+                      data={specialData}
+                      className="rounded-md border overflow-hidden"
+                    />
+                  </TabsContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Tabs>
         </CardContent>
       </Card>

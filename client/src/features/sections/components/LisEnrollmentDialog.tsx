@@ -24,6 +24,8 @@ import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { format } from "date-fns";
+import { motion } from "motion/react";
+import { cn } from "@/shared/lib/utils";
 
 interface ProspectiveEnrolee {
   id: number;
@@ -292,18 +294,36 @@ export function LisEnrollmentDialog({
         {/* Tabs & Content */}
         <Tabs defaultValue="prospective" onValueChange={setActiveTab} className="w-full">
           <div className="px-6 pt-2 bg-slate-50/50 border-b border-slate-100">
-            <TabsList className="bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-2 p-1 bg-white border border-border rounded-xl relative shadow-sm">
               <TabsTrigger
                 value="prospective"
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-extrabold text-base uppercase px-4"
+                className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg text-base uppercase px-4"
               >
-                Prospective List
+                {activeTab === "prospective" && (
+                  <motion.div
+                    layoutId="lis-enroll-tab-pill"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span className={cn("relative z-20", activeTab === "prospective" ? "text-primary-foreground" : "text-foreground")}>
+                  Prospective List
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="search"
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-extrabold text-base uppercase px-4"
+                className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg text-base uppercase px-4"
               >
-                Search & Enrol Transferees
+                {activeTab === "search" && (
+                  <motion.div
+                    layoutId="lis-enroll-tab-pill"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <span className={cn("relative z-20", activeTab === "search" ? "text-primary-foreground" : "text-foreground")}>
+                  Search & Enrol Transferees
+                </span>
               </TabsTrigger>
             </TabsList>
           </div>

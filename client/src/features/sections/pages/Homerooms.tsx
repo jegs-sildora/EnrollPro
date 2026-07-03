@@ -1158,22 +1158,22 @@ export default function Homerooms() {
           value={activeGradeId}
           onValueChange={setActiveGradeId}
           className="w-full">
-          <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border border-border rounded-lg relative">
+          <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
             {groups.map((g) => (
               <TabsTrigger
                 key={g.gradeLevelId}
                 value={String(g.gradeLevelId)}
-                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
                 {activeGradeId === String(g.gradeLevelId) && (
                   <motion.div
                     layoutId="grade-active-pill"
-                    className="absolute inset-0 bg-primary rounded-md"
+                    className="absolute inset-0 bg-primary shadow-sm rounded-lg"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
                 <span
                   className={cn(
-                    "relative z-20 uppercase  text-base",
+                    "relative z-20 uppercase text-base",
                     activeGradeId === String(g.gradeLevelId)
                       ? "text-primary-foreground"
                       : "text-foreground",
