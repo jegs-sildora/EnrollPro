@@ -628,18 +628,7 @@ export async function unlockSchoolYearEosy(
       ? parseInt(String(schoolYearId))
       : null;
 
-    const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
-    if (pin !== adminPin) {
-      throw new AppError(403, "Invalid Security PIN for emergency unlock.");
-    }
-
-    if (!justification || String(justification).trim().length < 10) {
-      throw new AppError(
-        400,
-        "A valid justification (min 10 characters) is required for emergency archive unlock.",
-      );
-    }
-
+    // Security PIN and justification removed per request.
     // Always target the latest archived/finalized school year for emergency unlock.
     // This prevents stale client state from unlocking an older school year.
     const schoolYear = await prisma.schoolYear.findFirst({
@@ -1489,6 +1478,77 @@ export async function finalizeGradeLevel(
     next(error);
   }
 }
+
+export async function unlockGradeLevelEosy(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { gradeLevelId } = req.params;
+    const { schoolYearId } = req.body;
+
+    const syId = parseInt(String(schoolYearId), 10);
+    const glId = parseInt(String(gradeLevelId), 10);
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: syId },
+    });
+
+    if (!schoolYear) throw new AppError(404, "School year not found.");
+    if (schoolYear.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Cannot unlock grade level. School year EOSY is already finalized globally.",
+      );
+    }
+
+    const gradeLevel = await prisma.gradeLevel.findUnique({
+      where: { id: glId },
+    });
+    if (!gradeLevel) throw new AppError(404, "Grade level not found.");
+
+    const sections = await prisma.section.findMany({
+      where: {
+        schoolYearId: syId,
+        gradeLevelId: glId,
+      },
+    });
+
+    if (sections.length === 0) {
+      throw new AppError(
+        422,
+        "No sections found for this grade level in the active school year.",
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.section.updateMany({
+        where: {
+          schoolYearId: syId,
+          gradeLevelId: glId,
+        },
+        data: { isEosyFinalized: false },
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "EOSY_GRADE_LEVEL_UNLOCKED",
+        description: `Unlocked grade level ${gradeLevel.name} to revert control back to Class Advisers for corrections.`,
+        subjectType: "GradeLevel",
+        recordId: glId,
+        req,
+      });
+    });
+
+    res.json({ success: true, message: "Grade level successfully unlocked." });
+
+    broadcastEosyUpdate({ type: "GRADE_LEVEL_UNLOCKED", gradeLevelId: glId });
+  } catch (error) {
+    next(error);
+  }
+}
+
 
 export async function unlockSectionEosy(
   req: Request,

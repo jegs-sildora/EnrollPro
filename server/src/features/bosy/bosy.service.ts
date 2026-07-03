@@ -1,6 +1,7 @@
 // Refreshed status enum support
 import {
   PrismaClient,
+  Prisma,
   ApplicationStatus,
   LearnerType,
   ApplicantType,
@@ -16,7 +17,7 @@ export interface BOSYReadiness {
   readyForSectioningCount: number;
   enrolledCount: number;
   jhsCompleterCount: number;
-  droppedCount: number;
+  transferRequestCount: number;
   // Phase 2 BEEF intake counts
   scpPriorityCount: number;
   onlineBeefCount: number;
@@ -104,59 +105,13 @@ export async function getBOSYReadiness(
     throw Object.assign(new Error("School year not found."), { status: 404 });
   }
 
-  const prevSchoolYearId = schoolYear.clonedFromId;
-
-  // If we have a previous year, we need to count learners who WERE enrolled but DON'T have an application yet.
-  // These are "missing" from the current year's PENDING_CONFIRMATION queue but SHOULD be there.
-  let missingContinuingCount = 0;
-  if (prevSchoolYearId) {
-    // Subquery: learner IDs who already have an application in the current year
-    const existingAppLearnerIds = await prisma.enrollmentApplication.findMany({
-      where: { schoolYearId },
-      select: { learnerId: true },
-    });
-    const excludedIds = existingAppLearnerIds.map((a) => a.learnerId);
-
-    missingContinuingCount = await prisma.enrollmentRecord.count({
-      where: {
-        schoolYearId: prevSchoolYearId,
-        learnerId: excludedIds.length > 0 ? { notIn: excludedIds } : undefined,
-        enrollmentApplication: {
-          status: {
-            in: ["ENROLLED", "ENROLLED", "ENROLLED"],
-          },
-        },
-        OR: [
-          { eosyStatus: { equals: null } },
-          {
-            eosyStatus: {
-              notIn: ["DROPPED_OUT", "CONDITIONALLY_PROMOTED"],
-            },
-          },
-        ],
-        // Exclude Grade 10 Promoted (they graduate JHS)
-        NOT: {
-          AND: [
-            { section: { gradeLevel: { displayOrder: 10 } } },
-            {
-              OR: [
-                { eosyStatus: { equals: null } },
-                { eosyStatus: null },
-              ],
-            },
-          ],
-        },
-      },
-    });
-  }
-
   const [
     irregularBlockerCount,
     existingPendingCount,
     readyForSectioningCount,
     enrolledCount,
     jhsCompleterCount,
-    droppedCount,
+    transferRequestCount,
     scpPriorityCount,
     onlineBeefCount,
     walkInBeefCount,
@@ -169,21 +124,23 @@ export async function getBOSYReadiness(
       where: {
         schoolYearId,
         learnerType: "CONTINUING",
-        status: "VERIFIED",
+        status: "PENDING_CONFIRMATION",
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
         schoolYearId,
         learnerType: "CONTINUING",
-        status: "VERIFIED",
+        status: "READY_FOR_SECTIONING",
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
         schoolYearId,
         learnerType: "CONTINUING",
-        status: { in: ["ENROLLED", "ENROLLED"] },
+        status: {
+          in: ["OFFICIALLY_ENROLLED", "ENROLLED", "SECTIONED"],
+        },
       },
     }),
     prisma.learner.count({
@@ -193,7 +150,7 @@ export async function getBOSYReadiness(
       where: {
         schoolYearId,
         learnerType: "CONTINUING",
-        status: { in: ["VERIFIED", "VERIFIED", "VERIFIED"] },
+        status: "TRANSFERRING_OUT",
       },
     }),
     // Phase 2: SCP Priority (passed screening, returning for physical BEEF)
@@ -227,11 +184,11 @@ export async function getBOSYReadiness(
     schoolYearLabel: schoolYear.yearLabel,
     isEosyFinalized: schoolYear.isEosyFinalized,
     irregularBlockerCount,
-    pendingConfirmationCount: existingPendingCount + missingContinuingCount,
+    pendingConfirmationCount: existingPendingCount,
     readyForSectioningCount,
     enrolledCount,
     jhsCompleterCount,
-    droppedCount,
+    transferRequestCount,
     scpPriorityCount,
     onlineBeefCount,
     walkInBeefCount,
@@ -250,8 +207,36 @@ export async function getBOSYQueue(params: {
 }): Promise<BOSYQueuePage> {
   const { schoolYearId, gradeLevelId, status, search, previousSectionName, page, limit } = params;
   const skip = (page - 1) * limit;
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { clonedFromId: true },
+  });
+  const previousSchoolYearId = schoolYear?.clonedFromId ?? null;
+  const learnerConditions: Prisma.LearnerWhereInput[] = [];
 
-  const where: any = {
+  if (search) {
+    learnerConditions.push({
+      AND: search.split(/\s+/).filter(Boolean).map((term) => ({
+        OR: [
+          { firstName: { contains: term, mode: "insensitive" } },
+          { lastName: { contains: term, mode: "insensitive" } },
+          { lrn: { contains: term, mode: "insensitive" } },
+        ],
+      })),
+    });
+  }
+  if (previousSectionName && previousSchoolYearId) {
+    learnerConditions.push({
+      enrollmentHistories: {
+        some: {
+          schoolYearId: previousSchoolYearId,
+          section: { name: previousSectionName },
+        },
+      },
+    });
+  }
+
+  const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId,
     learnerType: "CONTINUING" as const,
     ...(gradeLevelId ? { gradeLevelId } : {}),
@@ -261,50 +246,16 @@ export async function getBOSYQueue(params: {
             status.trim() === "ENROLLED"
               ? {
                   in: [
+                    "OFFICIALLY_ENROLLED",
                     "ENROLLED",
-                    "ENROLLED",
+                    "SECTIONED",
                   ] as ApplicationStatus[],
                 }
-              : status.trim() === "VERIFIED" ||
-                  status.trim() === "VERIFIED"
-                ? {
-                    in: [
-                      "VERIFIED",
-                      "VERIFIED",
-                      "VERIFIED",
-                    ] as ApplicationStatus[],
-                  }
-                : (status.trim() as ApplicationStatus),
+              : (status.trim() as ApplicationStatus),
         }
       : {}),
-    ...(search
-      ? {
-          learner: {
-            AND: search.split(/\s+/).filter(Boolean).map(term => ({
-              OR: [
-                { firstName: { contains: term, mode: "insensitive" as const } },
-                { lastName: { contains: term, mode: "insensitive" as const } },
-                { lrn: { contains: term, mode: "insensitive" as const } },
-              ]
-            }))
-          }
-        }
-      : {}),
-    ...(previousSectionName
-      ? {
-          learner: {
-            enrollmentRecords: {
-              some: {
-                schoolYear: {
-                  status: "ARCHIVED",
-                },
-                section: {
-                  name: previousSectionName,
-                },
-              },
-            },
-          },
-        }
+    ...(learnerConditions.length > 0
+      ? { learner: { AND: learnerConditions } }
       : {}),
   };
 
@@ -356,41 +307,42 @@ export async function getBOSYQueue(params: {
 
   // Resolve prior-year section and adviser for each learner in one batch
   const learnerIds = applications.map((a) => a.learner.id);
-  const priorRecords = await prisma.enrollmentRecord.findMany({
+  const priorRecords = previousSchoolYearId
+    ? await prisma.enrollmentHistory.findMany({
     where: {
       learnerId: { in: learnerIds },
-      schoolYear: {
-        status: "ARCHIVED",
-      },
+      schoolYearId: previousSchoolYearId,
     },
-    orderBy: { enrolledAt: "desc" },
+    orderBy: { createdAt: "desc" },
     distinct: ["learnerId"],
     select: {
       learnerId: true,
       section: {
         select: {
           name: true,
-          advisers: {
-            where: { status: "ACTIVE" },
-            take: 1,
-            select: {
-              teacher: {
-                select: { firstName: true, lastName: true },
-              },
-            },
-          },
         },
       },
+      adviser: {
+        select: { firstName: true, lastName: true },
+      },
     },
-  });
+  })
+    : [];
 
   const priorByLearner = new Map(
-    priorRecords.map((r) => [r.learnerId, r.section]),
+    priorRecords.map((record) => [
+      record.learnerId,
+      {
+        section: record.section,
+        adviser: record.adviser,
+      },
+    ]),
   );
 
   const items: BOSYQueueItem[] = applications.map((a) => {
-    const section = priorByLearner.get(a.learner.id) ?? null;
-    const adviser = section?.advisers[0]?.teacher ?? null;
+    const prior = priorByLearner.get(a.learner.id) ?? null;
+    const section = prior?.section ?? null;
+    const adviser = prior?.adviser ?? null;
     return {
       applicationId: a.id,
       trackingNumber: a.trackingNumber,
@@ -551,7 +503,7 @@ export async function syncBOSYQueue(
         gradeLevelId: targetGradeLevelId,
         applicantType: application.applicantType,
         learnerType: "CONTINUING",
-        status: "VERIFIED",
+        status: "PENDING_CONFIRMATION",
         admissionChannel: "F2F",
         isPrivacyConsentGiven: application.isPrivacyConsentGiven ?? false,
         guardianRelationship: application.guardianRelationship,
@@ -596,10 +548,10 @@ export async function confirmReturn(
     throw Object.assign(new Error("Application not found."), { status: 404 });
   }
 
-  if (application.status !== "VERIFIED") {
+  if (application.status !== "PENDING_CONFIRMATION") {
     throw Object.assign(
       new Error(
-        `Cannot confirm return: application is in status "${application.status}", expected "VERIFIED".`,
+        `Cannot confirm return: application is in status "${application.status}", expected "PENDING_CONFIRMATION".`,
       ),
       { status: 422 },
     );
@@ -610,10 +562,54 @@ export async function confirmReturn(
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
-      status: "VERIFIED",
+      status: "READY_FOR_SECTIONING",
       confirmationConsent: true,
       encodedById: actingUserId,
       isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+    },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function markTransferRequest(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: {
+      id: true,
+      status: true,
+      learnerType: true,
+    },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+  if (application.learnerType !== "CONTINUING") {
+    throw Object.assign(
+      new Error("Only continuing learners can be marked as transfer requests."),
+      { status: 422 },
+    );
+  }
+  if (application.status !== "PENDING_CONFIRMATION") {
+    throw Object.assign(
+      new Error(
+        `Cannot mark transfer request: application is in status "${application.status}", expected "PENDING_CONFIRMATION".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "TRANSFERRING_OUT",
+      confirmationConsent: false,
+      encodedById: actingUserId,
     },
     select: { id: true, status: true },
   });
@@ -652,10 +648,10 @@ export async function bulkConfirmReturn(
       });
       continue;
     }
-    if (app.status !== "VERIFIED") {
+    if (app.status !== "PENDING_CONFIRMATION") {
       failed.push({
         id,
-        reason: `Status is "${app.status}", expected "VERIFIED".`,
+        reason: `Status is "${app.status}", expected "PENDING_CONFIRMATION".`,
       });
       continue;
     }
@@ -668,7 +664,7 @@ export async function bulkConfirmReturn(
     await prisma.enrollmentApplication.updateMany({
       where: { id: { in: confirmed } },
       data: {
-        status: "VERIFIED",
+        status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
         encodedById: actingUserId,
         isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
@@ -759,7 +755,7 @@ export async function getPhase2Queue(params: {
   const skip = (page - 1) * limit;
   const statuses = (Array.isArray(status) ? status : [status]) as ApplicationStatus[];
 
-  const where: any = {
+  const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId,
     status: { in: statuses },
     ...(admissionChannel ? { admissionChannel } : {}),

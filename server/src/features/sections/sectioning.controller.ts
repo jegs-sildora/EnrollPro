@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
+import { Prisma } from "../../generated/prisma/index.js";
 
 /**
  * TLE Sectioning Workspace: Returns sections with current M/F counts and TLE tracks.
@@ -42,8 +43,10 @@ export async function getSectionsSummary(req: Request, res: Response) {
       return {
         id: s.id,
         name: s.name,
-        gradeLevel: { id: s.gradeLevelId, name: s.gradeLevel.name },
+        gradeLevel: s.gradeLevel.name,
+        gradeLevelId: s.gradeLevelId,
         gradeLevelOrder: s.gradeLevel.displayOrder,
+        programType: s.programType,
         maxCapacity: s.maxCapacity,
         currentCount: s.enrollmentRecords.length,
         boys,
@@ -76,13 +79,9 @@ export async function getSectioningPool(req: Request, res: Response) {
        return res.status(400).json({ message: "Active school year required." });
     }
 
-    const where: any = {
+    const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
-      status: "VERIFIED",
-      OR: [
-        { assignedProgram: "REGULAR" },
-        { assignedProgram: null, applicantType: "REGULAR" },
-      ], // SCP Guard: exclude STE, SPAS, SPS, SPIJ, SPFL, SPTVE
+      status: "READY_FOR_SECTIONING",
       enrollmentRecord: null, // Critical: Only students not yet assigned
     };
 
@@ -131,6 +130,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       gradeLevel: app.gradeLevel.name,
       gradeLevelId: app.gradeLevelId,
       duplicateFlag: app.duplicateFlag,
+      programType: app.assignedProgram ?? app.applicantType,
     }));
 
     return res.json(pool);
@@ -175,11 +175,9 @@ export async function assignBulk(req: Request, res: Response) {
     // 2. Capacity Guard (Rule: Hard cap 50 students)
     const currentCount = section.enrollmentRecords.length;
     const requestedCount = applicationIds.length;
-    const MAX_LIMIT = 50;
-
-    if (currentCount + requestedCount > MAX_LIMIT) {
+    if (currentCount + requestedCount > section.maxCapacity) {
       return res.status(409).json({ 
-        message: `Capacity Breach! Section '${section.name}' already has ${currentCount} students. Adding ${requestedCount} more exceeds the hard limit of ${MAX_LIMIT}.` 
+        message: `Section ${section.name} has ${section.maxCapacity - currentCount} available seat(s), but ${requestedCount} learner(s) were selected.`,
       });
     }
 
@@ -204,15 +202,29 @@ export async function assignBulk(req: Request, res: Response) {
       }
 
       // Stage Gate: only section learners cleared by Stage 2
-      if (app.status !== "VERIFIED") {
+      if (app.status !== "READY_FOR_SECTIONING") {
         return res.status(409).json({
-          message: `Application ${app.id} is not READY_FOR_SECTIONING.`,
+          message: `Application ${app.id} is not ready for section assignment.`,
+        });
+      }
+
+      if (app.schoolYearId !== section.schoolYearId) {
+        return res.status(422).json({
+          message: "The learner and section belong to different school years.",
         });
       }
 
       // Grade Level Check
       if (app.gradeLevelId !== section.gradeLevelId) {
          return res.status(422).json({ message: "Grade Level Mismatch: Student grade level does not match section grade level." });
+      }
+
+      const effectiveProgram = app.assignedProgram ?? app.applicantType;
+      if (effectiveProgram !== section.programType) {
+        return res.status(422).json({
+          message:
+            `${app.learner.firstName} ${app.learner.lastName} belongs to ${effectiveProgram}, not ${section.programType}.`,
+        });
       }
 
     }
@@ -237,7 +249,7 @@ export async function assignBulk(req: Request, res: Response) {
         // Finalize Application Status
         await tx.enrollmentApplication.update({
           where: { id: app.id },
-          data: { status: app.isTemporarilyEnrolled ? "TEMPORARILY_ENROLLED" : "OFFICIALLY_ENROLLED" }
+          data: { status: "OFFICIALLY_ENROLLED" }
         });
 
         records.push(record);

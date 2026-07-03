@@ -4,6 +4,10 @@ import { normalizeDateToUtcNoon, deriveSchoolYearScheduleFromOpeningDate } from 
 import { prisma } from "../../../lib/prisma.js";
 import { EosyStatus, AcademicStatus } from "../../../generated/prisma/index.js";
 import type { Request, Response } from "express";
+import {
+  executeSchoolYearRollover,
+  RolloverNotReadyError,
+} from "../services/school-year-rollover.service.js";
 
 
 
@@ -367,8 +371,6 @@ async function carryOverEligibleLearners(
       yearLabel,
       classOpeningDate,
       classEndDate,
-      cloneStructure = true,
-      carryOverLearners = true,
       pin,
       termFormat,
     } = req.body;
@@ -418,17 +420,6 @@ async function carryOverEligibleLearners(
       yearLabel,
       schedule.yearLabel);
 
-    const existingTargetYear = await prisma.schoolYear.findUnique({
-      where: { yearLabel: resolvedYearLabel },
-      select: { id: true, status: true },
-    });
-    if (existingTargetYear && existingTargetYear.status !== "DRAFT") {
-      res
-        .status(400)
-        .json({ message: "A school year with this label already exists" });
-      return;
-    }
-
     const schoolSetting = await prisma.schoolSetting.findFirst({
       select: {
         activeSchoolYearId: true,
@@ -459,119 +450,40 @@ async function carryOverEligibleLearners(
       return;
     }
 
-    if (!activeYear.isEosyFinalized) {
-      res.status(422).json({
-        message:
-          "Active school year must be EOSY-finalized before rollover can proceed.",
-      });
-      return;
-    }
-
-    const irregularBlockerCount = await prisma.enrollmentRecord.count({
-      where: {
-        schoolYearId: activeYear.id,
-        eosyStatus: "CONDITIONALLY_PROMOTED",
-      },
-    });
-
-    if (irregularBlockerCount > 0) {
-      res.status(422).json({
-        message: `EOSY FINALIZATION BLOCKED: ${irregularBlockerCount} learner(s) remain CONDITIONALLY PROMOTED. Encode their End-of-School-Year (EOSY) Class grades to finalize their statuses before closing the academic year.`,
-      });
-      return;
-    }
-
-    await prisma.schoolYear.updateMany({
-      where: { status: "ACTIVE" },
-      data: { status: "ARCHIVED" },
-    });
-
-    const newYear = await prisma.schoolYear.upsert({
-      where: { yearLabel: resolvedYearLabel },
-      update: {
-        status: "ACTIVE",
-        classOpeningDate: schedule.classOpeningDate,
-        classEndDate: schedule.classEndDate,
-        enrollOpenDate: schedule.enrollOpenDate,
-        enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        termFormat: termFormat ?? "TRIMESTER",
-        clonedFromId: activeYear.id,
-      },
-      create: {
-        yearLabel: resolvedYearLabel,
-        status: "ACTIVE",
-        classOpeningDate: schedule.classOpeningDate,
-        classEndDate: schedule.classEndDate,
-        enrollOpenDate: schedule.enrollOpenDate,
-        enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        termFormat: termFormat ?? "TRIMESTER",
-        clonedFromId: activeYear.id,
-      },
-    });
-
-    await setActiveSchoolYear( newYear.id);
-
-    if (cloneStructure) {
-      await cloneSchoolYearStructure( activeYear.id, newYear.id);
-    }
-
-    await ensureDefaultGradeLevels();
-
-    const rolloverSummary = carryOverLearners
-      ? await carryOverEligibleLearners(
-          
-          activeYear.id,
-          newYear.id,
-          parseStartYearFromLabel(resolvedYearLabel),
-          req.user?.userId ?? null)
-      : null;
-
-    await prisma.auditLog.create({ data: { ipAddress: req.ip || "unknown", userAgent: req.headers["user-agent"] || null, userId: req.user!.userId,
-      actionType: "SY_ROLLOVER_COMPLETED",
-      description: `Rolled over school year from "${activeYear.yearLabel}" to "${resolvedYearLabel}"${carryOverLearners && rolloverSummary ? ` with ${rolloverSummary.createdApplications} carried learner application(s)` : ""}`,
-      subjectType: "SchoolYear",
-      recordId: newYear.id,
-      } });
-
-    const full = await prisma.schoolYear.findUnique({
-      where: { id: newYear.id },
-      include: {
-        sections: {
-          orderBy: [
-            { gradeLevel: { displayOrder: "asc" } },
-            { sortOrder: "asc" },
-          ],
-          include: { gradeLevel: true },
+    try {
+      const result = await executeSchoolYearRollover({
+        sourceSchoolYearId: activeYear.id,
+        targetYearLabel: resolvedYearLabel,
+        schedule: {
+          classOpeningDate: schedule.classOpeningDate,
+          classEndDate: schedule.classEndDate,
+          enrollOpenDate: schedule.enrollOpenDate,
+          enrollCloseDate: schedule.enrollCloseDate,
+          term1Start: schedule.term1Start,
+          term1End: schedule.term1End,
+          term2Start: schedule.term2Start,
+          term2End: schedule.term2End,
+          term3Start: schedule.term3Start,
+          term3End: schedule.term3End,
         },
-        _count: {
-          select: {
-            enrollmentApplications: true,
-            enrollmentRecords: true,
-          },
-        },
-      },
-    });
+        termFormat: termFormat ?? "TRIMESTER",
+        actingUserId: req.user!.userId,
+        ipAddress: req.ip || "unknown",
+        userAgent: req.headers["user-agent"] ?? null,
+      });
 
-    res.status(201).json({
-      year: full,
-      rolloverFrom: {
-        id: activeYear.id,
-        yearLabel: activeYear.yearLabel,
-      },
-      rolloverSummary,
-    });
+      res.status(201).json(result);
+    } catch (error: unknown) {
+      if (error instanceof RolloverNotReadyError) {
+        res.status(422).json({
+          code: error.code,
+          message: error.message,
+          ...error.readiness,
+        });
+        return;
+      }
+      throw error;
+    }
   }
 
   export async function updateRolloverDraft(

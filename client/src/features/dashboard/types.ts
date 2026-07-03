@@ -54,6 +54,7 @@ export interface GradeLevelFinalizationItem {
 
 export interface DashboardStats {
   systemPhase: string
+  isArchived: boolean
   classroomDeficitDetected: boolean
   dailyIntakeVelocity: Array<DailyIntakePoint>
   intakeDemographics: Array<IntakeDemographic>
@@ -92,6 +93,16 @@ export interface DashboardStats {
     activeLearnersCount: number
     transferredLearnersCount: number
     droppedLearnersCount: number
+  }
+  historicalSummary: {
+    promotedTotal: number
+    conditionallyPromotedTotal: number
+    retainedTotal: number
+    jhsCompletersTotal: number
+    jhsCompletersMale: number
+    jhsCompletersFemale: number
+    transferredOutTotal: number
+    droppedOutTotal: number
   }
   criticalSections: Array<{
     id: string

@@ -14,6 +14,7 @@ import { SectioningEngine } from "../enrollment/services/sectioning-engine.servi
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
+import { buildBalancedSectionAssignments } from "./section-distribution.service.js";
 
 
 const sectioningEngine = new SectioningEngine(prisma as unknown as PrismaClient);
@@ -86,9 +87,20 @@ export async function commitBatchSectioning(req: Request, res: Response) {
 
     // Fetch learner IDs first as they are required for EnrollmentRecord
     const applications = await prisma.enrollmentApplication.findMany({
-      where: { id: { in: appIds } },
+      where: {
+        id: { in: appIds },
+        schoolYearId,
+        status: "READY_FOR_SECTIONING",
+        enrollmentRecord: { is: null },
+      },
       select: { id: true, learnerId: true },
     });
+    if (applications.length !== appIds.length) {
+      return res.status(409).json({
+        message:
+          "One or more learners are no longer ready for section assignment.",
+      });
+    }
 
     const appToLearnerMap = new Map(
       applications.map((app) => [app.id, app.learnerId]),
@@ -102,13 +114,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
             id: { in: appIds },
             
           },
-          data: { status: "SECTIONED" },
-        });
-
-        // Clear any existing enrollment records for these applications to avoid unique constraint violations
-        // This allows re-running the sectioning algorithm
-        await tx.enrollmentRecord.deleteMany({
-          where: { enrollmentApplicationId: { in: appIds } },
+          data: { status: "OFFICIALLY_ENROLLED" },
         });
 
         const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
@@ -282,6 +288,10 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     res.json({
       sections: sections.map((s) => {
         const activeAdviser = s.advisers[0]?.teacher ?? null;
+        const enrollmentCounts = s._count as {
+          enrollmentHistories?: number;
+          enrollmentRecords?: number;
+        };
         return {
           id: s.id,
           name: s.name,
@@ -289,7 +299,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: isArchived ? (s._count as any).enrollmentHistories : s._count.enrollmentRecords,
+          enrolledCount: isArchived
+            ? enrollmentCounts.enrollmentHistories ?? 0
+            : enrollmentCounts.enrollmentRecords ?? 0,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -346,6 +358,10 @@ export async function listSections(req: Request, res: Response): Promise<void> {
       displayOrder: gl.displayOrder,
       sections: gl.sections.map((s) => {
         const activeAdviser = s.advisers[0]?.teacher ?? null;
+        const enrollmentCounts = s._count as {
+          enrollmentHistories?: number;
+          enrollmentRecords?: number;
+        };
         return {
           id: s.id,
           name: s.name,
@@ -354,7 +370,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: isArchived ? (s._count as any).enrollmentHistories : s._count.enrollmentRecords,
+          enrolledCount: isArchived
+            ? enrollmentCounts.enrollmentHistories ?? 0
+            : enrollmentCounts.enrollmentRecords ?? 0,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -859,7 +877,7 @@ export async function getSectionMasterlist(
         middleName: hist.learner.middleName,
         sex: hist.learner.sex,
         birthdate: hist.learner.birthdate?.toISOString() ?? null,
-        status: "VERIFIED",
+        status: "READY_FOR_SECTIONING",
         applicantType: "NEW_ENROLLEE",
         enrolledAt: hist.createdAt,
         sectioningMethod: "MANUAL",
@@ -928,7 +946,7 @@ export async function getUnsectionedPool(
       where: {
         gradeLevelId: parsedGradeLevelId,
         schoolYearId,
-        status: "VERIFIED",
+        status: "READY_FOR_SECTIONING",
         enrollmentRecord: null,
       },
       include: {
@@ -998,7 +1016,7 @@ export async function autoDistributeUnassigned(
     where: {
       gradeLevelId: parseInt(gradeLevelId as string),
       schoolYearId: schoolYearId,
-      status: "VERIFIED",
+      status: "READY_FOR_SECTIONING",
       enrollmentRecord: null,
     },
     include: {
@@ -1047,67 +1065,32 @@ export async function autoDistributeUnassigned(
     return;
   }
 
-  // Prepare learner data with final average
-  const unassignedPool = applications.map((app) => ({
-    appId: app.id,
-    learnerId: app.learner.id,
-    sex: app.learner.sex,
-    finalAverage:
-      app.learner.enrollmentRecords[0]?.finalAverage ??
-      app.previousSchool?.generalAverage ??
-      app.learner.previousGenAve ??
-      0,
-  }));
-
-  // Separate by sex and sort descending by average
-  const males = unassignedPool.filter((l) => l.sex === "MALE").sort((a, b) => b.finalAverage - a.finalAverage);
-  const females = unassignedPool.filter((l) => l.sex !== "MALE").sort((a, b) => b.finalAverage - a.finalAverage);
-
-  // State to track section capacities
-  const sectionCaps = sections.map((sec) => ({
-    id: sec.id,
-    capacity: sec.maxCapacity,
-    currentCount: sec._count.enrollmentRecords,
-  }));
-
-  const assignments: { appId: number; learnerId: number; sectionId: number }[] = [];
-
-  const distribute = (learners: typeof males) => {
-    let direction = 1;
-    let sectionIdx = 0;
-
-    for (const learner of learners) {
-      let attempts = 0;
-      let assigned = false;
-
-      while (attempts < sectionCaps.length && !assigned) {
-        const currentSec = sectionCaps[sectionIdx];
-        if (currentSec.currentCount < currentSec.capacity) {
-          assignments.push({
-            appId: learner.appId,
-            learnerId: learner.learnerId,
-            sectionId: currentSec.id,
-          });
-          currentSec.currentCount++;
-          assigned = true;
-        }
-
-        sectionIdx += direction;
-
-        if (sectionIdx >= sectionCaps.length) {
-          direction = -1;
-          sectionIdx = sectionCaps.length - 1;
-        } else if (sectionIdx < 0) {
-          direction = 1;
-          sectionIdx = 0;
-        }
-        attempts++;
-      }
-    }
-  };
-
-  distribute(males);
-  distribute(females);
+  const learnerIdByApplicationId = new Map(
+    applications.map((application) => [
+      application.id,
+      application.learner.id,
+    ]),
+  );
+  const assignments = buildBalancedSectionAssignments({
+    learners: applications.map((application) => ({
+      applicationId: application.id,
+      sex: application.learner.sex,
+      generalAverage:
+        application.learner.enrollmentRecords[0]?.finalAverage
+        ?? application.previousSchool?.generalAverage
+        ?? application.learner.previousGenAve
+        ?? 0,
+      programType:
+        application.assignedProgram ?? application.applicantType,
+    })),
+    sections: sections.map((section) => ({
+      id: section.id,
+      sortOrder: section.sortOrder,
+      maxCapacity: section.maxCapacity,
+      currentCount: section._count.enrollmentRecords,
+      programType: section.programType,
+    })),
+  });
 
   if (assignments.length === 0) {
     res.json({ message: "No learners could be assigned (sections might be full)", assignedCount: 0 });
@@ -1119,8 +1102,14 @@ export async function autoDistributeUnassigned(
 
   await prisma.$transaction(async (tx) => {
     const recordsData = assignments.map((a) => ({
-      enrollmentApplicationId: a.appId,
-      learnerId: a.learnerId,
+      enrollmentApplicationId: a.applicationId,
+      learnerId:
+        learnerIdByApplicationId.get(a.applicationId)
+        ?? (() => {
+          throw new Error(
+            `Learner not found for application ${a.applicationId}.`,
+          );
+        })(),
       sectionId: a.sectionId,
       schoolYearId: schoolYearId,
       enrolledById: req.user!.userId,
@@ -1134,10 +1123,10 @@ export async function autoDistributeUnassigned(
       data: recordsData,
     });
 
-    const appIds = assignments.map((a) => a.appId);
+    const appIds = assignments.map((assignment) => assignment.applicationId);
     await tx.enrollmentApplication.updateMany({
       where: { id: { in: appIds } },
-      data: { status: "ENROLLED" },
+      data: { status: "OFFICIALLY_ENROLLED" },
     });
   });
 
@@ -1220,7 +1209,7 @@ export async function inlineSlotLearner(
 
     await tx.enrollmentApplication.update({
       where: { id: enrollmentApplicationId },
-      data: { status: "ENROLLED" },
+      data: { status: "OFFICIALLY_ENROLLED" },
     });
 
     const created = await tx.enrollmentRecord.create({
@@ -1421,7 +1410,7 @@ export async function transferLearner(req: Request, res: Response) {
         });
         await tx.enrollmentApplication.update({
           where: { id: enrollmentApplicationId },
-          data: { status: "VERIFIED" },
+          data: { status: "READY_FOR_SECTIONING" },
         });
       });
 

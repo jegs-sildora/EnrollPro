@@ -25,9 +25,8 @@ export const rolloverSchoolYearSchema = z.object({
   yearLabel: z.string().min(1, "Year label is required").optional(),
   classOpeningDate: z.string().or(z.date()),
   classEndDate: z.string().or(z.date()).optional().nullable(),
-  cloneStructure: z.boolean().optional().default(true),
-  carryOverLearners: z.boolean().optional().default(true),
-  pin: z.string().optional(),
+  pin: z.string().regex(/^\d{6}$/, "A valid 6-digit administrator PIN is required"),
+  termFormat: TermFormatEnum.optional(),
 });
 
 export const updateRolloverDraftSchema = z.object({

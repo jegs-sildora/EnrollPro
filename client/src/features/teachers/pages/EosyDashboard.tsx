@@ -56,17 +56,23 @@ interface Section {
   };
 }
 
-const formatStatusLabel = (status: string | null) => {
+const formatStatusLabel = (status: string | null, isGrade10: boolean = false) => {
   const normalized = status ?? "PROMOTED";
   switch (normalized) {
     case "PROMOTED":
-      return "Promoted";
+      return isGrade10 ? "JHS COMPLETER" : "PROMOTED";
     case "RETAINED":
-      return "Retained";
+      return "RETAINED";
+    case "CONDITIONALLY_PROMOTED":
+      return isGrade10 ? "CONDITIONALLY PROMOTED" : "PROMOTED (TO BEC)";
+    case "TRANSFERRED_OUT":
+      return "TRANSFERRED OUT";
     case "DROPPED_OUT":
-      return "Dropped Out";
+      return "DROPPED OUT";
+    case "ACTION_REQUIRED":
+      return "ACTION REQUIRED";
     default:
-      return "Promoted";
+      return "PROMOTED";
   }
 };
 
@@ -235,14 +241,23 @@ export default function TeacherEosyDashboard() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const resolvedStatus = r.eosyStatus ?? "PROMOTED";
-          const statusLabel = formatStatusLabel(r.eosyStatus);
-
+          let resolvedStatus = r.eosyStatus ?? "";
           const ave = r.finalAverage;
-          const isScp = Boolean(section?.programType && section.programType !== "REGULAR");
-          const isScpWarning = isScp && ave !== null && ave !== undefined && ave >= 75 && ave < 85;
           const isFailing = ave !== null && ave !== undefined && ave > 0 && ave < 75;
           const hasZeroOrBlankGrade = ave === 0 || ave === null || ave === undefined || isNaN(ave);
+
+          if (!resolvedStatus) {
+            if (hasZeroOrBlankGrade || isFailing) {
+              resolvedStatus = "ACTION_REQUIRED";
+            } else {
+              resolvedStatus = "PROMOTED";
+            }
+          }
+          const statusLabel = formatStatusLabel(resolvedStatus, section?.gradeLevel?.name?.includes("10") || false);
+
+          const isScp = Boolean(section?.programType && section.programType !== "REGULAR");
+          const isGrade10 = section?.gradeLevel?.name?.includes("10") || false;
+          const isScpWarning = !isGrade10 && isScp && ave !== null && ave !== undefined && ave >= 75 && ave < 85;
 
           const renderStatusContent = () => (
             <div
@@ -250,9 +265,11 @@ export default function TeacherEosyDashboard() {
                 "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border transition-colors",
                 isScpWarning
                   ? "text-amber-700 bg-amber-50 border-amber-200"
-                  : !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                    ? "text-green-700 bg-green-50 border-green-200"
-                    : "text-amber-700 bg-amber-50 border-amber-200"
+                  : resolvedStatus === "ACTION_REQUIRED"
+                    ? "text-red-700 bg-red-50 border-red-200"
+                    : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                      ? "text-green-700 bg-green-50 border-green-200"
+                      : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
               <span>{isScpWarning ? "PROMOTED (TO BEC)" : statusLabel}</span>
               {isScpWarning && (
@@ -290,7 +307,7 @@ export default function TeacherEosyDashboard() {
           return (
             <div className="flex justify-center items-center gap-2">
               <Select
-                value={isScpWarning ? "PROMOTED_TO_BEC" : resolvedStatus}
+                value={isScpWarning ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
                   if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
                   else handleStatusChange(r.id, val);
@@ -312,24 +329,30 @@ export default function TeacherEosyDashboard() {
                   <SelectTrigger
                     className={cn(
                       "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
-                      !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                        ? "text-green-700 bg-green-50 border-green-200"
-                        : "text-amber-700 bg-amber-50 border-amber-200",
+                      resolvedStatus === "ACTION_REQUIRED"
+                        ? "text-red-700 bg-red-50 border-red-200"
+                        : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                          ? "text-green-700 bg-green-50 border-green-200"
+                          : "text-amber-700 bg-amber-50 border-amber-200",
                     )}>
-                    <SelectValue />
+                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                 )}
                 <SelectContent>
                   {!hasZeroOrBlankGrade && !isFailing && !isScpWarning && (
-                    <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
                   )}
-                  {isScp && !hasZeroOrBlankGrade && !isFailing && (
-                    <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
+                  {isScp && !isGrade10 && !hasZeroOrBlankGrade && !isFailing && (
+                    <SelectItem value="PROMOTED_TO_BEC">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
                   )}
                   {!hasZeroOrBlankGrade && (
-                    <SelectItem value="RETAINED">RETAINED</SelectItem>
+                    <>
+                      <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                      <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                    </>
                   )}
-                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                  <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                  <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -14,11 +14,15 @@ import {
   getBOSYReadiness,
   getBOSYQueue,
   confirmReturn,
+  markTransferRequest,
   bulkConfirm,
   apiRevertToPendingBeef,
   apiFlushNoShows,
   getPreviousSections,
 } from "../api/bosy.api";
+import { useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import type { BOSYReadiness, BOSYQueueItem } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -111,6 +115,8 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const { ayLabel } = useSchoolYearContext();
@@ -138,7 +144,7 @@ export default function BOSYPage() {
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState<string>("PENDING_VERIFICATION");
+  const [statusFilter, setStatusFilter] = useState<string>("PENDING_CONFIRMATION");
   const [targetGrade, setTargetGrade] = useState<string>("ALL");
   const {
     inputValue: queueSearch,
@@ -170,6 +176,8 @@ export default function BOSYPage() {
   const [noShowLoading, setNoShowLoading] = useState(false);
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
   const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
+  const [transferTarget, setTransferTarget] = useState<BOSYQueueItem | null>(null);
+  const [transferBusy, setTransferBusy] = useState(false);
 
 
   const fetchReadiness = useCallback(async () => {
@@ -245,6 +253,9 @@ export default function BOSYPage() {
       );
       setQueueTotal((prev) => Math.max(0, prev - 1));
       setConfirmSingleTarget(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
       void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
@@ -255,6 +266,31 @@ export default function BOSYPage() {
         return next;
       });
       setConfirmSingleBusy(false);
+    }
+  };
+
+  const executeTransferRequest = async () => {
+    if (!transferTarget) return;
+    setTransferBusy(true);
+    try {
+      await markTransferRequest(transferTarget.applicationId);
+      sileo.success({
+        title: "Transfer Request Recorded",
+        description:
+          `${transferTarget.firstName} ${transferTarget.lastName} was moved to Transfer Requests.`,
+      });
+      setQueueItems((current) =>
+        current.filter(
+          (item) => item.applicationId !== transferTarget.applicationId,
+        ),
+      );
+      setQueueTotal((current) => Math.max(0, current - 1));
+      setTransferTarget(null);
+      void fetchReadiness();
+    } catch (error: unknown) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setTransferBusy(false);
     }
   };
 
@@ -372,27 +408,35 @@ export default function BOSYPage() {
         <div>
           <h1 className="text-3xl font-extrabold">Confirmation of Continuing Learners</h1>
           <p className="text-base leading-tight font-extrabold">
-            Verify returning Junior High School learners and roll their records over to the live S.Y. {ayLabel || "2026–2027"} masterlist.
+            Record which learners are returning before assigning their class sections for S.Y. {ayLabel || "2026–2027"}.
           </p>
           {isHistoricalReadOnly && (
             <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+          className="font-extrabold"
+        >
+          Open Section Assignment
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           {
             label: "Pending Confirmations",
-            subBadge: "Unverified Returning Enrollees",
+            subBadge: "Waiting for the learner or parent to confirm",
             value: readiness?.pendingConfirmationCount ?? 0,
-            filterVal: "PENDING_VERIFICATION",
+            filterVal: "PENDING_CONFIRMATION",
             actionText: "Review Enrollees →",
             isPrimaryMetric: false,
           },
           {
-            label: "Confirmed Continuing",
-            subBadge: `Added to Live S.Y. ${ayLabel || "2026–2027"} Tally`,
+            label: "Confirmed and Ready for Section Assignment",
+            subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
             value: readiness?.readyForSectioningCount ?? 0,
             filterVal: "READY_FOR_SECTIONING",
             actionText: "View Masterlist →",
@@ -401,8 +445,8 @@ export default function BOSYPage() {
           {
             label: "Transfer Requests (SF10)",
             subBadge: "Moving to Another School",
-            value: readiness?.droppedCount ?? 0,
-            filterVal: "TRANSFERRED_OUT",
+            value: readiness?.transferRequestCount ?? 0,
+            filterVal: "TRANSFERRING_OUT",
             actionText: "Process Transfers →",
             isPrimaryMetric: false,
           },
@@ -458,7 +502,7 @@ export default function BOSYPage() {
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
-              {canMutate && statusFilter === "PENDING_VERIFICATION" && selectedIds.length > 0 ? (
+              {canMutate && statusFilter === "PENDING_CONFIRMATION" && selectedIds.length > 0 ? (
                 <div className="flex items-center gap-2">
                   <BulkConfirmBar
                     selectedCount={selectedIds.length}
@@ -530,12 +574,12 @@ export default function BOSYPage() {
               items={queueItems}
               loading={queueLoading}
               isSearching={isSearching}
-              showConfirmAction={statusFilter === "PENDING_VERIFICATION" && canMutate}
-              rowSelection={statusFilter === "PENDING_VERIFICATION" ? rowSelection : {}}
+              showConfirmAction={statusFilter === "PENDING_CONFIRMATION" && canMutate}
+              rowSelection={statusFilter === "PENDING_CONFIRMATION" ? rowSelection : {}}
               onRowSelectionChange={setRowSelection}
               onConfirmSingle={handleConfirmSingle}
+              onTransferRequest={setTransferTarget}
               confirmingIds={confirmingIds}
-              onRevertSingle={statusFilter === "READY_FOR_SECTIONING" && canMutate ? (id) => { setRevertTargetId(id); setRevertReason(""); } : undefined}
             />
           </div>
           <PaginationBar
@@ -604,6 +648,52 @@ export default function BOSYPage() {
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />
               )}
               Confirm Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={transferTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !transferBusy) setTransferTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark as Transfer Request</DialogTitle>
+            <DialogDescription>
+              Move this learner to Transfer Requests. The learner will not be
+              included in enrollment totals or class assignment.
+            </DialogDescription>
+          </DialogHeader>
+          {transferTarget && (
+            <div className="rounded-md border bg-muted/40 px-4 py-3">
+              <p className="font-extrabold">
+                {transferTarget.lastName}, {transferTarget.firstName}
+              </p>
+              <p className="text-sm font-semibold">
+                {transferTarget.gradeLevelName}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={transferBusy}
+              onClick={() => setTransferTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={transferBusy}
+              onClick={() => void executeTransferRequest()}
+            >
+              {transferBusy && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Mark as Transfer Request
             </Button>
           </DialogFooter>
         </DialogContent>

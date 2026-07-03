@@ -27,13 +27,18 @@ export function EosyFinalizationMetrics() {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm w-full">
       <h3 className="text-gray-900 font-semibold text-lg border-b pb-3 mb-4">
-        Rollover Readiness Checklist
+        Classes to Finish Before Starting the New School Year
       </h3>
       <ul className="flex flex-col gap-3">
-        {readiness.blockers.map((blocker, index) => (
-          <li key={index} className="flex items-start text-base leading-tight text-amber-900 ">
-            <span className="mr-2 shrink-0">⚠️</span>
-            <span>{blocker}</span>
+        {readiness.blockers.map((blocker) => (
+          <li
+            key={`${blocker.gradeLevel}-${blocker.sectionName}`}
+            className="flex items-start text-base leading-tight text-amber-900"
+          >
+            <span>
+              {blocker.gradeLevel} - {blocker.sectionName}:{" "}
+              {blocker.unfinishedLearnerCount} unfinished learner record(s)
+            </span>
           </li>
         ))}
       </ul>

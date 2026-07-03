@@ -8,8 +8,12 @@ import { PhaseOfficial } from "./PhaseOfficial";
 import { PhaseOngoing } from "./PhaseOngoing";
 import { PhaseEOSY } from "./PhaseEOSY";
 
+interface DashboardStatsResponse {
+  stats: DashboardStats
+}
+
 export default function DashboardIndex() {
-  const { ayId } = useSchoolYearContext();
+  const { ayId, viewingStatus } = useSchoolYearContext();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +23,7 @@ export default function DashboardIndex() {
       if (!ayId) return;
       try {
         setLoading(true);
-        const res = await api.get("/dashboard/stats");
+        const res = await api.get<DashboardStatsResponse>("/dashboard/stats");
         setStats(res.data.stats);
       } catch (err) {
         console.error("Failed to load dashboard stats", err);
@@ -50,6 +54,10 @@ export default function DashboardIndex() {
   }
 
   const phase = stats?.systemPhase;
+
+  if (stats.isArchived || viewingStatus === "ARCHIVED") {
+    return <PhaseOfficial stats={stats} />;
+  }
 
   if (phase === "OFFICIAL_ENROLLMENT") {
     return <PhaseOfficial stats={stats} />;

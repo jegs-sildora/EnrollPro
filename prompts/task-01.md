@@ -1,27 +1,34 @@
-# SYSTEM DIRECTIVE: EOSY Status Validation and Restriction Logic (v99.0)
+# SYSTEM DIRECTIVE: Transition, Confirmation, and Sectioning Routing (v122.0)
 
-**Context Persona:** Act as a Senior GovTech Enterprise Architect. Your standard is high data-density, high-security, offline-first administrative software. Interfaces must dynamically restrict user inputs based on strict Department of Education (DepEd) policy algorithms. Strictly obey markdown formatting and completely avoid using any square brackets in your output.
+**Context Persona:** Act as a Senior GovTech Enterprise Architect. Your standard is high data-density, high-security, offline-first administrative software. The transition between academic years must use plain, everyday language and mirror real-world school enrollment steps. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
 
-**Core Mandate:** The End of School Year (EOSY) Promotion Update module must not rely entirely on human accuracy. The system must conditionally render and restrict the available EOSY Status dropdown options based on the intersection of the learner's Final General Average and their currently assigned curriculum program (Special vs. Regular).
+**Core Mandate:** When the administrator starts a new school year, the system must smoothly transition returning students through a strict three-phase pipeline: the Historical Archive, the Confirmation Waiting Room, and finally, the Class Sectioning Dispatch. 
 
-Execute the following four architectural logic upgrades:
+Execute the following five plain-English system behaviors:
 
-## 1. Curriculum-Aware Dropdown Filtering
-The system must prevent illogical program transitions.
-* Target the EOSY Status dropdown menu for every learner.
-* If the learner's current section belongs to the regular Basic Education Curriculum (BEC), strictly hide the PROMOTED (TO BEC) option from their dropdown list. This option must only render for learners currently enrolled in Special Curricular Programs (SCP).
+## 1. The Safety Check
+The system must refuse to start a new year if the old year is not finished.
+* The system must check all grades to ensure every single student record is locked and finished for the year.
+* If any record is still open, stop the process and show a simple error message telling the user exactly which class needs to be finished first.
 
-## 2. Special Program Maintaining Grade Enforcement
-The system must automate the demotion of underperforming SCP learners.
-* For learners in an SCP section, evaluate their Final General Average.
-* If the average falls below the strict maintaining grade (e.g., below 85) but remains above the absolute passing grade (75), the system must default the status to PROMOTED (TO BEC) and strictly disable the standard PROMOTED option.
+## 2. Clearing the Slate
+The system must start the new year with an empty official roster.
+* When the new year starts, the main Total Official Enrollment number on the dashboard must reset to exactly 0.
+* All old class lists and section assignments must be completely cleared.
 
-## 3. Standard Retention Logic
-Academic failure must be strictly categorized.
-* If a learner's Final General Average falls below 75, the system must restrict the positive academic statuses.
-* Disable all Promoted variants. The Registrar may only select between Retained, Conditional, Transferred Out, or Dropped Out.
+## 3. Moving Students to the Waiting Room
+The system must hold returning students until they physically confirm they are coming back.
+* Grade 10 students who finished are marked as Completers and removed from the active incoming lists.
+* All students who passed, conditionally passed, or were retained must be moved directly into the Pending Confirmations list on the Continuing Learners page.
+* While they are in this pending list, they do not count toward the official enrollment yet, and they cannot be placed in a new class yet.
 
-## 4. The Zero-Grade Nullification Rule
-The system must automatically flag non-completers.
-* If the encoded Final General Average is exactly 0.00 or left entirely blank at the end of the encoding period, the system must disable all academic evaluation statuses (Promoted, Retained, Conditional).
-* The Registrar must be forced to select either Dropped Out or Transferred Out, accompanied by a mandatory validation prompt to verify the learner's whereabouts.
+## 4. The Confirmation Step
+The staff must manually verify what happens to each returning student.
+* If the staff confirms the student is returning, two things happen instantly: the student is added to the Total Official Enrollment tally, and they are immediately routed to the Sectioning and SF1 Prep page.
+* If the student is moving to a different school, the staff marks them as a Transfer Request, which moves them to the transfer list and keeps them out of the active enrollment count.
+
+## 5. The Class Assignment Step
+The system must queue confirmed students for official classroom placement.
+* Once a student is confirmed, they must appear in the Unassigned Learners list under the Section Assignment tab for their specific grade level.
+* From this list, the Registrar can manually select students and assign them to a classroom.
+* Alternatively, the Registrar can utilize the Auto-Distribute tool, allowing the system to algorithmically divide the unassigned students into the available sections to ensure evenly balanced classrooms based on gender and general average.

@@ -123,20 +123,22 @@ interface EosyExportLockState {
   lockReason: string | null;
 }
 
-const formatStatusLabel = (status: EosyStatus | null) => {
+const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolean = false) => {
   const normalized = status ?? "PROMOTED";
 
-  switch (normalized) {
+  switch (normalized as string) {
     case "PROMOTED":
-      return "PROMOTED";
+      return isGrade10 ? "JHS COMPLETER" : "PROMOTED";
     case "RETAINED":
       return "RETAINED";
     case "CONDITIONALLY_PROMOTED":
-      return "PROMOTED (TO BEC)";
+      return isGrade10 ? "CONDITIONALLY PROMOTED" : "PROMOTED (TO BEC)";
     case "TRANSFERRED_OUT":
       return "TRANSFERRED OUT";
     case "DROPPED_OUT":
       return "DROPPED OUT";
+    case "ACTION_REQUIRED":
+      return "ACTION REQUIRED";
     default:
       return "PROMOTED";
   }
@@ -1069,7 +1071,7 @@ export default function EosyUpdating() {
         cell: ({ row }) => {
           const r = row.original;
           const recordId = r.id;
-          const isScpDemoted = r.isScpDemoted || !!r.scpViolation;
+          const isScpDemoted = !activeGradeName.includes("10") && (r.isScpDemoted || !!r.scpViolation);
           const scpViolation = r.scpViolation;
 
           const unsaved = unsavedChanges[recordId] || {};
@@ -1080,10 +1082,18 @@ export default function EosyUpdating() {
           const currentAve = unsaved.hasOwnProperty("finalAverage") ? unsaved.finalAverage : r.finalAverage;
           const hasZeroOrBlankGrade = currentAve === 0 || currentAve === null || currentAve === undefined || isNaN(currentAve as number);
           const isFailing = currentAve !== null && currentAve !== undefined && currentAve > 0 && currentAve < 75;
-          const isScpDemotedGrades = isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
+          const isScpDemotedGrades = !activeGradeName.includes("10") && isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
 
-          const resolvedStatus = currentStatus ?? "PROMOTED";
-          const statusLabel = formatStatusLabel(resolvedStatus);
+          let resolvedStatus: string = currentStatus ?? "";
+          if (!resolvedStatus) {
+            if (hasZeroOrBlankGrade || isFailing) {
+              resolvedStatus = "ACTION_REQUIRED";
+            } else {
+              resolvedStatus = "PROMOTED";
+            }
+          }
+          const isGrade10 = activeGradeName.includes("10");
+          const statusLabel = formatStatusLabel(resolvedStatus as string, isGrade10);
           const isSectionFinalized = r.section.isEosyFinalized;
 
           const renderStatusContent = () => (
@@ -1092,14 +1102,14 @@ export default function EosyUpdating() {
                 "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border transition-colors",
                 isScpDemoted && resolvedStatus === "PROMOTED"
                   ? "text-amber-700 bg-amber-50 border-amber-200"
-                  : !resolvedStatus || resolvedStatus === "PROMOTED"
-                    ? "text-green-700 bg-green-50 border-green-200"
-                    : "text-amber-700 bg-amber-50 border-amber-200"
+                  : resolvedStatus === "ACTION_REQUIRED"
+                    ? "text-red-700 bg-red-50 border-red-200"
+                    : !resolvedStatus || resolvedStatus === "PROMOTED"
+                      ? "text-green-700 bg-green-50 border-green-200"
+                      : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
               <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
-              {isScpDemoted && resolvedStatus === "PROMOTED" && (
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-2 cursor-help" />
-              )}
+              {isScpDemoted && resolvedStatus === "PROMOTED" }
             </div>
           );
 
@@ -1134,19 +1144,19 @@ export default function EosyUpdating() {
             return (
               <div className="flex flex-col gap-1 items-center">
                 <Select
-                  value={resolvedStatus}
+                  value={resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                   onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
                   disabled={isCommitting}
                 >
-                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-40", isStatusChanged && "border-amber-500 focus:ring-amber-500")}>
-                    <SelectValue />
+                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-40", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
+                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PROMOTED">PROMOTED</SelectItem>
-                    <SelectItem value="RETAINED">RETAINED</SelectItem>
-                    <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
-                    <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
-                    <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                    <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                    <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                    <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                    <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                   </SelectContent>
                 </Select>
                 {isStatusChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
@@ -1165,7 +1175,7 @@ export default function EosyUpdating() {
           return (
             <div className="flex justify-center">
               <Select
-                value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus}
+                value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
                   if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
                   else handleStatusChange(r.id, val);
@@ -1179,35 +1189,36 @@ export default function EosyUpdating() {
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-1" />
                     </SelectTrigger>
                   )
                 ) : (
                   <SelectTrigger
                     className={cn(
                       "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
-                      !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                        ? "text-green-700 bg-green-50 border-green-200"
-                        : "text-amber-700 bg-amber-50 border-amber-200",
+                      resolvedStatus === "ACTION_REQUIRED"
+                        ? "text-red-700 bg-red-50 border-red-200"
+                        : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                          ? "text-green-700 bg-green-50 border-green-200"
+                          : "text-amber-700 bg-amber-50 border-amber-200",
                     )}>
-                    <SelectValue />
+                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                 )}
                 <SelectContent className="font-extrabold">
                   {!hasZeroOrBlankGrade && !isFailing && !isScpDemotedGrades && (
-                    <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
                   )}
-                  {isScp && !hasZeroOrBlankGrade && !isFailing && (
-                    <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
+                  {isScp && !isGrade10 && !hasZeroOrBlankGrade && !isFailing && (
+                    <SelectItem value="PROMOTED_TO_BEC">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
                   )}
                   {!hasZeroOrBlankGrade && (
                     <>
-                      <SelectItem value="RETAINED">RETAINED</SelectItem>
-                      <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
+                      <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                      <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
                     </>
                   )}
-                  <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
-                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                  <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                  <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

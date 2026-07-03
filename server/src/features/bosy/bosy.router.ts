@@ -6,6 +6,7 @@ import {
   getBosyQueue,
   syncBosyQueueHandler,
   confirmReturnHandler,
+  markTransferRequestHandler,
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
   getPhase2QueueHandler,
@@ -54,6 +55,13 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR", "TEACHER"),
   confirmReturnHandler,
+);
+
+router.post(
+  "/transfer-request/:applicationId",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  markTransferRequestHandler,
 );
 
 router.post(

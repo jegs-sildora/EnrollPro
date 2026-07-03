@@ -69,6 +69,13 @@ router.post(
 );
 
 router.post(
+  "/grade/:gradeLevelId/unlock",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.unlockGradeLevelEosy,
+);
+
+router.post(
   "/batch-update",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),

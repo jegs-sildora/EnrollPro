@@ -5,7 +5,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowRightLeft, CheckCircle2, Loader2 } from "lucide-react";
 import type {
   ColumnDef,
   RowSelectionState,
@@ -23,12 +23,12 @@ interface QueueTableProps {
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onConfirmSingle: (applicationId: number) => void;
+  onTransferRequest: (learner: BOSYQueueItem) => void;
   confirmingIds: Set<number>;
-  onRevertSingle?: (applicationId: number) => void;
 }
 
 function statusBadge(status: string) {
-  if (status === "PENDING_VERIFICATION")
+  if (status === "PENDING_CONFIRMATION")
     return (
       <Badge
         className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-700 border-transparent hover:bg-amber-200">
@@ -67,8 +67,8 @@ export function QueueTable({
   rowSelection,
   onRowSelectionChange,
   onConfirmSingle,
+  onTransferRequest,
   confirmingIds,
-  onRevertSingle,
 }: QueueTableProps) {
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
@@ -181,9 +181,20 @@ export function QueueTable({
           return (
             <div className="text-center">
               <Badge
-                className={cn("text-[10px] font-extrabold uppercase text-white border-transparent", s === "PROMOTED" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700")}
+                className={cn(
+                  "text-[10px] font-extrabold uppercase text-white border-transparent",
+                  s === "PROMOTED"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : s === "CONDITIONALLY_PROMOTED"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-red-600 hover:bg-red-700",
+                )}
               >
-                {s === "PROMOTED" ? "Promoted" : "Retained"}
+                {s === "PROMOTED"
+                  ? "Promoted"
+                  : s === "CONDITIONALLY_PROMOTED"
+                    ? "Conditionally Promoted"
+                    : "Retained"}
               </Badge>
             </div>
           );
@@ -222,9 +233,9 @@ export function QueueTable({
         cell: ({ row }) => {
           const r = row.original;
           const isConfirming = confirmingIds.has(r.applicationId);
-          if (r.status !== "PENDING_VERIFICATION") return null;
+          if (r.status !== "PENDING_CONFIRMATION") return null;
           return (
-            <div className="flex justify-center">
+            <div className="flex flex-wrap justify-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -232,7 +243,17 @@ export function QueueTable({
                 disabled={isConfirming}
                 onClick={() => onConfirmSingle(r.applicationId)}>
                 {isConfirming && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Confirm Roll-Over ⚡
+                Confirm Return
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-3 text-sm font-extrabold"
+                disabled={isConfirming}
+                onClick={() => onTransferRequest(r)}
+              >
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Transfer Request
               </Button>
             </div>
           );
@@ -245,7 +266,13 @@ export function QueueTable({
 
 
     return base;
-  }, [showConfirmAction, onConfirmSingle, confirmingIds, onRevertSingle, priorSyLabel]);
+  }, [
+    showConfirmAction,
+    onConfirmSingle,
+    onTransferRequest,
+    confirmingIds,
+    priorSyLabel,
+  ]);
 
   if (loading) {
     return (

@@ -38,6 +38,7 @@ import { cn } from "@/shared/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { SectionMasterlistModal } from "./SectionMasterlistModal";
+import { isAxiosError } from "axios";
 
 interface SectionSummary {
   id: number;
@@ -57,7 +58,7 @@ interface SectionSummary {
 
 interface PoolLearner {
   applicationId: number;
-  lrn: string;
+  lrn: string | null;
   firstName: string;
   lastName: string;
   middleName: string | null;
@@ -68,6 +69,21 @@ interface PoolLearner {
   tleProgram: string | null;
   tleProgramId: number | null;
   duplicateFlag?: boolean;
+  programType: string;
+}
+
+interface GradeLevelOption {
+  id: number;
+  name: string;
+  displayOrder: number;
+}
+
+interface GradeLevelsResponse {
+  gradeLevels: GradeLevelOption[];
+}
+
+interface ApiMessageResponse {
+  message?: string;
 }
 
 const SCP_SHORT_LABELS: Record<string, string> = {
@@ -124,7 +140,10 @@ export function SectioningWorkspace() {
     isLoading: gradeLevelsLoading,
   } = useQuery({
     queryKey: ["settings", "grade-levels"],
-    queryFn: () => api.get("/school-years/grade-levels").then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<GradeLevelsResponse>("/school-years/grade-levels")
+        .then((response) => response.data),
     staleTime: 60_000,
   });
 
@@ -155,9 +174,13 @@ export function SectioningWorkspace() {
   const [targetSectionId, setTargetSectionId] = useState<number | null>(null);
 
   const gradeLevels = useMemo(() => {
-    const raw = gradeLevelsResponse?.gradeLevels || gradeLevelsResponse || [];
-    const jhs = raw.filter((g: any) => ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(g.name));
-    return jhs.sort((a: any, b: any) => {
+    const raw = gradeLevelsResponse?.gradeLevels ?? [];
+    const jhs = raw.filter((gradeLevel) =>
+      ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
+        gradeLevel.name,
+      ),
+    );
+    return jhs.sort((a, b) => {
       const orderA = a.displayOrder ?? parseInt(a.name.replace(/\D/g, "")) ?? 0;
       const orderB = b.displayOrder ?? parseInt(b.name.replace(/\D/g, "")) ?? 0;
       return orderA - orderB;
@@ -181,6 +204,17 @@ export function SectioningWorkspace() {
     if (!activeGradeLevelId) return [];
     return pool.filter((p) => String(p.gradeLevelId) === activeGradeLevelId);
   }, [pool, activeGradeLevelId]);
+  const selectedProgramTypes = useMemo(
+    () =>
+      new Set(
+        currentGradePool
+          .filter((learner) =>
+            selectedAppIds.includes(learner.applicationId),
+          )
+          .map((learner) => learner.programType),
+      ),
+    [currentGradePool, selectedAppIds],
+  );
 
   const filteredPool = useMemo(() => {
     return currentGradePool.filter((l) => {
@@ -232,10 +266,14 @@ export function SectioningWorkspace() {
       setTargetSectionId(null);
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
-    } catch (err: any) {
+    } catch (error: unknown) {
       sileo.error({
         title: "Assignment Failed",
-        description: err.response?.data?.message || "An error occurred while moving learners. Please try again.",
+        description:
+          (isAxiosError<ApiMessageResponse>(error)
+            ? error.response?.data.message
+            : undefined)
+          ?? "An error occurred while moving learners. Please try again.",
       });
     } finally {
       setProcessing(false);
@@ -246,7 +284,7 @@ export function SectioningWorkspace() {
     if (!activeGradeLevelId) return;
     setProcessing(true);
     try {
-      const res = await api.post("/sections/auto-distribute", {
+      const res = await api.post<ApiMessageResponse>("/sections/auto-distribute", {
         gradeLevelId: activeGradeLevelId,
       });
       sileo.success({
@@ -256,10 +294,14 @@ export function SectioningWorkspace() {
       setIsAutoDistributeModalOpen(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
-    } catch (err: any) {
+    } catch (error: unknown) {
       sileo.error({
         title: "Auto-Distribute Failed",
-        description: err.response?.data?.message || "An error occurred during auto-distribution.",
+        description:
+          (isAxiosError<ApiMessageResponse>(error)
+            ? error.response?.data.message
+            : undefined)
+          ?? "An error occurred during auto-distribution.",
       });
     } finally {
       setProcessing(false);
@@ -285,7 +327,7 @@ export function SectioningWorkspace() {
         if (!isLockedIn) setActiveGradeLevelId(val);
       }} className="flex-shrink-0 mb-6">
         <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 bg-white border-border relative">
-          {gradeLevels.map((g: any) => (
+          {gradeLevels.map((g) => (
             <TabsTrigger
               key={g.id}
               value={String(g.id)}
@@ -419,6 +461,9 @@ export function SectioningWorkspace() {
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[10px] font-extrabold uppercase text-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
                                 <Badge variant="outline" className="text-[9px] uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
+                                <Badge variant="outline" className="text-[9px] uppercase font-extrabold">
+                                  {SCP_SHORT_LABELS[l.programType] ?? l.programType}
+                                </Badge>
                               </div>
                             </div>
                           </td>
@@ -467,13 +512,23 @@ export function SectioningWorkspace() {
                 currentGradeSections.map((s) => {
                   const isOverCapacity = s.currentCount >= s.maxCapacity;
                   const isSelected = targetSectionId === s.id;
+                  const isProgramCompatible =
+                    selectedProgramTypes.size === 0
+                    || (
+                      selectedProgramTypes.size === 1
+                      && selectedProgramTypes.has(s.programType)
+                    );
 
                   return (
                     <div
                       key={s.id}
-                      onClick={() => setTargetSectionId(s.id)}
+                      onClick={() => {
+                        if (isProgramCompatible) setTargetSectionId(s.id);
+                      }}
                       className={cn(
                         "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
+                        !isProgramCompatible
+                          && "cursor-not-allowed opacity-45",
                         isSelected
                           ? "bg-primary/5 border-primary shadow-sm"
                           : "bg-background hover:bg-muted/50 border-border"

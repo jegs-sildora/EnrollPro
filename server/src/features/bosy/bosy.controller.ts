@@ -4,6 +4,7 @@ import {
   getBOSYReadiness,
   getBOSYQueue,
   confirmReturn,
+  markTransferRequest,
   bulkConfirmReturn,
   getJHSCompleters,
   syncBOSYQueue,
@@ -29,9 +30,6 @@ export async function getBosyReadiness(
         .json({ message: "schoolYearId query param is required." });
       return;
     }
-
-    // Auto-sync missing learners before returning readiness
-    await syncBOSYQueue(schoolYearId, req.user!.userId);
 
     const data = await getBOSYReadiness(schoolYearId);
     res.json(data);
@@ -88,11 +86,6 @@ export async function getBosyQueue(
         ? req.query.status
         : undefined;
 
-    // If fetching pending confirmation, auto-sync to ensure list is complete
-    if (status === "VERIFIED") {
-      await syncBOSYQueue(schoolYearId, req.user!.userId);
-    }
-
     const gradeLevelId = req.query.gradeLevelId
       ? parsePositiveInt(req.query.gradeLevelId, 0) || undefined
       : undefined;
@@ -143,6 +136,39 @@ export async function confirmReturnHandler(
       userId: req.user!.userId,
       actionType: "BOSY_RETURN_CONFIRMED",
       description: `Confirmed return for enrollment application #${applicationId}`,
+      subjectType: "EnrollmentApplication",
+      recordId: applicationId,
+      req,
+    });
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markTransferRequestHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const applicationId = parsePositiveInt(req.params.applicationId, 0);
+    if (!applicationId) {
+      res.status(400).json({ message: "Invalid applicationId." });
+      return;
+    }
+
+    const result = await markTransferRequest(
+      applicationId,
+      req.user!.userId,
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "BOSY_TRANSFER_REQUEST_MARKED",
+      description:
+        `Marked enrollment application #${applicationId} as a transfer request.`,
       subjectType: "EnrollmentApplication",
       recordId: applicationId,
       req,

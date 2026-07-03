@@ -53,6 +53,16 @@ export async function confirmReturn(
   return res.data;
 }
 
+export async function markTransferRequest(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/transfer-request/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
 export async function bulkConfirm(body: {
   applicationIds: number[];
   schoolYearId: number;

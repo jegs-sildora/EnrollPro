@@ -7,7 +7,7 @@ export interface BOSYReadiness {
   readyForSectioningCount: number;
   enrolledCount: number;
   jhsCompleterCount: number;
-  droppedCount: number;
+  transferRequestCount: number;
   // Phase 2 BEEF intake counts
   scpPriorityCount: number;
   onlineBeefCount: number;

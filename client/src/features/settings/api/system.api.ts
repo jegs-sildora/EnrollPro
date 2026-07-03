@@ -2,7 +2,14 @@ import api from "@/shared/api/axiosInstance";
 
 export interface RolloverReadinessPayload {
   isEosyPhase: boolean;
-  blockers: string[];
+  ready: boolean;
+  schoolYearFinalized: boolean;
+  blockers: Array<{
+    gradeLevel: string;
+    sectionName: string;
+    unfinishedLearnerCount: number;
+    reasons: string[];
+  }>;
 }
 
 export async function getRolloverReadiness(): Promise<RolloverReadinessPayload> {

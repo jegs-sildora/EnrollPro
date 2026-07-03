@@ -13,7 +13,10 @@ import {
   Archive,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { useSettingsStore } from "@/store/settings.slice";
+import {
+  useSettingsStore,
+  type SettingsState,
+} from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -53,8 +56,11 @@ import {
   type LoadingState as MultiStepLoadingState,
 } from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
-
-import SystemRolloverModal from "../components/SystemRolloverModal";
+import { AdminPinInput } from "@/shared/components/AdminPinInput";
+import {
+  getRolloverReadiness,
+  type RolloverReadinessPayload,
+} from "../api/system.api";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
@@ -69,12 +75,23 @@ const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
     text: "Preparing the next school-year timeline, enrollment windows, and registrar controls.",
   },
   {
-    text: "Applying rollover options for structure cloning and continuing-learner carryover.",
+    text: "Preparing empty class lists and pending returning-learner confirmations.",
   },
   { text: "Refreshing active school-year context across connected modules." },
 ];
 
 const ROLLOVER_CLOSE_COUNTDOWN_SECONDS = 5;
+type AcademicPhase = Exclude<SettingsState["systemPhase"], null>;
+
+function isAcademicPhase(value: string): value is AcademicPhase {
+  return [
+    "PRE_REGISTRATION",
+    "BOSY_ENROLLMENT",
+    "OFFICIAL_ENROLLMENT",
+    "CLASSES_ONGOING",
+    "EOSY_CLOSING",
+  ].includes(value);
+}
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -266,12 +283,10 @@ interface Defaults {
 }
 
 interface RolloverSummary {
-  processedRecords: number;
-  createdApplications: number;
-  skippedByEosyOutcome: number;
-  skippedNoTargetGrade: number;
-  skippedExistingApplications: number;
-  skippedDuplicateRecords: number;
+  archivedRecords: number;
+  pendingConfirmations: number;
+  completers: number;
+  archiveOnlyDepartures: number;
 }
 
 interface RolloverDraftSnapshot {
@@ -337,7 +352,8 @@ export default function SchoolYearTab() {
   const pendingSuccessToastRef = useRef<(() => void) | null>(null);
 
   // Phase Shift State
-  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
+  const [selectedPhase, setSelectedPhase] =
+    useState<SettingsState["systemPhase"]>(null);
   const [showPhaseModal, setShowPhaseModal] = useState(false);
   const [isUpdatingPhase, setIsUpdatingPhase] = useState(false);
 
@@ -346,10 +362,9 @@ export default function SchoolYearTab() {
   const [editClassOpening, setClassOpening] = useState<Date | undefined>();
   const [editClassEnd, setClassEnd] = useState<Date | undefined>();
 
-  const [rolloverOptions, setRolloverOptions] = useState({
-    cloneStructure: true,
-    carryOverLearners: true,
-  });
+  const [rolloverPin, setRolloverPin] = useState("");
+  const [rolloverReadiness, setRolloverReadiness] =
+    useState<RolloverReadinessPayload | null>(null);
 
   // Activation & Legal state
   const [isAgreedToActivation, setIsAgreedToActivation] = useState(false);
@@ -510,7 +525,7 @@ export default function SchoolYearTab() {
 
     // Fallback 2: Any non-archived, non-draft record
     return years.find((y) => y.status !== "ARCHIVED" && y.status !== "DRAFT");
-  }, [years, activeSchoolYearId]);
+  }, [years, activeSchoolYearId, viewingSchoolYearId]);
 
   const draftYear = useMemo(() => {
     // Find a year explicitly marked as DRAFT
@@ -540,8 +555,8 @@ export default function SchoolYearTab() {
         term2End: activeYear.term2End ? activeYear.term2End.split('T')[0] : "",
         term3Start: activeYear.term3Start ? activeYear.term3Start.split('T')[0] : "",
         term3End: activeYear.term3End ? activeYear.term3End.split('T')[0] : "",
-        term4Start: (activeYear as any).term4Start ? (activeYear as any).term4Start.split('T')[0] : "",
-        term4End: (activeYear as any).term4End ? (activeYear as any).term4End.split('T')[0] : "",
+        term4Start: activeYear.term4Start ? activeYear.term4Start.split('T')[0] : "",
+        term4End: activeYear.term4End ? activeYear.term4End.split('T')[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
       });
@@ -550,7 +565,8 @@ export default function SchoolYearTab() {
 
   const isCalendarChanged = useMemo(() => {
     if (!activeYear) return false;
-    const getVal = (val: any) => val ? val.split('T')[0] : "";
+    const getVal = (value: string | null | undefined) =>
+      value ? value.split("T")[0] : "";
     return (
       localCalendarState.termFormat !== (activeYear.termFormat ?? "TRIMESTER") ||
       localCalendarState.term1Start !== getVal(activeYear.term1Start) ||
@@ -559,14 +575,16 @@ export default function SchoolYearTab() {
       localCalendarState.term2End !== getVal(activeYear.term2End) ||
       localCalendarState.term3Start !== getVal(activeYear.term3Start) ||
       localCalendarState.term3End !== getVal(activeYear.term3End) ||
-      localCalendarState.term4Start !== getVal((activeYear as any).term4Start) ||
-      localCalendarState.term4End !== getVal((activeYear as any).term4End) ||
+      localCalendarState.term4Start !== getVal(activeYear.term4Start) ||
+      localCalendarState.term4End !== getVal(activeYear.term4End) ||
       localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
       localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate)
     );
   }, [localCalendarState, activeYear]);
 
-  const isRolloverReady = Boolean(activeYear?.isEosyFinalized) || systemPhase === "EOSY_CLOSING";
+  const isRolloverReady = activeYear
+    ? rolloverReadiness?.ready === true
+    : true;
 
   const nextRolloverYearLabel = useMemo(() => {
     if (!activeYear) {
@@ -765,8 +783,7 @@ export default function SchoolYearTab() {
           yearLabel: activationPayload.yearLabel,
           classOpeningDate: activationPayload.classOpeningDate,
           classEndDate: activationPayload.classEndDate,
-          cloneStructure: rolloverOptions.cloneStructure,
-          carryOverLearners: rolloverOptions.carryOverLearners,
+          pin: rolloverPin,
         }
         : {
           ...activationPayload,
@@ -798,7 +815,7 @@ export default function SchoolYearTab() {
 
       const successDescription = activeYear
         ? rolloverSummary
-          ? `School Year ${res.data.year.yearLabel} is now active. ${rolloverSummary.createdApplications} learner application(s) were carried over.`
+          ? `School Year ${res.data.year.yearLabel} is now active with empty class lists. ${rolloverSummary.pendingConfirmations} returning learner(s) are waiting for confirmation.`
           : `School Year ${res.data.year.yearLabel} is now active.`
         : `School Year ${res.data.year.yearLabel} is now active.`;
 
@@ -817,6 +834,8 @@ export default function SchoolYearTab() {
       }
 
       setShowNextForm(false);
+      setRolloverPin("");
+      setRolloverReadiness(null);
       setRolloverDraftBaseline(null);
 
       if (isRolloverFlow) {
@@ -895,7 +914,17 @@ export default function SchoolYearTab() {
       });
     }
 
+    setRolloverPin("");
+    setRolloverReadiness(null);
     setShowNextForm(true);
+
+    if (activeYear) {
+      void getRolloverReadiness()
+        .then(setRolloverReadiness)
+        .catch((error: unknown) => {
+          toastApiError(error as Parameters<typeof toastApiError>[0]);
+        });
+    }
   };
 
   const handleSaveCalendarSettings = async () => {
@@ -1123,11 +1152,6 @@ export default function SchoolYearTab() {
                   </div>
                 </div>
 
-                {activeYear && activeYear._count?.sections > 0 && activeYear.sections?.length === 0 && (
-                  <div className="flex flex-col items-end w-full lg:w-auto mt-2 lg:mt-0">
-                    <SystemRolloverModal disabled={false} activeYearLabel={activeYear.yearLabel} />
-                  </div>
-                )}
               </div>
 
               {activeYear ? (
@@ -1148,7 +1172,11 @@ export default function SchoolYearTab() {
                     </div>
                     <RadioGroup
                       value={isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")}
-                      onValueChange={(value: string) => setSelectedPhase(value)}
+                      onValueChange={(value: string) => {
+                        if (isAcademicPhase(value)) {
+                          setSelectedPhase(value);
+                        }
+                      }}
                       className="grid grid-cols-1 md:grid-cols-3 gap-4"
                       disabled={isArchived}
                     >
@@ -1494,6 +1522,8 @@ export default function SchoolYearTab() {
           if (!open) {
             setRolloverDraftBaseline(null);
             setIsAgreedToActivation(false);
+            setRolloverPin("");
+            setRolloverReadiness(null);
           }
         }}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1501,12 +1531,12 @@ export default function SchoolYearTab() {
             <DialogTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5" />
               {activeYear
-                ? `Prepare School Year Rollover: ${editYearLabel}`
+                ? `Start New School Year: ${editYearLabel}`
                 : `Configure Inaugural Academic Year: ${editYearLabel}`}
             </DialogTitle>
             <DialogDescription>
               {activeYear
-                ? `Create and activate the next school year from ${activeYear.yearLabel}.`
+                ? `Archive ${activeYear.yearLabel}, open empty class lists, and prepare returning learners for confirmation.`
                 : "Set the official start and end dates for the system's first active school year."}
             </DialogDescription>
           </DialogHeader>
@@ -1561,47 +1591,52 @@ export default function SchoolYearTab() {
             {activeYear && (
               <div className="p-4 border rounded-lg space-y-3">
                 <p className="text-base font-extrabold">
-                  Rollover options from {activeYear.yearLabel}
+                  What happens when the new school year starts
                 </p>
                 <p className="text-sm text-foreground">
-                  EOSY finalization must be completed before rollover can run.
+                  The completed school year will be archived. These required
+                  steps are applied automatically:
                 </p>
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="c1"
-                      checked={rolloverOptions.cloneStructure}
-                      onCheckedChange={(checked) =>
-                        setRolloverOptions({
-                          ...rolloverOptions,
-                          cloneStructure: checked === true,
-                        })
-                      }
-                    />
-                    <label
-                      htmlFor="c1"
-                      className="text-base cursor-pointer select-none">
-                      Clone grade levels, sections, and SCPs (Adviser
-                      assignments will be wiped clean)
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="c3"
-                      checked={rolloverOptions.carryOverLearners}
-                      onCheckedChange={(checked) =>
-                        setRolloverOptions({
-                          ...rolloverOptions,
-                          carryOverLearners: checked === true,
-                        })
-                      }
-                    />
-                    <label
-                      htmlFor="c3"
-                      className="text-base cursor-pointer select-none">
-                      Carry over eligible enrolled learners as continuing status
-                    </label>
-                  </div>
+                <ul className="list-disc space-y-1 pl-5 text-sm font-semibold">
+                  <li>Copy the section structure with no learners or advisers.</li>
+                  <li>Begin the official enrollment count at zero.</li>
+                  <li>
+                    Place eligible returning learners in Pending Confirmations.
+                  </li>
+                  <li>
+                    Create SF1 records only after confirmation and section
+                    assignment.
+                  </li>
+                </ul>
+
+                {rolloverReadiness &&
+                  rolloverReadiness.blockers.length > 0 && (
+                    <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                      <p className="font-extrabold text-amber-900">
+                        Finish these classes before starting the new school year:
+                      </p>
+                      <ul className="mt-2 space-y-1 text-sm text-amber-950">
+                        {rolloverReadiness.blockers.map((blocker) => (
+                          <li
+                            key={`${blocker.gradeLevel}-${blocker.sectionName}`}
+                          >
+                            {blocker.gradeLevel} - {blocker.sectionName}:{" "}
+                            {blocker.unfinishedLearnerCount} unfinished learner
+                            record(s)
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                <div className="space-y-2 border-t pt-3">
+                  <Label>Six-digit administrator PIN</Label>
+                  <AdminPinInput
+                    value={rolloverPin}
+                    onChange={setRolloverPin}
+                    disabled={creating || isRolloverLoaderOpen}
+                    ariaLabel="Administrator PIN for starting the new school year"
+                  />
                 </div>
               </div>
             )}
@@ -1684,21 +1719,24 @@ export default function SchoolYearTab() {
                   !editClassEnd ||
                   isLabelTaken ||
                   !isAgreedToActivation ||
-                  (activeYear && !isRolloverReady)
+                  (activeYear &&
+                    (!isRolloverReady || !/^\d{6}$/.test(rolloverPin)))
                 }>
                 {creating
                   ? activeYear
                     ? "Running rollover..."
                     : "Activating..."
                   : activeYear
-                    ? "Execute School Year Rollover"
+                    ? "Start New School Year"
                     : `Activate SY ${editYearLabel}`}
               </Button>
             </div>
             {activeYear && !isRolloverReady && (
               <div className="flex items-center justify-end gap-1 text-sm font-extrabold text-amber-700">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                <span>Waiting for EOSY Finalization.</span>
+                <span>
+                  Complete all EOSY records and lock every class first.
+                </span>
               </div>
             )}
           </div>
@@ -1775,7 +1813,7 @@ export default function SchoolYearTab() {
 
           // Optimistic UI Update
           const previousPhase = systemPhase;
-          setSettings({ systemPhase: selectedPhase as any });
+          setSettings({ systemPhase: selectedPhase });
           setShowPhaseModal(false);
 
           try {

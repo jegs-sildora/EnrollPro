@@ -57,7 +57,7 @@ export class SectioningEngine {
 
   // Helper to compute weighted score for Grade 7 STE
   private getWeightedScpScore(app: ApplicantWithRelations): number {
-    const assessments: any[] = [];
+    const assessments: Array<{ type: string; score: number }> = [];
 
     // Qualifying Exam (65%)
     const examScore =
@@ -171,7 +171,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: "VERIFIED",
+          status: "READY_FOR_SECTIONING",
           enrollmentRecord: null,
         },
       }),
@@ -224,7 +224,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: "VERIFIED",
+          status: "READY_FOR_SECTIONING",
           enrollmentRecord: null,
         },
         include: {
@@ -242,7 +242,7 @@ export class SectioningEngine {
           previousSchool: true,
           
         },
-      }) as any); // Type assertion needed for complex include
+      }) as unknown as ApplicantWithRelations[]);
 
     if (applicants.length === 0) {
       throw new AppError(400, "No eligible learners found for sectioning.");
@@ -307,10 +307,7 @@ export class SectioningEngine {
       proposedAssignments: [],
     };
 
-    // --- PRE-PROCESSING: Filter out RETAINED learners ---
-    const eligibleApplicants = applicants.filter(
-      (a) => a.learner.promotionStatus !== "RETAINED",
-    );
+    const eligibleApplicants = applicants;
 
     // --- STEP 1: SCP Segregation (Top 70 STE or Vacancy Fill) ---
     const steApplicants = eligibleApplicants.filter(
