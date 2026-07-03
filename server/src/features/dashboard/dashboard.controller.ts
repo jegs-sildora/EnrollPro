@@ -642,7 +642,7 @@ export async function lockPhaseAndExportSF1(req: Request, res: Response): Promis
     await prisma.schoolYear.update({
       where: { id: schoolYearId },
       data: { 
-        status: "BOSY_LOCKED",
+        status: "ACTIVE",
         bosyLockedAt: new Date(),
         bosyLockedById: userId || null
       }

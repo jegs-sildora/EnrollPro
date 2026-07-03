@@ -22,13 +22,6 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="space-y-6 pb-6" style={{ "--element-track": "340 40% 96%" } as React.CSSProperties}>
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Master Enrollment Dashboard</h1>
-        <p className="text-base leading-tight font-extrabold text-foreground">
-          End of School Year (EOSY) Closing • {ayLabel}
-        </p>
-      </div>
-
       <Alert style={{ backgroundColor: "#FDF2F8", borderColor: "#FBCFE8" }}>
         <AlertTitle className="font-extrabold" style={{ color: "#831843" }}>Academic Phase: EOSY Closing</AlertTitle>
         <AlertDescription className="font-extrabold" style={{ color: "#831843" }}>

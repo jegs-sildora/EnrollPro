@@ -45,6 +45,7 @@ import { DocumentAuthModal } from "@/features/students/components/DocumentAuthMo
 import { Sf10Tracking, type Sf10Request } from "@/features/students/components/tabs/Sf10Tracking";
 import { useAuthStore } from "@/store/auth.slice";
 import axios from "axios";
+import { useHeaderStore } from "@/store/header.slice";
 
 type StudentRecordHistoryEntry = {
   id: number;
@@ -168,6 +169,17 @@ export default function StudentProfile() {
       void fetchSf10Requests();
     }
   }, [activeTab, student?.learnerId, fetchSf10Requests]);
+
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (student) {
+      setTitle(`Student Profile: ${student.lastName}, ${student.firstName}`);
+    } else {
+      setTitle("Student Profile");
+    }
+    return () => setTitle(null);
+  }, [setTitle, student]);
 
   const handleVerifyPsa = async (type: "PSA" | "SECONDARY") => {
     if (!student) return;

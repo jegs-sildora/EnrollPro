@@ -33,6 +33,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { useHeaderStore } from "@/store/header.slice";
 
 interface AuditUser {
   id: number;
@@ -511,17 +512,16 @@ export default function AuditLogs() {
     }
   };
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("System Activity Logs");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold text-foreground">
-            System Activity Logs
-          </h1>
-          <p className="text-base leading-tight font-extrabold text-foreground ">
-            Track institutional data modifications, enrollment overrides, and staff login activity.
-          </p>
-        </div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
         <div className="flex gap-2">
           <Button
             variant="outline"

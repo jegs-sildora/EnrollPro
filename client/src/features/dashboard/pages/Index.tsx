@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "@/shared/api/axiosInstance";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useHeaderStore } from "@/store/header.slice";
 import type { DashboardStats } from "../types";
 
 import { PhaseOfficial } from "./PhaseOfficial";
@@ -14,6 +15,12 @@ interface DashboardStatsResponse {
 
 export default function DashboardIndex() {
   const { ayId, viewingStatus } = useSchoolYearContext();
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Master Dashboard");
+    return () => setTitle(null);
+  }, [setTitle]);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);

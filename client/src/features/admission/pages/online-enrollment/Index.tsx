@@ -86,10 +86,9 @@ export default function Apply() {
     return todayToken >= openToken && todayToken <= closeToken;
   })();
 
-  const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const isEosyClosing = systemPhase === "EOSY_CLOSING";
-  // The forms are closed if the school year is BOSY Locked or if we are in EOSY phase
-  const isClosed = isBosyLocked || isEosyClosing || (!isWithinOfficialBosyEnrollmentWindow && systemPhase !== "CLASSES_ONGOING");
+  // The forms are closed if we are in EOSY phase or outside the enrollment window
+  const isClosed = isEosyClosing || (!isWithinOfficialBosyEnrollmentWindow && systemPhase !== "CLASSES_ONGOING");
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -244,7 +243,7 @@ export default function Apply() {
 
                   </div>
 
-                  {isBosyLocked || isEosyClosing ? (
+                  {isEosyClosing ? (
                     <div className="space-y-4 max-w-lg mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-2xl font-extrabold text-gray-900 mt-6">

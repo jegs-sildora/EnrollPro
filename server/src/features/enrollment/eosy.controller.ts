@@ -4,6 +4,7 @@ import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
 import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
+import { getHistoricalProfileSnapshot } from "../school-year/services/school-year-rollover.service.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -229,7 +230,7 @@ export async function updateEosyRecord(
       );
     }
 
-    const ave = finalAverage !== undefined ? parseFloat(String(finalAverage)) : null;
+    const ave = finalAverage !== undefined ? parseFloat(String(finalAverage)) : record.finalAverage !== null ? parseFloat(String(record.finalAverage)) : null;
     const isScp = record.section?.programType && record.section.programType !== "REGULAR";
 
     let targetStatus = eosyStatus;
@@ -599,6 +600,122 @@ export async function finalizeSchoolYear(
       },
     });
 
+    // Create EnrollmentHistory for all records in this school year
+    const sourceRecords = await prisma.enrollmentRecord.findMany({
+      where: { schoolYearId: syId },
+      select: {
+        learnerId: true,
+        schoolYearId: true,
+        sectionId: true,
+        finalAverage: true,
+        eosyStatus: true,
+        learner: {
+          select: {
+            lrn: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            extensionName: true,
+            sex: true,
+            birthdate: true,
+          },
+        },
+        enrolledBy: {
+          select: { firstName: true, lastName: true },
+        },
+        section: {
+          select: {
+            gradeLevelId: true,
+            advisers: {
+              where: { status: "ACTIVE" },
+              take: 1,
+              select: { teacherId: true },
+            },
+          },
+        },
+        enrollmentApplication: {
+          select: {
+            id: true,
+            applicantType: true,
+            assignedProgram: true,
+            learnerType: true,
+            contactNumber: true,
+            guardianName: true,
+          },
+        },
+      },
+    });
+
+    if (sourceRecords.length > 0) {
+      await prisma.enrollmentHistory.createMany({
+        data: sourceRecords.map((record) => ({
+          learnerId: record.learnerId,
+          schoolYearId: record.schoolYearId,
+          gradeLevelId: record.section.gradeLevelId,
+          sectionId: record.sectionId,
+          adviserId: record.section.advisers[0]?.teacherId ?? null,
+          genAve: record.finalAverage,
+          eosyStatus: record.eosyStatus,
+          learnerProfileSnapshot: getHistoricalProfileSnapshot(record),
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Create the next school year and set it as the new active year
+    let nextYearLabel = "";
+    const parts = updated.yearLabel.split("-");
+    if (parts.length === 2) {
+      const start = parseInt(parts[0], 10);
+      const end = parseInt(parts[1], 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        nextYearLabel = `${start + 1}-${end + 1}`;
+      }
+    }
+
+    if (nextYearLabel) {
+      let nextSy = await prisma.schoolYear.findUnique({
+        where: { yearLabel: nextYearLabel },
+      });
+      if (!nextSy) {
+        const shiftYear = (d: Date | null) => {
+          if (!d) return null;
+          const newDate = new Date(d);
+          newDate.setFullYear(newDate.getFullYear() + 1);
+          return newDate;
+        };
+
+        nextSy = await prisma.schoolYear.create({
+          data: {
+            yearLabel: nextYearLabel,
+            status: "ACTIVE",
+            termFormat: updated.termFormat,
+            clonedFromId: updated.id,
+            classOpeningDate: shiftYear(updated.classOpeningDate),
+            classEndDate: shiftYear(updated.classEndDate),
+            enrollOpenDate: shiftYear(updated.enrollOpenDate),
+            enrollCloseDate: shiftYear(updated.enrollCloseDate),
+            term1Start: shiftYear(updated.term1Start),
+            term1End: shiftYear(updated.term1End),
+            term2Start: shiftYear(updated.term2Start),
+            term2End: shiftYear(updated.term2End),
+            term3Start: shiftYear(updated.term3Start),
+            term3End: shiftYear(updated.term3End),
+            term4Start: shiftYear(updated.term4Start),
+            term4End: shiftYear(updated.term4End),
+          },
+        });
+      }
+      
+      // Update global active school year and phase in settings
+      await prisma.schoolSetting.updateMany({
+        data: { 
+          activeSchoolYearId: nextSy.id,
+          systemPhase: "OFFICIAL_ENROLLMENT"
+        },
+      });
+    }
+
     // Hook: Queue Ecosystem Sync for entire school year
 
     await auditLog({
@@ -611,7 +728,7 @@ export async function finalizeSchoolYear(
     });
 
     const state = await getSchoolYearExportLockState(syId);
-    res.json({ schoolYear: updated, exportLock: state });
+    res.json({ schoolYear: updated, exportLock: state, nextSchoolYear: nextYearLabel ? (await prisma.schoolYear.findUnique({ where: { yearLabel: nextYearLabel } })) : null });
   } catch (error) {
     next(error);
   }
@@ -657,7 +774,7 @@ export async function unlockSchoolYearEosy(
       where: { id: schoolYear.id },
       data: {
         isEosyFinalized: false,
-        status: "BOSY_LOCKED", // Revert to BOSY_LOCKED so teachers can correct records
+        status: "ACTIVE", // Revert to ACTIVE so teachers can correct records
       },
     });
 

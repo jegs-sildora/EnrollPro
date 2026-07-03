@@ -23,6 +23,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { useHeaderStore } from "@/store/header.slice";
 
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
@@ -1562,17 +1563,15 @@ export default function Students() {
     );
   }
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Master Learner Registry (LIS)");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">
-          Master Learner Registry (LIS)
-        </h1>
-        <p className="leading-tight font-extrabold text-foreground">
-          Manage officially enrolled demographic data, enrollment histories, and permanent records.
-        </p>
-      </div>
 
 
       {/* Tabs */}

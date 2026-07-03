@@ -27,7 +27,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/continuing-learners": "Confirmation of Continuing Learners",
     "/monitoring/enrollment": "Sectioning & SF1 Prep",
     "/monitoring/enrollment/walk-in": "Late Enrollee Form",
-    "/eosy": "EOSY Promotion Update",
+    "/eosy": "EOSY Updating",
     "/students": "Learner Registry",
     "/sections": "Class Sections (SF1)",
     "/sections/homerooms": "Class Sections (SF1)",

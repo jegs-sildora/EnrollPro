@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router";
+import { useHeaderStore } from "@/store/header.slice";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { VerificationWorkspace } from "../components/VerificationWorkspace";
 import { SectioningWorkspace } from "../components/SectioningWorkspace";
@@ -14,21 +16,16 @@ export default function EnrollmentManagement() {
   const setActiveTab = (val: string) => {
     setSearchParams({ tab: val });
   };
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Sectioning & SF1 Prep");
+    return () => setTitle(null);
+  }, [setTitle]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
       <PhaseBanner />
-      {/* ── Top Header ── */}
-      <div className="flex items-center justify-between pb-6 flex-shrink-0">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Sectioning & School Form 1 (SF1) Preparation
-          </h1>
-          <p className="text-base leading-tight font-extrabold text-foreground">
-            Validate submitted credentials and execute batch sectioning to generate official class registers.
-          </p>
-        </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
         <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">

@@ -14,6 +14,7 @@ import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { Eye, BookOpen } from "lucide-react";
+import { useHeaderStore } from "@/store/header.slice";
 
 import {
   UsersIcon,
@@ -696,16 +697,19 @@ export default function Teachers() {
     [isPanelOpen, viewingTeacher, invalidateTeacherQueries],
   );
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Faculty & Staff Masterlist");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-balance text-foreground">
-            Faculty & Staff Masterlist
-          </h1>
           <p className="text-base leading-tight text-foreground text-balance font-extrabold">
-            Manage faculty and staff records, school roles, advisory classes,
-            and service status.
+            
           </p>
         </div>
         <Button

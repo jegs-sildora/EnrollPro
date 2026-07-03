@@ -18,12 +18,6 @@ function parseSchoolYearId(req: Request): number {
     const { status } = req.body;
 
     const validStatuses = [
-      "DRAFT",
-      "UPCOMING",
-      "PREPARATION",
-      "ENROLLMENT_OPEN",
-      "BOSY_LOCKED",
-      "EOSY_PROCESSING",
       "ACTIVE",
       "ARCHIVED",
     ];
@@ -53,15 +47,6 @@ function parseSchoolYearId(req: Request): number {
 
       await ensureDefaultGradeLevels();
       await setActiveSchoolYear( id);
-    } else if (status === "BOSY_LOCKED") {
-      await prisma.schoolYear.update({
-        where: { id },
-        data: {
-          status: "BOSY_LOCKED",
-          bosyLockedAt: new Date(),
-          bosyLockedById: req.user?.userId ?? null,
-        },
-      });
     } else {
       await prisma.schoolYear.update({
         where: { id },

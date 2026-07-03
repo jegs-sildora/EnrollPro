@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
@@ -28,6 +28,7 @@ import {
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+import { useHeaderStore } from "@/store/header.slice";
 
 interface AdvisoryLearner {
   id: number;
@@ -222,7 +223,6 @@ export default function AdvisoryClass() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">My Advisory Class</h1>
           <p className="text-muted-foreground">
             View your currently assigned advisory class and enrolled learners.
           </p>
@@ -235,22 +235,19 @@ export default function AdvisoryClass() {
     );
   }
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (section) {
+      setTitle(`${section.gradeLevel.name} — ${section.name}`);
+    } else {
+      setTitle("My Advisory Class");
+    }
+    return () => setTitle(null);
+  }, [section, setTitle]);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-1">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase">
-              {section.gradeLevel.name} — {section.name}
-            </h1>
-            <p className="text-base leading-tight font-extrabold text-foreground">
-              {getProgramTypeLabel(section.programType || "REGULAR")}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">

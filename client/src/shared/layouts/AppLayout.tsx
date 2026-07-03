@@ -54,6 +54,7 @@ import { Button } from "@/shared/ui/button";
 
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHeaderStore } from "@/store/header.slice";
 import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { motion, AnimatePresence } from "motion/react";
@@ -219,27 +220,6 @@ function SYSwitcher() {
   const archivedYears = years.filter((y) => y.status === "ARCHIVED");
 
   const getStatusBadgeMeta = (status?: string | null) => {
-    if (status === "ENROLLMENT_OPEN") {
-      return {
-        label: "ENROLLMENT",
-        className: "bg-blue-100 text-blue-700",
-      };
-    }
-
-    if (status === "BOSY_LOCKED" || status === "ACTIVE") {
-      return {
-        label: "ACTIVE",
-        className: "bg-green-100 text-green-800",
-      };
-    }
-
-    if (status === "EOSY_PROCESSING") {
-      return {
-        label: "EOSY CLOSING",
-        className: "bg-amber-100 text-amber-700",
-      };
-    }
-
     if (status === "ARCHIVED") {
       return {
         label: "ARCHIVED",
@@ -305,7 +285,7 @@ function SYSwitcher() {
               <ChevronsUpDown className="text-foreground w-4 h-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base "text-foreground>
+          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base " text-foreground>
             Switch School Year
           </TooltipContent>
         </Tooltip>
@@ -596,7 +576,7 @@ function AppSidebar() {
                           icon={ArrowUpRightSquare}
                           label={
                             <div className="flex items-center justify-between w-full">
-                              <span>EOSY Promotion Update</span>
+                              <span>EOSY Updating</span>
                             </div>
                           }
                           pathname={pathname}
@@ -752,7 +732,7 @@ const ROUTE_PHASES: Record<string, {
   },
   "/eosy": {
     allowedPhases: ["EOSY_CLOSING"],
-    moduleName: "EOSY Promotion Update",
+    moduleName: "EOSY Updating",
     redirectTo: "/dashboard",
     redirectLabel: "Take me to Dashboard"
   }
@@ -771,6 +751,7 @@ function formatPhaseName(phase: string | null): string {
 }
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
+  const title = useHeaderStore((s) => s.title);
   const {
     selectedAccentHsl,
     colorScheme,
@@ -950,6 +931,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             orientation="vertical"
             className="mr-2 h-4!"
           />
+          {title && (
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-none whitespace-nowrap mr-4">
+              {title}
+            </h1>
+          )}
           <div className="flex items-center gap-2">
             {isHistoricalReadOnly ? (
               <Badge
@@ -993,39 +979,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         </AnimatePresence>
       </SidebarInset>
 
-      <Dialog open={showBlockedModal} onOpenChange={(open) => { if (!open) handleConfirmRedirect(); }}>
-        <DialogContent className="sm:max-w-[420px] text-center p-6 bg-white rounded-xl shadow-lg border border-border">
-          <DialogHeader className="flex flex-col items-center">
-            <DialogTitle className="text-xl font-black text-rose-600 tracking-wide uppercase flex items-center gap-1.5">
-              [Module Out of Season]
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            <p className="font-bold text-slate-800 leading-tight">
-              The {blockedInfo?.moduleName} module is closed.
-            </p>
-            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
-              The active school phase is currently set to <span className="font-bold text-slate-700">{formatPhaseName(blockedInfo?.activePhase ?? null)}</span>.
-            </p>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative">
-              <div
-                className="h-full bg-rose-500 transition-all duration-1000"
-                style={{ width: `${(redirectCountdown / 3) * 100}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-              Auto-redirecting in {redirectCountdown}s...
-            </p>
-          </div>
-          <DialogFooter className="sm:justify-center">
-            <Button
-              onClick={handleConfirmRedirect}
-              className="w-full h-10 font-bold uppercase tracking-wide bg-rose-600 hover:bg-rose-700 text-white border-none shadow-none">
-              {blockedInfo?.redirectLabel}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   );
 }

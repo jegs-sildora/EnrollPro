@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller } from "react-hook-form";
@@ -39,6 +39,7 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
 import FinalizeEnrollmentModal from "@/features/intake/components/FinalizeEnrollmentModal";
+import { useHeaderStore } from "@/store/header.slice";
 
 const READING_LEVELS = [
   { value: "INDEPENDENT", label: "Independent", color: "text-emerald-600" },
@@ -773,6 +774,13 @@ export default function IntakeDashboard() {
   const readingCount = readingQueue.length;
   const confirmationCount = confirmationQueue.length;
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Intake Dashboard");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   if (!schoolYearId) {
     return (
       <div className="flex items-center justify-center py-20 text-foreground">
@@ -783,12 +791,6 @@ export default function IntakeDashboard() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-extrabold uppercase tracking-tight">Intake Dashboard</h1>
-        <p className="text-base leading-tight text-foreground mt-1">
-          School Year {yearLabel} - Pre-Listing, Reading Assessment, and Confirmation
-        </p>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3">

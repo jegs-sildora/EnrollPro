@@ -169,7 +169,7 @@ export async function submitTeacherAdvisory(
         if (!record) continue;
 
         // DepEd Cutoff Enforcer for Special Programs
-        const finalAverage = update.finalAverage;
+        const finalAverage = update.finalAverage !== undefined ? update.finalAverage : record.finalAverage !== null ? parseFloat(String(record.finalAverage)) : null;
 
         let eosyStatus = update.eosyStatus as EosyStatus;
         let nextYearCurriculum: any = null;

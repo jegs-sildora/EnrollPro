@@ -45,16 +45,9 @@ export interface SettingsState {
     | "EARLY_REGISTRATION"
     | "REGULAR_ENROLLMENT"
     | "CLOSED"
-    | "OVERRIDE"
-    | "BOSY_LOCKED";
+    | "OVERRIDE";
   systemPhase: "PRE_REGISTRATION" | "BOSY_ENROLLMENT" | "OFFICIAL_ENROLLMENT" | "CLASSES_ONGOING" | "EOSY_CLOSING" | null;
   systemStatus:
-    | "DRAFT"
-    | "UPCOMING"
-    | "PREPARATION"
-    | "ENROLLMENT_OPEN"
-    | "BOSY_LOCKED"
-    | "EOSY_PROCESSING"
     | "ACTIVE"
     | "ARCHIVED";
   globalDefaultPassword: string;
@@ -116,7 +109,7 @@ export const useSettingsStore = create<SettingsState>()(
       isBosyEnrollmentOpen: false,
       enrollmentPhase: "CLOSED",
       systemPhase: null,
-      systemStatus: "DRAFT",
+      systemStatus: "ACTIVE",
       bosyLockedAt: null,
       globalDefaultPassword: "DepEd2026!",
       viewingSchoolYearId: null,

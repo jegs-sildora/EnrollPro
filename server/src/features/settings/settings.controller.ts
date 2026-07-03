@@ -65,7 +65,7 @@ export async function getPublicSettings(
       expiresAt: lock.expiresAt,
     } : null;
 
-    const effectiveSystemStatus = contextSy?.status ?? activeSy?.status ?? "DRAFT";
+    const effectiveSystemStatus = contextSy?.status ?? activeSy?.status ?? "ACTIVE";
 
     const isContextArchived = effectiveSystemStatus === "ARCHIVED" || contextSy?.status === "ARCHIVED";
     const snapshotSettings = isContextArchived && contextSy?.settingsSnapshot

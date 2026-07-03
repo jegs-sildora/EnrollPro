@@ -23,7 +23,6 @@ function toManilaDateToken(date: Date): number {
 }
 
 export function isEnrollmentOpen(year: SchoolYear): boolean {
-  if (year.status === "BOSY_LOCKED") return false;
 
   const todayToken = toManilaDateToken(new Date());
 
@@ -45,7 +44,6 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
  * BOSY enrollment is considered open.
  */
 export function isRegularEnrollmentWindowOpen(year: SchoolYear): boolean {
-  if (year.status === "BOSY_LOCKED") return false;
 
 
   const todayToken = toManilaDateToken(new Date());
@@ -61,9 +59,8 @@ export function getEnrollmentPhase(
   year: SchoolYear,
 ):
   | "REGULAR_ENROLLMENT"
-  | "CLOSED"
-  | "BOSY_LOCKED" {
-  if (year.status === "BOSY_LOCKED") return "BOSY_LOCKED";
+  | "CLOSED" {
+
 
 
   const todayToken = toManilaDateToken(new Date());

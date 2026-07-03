@@ -367,7 +367,7 @@ export default function SchoolYearTab() {
     useState<RolloverReadinessPayload | null>(null);
 
   // Activation & Legal state
-  const [isAgreedToActivation, setIsAgreedToActivation] = useState(false);
+
   const [, setIsUpdatingTimeline] = useState(false);
 
   const currentManilaYear = useMemo(
@@ -511,36 +511,17 @@ export default function SchoolYearTab() {
     }
 
     // Fallback 1: Explicit operational statuses
-    const OPERATIONAL_STATUSES = [
-      "ACTIVE",
-      "BOSY_LOCKED",
-      "ENROLLMENT_OPEN",
-      "EOSY_PROCESSING",
-      "PREPARATION",
-    ];
+    const OPERATIONAL_STATUSES = ["ACTIVE"];
     const statusMatch = years.find((y) =>
       OPERATIONAL_STATUSES.includes(y.status),
     );
     if (statusMatch) return statusMatch;
 
-    // Fallback 2: Any non-archived, non-draft record
-    return years.find((y) => y.status !== "ARCHIVED" && y.status !== "DRAFT");
+    // Fallback 2: Any non-archived record
+    return years.find((y) => y.status !== "ARCHIVED");
   }, [years, activeSchoolYearId, viewingSchoolYearId]);
 
-  const draftYear = useMemo(() => {
-    // Find a year explicitly marked as DRAFT
-    const draft = years.find((y) => y.status === "DRAFT");
-    if (draft) return draft;
-
-    // If we have an active year, check if there's a different year marked as UPCOMING
-    if (activeYear) {
-      return years.find(
-        (y) => y.status === "UPCOMING" && y.id !== activeYear.id,
-      );
-    }
-
-    return undefined;
-  }, [years, activeYear]);
+  const draftYear = undefined;
 
   // Unified Calendar State
   const [localCalendarState, setLocalCalendarState] = useState<Record<string, string>>({});
@@ -607,9 +588,9 @@ export default function SchoolYearTab() {
   const isLabelTaken = useMemo(() => {
     const label = editYearLabel.trim().toLowerCase();
     if (!label) return false;
-    // Draft can be re-saved with its own label
+    // Check if label already exists on a different year
     return years.some(
-      (y) => y.yearLabel.toLowerCase() === label && y.status !== "DRAFT",
+      (y) => y.yearLabel.toLowerCase() === label && y.id !== activeYear?.id,
     );
   }, [editYearLabel, years]);
 
@@ -807,6 +788,7 @@ export default function SchoolYearTab() {
       setSettings({
         activeSchoolYearId: res.data.year.id,
         activeSchoolYearLabel: res.data.year.yearLabel,
+        viewingSchoolYearId: null,
       });
 
       if (isRolloverFlow) {
@@ -1521,7 +1503,6 @@ export default function SchoolYearTab() {
           setShowNextForm(open);
           if (!open) {
             setRolloverDraftBaseline(null);
-            setIsAgreedToActivation(false);
             setRolloverPin("");
             setRolloverReadiness(null);
           }
@@ -1651,23 +1632,6 @@ export default function SchoolYearTab() {
                   ? "Executing rollover will archive the current academic cycle. This action cannot be reversed."
                   : "Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database."}
               </p>
-              <div className="flex items-start space-x-3 pt-1">
-                <Checkbox
-                  id="agreed-to-activation"
-                  checked={isAgreedToActivation}
-                  onCheckedChange={(checked) =>
-                    setIsAgreedToActivation(checked === true)
-                  }
-                  className="mt-1"
-                />
-                <label
-                  htmlFor="agreed-to-activation"
-                  className="text-base font-extrabold leading-tight cursor-pointer select-none">
-                  I confirm that these dates align with the official DepEd
-                  School Calendar Memorandum and I am authorized to activate the
-                  system.
-                </label>
-              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-4 border-t">
@@ -1706,9 +1670,7 @@ export default function SchoolYearTab() {
                 onClick={handleActivateNext}
                 className={cn(
                   "font-extrabold transition-all shadow-md border-none",
-                  isAgreedToActivation
-                    ? "bg-[#800000] hover:bg-[#600000] text-white"
-                    : "bg text-foreground grayscale",
+                  "bg-[#800000] hover:bg-[#600000] text-white",
                 )}
                 disabled={
                   creating ||
@@ -1718,7 +1680,6 @@ export default function SchoolYearTab() {
                   !editClassOpening ||
                   !editClassEnd ||
                   isLabelTaken ||
-                  !isAgreedToActivation ||
                   (activeYear &&
                     (!isRolloverReady || !/^\d{6}$/.test(rolloverPin)))
                 }>
@@ -1759,7 +1720,7 @@ export default function SchoolYearTab() {
         variant="primary"
         confirmClassName="bg-primary text-primary-foreground"
         description={
-          <span className="block text-center uppercase font-extrabold text-foreground space-y-4">
+          <span className="block font-bold text-foreground space-y-4">
             {selectedPhase === "OFFICIAL_ENROLLMENT" && (
               <>
                 <p>You are about to open the official enrollment portals for School Year {activeYear?.yearLabel || "2026–2027"}.</p>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useHeaderStore } from "@/store/header.slice";
 import {
   Card,
   CardContent,
@@ -215,6 +216,15 @@ export default function RegistrarEOSYWorkspace() {
 
   const isLocked = section.isEosyFinalized;
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (section) {
+      setTitle(`${section.gradeLevel.name} - ${section.name}`);
+    }
+    return () => setTitle(null);
+  }, [section, setTitle]);
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header Area */}
@@ -223,15 +233,6 @@ export default function RegistrarEOSYWorkspace() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 h-8 text-slate-500">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sections
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-tight uppercase">{section.gradeLevel.name} - {section.name}</h1>
-              <p className="text-base leading-tight text-slate-500 font-extrabold">EOSY Status Batch Updating Workspace</p>
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

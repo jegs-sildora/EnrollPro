@@ -275,7 +275,7 @@ async function carryOverEligibleLearners(
     const existing = await prisma.schoolYear.findUnique({
       where: { yearLabel: resolvedYearLabel },
     });
-    if (existing && existing.status !== "DRAFT") {
+    if (existing && existing.status !== "ARCHIVED") {
       res
         .status(400)
         .json({ message: "A school year with this label already exists" });
@@ -420,17 +420,18 @@ async function carryOverEligibleLearners(
       yearLabel,
       schedule.yearLabel);
 
+
+
+
     const schoolSetting = await prisma.schoolSetting.findFirst({
       select: {
         activeSchoolYearId: true,
       },
     });
-
     let activeYear = null;
     if (schoolSetting?.activeSchoolYearId) {
       activeYear = await prisma.schoolYear.findUnique({
         where: { id: schoolSetting.activeSchoolYearId },
-        select: { id: true, yearLabel: true, isEosyFinalized: true },
       });
     }
 
@@ -438,7 +439,6 @@ async function carryOverEligibleLearners(
       activeYear = await prisma.schoolYear.findFirst({
         where: { status: "ACTIVE" },
         orderBy: { createdAt: "desc" },
-        select: { id: true, yearLabel: true, isEosyFinalized: true },
       });
     }
 
@@ -450,6 +450,13 @@ async function carryOverEligibleLearners(
       return;
     }
 
+    const shiftYear = (d: Date | null | undefined) => {
+      if (!d) return null;
+      const newDate = new Date(d);
+      newDate.setUTCFullYear(newDate.getUTCFullYear() + 1);
+      return newDate;
+    };
+
     try {
       const result = await executeSchoolYearRollover({
         sourceSchoolYearId: activeYear.id,
@@ -457,14 +464,16 @@ async function carryOverEligibleLearners(
         schedule: {
           classOpeningDate: schedule.classOpeningDate,
           classEndDate: schedule.classEndDate,
-          enrollOpenDate: schedule.enrollOpenDate,
-          enrollCloseDate: schedule.enrollCloseDate,
-          term1Start: schedule.term1Start,
-          term1End: schedule.term1End,
-          term2Start: schedule.term2Start,
-          term2End: schedule.term2End,
-          term3Start: schedule.term3Start,
-          term3End: schedule.term3End,
+          enrollOpenDate: shiftYear(activeYear.enrollOpenDate) ?? schedule.enrollOpenDate,
+          enrollCloseDate: shiftYear(activeYear.enrollCloseDate) ?? schedule.enrollCloseDate,
+          term1Start: shiftYear(activeYear.term1Start) ?? schedule.term1Start,
+          term1End: shiftYear(activeYear.term1End) ?? schedule.term1End,
+          term2Start: shiftYear(activeYear.term2Start) ?? schedule.term2Start,
+          term2End: shiftYear(activeYear.term2End) ?? schedule.term2End,
+          term3Start: shiftYear(activeYear.term3Start) ?? schedule.term3Start,
+          term3End: shiftYear(activeYear.term3End) ?? schedule.term3End,
+          term4Start: shiftYear(activeYear.term4Start),
+          term4End: shiftYear(activeYear.term4End),
         },
         termFormat: termFormat ?? "TRIMESTER",
         actingUserId: req.user!.userId,
@@ -566,7 +575,7 @@ async function carryOverEligibleLearners(
     if (
       existingTargetYear &&
       existingTargetYear.id !== activeYear?.id &&
-      existingTargetYear.status !== "DRAFT"
+      existingTargetYear.status !== "ARCHIVED"
     ) {
       res
         .status(400)
@@ -587,11 +596,11 @@ async function carryOverEligibleLearners(
         term2End: schedule.term2End,
         term3Start: schedule.term3Start,
         term3End: schedule.term3End,
-        status: "DRAFT",
+        status: "ACTIVE",
       },
       create: {
         yearLabel: resolvedYearLabel,
-        status: "DRAFT",
+        status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
         enrollOpenDate: schedule.enrollOpenDate,

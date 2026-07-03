@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, AlertTriangle, Search, Loader2, Mars, Venus, 
 import { isAxiosError } from "axios";
 import { format, isValid, parse, isAfter, isBefore } from "date-fns";
 import { sileo } from "sileo";
+import { useHeaderStore } from "@/store/header.slice";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
@@ -831,13 +832,17 @@ export default function WalkInEncoder() {
     ? (APPLICANT_TYPE_LABELS[hydratedApplicantType] ?? hydratedApplicantType)
     : null;
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Late Enrollee Form");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-left">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Manual Basic Education Enrollment Forms (BEEF) Encoding
-          </h1>
           <p className="text-base leading-tight text-foreground font-extrabold">
             Encode submitted Basic Education Enrollment Forms (BEEF) for late enrollees and transferees.
           </p>

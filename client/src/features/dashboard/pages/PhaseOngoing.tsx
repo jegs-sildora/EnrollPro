@@ -16,13 +16,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Master Enrollment Dashboard</h1>
-        <p className="text-base leading-tight font-extrabold text-foreground">
-          Classes Ongoing (Late Enrollment) • {ayLabel}
-        </p>
-      </div>
-
       <Alert style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}>
         <AlertTitle className="font-extrabold" style={{ color: "#1E3A8A" }}>Academic Phase: Classes Ongoing</AlertTitle>
         <AlertDescription className="font-extrabold" style={{ color: "#1E3A8A" }}>

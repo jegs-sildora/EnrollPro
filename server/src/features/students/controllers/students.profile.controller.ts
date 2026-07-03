@@ -53,7 +53,7 @@ const getRequestUserId = (req: Request): number | null => {
         return res.status(403).json({ message: "Cannot edit core demographics during EOSY Closing phase." });
       }
       
-      if (applicant && applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE" && applicant.schoolYear.status !== "ENROLLMENT_OPEN") {
+      if (applicant && applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE") {
         return res.status(403).json({ message: "Cannot edit historical records." });
       }
 
@@ -461,7 +461,7 @@ const getRequestUserId = (req: Request): number | null => {
 
       if (!applicant) return res.status(404).json({ message: "Student not found" });
 
-      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE" && applicant.schoolYear.status !== "ENROLLMENT_OPEN") {
+      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE") {
         return res.status(403).json({ message: "Cannot edit historical records." });
       }
 
@@ -511,7 +511,7 @@ const getRequestUserId = (req: Request): number | null => {
 
       if (!applicant) return res.status(404).json({ message: "Student not found" });
 
-      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE" && applicant.schoolYear.status !== "ENROLLMENT_OPEN") {
+      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE") {
         return res.status(403).json({ message: "Cannot modify historical records." });
       }
 
@@ -578,7 +578,7 @@ const getRequestUserId = (req: Request): number | null => {
 
       if (!applicant) return res.status(404).json({ message: "Student not found" });
 
-      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE" && applicant.schoolYear.status !== "ENROLLMENT_OPEN") {
+      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE") {
         return res.status(403).json({ message: "Cannot modify historical records." });
       }
 

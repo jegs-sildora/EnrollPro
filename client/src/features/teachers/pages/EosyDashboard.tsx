@@ -24,6 +24,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/shared/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
+import { useHeaderStore } from "@/store/header.slice";
 
 interface Learner {
   id: number;
@@ -64,7 +65,9 @@ const formatStatusLabel = (status: string | null, isGrade10: boolean = false) =>
     case "RETAINED":
       return "RETAINED";
     case "CONDITIONALLY_PROMOTED":
-      return isGrade10 ? "CONDITIONALLY PROMOTED" : "PROMOTED (TO BEC)";
+      return "CONDITIONALLY PROMOTED";
+    case "PROMOTED_TO_BEC":
+      return "PROMOTED (TO BEC)";
     case "TRANSFERRED_OUT":
       return "TRANSFERRED OUT";
     case "DROPPED_OUT":
@@ -262,7 +265,7 @@ export default function TeacherEosyDashboard() {
           const renderStatusContent = () => (
             <div
               className={cn(
-                "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border transition-colors",
+                "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border transition-colors",
                 isScpWarning
                   ? "text-amber-700 bg-amber-50 border-amber-200"
                   : resolvedStatus === "ACTION_REQUIRED"
@@ -318,7 +321,7 @@ export default function TeacherEosyDashboard() {
                   renderTooltip(
                     <SelectTrigger
                       className={cn(
-                        "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
@@ -328,7 +331,7 @@ export default function TeacherEosyDashboard() {
                 ) : (
                   <SelectTrigger
                     className={cn(
-                      "inline-flex items-center justify-between w-max min-w-[140px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
                       resolvedStatus === "ACTION_REQUIRED"
                         ? "text-red-700 bg-red-50 border-red-200"
                         : !r.eosyStatus || r.eosyStatus === "PROMOTED"
@@ -342,9 +345,7 @@ export default function TeacherEosyDashboard() {
                   {!hasZeroOrBlankGrade && !isFailing && !isScpWarning && (
                     <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
                   )}
-                  {isScp && !isGrade10 && !hasZeroOrBlankGrade && !isFailing && (
-                    <SelectItem value="PROMOTED_TO_BEC">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
-                  )}
+
                   {!hasZeroOrBlankGrade && (
                     <>
                       <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
@@ -358,7 +359,7 @@ export default function TeacherEosyDashboard() {
             </div>
           );
         },
-        size: 150,
+        size: 240,
       },
     ],
     [isFinalized]
@@ -405,22 +406,17 @@ export default function TeacherEosyDashboard() {
     );
   }
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("EOSY Finalization");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <>
       <div className="flex flex-col min-h-0 pb-6">
         <PhaseBanner />
-
-        {/* ── Top Header ── */}
-        <div className="flex items-center justify-between pb-6 flex-shrink-0">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-foreground">
-              EOSY Finalization
-            </h1>
-            <p className="text-base leading-tight font-extrabold text-foreground uppercase">
-              {section.gradeLevel.name} - {section.name}
-            </p>
-          </div>
-        </div>
 
         <div className="bg-white border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
           <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">

@@ -23,6 +23,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { useHeaderStore } from "@/store/header.slice";
 
 interface HealthResponse {
   database: {
@@ -165,13 +166,17 @@ export default function SystemHealth() {
     [],
   );
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("System Health");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold">
-            System Health
-          </h1>
           <p className="text-base leading-tight font-extrabold text-foreground">
             Monitor runtime status, resource usage, and key operational counts.
           </p>

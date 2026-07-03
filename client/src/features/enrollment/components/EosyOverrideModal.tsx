@@ -119,7 +119,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
               <SelectContent>
                 <SelectItem value="PROMOTED">PROMOTED</SelectItem>
                 <SelectItem value="RETAINED">RETAINED</SelectItem>
-                <SelectItem value="CONDITIONALLY_PROMOTED">PROMOTED (TO BEC)</SelectItem>
+                <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
                 <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
                 <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
               </SelectContent>

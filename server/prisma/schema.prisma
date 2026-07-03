@@ -114,7 +114,7 @@ model SchoolSetting {
 model SchoolYear {
   id                     Int                     @id @default(autoincrement())
   yearLabel              String                  @unique(map: "uq_school_years_year_label") @map("year_label")
-  status                 SchoolYearStatus        @default(DRAFT)
+  status                 SchoolYearStatus        @default(ACTIVE)
   classOpeningDate       DateTime?               @map("class_opening_date") @db.Date
   classEndDate           DateTime?               @map("class_end_date") @db.Date
   enrollOpenDate         DateTime?               @map("enroll_open_date") @db.Date
@@ -671,14 +671,8 @@ enum SystemAcademicPhase {
 }
 
 enum SchoolYearStatus {
-  DRAFT
-  UPCOMING
   ACTIVE
   ARCHIVED
-  PREPARATION
-  ENROLLMENT_OPEN
-  BOSY_LOCKED
-  EOSY_PROCESSING
 
   @@map("school_year_status")
 }

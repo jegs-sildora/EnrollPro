@@ -76,8 +76,8 @@ export async function lockBosy(req: Request, res: Response) {
       return;
     }
 
-    if (setting.activeSchoolYear.status === "BOSY_LOCKED") {
-      res.status(400).json({ message: "BOSY is already locked" });
+    if (setting.activeSchoolYear.status !== "ACTIVE") {
+      res.status(400).json({ message: "School year is not in ACTIVE status" });
       return;
     }
 
@@ -85,7 +85,7 @@ export async function lockBosy(req: Request, res: Response) {
     const updated = await prisma.schoolYear.update({
       where: { id: setting.activeSchoolYear.id },
       data: {
-        status: "BOSY_LOCKED",
+        status: "ACTIVE",
         bosyLockedAt: lockedAt,
         bosyLockedById: req.user!.userId,
       },
@@ -138,7 +138,7 @@ export async function unlockBosy(req: Request, res: Response) {
     const updated = await prisma.schoolYear.update({
       where: { id: setting.activeSchoolYear.id },
       data: {
-        status: "ENROLLMENT_OPEN",
+        status: "ACTIVE",
         bosyLockedAt: null,
         bosyLockedById: null,
       },

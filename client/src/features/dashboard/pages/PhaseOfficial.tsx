@@ -56,10 +56,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Master Enrollment Dashboard</h1>
-      </div>
-
       {!isArchived && (
         <Alert
           style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}

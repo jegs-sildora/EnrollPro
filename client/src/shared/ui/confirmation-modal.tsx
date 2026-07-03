@@ -150,8 +150,10 @@ export function ConfirmationModal({
         <DialogHeader className="space-y-2 text-center items-center">
           <DialogTitle className="text-2xl font-extrabold ">{title}</DialogTitle>
           <div className="space-y-4">
-            <DialogDescription className="text-base leading-relaxed text-center">
-              {description}
+            <DialogDescription asChild>
+              <div className="text-base leading-relaxed text-center text-muted-foreground">
+                {description}
+              </div>
             </DialogDescription>
             {footerWarning && (
               <div className="font-semibold text-primary mt-2 p-3 bg-primary/5 rounded-md border-2 border-primary">

@@ -24,6 +24,7 @@ import { sileo } from "sileo";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useNavigate } from "react-router";
+import { useHeaderStore } from "@/store/header.slice";
 
 import {
   Select,
@@ -276,29 +277,27 @@ export default function ViewMasterlist() {
     );
   };
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (section) {
+      setTitle(`${section.gradeLevel} — ${section.name}`);
+    } else {
+      setTitle("Masterlist");
+    }
+    return () => setTitle(null);
+  }, [section, setTitle]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-1">
-        <div className="mb-4">
-          <Link
-            to="/sections"
-            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
-          >
-            ← Back to Class Sections Lobby
-          </Link>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase">
-              {section?.gradeLevel} — {section?.name}
-            </h1>
-            <p className="text-base leading-tight font-extrabold text-foreground">
-              {section ? getProgramTypeLabel(section.programType) : "—"}
-            </p>
-          </div>
-        </div>
+      <div className="mb-4">
+        <Link
+          to="/sections"
+          className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
+        >
+          ← Back to Class Sections Lobby
+        </Link>
       </div>
 
       {/* Toolbar Card */}

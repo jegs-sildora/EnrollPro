@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { useHeaderStore } from "@/store/header.slice";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 
 import {
@@ -397,19 +398,22 @@ export default function BOSYPage() {
     }
   };
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Confirmation of Continuing Learners");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div
       className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
     >
       <PhaseBanner />
       <div
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="flex flex-col md:flex-row md:items-center justify-end gap-4"
       >
         <div>
-          <h1 className="text-3xl font-extrabold">Confirmation of Continuing Learners</h1>
-          <p className="text-base leading-tight font-extrabold">
-            Record which learners are returning before assigning their class sections for S.Y. {ayLabel || "2026–2027"}.
-          </p>
           {isHistoricalReadOnly && (
             <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}

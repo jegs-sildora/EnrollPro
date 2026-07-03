@@ -39,6 +39,8 @@ export interface RolloverSchedule {
   term2End: Date
   term3Start: Date
   term3End: Date
+  term4Start?: Date | null
+  term4End?: Date | null
 }
 
 export interface ExecuteRolloverInput {
@@ -170,7 +172,7 @@ export async function getSchoolYearRolloverReadiness(
   return getReadiness(prisma, schoolYearId)
 }
 
-function getHistoricalProfileSnapshot(record: {
+export function getHistoricalProfileSnapshot(record: {
   learner: {
     lrn: string | null
     firstName: string
@@ -354,7 +356,8 @@ export async function executeSchoolYearRollover({
       })
       if (
         existingTargetYear
-        && existingTargetYear.status !== "DRAFT"
+        && existingTargetYear.status !== "ACTIVE"
+        && existingTargetYear.status !== "ARCHIVED"
       ) {
         throw new Error("The next school year is already active or archived.")
       }
@@ -380,6 +383,12 @@ export async function executeSchoolYearRollover({
             },
             select: { id: true, yearLabel: true, status: true },
           })
+
+      await tx.schoolSetting.updateMany({
+        data: {
+          systemPhase: "OFFICIAL_ENROLLMENT",
+        },
+      })
 
       if (existingTargetYear) {
         await tx.enrollmentRecord.deleteMany({

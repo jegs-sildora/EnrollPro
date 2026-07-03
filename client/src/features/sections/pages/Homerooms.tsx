@@ -12,6 +12,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { Button } from "@/shared/ui/button";
 import { SectionFormSheet } from "../components/SectionFormSheet";
+import { useHeaderStore } from "@/store/header.slice";
 import type { SectionFormState, SectionItem, TeacherOption } from "../types";
 import { SectionHandoverModal } from "../components/SectionHandoverModal";
 import {
@@ -1122,16 +1123,15 @@ export default function Homerooms() {
     );
   }
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("Class Advisership & Section Management");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   return (
     <div className="space-y-6 ">
-      <div>
-        <div>
-          <h1 className="text-3xl font-extrabold ">Class Advisership & Section Management</h1>
-          <p className="text-base leading-tight text-foreground font-extrabold">
-            Manage grade level sections and advising teachers
-          </p>
-        </div>
-      </div>
 
       {showSkeleton ? (
         <div className="space-y-6">

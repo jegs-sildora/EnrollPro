@@ -537,9 +537,14 @@ export async function confirmReturn(
       id: true,
       status: true,
       learnerType: true,
+      isMissingSf9: true,
+      hasSf9CertificationLetter: true,
       gradeLevel: { select: { displayOrder: true } },
       learner: {
-        select: { id: true, lrn: true, firstName: true, lastName: true },
+        select: { 
+          id: true, lrn: true, firstName: true, lastName: true,
+          hasPsaBirthCertificate: true, missingRequirements: true
+        },
       },
     },
   });
@@ -557,6 +562,12 @@ export async function confirmReturn(
     );
   }
 
+  const isMissingSf9Doc = application.isMissingSf9 && !application.hasSf9CertificationLetter;
+  const isMissingPsa = !application.learner.hasPsaBirthCertificate;
+  const hasMissingReqs = application.learner.missingRequirements && application.learner.missingRequirements.length > 0;
+  
+  const isLacking = isMissingSf9Doc || isMissingPsa || hasMissingReqs;
+
   const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
 
   const updated = await prisma.enrollmentApplication.update({
@@ -566,6 +577,8 @@ export async function confirmReturn(
       confirmationConsent: true,
       encodedById: actingUserId,
       isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+      isTemporarilyEnrolled: isLacking,
+      complianceStatus: isLacking ? "PENDING" : "COMPLIED",
     },
     select: { id: true, status: true },
   });
@@ -633,11 +646,21 @@ export async function bulkConfirmReturn(
     select: {
       id: true,
       status: true,
+      isMissingSf9: true,
+      hasSf9CertificationLetter: true,
       gradeLevel: { select: { displayOrder: true } },
+      learner: {
+        select: {
+          hasPsaBirthCertificate: true,
+          missingRequirements: true,
+        },
+      },
     },
   });
 
   const appMap = new Map(applications.map((a) => [a.id, a]));
+  const completeIds: number[] = [];
+  const lackingIds: number[] = [];
 
   for (const id of applicationIds) {
     const app = appMap.get(id);
@@ -655,19 +678,47 @@ export async function bulkConfirmReturn(
       });
       continue;
     }
+    
     confirmed.push(id);
+
+    const isMissingSf9Doc = app.isMissingSf9 && !app.hasSf9CertificationLetter;
+    const isMissingPsa = !app.learner.hasPsaBirthCertificate;
+    const hasMissingReqs = app.learner.missingRequirements && app.learner.missingRequirements.length > 0;
+    
+    if (isMissingSf9Doc || isMissingPsa || hasMissingReqs) {
+      lackingIds.push(id);
+    } else {
+      completeIds.push(id);
+    }
   }
 
   const setting = await prisma.schoolSetting.findFirst({ select: { systemPhase: true } });
+  const isLate = setting?.systemPhase === "CLASSES_ONGOING";
 
-  if (confirmed.length > 0) {
+  if (completeIds.length > 0) {
     await prisma.enrollmentApplication.updateMany({
-      where: { id: { in: confirmed } },
+      where: { id: { in: completeIds } },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
         encodedById: actingUserId,
-        isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+        isLateEnrollee: isLate,
+        isTemporarilyEnrolled: false,
+        complianceStatus: "COMPLIED",
+      },
+    });
+  }
+
+  if (lackingIds.length > 0) {
+    await prisma.enrollmentApplication.updateMany({
+      where: { id: { in: lackingIds } },
+      data: {
+        status: "READY_FOR_SECTIONING",
+        confirmationConsent: true,
+        encodedById: actingUserId,
+        isLateEnrollee: isLate,
+        isTemporarilyEnrolled: true,
+        complianceStatus: "PENDING",
       },
     });
   }
