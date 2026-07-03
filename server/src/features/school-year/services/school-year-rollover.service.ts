@@ -12,7 +12,6 @@ type TransactionClient = Prisma.TransactionClient
 export type RolloverBlockerReason =
   | "SECTION_NOT_LOCKED"
   | "LEARNERS_WITHOUT_EOSY_STATUS"
-  | "GRADE_10_CONDITIONAL_REMEDIAL"
 
 export interface RolloverClassBlocker {
   sectionId: number
@@ -56,6 +55,7 @@ export interface ExecuteRolloverInput {
 export interface RolloverSummary {
   archivedRecords: number
   pendingConfirmations: number
+  remedialHolds: number
   completers: number
   archiveOnlyDepartures: number
 }
@@ -131,30 +131,19 @@ async function getReadiness(
     const recordsWithoutResult = section.enrollmentRecords.filter(
       (record) => record.eosyStatus === null,
     ).length
-    const unresolvedGradeTenConditionals =
-      section.gradeLevel.displayOrder === 10
-        ? section.enrollmentRecords.filter(
-            (record) => record.eosyStatus === "CONDITIONALLY_PROMOTED",
-          ).length
-        : 0
     const reasons: RolloverBlockerReason[] = []
 
     if (!section.isEosyFinalized) reasons.push("SECTION_NOT_LOCKED")
     if (recordsWithoutResult > 0) {
       reasons.push("LEARNERS_WITHOUT_EOSY_STATUS")
     }
-    if (unresolvedGradeTenConditionals > 0) {
-      reasons.push("GRADE_10_CONDITIONAL_REMEDIAL")
-    }
-
     if (reasons.length === 0) return []
 
     return [{
       sectionId: section.id,
       gradeLevel: section.gradeLevel.name,
       sectionName: section.name,
-      unfinishedLearnerCount:
-        recordsWithoutResult + unresolvedGradeTenConditionals,
+      unfinishedLearnerCount: recordsWithoutResult,
       reasons,
     }]
   })
@@ -428,6 +417,7 @@ export async function executeSchoolYearRollover({
       }
 
       const pendingApplicationIds: number[] = []
+      let remedialHolds = 0
       let completers = 0
       let archiveOnlyDepartures = 0
       const targetStartYear = Number.parseInt(
@@ -470,10 +460,6 @@ export async function executeSchoolYearRollover({
           archiveOnlyDepartures += 1
           continue
         }
-        if (destination.kind === "BLOCKED_GRADE_10_CONDITIONAL") {
-          throw new RolloverNotReadyError(readiness)
-        }
-
         const targetGradeLevelId = targetGradeByOrder.get(
           destination.targetGradeOrder,
         )
@@ -495,7 +481,10 @@ export async function executeSchoolYearRollover({
             applicantType: effectiveProgram,
             assignedProgram: effectiveProgram,
             learnerType: "CONTINUING",
-            status: "PENDING_CONFIRMATION",
+            status:
+              destination.kind === "REMEDIAL_HOLD"
+                ? "REMEDIAL_HOLD"
+                : "PENDING_CONFIRMATION",
             admissionChannel: "F2F",
             isPrivacyConsentGiven:
               record.enrollmentApplication.isPrivacyConsentGiven,
@@ -529,7 +518,11 @@ export async function executeSchoolYearRollover({
           },
           select: { id: true },
         })
-        pendingApplicationIds.push(application.id)
+        if (destination.kind === "REMEDIAL_HOLD") {
+          remedialHolds += 1
+        } else {
+          pendingApplicationIds.push(application.id)
+        }
 
         const trackingNumber = `REG-${targetStartYear}-${String(application.id).padStart(5, "0")}`
         await tx.enrollmentApplication.update({
@@ -585,7 +578,7 @@ export async function executeSchoolYearRollover({
           userId: actingUserId,
           actionType: "SY_ROLLOVER_COMPLETED",
           description:
-            `Archived ${sourceYear.yearLabel}, opened ${targetYear.yearLabel}, and created ${pendingApplicationIds.length} pending confirmation record(s).`,
+            `Archived ${sourceYear.yearLabel}, opened ${targetYear.yearLabel}, created ${pendingApplicationIds.length} pending confirmation record(s), and placed ${remedialHolds} Grade 10 case(s) on remedial hold.`,
           subjectType: "SchoolYear",
           recordId: targetYear.id,
           ipAddress,
@@ -599,6 +592,7 @@ export async function executeSchoolYearRollover({
         rolloverSummary: {
           archivedRecords: sourceRecords.length,
           pendingConfirmations: pendingApplicationIds.length,
+          remedialHolds,
           completers,
           archiveOnlyDepartures,
         },

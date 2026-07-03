@@ -10,11 +10,27 @@ import {
   syncBOSYQueue,
   getPhase2Queue,
   getPreviousSections,
+  type BOSYQueueState,
 } from "./bosy.service.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const BOSY_QUEUE_STATES = new Set<BOSYQueueState>([
+  "PENDING",
+  "CONFIRMED",
+  "TEMPORARY",
+  "TRANSFER_REQUEST",
+  "ENROLLED",
+]);
+
+function parseQueueState(value: unknown): BOSYQueueState | undefined {
+  if (typeof value !== "string") return undefined;
+  return BOSY_QUEUE_STATES.has(value as BOSYQueueState)
+    ? (value as BOSYQueueState)
+    : undefined;
 }
 
 export async function getBosyReadiness(
@@ -55,7 +71,7 @@ export async function syncBosyQueueHandler(
     await auditLog({
       userId: req.user!.userId,
       actionType: "BOSY_QUEUE_SYNCED",
-      description: `Synchronized BOSY queue; created ${result.created} missing applications.`,
+      description: `Synchronized BOSY queue; created ${result.created} missing applications, including ${result.remedialHolds} Grade 10 remedial hold(s).`,
       subjectType: "SchoolYear",
       recordId: schoolYearId,
       req,
@@ -89,6 +105,23 @@ export async function getBosyQueue(
     const gradeLevelId = req.query.gradeLevelId
       ? parsePositiveInt(req.query.gradeLevelId, 0) || undefined
       : undefined;
+    const targetGradeOrder = req.query.targetGradeOrder
+      ? parsePositiveInt(req.query.targetGradeOrder, 0) || undefined
+      : undefined;
+    if (
+      targetGradeOrder !== undefined &&
+      (targetGradeOrder < 7 || targetGradeOrder > 10)
+    ) {
+      res.status(400).json({
+        message: "targetGradeOrder must be from Grade 7 to Grade 10.",
+      });
+      return;
+    }
+    const queueState = parseQueueState(req.query.queueState);
+    if (req.query.queueState !== undefined && !queueState) {
+      res.status(400).json({ message: "Invalid BOSY queue state." });
+      return;
+    }
     const search =
       typeof req.query.search === "string" && req.query.search.length > 0
         ? req.query.search
@@ -103,6 +136,8 @@ export async function getBosyQueue(
     const result = await getBOSYQueue({
       schoolYearId,
       gradeLevelId,
+      targetGradeOrder,
+      queueState,
       status,
       search,
       previousSectionName,

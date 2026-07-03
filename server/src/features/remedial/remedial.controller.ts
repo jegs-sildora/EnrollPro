@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import type { Prisma } from "../../generated/prisma/index.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -26,9 +27,12 @@ export async function getRemedialPending(
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
     const skip = (page - 1) * limit;
 
-    const where = {
-      academicStatus: "CONDITIONALLY_PROMOTED" as const,
+    const where: Prisma.EnrollmentApplicationWhereInput = {
+      academicStatus: "CONDITIONALLY_PROMOTED",
       isRemedialRequired: true,
+      status: {
+        in: ["ENROLLED", "REMEDIAL_HOLD"],
+      },
       ...(schoolYearId ? { schoolYearId } : {}),
     };
 
@@ -85,9 +89,8 @@ export async function getRemedialPending(
 /**
  * PATCH /api/remedial/:learnerId/resolve
  * Resolves a remedial case after the learner passes the summer remedial exam.
- * Body: { schoolYearId: number, summerGrade: number }
- * Updates ApplicationChecklist.academicStatus → PROMOTED, isRemedialRequired → false.
- * Updates EnrollmentRecord.finalAverage = summerGrade, eosyStatus → PROMOTED.
+ * Body: { schoolYearId: number, summerGrade: number, outcome: "PROMOTED" | "RETAINED" }
+ * Supports unresolved cases before rollover and target-year remedial holds.
  * Roles: HEAD_REGISTRAR, SYSTEM_ADMIN
  */
 export async function resolveRemedial(
@@ -115,21 +118,37 @@ export async function resolveRemedial(
         .json({ message: "summerGrade must be a number between 0 and 100." });
       return;
     }
+    const outcome =
+      req.body.outcome === "PROMOTED" || req.body.outcome === "RETAINED"
+        ? req.body.outcome
+        : null;
+    if (!outcome) {
+      res.status(400).json({
+        message: "outcome must be PROMOTED or RETAINED.",
+      });
+      return;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const application = await tx.enrollmentApplication.findFirst({
         where: {
           learnerId,
           schoolYearId,
-          status: "ENROLLED",
+          status: { in: ["ENROLLED", "REMEDIAL_HOLD"] },
         },
-        select: { id: true, academicStatus: true, isRemedialRequired: true },
+        select: {
+          id: true,
+          status: true,
+          academicStatus: true,
+          isRemedialRequired: true,
+          schoolYear: { select: { clonedFromId: true } },
+        },
       });
 
       if (!application) {
         throw Object.assign(
           new Error(
-            "No ENROLLED application found for this learner and school year.",
+            "No unresolved remedial case was found for this learner and school year.",
           ),
           { statusCode: 404 },
         );
@@ -145,11 +164,63 @@ export async function resolveRemedial(
         );
       }
 
+      if (application.status === "REMEDIAL_HOLD") {
+        const sourceSchoolYearId = application.schoolYear.clonedFromId;
+        if (!sourceSchoolYearId) {
+          throw Object.assign(
+            new Error("The remedial hold has no source school year."),
+            { statusCode: 409 },
+          );
+        }
+
+        const historicalUpdate = await tx.enrollmentHistory.updateMany({
+          where: {
+            learnerId,
+            schoolYearId: sourceSchoolYearId,
+          },
+          data: {
+            genAve: rawGrade,
+            eosyStatus: outcome,
+          },
+        });
+        if (historicalUpdate.count === 0) {
+          throw Object.assign(
+            new Error("The learner's archived Grade 10 record was not found."),
+            { statusCode: 409 },
+          );
+        }
+
+        const updatedApplication = await tx.enrollmentApplication.update({
+          where: { id: application.id },
+          data: {
+            status:
+              outcome === "PROMOTED"
+                ? "REMEDIAL_RESOLVED"
+                : "PENDING_CONFIRMATION",
+            academicStatus: outcome,
+            isRemedialRequired: false,
+            confirmationConsent: null,
+          },
+        });
+        await tx.learner.update({
+          where: { id: learnerId },
+          data: {
+            status: outcome === "PROMOTED" ? "JHS_COMPLETER" : "ACTIVE",
+            promotionStatus: outcome,
+          },
+        });
+
+        return {
+          updatedApplication,
+          enrollmentRecordId: null,
+        };
+      }
+
       const [updatedApplication, updatedRecord] = await Promise.all([
         tx.enrollmentApplication.update({
           where: { id: application.id },
           data: {
-            academicStatus: "PROMOTED",
+            academicStatus: outcome,
             isRemedialRequired: false,
           },
         }),
@@ -157,18 +228,21 @@ export async function resolveRemedial(
           where: { enrollmentApplicationId: application.id },
           data: {
             finalAverage: rawGrade,
-            eosyStatus: "PROMOTED",
+            eosyStatus: outcome,
           },
         }),
       ]);
 
-      return { updatedApplication, updatedRecord };
+      return {
+        updatedApplication,
+        enrollmentRecordId: updatedRecord.id,
+      };
     });
 
     await auditLog({
       userId: req.user!.userId,
       actionType: "REMEDIAL_RESOLVED",
-      description: `Resolved remedial for learner #${learnerId} (SY ${schoolYearId}); summerGrade=${rawGrade}`,
+      description: `Resolved remedial for learner #${learnerId} (SY ${schoolYearId}); outcome=${outcome}; summerGrade=${rawGrade}`,
       subjectType: "Learner",
       recordId: learnerId,
       req,
@@ -177,12 +251,17 @@ export async function resolveRemedial(
     res.json({
       message: "Remedial case resolved successfully.",
       checklistId: result.updatedApplication.id,
-      enrollmentRecordId: result.updatedRecord.id,
-      finalAverage: result.updatedRecord.finalAverage,
-      eosyStatus: result.updatedRecord.eosyStatus,
+      enrollmentRecordId: result.enrollmentRecordId,
+      applicationStatus: result.updatedApplication.status,
+      finalAverage: rawGrade,
+      eosyStatus: outcome,
     });
-  } catch (error: any) {
-    if (error?.statusCode) {
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      "statusCode" in error &&
+      typeof error.statusCode === "number"
+    ) {
       res.status(error.statusCode).json({ message: error.message });
       return;
     }

@@ -6,6 +6,8 @@ import type {
   JHSCompleterPage,
   TLEProgram,
   Phase2QueuePage,
+  BOSYQueueState,
+  ConfirmReturnResult,
 } from "../types";
 
 export async function getBOSYReadiness(
@@ -22,6 +24,8 @@ export interface BOSYQueueParams {
   page?: number;
   limit?: number;
   gradeLevelId?: number;
+  targetGradeOrder?: number;
+  queueState?: BOSYQueueState;
   status?: string;
   search?: string;
   previousSectionName?: string;
@@ -45,8 +49,8 @@ export async function getPreviousSections(
 
 export async function confirmReturn(
   applicationId: number,
-): Promise<{ applicationId: number; status: string }> {
-  const res = await api.post<{ applicationId: number; status: string }>(
+): Promise<ConfirmReturnResult> {
+  const res = await api.post<ConfirmReturnResult>(
     `/bosy/confirm-return/${applicationId}`,
     {},
   );
@@ -82,8 +86,8 @@ export async function getTLEPrograms(
 
 export async function syncBOSYQueue(
   schoolYearId: number,
-): Promise<{ created: number }> {
-  const res = await api.post<{ created: number }>(`/bosy/sync`, {
+): Promise<{ created: number; remedialHolds: number }> {
+  const res = await api.post<{ created: number; remedialHolds: number }>(`/bosy/sync`, {
     schoolYearId,
   });
   return res.data;

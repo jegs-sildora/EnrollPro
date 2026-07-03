@@ -16,7 +16,12 @@ export type RolloverDestination =
       isRemedialRequired: boolean
     }
   | { kind: "JHS_COMPLETER" }
-  | { kind: "BLOCKED_GRADE_10_CONDITIONAL" }
+  | {
+      kind: "REMEDIAL_HOLD"
+      targetGradeOrder: 10
+      academicStatus: "CONDITIONALLY_PROMOTED"
+      isRemedialRequired: true
+    }
   | { kind: "ARCHIVE_ONLY" }
 
 export function resolveRolloverDestination({
@@ -35,7 +40,12 @@ export function resolveRolloverDestination({
     sourceGradeOrder === 10
     && eosyStatus === "CONDITIONALLY_PROMOTED"
   ) {
-    return { kind: "BLOCKED_GRADE_10_CONDITIONAL" }
+    return {
+      kind: "REMEDIAL_HOLD",
+      targetGradeOrder: 10,
+      academicStatus: "CONDITIONALLY_PROMOTED",
+      isRemedialRequired: true,
+    }
   }
 
   if (eosyStatus === "RETAINED") {

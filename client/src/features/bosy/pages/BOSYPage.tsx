@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, startTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  startTransition,
+} from "react";
 import {
   Search,
   Loader2,
@@ -20,11 +26,15 @@ import {
   apiRevertToPendingBeef,
   apiFlushNoShows,
   getPreviousSections,
+  syncBOSYQueue,
 } from "../api/bosy.api";
-import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import type { BOSYReadiness, BOSYQueueItem } from "../types";
+import type {
+  BOSYReadiness,
+  BOSYQueueItem,
+  BOSYQueueState,
+} from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
@@ -116,7 +126,6 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
@@ -144,8 +153,9 @@ export default function BOSYPage() {
   const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
+  const repairedSchoolYearRef = useRef<number | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState<string>("PENDING_CONFIRMATION");
+  const [queueState, setQueueState] = useState<BOSYQueueState>("PENDING");
   const [targetGrade, setTargetGrade] = useState<string>("ALL");
   const {
     inputValue: queueSearch,
@@ -158,6 +168,8 @@ export default function BOSYPage() {
   const [previousSections, setPreviousSections] = useState<string[]>([]);
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
+  const [repairReadySchoolYearId, setRepairReadySchoolYearId] =
+    useState<number | null>(null);
   const [queuePage, setQueuePage] = useState(1);
   const [queueLimit, setQueueLimit] = useState(25);
   const [queueLoading, setQueueLoading] = useState(false);
@@ -184,6 +196,22 @@ export default function BOSYPage() {
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
     try {
+      if (
+        syId === activeSchoolYearId &&
+        canMutate &&
+        repairedSchoolYearRef.current !== syId
+      ) {
+        const repairResult = await syncBOSYQueue(syId);
+        repairedSchoolYearRef.current = syId;
+        if (repairResult.created > 0) {
+          sileo.success({
+            title: "Continuing Learner Queue Restored",
+            description:
+              `${repairResult.created} learner record(s) were recovered from the previous school year.`,
+          });
+        }
+      }
+      setRepairReadySchoolYearId(syId);
       await Promise.all([
         getBOSYReadiness(syId).then(setReadiness),
         getPreviousSections(syId).then(setPreviousSections),
@@ -191,17 +219,19 @@ export default function BOSYPage() {
     } catch (e) {
       toastApiError(e as never);
     }
-  }, [syId]);
+  }, [activeSchoolYearId, canMutate, syId]);
 
 
 
   const fetchQueue = useCallback(async () => {
-    if (!syId) return;
+    if (!syId || repairReadySchoolYearId !== syId) return;
     setQueueLoading(true);
     try {
       const data = await getBOSYQueue({
         schoolYearId: syId,
-        status: statusFilter,
+        queueState,
+        targetGradeOrder:
+          targetGrade === "ALL" ? undefined : Number(targetGrade),
         search: activeQueueSearch || undefined,
         previousSectionName: previousSectionName !== "ALL" ? previousSectionName : undefined,
         page: queuePage,
@@ -214,7 +244,16 @@ export default function BOSYPage() {
     } finally {
       setQueueLoading(false);
     }
-  }, [syId, queuePage, queueLimit, statusFilter, activeQueueSearch, previousSectionName]);
+  }, [
+    syId,
+    queuePage,
+    queueLimit,
+    queueState,
+    targetGrade,
+    repairReadySchoolYearId,
+    activeQueueSearch,
+    previousSectionName,
+  ]);
 
   useEffect(() => {
     void fetchReadiness();
@@ -244,11 +283,20 @@ export default function BOSYPage() {
     setConfirmSingleBusy(true);
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
-      await confirmReturn(applicationId);
-      sileo.success({
-        title: "Learner Return Confirmed",
-        description: "Application confirmed for sectioning.",
-      });
+      const result = await confirmReturn(applicationId);
+      sileo.success(
+        result.intakeState === "TEMPORARY"
+          ? {
+              title: "Learner Temporarily Enrolled",
+              description:
+                "The learner may proceed to section assignment while the listed school requirements are completed.",
+            }
+          : {
+              title: "Learner Ready for Section Assignment",
+              description:
+                "The learner's return and school requirements are confirmed.",
+            },
+      );
       setQueueItems((prev) =>
         prev.filter((item) => item.applicationId !== applicationId),
       );
@@ -257,6 +305,7 @@ export default function BOSYPage() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.sectioningPool(),
       });
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
       void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
@@ -316,7 +365,9 @@ export default function BOSYPage() {
       if (result.confirmed.length > 0) {
         sileo.success({
           title: "Bulk Confirmation Completed",
-          description: `${result.confirmed.length} learner(s) confirmed for sectioning.`,
+          description:
+            `${result.readyForSectioning.length} ready for section assignment; ` +
+            `${result.temporarilyEnrolled.length} temporarily enrolled.`,
         });
         setQueueItems((prev) =>
           prev.filter((item) => !result.confirmed.includes(item.applicationId)),
@@ -330,6 +381,10 @@ export default function BOSYPage() {
         });
       }
       setRowSelection({});
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
       void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
@@ -418,14 +473,6 @@ export default function BOSYPage() {
             <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
-          className="font-extrabold"
-        >
-          Open Section Assignment
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -434,55 +481,55 @@ export default function BOSYPage() {
             label: "Pending Confirmations",
             subBadge: "Waiting for the learner or parent to confirm",
             value: readiness?.pendingConfirmationCount ?? 0,
-            filterVal: "PENDING_CONFIRMATION",
-            actionText: "Review Enrollees →",
+            filterVal: "PENDING" as const,
             isPrimaryMetric: false,
           },
           {
             label: "Confirmed and Ready for Section Assignment",
             subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
-            value: readiness?.readyForSectioningCount ?? 0,
-            filterVal: "READY_FOR_SECTIONING",
-            actionText: "View Masterlist →",
+            value: readiness?.confirmedReadyCount ?? 0,
+            filterVal: "CONFIRMED" as const,
             isPrimaryMetric: true,
           },
           {
-            label: "Transfer Requests (SF10)",
-            subBadge: "Moving to Another School",
-            value: readiness?.transferRequestCount ?? 0,
-            filterVal: "TRANSFERRING_OUT",
-            actionText: "Process Transfers →",
+            label: "Temporarily Enrolled",
+            subBadge: "Missing school requirements for follow-up",
+            value: readiness?.temporarilyEnrolledCount ?? 0,
+            filterVal: "TEMPORARY" as const,
             isPrimaryMetric: false,
           },
         ].map(({ label, subBadge, value, filterVal, isPrimaryMetric }) => (
-          <Card
+          <button
+            type="button"
             key={label}
             onClick={() => {
-              setStatusFilter(filterVal);
+              setQueueState(filterVal);
               setQueuePage(1);
               setRowSelection({});
             }}
+            aria-pressed={queueState === filterVal}
             className={cn(
-              "shadow-sm cursor-pointer transition-all border flex flex-col",
-              statusFilter === filterVal ? "border-slate-300 bg-slate-50 ring-1 ring-slate-200" : "border-slate-200 bg-white hover:border-slate-300"
+              "flex min-h-32 flex-col rounded-lg border bg-white p-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              queueState === filterVal
+                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                : "border-border hover:border-primary/50 hover:bg-muted/20",
             )}>
-            <CardContent className="p-4 flex flex-row h-full justify-between gap-4">
-              <div className="flex flex-col justify-between">
-                <p className="text-base font-extrabold leading-tight text-foreground">
-                  {label}
-                </p>
-                <div className="mt-4">
-                  <p
-                    className={cn("text-4xl font-extrabold leading-none", isPrimaryMetric && value > 0 ? "" : "text-foreground")}
-                    style={isPrimaryMetric && value > 0 ? { color: "hsl(var(--primary))" } : undefined}
-                  >
-                    {value}
-                  </p>
-                  <p className="text-sm font-semibold text-foreground mt-0.5">{subBadge}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <span className="text-base font-extrabold leading-tight text-foreground">
+              {label}
+            </span>
+            <span
+              className={cn(
+                "mt-4 text-4xl font-extrabold leading-none",
+                isPrimaryMetric && value > 0
+                  ? "text-primary"
+                  : "text-foreground",
+              )}>
+              {value}
+            </span>
+            <span className="mt-1 text-sm font-semibold text-muted-foreground">
+              {subBadge}
+            </span>
+          </button>
         ))}
       </div>
 
@@ -506,7 +553,7 @@ export default function BOSYPage() {
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
-              {canMutate && statusFilter === "PENDING_CONFIRMATION" && selectedIds.length > 0 ? (
+              {canMutate && queueState === "PENDING" && selectedIds.length > 0 ? (
                 <div className="flex items-center gap-2">
                   <BulkConfirmBar
                     selectedCount={selectedIds.length}
@@ -532,6 +579,7 @@ export default function BOSYPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ALL" className="text-base">All Returning Grades</SelectItem>
+                        <SelectItem value="7" className="text-base">Incoming Grade 7</SelectItem>
                         <SelectItem value="8" className="text-base">Incoming Grade 8</SelectItem>
                         <SelectItem value="9" className="text-base">Incoming Grade 9</SelectItem>
                         <SelectItem value="10" className="text-base">Incoming Grade 10</SelectItem>
@@ -578,8 +626,8 @@ export default function BOSYPage() {
               items={queueItems}
               loading={queueLoading}
               isSearching={isSearching}
-              showConfirmAction={statusFilter === "PENDING_CONFIRMATION" && canMutate}
-              rowSelection={statusFilter === "PENDING_CONFIRMATION" ? rowSelection : {}}
+              showConfirmAction={queueState === "PENDING" && canMutate}
+              rowSelection={queueState === "PENDING" ? rowSelection : {}}
               onRowSelectionChange={setRowSelection}
               onConfirmSingle={handleConfirmSingle}
               onTransferRequest={setTransferTarget}
@@ -612,9 +660,9 @@ export default function BOSYPage() {
               Confirm Learner Return
             </DialogTitle>
             <DialogDescription>
-              The following learner will be marked as{" "}
-              <strong>Ready for Sectioning</strong>. This will complete their
-              BOSY confirmation.
+              Confirm the learner's return for this school year. Learners with
+              incomplete school requirements will be marked as temporarily
+              enrolled but may still proceed to section assignment.
             </DialogDescription>
           </DialogHeader>
           {confirmSingleTarget && (
@@ -633,6 +681,16 @@ export default function BOSYPage() {
                 className="text-[10px] font-extrabold uppercase">
                 {confirmSingleTarget.gradeLevelName}
               </Badge>
+              {confirmSingleTarget.missingDocuments.length > 0 && (
+                <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-sm font-extrabold text-amber-900">
+                    Missing school requirements
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-amber-800">
+                    {confirmSingleTarget.missingDocuments.join(", ")}
+                  </p>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

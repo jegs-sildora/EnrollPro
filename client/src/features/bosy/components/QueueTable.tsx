@@ -27,22 +27,36 @@ interface QueueTableProps {
   confirmingIds: Set<number>;
 }
 
-function statusBadge(status: string) {
-  if (status === "PENDING_CONFIRMATION")
+function statusBadge(item: BOSYQueueItem) {
+  if (item.status === "PENDING_CONFIRMATION")
     return (
       <Badge
         className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-700 border-transparent hover:bg-amber-200">
         Pending
       </Badge>
     );
-  if (status === "READY_FOR_SECTIONING")
+  if (item.status === "READY_FOR_SECTIONING" && item.isTemporarilyEnrolled)
+    return (
+      <div className="flex max-w-64 flex-col items-center gap-1.5 text-center">
+        <Badge
+          className="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-50">
+          Temporarily Enrolled
+        </Badge>
+        {item.missingDocuments.length > 0 && (
+          <span className="text-xs font-semibold leading-tight text-amber-800">
+            Missing: {item.missingDocuments.join(", ")}
+          </span>
+        )}
+      </div>
+    );
+  if (item.status === "READY_FOR_SECTIONING")
     return (
       <Badge
         className="text-[10px] font-extrabold uppercase bg-blue-600 text-white border-transparent hover:bg-blue-700">
-        Confirmed
+        Ready for Section Assignment
       </Badge>
     );
-  if (status === "ENROLLED" || status === "OFFICIALLY_ENROLLED")
+  if (item.status === "ENROLLED" || item.status === "OFFICIALLY_ENROLLED")
     return (
       <Badge
         className="text-[10px] font-extrabold uppercase bg-emerald-600 text-white border-transparent hover:bg-emerald-700">
@@ -53,7 +67,7 @@ function statusBadge(status: string) {
     <Badge
       variant="outline"
       className="text-[10px] font-extrabold uppercase">
-      {formatApplicationStatus(status)}
+      {formatApplicationStatus(item.status)}
     </Badge>
   );
 }
@@ -196,6 +210,11 @@ export function QueueTable({
                     ? "Conditionally Promoted"
                     : "Retained"}
               </Badge>
+              {row.original.isRemedialRequired && (
+                <span className="mt-1 block text-xs font-semibold leading-tight text-amber-800">
+                  Academic deficiency for follow-up
+                </span>
+              )}
             </div>
           );
         },
@@ -213,7 +232,7 @@ export function QueueTable({
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
-            {statusBadge(row.original.status)}
+            {statusBadge(row.original)}
           </div>
         ),
         size: 110,
@@ -289,8 +308,12 @@ export function QueueTable({
           <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
             <CheckCircle2 className="h-6 w-6 text-emerald-500" />
           </div>
-          <p className="font-extrabold text-base text-foreground">No unconfirmed returning learners match your current filter.</p>
-          <p className="text-sm">Select a different 'Target Grade' above or verify your search spelling.</p>
+          <p className="text-base font-extrabold text-foreground">
+            No continuing learners match this intake status.
+          </p>
+          <p className="text-sm">
+            Select another target grade or check the learner name or LRN.
+          </p>
         </div>
       }
       columns={columns}

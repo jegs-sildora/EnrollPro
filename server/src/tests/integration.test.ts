@@ -3,6 +3,9 @@ import {
   resolveRolloverDestination,
 } from "../features/school-year/services/school-year-transition.service.js"
 import {
+  classifyDocumentReadiness,
+} from "../features/bosy/bosy-intake-policy.service.js"
+import {
   buildBalancedSectionAssignments,
 } from "../features/sections/section-distribution.service.js"
 
@@ -59,7 +62,12 @@ function testRolloverOutcomeRouting(): void {
       eosyStatus: "CONDITIONALLY_PROMOTED",
       sourceGradeOrder: 10,
     }),
-    { kind: "BLOCKED_GRADE_10_CONDITIONAL" },
+    {
+      kind: "REMEDIAL_HOLD",
+      targetGradeOrder: 10,
+      academicStatus: "CONDITIONALLY_PROMOTED",
+      isRemedialRequired: true,
+    },
   )
 
   for (const eosyStatus of ["TRANSFERRED_OUT", "DROPPED_OUT"] as const) {
@@ -71,6 +79,52 @@ function testRolloverOutcomeRouting(): void {
       { kind: "ARCHIVE_ONLY" },
     )
   }
+}
+
+function testDocumentReadinessClassification(): void {
+  assert.deepEqual(
+    classifyDocumentReadiness({
+      isMissingSf9: false,
+      hasSf9CertificationLetter: false,
+      hasPsaBirthCertificate: true,
+      missingRequirements: [],
+    }),
+    {
+      isTemporarilyEnrolled: false,
+      missingDocuments: [],
+    },
+  )
+
+  assert.deepEqual(
+    classifyDocumentReadiness({
+      isMissingSf9: true,
+      hasSf9CertificationLetter: false,
+      hasPsaBirthCertificate: false,
+      missingRequirements: ["Form 137", "Good Moral Certificate"],
+    }),
+    {
+      isTemporarilyEnrolled: true,
+      missingDocuments: [
+        "SF9 Report Card",
+        "PSA Birth Certificate",
+        "Form 137",
+        "Good Moral Certificate",
+      ],
+    },
+  )
+
+  assert.deepEqual(
+    classifyDocumentReadiness({
+      isMissingSf9: true,
+      hasSf9CertificationLetter: true,
+      hasPsaBirthCertificate: true,
+      missingRequirements: ["Form 137", "Form 137", " "],
+    }),
+    {
+      isTemporarilyEnrolled: true,
+      missingDocuments: ["Form 137"],
+    },
+  )
 }
 
 function testBalancedSectionAssignments(): void {
@@ -124,6 +178,7 @@ function testBalancedSectionAssignments(): void {
 
 function run(): void {
   testRolloverOutcomeRouting()
+  testDocumentReadinessClassification()
   testBalancedSectionAssignments()
   console.log("Transition and sectioning integration checks passed.")
 }

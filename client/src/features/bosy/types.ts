@@ -4,6 +4,8 @@ export interface BOSYReadiness {
   isEosyFinalized: boolean;
   irregularBlockerCount: number;
   pendingConfirmationCount: number;
+  confirmedReadyCount: number;
+  temporarilyEnrolledCount: number;
   readyForSectioningCount: number;
   enrolledCount: number;
   jhsCompleterCount: number;
@@ -14,6 +16,13 @@ export interface BOSYReadiness {
   walkInBeefCount: number;
   pendingBeefCount: number;
 }
+
+export type BOSYQueueState =
+  | "PENDING"
+  | "CONFIRMED"
+  | "TEMPORARY"
+  | "TRANSFER_REQUEST"
+  | "ENROLLED";
 
 export interface BOSYQueueItem {
   applicationId: number;
@@ -28,6 +37,9 @@ export interface BOSYQueueItem {
   gradeLevelName: string;
   gradeLevelDisplayOrder: number;
   academicStatus: string | null;
+  isRemedialRequired: boolean;
+  isTemporarilyEnrolled: boolean;
+  missingDocuments: string[];
   priorSectionName: string | null;
   priorAdviserName: string | null;
 }
@@ -52,7 +64,16 @@ export interface BOSYQueuePage {
 
 export interface BulkConfirmResult {
   confirmed: number[];
+  readyForSectioning: number[];
+  temporarilyEnrolled: number[];
   failed: Array<{ id: number; reason: string }>;
+}
+
+export interface ConfirmReturnResult {
+  applicationId: number;
+  status: string;
+  intakeState: "CONFIRMED" | "TEMPORARY";
+  missingDocuments: string[];
 }
 
 export interface JHSCompleterPage {

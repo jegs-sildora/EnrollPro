@@ -31,7 +31,6 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Switch } from "@/shared/ui/switch";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 
 import {
@@ -285,6 +284,7 @@ interface Defaults {
 interface RolloverSummary {
   archivedRecords: number;
   pendingConfirmations: number;
+  remedialHolds: number;
   completers: number;
   archiveOnlyDepartures: number;
 }
@@ -592,7 +592,7 @@ export default function SchoolYearTab() {
     return years.some(
       (y) => y.yearLabel.toLowerCase() === label && y.id !== activeYear?.id,
     );
-  }, [editYearLabel, years]);
+  }, [activeYear?.id, editYearLabel, years]);
 
 
 
@@ -797,7 +797,7 @@ export default function SchoolYearTab() {
 
       const successDescription = activeYear
         ? rolloverSummary
-          ? `School Year ${res.data.year.yearLabel} is now active with empty class lists. ${rolloverSummary.pendingConfirmations} returning learner(s) are waiting for confirmation.`
+          ? `School Year ${res.data.year.yearLabel} is now active with empty class lists. ${rolloverSummary.pendingConfirmations} returning learner(s) are waiting for confirmation. ${rolloverSummary.remedialHolds} Grade 10 remedial case(s) are on hold.`
           : `School Year ${res.data.year.yearLabel} is now active.`
         : `School Year ${res.data.year.yearLabel} is now active.`;
 

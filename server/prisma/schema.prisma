@@ -649,6 +649,8 @@ enum ApplicationStatus {
   DROPPED
   SECTIONED
   ARCHIVED_NO_SHOW
+  REMEDIAL_HOLD
+  REMEDIAL_RESOLVED
 }
 
 enum ReadingProfileLevel {
