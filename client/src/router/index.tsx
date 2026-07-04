@@ -18,7 +18,6 @@ import LearnerDashboard from "@/features/learner/pages/Dashboard";
 import Enrollment from "@/features/enrollment/pages/Index";
 import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
 import RegistrarEOSYWorkspace from "@/features/enrollment/pages/RegistrarEOSYWorkspace";
-import WalkInEncoder from "@/features/enrollment/pages/WalkInEncoder";
 import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
 
@@ -150,7 +149,12 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/monitoring/enrollment/walk-in",
-                element: <WalkInEncoder />,
+                element: (
+                  <Navigate
+                    to="/continuing-learners?tab=incoming"
+                    replace
+                  />
+                ),
               },
               {
                 path: "/eosy",

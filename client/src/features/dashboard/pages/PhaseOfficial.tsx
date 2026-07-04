@@ -177,7 +177,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               <div className="flex items-center justify-end text-right w-full @container">
                 {isEnrollmentOpen ? (
                   <button
-                    onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                    onClick={() => navigate("/continuing-learners?tab=incoming")}
                     className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
                     style={{ color: "hsl(var(--primary))" }}
                   >
@@ -215,7 +215,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
             ) : (
               <div className="flex items-center justify-end text-right w-full @container">
                 <button
-                  onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+                  onClick={() => navigate("/monitoring/enrollment")}
                   className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
                   style={{ color: "hsl(var(--primary))" }}
                 >
@@ -248,7 +248,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
             ) : (
               <div className="flex items-center justify-end text-right w-full @container">
                 <button
-                  onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                  onClick={() => navigate("/continuing-learners?tab=incoming")}
                   className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
                   style={{ color: "hsl(var(--primary))" }}
                 >

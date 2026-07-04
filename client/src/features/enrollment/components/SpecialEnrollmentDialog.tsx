@@ -165,7 +165,7 @@ export function SpecialEnrollmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold">
             Walk-in / Special Enrollment

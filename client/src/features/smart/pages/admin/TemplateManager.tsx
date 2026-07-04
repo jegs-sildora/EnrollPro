@@ -753,7 +753,7 @@ export default function TemplateManager() {
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1400px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Upload Excel Template</DialogTitle>
             <DialogDescription>
@@ -886,7 +886,7 @@ export default function TemplateManager() {
 
       {/* Info Dialog */}
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedTemplate?.formName}</DialogTitle>
             <DialogDescription>{selectedTemplate?.formType}</DialogDescription>
@@ -941,7 +941,7 @@ export default function TemplateManager() {
 
       {/* Template Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogContent className="w-full max-w-3xl max-h-[95vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Template Preview</DialogTitle>
             <DialogDescription>

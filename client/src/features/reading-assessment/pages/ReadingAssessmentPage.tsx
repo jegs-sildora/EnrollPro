@@ -568,7 +568,7 @@ export default function ReadingAssessmentPage() {
           if (!open) handleDialogClose();
         }}
       >
-        <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-3xl max-h-[88vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold">Adviser Intake</DialogTitle>
             {selected && (

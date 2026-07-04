@@ -61,7 +61,7 @@ export default function FinalizeEnrollmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">{title}</DialogTitle>
           {learnerName ? (

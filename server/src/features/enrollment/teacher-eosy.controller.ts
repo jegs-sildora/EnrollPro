@@ -4,6 +4,22 @@ import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
 import { broadcastEosyUpdate } from "./eosy-events.service.js";
+
+function normalizeAcademicDeficiencyNote(
+  eosyStatus: EosyStatus | null | undefined,
+  note: unknown,
+): string | null {
+  if (eosyStatus !== "CONDITIONALLY_PROMOTED") {
+    return null
+  }
+
+  if (typeof note !== "string") {
+    return null
+  }
+
+  const trimmed = note.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
 /**
  * GET /api/teacher-eosy/advisory
  * Fetches the active advisory section for the logged-in teacher (by user ID)
@@ -215,6 +231,12 @@ export async function submitTeacherAdvisory(
           data: {
             eosyStatus,
             nextYearCurriculum,
+            academicDeficiencyNote: normalizeAcademicDeficiencyNote(
+              eosyStatus,
+              "academicDeficiencyNote" in update
+                ? update.academicDeficiencyNote
+                : null,
+            ),
             finalAverage:
               update.finalAverage !== undefined && update.finalAverage !== null
                 ? parseFloat(String(update.finalAverage))

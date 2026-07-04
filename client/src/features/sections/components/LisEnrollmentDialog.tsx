@@ -272,7 +272,7 @@ export function LisEnrollmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden border-none shadow-2xl backdrop-blur-md bg-white/95 rounded-2xl">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl backdrop-blur-md bg-white/95 rounded-2xl">
         {/* Header with gradient strip */}
         <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">

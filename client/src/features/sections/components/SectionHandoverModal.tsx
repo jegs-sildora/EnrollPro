@@ -150,7 +150,7 @@ export function SectionHandoverModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl border-2 p-0 overflow-hidden rounded-2xl bg-background">
+      <DialogContent className="w-full max-w-3xl border-2 p-0 overflow-hidden rounded-2xl bg-background">
         <DialogHeader className="px-6 py-6 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-foreground/10 rounded-lg">

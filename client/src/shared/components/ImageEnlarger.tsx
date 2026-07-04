@@ -19,7 +19,7 @@ export function ImageEnlarger({
 			open={isOpen}
 			onOpenChange={(open) => !open && onClose()}
 		>
-			<DialogContent className='max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent shadow-none flex items-center justify-center overflow-hidden outline-none ring-0'>
+			<DialogContent className='w-full max-w-3xl max-h-[95vh] p-0 border-none bg-transparent shadow-none flex items-center justify-center overflow-hidden outline-none ring-0'>
 				<DialogTitle className='sr-only'>{alt}</DialogTitle>
 
 				<button

@@ -1779,7 +1779,7 @@ export default function WalkInEncoder() {
 
       {/* 5. POST-SUBMISSION MODAL DIALOG */}
       <Dialog open={showSectionModal} onOpenChange={(open) => { if (!open) handleSkipSectionAssignment(); }}>
-        <DialogContent className="sm:max-w-[460px] text-left p-6 bg-white rounded-xl shadow-lg border border-border">
+        <DialogContent className="w-full max-w-3xl text-left p-6 bg-white rounded-xl shadow-lg border border-border">
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold text-foreground tracking-wide">
               Assign Late Enrollee to a Class Section
@@ -1884,7 +1884,7 @@ export default function WalkInEncoder() {
       <Dialog
         open={isCapacityOverrideOpen}
         onOpenChange={setIsCapacityOverrideOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="px-6 pt-6 pb-4 bg-amber-50 border-b border-amber-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg text-amber-700">
@@ -1932,7 +1932,7 @@ export default function WalkInEncoder() {
       </Dialog>
       {/* Duplication Sentinel Blocking Modal */}
       <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="px-6 pt-6 pb-4 bg-rose-50 border-b border-rose-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-rose-100 rounded-lg text-rose-700">

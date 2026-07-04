@@ -5,6 +5,7 @@ import {
   useRef,
   startTransition,
 } from "react";
+import { useSearchParams } from "react-router";
 import {
   Search,
   Loader2,
@@ -22,6 +23,8 @@ import {
   getBOSYQueue,
   confirmReturn,
   markTransferRequest,
+  revokeConfirmedReturn,
+  markConfirmedTransferOut,
   bulkConfirm,
   apiRevertToPendingBeef,
   apiFlushNoShows,
@@ -41,6 +44,7 @@ import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -66,6 +70,7 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
+import { VerificationWorkspace } from "@/features/enrollment/components/VerificationWorkspace";
 
 import { sileo } from "sileo";
 
@@ -126,6 +131,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
@@ -176,6 +182,7 @@ export default function BOSYPage() {
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
+  const [busyActionIds, setBusyActionIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
 
 
@@ -190,7 +197,10 @@ export default function BOSYPage() {
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
   const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
   const [transferTarget, setTransferTarget] = useState<BOSYQueueItem | null>(null);
+  const [transferMode, setTransferMode] = useState<"PENDING" | "CONFIRMED">("PENDING");
   const [transferBusy, setTransferBusy] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<BOSYQueueItem | null>(null);
+  const [revokeBusy, setRevokeBusy] = useState(false);
 
 
   const fetchReadiness = useCallback(async () => {
@@ -205,7 +215,7 @@ export default function BOSYPage() {
         repairedSchoolYearRef.current = syId;
         if (repairResult.created > 0) {
           sileo.success({
-            title: "Continuing Learner Queue Restored",
+            title: "Learner Enrollment Queue Restored",
             description:
               `${repairResult.created} learner record(s) were recovered from the previous school year.`,
           });
@@ -277,7 +287,7 @@ export default function BOSYPage() {
     if (!confirmSingleTarget) return;
     const { applicationId } = confirmSingleTarget;
     sileo.info({
-      title: "Confirming Learner Return",
+      title: "Processing Learner Enrollment",
       description: "Submitting the learner record for BOSY sectioning readiness.",
     });
     setConfirmSingleBusy(true);
@@ -294,7 +304,7 @@ export default function BOSYPage() {
           : {
               title: "Learner Ready for Section Assignment",
               description:
-                "The learner's return and school requirements are confirmed.",
+                "The learner's enrollment and school requirements are confirmed.",
             },
       );
       setQueueItems((prev) =>
@@ -322,12 +332,22 @@ export default function BOSYPage() {
   const executeTransferRequest = async () => {
     if (!transferTarget) return;
     setTransferBusy(true);
+    setBusyActionIds((prev) => new Set(prev).add(transferTarget.applicationId));
     try {
-      await markTransferRequest(transferTarget.applicationId);
+      if (transferMode === "CONFIRMED") {
+        await markConfirmedTransferOut(transferTarget.applicationId);
+      } else {
+        await markTransferRequest(transferTarget.applicationId);
+      }
       sileo.success({
-        title: "Transfer Request Recorded",
+        title:
+          transferMode === "CONFIRMED"
+            ? "Confirmed Learner Marked for Transfer Out"
+            : "Learner Tagged as Not Returning",
         description:
-          `${transferTarget.firstName} ${transferTarget.lastName} was moved to Transfer Requests.`,
+          transferMode === "CONFIRMED"
+            ? `${transferTarget.firstName} ${transferTarget.lastName} was removed from the sectioning queue and marked for transfer out.`
+            : `${transferTarget.firstName} ${transferTarget.lastName} was cleared from the learner enrollment queue.`,
       });
       setQueueItems((current) =>
         current.filter(
@@ -336,11 +356,55 @@ export default function BOSYPage() {
       );
       setQueueTotal((current) => Math.max(0, current - 1));
       setTransferTarget(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
       void fetchReadiness();
     } catch (error: unknown) {
       toastApiError(error as Parameters<typeof toastApiError>[0]);
     } finally {
+      setBusyActionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(transferTarget.applicationId);
+        return next;
+      });
       setTransferBusy(false);
+    }
+  };
+
+  const executeRevokeConfirmation = async () => {
+    if (!revokeTarget) return;
+    setRevokeBusy(true);
+    setBusyActionIds((prev) => new Set(prev).add(revokeTarget.applicationId));
+    try {
+      await revokeConfirmedReturn(revokeTarget.applicationId);
+      sileo.success({
+        title: "Confirmation Revoked",
+        description:
+          `${revokeTarget.firstName} ${revokeTarget.lastName} was returned to Pending Enrollment.`,
+      });
+      setQueueItems((current) =>
+        current.filter(
+          (item) => item.applicationId !== revokeTarget.applicationId,
+        ),
+      );
+      setQueueTotal((current) => Math.max(0, current - 1));
+      setRevokeTarget(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
+      void fetchReadiness();
+    } catch (error: unknown) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setBusyActionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(revokeTarget.applicationId);
+        return next;
+      });
+      setRevokeBusy(false);
     }
   };
 
@@ -454,213 +518,249 @@ export default function BOSYPage() {
   };
 
   const setTitle = useHeaderStore((s) => s.setTitle);
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "incoming" ? "incoming" : "continuing";
+
+  const setActiveTab = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
-    setTitle("Confirmation of Continuing Learners");
+    setTitle("Learner Enrollment");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
-    <div
-      className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
-    >
+    <div className="flex h-[calc(100vh-120px)] min-h-0 flex-col">
       <PhaseBanner />
-      <div
-        className="flex flex-col md:flex-row md:items-center justify-end gap-4"
-      >
-        <div>
-          {isHistoricalReadOnly && (
-            <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
-          )}
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="mb-4 grid w-full grid-cols-1 gap-1 rounded-xl border border-border bg-white p-1 shadow-sm sm:grid-cols-2">
+          <TabsTrigger
+            value="continuing"
+            className="text-base font-extrabold uppercase"
+          >
+            Continuing Learners
+          </TabsTrigger>
+          <TabsTrigger
+            value="incoming"
+            className="text-base font-extrabold uppercase"
+          >
+            Incoming Grade 7 and Transferees
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[
-          {
-            label: "Pending Confirmations",
-            subBadge: "Waiting for the learner or parent to confirm",
-            value: readiness?.pendingConfirmationCount ?? 0,
-            filterVal: "PENDING" as const,
-            isPrimaryMetric: false,
-          },
-          {
-            label: "Confirmed and Ready for Section Assignment",
-            subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
-            value: readiness?.confirmedReadyCount ?? 0,
-            filterVal: "CONFIRMED" as const,
-            isPrimaryMetric: true,
-          },
-          {
-            label: "Temporarily Enrolled",
-            subBadge: "Missing school requirements for follow-up",
-            value: readiness?.temporarilyEnrolledCount ?? 0,
-            filterVal: "TEMPORARY" as const,
-            isPrimaryMetric: false,
-          },
-        ].map(({ label, subBadge, value, filterVal, isPrimaryMetric }) => (
-          <button
-            type="button"
-            key={label}
-            onClick={() => {
-              setQueueState(filterVal);
-              setQueuePage(1);
-              setRowSelection({});
-            }}
-            aria-pressed={queueState === filterVal}
-            className={cn(
-              "flex min-h-32 flex-col rounded-lg border bg-white p-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              queueState === filterVal
-                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                : "border-border hover:border-primary/50 hover:bg-muted/20",
-            )}>
-            <span className="text-base font-extrabold leading-tight text-foreground">
-              {label}
-            </span>
-            <span
-              className={cn(
-                "mt-4 text-4xl font-extrabold leading-none",
-                isPrimaryMetric && value > 0
-                  ? "text-primary"
-                  : "text-foreground",
-              )}>
-              {value}
-            </span>
-            <span className="mt-1 text-sm font-semibold text-muted-foreground">
-              {subBadge}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-        <CardHeader className="px-3 sm:px-6 pb-3">
-          <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
-            <div className="relative w-full lg:w-1/2 shrink-0">
-              <span className="text-base font-extrabold text-foreground">Search Learner</span>
-              <Search className="absolute left-2.5 h-4 w-4 bottom-3.5 text-foreground" />
-              <Input
-                placeholder="Search by LRN, Last Name, or First Name..."
-                className="pl-9 h-10 w-full text-base font-semibold mt-2"
-                value={queueSearch}
-                onChange={(e) => {
-                  setQueueSearch(e.target.value);
-                  startTransition(() => {
-                    setQueuePage(1);
-                  });
-                }}
-              />
+        <TabsContent
+          value="continuing"
+          forceMount
+          className={cn("m-0 flex min-h-0 flex-1 flex-col", activeTab !== "continuing" && "hidden")}
+        >
+          <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+            <div
+              className="flex flex-col md:flex-row md:items-center justify-end gap-4"
+            >
+              <div>
+                {isHistoricalReadOnly && (
+                  <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all enrollment actions are disabled.</p>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
-              {canMutate && queueState === "PENDING" && selectedIds.length > 0 ? (
-                <div className="flex items-center gap-2">
-                  <BulkConfirmBar
-                    selectedCount={selectedIds.length}
-                    loading={bulkLoading}
-                    onConfirm={() => void handleBulkConfirm()}
-                    onClear={() => setRowSelection({})}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                {
+                  label: "Pending Enrollment",
+                  subBadge: "Waiting for learner or parent check-in",
+                  value: readiness?.pendingConfirmationCount ?? 0,
+                  filterVal: "PENDING" as const,
+                  isPrimaryMetric: false,
+                },
+                {
+                  label: "Confirmed and Ready for Section Assignment",
+                  subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
+                  value: readiness?.confirmedReadyCount ?? 0,
+                  filterVal: "CONFIRMED" as const,
+                  isPrimaryMetric: true,
+                },
+                {
+                  label: "Temporarily Enrolled",
+                  subBadge: "Missing school requirements for follow-up",
+                  value: readiness?.temporarilyEnrolledCount ?? 0,
+                  filterVal: "TEMPORARY" as const,
+                  isPrimaryMetric: false,
+                },
+              ].map(({ label, subBadge, value, filterVal, isPrimaryMetric }) => (
+                <button
+                  type="button"
+                  key={label}
+                  onClick={() => {
+                    setQueueState(filterVal);
+                    setQueuePage(1);
+                    setRowSelection({});
+                  }}
+                  aria-pressed={queueState === filterVal}
+                  className={cn(
+                    "flex min-h-32 flex-col rounded-lg border bg-white p-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    queueState === filterVal
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                      : "border-border hover:border-primary/50 hover:bg-muted/20",
+                  )}>
+                  <span className="text-base font-extrabold leading-tight text-foreground">
+                    {label}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-4 text-4xl font-extrabold leading-none",
+                      isPrimaryMetric && value > 0
+                        ? "text-primary"
+                        : "text-foreground",
+                    )}>
+                    {value}
+                  </span>
+                  <span className="mt-1 text-sm font-semibold text-muted-foreground">
+                    {subBadge}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+              <CardHeader className="px-3 sm:px-6 pb-3">
+                <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
+                  <div className="relative w-full lg:w-1/2 shrink-0">
+                    <span className="text-base font-extrabold text-foreground">Search Learner</span>
+                    <Search className="absolute left-2.5 h-4 w-4 bottom-3.5 text-foreground" />
+                    <Input
+                      placeholder="Search by LRN, Last Name, or First Name..."
+                      className="pl-9 h-10 w-full text-base font-semibold mt-2"
+                      value={queueSearch}
+                      onChange={(e) => {
+                        setQueueSearch(e.target.value);
+                        startTransition(() => {
+                          setQueuePage(1);
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
+                    {canMutate && queueState === "PENDING" && selectedIds.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <BulkConfirmBar
+                          selectedCount={selectedIds.length}
+                          loading={bulkLoading}
+                          onConfirm={() => void handleBulkConfirm()}
+                          onClear={() => setRowSelection({})}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-1 w-full sm:w-auto">
+                          <span className="text-base font-extrabold text-foreground">Target Grade</span>
+                          <Select
+                            value={targetGrade}
+                            onValueChange={(val) => {
+                              setTargetGrade(val);
+                              setQueuePage(1);
+                              setRowSelection({});
+                            }}
+                          >
+                            <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-base font-semibold">
+                              <SelectValue placeholder="All Incoming Grades" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL" className="text-base">All Incoming Grades</SelectItem>
+                              <SelectItem value="7" className="text-base">Incoming Grade 7</SelectItem>
+                              <SelectItem value="8" className="text-base">Incoming Grade 8</SelectItem>
+                              <SelectItem value="9" className="text-base">Incoming Grade 9</SelectItem>
+                              <SelectItem value="10" className="text-base">Incoming Grade 10</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex flex-col gap-1 w-full sm:w-auto">
+                          <span className="text-base font-extrabold text-foreground">Prior Section</span>
+                          <Select
+                            value={previousSectionName}
+                            onValueChange={(val) => {
+                              setPreviousSectionName(val);
+                              startTransition(() => setQueuePage(1));
+                            }}
+                          >
+                            <SelectTrigger className="h-10 w-full sm:w-64 text-base font-semibold whitespace-nowrap">
+                              <SelectValue placeholder="All Previous Sections" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL" className="text-base font-semibold">All Previous Sections</SelectItem>
+                              {previousSections
+                                .filter((sec) => typeof sec === "string" && sec.trim() !== "")
+                                .map((sec) => (
+                                  <SelectItem key={sec} value={sec} className="text-base font-semibold">
+                                    {sec}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
+              <CardContent className="p-0 flex flex-col min-h-0">
+                <div className="overflow-hidden bg-muted/5 w-full max-w-full">
+                  <QueueTable
+                    priorSyLabel={priorSyLabel}
+                    items={queueItems}
+                    loading={queueLoading}
+                    isSearching={isSearching}
+                    queueState={queueState}
+                    allowActions={canMutate}
+                    rowSelection={queueState === "PENDING" ? rowSelection : {}}
+                    onRowSelectionChange={setRowSelection}
+                    onConfirmSingle={handleConfirmSingle}
+                    onTransferRequest={(item) => {
+                      setTransferMode("PENDING");
+                      setTransferTarget(item);
+                    }}
+                    onRevokeConfirmation={setRevokeTarget}
+                    onMarkConfirmedTransferOut={(item) => {
+                      setTransferMode("CONFIRMED");
+                      setTransferTarget(item);
+                    }}
+                    confirmingIds={confirmingIds}
+                    busyActionIds={busyActionIds}
                   />
                 </div>
-              ) : (
-                <>
-                  <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-base font-extrabold text-foreground">Target Grade</span>
-                    <Select
-                      value={targetGrade}
-                      onValueChange={(val) => {
-                        setTargetGrade(val);
-                        setQueuePage(1);
-                        setRowSelection({});
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-base font-semibold">
-                        <SelectValue placeholder="All Returning Grades" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL" className="text-base">All Returning Grades</SelectItem>
-                        <SelectItem value="7" className="text-base">Incoming Grade 7</SelectItem>
-                        <SelectItem value="8" className="text-base">Incoming Grade 8</SelectItem>
-                        <SelectItem value="9" className="text-base">Incoming Grade 9</SelectItem>
-                        <SelectItem value="10" className="text-base">Incoming Grade 10</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <PaginationBar
+                  page={queuePage}
+                  total={queueTotal}
+                  limit={queueLimit}
+                  onPageChange={setQueuePage}
+                  onLimitChange={(l) => {
+                    setQueueLimit(l);
+                    setQueuePage(1);
+                  }}
+                  itemName="Learners"
+                />
+              </CardContent>
+            </Card>
 
-                  <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <span className="text-base font-extrabold text-foreground">Prior Section</span>
-                    <Select
-                      value={previousSectionName}
-                      onValueChange={(val) => {
-                        setPreviousSectionName(val);
-                        startTransition(() => setQueuePage(1));
-                      }}
-                    >
-                      <SelectTrigger className="h-10 w-full sm:w-64 text-base font-semibold whitespace-nowrap">
-                        <SelectValue placeholder="All Previous Sections" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL" className="text-base font-semibold">All Previous Sections</SelectItem>
-                        {previousSections
-                          .filter((sec) => typeof sec === "string" && sec.trim() !== "")
-                          .map((sec) => (
-                            <SelectItem key={sec} value={sec} className="text-base font-semibold">
-                              {sec}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-        <CardContent className="p-0 flex flex-col min-h-0">
-          <div className="overflow-auto bg-muted/5 w-full max-w-full">
-            <QueueTable
-              priorSyLabel={priorSyLabel}
-              items={queueItems}
-              loading={queueLoading}
-              isSearching={isSearching}
-              showConfirmAction={queueState === "PENDING" && canMutate}
-              rowSelection={queueState === "PENDING" ? rowSelection : {}}
-              onRowSelectionChange={setRowSelection}
-              onConfirmSingle={handleConfirmSingle}
-              onTransferRequest={setTransferTarget}
-              confirmingIds={confirmingIds}
-            />
-          </div>
-          <PaginationBar
-            page={queuePage}
-            total={queueTotal}
-            limit={queueLimit}
-            onPageChange={setQueuePage}
-            onLimitChange={(l) => {
-              setQueueLimit(l);
-              setQueuePage(1);
-            }}
-            itemName="Learners"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Confirm Single Return Dialog */}
+            {/* Confirm Single Return Dialog */}
       <Dialog
         open={confirmSingleTarget !== null}
         onOpenChange={(open) => { if (!open) setConfirmSingleTarget(null); }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-3xl w-full">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              Confirm Learner Return
+              Enroll Learner
             </DialogTitle>
             <DialogDescription>
-              Confirm the learner's return for this school year. Learners with
+              Confirm learner enrollment for this school year. Learners with
               incomplete school requirements will be marked as temporarily
               enrolled but may still proceed to section assignment.
             </DialogDescription>
@@ -709,24 +809,29 @@ export default function BOSYPage() {
               ) : (
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />
               )}
-              Confirm Return
+              Enroll
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog
+            <Dialog
         open={transferTarget !== null}
         onOpenChange={(open) => {
           if (!open && !transferBusy) setTransferTarget(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-3xl w-full">
           <DialogHeader>
-            <DialogTitle>Mark as Transfer Request</DialogTitle>
+            <DialogTitle>
+              {transferMode === "CONFIRMED"
+                ? "Mark Transfer Out"
+                : "Tag as Not Returning"}
+            </DialogTitle>
             <DialogDescription>
-              Move this learner to Transfer Requests. The learner will not be
-              included in enrollment totals or class assignment.
+              {transferMode === "CONFIRMED"
+                ? "Remove this confirmed learner from the sectioning queue and mark the record for transfer out."
+                : "Clear this learner from the continuing learner onboarding queue. The learner will no longer appear in pending confirmations for this school year."}
             </DialogDescription>
           </DialogHeader>
           {transferTarget && (
@@ -755,17 +860,61 @@ export default function BOSYPage() {
               {transferBusy && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Mark as Transfer Request
+              {transferMode === "CONFIRMED"
+                ? "Mark Transfer Out"
+                : "Tag as Not Returning"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Revert to Pending Dialog */}
+            <Dialog
+        open={revokeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !revokeBusy) setRevokeTarget(null);
+        }}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Revoke Confirmation</DialogTitle>
+            <DialogDescription>
+              Return this learner to Pending Enrollment. This removes the learner from the unassigned sectioning pool and from the current official BOSY count.
+            </DialogDescription>
+          </DialogHeader>
+          {revokeTarget && (
+            <div className="rounded-md border bg-muted/40 px-4 py-3">
+              <p className="font-extrabold">
+                {revokeTarget.lastName}, {revokeTarget.firstName}
+              </p>
+              <p className="text-sm font-semibold">
+                {revokeTarget.gradeLevelName}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={revokeBusy}
+              onClick={() => setRevokeTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={revokeBusy}
+              onClick={() => void executeRevokeConfirmation()}>
+              {revokeBusy && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Revoke Confirmation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+            {/* Restore to Pending Enrollment Dialog */}
       <Dialog
         open={revertTargetId !== null}
         onOpenChange={(open) => { if (!open) { setRevertTargetId(null); setRevertReason(""); } }}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl w-full">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-amber-600" />
@@ -806,13 +955,13 @@ export default function BOSYPage() {
               ) : (
                 <RotateCcw className="h-4 w-4 mr-1.5" />
               )}
-              Revert to Pending
+              Restore to Pending Enrollment
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Flush No-Shows Dialog */}
+            {/* Flush No-Shows Dialog */}
       <Dialog
         open={flushDialogOpen}
         onOpenChange={(open) => {
@@ -820,7 +969,7 @@ export default function BOSYPage() {
           if (!open) setNoShowItems([]);
         }}
       >
-        <DialogContent className="sm:max-w-2xl gap-0 p-0 overflow-hidden">
+        <DialogContent className="max-w-3xl w-full gap-0 overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="h-4 w-4" />
@@ -886,6 +1035,17 @@ export default function BOSYPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+          </div>
+        </TabsContent>
+
+        <TabsContent
+          value="incoming"
+          forceMount
+          className={cn("m-0 flex min-h-0 flex-1 flex-col", activeTab !== "incoming" && "hidden")}
+        >
+          <VerificationWorkspace />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

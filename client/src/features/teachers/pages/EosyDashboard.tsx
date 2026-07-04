@@ -44,6 +44,7 @@ interface EnrollmentRecord {
   id: number;
   eosyStatus: "PROMOTED" | "RETAINED" | "DROPPED_OUT" | string | null;
   finalAverage: number | null;
+  academicDeficiencyNote: string | null;
   enrollmentApplication: EnrollmentApplication;
 }
 
@@ -128,6 +129,16 @@ export default function TeacherEosyDashboard() {
     );
   };
 
+  const handleDeficiencyNoteChange = (recordId: number, value: string) => {
+    setRecords((prev) =>
+      prev.map((r) =>
+        r.id === recordId
+          ? { ...r, academicDeficiencyNote: value }
+          : r,
+      ),
+    );
+  };
+
   const handleSubmit = async () => {
     setSubmitLoading(true);
     try {
@@ -135,7 +146,11 @@ export default function TeacherEosyDashboard() {
         updates: records.map(r => ({
           recordId: r.id,
           eosyStatus: r.eosyStatus,
-          finalAverage: r.finalAverage
+          finalAverage: r.finalAverage,
+          academicDeficiencyNote:
+            r.eosyStatus === "CONDITIONALLY_PROMOTED"
+              ? r.academicDeficiencyNote
+              : null,
         }))
       };
 
@@ -261,6 +276,7 @@ export default function TeacherEosyDashboard() {
           const isScp = Boolean(section?.programType && section.programType !== "REGULAR");
           const isGrade10 = section?.gradeLevel?.name?.includes("10") || false;
           const isScpWarning = !isGrade10 && isScp && ave !== null && ave !== undefined && ave >= 75 && ave < 85;
+          const deficiencyNote = r.academicDeficiencyNote ?? "";
 
           const renderStatusContent = () => (
             <div
@@ -301,61 +317,76 @@ export default function TeacherEosyDashboard() {
 
           if (isFinalized) {
             return (
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-1">
                 {isScpWarning ? renderTooltip(renderStatusContent()) : renderStatusContent()}
+                {resolvedStatus === "CONDITIONALLY_PROMOTED" && deficiencyNote && (
+                  <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
+                    Deficiency: {deficiencyNote}
+                  </span>
+                )}
               </div>
             );
           }
 
           return (
-            <div className="flex justify-center items-center gap-2">
-              <Select
-                value={isScpWarning ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
-                onValueChange={(val) => {
-                  if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
-                  else handleStatusChange(r.id, val);
-                }}
-                disabled={isScpWarning}
-              >
-                {isScpWarning ? (
-                  renderTooltip(
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex justify-center items-center gap-2">
+                <Select
+                  value={isScpWarning ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
+                  onValueChange={(val) => {
+                    if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
+                    else handleStatusChange(r.id, val);
+                  }}
+                  disabled={isScpWarning}
+                >
+                  {isScpWarning ? (
+                    renderTooltip(
+                      <SelectTrigger
+                        className={cn(
+                          "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                          "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
+                        )}>
+                        <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-1" />
+                      </SelectTrigger>
+                    )
+                  ) : (
                     <SelectTrigger
                       className={cn(
                         "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
-                        "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
+                        resolvedStatus === "ACTION_REQUIRED"
+                          ? "text-red-700 bg-red-50 border-red-200"
+                          : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                            ? "text-green-700 bg-green-50 border-green-200"
+                            : "text-amber-700 bg-amber-50 border-amber-200",
                       )}>
-                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-1" />
+                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                     </SelectTrigger>
-                  )
-                ) : (
-                  <SelectTrigger
-                    className={cn(
-                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
-                      resolvedStatus === "ACTION_REQUIRED"
-                        ? "text-red-700 bg-red-50 border-red-200"
-                        : !r.eosyStatus || r.eosyStatus === "PROMOTED"
-                          ? "text-green-700 bg-green-50 border-green-200"
-                          : "text-amber-700 bg-amber-50 border-amber-200",
-                    )}>
-                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
-                  </SelectTrigger>
-                )}
-                <SelectContent>
-                  {!hasZeroOrBlankGrade && !isFailing && !isScpWarning && (
-                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
                   )}
+                  <SelectContent>
+                    {!hasZeroOrBlankGrade && !isFailing && !isScpWarning && (
+                      <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                    )}
 
-                  {!hasZeroOrBlankGrade && (
-                    <>
-                      <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
-                      <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
-                    </>
-                  )}
-                  <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
-                  <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
-                </SelectContent>
-              </Select>
+                    {!hasZeroOrBlankGrade && (
+                      <>
+                        <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                        <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                    <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
+                <Input
+                  value={deficiencyNote}
+                  onChange={(e) => handleDeficiencyNoteChange(r.id, e.target.value)}
+                  placeholder="Enter failing subject or deficiency note"
+                  className="h-8 w-full min-w-[220px] text-sm font-bold"
+                />
+              )}
             </div>
           );
         },

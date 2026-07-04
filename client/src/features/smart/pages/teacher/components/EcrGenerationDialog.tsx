@@ -12,7 +12,7 @@ interface EcrGenerationDialogProps {
 export function EcrGenerationDialog({ open, percentage, progress }: EcrGenerationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={() => { }}>
-      <DialogContent className="sm:max-w-md rounded-[2.5rem] border-0 shadow-2xl p-0 overflow-hidden bg-white">
+      <DialogContent className="w-full max-w-3xl rounded-[2.5rem] border-0 shadow-2xl p-0 overflow-hidden bg-white">
         <div className="p-10 text-center">
           <div className="relative w-32 h-32 mx-auto mb-8">
             <svg className="w-full h-full -rotate-90">

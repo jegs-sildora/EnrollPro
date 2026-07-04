@@ -685,7 +685,7 @@ export default function StudentRecords() {
 
       {/* Student Detail Dialog */}
       <Dialog open={studentDetailOpen} onOpenChange={setStudentDetailOpen}>
-        <DialogContent className="w-[95vw] sm:!max-w-3xl md:!max-w-4xl lg:!max-w-5xl xl:!max-w-6xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-8">
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-8">
           <DialogHeader className="pb-4 sm:pb-6">
             <DialogTitle className="flex items-center gap-2 sm:gap-3 text-gray-900 text-xl sm:text-2xl">
               <Users className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" />

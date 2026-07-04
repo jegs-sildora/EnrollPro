@@ -572,7 +572,7 @@ function ReadingAssessmentTab({
       </Card>
 
       <Dialog open={!!target} onOpenChange={(o) => { if (!o) { setTarget(null); setReadingLevel(""); } }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">Phil-IRI Reading Assessment</DialogTitle>
           </DialogHeader>

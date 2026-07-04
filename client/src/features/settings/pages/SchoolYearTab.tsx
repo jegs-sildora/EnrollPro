@@ -1507,7 +1507,7 @@ export default function SchoolYearTab() {
             setRolloverReadiness(null);
           }
         }}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5" />

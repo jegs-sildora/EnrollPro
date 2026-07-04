@@ -393,8 +393,6 @@ const NavItem = memo(function NavItem({
   if (!isActive && to !== "/") {
     if (to === "/sections" && pathname.startsWith("/sections")) {
       isActive = false;
-    } else if (to === "/monitoring/enrollment" && pathname.startsWith("/monitoring/enrollment/walk-in")) {
-      isActive = false;
     } else if (pathname.startsWith(to + "/")) {
       isActive = true;
     }
@@ -540,29 +538,18 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    {(systemPhase === "PRE_REGISTRATION" || systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT" || !systemPhase) && (
+                    {(systemPhase === "PRE_REGISTRATION" || systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                       <>
                         <NavItem
                           to="/continuing-learners"
                           icon={UserPlus}
-                          label="Continuing Learners"
+                          label="Learner Enrollment"
                           pathname={pathname}
                         />
                         <NavItem
                           to="/monitoring/enrollment"
                           icon={Calendar}
-                          label="Sectioning & SF1 Prep"
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    {systemPhase === "CLASSES_ONGOING" && (
-                      <>
-                        <NavItem
-                          to="/monitoring/enrollment/walk-in"
-                          icon={UserPlus}
-                          label="Late Enrollee Form"
+                          label="Class Sectioning and SF1"
                           pathname={pathname}
                         />
                       </>
@@ -713,22 +700,22 @@ const ROUTE_PHASES: Record<string, {
   redirectLabel: string;
 }> = {
   "/continuing-learners": {
-    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT"],
-    moduleName: "Continuing Learners",
-    redirectTo: "/monitoring/enrollment/walk-in",
-    redirectLabel: "Take me to Late Admissions"
+    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    moduleName: "Learner Enrollment",
+    redirectTo: "/monitoring/enrollment",
+    redirectLabel: "Take me to Class Sectioning"
   },
   "/monitoring/enrollment": {
-    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT"],
-    moduleName: "Sectioning & SF1 Prep",
+    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    moduleName: "Class Sectioning and SF1",
     redirectTo: "/sections",
     redirectLabel: "Take me to Class Sections"
   },
   "/monitoring/enrollment/walk-in": {
     allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
-    moduleName: "Late Enrollee Intake",
-    redirectTo: "/dashboard",
-    redirectLabel: "Take me to Dashboard"
+    moduleName: "Learner Enrollment",
+    redirectTo: "/continuing-learners",
+    redirectLabel: "Take me to Learner Enrollment"
   },
   "/eosy": {
     allowedPhases: ["EOSY_CLOSING"],

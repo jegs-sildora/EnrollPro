@@ -41,7 +41,7 @@ export default function BatchResultsModal({ results, onClose }: Props) {
     <Dialog
       open={!!results}
       onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+      <DialogContent className="w-full max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-extrabold">
             Batch Processing Results

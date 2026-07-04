@@ -62,6 +62,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 export interface EnrollmentRecord {
   id: number;
   eosyStatus: EosyStatus | null;
+  academicDeficiencyNote: string | null;
   dropOutReason: string | null;
   finalAverage: number | null;
   nextYearCurriculum: string | null;
@@ -322,12 +323,17 @@ export default function EosyUpdating() {
     sectionId?: number;
     finalAverage?: number | null;
     eosyStatus?: EosyStatus;
+    academicDeficiencyNote?: string | null;
     latitude?: number;
     longitude?: number;
   }>>({});
   const [isCommitting, setIsCommitting] = useState(false);
 
-  const handleFieldChange = useCallback((recordId: number, field: string, value: any) => {
+  const handleFieldChange = useCallback((
+    recordId: number,
+    field: string,
+    value: string | number | null | EosyStatus | undefined,
+  ) => {
     setUnsavedChanges(prev => {
       const existing = prev[recordId] || {};
       return {
@@ -527,7 +533,12 @@ export default function EosyUpdating() {
 
 
   const handleStatusChange = useCallback(
-    async (recordId: number, status: string, finalAverage?: number | null) => {
+    async (
+      recordId: number,
+      status: string,
+      finalAverage?: number | null,
+      academicDeficiencyNote?: string | null,
+    ) => {
       if (isHistoricalReadOnly && !hasOverride) {
         sileo.error({ title: "Read-Only", description: "This school year is archived. All records are read-only." });
         return;
@@ -553,6 +564,11 @@ export default function EosyUpdating() {
       try {
         const payload: Record<string, unknown> = { eosyStatus: status };
         if (finalAverage !== undefined) payload.finalAverage = finalAverage;
+        if (status !== "CONDITIONALLY_PROMOTED") {
+          payload.academicDeficiencyNote = null;
+        } else if (academicDeficiencyNote !== undefined) {
+          payload.academicDeficiencyNote = academicDeficiencyNote;
+        }
 
         await api.patch(`/eosy/records/${recordId}`, payload);
 
@@ -562,6 +578,10 @@ export default function EosyUpdating() {
               ? {
                 ...r,
                 eosyStatus: status as EosyStatus,
+                academicDeficiencyNote:
+                  status === "CONDITIONALLY_PROMOTED"
+                    ? academicDeficiencyNote ?? r.academicDeficiencyNote
+                    : null,
                 finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage,
               }
               : r,
@@ -576,6 +596,33 @@ export default function EosyUpdating() {
       }
     },
     [exportLock?.schoolYearFinalized, records, isHistoricalReadOnly, hasOverride],
+  );
+
+  const handleAcademicDeficiencyNoteSave = useCallback(
+    async (recordId: number, note: string) => {
+      const record = records.find((item) => item.id === recordId);
+      if (!record || record.eosyStatus !== "CONDITIONALLY_PROMOTED") {
+        return;
+      }
+
+      try {
+        await api.patch(`/eosy/records/${recordId}`, {
+          eosyStatus: record.eosyStatus,
+          academicDeficiencyNote: note,
+        });
+
+        setRecords((prev) =>
+          prev.map((item) =>
+            item.id === recordId
+              ? { ...item, academicDeficiencyNote: note.trim() || null }
+              : item,
+          ),
+        );
+      } catch (err) {
+        toastApiError(err as never);
+      }
+    },
+    [records],
   );
 
   const handleBatchUpdate = async () => {
@@ -1071,6 +1118,9 @@ export default function EosyUpdating() {
           const unsaved = unsavedChanges[recordId] || {};
           const currentStatus = unsaved.hasOwnProperty("eosyStatus") ? unsaved.eosyStatus : r.eosyStatus;
           const isStatusChanged = unsaved.hasOwnProperty("eosyStatus") && unsaved.eosyStatus !== r.eosyStatus;
+          const currentDeficiencyNote = unsaved.hasOwnProperty("academicDeficiencyNote")
+            ? unsaved.academicDeficiencyNote
+            : r.academicDeficiencyNote;
 
           const isScp = Boolean(r.section?.programType && r.section.programType !== "REGULAR");
           const currentAve = unsaved.hasOwnProperty("finalAverage") ? unsaved.finalAverage : r.finalAverage;
@@ -1152,6 +1202,19 @@ export default function EosyUpdating() {
                     <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                   </SelectContent>
                 </Select>
+                {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
+                  <Input
+                    value={currentDeficiencyNote ?? ""}
+                    onChange={(e) => handleFieldChange(
+                      recordId,
+                      "academicDeficiencyNote",
+                      e.target.value,
+                    )}
+                    disabled={isCommitting}
+                    placeholder="Enter failing subject or deficiency note"
+                    className="h-8 w-full min-w-[220px] text-sm font-bold"
+                  />
+                )}
                 {isStatusChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
@@ -1159,19 +1222,31 @@ export default function EosyUpdating() {
 
           if (isSectionFinalized || isScopeFinalized) {
             return (
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-1">
                 {isScpDemoted && resolvedStatus === "PROMOTED" ? renderTooltip(renderStatusContent()) : renderStatusContent()}
+                {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
+                  <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
+                    Deficiency: {currentDeficiencyNote}
+                  </span>
+                )}
               </div>
             );
           }
 
           return (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
               <Select
                 value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
                   if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
-                  else handleStatusChange(r.id, val);
+                  else handleStatusChange(
+                    r.id,
+                    val,
+                    undefined,
+                    val === "CONDITIONALLY_PROMOTED"
+                      ? currentDeficiencyNote ?? ""
+                      : null,
+                  );
                 }}
                 disabled={isSectionFinalized || isScpDemotedGrades}>
                 {isScpDemoted && resolvedStatus === "PROMOTED" ? (
@@ -1212,13 +1287,21 @@ export default function EosyUpdating() {
                   <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                 </SelectContent>
               </Select>
+              {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
+                <Input
+                  defaultValue={currentDeficiencyNote ?? ""}
+                  onBlur={(e) => void handleAcademicDeficiencyNoteSave(recordId, e.target.value)}
+                  placeholder="Enter failing subject or deficiency note"
+                  className="h-8 w-full min-w-[220px] text-sm font-bold"
+                />
+              )}
             </div>
           );
         },
         meta: { className: "w-[240px] text-center" }
       },
     ],
-    [isScopeFinalized, handleStatusChange, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange],
+    [isScopeFinalized, handleStatusChange, handleAcademicDeficiencyNoteSave, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange],
   );
 
   const columns = useMemo(() => {
@@ -1487,7 +1570,7 @@ export default function EosyUpdating() {
       </div>
 
       <Dialog open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen}>
-        <DialogContent className={cn("w-[calc(100%-2rem)] sm:max-w-xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
+        <DialogContent className={cn("w-full max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
           <DialogHeader className="space-y-2 text-center items-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
@@ -1558,7 +1641,7 @@ export default function EosyUpdating() {
       />
 
       <Dialog open={sf5WatermarkOpen} onOpenChange={setSf5WatermarkOpen}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white border border-gray-300 shadow-2xl">
+        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden bg-white border border-gray-300 shadow-2xl">
           <DialogHeader className="p-4 border-b bg-gray-50 flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="text-lg font-extrabold">School Form 5 (SF5) Preview</DialogTitle>
@@ -1650,7 +1733,7 @@ export default function EosyUpdating() {
       />
 
       <Dialog open={reopenModalOpen} onOpenChange={setReopenModalOpen}>
-        <DialogContent className={cn("w-[calc(100%-2rem)] sm:max-w-xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
+        <DialogContent className={cn("w-full max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
           <DialogHeader className="space-y-2 text-center items-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
@@ -1727,7 +1810,7 @@ export default function EosyUpdating() {
 
       <Dialog open={transitionModalOpen} onOpenChange={setTransitionModalOpen}>
         <DialogContent
-          className={cn("w-[calc(100%-2rem)] sm:max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}
+          className={cn("w-full max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >

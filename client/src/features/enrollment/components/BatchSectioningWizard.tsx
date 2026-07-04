@@ -1137,7 +1137,7 @@ export function BatchSectioningWizard({
             onOpenChange={(open) => {
               if (!open) blocker.reset?.();
             }}>
-            <DialogContent className="sm:max-w-xl border-2">
+            <DialogContent className="w-full max-w-3xl border-2">
               <DialogHeader className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-orange-100 text-orange-600">
@@ -1185,7 +1185,7 @@ export function BatchSectioningWizard({
           <Dialog
             open={isDiscardDialogOpen}
             onOpenChange={setIsDiscardDialogOpen}>
-            <DialogContent className="sm:max-w-xl border-2">
+            <DialogContent className="w-full max-w-3xl border-2">
               <DialogHeader className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-orange-100 text-orange-600">
@@ -1235,7 +1235,7 @@ export function BatchSectioningWizard({
             onOpenChange={(open) => {
               if (!open) setViewingReclassified(null);
             }}>
-            <DialogContent className="sm:max-w-2xl border-2">
+            <DialogContent className="w-full max-w-3xl border-2">
               <DialogHeader>
                 <DialogTitle className="text-xl font-extrabold uppercase ">
                   Reclassified Learners — {viewingReclassified?.title}

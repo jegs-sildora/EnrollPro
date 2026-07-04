@@ -396,7 +396,7 @@ export default function RegistrarEOSYWorkspace() {
 
       {/* Summary Modal */}
       <Dialog open={showSummary} onOpenChange={setShowSummary}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="w-full max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold uppercase tracking-tight">Confirm Batch Submission</DialogTitle>
             <DialogDescription className="font-extrabold text-slate-600 pt-2">

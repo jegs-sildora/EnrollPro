@@ -54,10 +54,10 @@ export function TLEConfirmModal({
     <Dialog
       open={open}
       onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-base leading-tight">
-            Confirm Return — TLE Selection Required
+            Enroll Learner — TLE Selection Required
           </DialogTitle>
           {item && (
             <DialogDescription className="text-base leading-tight">
@@ -65,7 +65,7 @@ export function TLEConfirmModal({
                 {item.lastName}, {item.firstName}
               </span>{" "}
               ({item.gradeLevelName}) must select a TLE specialization before
-              their return can be confirmed.
+              enrollment can be completed.
             </DialogDescription>
           )}
         </DialogHeader>
@@ -108,7 +108,7 @@ export function TLEConfirmModal({
             ) : (
               <CheckCircle2 className="h-4 w-4" />
             )}
-            Confirm Return
+            Enroll
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -73,9 +73,12 @@ export interface BOSYQueueItem {
   academicStatus: string | null;
   isRemedialRequired: boolean;
   isTemporarilyEnrolled: boolean;
+  credentialStatus: "COMPLETE" | "PENDING";
   missingDocuments: string[];
   priorSectionName: string | null;
   priorAdviserName: string | null;
+  priorYearGenAve: number | null;
+  priorYearDeficiencyNote: string | null;
 }
 
 export interface JHSCompleter {
@@ -125,13 +128,13 @@ interface BOSYRolloverRepairSource {
 }
 
 function isJsonObject(
-  value: Prisma.JsonValue,
+  value: Prisma.JsonValue | null | undefined,
 ): value is Prisma.JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function readSnapshotString(
-  snapshot: Prisma.JsonValue,
+  snapshot: Prisma.JsonValue | null | undefined,
   key: string,
 ): string | null {
   if (!isJsonObject(snapshot)) return null;
@@ -140,7 +143,7 @@ function readSnapshotString(
 }
 
 function readSnapshotApplicantType(
-  snapshot: Prisma.JsonValue,
+  snapshot: Prisma.JsonValue | null | undefined,
   key: string,
 ): ApplicantType | null {
   const value = readSnapshotString(snapshot, key);
@@ -148,6 +151,59 @@ function readSnapshotApplicantType(
     Object.values(ApplicantType).includes(value as ApplicantType)
     ? (value as ApplicantType)
     : null;
+}
+
+function readSnapshotObject(
+  snapshot: Prisma.JsonValue | null | undefined,
+  key: string,
+): Prisma.JsonObject | null {
+  if (!isJsonObject(snapshot)) return null;
+  const value = snapshot[key];
+  return isJsonObject(value) ? value : null;
+}
+
+function readSnapshotStringFromObject(
+  snapshot: Prisma.JsonValue | null | undefined,
+  parentKey: string,
+  childKey: string,
+): string | null {
+  const parent = readSnapshotObject(snapshot, parentKey);
+  if (!parent) return null;
+  const value = parent[childKey];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function extractDeficiencyNote(
+  snapshot: Prisma.JsonValue | null | undefined,
+): string | null {
+  const directKeys = [
+    "deficiencyNote",
+    "deficiencyNotes",
+    "backSubject",
+    "backSubjects",
+    "remedialNote",
+    "remedialSubject",
+  ];
+  for (const key of directKeys) {
+    const value = readSnapshotString(snapshot, key);
+    if (value) return value;
+  }
+
+  const nestedPairs = [
+    ["learner", "deficiencyNote"],
+    ["learner", "backSubject"],
+    ["learner", "remedialSubject"],
+    ["academic", "deficiencyNote"],
+    ["academic", "backSubject"],
+    ["academic", "remedialSubject"],
+  ] as const;
+
+  for (const [parentKey, childKey] of nestedPairs) {
+    const value = readSnapshotStringFromObject(snapshot, parentKey, childKey);
+    if (value) return value;
+  }
+
+  return null;
 }
 
 export async function getBOSYReadiness(
@@ -404,6 +460,9 @@ export async function getBOSYQueue(params: {
     distinct: ["learnerId"],
     select: {
       learnerId: true,
+      genAve: true,
+      academicDeficiencyNote: true,
+      learnerProfileSnapshot: true,
       section: {
         select: {
           name: true,
@@ -422,6 +481,10 @@ export async function getBOSYQueue(params: {
       {
         section: record.section,
         adviser: record.adviser,
+        genAve: record.genAve,
+        deficiencyNote:
+          record.academicDeficiencyNote
+          ?? extractDeficiencyNote(record.learnerProfileSnapshot),
       },
     ]),
   );
@@ -451,11 +514,16 @@ export async function getBOSYQueue(params: {
       academicStatus: a.academicStatus ?? null,
       isRemedialRequired: a.isRemedialRequired,
       isTemporarilyEnrolled: a.isTemporarilyEnrolled,
+      credentialStatus: documentReadiness.isTemporarilyEnrolled
+        ? "PENDING"
+        : "COMPLETE",
       missingDocuments: documentReadiness.missingDocuments,
       priorSectionName: section?.name ?? null,
       priorAdviserName: adviser
         ? `${adviser.firstName} ${adviser.lastName}`.trim()
         : null,
+      priorYearGenAve: prior?.genAve ?? null,
+      priorYearDeficiencyNote: prior?.deficiencyNote ?? null,
     };
   });
 
@@ -821,6 +889,116 @@ export async function markTransferRequest(
     data: {
       status: "TRANSFERRING_OUT",
       confirmationConsent: false,
+      encodedById: actingUserId,
+    },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function revokeConfirmedReturn(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: {
+      id: true,
+      status: true,
+      learnerType: true,
+      enrollmentRecord: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+  if (application.learnerType !== "CONTINUING") {
+    throw Object.assign(
+      new Error("Only continuing learners can be returned to pending confirmation."),
+      { status: 422 },
+    );
+  }
+  if (application.status !== "READY_FOR_SECTIONING") {
+    throw Object.assign(
+      new Error(
+        `Cannot revoke confirmation: application is in status "${application.status}", expected "READY_FOR_SECTIONING".`,
+      ),
+      { status: 422 },
+    );
+  }
+  if (application.enrollmentRecord) {
+    throw Object.assign(
+      new Error("This learner is already assigned to a class section and can no longer be reversed here."),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "PENDING_CONFIRMATION",
+      confirmationConsent: false,
+      isTemporarilyEnrolled: false,
+      complianceStatus: null,
+      encodedById: actingUserId,
+    },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function markConfirmedTransferOut(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: {
+      id: true,
+      status: true,
+      learnerType: true,
+      enrollmentRecord: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+  if (application.learnerType !== "CONTINUING") {
+    throw Object.assign(
+      new Error("Only continuing learners can be marked as transfer out from this queue."),
+      { status: 422 },
+    );
+  }
+  if (application.status !== "READY_FOR_SECTIONING") {
+    throw Object.assign(
+      new Error(
+        `Cannot mark transfer out: application is in status "${application.status}", expected "READY_FOR_SECTIONING".`,
+      ),
+      { status: 422 },
+    );
+  }
+  if (application.enrollmentRecord) {
+    throw Object.assign(
+      new Error("This learner is already assigned to a class section and can no longer be transferred here."),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "TRANSFERRING_OUT",
+      confirmationConsent: false,
+      isTemporarilyEnrolled: false,
+      complianceStatus: null,
       encodedById: actingUserId,
     },
     select: { id: true, status: true },

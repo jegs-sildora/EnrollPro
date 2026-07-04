@@ -67,6 +67,26 @@ export async function markTransferRequest(
   return res.data;
 }
 
+export async function revokeConfirmedReturn(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/revoke-confirmation/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function markConfirmedTransferOut(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/confirmed-transfer-out/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
 export async function bulkConfirm(body: {
   applicationIds: number[];
   schoolYearId: number;

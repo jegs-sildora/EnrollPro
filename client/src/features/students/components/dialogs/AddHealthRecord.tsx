@@ -142,7 +142,7 @@ export function AddHealthRecord({
 			open={isOpen}
 			onOpenChange={onOpenChange}
 		>
-			<DialogContent className='sm:max-w-[425px]'>
+			<DialogContent className='w-full max-w-3xl'>
 				<DialogHeader>
 					<DialogTitle>{editRecord ? 'Edit' : 'Add'} Health Record</DialogTitle>
 					<DialogDescription>

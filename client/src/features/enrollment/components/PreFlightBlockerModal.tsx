@@ -29,7 +29,7 @@ export function PreFlightBlockerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold text-red-700 flex items-center">
             <AlertCircle className="w-5 h-5 mr-2" /> Cannot Finalize {targetScopeName}

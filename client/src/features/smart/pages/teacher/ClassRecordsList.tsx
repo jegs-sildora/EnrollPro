@@ -608,7 +608,7 @@ export default function ClassRecordsList() {
       )}
 
       <Dialog open={!!assignmentToDelete} onOpenChange={(open) => !open && setAssignmentToDelete(null)}>
-        <DialogContent className="rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden max-w-md">
+        <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden">
           <div className="bg-rose-600 p-8 text-white">
             <div className="w-16 h-16 bg-white/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
               <Trash2 className="w-8 h-8 text-white" />
@@ -648,7 +648,7 @@ export default function ClassRecordsList() {
         </DialogContent>
       </Dialog>
       <Dialog open={confirmDeleteAll} onOpenChange={setConfirmDeleteAll}>
-        <DialogContent className="rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden max-w-md">
+        <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden">
           <div className="bg-rose-600 p-8 text-white">
             <div className="w-16 h-16 bg-white/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
               <Trash2 className="w-8 h-8 text-white" />

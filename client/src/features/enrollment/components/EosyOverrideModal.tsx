@@ -21,6 +21,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [eosyStatus, setEosyStatus] = useState<EosyStatus | "">("");
   const [finalAverage, setFinalAverage] = useState<string>("");
+  const [academicDeficiencyNote, setAcademicDeficiencyNote] = useState("");
   const [dropOutReason, setDropOutReason] = useState("");
   const [transferOutDate, setTransferOutDate] = useState("");
 
@@ -28,6 +29,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
     if (record) {
       setEosyStatus(record.eosyStatus || "");
       setFinalAverage(record.finalAverage !== null ? String(record.finalAverage) : "");
+      setAcademicDeficiencyNote(record.academicDeficiencyNote || "");
       setDropOutReason(record.dropOutReason || "");
       setTransferOutDate(record.transferOutDate ? new Date(record.transferOutDate).toISOString().split("T")[0] : "");
     }
@@ -58,6 +60,10 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
     try {
       await api.post(`/eosy/records/${record.id}/override`, {
         eosyStatus,
+        academicDeficiencyNote:
+          eosyStatus === "CONDITIONALLY_PROMOTED"
+            ? academicDeficiencyNote
+            : null,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate: eosyStatus === "TRANSFERRED_OUT" ? transferOutDate : null,
         finalAverage: parsedAve,
@@ -78,7 +84,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
 
   return (
     <Dialog open={!!record} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-md border-amber-200 bg-amber-50">
+      <DialogContent className="w-full max-w-3xl border-amber-200 bg-amber-50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-800 uppercase font-extrabold text-xl">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
@@ -125,6 +131,17 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
               </SelectContent>
             </Select>
           </div>
+
+          {eosyStatus === "CONDITIONALLY_PROMOTED" && (
+            <div className="space-y-1.5">
+              <Label className="font-extrabold text-amber-900">Academic Deficiency Note</Label>
+              <Input
+                value={academicDeficiencyNote}
+                onChange={(e) => setAcademicDeficiencyNote(e.target.value)}
+                placeholder="Example: Mathematics"
+              />
+            </div>
+          )}
 
           {eosyStatus === "DROPPED_OUT" && (
             <div className="space-y-1.5">

@@ -118,7 +118,7 @@ export function ConfirmationModal({
       onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "w-[calc(100%-2rem)] sm:max-w-2xl rounded-lg p-8 overflow-hidden",
+          "w-full max-w-3xl rounded-lg p-8 overflow-hidden",
           "bg-sidebar shadow-2xl",
         )}
         style={

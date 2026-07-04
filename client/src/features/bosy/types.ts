@@ -39,9 +39,12 @@ export interface BOSYQueueItem {
   academicStatus: string | null;
   isRemedialRequired: boolean;
   isTemporarilyEnrolled: boolean;
+  credentialStatus: "COMPLETE" | "PENDING";
   missingDocuments: string[];
   priorSectionName: string | null;
   priorAdviserName: string | null;
+  priorYearGenAve: number | null;
+  priorYearDeficiencyNote: string | null;
 }
 
 export interface JHSCompleter {

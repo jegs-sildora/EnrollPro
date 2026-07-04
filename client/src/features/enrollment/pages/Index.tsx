@@ -1,98 +1,20 @@
 import { useEffect } from "react";
-import { useSearchParams } from "react-router";
 import { useHeaderStore } from "@/store/header.slice";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
-import { VerificationWorkspace } from "../components/VerificationWorkspace";
 import { SectioningWorkspace } from "../components/SectioningWorkspace";
-import { cn } from "@/shared/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
 
 export default function EnrollmentManagement() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const activeTab = tabParam === "sectioning" ? "sectioning" : "verification";
-
-  const setActiveTab = (val: string) => {
-    setSearchParams({ tab: val });
-  };
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Sectioning & SF1 Prep");
+    setTitle("Class Sectioning and SF1");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] min-h-0">
+    <div className="flex flex-col h-[calc(100vh-120px)] min-h-0 space-y-4 sm:space-y-6">
       <PhaseBanner />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
-          <TabsTrigger
-            value="verification"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
-          >
-            {activeTab === "verification" && (
-              <motion.div
-                layoutId="enrollment-main-tab-pill"
-                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className={cn("relative z-20 text-base uppercase", activeTab === "verification" ? "text-primary-foreground" : "text-foreground")}>
-              Document Verification
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="sectioning"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
-          >
-            {activeTab === "sectioning" && (
-              <motion.div
-                layoutId="enrollment-main-tab-pill"
-                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className={cn("relative z-20 text-base uppercase", activeTab === "sectioning" ? "text-primary-foreground" : "text-foreground")}>
-              Section Assignment
-            </span>
-          </TabsTrigger>
-        </TabsList>
-
-        <AnimatePresence mode="wait">
-          {activeTab === "verification" && (
-            <motion.div
-              key="verification"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 w-full h-full min-h-0"
-            >
-              <TabsContent value="verification" forceMount className="h-full m-0 mt-0 focus-visible:outline-none ring-0">
-                <VerificationWorkspace />
-              </TabsContent>
-            </motion.div>
-          )}
-
-          {activeTab === "sectioning" && (
-            <motion.div
-              key="sectioning"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 w-full h-full min-h-0"
-            >
-              <TabsContent value="sectioning" forceMount className="h-full m-0 mt-0 focus-visible:outline-none ring-0">
-                <SectioningWorkspace />
-              </TabsContent>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Tabs>
+      <SectioningWorkspace />
     </div>
   );
 }

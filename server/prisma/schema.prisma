@@ -407,6 +407,7 @@ model EnrollmentRecord {
   sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
   sf1Remarks              String?               @map("sf1_remarks")
   finalAverage            Float?                @map("final_average")
+  academicDeficiencyNote  String?               @map("academic_deficiency_note")
   nextYearCurriculum      ApplicantType?        @map("next_year_curriculum")
   learnerId               Int                   @map("learner_id")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
@@ -840,6 +841,7 @@ model EnrollmentHistory {
   adviserId      Int?        @map("adviser_id")
   genAve         Float?      @map("gen_ave")
   eosyStatus     EosyStatus? @map("eosy_status")
+  academicDeficiencyNote String? @map("academic_deficiency_note")
   learnerProfileSnapshot Json? @map("learner_profile_snapshot")
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 

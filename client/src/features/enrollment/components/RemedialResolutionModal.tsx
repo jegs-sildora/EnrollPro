@@ -78,7 +78,7 @@ export function RemedialResolutionModal({
     <Dialog
       open={open}
       onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-base leading-tight">
             Resolve Remedial Grade

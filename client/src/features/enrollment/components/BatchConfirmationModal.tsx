@@ -261,7 +261,7 @@ export function BatchConfirmationModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl bg-background rounded-2xl">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl bg-background rounded-2xl">
         {/* Professional Metadata Header */}
         <DialogHeader className="px-8 pt-8 pb-6 bg-muted/30 border-b border-border relative overflow-hidden">
           <div className="flex items-start gap-4 relative z-10">

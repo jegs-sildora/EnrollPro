@@ -611,7 +611,7 @@ export default function ECRTemplateManager() {
           setUploadSuccess('');
         }
       }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Upload ECR Template</DialogTitle>
             <DialogDescription>
@@ -898,7 +898,7 @@ export default function ECRTemplateManager() {
 
       {/* Info Dialog */}
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle>ECR Template Details</DialogTitle>
           </DialogHeader>

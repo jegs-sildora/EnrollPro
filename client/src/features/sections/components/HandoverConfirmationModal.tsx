@@ -71,7 +71,7 @@ export function HandoverConfirmationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl border-2 border-amber-300/60 p-0 overflow-hidden">
+      <DialogContent className="w-full max-w-3xl border-2 border-amber-300/60 p-0 overflow-hidden">
         <DialogHeader className="px-6 py-5 bg-gradient-to-r from-amber-100 via-amber-50 to-red-50 border-b border-amber-200">
           <div className="flex items-start gap-3">
             <div className="h-9 w-9 rounded-full bg-amber-200/70 text-amber-900 flex items-center justify-center shrink-0">

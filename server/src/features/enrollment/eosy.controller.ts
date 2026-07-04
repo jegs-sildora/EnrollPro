@@ -43,6 +43,22 @@ function toSf5Remarks(status: EosyStatus | null): string {
   }
 }
 
+function normalizeAcademicDeficiencyNote(
+  eosyStatus: EosyStatus | null | undefined,
+  note: unknown,
+): string | null {
+  if (eosyStatus !== "CONDITIONALLY_PROMOTED") {
+    return null
+  }
+
+  if (typeof note !== "string") {
+    return null
+  }
+
+  const trimmed = note.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 async function getSchoolYearExportLockState(schoolYearId: number) {
   const [schoolYear, totalSections, finalizedSections] = await Promise.all([
     prisma.schoolYear.findUnique({
@@ -195,7 +211,13 @@ export async function updateEosyRecord(
   try {
     const { id } = req.params;
     const recordId = parseInt(String(id), 10);
-    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } =
+    const {
+      eosyStatus,
+      dropOutReason,
+      transferOutDate,
+      finalAverage,
+      academicDeficiencyNote,
+    } =
       req.body;
 
     const record = await prisma.enrollmentRecord.findUnique({
@@ -265,6 +287,10 @@ export async function updateEosyRecord(
       where: { id: recordId },
       data: {
         eosyStatus: targetStatus as EosyStatus,
+        academicDeficiencyNote: normalizeAcademicDeficiencyNote(
+          targetStatus as EosyStatus,
+          academicDeficiencyNote,
+        ),
         nextYearCurriculum: nextYearCurriculum !== undefined ? nextYearCurriculum : undefined,
         dropOutReason: targetStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
@@ -336,7 +362,15 @@ export async function batchUpdateEosyRecords(
 
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
-          data: { eosyStatus: update.status as EosyStatus },
+          data: {
+            eosyStatus: update.status as EosyStatus,
+            academicDeficiencyNote: normalizeAcademicDeficiencyNote(
+              update.status as EosyStatus,
+              "academicDeficiencyNote" in update
+                ? update.academicDeficiencyNote
+                : null,
+            ),
+          },
         });
 
         await tx.auditLog.create({
@@ -609,6 +643,7 @@ export async function finalizeSchoolYear(
         sectionId: true,
         finalAverage: true,
         eosyStatus: true,
+        academicDeficiencyNote: true,
         learner: {
           select: {
             lrn: true,
@@ -656,6 +691,7 @@ export async function finalizeSchoolYear(
           adviserId: record.section.advisers[0]?.teacherId ?? null,
           genAve: record.finalAverage,
           eosyStatus: record.eosyStatus,
+          academicDeficiencyNote: record.academicDeficiencyNote,
           learnerProfileSnapshot: getHistoricalProfileSnapshot(record),
         })),
         skipDuplicates: true,
@@ -1380,7 +1416,11 @@ export async function batchUpdateGradeRecords(
           const ave = current.finalAverage !== null ? parseFloat(String(current.finalAverage)) : null;
 
         let targetStatus = update.status;
-        let dataToUpdate: any = {};
+        const dataToUpdate: {
+          eosyStatus?: EosyStatus
+          nextYearCurriculum?: "REGULAR" | null
+          academicDeficiencyNote?: string | null
+        } = {};
 
         if (ave === 0 || ave === null || isNaN(ave!)) {
           if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
@@ -1408,6 +1448,12 @@ export async function batchUpdateGradeRecords(
         }
 
         dataToUpdate.eosyStatus = targetStatus as EosyStatus;
+        dataToUpdate.academicDeficiencyNote = normalizeAcademicDeficiencyNote(
+          targetStatus as EosyStatus,
+          "academicDeficiencyNote" in update
+            ? update.academicDeficiencyNote
+            : null,
+        )
 
         await tx.enrollmentRecord.update({
           where: { id: update.recordId },
@@ -1731,6 +1777,7 @@ export async function overrideEosyRecord(
       sectionId,
       finalAverage,
       eosyStatus,
+      academicDeficiencyNote,
       dropOutReason,
       transferOutDate,
       latitude,
@@ -1789,6 +1836,18 @@ export async function overrideEosyRecord(
       data: {
         sectionId: sectionId !== undefined ? sectionId : undefined,
         eosyStatus: eosyStatus !== undefined ? (eosyStatus as EosyStatus) : undefined,
+        academicDeficiencyNote:
+          eosyStatus !== undefined
+            ? normalizeAcademicDeficiencyNote(
+                eosyStatus as EosyStatus,
+                academicDeficiencyNote,
+              )
+            : academicDeficiencyNote !== undefined
+              ? normalizeAcademicDeficiencyNote(
+                  record.eosyStatus,
+                  academicDeficiencyNote,
+                )
+              : undefined,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
           eosyStatus === "TRANSFERRED_OUT"
@@ -1811,6 +1870,10 @@ export async function overrideEosyRecord(
     if (sectionId !== undefined && sectionId !== record.sectionId) auditDetails.push(`Section ID: ${record.sectionId} -> ${sectionId}`);
     if (finalAverage !== undefined && finalAverage !== record.finalAverage) auditDetails.push(`Average: ${record.finalAverage} -> ${finalAverage}`);
     if (eosyStatus !== undefined && eosyStatus !== record.eosyStatus) auditDetails.push(`Status: ${record.eosyStatus} -> ${eosyStatus}`);
+    if (
+      academicDeficiencyNote !== undefined &&
+      academicDeficiencyNote !== record.academicDeficiencyNote
+    ) auditDetails.push(`Deficiency Note: ${record.academicDeficiencyNote ?? "none"} -> ${academicDeficiencyNote ?? "none"}`);
     if (latitude !== undefined || longitude !== undefined) auditDetails.push(`Coords: Lat ${latitude}, Lng ${longitude}`);
 
     await auditLog({

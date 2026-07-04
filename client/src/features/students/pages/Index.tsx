@@ -1717,7 +1717,7 @@ export default function Students() {
       <Dialog
         open={showTransferOutDialog}
         onOpenChange={setShowTransferOutDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle>Mark Learner as Transferred Out</DialogTitle>
             <DialogDescription>
@@ -1786,7 +1786,7 @@ export default function Students() {
       <Dialog
         open={showDropoutDialog}
         onOpenChange={setShowDropoutDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle>Mark Learner as Dropped Out</DialogTitle>
             <DialogDescription>
@@ -1873,7 +1873,7 @@ export default function Students() {
       <Dialog
         open={showLrnDialog}
         onOpenChange={setShowLrnDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-full max-w-3xl">
           <DialogHeader>
             <DialogTitle>Input Official DepEd LRN</DialogTitle>
             <DialogDescription>

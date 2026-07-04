@@ -152,7 +152,7 @@ export function ConfirmationSlipModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
         <div className="bg-emerald-600 px-6 py-4 text-white">
           <DialogHeader>
             <div className="flex items-center gap-2">

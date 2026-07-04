@@ -77,7 +77,7 @@ export function OneTimePinSuccessDialog({
   return (
     <Dialog open>
       <DialogContent
-        className="sm:max-w-2xl p-0 overflow-hidden border-2 border-emerald-200 [&>button]:hidden"
+        className="max-w-3xl w-full p-0 overflow-hidden border-2 border-emerald-200 [&>button]:hidden"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}>

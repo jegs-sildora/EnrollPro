@@ -307,7 +307,7 @@ export function VerificationWorkspace() {
         <div className="relative flex-1">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Scan Tracking Number or Enter LRN/Name..."
+            placeholder="Enter LRN/Name..."
             className="pl-12 h-14 text-lg border-2 border-border focus-visible:ring-primary/20 bg-card shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -596,7 +596,7 @@ export function VerificationWorkspace() {
 
       {/* Duplication Sentinel Blocking Modal */}
       <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="px-6 pt-6 pb-4 bg-rose-50 border-b border-rose-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-rose-100 rounded-lg text-rose-700">

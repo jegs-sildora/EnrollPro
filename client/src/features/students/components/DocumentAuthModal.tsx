@@ -49,7 +49,7 @@ export function DocumentAuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] border-t-4">
+      <DialogContent className="w-full max-w-3xl border-t-4">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold uppercase text-primary flex items-center gap-2">
             <ShieldCheck className="h-6 w-6" />

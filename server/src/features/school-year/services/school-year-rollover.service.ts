@@ -88,6 +88,18 @@ export class RolloverNotReadyError extends Error {
   }
 }
 
+interface SourceSectionSnapshot {
+  id: number
+  name: string
+  maxCapacity: number
+  gradeLevelId: number
+  programType: ApplicantType
+  sortOrder: number
+  isHomogeneous: boolean
+  isSnake: boolean
+  sectionRank: number | null
+}
+
 async function getReadiness(
   client: TransactionClient | typeof prisma,
   schoolYearId: number,
@@ -162,6 +174,7 @@ export async function getSchoolYearRolloverReadiness(
 }
 
 export function getHistoricalProfileSnapshot(record: {
+  academicDeficiencyNote?: string | null
   learner: {
     lrn: string | null
     firstName: string
@@ -185,6 +198,7 @@ export function getHistoricalProfileSnapshot(record: {
   }
 }): Prisma.InputJsonObject {
   return {
+    academicDeficiencyNote: record.academicDeficiencyNote ?? "",
     learner: {
       lrn: record.learner.lrn ?? "",
       firstName: record.learner.firstName,
@@ -204,7 +218,102 @@ export function getHistoricalProfileSnapshot(record: {
       firstName: record.enrolledBy.firstName,
       lastName: record.enrolledBy.lastName,
     },
+    academic: {
+      deficiencyNote: record.academicDeficiencyNote ?? "",
+    },
   }
+}
+
+async function cloneSectionStructure(params: {
+  client: TransactionClient
+  targetSchoolYearId: number
+  sourceSections: SourceSectionSnapshot[]
+}): Promise<number> {
+  const {
+    client,
+    targetSchoolYearId,
+    sourceSections,
+  } = params
+
+  let createdSections = 0
+
+  for (const section of sourceSections) {
+    const createdSection = await client.section.create({
+      data: {
+        name: section.name,
+        maxCapacity: section.maxCapacity,
+        gradeLevelId: section.gradeLevelId,
+        programType: section.programType,
+        sortOrder: section.sortOrder,
+        isHomogeneous: section.isHomogeneous,
+        isSnake: section.isSnake,
+        schoolYearId: targetSchoolYearId,
+        sectionRank: section.sectionRank,
+        isEosyFinalized: false,
+      },
+      select: { id: true },
+    })
+    createdSections += 1
+  }
+
+  return createdSections
+}
+
+export async function repairClonedSchoolYearSections(
+  schoolYearId: number,
+): Promise<{ repaired: boolean; createdSections: number }> {
+  return prisma.$transaction(async (tx) => {
+    const schoolYear = await tx.schoolYear.findUnique({
+      where: { id: schoolYearId },
+      select: {
+        id: true,
+        clonedFromId: true,
+        _count: {
+          select: {
+            sections: true,
+          },
+        },
+      },
+    })
+
+    if (!schoolYear?.clonedFromId || schoolYear._count.sections > 0) {
+      return { repaired: false, createdSections: 0 }
+    }
+
+    const sourceSections = await tx.section.findMany({
+      where: { schoolYearId: schoolYear.clonedFromId },
+      orderBy: [
+        { gradeLevel: { displayOrder: "asc" } },
+        { sortOrder: "asc" },
+      ],
+      select: {
+        id: true,
+        name: true,
+        maxCapacity: true,
+        gradeLevelId: true,
+        programType: true,
+        sortOrder: true,
+        isHomogeneous: true,
+        isSnake: true,
+        sectionRank: true,
+      },
+    })
+
+    if (sourceSections.length === 0) {
+      return { repaired: false, createdSections: 0 }
+    }
+
+    const createdSections = await cloneSectionStructure({
+      client: tx as unknown as TransactionClient,
+      targetSchoolYearId: schoolYear.id,
+      sourceSections,
+    })
+
+    return {
+      repaired: createdSections > 0,
+      createdSections,
+    }
+  })
 }
 
 export async function executeSchoolYearRollover({
@@ -240,6 +349,7 @@ export async function executeSchoolYearRollover({
               sectionId: true,
               finalAverage: true,
               eosyStatus: true,
+              academicDeficiencyNote: true,
               nextYearCurriculum: true,
               learner: {
                 select: {
@@ -267,6 +377,10 @@ export async function executeSchoolYearRollover({
                   },
                   advisers: {
                     where: { status: "ACTIVE" },
+                    orderBy: [
+                      { effectiveFrom: "desc" },
+                      { id: "desc" },
+                    ],
                     take: 1,
                     select: { teacherId: true },
                   },
@@ -317,6 +431,7 @@ export async function executeSchoolYearRollover({
           tx.section.findMany({
             where: { schoolYearId: sourceSchoolYearId },
             select: {
+              id: true,
               name: true,
               maxCapacity: true,
               gradeLevelId: true,
@@ -391,15 +506,11 @@ export async function executeSchoolYearRollover({
         })
       }
 
-      if (sourceSections.length > 0) {
-        await tx.section.createMany({
-          data: sourceSections.map((section) => ({
-            ...section,
-            schoolYearId: targetYear.id,
-            isEosyFinalized: false,
-          })),
-        })
-      }
+      await cloneSectionStructure({
+        client: tx as unknown as TransactionClient,
+        targetSchoolYearId: targetYear.id,
+        sourceSections,
+      })
 
       if (sourceRecords.length > 0) {
         await tx.enrollmentHistory.createMany({
@@ -411,6 +522,7 @@ export async function executeSchoolYearRollover({
             adviserId: record.section.advisers[0]?.teacherId ?? null,
             genAve: record.finalAverage,
             eosyStatus: record.eosyStatus,
+            academicDeficiencyNote: record.academicDeficiencyNote,
             learnerProfileSnapshot: getHistoricalProfileSnapshot(record),
           })),
         })

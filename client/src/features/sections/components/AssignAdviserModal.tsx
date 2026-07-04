@@ -247,7 +247,7 @@ export function AssignAdviserModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-0 overflow-hidden">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden">
         {/* ── Header ── */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/20">
           <DialogTitle className="text-lg font-extrabold uppercase">

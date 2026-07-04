@@ -87,7 +87,7 @@ export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlist
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border-border shadow-xl">
+      <DialogContent className="w-full max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border-border shadow-xl">
         <DialogHeader className="p-6 border-b border-border bg-muted/30">
           <DialogTitle className="text-xl font-extrabold uppercase tracking-wide flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />

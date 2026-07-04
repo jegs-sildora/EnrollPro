@@ -33,7 +33,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
             <AlertDescription className="text-amber-700 font-extrabold">
               There is an active student headcount disparity greater than 5 learners within a grade level. Perform a serpentine load rebalancing to optimize advisory workloads.{" "}
               <button
-                onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+                onClick={() => navigate("/monitoring/enrollment")}
                 className="underline font-extrabold cursor-pointer hover:text-amber-800"
               >
                 Go to Sectioning
@@ -53,7 +53,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
             <AlertDescription className="text-rose-700 font-extrabold">
               There are {stats?.v85Stats?.expiredTemporaryAdmissionsCount} learners currently enrolled temporarily whose doc submission deadline (October 31) has expired. Follow up or flag these accounts.{" "}
               <button
-                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                onClick={() => navigate("/continuing-learners?tab=incoming")}
                 className="underline font-extrabold cursor-pointer hover:text-rose-800"
               >
                 Go to Verification Workspace
@@ -86,7 +86,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
                 )}
               </div>
               <button
-                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                onClick={() => navigate("/continuing-learners?tab=incoming")}
                 className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                 style={{ color: "hsl(var(--primary))" }}
               >
@@ -118,7 +118,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
                 )}
               </div>
               <button
-                onClick={() => navigate("/monitoring/enrollment?tab=sectioning")}
+                onClick={() => navigate("/monitoring/enrollment")}
                 className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                 style={{ color: "hsl(var(--primary))" }}
               >
@@ -150,7 +150,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
                 )}
               </div>
               <button
-                onClick={() => navigate("/monitoring/enrollment?tab=verification")}
+                onClick={() => navigate("/continuing-learners?tab=incoming")}
                 className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                 style={{ color: "hsl(var(--primary))" }}
               >

@@ -5,6 +5,8 @@ import {
   getBOSYQueue,
   confirmReturn,
   markTransferRequest,
+  revokeConfirmedReturn,
+  markConfirmedTransferOut,
   bulkConfirmReturn,
   getJHSCompleters,
   syncBOSYQueue,
@@ -204,6 +206,72 @@ export async function markTransferRequestHandler(
       actionType: "BOSY_TRANSFER_REQUEST_MARKED",
       description:
         `Marked enrollment application #${applicationId} as a transfer request.`,
+      subjectType: "EnrollmentApplication",
+      recordId: applicationId,
+      req,
+    });
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function revokeConfirmedReturnHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const applicationId = parsePositiveInt(req.params.applicationId, 0);
+    if (!applicationId) {
+      res.status(400).json({ message: "Invalid applicationId." });
+      return;
+    }
+
+    const result = await revokeConfirmedReturn(
+      applicationId,
+      req.user!.userId,
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "BOSY_CONFIRMATION_REVOKED",
+      description:
+        `Returned enrollment application #${applicationId} to pending confirmation.`,
+      subjectType: "EnrollmentApplication",
+      recordId: applicationId,
+      req,
+    });
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markConfirmedTransferOutHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const applicationId = parsePositiveInt(req.params.applicationId, 0);
+    if (!applicationId) {
+      res.status(400).json({ message: "Invalid applicationId." });
+      return;
+    }
+
+    const result = await markConfirmedTransferOut(
+      applicationId,
+      req.user!.userId,
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "BOSY_CONFIRMED_TRANSFER_OUT",
+      description:
+        `Moved confirmed enrollment application #${applicationId} to transfer request status.`,
       subjectType: "EnrollmentApplication",
       recordId: applicationId,
       req,

@@ -175,7 +175,7 @@ export function InsertLateEnrolleeModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
         <DialogHeader className="px-6 pt-6 pb-4 bg-muted/30 border-b border-border">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">

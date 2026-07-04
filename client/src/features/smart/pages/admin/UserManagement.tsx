@@ -494,7 +494,7 @@ export default function UserManagement() {
 
       {/* Create User Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl">
+        <DialogContent className="w-full max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
@@ -618,7 +618,7 @@ export default function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl">
+        <DialogContent className="w-full max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
@@ -736,7 +736,7 @@ export default function UserManagement() {
 
       {/* View User Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-2xl">
+        <DialogContent className="w-full max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
@@ -801,7 +801,7 @@ export default function UserManagement() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-2xl">
+        <DialogContent className="w-full max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <div className="p-2 rounded-lg bg-red-100">

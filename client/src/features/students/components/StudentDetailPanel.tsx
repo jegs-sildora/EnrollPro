@@ -1879,7 +1879,7 @@ export function StudentDetailPanel({
                   Transferred Out
                 </Button>
               </DialogTrigger>
-              <DialogContent aria-describedby={undefined} className="p-0 overflow-hidden sm:max-w-[425px]">
+              <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
                 <div className="p-6 pb-2">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-extrabold text-foreground">
@@ -1954,7 +1954,7 @@ export function StudentDetailPanel({
                   Dropped Out
                 </Button>
               </DialogTrigger>
-              <DialogContent aria-describedby={undefined} className="p-0 overflow-hidden sm:max-w-[425px]">
+              <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
                 <div className="p-6 pb-2">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-extrabold text-red-700">

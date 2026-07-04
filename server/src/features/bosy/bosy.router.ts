@@ -7,6 +7,8 @@ import {
   syncBosyQueueHandler,
   confirmReturnHandler,
   markTransferRequestHandler,
+  revokeConfirmedReturnHandler,
+  markConfirmedTransferOutHandler,
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
   getPhase2QueueHandler,
@@ -62,6 +64,20 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
   markTransferRequestHandler,
+);
+
+router.post(
+  "/revoke-confirmation/:applicationId",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  revokeConfirmedReturnHandler,
+);
+
+router.post(
+  "/confirmed-transfer-out/:applicationId",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  markConfirmedTransferOutHandler,
 );
 
 router.post(

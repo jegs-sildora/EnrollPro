@@ -79,7 +79,7 @@ export function PinResetHandoverModal({
     }}>
       <DialogContent
         className={cn(
-          "sm:max-w-[500px] border-t-4 transition-all duration-300"
+          "w-full max-w-3xl border-t-4 transition-all duration-300"
         )}
         onPointerDownOutside={(e) => {
           if (step === 2 && !hasCopiedPin) e.preventDefault();

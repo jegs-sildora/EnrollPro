@@ -54,7 +54,7 @@ export function PinHandoverModal({
         if (!val) setHasWrittenPin(false);
       }
     }}>
-      <DialogContent className="sm:max-w-[500px] border-emerald-200" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <DialogContent className="w-full max-w-3xl border-emerald-200" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold uppercase text-emerald-700 flex items-center gap-2">
             <CheckCircle2 className="h-6 w-6" />

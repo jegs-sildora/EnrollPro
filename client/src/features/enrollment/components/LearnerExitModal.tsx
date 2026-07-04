@@ -170,7 +170,7 @@ export function LearnerExitModal({
       onOpenChange={(isOpen) => {
         if (!isOpen) handleClose();
       }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-base leading-tight font-extrabold uppercase tracking-wide">
             {isViewMode ? "Learner Exit Record" : "Process Learner Exit"}
