@@ -36,6 +36,7 @@ interface ConfirmationModalProps {
   cancelText?: string;
   loading?: boolean;
   confirmClassName?: string;
+  confirmDisabled?: boolean;
   variant?: ConfirmationModalVariant;
   icon?: LucideIcon;
 }
@@ -92,6 +93,7 @@ export function ConfirmationModal({
   cancelText = "Cancel",
   loading = false,
   confirmClassName,
+  confirmDisabled = false,
   variant = "danger",
   icon: CustomIcon,
 }: ConfirmationModalProps) {
@@ -156,7 +158,7 @@ export function ConfirmationModal({
               </div>
             </DialogDescription>
             {footerWarning && (
-              <div className="font-semibold text-primary mt-2 p-3 bg-primary/5 rounded-md border-2 border-primary">
+              <div className="font-bold text-primary mt-2 p-3 bg-primary/5 rounded-md border-2 border-primary">
                 {footerWarning}
               </div>
             )}
@@ -186,7 +188,7 @@ export function ConfirmationModal({
               onConfirm();
               if (!loading) onOpenChange(false);
             }}
-            disabled={loading}
+            disabled={loading || confirmDisabled}
             className={cn(
               "flex-1 h-12 rounded-lg font-extrabold text-sm",
               "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",

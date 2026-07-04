@@ -1720,7 +1720,7 @@ export default function SchoolYearTab() {
         variant="primary"
         confirmClassName="bg-primary text-primary-foreground"
         description={
-          <span className="block font-bold text-foreground space-y-4">
+          <span className="block font-bold text-foreground space-y-4 text-base">
             {selectedPhase === "OFFICIAL_ENROLLMENT" && (
               <>
                 <p>You are about to open the official enrollment portals for School Year {activeYear?.yearLabel || "2026–2027"}.</p>

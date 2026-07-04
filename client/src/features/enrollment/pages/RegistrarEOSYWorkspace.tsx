@@ -204,6 +204,15 @@ export default function RegistrarEOSYWorkspace() {
     });
   }, [records, activeSearchQuery]);
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (section) {
+      setTitle(`${section.gradeLevel.name} - ${section.name}`);
+    }
+    return () => setTitle(null);
+  }, [section, setTitle]);
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -215,15 +224,6 @@ export default function RegistrarEOSYWorkspace() {
   if (!section) return <div>Section not found.</div>;
 
   const isLocked = section.isEosyFinalized;
-
-  const setTitle = useHeaderStore((s) => s.setTitle);
-
-  useEffect(() => {
-    if (section) {
-      setTitle(`${section.gradeLevel.name} - ${section.name}`);
-    }
-    return () => setTitle(null);
-  }, [section, setTitle]);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">

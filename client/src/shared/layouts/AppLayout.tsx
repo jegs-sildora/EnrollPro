@@ -919,7 +919,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             className="mr-2 h-4!"
           />
           {title && (
-            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-none whitespace-nowrap mr-4">
+            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none whitespace-nowrap mr-4">
               {title}
             </h1>
           )}

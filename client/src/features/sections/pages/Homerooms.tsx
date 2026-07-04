@@ -354,8 +354,8 @@ function SectionCard({
           {section.isHomogeneous && section.programType === "REGULAR" && (
             <Badge
               variant="outline"
-              className="mt-1 text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200">
-              Pilot
+              className="mt-1 text-sm font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200">
+              Top BEC Section
             </Badge>
           )}
         </div>

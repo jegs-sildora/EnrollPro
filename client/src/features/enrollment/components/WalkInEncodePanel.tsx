@@ -212,7 +212,7 @@ export function WalkInEncodePanel() {
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button className="h-14 px-6 text-lg font-extrabold gap-2">
+        <Button className="h-11 px-6 text-base font-extrabold gap-2">
           <Plus className="w-5 h-5" />
           Encode Walk-In
         </Button>

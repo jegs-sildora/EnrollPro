@@ -396,6 +396,13 @@ export default function TeacherEosyDashboard() {
     [isFinalized]
   );
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    setTitle("EOSY Finalization");
+    return () => setTitle(null);
+  }, [setTitle]);
+
   if (!isEosyPhase) {
     return (
       <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
@@ -436,13 +443,6 @@ export default function TeacherEosyDashboard() {
       </div>
     );
   }
-
-  const setTitle = useHeaderStore((s) => s.setTitle);
-
-  useEffect(() => {
-    setTitle("EOSY Finalization");
-    return () => setTitle(null);
-  }, [setTitle]);
 
   return (
     <>

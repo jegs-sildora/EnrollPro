@@ -615,9 +615,10 @@ export function QueueTable({
         )}
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
       <DataTable
-      className="border-x-0 border-b-0 border-t-0 rounded-none"
+      containerHeight="100%"
+      className="border-x-0 border-b-0 border-t-0 rounded-none h-full flex-1"
       tableClassName="w-full table-fixed"
       emptyStateContent={
         <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   Search,
@@ -58,6 +59,10 @@ interface PendingVerification {
   }>;
 }
 
+interface ApiErrorResponse {
+  message?: string;
+}
+
 const getGradeColorClasses = (gradeName: string) => {
   const name = gradeName.toUpperCase();
   if (name.includes("7")) return "bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80";
@@ -112,6 +117,10 @@ export function VerificationWorkspace() {
     activeFilter: activeSearchQuery,
   } = useDebouncedSearch();
 
+  const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
+  const [programFilter, setProgramFilter] = useState<string>("ALL");
+  const [verificationStatusFilter, setVerificationStatusFilter] = useState<string>("ALL");
+
   const {
     data: pendingVerifications = [],
     isLoading,
@@ -129,22 +138,42 @@ export function VerificationWorkspace() {
   });
 
   const filteredVerifications = useMemo(() => {
-    if (!activeSearchQuery) return pendingVerifications;
-    const q = activeSearchQuery.toLowerCase();
-    return pendingVerifications.filter(app => {
-      const tracking = app.trackingNumber?.toLowerCase() || "";
-      const lrn = app.learner.lrn?.toLowerCase() || "";
-      const fullName = `${app.learner.lastName} ${app.learner.firstName}`.toLowerCase();
-      return tracking.includes(q) || lrn.includes(q) || fullName.includes(q);
-    });
-  }, [pendingVerifications, activeSearchQuery]);
+    let result = pendingVerifications;
+
+    if (activeSearchQuery) {
+      const q = activeSearchQuery.toLowerCase();
+      result = result.filter(app => {
+        const tracking = app.trackingNumber?.toLowerCase() || "";
+        const lrn = app.learner.lrn?.toLowerCase() || "";
+        const fullName = `${app.learner.lastName} ${app.learner.firstName}`.toLowerCase();
+        return tracking.includes(q) || lrn.includes(q) || fullName.includes(q);
+      });
+    }
+
+    if (intakeCategoryFilter !== "ALL") {
+      result = result.filter((app) => app.applicantType === intakeCategoryFilter);
+    }
+
+    if (programFilter !== "ALL") {
+      // Future enhancement: when backend includes program preference in pending verification response
+    }
+
+    if (verificationStatusFilter !== "ALL") {
+      if (verificationStatusFilter === "PENDING") {
+        result = result.filter((app) => app.status !== "VERIFIED_ENROLLED");
+      } else if (verificationStatusFilter === "VERIFIED") {
+        result = result.filter((app) => app.status === "VERIFIED_ENROLLED");
+      }
+    }
+
+    return result;
+  }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, verificationStatusFilter]);
 
   const selectedApp = useMemo(() => {
     return pendingVerifications.find(app => app.id === selectedAppId);
   }, [pendingVerifications, selectedAppId]);
 
-  // Sync assigned program when selection changes
-  useMemo(() => {
+  useEffect(() => {
     if (selectedApp) {
       setAssignedProgram(selectedApp.applicantType);
     }
@@ -208,8 +237,7 @@ export function VerificationWorkspace() {
     });
   }, [selectedApp]);
 
-  // Effect to auto-select if only 1 exact match via search
-  useMemo(() => {
+  useEffect(() => {
     if (activeSearchQuery && filteredVerifications.length === 1) {
       if (selectedAppId !== filteredVerifications[0].id) {
         setSelectedAppId(filteredVerifications[0].id);
@@ -218,6 +246,18 @@ export function VerificationWorkspace() {
       }
     }
   }, [activeSearchQuery, filteredVerifications, selectedAppId]);
+
+  const getApiErrorMessage = (error: unknown, fallback: string): string => {
+    if (isAxiosError<ApiErrorResponse>(error)) {
+      return error.response?.data?.message ?? fallback;
+    }
+
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message;
+    }
+
+    return fallback;
+  };
 
   const handleSelect = (appId: number) => {
     setSelectedAppId(appId);
@@ -245,10 +285,13 @@ export function VerificationWorkspace() {
       setPsaVerified(false);
       void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
-    } catch (err: any) {
+    } catch (error: unknown) {
       sileo.error({
         title: "Verification Failed",
-        description: err.response?.data?.message || "An error occurred while verifying the learner.",
+        description: getApiErrorMessage(
+          error,
+          "An error occurred while verifying the learner.",
+        ),
       });
     } finally {
       setProcessing(false);
@@ -277,10 +320,13 @@ export function VerificationWorkspace() {
       setPsaVerified(false);
       void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
-    } catch (err: any) {
+    } catch (error: unknown) {
       sileo.error({
         title: "Temporary Enrollment Failed",
-        description: err.response?.data?.message || "An error occurred while temporarily enrolling the learner.",
+        description: getApiErrorMessage(
+          error,
+          "An error occurred while temporarily enrolling the learner.",
+        ),
       });
     } finally {
       setProcessing(false);
@@ -301,28 +347,77 @@ export function VerificationWorkspace() {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6 min-h-0">
-      {/* Search Bar */}
-      <div className="flex items-center gap-3 p-1 -mx-1 -mt-1">
-        <div className="relative flex-1">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+    <div className="flex flex-col h-full min-h-0">
+      <Card className="flex-1 flex flex-col shadow-sm border-none bg-card overflow-hidden">
+        {/* Filter Toolbar */}
+        <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6 shrink-0">
+          <div className="relative w-full xl:w-84 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Enter LRN/Name..."
-            className="pl-12 h-14 text-lg border-2 border-border focus-visible:ring-primary/20 bg-card shadow-sm"
+            placeholder="Search by LRN, Last Name, or First Name..."
+            className="w-full h-10 pl-9 bg-white border-gray-300 font-semibold"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
           />
         </div>
-        {!isHistoricalReadOnly && (
-          <WalkInEncodePanel />
-        )}
+
+        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
+
+          <Select
+            value={intakeCategoryFilter}
+            onValueChange={(val) => setIntakeCategoryFilter(val)}
+          >
+            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+              <SelectValue placeholder="All Intake Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="leading-tight font-extrabold">All Intake Categories</SelectItem>
+              <SelectItem value="NEW_ENROLLEE" className="leading-tight font-extrabold">Incoming Grade 7 Feeder Graduates</SelectItem>
+              <SelectItem value="TRANSFEREE" className="leading-tight font-extrabold">External Transferees</SelectItem>
+              <SelectItem value="BALIK_ARAL" className="leading-tight font-extrabold">Returning Balik-Aral</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={programFilter}
+            onValueChange={(val) => setProgramFilter(val)}
+          >
+            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+              <SelectValue placeholder="All Programs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
+              <SelectItem value="REGULAR" className="leading-tight font-extrabold">Regular BEC</SelectItem>
+              <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
+              <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
+              <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={verificationStatusFilter}
+            onValueChange={(val) => setVerificationStatusFilter(val)}
+          >
+            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="leading-tight font-extrabold">All Statuses</SelectItem>
+              <SelectItem value="PENDING" className="leading-tight font-extrabold">Pending Verification</SelectItem>
+              <SelectItem value="VERIFIED" className="leading-tight font-extrabold">Verified Enrolled</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {!isHistoricalReadOnly && (
+            <WalkInEncodePanel />
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
-        {/* LEFT PANE: PENDING VERIFICATION LIST */}
-        <Card className="w-[30%] flex flex-col shadow-sm border border-border overflow-hidden bg-card shrink-0">
-          <CardHeader className="border-b border-border bg-muted/20 py-4 px-5">
+      <div className="flex-1 flex min-h-0">
+        {/* LEFT PANE */}
+        <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
+          <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                 <FileText className="h-4 w-4 text-primary" />
@@ -332,7 +427,7 @@ export function VerificationWorkspace() {
                 {filteredVerifications.length} Queue
               </Badge>
             </div>
-          </CardHeader>
+          </div>
           <div className="flex-1 overflow-auto p-2 space-y-2">
             {filteredVerifications.length === 0 ? (
               <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground p-8 text-center">
@@ -369,10 +464,10 @@ export function VerificationWorkspace() {
               ))
             )}
           </div>
-        </Card>
+        </div>
 
         {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
-        <Card className="flex-1 flex flex-col shadow-sm border border-border overflow-hidden bg-card text-card-foreground">
+        <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
           {selectedApp ? (
             <>
               <div className="flex-1 overflow-auto p-8 relative">
@@ -591,8 +686,9 @@ export function VerificationWorkspace() {
               <p className="font-extrabold text-base leading-tight max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
             </div>
           )}
-        </Card>
+        </div>
       </div>
+      </Card>
 
       {/* Duplication Sentinel Blocking Modal */}
       <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>

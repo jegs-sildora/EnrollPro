@@ -6,6 +6,7 @@ import {
   startTransition,
 } from "react";
 import { useSearchParams } from "react-router";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   Loader2,
@@ -43,6 +44,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Input } from "@/shared/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
@@ -64,7 +66,7 @@ import {
   DialogDescription,
 } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { QueueTable } from "../components/QueueTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
@@ -172,6 +174,9 @@ export default function BOSYPage() {
 
   const [previousSectionName, setPreviousSectionName] = useState<string>("ALL");
   const [previousSections, setPreviousSections] = useState<string[]>([]);
+  const [curricularProgram, setCurricularProgram] = useState<string>("ALL");
+  const [intakeCategory, setIntakeCategory] = useState<string>("ALL");
+  const [verificationStatus, setVerificationStatus] = useState<string>("ALL");
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [repairReadySchoolYearId, setRepairReadySchoolYearId] =
@@ -533,43 +538,71 @@ export default function BOSYPage() {
   return (
     <div className="flex h-[calc(100vh-120px)] min-h-0 flex-col">
       <PhaseBanner />
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="mb-4 grid w-full grid-cols-1 gap-1 rounded-xl border border-border bg-white p-1 shadow-sm sm:grid-cols-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="continuing"
-            className="text-base font-extrabold uppercase"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
           >
-            Continuing Learners
+            {activeTab === "continuing" && (
+              <motion.div
+                layoutId="bosy-active-pill"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className={cn("relative z-20 text-base uppercase", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
+              Continuing Learners
+            </span>
           </TabsTrigger>
           <TabsTrigger
             value="incoming"
-            className="text-base font-extrabold uppercase"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
           >
-            Incoming Grade 7 and Transferees
+            {activeTab === "incoming" && (
+              <motion.div
+                layoutId="bosy-active-pill"
+                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className={cn("relative z-20 text-base uppercase", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
+              Incoming Grade 7 and Transferees
+            </span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent
-          value="continuing"
-          forceMount
-          className={cn("m-0 flex min-h-0 flex-1 flex-col", activeTab !== "continuing" && "hidden")}
-        >
-          <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
-            <div
-              className="flex flex-col md:flex-row md:items-center justify-end gap-4"
+        <AnimatePresence mode="wait">
+          {activeTab === "continuing" && (
+            <motion.div
+              key="continuing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex min-h-0 flex-col w-full h-full"
             >
-              <div>
-                {isHistoricalReadOnly && (
-                  <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all enrollment actions are disabled.</p>
-                )}
-              </div>
-            </div>
+              <TabsContent
+                value="continuing"
+                forceMount
+                className="m-0 flex min-h-0 flex-1 flex-col h-full focus-visible:outline-none ring-0"
+              >
+                <div className="flex flex-col flex-1 h-full w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+                  <div
+                    className="flex flex-col md:flex-row md:items-center justify-end gap-4"
+                  >
+                    <div>
+                      {isHistoricalReadOnly && (
+                        <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all enrollment actions are disabled.</p>
+                      )}
+                    </div>
+                  </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 {
                   label: "Pending Enrollment",
-                  subBadge: "Waiting for learner or parent check-in",
+                  subBadge: "Waiting for learner or parent confirmation",
                   value: readiness?.pendingConfirmationCount ?? 0,
                   filterVal: "PENDING" as const,
                   isPrimaryMetric: false,
@@ -601,116 +634,132 @@ export default function BOSYPage() {
                   className={cn(
                     "flex min-h-32 flex-col rounded-lg border bg-white p-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     queueState === filterVal
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border hover:border-primary/50 hover:bg-muted/20",
+                      ? "border-primary bg-primary ring-1 ring-primary/20"
+                      : "border-border hover:border-primary hover:bg-muted/20",
                   )}>
-                  <span className="text-base font-extrabold leading-tight text-foreground">
+                  <span className={cn(
+                    "text-base font-extrabold leading-tight ",
+                    queueState === filterVal ? "text-primary-foreground" : "text-foreground"
+                  )}>
                     {label}
                   </span>
                   <span
                     className={cn(
                       "mt-4 text-4xl font-extrabold leading-none",
-                      isPrimaryMetric && value > 0
-                        ? "text-primary"
-                        : "text-foreground",
+                      queueState === filterVal
+                        ? "text-primary-foreground"
+                        : isPrimaryMetric && value > 0
+                          ? "text-primary"
+                          : "text-foreground",
                     )}>
                     {value}
                   </span>
-                  <span className="mt-1 text-sm font-semibold text-muted-foreground">
+                  <span className={cn(
+                    "mt-1 text-sm font-extrabold",
+                    queueState === filterVal ? "text-primary-foreground" : "text-foreground"
+                  )}>
                     {subBadge}
                   </span>
                 </button>
               ))}
             </div>
 
-            <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-              <CardHeader className="px-3 sm:px-6 pb-3">
-                <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
-                  <div className="relative w-full lg:w-1/2 shrink-0">
-                    <span className="text-base font-extrabold text-foreground">Search Learner</span>
-                    <Search className="absolute left-2.5 h-4 w-4 bottom-3.5 text-foreground" />
-                    <Input
-                      placeholder="Search by LRN, Last Name, or First Name..."
-                      className="pl-9 h-10 w-full text-base font-semibold mt-2"
-                      value={queueSearch}
-                      onChange={(e) => {
-                        setQueueSearch(e.target.value);
-                        startTransition(() => {
-                          setQueuePage(1);
-                        });
-                      }}
+          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+            <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6">
+              <div className="relative w-full xl:w-80 shrink-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by LRN, Last Name, or First Name..."
+                  className="w-full h-10 pl-9 bg-white border-gray-300 font-semibold"
+                  value={queueSearch}
+                  onChange={(e) => {
+                    setQueueSearch(e.target.value);
+                    startTransition(() => {
+                      setQueuePage(1);
+                    });
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
+                {canMutate && queueState === "PENDING" && selectedIds.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <BulkConfirmBar
+                      selectedCount={selectedIds.length}
+                      loading={bulkLoading}
+                      onConfirm={() => void handleBulkConfirm()}
+                      onClear={() => setRowSelection({})}
                     />
                   </div>
+                ) : (
+                  <>
+                    <Select
+                      value={targetGrade}
+                      onValueChange={(val) => {
+                        setTargetGrade(val);
+                        setQueuePage(1);
+                        setRowSelection({});
+                      }}
+                    >
+                      <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                        <SelectValue placeholder="All Incoming Grades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="leading-tight font-extrabold">All Incoming Grades</SelectItem>
+                        <SelectItem value="8" className="leading-tight font-extrabold">Grade 8</SelectItem>
+                        <SelectItem value="9" className="leading-tight font-extrabold">Grade 9</SelectItem>
+                        <SelectItem value="10" className="leading-tight font-extrabold">Grade 10</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                  <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 flex-1 lg:justify-end">
-                    {canMutate && queueState === "PENDING" && selectedIds.length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <BulkConfirmBar
-                          selectedCount={selectedIds.length}
-                          loading={bulkLoading}
-                          onConfirm={() => void handleBulkConfirm()}
-                          onClear={() => setRowSelection({})}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex flex-col gap-1 w-full sm:w-auto">
-                          <span className="text-base font-extrabold text-foreground">Target Grade</span>
-                          <Select
-                            value={targetGrade}
-                            onValueChange={(val) => {
-                              setTargetGrade(val);
-                              setQueuePage(1);
-                              setRowSelection({});
-                            }}
-                          >
-                            <SelectTrigger className="w-full sm:min-w-[210px] bg-white h-10 whitespace-nowrap text-base font-semibold">
-                              <SelectValue placeholder="All Incoming Grades" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ALL" className="text-base">All Incoming Grades</SelectItem>
-                              <SelectItem value="7" className="text-base">Incoming Grade 7</SelectItem>
-                              <SelectItem value="8" className="text-base">Incoming Grade 8</SelectItem>
-                              <SelectItem value="9" className="text-base">Incoming Grade 9</SelectItem>
-                              <SelectItem value="10" className="text-base">Incoming Grade 10</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                    <Select
+                      value={curricularProgram}
+                      onValueChange={(val) => {
+                        setCurricularProgram(val);
+                        setQueuePage(1);
+                        setRowSelection({});
+                      }}
+                    >
+                      <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                        <SelectValue placeholder="All Programs" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
+                        <SelectItem value="REGULAR" className="leading-tight font-extrabold">Regular BEC</SelectItem>
+                        <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
+                        <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                        <div className="flex flex-col gap-1 w-full sm:w-auto">
-                          <span className="text-base font-extrabold text-foreground">Prior Section</span>
-                          <Select
-                            value={previousSectionName}
-                            onValueChange={(val) => {
-                              setPreviousSectionName(val);
-                              startTransition(() => setQueuePage(1));
-                            }}
-                          >
-                            <SelectTrigger className="h-10 w-full sm:w-64 text-base font-semibold whitespace-nowrap">
-                              <SelectValue placeholder="All Previous Sections" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ALL" className="text-base font-semibold">All Previous Sections</SelectItem>
-                              {previousSections
-                                .filter((sec) => typeof sec === "string" && sec.trim() !== "")
-                                .map((sec) => (
-                                  <SelectItem key={sec} value={sec} className="text-base font-semibold">
-                                    {sec}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
+                    <Select
+                      value={previousSectionName}
+                      onValueChange={(val) => {
+                        setPreviousSectionName(val);
+                        startTransition(() => setQueuePage(1));
+                      }}
+                    >
+                      <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                        <SelectValue placeholder="All Previous Sections" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="leading-tight font-extrabold">All Previous Sections</SelectItem>
+                        {previousSections
+                          .filter((sec) => typeof sec === "string" && sec.trim() !== "")
+                          .map((sec) => (
+                            <SelectItem key={sec} value={sec} className="leading-tight font-extrabold">
+                              {sec}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+              </div>
+            </div>
 
-            <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
-              <CardContent className="p-0 flex flex-col min-h-0">
-                <div className="overflow-hidden bg-muted/5 w-full max-w-full">
+            <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+              <div className="overflow-hidden bg-muted/5 w-full flex-1 flex flex-col min-h-0">
                   <QueueTable
                     priorSyLabel={priorSyLabel}
                     items={queueItems}
@@ -748,234 +797,184 @@ export default function BOSYPage() {
               </CardContent>
             </Card>
 
-            {/* Confirm Single Return Dialog */}
-      <Dialog
+      {/* Confirm Single Return Dialog */}
+      <ConfirmationModal
         open={confirmSingleTarget !== null}
         onOpenChange={(open) => { if (!open) setConfirmSingleTarget(null); }}
-      >
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              Enroll Learner
-            </DialogTitle>
-            <DialogDescription>
+        title="Enroll Learner"
+        variant="success"
+        loading={confirmSingleBusy}
+        confirmText="Enroll"
+        onConfirm={() => { void executeConfirmSingle(); }}
+        description={
+          <>
+            <p className="mb-4">
               Confirm learner enrollment for this school year. Learners with
               incomplete school requirements will be marked as temporarily
-              enrolled but may still proceed to section assignment.
-            </DialogDescription>
-          </DialogHeader>
-          {confirmSingleTarget && (
-            <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5">
-              <p className="text-base leading-tight font-extrabold uppercase">
-                {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
-                {confirmSingleTarget.middleName
-                  ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
-                  : ""}
-              </p>
-              <p className="text-base text-foreground font-extrabold">
-                LRN: {confirmSingleTarget.lrn ?? "No LRN"}
-              </p>
-              <Badge
-                variant="outline"
-                className="text-[10px] font-extrabold uppercase">
-                {confirmSingleTarget.gradeLevelName}
-              </Badge>
-              {confirmSingleTarget.missingDocuments.length > 0 && (
-                <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
-                  <p className="text-sm font-extrabold text-amber-900">
-                    Missing school requirements
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-amber-800">
-                    {confirmSingleTarget.missingDocuments.join(", ")}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmSingleTarget(null)}
-              disabled={confirmSingleBusy}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              disabled={confirmSingleBusy}
-              onClick={() => void executeConfirmSingle()}>
-              {confirmSingleBusy ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4 mr-1.5" />
-              )}
-              Enroll
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              enrolled but may still proceed to Class Sectioning and SF1 assignment.
+            </p>
+            {confirmSingleTarget && (
+              <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
+                <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                  {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
+                  {confirmSingleTarget.middleName
+                    ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
+                    : ""}
+                </p>
+                <p className="text-base text-foreground font-extrabold break-all">
+                  LRN: {confirmSingleTarget.lrn ?? "No LRN"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
+                  {confirmSingleTarget.gradeLevelName}
+                </Badge>
+                {confirmSingleTarget.missingDocuments.length > 0 && (
+                  <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+                    <p className="text-sm font-extrabold text-amber-900">
+                      Missing school requirements
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-amber-800">
+                      {confirmSingleTarget.missingDocuments.join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        }
+      />
 
-            <Dialog
+      <ConfirmationModal
         open={transferTarget !== null}
         onOpenChange={(open) => {
           if (!open && !transferBusy) setTransferTarget(null);
         }}
-      >
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>
-              {transferMode === "CONFIRMED"
-                ? "Mark Transfer Out"
-                : "Tag as Not Returning"}
-            </DialogTitle>
-            <DialogDescription>
+        title={transferMode === "CONFIRMED" ? "Mark Transfer Out" : "Tag as Not Returning"}
+        variant="danger"
+        loading={transferBusy}
+        confirmText={transferMode === "CONFIRMED" ? "Mark Transfer Out" : "Tag as Not Returning"}
+        onConfirm={() => { void executeTransferRequest(); }}
+        description={
+          <>
+            <p className="mb-4">
               {transferMode === "CONFIRMED"
                 ? "Remove this confirmed learner from the sectioning queue and mark the record for transfer out."
-                : "Clear this learner from the continuing learner onboarding queue. The learner will no longer appear in pending confirmations for this school year."}
-            </DialogDescription>
-          </DialogHeader>
-          {transferTarget && (
-            <div className="rounded-md border bg-muted/40 px-4 py-3">
-              <p className="font-extrabold">
-                {transferTarget.lastName}, {transferTarget.firstName}
-              </p>
-              <p className="text-sm font-semibold">
-                {transferTarget.gradeLevelName}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={transferBusy}
-              onClick={() => setTransferTarget(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={transferBusy}
-              onClick={() => void executeTransferRequest()}
-            >
-              {transferBusy && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {transferMode === "CONFIRMED"
-                ? "Mark Transfer Out"
-                : "Tag as Not Returning"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                : "Clear this learner from the Pending Enrollment queue. The learner will no longer appear in pending confirmations for this school year."}
+            </p>
+            {transferTarget && (
+              <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
+                <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                  {transferTarget.lastName}, {transferTarget.firstName}
+                  {transferTarget.middleName
+                    ? ` ${transferTarget.middleName.charAt(0)}.`
+                    : ""}
+                </p>
+                <p className="text-base text-foreground font-extrabold break-all">
+                  LRN: {transferTarget.lrn ?? "No LRN"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
+                  {transferTarget.gradeLevelName}
+                </Badge>
+              </div>
+            )}
+          </>
+        }
+      />
 
-            <Dialog
+      <ConfirmationModal
         open={revokeTarget !== null}
         onOpenChange={(open) => {
           if (!open && !revokeBusy) setRevokeTarget(null);
-        }}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Revoke Confirmation</DialogTitle>
-            <DialogDescription>
+        }}
+        title="Revoke Confirmation"
+        variant="danger"
+        loading={revokeBusy}
+        confirmText="Revoke Confirmation"
+        onConfirm={() => { void executeRevokeConfirmation(); }}
+        description={
+          <>
+            <p className="mb-4">
               Return this learner to Pending Enrollment. This removes the learner from the unassigned sectioning pool and from the current official BOSY count.
-            </DialogDescription>
-          </DialogHeader>
-          {revokeTarget && (
-            <div className="rounded-md border bg-muted/40 px-4 py-3">
-              <p className="font-extrabold">
-                {revokeTarget.lastName}, {revokeTarget.firstName}
-              </p>
-              <p className="text-sm font-semibold">
-                {revokeTarget.gradeLevelName}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={revokeBusy}
-              onClick={() => setRevokeTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={revokeBusy}
-              onClick={() => void executeRevokeConfirmation()}>
-              {revokeBusy && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Revoke Confirmation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </p>
+            {revokeTarget && (
+              <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
+                <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                  {revokeTarget.lastName}, {revokeTarget.firstName}
+                  {revokeTarget.middleName
+                    ? ` ${revokeTarget.middleName.charAt(0)}.`
+                    : ""}
+                </p>
+                <p className="text-base text-foreground font-extrabold break-all">
+                  LRN: {revokeTarget.lrn ?? "No LRN"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
+                  {revokeTarget.gradeLevelName}
+                </Badge>
+              </div>
+            )}
+          </>
+        }
+      />
 
-            {/* Restore to Pending Enrollment Dialog */}
-      <Dialog
+      {/* Restore to Pending Enrollment Dialog */}
+      <ConfirmationModal
         open={revertTargetId !== null}
-        onOpenChange={(open) => { if (!open) { setRevertTargetId(null); setRevertReason(""); } }}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-amber-600" />
-              Flag for Review
-            </DialogTitle>
-            <DialogDescription>
+        onOpenChange={(open) => { if (!open) { setRevertTargetId(null); setRevertReason(""); } }}
+        title="Flag for Review"
+        variant="warning"
+        loading={revertBusy}
+        confirmDisabled={revertReason.trim().length < 5}
+        confirmText="Restore to Pending Enrollment"
+        onConfirm={() => {
+          if (revertReason.trim().length >= 5) {
+            void handleRevertToPending();
+          }
+        }}
+        description={
+          <>
+            <p className="mb-4">
               This will move the learner back to the BEEF intake queue
               (PENDING_BEEF). Provide a mandatory reason of at least 5 characters.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Textarea
-              placeholder="Reason for reverting (min. 5 characters)…"
-              value={revertReason}
-              onChange={(e) => setRevertReason(e.target.value)}
-              rows={3}
-              className="resize-none font-extrabold text-base leading-tight"
-            />
-            {revertReason.length > 0 && revertReason.trim().length < 5 && (
-              <p className="text-base text-destructive font-extrabold">
-                Reason must be at least 5 characters.
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => { setRevertTargetId(null); setRevertReason(""); }}
-              disabled={revertBusy}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={revertBusy || revertReason.trim().length < 5}
-              onClick={() => void handleRevertToPending()}>
-              {revertBusy ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              ) : (
-                <RotateCcw className="h-4 w-4 mr-1.5" />
+            </p>
+            <div className="space-y-2 py-2 text-left">
+              <Textarea
+                placeholder="Reason for reverting (min. 5 characters)…"
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                rows={3}
+                className="resize-none font-extrabold text-base leading-tight"
+              />
+              {revertReason.length > 0 && revertReason.trim().length < 5 && (
+                <p className="text-base text-destructive font-extrabold">
+                  Reason must be at least 5 characters.
+                </p>
               )}
-              Restore to Pending Enrollment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </>
+        }
+      />
 
-            {/* Flush No-Shows Dialog */}
-      <Dialog
+      {/* Flush No-Shows Dialog */}
+      <ConfirmationModal
         open={flushDialogOpen}
         onOpenChange={(open) => {
           setFlushDialogOpen(open);
           if (!open) setNoShowItems([]);
         }}
-      >
-        <DialogContent className="max-w-3xl w-full gap-0 overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 className="h-4 w-4" />
-              Flush No-Shows
-            </DialogTitle>
-            <DialogDescription>
+        title="Flush No-Shows"
+        variant="danger"
+        loading={flushBusy}
+        confirmDisabled={noShowLoading || noShowItems.length === 0}
+        confirmText="Flush No-Shows"
+        onConfirm={() => { void handleFlushNoShows(); }}
+        description={
+          <>
+            <p className="mb-4">
               {noShowLoading
                 ? "Loading no-show applicants…"
                 : noShowItems.length > 0
@@ -983,68 +982,61 @@ export default function BOSYPage() {
                   } in Ready for Enrollment or Pending (Incomplete) status have not reported. Confirming will withdraw all of them. This cannot be undone.`
                   : "No eligible no-show applicants found for this school year."
               }
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-6 py-4 space-y-3">
-            {noShowLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-              </div>
-            ) : noShowItems.length > 0 ? (
-              <>
-                <DataTable
-                  columns={FLUSH_NO_SHOW_COLUMNS}
-                  data={noShowItems}
-                  dense
-                  getRowId={(row) => String(row.applicationId)}
-                  containerHeight="14rem"
-                  estimatedRowHeight={32}
-                />
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-extrabold">
-                  This is a destructive bulk operation. Only proceed if these
-                  learners have confirmed they will not be attending.
+            </p>
+            <div className="py-4 space-y-3 text-left">
+              {noShowLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 className="h-6 w-6 animate-spin text-foreground" />
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-extrabold gap-2">
-                <CheckCircle2 className="h-4 w-4 opacity-50" />
-                No no-show applicants found.
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="px-6 pb-6 pt-4 border-t gap-2">
-            <Button
-              variant="outline"
-              onClick={() => { setFlushDialogOpen(false); setNoShowItems([]); }}
-              disabled={flushBusy}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={flushBusy || noShowLoading || noShowItems.length === 0}
-              onClick={() => void handleFlushNoShows()}>
-              {flushBusy ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : noShowItems.length > 0 ? (
+                <>
+                  <DataTable
+                    columns={FLUSH_NO_SHOW_COLUMNS}
+                    data={noShowItems}
+                    dense
+                    getRowId={(row) => String(row.applicationId)}
+                    containerHeight="14rem"
+                    estimatedRowHeight={32}
+                  />
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-extrabold">
+                    This is a destructive bulk operation. Only proceed if these
+                    learners have confirmed they will not be attending.
+                  </div>
+                </>
               ) : (
-                <Trash2 className="h-4 w-4 mr-1.5" />
+                <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-extrabold gap-2">
+                  <CheckCircle2 className="h-4 w-4 opacity-50" />
+                  No no-show applicants found.
+                </div>
               )}
-              Confirm Flush
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </>
+        }
+      />
           </div>
-        </TabsContent>
+              </TabsContent>
+            </motion.div>
+          )}
 
-        <TabsContent
-          value="incoming"
-          forceMount
-          className={cn("m-0 flex min-h-0 flex-1 flex-col", activeTab !== "incoming" && "hidden")}
-        >
-          <VerificationWorkspace />
-        </TabsContent>
+          {activeTab === "incoming" && (
+            <motion.div
+              key="incoming"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex min-h-0 flex-col w-full"
+            >
+              <TabsContent
+                value="incoming"
+                forceMount
+                className="m-0 flex min-h-0 flex-1 flex-col focus-visible:outline-none ring-0"
+              >
+                <VerificationWorkspace />
+              </TabsContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Tabs>
     </div>
   );

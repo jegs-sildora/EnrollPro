@@ -58,6 +58,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shar
 import { sileo } from "sileo";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Navigate, useNavigate } from "react-router";
 
 export interface EnrollmentRecord {
   id: number;
@@ -273,6 +274,7 @@ function GeofencingPopover({
 }
 
 export default function EosyUpdating() {
+  const navigate = useNavigate();
   const {
     activeSchoolYearId,
     viewingSchoolYearId,
@@ -778,15 +780,7 @@ export default function EosyUpdating() {
     setTransitionLoading(true);
     try {
       const finalizeRes = await api.post("/eosy/school-year/finalize", { schoolYearId: ayId });
-      sileo.success({
-        title: "EOSY Finalized",
-        description: "The school year has been finalized successfully."
-      });
-      setTransitionModalOpen(false);
-      setTransitionLoading(false);
 
-      // Switch store context to the new active school year immediately
-      // so the axios interceptor sends the correct SY context header
       const nextSy = finalizeRes.data.nextSchoolYear;
       if (nextSy) {
         useSettingsStore.getState().setSettings({
@@ -794,19 +788,18 @@ export default function EosyUpdating() {
           activeSchoolYearLabel: nextSy.yearLabel,
           activeSchoolYearStatus: nextSy.status,
           systemPhase: "OFFICIAL_ENROLLMENT",
+          systemStatus: "ACTIVE",
         });
       }
       useSettingsStore.getState().setViewingSY(null, null, null);
 
-      // Fetch latest public settings with the new SY context
-      const pubRes = await api.get("/settings/public");
-      useSettingsStore.getState().setSettings(pubRes.data);
-
-      // Immediately redirect to Master Dashboard
-      window.location.href = "/dashboard";
+      navigate("/dashboard", { replace: true });
+      sileo.success({
+        title: "New School Year Ready",
+        description: "The new school year is active. The dashboard has been refreshed.",
+      });
     } catch (err) {
       toastApiError(err as Parameters<typeof toastApiError>[0]);
-    } finally {
       setTransitionLoading(false);
     }
   };
@@ -1308,30 +1301,18 @@ export default function EosyUpdating() {
     return baseColumns;
   }, [baseColumns]);
 
-
-
-  if (!isEosyPhase && !isHistoricalReadOnly) {
-    return (
-      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
-        <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center">
-          <Lock className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <div className="text-center max-w-md space-y-2">
-          <h2 className="text-xl font-extrabold uppercase">EOSY Phase Not Active</h2>
-          <p className="text-base text-muted-foreground leading-relaxed">
-            EOSY status updates are only available during the End of School Year phase.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
     setTitle("EOSY Updating");
     return () => setTitle(null);
   }, [setTitle]);
+
+
+
+  if (!isEosyPhase && !isHistoricalReadOnly) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <>
@@ -1369,11 +1350,7 @@ export default function EosyUpdating() {
             {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
               <Button
                 onClick={() => {
-                  if (isSchoolYearFinalized) {
-                    window.location.href = "/settings";
-                  } else {
-                    setTransitionModalOpen(true);
-                  }
+                  setTransitionModalOpen(true);
                 }}
                 size="lg"
                 className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"

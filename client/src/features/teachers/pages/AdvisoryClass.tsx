@@ -211,6 +211,17 @@ export default function AdvisoryClass() {
     );
   };
 
+  const setTitle = useHeaderStore((s) => s.setTitle);
+
+  useEffect(() => {
+    if (section) {
+      setTitle(`${section.gradeLevel.name} — ${section.name}`);
+    } else {
+      setTitle("My Advisory Class");
+    }
+    return () => setTitle(null);
+  }, [section, setTitle]);
+
   if (loading) {
     return (
       <div className="flex justify-center p-12">
@@ -234,17 +245,6 @@ export default function AdvisoryClass() {
       </div>
     );
   }
-
-  const setTitle = useHeaderStore((s) => s.setTitle);
-
-  useEffect(() => {
-    if (section) {
-      setTitle(`${section.gradeLevel.name} — ${section.name}`);
-    } else {
-      setTitle("My Advisory Class");
-    }
-    return () => setTitle(null);
-  }, [section, setTitle]);
 
   return (
     <div className="space-y-6">

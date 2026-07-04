@@ -31,6 +31,12 @@ async function main() {
     },
   });
 
+  console.log("🔓 Unlocking all sections...");
+  await prisma.section.updateMany({
+    where: { schoolYearId: restoredSy.id },
+    data: { isEosyFinalized: false }
+  });
+
   console.log("⚙️ Updating System Settings to point to the restored school year...");
   await prisma.schoolSetting.updateMany({
     data: { activeSchoolYearId: restoredSy.id },
@@ -43,8 +49,27 @@ async function main() {
 
   for (const sy of newerSyList) {
     console.log(`🗑️ Deleting newer School Year: ${sy.yearLabel}`);
+
+    console.log(`   - Deleting dependent records for ${sy.yearLabel}...`);
+    await prisma.enrollmentRecord.deleteMany({ where: { schoolYearId: sy.id } });
+    await prisma.enrollmentApplication.deleteMany({ where: { schoolYearId: sy.id } });
+    await prisma.healthRecord.deleteMany({ where: { schoolYearId: sy.id } });
+
     await prisma.schoolYear.delete({ where: { id: sy.id } });
   }
+
+  // Delete enrollment history created during finalization
+  const deletedHistory = await prisma.enrollmentHistory.deleteMany({
+    where: { schoolYearId: restoredSy.id },
+  });
+  console.log(`🗑️ Deleted ${deletedHistory.count} history records for the restored school year.`);
+
+  // Revert section advisers
+  console.log("⚙️ Re-activating Section Advisers...");
+  await prisma.sectionAdviser.updateMany({
+    where: { schoolYearId: restoredSy.id, status: "REVOKED" },
+    data: { status: "ACTIVE" }
+  });
 
   console.log("✅ Successfully reversed the School Year Transition!");
 }

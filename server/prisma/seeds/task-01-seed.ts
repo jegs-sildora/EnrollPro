@@ -323,6 +323,8 @@ export const seedDatabase = async () => {
               motherTongue,
               isIpCommunity: isIp,
               ipGroupName,
+              hasPsaBirthCertificate: true,
+              birthCertificateType: "PSA_BIRTH_CERTIFICATE",
             }
           });
 
@@ -386,6 +388,7 @@ export const seedDatabase = async () => {
               contactNumber: primaryContact.contactNumber,
               guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
               guardianRelationship: primaryContact.relationship,
+              isMissingSf9: false,
               addresses: {
                 createMany: {
                   data: [
