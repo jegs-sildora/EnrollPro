@@ -253,7 +253,7 @@ export default function Step5Enrollment() {
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
                 learnerType === typeOption.value
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
-                  : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
               <span className="font-extrabold text-base leading-tight ">
                 {typeOption.label}
@@ -293,7 +293,7 @@ export default function Step5Enrollment() {
                 "relative flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all h-14 uppercase",
                 gradeLevel === gradeOption.value
                   ? "border-primary bg-primary text-white shadow-sm ring-1 ring-primary"
-                  : "border-border bg-white hover:border-primary/50 hover:bg-primary/5",
+                  : "border-border bg-muted hover:border-primary/50 hover:bg-primary/5",
               )}>
               <span className="text-base font-extrabold leading-tight">
                 {gradeOption.label}
@@ -341,7 +341,7 @@ export default function Step5Enrollment() {
               placeholder="e.g. 88.50"
               disabled={watch("hasSf9Deficiency")}
               className={cn(
-                "h-12 font-extrabold text-lg bg-white border-2 disabled:opacity-50",
+                "h-12 font-extrabold text-lg bg-muted border-2 disabled:opacity-50",
                 errors.generalAverage && "border-destructive",
               )}
               value={inputGaValue}
@@ -382,7 +382,7 @@ export default function Step5Enrollment() {
       <div className="space-y-8 pb-8">
         <div className="p-6 border bg-primary/5 border-primary/20 rounded-2xl space-y-6 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shadow-sm">
               <BookOpen className="w-5 h-5 text-primary" />
             </div>
             <Label className="text-base font-extrabold text-primary">
@@ -404,7 +404,7 @@ export default function Step5Enrollment() {
               }
             }}
           >
-            <SelectTrigger className="w-full bg-white font-extrabold h-12">
+            <SelectTrigger className="w-full bg-muted font-extrabold h-12">
               <SelectValue placeholder="Select Preferred Curriculum Program" />
             </SelectTrigger>
             <SelectContent>
@@ -479,7 +479,7 @@ export default function Step5Enrollment() {
                         })
                       }
                       value={watch("artField")}>
-                      <SelectTrigger className="h-10 bg-white border-2 font-extrabold">
+                      <SelectTrigger className="h-10 bg-muted border-2 font-extrabold">
                         <SelectValue placeholder="Select Art Field" />
                       </SelectTrigger>
                       <SelectContent>

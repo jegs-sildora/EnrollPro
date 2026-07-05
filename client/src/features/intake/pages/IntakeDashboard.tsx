@@ -294,7 +294,7 @@ function PreListingTab({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <div className="bg-muted border border-slate-200 rounded-lg p-6">
         <div className="space-y-1 mb-5">
           <h3 className="text-base font-extrabold text-slate-900">Register Walk-In Applicant</h3>
           <p className="text-base leading-tight text-slate-600">
@@ -794,7 +794,7 @@ export default function IntakeDashboard() {
     <div className="space-y-6 p-6">
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-3 h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger value="pre-listing" className="text-base font-extrabold uppercase tracking-normal relative rounded-lg data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "pre-listing" && (
               <motion.div

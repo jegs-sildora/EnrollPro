@@ -124,7 +124,7 @@ export default function RegistrarLoginPage() {
         {/* Decorative patterns */}
         <div className="absolute inset-0">
           {/* Floating orbs */}
-          <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl login-float" />
+          <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-muted/10 blur-3xl login-float" />
           <div
             className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float"
             style={{
@@ -190,9 +190,9 @@ export default function RegistrarLoginPage() {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 group transition-all duration-300"
+                className="flex items-center gap-3 p-3 rounded-2xl bg-muted/5 backdrop-blur-sm border border-white/10 hover:bg-muted/10 hover:border-white/20 group transition-all duration-300"
               >
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-muted/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                   <feature.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -206,7 +206,7 @@ export default function RegistrarLoginPage() {
 
         {/* Footer attribution */}
         <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-sm">
-          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-muted/10 flex items-center justify-center flex-shrink-0">
             <FileText className="w-4 h-4 text-white" />
           </div>
           <span>Registrar Office • Records Management</span>
@@ -296,7 +296,7 @@ export default function RegistrarLoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg overflow-hidden bg-white border border-slate-200"
+              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg overflow-hidden bg-muted border border-slate-200"
             >
               {fullLogoUrl ? (
                 <img src={fullLogoUrl} alt={schoolName} className="w-full h-full object-cover" />
@@ -314,7 +314,7 @@ export default function RegistrarLoginPage() {
           </div>
 
           {/* Login card with premium styling */}
-          <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden">
+          <Card className="border-0 shadow-2xl shadow-gray-200 bg-muted/90 backdrop-blur-xl rounded-lg overflow-hidden">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div
                 className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"
@@ -435,7 +435,7 @@ export default function RegistrarLoginPage() {
                         type="checkbox"
                         className="peer sr-only"
                       />
-                      <div className="w-4 h-4 rounded border border-gray-300 bg-white peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-all duration-150">
+                      <div className="w-4 h-4 rounded border border-gray-300 bg-muted peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-all duration-150">
                         <svg className="w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>

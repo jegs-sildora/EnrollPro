@@ -67,6 +67,8 @@ export interface SettingsState {
   activeCorrection: { userId: number; userName: string; expiresAt: number; } | null;
   isHydrated: boolean;
   initialized: boolean;
+  isSwitchingSchoolYear: boolean;
+  switchingToSchoolYearLabel: string | null;
   setSettings: (settings: Partial<SettingsState>) => void;
   setViewingSY: (
     id: number | null,
@@ -76,6 +78,15 @@ export interface SettingsState {
   setHistoricalCorrectionToken: (token: string | null, expiresAt?: number | null) => void;
   setFontSize: (size: number) => void;
   setHydrated: () => void;
+  triggerSchoolYearSwitch: (
+    id: number | null,
+    status?: string | null,
+    label?: string | null,
+  ) => void;
+  triggerRolloverSwitch: (
+    settings: Partial<SettingsState>,
+    targetLabel: string,
+  ) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -120,6 +131,8 @@ export const useSettingsStore = create<SettingsState>()(
       accentForeground: null,
       accentMutedForeground: null,
       fontSize: 100, // percentage
+      isSwitchingSchoolYear: false,
+      switchingToSchoolYearLabel: null,
       activeCorrection: null,
       isHydrated: false,
       initialized: false,
@@ -135,6 +148,50 @@ export const useSettingsStore = create<SettingsState>()(
         set({ historicalCorrectionToken: token, historicalCorrectionExpiresAt: expiresAt ?? null }),
       setFontSize: (size) => set({ fontSize: size }),
       setHydrated: () => set({ isHydrated: true }),
+      triggerSchoolYearSwitch: (id, status, label) => {
+        set({
+          isSwitchingSchoolYear: true,
+          switchingToSchoolYearLabel: label ?? "Active School Year",
+        });
+        
+        setTimeout(async () => {
+          set({
+            viewingSchoolYearId: id,
+            viewingSchoolYearStatus: status ?? null,
+            viewingSchoolYearLabel: label ?? null,
+            isSwitchingSchoolYear: false,
+            switchingToSchoolYearLabel: null,
+          });
+          
+          // Dynamically import queryClient to avoid circular dependency issues at the top level
+          const { queryClient } = await import("@/shared/lib/queryClient");
+          queryClient.invalidateQueries();
+        }, 2000);
+      },
+      triggerRolloverSwitch: (settings, targetLabel) => {
+        set({
+          isSwitchingSchoolYear: true,
+          switchingToSchoolYearLabel: targetLabel,
+        });
+        
+        setTimeout(async () => {
+          set((state) => ({
+            ...state,
+            ...settings,
+            viewingSchoolYearId: null,
+            viewingSchoolYearStatus: null,
+            viewingSchoolYearLabel: null,
+            isSwitchingSchoolYear: false,
+            switchingToSchoolYearLabel: null,
+            initialized: true,
+          }));
+          
+          const { queryClient } = await import("@/shared/lib/queryClient");
+          queryClient.invalidateQueries();
+          
+          window.dispatchEvent(new CustomEvent("ROLLOVER_COMPLETE"));
+        }, 2000);
+      },
     }),
     {
       name: "enrollpro-settings",
@@ -144,7 +201,14 @@ export const useSettingsStore = create<SettingsState>()(
       // historicalCorrectionToken is ephemeral — never persist across page loads
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { historicalCorrectionToken, historicalCorrectionExpiresAt, activeCorrection, ...rest } = state;
+        const {
+          historicalCorrectionToken,
+          historicalCorrectionExpiresAt,
+          activeCorrection,
+          isSwitchingSchoolYear,
+          switchingToSchoolYearLabel,
+          ...rest
+        } = state;
         return rest;
       },
     },

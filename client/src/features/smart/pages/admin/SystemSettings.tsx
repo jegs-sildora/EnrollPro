@@ -396,7 +396,7 @@ export default function SystemSettings() {
       </div>
 
       {/* School Information */}
-      <Card id="school" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden">
+      <Card id="school" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden">
         <CardHeader className="px-6 py-4 border-b border-gray-100" style={{ background: `linear-gradient(to right, ${themeColors.primary}12, ${themeColors.primary}08)` }}>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.primary}20`, color: themeColors.primary }}>
@@ -484,7 +484,7 @@ export default function SystemSettings() {
       </Card>
 
       {/* Branding & Theme */}
-      <Card id="branding" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden">
+      <Card id="branding" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden">
         <CardHeader className="px-6 py-4 border-b border-gray-100" style={{ background: `linear-gradient(to right, ${themeColors.primary}12, ${themeColors.primary}08)` }}>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.primary}20`, color: themeColors.primary }}>
@@ -625,7 +625,7 @@ export default function SystemSettings() {
       </Card>
 
       {/* Academic Settings */}
-      <Card id="academic" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden">
+      <Card id="academic" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden">
         <CardHeader className="px-6 py-4 border-b border-gray-100" style={{ background: `linear-gradient(to right, ${themeColors.primary}10, ${themeColors.primary}08)` }}>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.primary}20`, color: themeColors.primary }}>
@@ -812,7 +812,7 @@ export default function SystemSettings() {
       </Card>
 
       {/* System Configuration */}
-      <Card id="system" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden">
+      <Card id="system" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden">
         <CardHeader className="px-6 py-4 border-b border-gray-100" style={{ background: `linear-gradient(to right, ${themeColors.secondary}10, ${themeColors.secondary}08)` }}>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.secondary}20`, color: themeColors.secondary }}>
@@ -868,7 +868,7 @@ export default function SystemSettings() {
       </Card>
 
       {/* Security & Backup */}
-      <Card id="security" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden">
+      <Card id="security" className="p-0 gap-0 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden">
         <CardHeader className="px-6 py-4 border-b border-gray-100" style={{ background: `linear-gradient(to right, ${themeColors.primary}12, ${themeColors.primary}08)` }}>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.primary}20`, color: themeColors.primary }}>

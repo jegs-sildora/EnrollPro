@@ -107,7 +107,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
       />
 
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl login-float" />
+        <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-muted/10 blur-3xl login-float" />
         <div
           className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float"
           style={{
@@ -186,8 +186,8 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
           ].map((feature) => (
             <div
               key={feature.title}
-              className="flex items-center gap-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 p-4 transition-all shadow-sm group">
-              <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              className="flex items-center gap-4 rounded-xl bg-muted/5 backdrop-blur-sm border border-white/10 hover:bg-muted/10 hover:border-white/20 p-4 transition-all shadow-sm group">
+              <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-muted/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <feature.icon className="w-6 h-6" />
               </div>
               <div className="min-w-0">
@@ -480,7 +480,7 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 w-full max-w-[420px]">
-          <Card className="border border-slate-200/50 shadow-xl bg-white/95 backdrop-blur-xl rounded-2xl overflow-hidden animate-scale-in">
+          <Card className="border border-slate-200/50 shadow-xl bg-muted/95 backdrop-blur-xl rounded-2xl overflow-hidden animate-scale-in">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div
                 className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"

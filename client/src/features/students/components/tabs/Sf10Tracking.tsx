@@ -161,7 +161,7 @@ export function Sf10Tracking({
                 "overflow-hidden transition-all",
                 req.status === "SENT"
                   ? "bg-emerald-50/30 border-emerald-100"
-                  : "bg-white",
+                  : "bg-muted",
               )}>
               <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">

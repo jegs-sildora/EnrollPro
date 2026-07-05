@@ -64,10 +64,10 @@ function RadioIndicator({ checked }: { checked: boolean }) {
         "flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-150",
         checked
           ? "border-red-700 bg-red-700"
-          : "border-slate-300 bg-white group-hover:border-red-400",
+          : "border-slate-300 bg-muted group-hover:border-red-400",
       )}
     >
-      {checked && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+      {checked && <span className="w-1.5 h-1.5 rounded-full bg-muted" />}
     </span>
   )
 }
@@ -322,7 +322,7 @@ export function AssignAdviserModal({
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+                      "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-muted shadow-sm transition-transform duration-200",
                       showAssigned ? "translate-x-4" : "translate-x-0",
                     )}
                   />

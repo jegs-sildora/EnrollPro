@@ -144,7 +144,7 @@ export function OneTimePinSuccessDialog({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-white p-4 text-center">
+          <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-muted p-4 text-center">
             <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
               Learner Portal One-Time PIN
             </p>

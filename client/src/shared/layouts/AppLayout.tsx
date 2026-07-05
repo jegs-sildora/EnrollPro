@@ -89,6 +89,7 @@ import { NoSchoolYearState } from "@/shared/components/NoSchoolYearState";
 import { HistoricalBanner } from "../components/HistoricalBanner";
 import { useHistoricalReadOnly } from "../hooks/useHistoricalReadOnly";
 import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionModal";
+import { SchoolYearTransitionLoader } from "@/shared/components/SchoolYearTransitionLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -183,8 +184,12 @@ function UserNav() {
 }
 
 function SYSwitcher() {
-  const { activeSchoolYearId, viewingSchoolYearId, setViewingSY } =
-    useSettingsStore();
+  const {
+    activeSchoolYearId,
+    activeSchoolYearLabel,
+    viewingSchoolYearId,
+    triggerSchoolYearSwitch,
+  } = useSettingsStore();
   const { hasOverride } = useHistoricalReadOnly();
   const [years, setYears] = useState<SchoolYearItem[]>([]);
   const [open, setOpen] = useState(false);
@@ -254,15 +259,11 @@ function SYSwitcher() {
       });
       return;
     }
-    setViewingSY(
-      y.id === activeSchoolYearId ? null : y.id,
-      y.id === activeSchoolYearId ? null : y.status,
-      y.id === activeSchoolYearId ? null : y.yearLabel,
-    );
     setOpen(false);
-    // Trigger a full reload to ensure all components re-fetch data
-    // using the new school year context header.
-    setTimeout(() => window.location.reload(), 50);
+    const targetId = y.id === activeSchoolYearId ? null : y.id;
+    const targetStatus = y.id === activeSchoolYearId ? null : y.status;
+    const targetLabel = y.id === activeSchoolYearId ? activeSchoolYearLabel : y.yearLabel;
+    triggerSchoolYearSwitch(targetId, targetStatus, targetLabel);
   };
 
   // Don't return null if initialized but empty, show the "No School Year Set" button
@@ -275,7 +276,7 @@ function SYSwitcher() {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+              className="flex items-center gap-3 px-4 py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
               <Calendar className="text-foreground w-4 h-4" />
               <span className="text-sm text-foreground whitespace-nowrap font-extrabold">
@@ -487,7 +488,7 @@ function AppSidebar() {
             <SidebarMenuItem>
               <div className="flex items-center transition-all duration-300 ease-in-out group-data-[state=expanded]:gap-3 group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:justify-center">
                 {logoUrl ? (
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-white p-1">
+                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-muted p-1">
                     <img
                       src={`${API_BASE}${logoUrl}`}
                       alt="Logo"
@@ -746,6 +747,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     activeSchoolYearId,
     viewingSchoolYearId,
     systemPhase,
+    isSwitchingSchoolYear,
+    switchingToSchoolYearLabel,
   } = useSettingsStore();
   const { width } = useWindowSize();
   const accentHsl =
@@ -753,6 +756,21 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleRolloverComplete = () => {
+      sileo.success({
+        title: "New School Year Ready",
+        description: "The new school year is active. The dashboard has been refreshed.",
+      });
+      navigate("/dashboard");
+    };
+
+    window.addEventListener("ROLLOVER_COMPLETE", handleRolloverComplete);
+    return () => {
+      window.removeEventListener("ROLLOVER_COMPLETE", handleRolloverComplete);
+    };
+  }, [navigate]);
 
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
@@ -766,6 +784,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     redirectLabel: string;
   } | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
+
+
 
   useEffect(() => {
     const currentPhase = systemPhase || "OFFICIAL_ENROLLMENT";
@@ -956,7 +976,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         <AnimatePresence mode="wait">
           <PageTransition
             routeKey={location.pathname}
-            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
+            className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />
             ) : (
@@ -966,6 +986,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         </AnimatePresence>
       </SidebarInset>
 
+      <AnimatePresence>
+        {isSwitchingSchoolYear && (
+          <SchoolYearTransitionLoader targetLabel={switchingToSchoolYearLabel} />
+        )}
+      </AnimatePresence>
     </SidebarProvider>
   );
 }

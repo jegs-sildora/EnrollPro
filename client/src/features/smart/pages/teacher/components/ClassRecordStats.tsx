@@ -22,9 +22,9 @@ export function ClassRecordStats({ avg, passed, total, highest }: ClassRecordSta
         { label: "Highest Grade", value: highest, icon: Award, color: "amber" },
         { label: "Needs Support", value: needsSupport, icon: TrendingDown, color: "rose" },
       ].map((stat) => (
-        <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-[2rem] bg-white overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+        <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-[2rem] bg-muted overflow-hidden group hover:-translate-y-1 transition-all duration-300">
           <CardContent className="p-7 flex flex-col justify-between h-full">
-            <div className="p-3 rounded-2xl w-fit mb-4 bg-slate-50 group-hover:bg-white transition-colors shadow-sm">
+            <div className="p-3 rounded-2xl w-fit mb-4 bg-slate-50 group-hover:bg-muted transition-colors shadow-sm">
               <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
             </div>
             <div>

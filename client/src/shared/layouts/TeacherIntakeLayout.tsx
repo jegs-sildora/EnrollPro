@@ -132,7 +132,7 @@ export default function TeacherIntakeLayout() {
         {/* School identity */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           {logoUrl ? (
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border bg-white p-0.5 shrink-0">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border bg-muted p-0.5 shrink-0">
               <img
                 src={`${API_BASE}${logoUrl}`}
                 alt="School Logo"

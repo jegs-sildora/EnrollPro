@@ -416,7 +416,7 @@ export default function TrackApplication({
                     "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
                     config.color,
                   )}>
-                  <div className="p-4 rounded-full bg-white shadow-sm border border-current/20">
+                  <div className="p-4 rounded-full bg-muted shadow-sm border border-current/20">
                     {Icon && <Icon className="w-10 h-10" />}
                   </div>
                   <div>
@@ -464,7 +464,7 @@ export default function TrackApplication({
 
 
 
-                  <div className="p-5 bg-white border border-border rounded-2xl space-y-1 text-center md:col-span-3">
+                  <div className="p-5 bg-muted border border-border rounded-2xl space-y-1 text-center md:col-span-3">
                     <p className="text-[0.625rem] font-extrabold uppercase text-foreground ">
                       Date Submitted
                     </p>
@@ -474,7 +474,7 @@ export default function TrackApplication({
                   </div>
                 </div>
 
-                <div className="p-6 bg-white border border-border rounded-2xl space-y-4">
+                <div className="p-6 bg-muted border border-border rounded-2xl space-y-4">
                   <h4 className="text-base leading-tight font-extrabold uppercase  text-foreground">
                     Dynamic Next Steps
                   </h4>

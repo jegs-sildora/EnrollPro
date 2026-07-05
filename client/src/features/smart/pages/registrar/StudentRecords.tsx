@@ -116,7 +116,7 @@ const FormStatusCard = ({ label, title, status, description }: {
   return (
     <div className={`p-3 rounded-xl border-2 ${config.bg} ${config.border} transition-all ${status === 'dev' ? 'opacity-70 grayscale-[0.5]' : ''}`}>
       <div className="flex items-center justify-between mb-1">
-        <Badge variant="outline" className={`${config.color} ${config.border} bg-white px-1.5 text-[10px]`}>{label}</Badge>
+        <Badge variant="outline" className={`${config.color} ${config.border} bg-muted px-1.5 text-[10px]`}>{label}</Badge>
         <Icon className={`w-4 h-4 ${config.color} ${status === 'dev' ? 'animate-spin-slow' : ''}`} />
       </div>
       <p className="font-extrabold text-gray-900 text-[11px] truncate leading-tight" title={title}>{title}</p>
@@ -376,7 +376,7 @@ export default function StudentRecords() {
       </div>
 
       {/* Main Table Card */}
-      <Card className="border-0 shadow-xl shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
+      <Card className="border-0 shadow-xl shadow-gray-200/50 bg-muted overflow-hidden rounded-2xl p-0">
         <CardHeader className="border-b border-gray-100 px-6 py-5" style={{ backgroundColor: `${colors.primary}08` }}>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -467,7 +467,7 @@ export default function StudentRecords() {
                     return (
                       <div
                         key={student.id}
-                        className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                        className="bg-muted border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -519,7 +519,7 @@ export default function StudentRecords() {
               <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-white border-b border-slate-100 hover:bg-white">
+                    <TableRow className="bg-muted border-b border-slate-100 hover:bg-muted">
                       <TableHead className="font-extrabold text-slate-800 py-4">LRN</TableHead>
                       <TableHead className="font-extrabold text-slate-800 py-4">Student Name</TableHead>
                       <TableHead className="font-extrabold text-slate-800 py-4">Gender</TableHead>
@@ -587,7 +587,7 @@ export default function StudentRecords() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewStudent(student)}
-                                  className="h-9 px-4 rounded-xl  transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100"
+                                  className="h-9 px-4 rounded-xl  transition-all hover:bg-muted hover:shadow-sm border border-transparent hover:border-slate-100"
                                   style={{ ['--hover-text' as any]: colors.primary }}
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
@@ -616,7 +616,7 @@ export default function StudentRecords() {
                 <div className="flex items-center gap-2">
                   <span>Rows per page:</span>
                   <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
-                    <SelectTrigger className="h-9 w-20 rounded-lg border-slate-200 bg-white">
+                    <SelectTrigger className="h-9 w-20 rounded-lg border-slate-200 bg-muted">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -635,7 +635,7 @@ export default function StudentRecords() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage(1)}
                 >
@@ -644,7 +644,7 @@ export default function StudentRecords() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
                 >
@@ -662,7 +662,7 @@ export default function StudentRecords() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
                 >
@@ -671,7 +671,7 @@ export default function StudentRecords() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage(totalPages)}
                 >
@@ -831,7 +831,7 @@ export default function StudentRecords() {
                 <>
                   {/* Current Year Grades (SF9 Preview) */}
                   {sf9Data && (
-                    <div className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-md">
+                    <div className="bg-muted border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-md">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
                           <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
@@ -872,7 +872,7 @@ export default function StudentRecords() {
 
                   {/* Academic History (SF10 Preview) */}
                   {sf10Data && sf10Data.schoolRecords.length > 0 && (
-                    <div className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-md">
+                    <div className="bg-muted border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-md">
                       <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                         <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: colors.primary }} />
                         <h3 className="font-extrabold text-gray-900 text-lg sm:text-xl">Academic History (SF10)</h3>
@@ -882,7 +882,7 @@ export default function StudentRecords() {
                           <div key={record.schoolYear} className="border-2 rounded-xl p-4 sm:p-6 shadow-sm" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}30` }}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-3">
                               <h4 className="font-extrabold text-gray-900 text-base sm:text-lg">S.Y. {record.schoolYear} - Grade {record.gradeLevel.replace('GRADE_', '')}</h4>
-                              <Badge variant="outline" className="bg-white text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4 w-fit">{record.section}</Badge>
+                              <Badge variant="outline" className="bg-muted text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4 w-fit">{record.section}</Badge>
                             </div>
                             <div className="flex flex-wrap items-center gap-3 sm:gap-5">
                               <span className="font-semibold text-gray-900 text-sm sm:text-base">GWA: <strong className="text-xl sm:text-2xl text-blue-700 ml-1">{record.generalAverage?.toFixed(2) ?? "-"}</strong></span>

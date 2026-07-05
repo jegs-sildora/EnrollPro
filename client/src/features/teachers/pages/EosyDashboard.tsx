@@ -234,7 +234,7 @@ export default function TeacherEosyDashboard() {
                 min="60"
                 max="100"
                 className={cn(
-                  "h-8 w-24 text-center font-extrabold text-base leading-tight bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                  "h-8 w-24 text-center font-extrabold text-base leading-tight bg-muted border rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
                   isFailing ? "text-red-600 border-red-300 focus:ring-red-500" :
                     isScpWarning ? "text-amber-600 border-amber-500 focus:ring-amber-500" : "text-gray-900 border-gray-300",
                   "disabled:opacity-100 disabled:bg-gray-50"
@@ -449,7 +449,7 @@ export default function TeacherEosyDashboard() {
       <div className="flex flex-col min-h-0 pb-6">
         <PhaseBanner />
 
-        <div className="bg-white border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
+        <div className="bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
           <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
             {/* Header / Actions Row */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">

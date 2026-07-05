@@ -92,7 +92,7 @@ function AssignmentCard({
   const containerClass = archived
     ? "border border-rose-200 shadow-xl shadow-rose-100/50 hover:shadow-2xl hover:shadow-rose-200"
     : "border-0 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-100";
-  const cardBg = "bg-white";
+  const cardBg = "bg-muted";
   const sectionText = archived ? "text-rose-500" : "text-slate-500";
   const mutedText = archived ? "text-rose-400" : "text-slate-400";
   const iconClass = archived
@@ -320,7 +320,7 @@ export default function ClassRecordsList() {
         </div>
       </div>
 
-      <Card className="border-0 shadow-2xl shadow-slate-200/50 bg-white/90 backdrop-blur-md rounded-[2.5rem] overflow-hidden">
+      <Card className="border-0 shadow-2xl shadow-slate-200/50 bg-muted/90 backdrop-blur-md rounded-[2.5rem] overflow-hidden">
         <CardContent className="p-8">
           <div className="flex flex-col lg:flex-row gap-6 items-center">
             <div className="relative flex-1 w-full group">
@@ -331,7 +331,7 @@ export default function ClassRecordsList() {
                 placeholder="Search by subject, section, or grade..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-16 h-14 bg-slate-50/50 border-0 hover:bg-slate-50 focus:bg-white focus:ring-4 focus:ring-indigo-50 rounded-2xl text-base font-extrabold transition-all placeholder:text-slate-400"
+                className="pl-16 h-14 bg-slate-50/50 border-0 hover:bg-slate-50 focus:bg-muted focus:ring-4 focus:ring-indigo-50 rounded-2xl text-base font-extrabold transition-all placeholder:text-slate-400"
               />
             </div>
 
@@ -345,7 +345,7 @@ export default function ClassRecordsList() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-11 w-11 rounded-xl transition-all ${viewMode === "grid" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                  className={`h-11 w-11 rounded-xl transition-all ${viewMode === "grid" ? "bg-muted text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                   onClick={() => setViewMode("grid")}
                 >
                   <LayoutGrid className="w-5 h-5" />
@@ -353,7 +353,7 @@ export default function ClassRecordsList() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-11 w-11 rounded-xl transition-all ${viewMode === "list" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                  className={`h-11 w-11 rounded-xl transition-all ${viewMode === "list" ? "bg-muted text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                   onClick={() => setViewMode("list")}
                 >
                   <List className="w-5 h-5" />
@@ -434,7 +434,7 @@ export default function ClassRecordsList() {
       {viewMode === "list" && (
         <div className="space-y-10">
           {activeClasses.length > 0 && (
-            <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+            <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted">
               <div className="divide-y divide-slate-50">
                 {activeClasses.map((assignment) => (
                   <Link key={assignment.id} to={`/teacher/records/${assignment.id}`} className="block group">
@@ -462,7 +462,7 @@ export default function ClassRecordsList() {
                         </div>
 
                         <div className="hidden lg:block">
-                          <div className="px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 group-hover:bg-white transition-colors">
+                          <div className="px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 group-hover:bg-muted transition-colors">
                             <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-1 text-center">WW / PT / TA</p>
                             <p className="text-sm text-slate-900 font-extrabold font-mono tracking-tighter text-center">
                               {assignment.subject.writtenWorkWeight} / {assignment.subject.perfTaskWeight} / {assignment.subject.quarterlyAssessWeight}
@@ -521,7 +521,7 @@ export default function ClassRecordsList() {
               </div>
 
               {isArchivedExpanded && (
-                <Card className="border-0 shadow-2xl shadow-rose-200/40 rounded-[2.5rem] overflow-hidden bg-white border border-rose-100 animate-in fade-in slide-in-from-top-4 duration-500">
+                <Card className="border-0 shadow-2xl shadow-rose-200/40 rounded-[2.5rem] overflow-hidden bg-muted border border-rose-100 animate-in fade-in slide-in-from-top-4 duration-500">
                   <div className="divide-y divide-rose-50">
                     {archivedClasses.map((assignment) => (
                       <Link key={assignment.id} to={`/teacher/records/${assignment.id}`} className="block group">
@@ -554,7 +554,7 @@ export default function ClassRecordsList() {
                             </div>
 
                             <div className="hidden lg:block">
-                              <div className="px-5 py-3 rounded-2xl bg-rose-50 border border-rose-100 group-hover:bg-white transition-colors">
+                              <div className="px-5 py-3 rounded-2xl bg-rose-50 border border-rose-100 group-hover:bg-muted transition-colors">
                                 <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-1 text-center">WW / PT / TA</p>
                                 <p className="text-sm text-slate-900 font-extrabold font-mono tracking-tighter text-center">
                                   {assignment.subject.writtenWorkWeight} / {assignment.subject.perfTaskWeight} / {assignment.subject.quarterlyAssessWeight}
@@ -592,7 +592,7 @@ export default function ClassRecordsList() {
       )}
 
       {activeClasses.length === 0 && archivedClasses.length === 0 && (
-        <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] bg-white overflow-hidden">
+        <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] bg-muted overflow-hidden">
           <CardContent className="py-32 text-center">
             <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
               <BookOpen className="w-10 h-10 text-slate-200" />
@@ -610,7 +610,7 @@ export default function ClassRecordsList() {
       <Dialog open={!!assignmentToDelete} onOpenChange={(open) => !open && setAssignmentToDelete(null)}>
         <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden">
           <div className="bg-rose-600 p-8 text-white">
-            <div className="w-16 h-16 bg-white/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
+            <div className="w-16 h-16 bg-muted/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
               <Trash2 className="w-8 h-8 text-white" />
             </div>
             <DialogHeader className="p-0 text-left">
@@ -620,7 +620,7 @@ export default function ClassRecordsList() {
               </DialogDescription>
             </DialogHeader>
           </div>
-          <DialogFooter className="p-8 bg-white flex flex-col sm:flex-row gap-4">
+          <DialogFooter className="p-8 bg-muted flex flex-col sm:flex-row gap-4">
             <Button
               variant="outline"
               onClick={() => setAssignmentToDelete(null)}
@@ -650,7 +650,7 @@ export default function ClassRecordsList() {
       <Dialog open={confirmDeleteAll} onOpenChange={setConfirmDeleteAll}>
         <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden">
           <div className="bg-rose-600 p-8 text-white">
-            <div className="w-16 h-16 bg-white/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
+            <div className="w-16 h-16 bg-muted/20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md">
               <Trash2 className="w-8 h-8 text-white" />
             </div>
             <DialogHeader className="p-0 text-left">
@@ -660,7 +660,7 @@ export default function ClassRecordsList() {
               </DialogDescription>
             </DialogHeader>
           </div>
-          <DialogFooter className="p-8 bg-white flex flex-col sm:flex-row gap-4">
+          <DialogFooter className="p-8 bg-muted flex flex-col sm:flex-row gap-4">
             <Button
               variant="outline"
               onClick={() => setConfirmDeleteAll(false)}

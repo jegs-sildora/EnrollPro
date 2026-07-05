@@ -743,8 +743,15 @@ export async function syncBOSYQueue(
     );
     if (!targetGradeLevelId) continue;
 
-    const newApp = await prisma.enrollmentApplication.create({
-      data: {
+    const newApp = await prisma.enrollmentApplication.upsert({
+      where: {
+        uq_enrollment_learner_sy: {
+          learnerId: record.learnerId,
+          schoolYearId,
+        },
+      },
+      update: {},
+      create: {
         learnerId: record.learnerId,
         schoolYearId,
         gradeLevelId: targetGradeLevelId,

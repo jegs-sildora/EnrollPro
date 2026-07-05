@@ -238,7 +238,7 @@ export default function Attendance() {
       </div>
 
       {/* Control Panel - Refined Glass Style */}
-      <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white/90 backdrop-blur-md">
+      <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-muted/90 backdrop-blur-md">
         <CardContent className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <div className="space-y-2">
@@ -339,7 +339,7 @@ export default function Attendance() {
             { label: "LATE", value: stats.late, icon: Clock, color: "amber" },
             { label: "EXCUSED", value: stats.excused, icon: FileText, color: "indigo" },
           ].map((stat) => (
-            <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-3xl bg-white overflow-hidden">
+            <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-3xl bg-muted overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -357,7 +357,7 @@ export default function Attendance() {
       )}
 
       {/* Main Table - Modern Corporate List */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted">
         <CardHeader className="p-8 border-b border-slate-50 bg-slate-50/30">
           <div className="flex items-center justify-between">
             <div>
@@ -443,7 +443,7 @@ export default function Attendance() {
             </div>
           ) : (
             <div className="py-32 text-center bg-slate-50/50">
-              <div className="w-20 h-20 bg-white rounded-[2rem] shadow-sm flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-muted rounded-[2rem] shadow-sm flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-slate-200" />
               </div>
               <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-widest mb-2">No Records Selected</h3>

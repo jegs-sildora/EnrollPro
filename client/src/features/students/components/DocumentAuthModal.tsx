@@ -86,7 +86,7 @@ export function DocumentAuthModal({
               <div
                 className={cn(
                   "flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
-                  documentType === "PSA" ? "border-primary bg-primary/10" : "border-slate-100 bg-white hover:border-slate-200"
+                  documentType === "PSA" ? "border-primary bg-primary/10" : "border-slate-100 bg-muted hover:border-slate-200"
                 )}
                 onClick={() => setDocumentType("PSA")}
               >
@@ -100,7 +100,7 @@ export function DocumentAuthModal({
               <div
                 className={cn(
                   "flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
-                  documentType === "SECONDARY" ? "border-amber-500 bg-amber-50/50" : "border-slate-100 bg-white hover:border-slate-200"
+                  documentType === "SECONDARY" ? "border-amber-500 bg-amber-50/50" : "border-slate-100 bg-muted hover:border-slate-200"
                 )}
                 onClick={() => setDocumentType("SECONDARY")}
               >

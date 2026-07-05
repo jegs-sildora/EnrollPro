@@ -291,7 +291,7 @@ export const MultiStepLoader = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35, ease: "easeInOut" }}
-          className="fixed inset-0 z-[100] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white/80 backdrop-blur-2xl"
+          className="fixed inset-0 z-[100] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-muted/80 backdrop-blur-2xl"
         >
           <div className="absolute inset-0 pointer-events-none">
             <svg

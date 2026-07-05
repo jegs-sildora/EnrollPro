@@ -46,7 +46,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
       sileo.error({ title: "Validation Error", description: "Transfer out date is required." });
       return;
     }
-    
+
     let parsedAve: number | undefined;
     if (finalAverage) {
       parsedAve = parseFloat(finalAverage);
@@ -95,7 +95,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 my-4 bg-white p-4 rounded-md border border-amber-100 shadow-sm">
+        <div className="space-y-4 my-4 bg-muted p-4 rounded-md border border-amber-100 shadow-sm">
           <div className="space-y-1">
             <Label className="font-extrabold text-amber-900">Learner</Label>
             <p className="text-base font-medium">

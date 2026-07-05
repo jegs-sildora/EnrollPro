@@ -22,7 +22,7 @@ export function EnrollmentWorkflowTabs({
         onValueChange(nextValue as EnrollmentSubMenu)
       }
       className="w-full">
-      <TabsList className="grid w-full h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm grid-cols-2 lg:grid-cols-4">
+      <TabsList className="grid w-full h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm grid-cols-2 lg:grid-cols-4">
         {ENROLLMENT_SUB_MENU_OPTIONS.map((option) => (
           <TabsTrigger
             key={option.value}

@@ -326,7 +326,7 @@ export function SectioningWorkspace() {
       <Tabs value={activeGradeLevelId} onValueChange={(val) => {
         if (!isLockedIn) setActiveGradeLevelId(val);
       }} className="flex-shrink-0 mb-6">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger
               key={g.id}
@@ -528,7 +528,7 @@ export function SectioningWorkspace() {
                       className={cn(
                         "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
                         !isProgramCompatible
-                          && "cursor-not-allowed opacity-45",
+                        && "cursor-not-allowed opacity-45",
                         isSelected
                           ? "bg-primary/5 border-primary shadow-sm"
                           : "bg-background hover:bg-muted/50 border-border"

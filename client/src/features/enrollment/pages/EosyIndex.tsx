@@ -260,7 +260,7 @@ function GeofencingPopover({
           </div>
 
           <div className="absolute top-[90px] left-[120px] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-sky-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+            <div className="w-1.5 h-1.5 bg-muted rounded-full" />
           </div>
         </div>
 
@@ -783,21 +783,16 @@ export default function EosyUpdating() {
 
       const nextSy = finalizeRes.data.nextSchoolYear;
       if (nextSy) {
-        useSettingsStore.getState().setSettings({
+        useSettingsStore.getState().triggerRolloverSwitch({
           activeSchoolYearId: nextSy.id,
           activeSchoolYearLabel: nextSy.yearLabel,
           activeSchoolYearStatus: nextSy.status,
           systemPhase: "OFFICIAL_ENROLLMENT",
           systemStatus: "ACTIVE",
-        });
+        }, nextSy.yearLabel);
+      } else {
+        window.dispatchEvent(new CustomEvent("ROLLOVER_COMPLETE"));
       }
-      useSettingsStore.getState().setViewingSY(null, null, null);
-
-      navigate("/dashboard", { replace: true });
-      sileo.success({
-        title: "New School Year Ready",
-        description: "The new school year is active. The dashboard has been refreshed.",
-      });
     } catch (err) {
       toastApiError(err as Parameters<typeof toastApiError>[0]);
       setTransitionLoading(false);
@@ -1324,7 +1319,7 @@ export default function EosyUpdating() {
         {/* ── Grade Tabs + Transition Button Row ── */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
           <div className="flex items-center gap-4 mb-4 flex-shrink-0">
-            <TabsList className="flex-1 flex flex-wrap sm:flex-nowrap h-auto gap-1 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+            <TabsList className="flex-1 flex flex-wrap sm:flex-nowrap h-auto gap-1 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
               {gradeLevels.map((gl) => (
                 <TabsTrigger
                   key={gl.id}
@@ -1377,7 +1372,7 @@ export default function EosyUpdating() {
                 </div>
               )}
 
-              <div className="bg-white border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
+              <div className="bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
                 <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
                   <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
                     {/* Left Side Actions */}
@@ -1388,7 +1383,7 @@ export default function EosyUpdating() {
                           placeholder="Search learner name or LRN..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 pr-4 bg-white/50 focus:bg-white transition-colors h-10 w-full font-extrabold"
+                          className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
                         />
                       </div>
                     </div>
@@ -1577,7 +1572,7 @@ export default function EosyUpdating() {
               disabled={finalizeLoading}
               className={cn(
                 "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "border border-gray-200 bg-white text-foreground",
+                "border border-gray-200 bg-muted text-foreground",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]"
               )}
@@ -1618,7 +1613,7 @@ export default function EosyUpdating() {
       />
 
       <Dialog open={sf5WatermarkOpen} onOpenChange={setSf5WatermarkOpen}>
-        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden bg-white border border-gray-300 shadow-2xl">
+        <DialogContent className="w-full max-w-3xl p-0 overflow-hidden bg-muted border border-gray-300 shadow-2xl">
           <DialogHeader className="p-4 border-b bg-gray-50 flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="text-lg font-extrabold">School Form 5 (SF5) Preview</DialogTitle>
@@ -1632,7 +1627,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="relative h-[600px] w-full bg-gray-100 p-8 flex items-center justify-center overflow-hidden">
             {/* The Document Paper */}
-            <div className="relative bg-white w-full h-full shadow-lg border border-gray-200 p-8 flex flex-col justify-between">
+            <div className="relative bg-muted w-full h-full shadow-lg border border-gray-200 p-8 flex flex-col justify-between">
 
               {/* WATERMARK OVERLAY */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-hidden">
@@ -1728,7 +1723,7 @@ export default function EosyUpdating() {
                 placeholder="Enter 6-digit Security PIN"
                 value={reopenPin}
                 onChange={(e) => setReopenPin(e.target.value)}
-                className="bg-white border-border"
+                className="bg-muted border-border"
               />
             </div>
             <div className="space-y-1">
@@ -1738,7 +1733,7 @@ export default function EosyUpdating() {
                 placeholder="Reason for reopening (min. 10 characters)"
                 value={reopenJustification}
                 onChange={(e) => setReopenJustification(e.target.value)}
-                className="bg-white border-border"
+                className="bg-muted border-border"
               />
             </div>
           </div>
@@ -1753,7 +1748,7 @@ export default function EosyUpdating() {
               disabled={reopenLoading}
               className={cn(
                 "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "border border-gray-200 bg-white text-foreground",
+                "border border-gray-200 bg-muted text-foreground",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]"
               )}
@@ -1817,7 +1812,7 @@ export default function EosyUpdating() {
               disabled={transitionLoading}
               className={cn(
                 "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "border border-gray-200 bg-white text-foreground",
+                "border border-gray-200 bg-muted text-foreground",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]"
               )}

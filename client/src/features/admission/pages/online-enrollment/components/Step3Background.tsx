@@ -21,7 +21,7 @@ export default function Step3Background() {
   return (
     <div className="space-y-12">
       <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20  rounded-xl">
-        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-border">
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shadow-sm border border-border">
           <Lock className="w-5 h-5 text-primary" />
         </div>
         <div>

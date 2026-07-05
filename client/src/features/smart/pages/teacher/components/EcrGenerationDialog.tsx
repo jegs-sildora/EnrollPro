@@ -12,7 +12,7 @@ interface EcrGenerationDialogProps {
 export function EcrGenerationDialog({ open, percentage, progress }: EcrGenerationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={() => { }}>
-      <DialogContent className="w-full max-w-3xl rounded-[2.5rem] border-0 shadow-2xl p-0 overflow-hidden bg-white">
+      <DialogContent className="w-full max-w-3xl rounded-[2.5rem] border-0 shadow-2xl p-0 overflow-hidden bg-muted">
         <div className="p-10 text-center">
           <div className="relative w-32 h-32 mx-auto mb-8">
             <svg className="w-full h-full -rotate-90">
@@ -39,7 +39,7 @@ export function EcrGenerationDialog({ open, percentage, progress }: EcrGeneratio
           <h3 className="text-xl font-extrabold text-slate-900 mb-2">Generating Workbook</h3>
           <p className="text-slate-500  text-sm mb-8 px-4">{progress}</p>
           <div className="bg-slate-50 rounded-3xl p-6 text-left border border-slate-100 flex items-start gap-5">
-            <div className="p-3 rounded-2xl bg-white shadow-sm">
+            <div className="p-3 rounded-2xl bg-muted shadow-sm">
               <FileSpreadsheet className="w-6 h-6 text-emerald-500" />
             </div>
             <div className="space-y-1">

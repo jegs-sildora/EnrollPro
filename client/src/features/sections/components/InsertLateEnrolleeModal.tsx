@@ -194,7 +194,7 @@ export function InsertLateEnrolleeModal({
             {classOpeningDate && (
               <Badge
                 variant="outline"
-                className="bg-white font-extrabold text-base uppercase border-border px-2">
+                className="bg-muted font-extrabold text-base uppercase border-border px-2">
                 Classes Started:{" "}
                 {format(new Date(classOpeningDate), "MMM d, yyyy")}
               </Badge>

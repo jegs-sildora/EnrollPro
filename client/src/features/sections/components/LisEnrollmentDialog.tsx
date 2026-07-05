@@ -272,7 +272,7 @@ export function LisEnrollmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl backdrop-blur-md bg-white/95 rounded-2xl">
+      <DialogContent className="w-full max-w-3xl p-0 overflow-hidden border-none shadow-2xl backdrop-blur-md bg-muted/95 rounded-2xl">
         {/* Header with gradient strip */}
         <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
@@ -294,7 +294,7 @@ export function LisEnrollmentDialog({
         {/* Tabs & Content */}
         <Tabs defaultValue="prospective" onValueChange={setActiveTab} className="w-full">
           <div className="px-6 pt-2 bg-slate-50/50 border-b border-slate-100">
-            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-2 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-2 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
               <TabsTrigger
                 value="prospective"
                 className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg text-base uppercase px-4"
@@ -347,7 +347,7 @@ export function LisEnrollmentDialog({
                   </p>
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-muted">
                   <table className="w-full text-left border-collapse text-base leading-tight">
                     <thead className="bg-slate-50 text-[10px] uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200">
                       <tr>
@@ -471,7 +471,7 @@ export function LisEnrollmentDialog({
                     </Button>
                   </div>
 
-                  <div className="p-3 bg-white rounded-lg border border-slate-200/60 shadow-sm flex items-center gap-2">
+                  <div className="p-3 bg-muted rounded-lg border border-slate-200/60 shadow-sm flex items-center gap-2">
                     <HelpCircle className="h-4 w-4 text-emerald-600 shrink-0" />
                     <p className="text-[11px] leading-relaxed text-slate-600 font-extrabold">
                       {selectedSearchLearner.enrollmentApplicationId
@@ -496,7 +496,7 @@ export function LisEnrollmentDialog({
                   </div>
                 )
               ) : (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white max-h-[220px] overflow-y-auto">
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-muted max-h-[220px] overflow-y-auto">
                   <table className="w-full text-left border-collapse text-base leading-tight">
                     <thead className="bg-slate-50 text-[10px] uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200 sticky top-0">
                       <tr>
@@ -548,7 +548,7 @@ export function LisEnrollmentDialog({
               value={officialEnrollmentDate}
               max={format(new Date(), "yyyy-MM-dd")}
               onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-base font-extrabold text-slate-800 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="flex h-9 w-full rounded-md border border-slate-200 bg-muted px-3 py-1 text-base font-extrabold text-slate-800 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
@@ -575,7 +575,7 @@ export function LisEnrollmentDialog({
         {/* Footer */}
         <DialogFooter className="px-6 py-4 border-t border-slate-100 flex items-center justify-between sm:justify-between bg-slate-50/50 shrink-0">
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[10px] font-extrabold uppercase bg-white border-slate-200/80">
+            <Badge variant="outline" className="text-[10px] font-extrabold uppercase bg-muted border-slate-200/80">
               LIS Sync: Active
             </Badge>
           </div>

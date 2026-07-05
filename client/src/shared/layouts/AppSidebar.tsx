@@ -1,15 +1,15 @@
 import { Link, useLocation } from "react-router";
 import { cn } from "@/shared/lib/utils";
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarGroup, 
-  SidebarGroupContent, 
-  SidebarGroupLabel, 
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem, 
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarFooter
 } from "@/shared/ui/sidebar";
 import { useAuthStore } from "@/store/auth.slice";
@@ -33,7 +33,7 @@ function NavBrand({
         <img
           src={logoUrl}
           alt={`${schoolName || "School"} Logo`}
-          className="size-8 rounded shadow-sm object-contain bg-white"
+          className="size-8 rounded shadow-sm object-contain bg-muted"
         />
       ) : (
         <div className="flex size-8 shrink-0 items-center justify-center rounded bg-primary/10 shadow-sm ring-1 ring-primary/20">
@@ -68,7 +68,7 @@ export function AppSidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
-  
+
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
@@ -114,14 +114,14 @@ export function AppSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
-         <SidebarMenu>
+        <SidebarMenu>
           <SidebarMenuItem>
-             <SidebarMenuButton onClick={handleLogout} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 group-data-[collapsible=icon]:justify-center">
-                <LogOut className="size-4" />
-                <span className="group-data-[collapsible=icon]:hidden">Sign out</span>
-             </SidebarMenuButton>
+            <SidebarMenuButton onClick={handleLogout} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 group-data-[collapsible=icon]:justify-center">
+              <LogOut className="size-4" />
+              <span className="group-data-[collapsible=icon]:hidden">Sign out</span>
+            </SidebarMenuButton>
           </SidebarMenuItem>
-         </SidebarMenu>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

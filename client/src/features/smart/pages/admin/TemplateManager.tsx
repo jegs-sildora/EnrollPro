@@ -572,7 +572,7 @@ export default function TemplateManager() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-              className="px-3 py-2 border rounded-md text-sm bg-white"
+              className="px-3 py-2 border rounded-md text-sm bg-muted"
             >
               <option value="ALL">All Status</option>
               <option value="ACTIVE">Active</option>
@@ -581,7 +581,7 @@ export default function TemplateManager() {
             <select
               value={formFilter}
               onChange={(e) => setFormFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md text-sm bg-white"
+              className="px-3 py-2 border rounded-md text-sm bg-muted"
             >
               <option value="ALL">All Forms</option>
               {Array.from(new Set(templates.map((t) => t.formType))).sort().map((formType) => (
@@ -797,7 +797,7 @@ export default function TemplateManager() {
                     );
                   }
                 }}
-                className="w-full px-3 py-2.5 border rounded-md text-sm bg-white"
+                className="w-full px-3 py-2.5 border rounded-md text-sm bg-muted"
               >
                 <option value="">Select a form type...</option>
                 {FORM_TYPES.map((form) => (
@@ -1050,7 +1050,7 @@ export default function TemplateManager() {
                           id="previewSheet"
                           value={selectedPreviewSheet}
                           onChange={(e) => setSelectedPreviewSheet(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md text-sm bg-white"
+                          className="w-full px-3 py-2 border rounded-md text-sm bg-muted"
                         >
                           {viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.map((sheet: any) => (
                             <option key={sheet.name} value={sheet.name}>

@@ -52,10 +52,10 @@ export async function getPublicSettings(
     }
 
     const enrollmentPhase = contextSy
-      ? getEnrollmentPhase(contextSy)
+      ? getEnrollmentPhase(contextSy, settings.systemPhase)
       : "CLOSED";
     const isBosyEnrollmentOpen = contextSy
-      ? isRegularEnrollmentWindowOpen(contextSy)
+      ? isRegularEnrollmentWindowOpen(contextSy, settings.systemPhase)
       : false;
 
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;

@@ -45,7 +45,7 @@ export function ClassRecordHero({
 }: ClassRecordHeroProps) {
   return (
     <>
-      <div className="relative overflow-hidden bg-white border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
+      <div className="relative overflow-hidden bg-muted border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="flex items-center gap-6">

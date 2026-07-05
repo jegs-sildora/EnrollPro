@@ -352,342 +352,342 @@ export function VerificationWorkspace() {
         {/* Filter Toolbar */}
         <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6 shrink-0">
           <div className="relative w-full xl:w-84 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search by LRN, Last Name, or First Name..."
-            className="w-full h-10 pl-9 bg-white border-gray-300 font-semibold"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
-
-          <Select
-            value={intakeCategoryFilter}
-            onValueChange={(val) => setIntakeCategoryFilter(val)}
-          >
-            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-              <SelectValue placeholder="All Intake Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="leading-tight font-extrabold">All Intake Categories</SelectItem>
-              <SelectItem value="NEW_ENROLLEE" className="leading-tight font-extrabold">Incoming Grade 7 Feeder Graduates</SelectItem>
-              <SelectItem value="TRANSFEREE" className="leading-tight font-extrabold">External Transferees</SelectItem>
-              <SelectItem value="BALIK_ARAL" className="leading-tight font-extrabold">Returning Balik-Aral</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={programFilter}
-            onValueChange={(val) => setProgramFilter(val)}
-          >
-            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-              <SelectValue placeholder="All Programs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
-              <SelectItem value="REGULAR" className="leading-tight font-extrabold">Regular BEC</SelectItem>
-              <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
-              <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
-              <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={verificationStatusFilter}
-            onValueChange={(val) => setVerificationStatusFilter(val)}
-          >
-            <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="leading-tight font-extrabold">All Statuses</SelectItem>
-              <SelectItem value="PENDING" className="leading-tight font-extrabold">Pending Verification</SelectItem>
-              <SelectItem value="VERIFIED" className="leading-tight font-extrabold">Verified Enrolled</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {!isHistoricalReadOnly && (
-            <WalkInEncodePanel />
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 flex min-h-0">
-        {/* LEFT PANE */}
-        <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
-          <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                <FileText className="h-4 w-4 text-primary" />
-                Pending Verification
-              </CardTitle>
-              <Badge variant="outline" className="font-extrabold bg-background border-border">
-                {filteredVerifications.length} Queue
-              </Badge>
-            </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by LRN, Last Name, or First Name..."
+              className="w-full h-10 pl-9 bg-muted border-gray-300 font-semibold"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="flex-1 overflow-auto p-2 space-y-2">
-            {filteredVerifications.length === 0 ? (
-              <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground p-8 text-center">
-                <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
-                <span className="font-extrabold text-base leading-tight">No pending verifications found.</span>
-              </div>
-            ) : (
-              filteredVerifications.map((app) => (
-                <div
-                  key={app.id}
-                  onClick={() => handleSelect(app.id)}
-                  className={cn(
-                    "cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden",
-                    selectedAppId === app.id
-                      ? getGradeCardClasses(app.gradeLevel.name)
-                      : "bg-background hover:bg-muted/50 border-border"
-                  )}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")}>
-                      {app.learner.lastName}, {app.learner.firstName}
-                    </h4>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <Badge variant="outline" className={cn("text-[10px] uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
-                      {app.gradeLevel.name}
-                    </Badge>
-                    <div className="flex items-center text-[10px] text-muted-foreground font-extrabold">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {format(new Date(app.createdAt), "MMM d, h:mm a")}
-                    </div>
-                  </div>
-                </div>
-              ))
+
+          <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
+
+            <Select
+              value={intakeCategoryFilter}
+              onValueChange={(val) => setIntakeCategoryFilter(val)}
+            >
+              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                <SelectValue placeholder="All Intake Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="leading-tight font-extrabold">All Intake Categories</SelectItem>
+                <SelectItem value="NEW_ENROLLEE" className="leading-tight font-extrabold">Incoming Grade 7 Feeder Graduates</SelectItem>
+                <SelectItem value="TRANSFEREE" className="leading-tight font-extrabold">External Transferees</SelectItem>
+                <SelectItem value="BALIK_ARAL" className="leading-tight font-extrabold">Returning Balik-Aral</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={programFilter}
+              onValueChange={(val) => setProgramFilter(val)}
+            >
+              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                <SelectValue placeholder="All Programs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
+                <SelectItem value="REGULAR" className="leading-tight font-extrabold">Regular BEC</SelectItem>
+                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
+                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
+                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={verificationStatusFilter}
+              onValueChange={(val) => setVerificationStatusFilter(val)}
+            >
+              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="leading-tight font-extrabold">All Statuses</SelectItem>
+                <SelectItem value="PENDING" className="leading-tight font-extrabold">Pending Verification</SelectItem>
+                <SelectItem value="VERIFIED" className="leading-tight font-extrabold">Verified Enrolled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {!isHistoricalReadOnly && (
+              <WalkInEncodePanel />
             )}
           </div>
         </div>
 
-        {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
-          {selectedApp ? (
-            <>
-              <div className="flex-1 overflow-auto p-8 relative">
-                <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between", getGradeCardClasses(selectedApp.gradeLevel.name))}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-3xl font-extrabold uppercase tracking-tight text-foreground">
-                      {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
-                    </h2>
-                    {selectedApp.learner.sex === "MALE" ? (
-                      <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-extrabold text-base">MALE</Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-extrabold text-base">FEMALE</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 text-base leading-tight font-extrabold text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <FileText className="w-4 h-4" /> TRK: <span className="text-foreground">{selectedApp.trackingNumber || "N/A"}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <UserIcon className="w-4 h-4" /> LRN: <span className="text-foreground">{selectedApp.learner.lrn || "NO LRN"}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <School className="w-4 h-4" /> Incoming <Badge variant="outline" className={cn("font-extrabold uppercase ml-1 text-base", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
-                    </div>
-                  </div>
-
-                  {/* GLANCEABLE CONTACT SNAPSHOT */}
-                  {(() => {
-                    const primaryContact = selectedApp.familyMembers?.find(
-                      (m) =>
-                        m.relationship === "MOTHER" ||
-                        m.relationship === "FATHER" ||
-                        m.relationship === "GUARDIAN"
-                    ) || selectedApp.familyMembers?.[0];
-
-                    if (primaryContact) {
-                      return (
-                        <div className="mt-4 flex items-center justify-between bg-muted/20 border border-border/50 rounded-lg p-3">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Primary Contact</span>
-                            <span className="text-base leading-tight font-extrabold text-foreground">
-                              {primaryContact.lastName}, {primaryContact.firstName}
-                            </span>
-                          </div>
-                          <div className="flex gap-4">
-                            <div className="flex flex-col text-right">
-                              <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Relationship</span>
-                              <Badge variant="secondary" className="text-[10px] font-extrabold uppercase">{primaryContact.relationship}</Badge>
-                            </div>
-                            <div className="flex flex-col text-right">
-                              <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Contact Number</span>
-                              <span className="text-base leading-tight font-extrabold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+        <div className="flex-1 flex min-h-0">
+          {/* LEFT PANE */}
+          <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
+            <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Pending Verification
+                </CardTitle>
+                <Badge variant="outline" className="font-extrabold bg-background border-border">
+                  {filteredVerifications.length} Queue
+                </Badge>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-2 space-y-2">
+              {filteredVerifications.length === 0 ? (
+                <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground p-8 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
+                  <span className="font-extrabold text-base leading-tight">No pending verifications found.</span>
                 </div>
-
-                {duplicateInfo && (
-                  <div className="mb-8 p-4 rounded-xl border border-rose-200 bg-rose-50 text-left flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-base font-extrabold text-rose-900">
-                        Duplicate Enrollment Sentinel Triggered
-                      </p>
-                      <p className="text-base text-rose-700 font-extrabold">
-                        A matching active enrollment for this learner was found (Tracking: {duplicateInfo.activeEnrollment?.trackingNumber || "N/A"}, Section: {duplicateInfo.activeEnrollment?.sectionName || "Unassigned"}). Intake is blocked.
-                      </p>
+              ) : (
+                filteredVerifications.map((app) => (
+                  <div
+                    key={app.id}
+                    onClick={() => handleSelect(app.id)}
+                    className={cn(
+                      "cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden",
+                      selectedAppId === app.id
+                        ? getGradeCardClasses(app.gradeLevel.name)
+                        : "bg-background hover:bg-muted/50 border-border"
+                    )}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")}>
+                        {app.learner.lastName}, {app.learner.firstName}
+                      </h4>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <Badge variant="outline" className={cn("text-[10px] uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
+                        {app.gradeLevel.name}
+                      </Badge>
+                      <div className="flex items-center text-[10px] text-muted-foreground font-extrabold">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {format(new Date(app.createdAt), "MMM d, h:mm a")}
+                      </div>
                     </div>
                   </div>
-                )}
+                ))
+              )}
+            </div>
+          </div>
 
-                {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
+          {/* RIGHT PANE: DETAIL VIEW & ACTIONS */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
+            {selectedApp ? (
+              <>
+                <div className="flex-1 overflow-auto p-8 relative">
+                  <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between", getGradeCardClasses(selectedApp.gradeLevel.name))}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-3xl font-extrabold uppercase tracking-tight text-foreground">
+                        {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
+                      </h2>
+                      {selectedApp.learner.sex === "MALE" ? (
+                        <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-extrabold text-base">MALE</Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-extrabold text-base">FEMALE</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-base leading-tight font-extrabold text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <FileText className="w-4 h-4" /> TRK: <span className="text-foreground">{selectedApp.trackingNumber || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <UserIcon className="w-4 h-4" /> LRN: <span className="text-foreground">{selectedApp.learner.lrn || "NO LRN"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <School className="w-4 h-4" /> Incoming <Badge variant="outline" className={cn("font-extrabold uppercase ml-1 text-base", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
+                      </div>
+                    </div>
+
+                    {/* GLANCEABLE CONTACT SNAPSHOT */}
+                    {(() => {
+                      const primaryContact = selectedApp.familyMembers?.find(
+                        (m) =>
+                          m.relationship === "MOTHER" ||
+                          m.relationship === "FATHER" ||
+                          m.relationship === "GUARDIAN"
+                      ) || selectedApp.familyMembers?.[0];
+
+                      if (primaryContact) {
+                        return (
+                          <div className="mt-4 flex items-center justify-between bg-muted/20 border border-border/50 rounded-lg p-3">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Primary Contact</span>
+                              <span className="text-base leading-tight font-extrabold text-foreground">
+                                {primaryContact.lastName}, {primaryContact.firstName}
+                              </span>
+                            </div>
+                            <div className="flex gap-4">
+                              <div className="flex flex-col text-right">
+                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Relationship</span>
+                                <Badge variant="secondary" className="text-[10px] font-extrabold uppercase">{primaryContact.relationship}</Badge>
+                              </div>
+                              <div className="flex flex-col text-right">
+                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Contact Number</span>
+                                <span className="text-base leading-tight font-extrabold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+
+                  {duplicateInfo && (
+                    <div className="mb-8 p-4 rounded-xl border border-rose-200 bg-rose-50 text-left flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-base font-extrabold text-rose-900">
+                          Duplicate Enrollment Sentinel Triggered
+                        </p>
+                        <p className="text-base text-rose-700 font-extrabold">
+                          A matching active enrollment for this learner was found (Tracking: {duplicateInfo.activeEnrollment?.trackingNumber || "N/A"}, Section: {duplicateInfo.activeEnrollment?.sectionName || "Unassigned"}). Intake is blocked.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
+                    <div className="space-y-4 mb-8">
+                      <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                        <School className="w-4 h-4" /> Academic History
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
+                          <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
+                          <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
+                        </div>
+                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
+                          <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
+                          <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-4 mb-8">
                     <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                      <School className="w-4 h-4" /> Academic History
+                      <School className="w-4 h-4" /> Curriculum Assignment
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                        <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
-                        <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
-                      </div>
-                      <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                        <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
-                        <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                    <div className="bg-muted/10 border border-border/50 rounded-xl p-6 space-y-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
+                          <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-base leading-tight text-muted-foreground font-semibold">
+                            {selectedApp.applicantType.replace(/_/g, " ")}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Official Program Assignment</label>
+                          <Select value={assignedProgram} onValueChange={setAssignedProgram}>
+                            <SelectTrigger className="w-full font-extrabold">
+                              <SelectValue placeholder="Select Program" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(SCP_LABELS).map(([value, label]) => {
+                                const show =
+                                  value === "REGULAR" ||
+                                  (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
+                                  (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
+                                  (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
+                                  selectedApp.applicantType === value ||
+                                  assignedProgram === value;
 
-                <div className="space-y-4 mb-8">
-                  <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                    <School className="w-4 h-4" /> Curriculum Assignment
-                  </h3>
-                  <div className="bg-muted/10 border border-border/50 rounded-xl p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
-                        <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-base leading-tight text-muted-foreground font-semibold">
-                          {selectedApp.applicantType.replace(/_/g, " ")}
+                                if (show) {
+                                  return <SelectItem key={value} value={value}>{label}</SelectItem>;
+                                }
+                                return null;
+                              })}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Official Program Assignment</label>
-                        <Select value={assignedProgram} onValueChange={setAssignedProgram}>
-                          <SelectTrigger className="w-full font-extrabold">
-                            <SelectValue placeholder="Select Program" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(SCP_LABELS).map(([value, label]) => {
-                              const show =
-                                value === "REGULAR" ||
-                                (value === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" && publicSettings?.steEnabled) ||
-                                (value === "SPECIAL_PROGRAM_IN_THE_ARTS" && publicSettings?.spaEnabled) ||
-                                (value === "SPECIAL_PROGRAM_IN_SPORTS" && publicSettings?.spsEnabled) ||
-                                selectedApp.applicantType === value ||
-                                assignedProgram === value;
-
-                              if (show) {
-                                return <SelectItem key={value} value={value}>{label}</SelectItem>;
-                              }
-                              return null;
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {assignedProgram !== "REGULAR" && (
+                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200/50 mt-2">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span className="text-base font-extrabold">Requires manual verification against the official SCP passers list.</span>
+                        </div>
+                      )}
                     </div>
-                    {assignedProgram !== "REGULAR" && (
-                      <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200/50 mt-2">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span className="text-base font-extrabold">Requires manual verification against the official SCP passers list.</span>
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> Required Documents
+                    </h3>
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-6">
+                      <label className="flex items-start gap-4 cursor-pointer group">
+                        <Checkbox
+                          className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          checked={sf9Verified}
+                          onCheckedChange={(c) => setSf9Verified(!!c)}
+                        />
+                        <div className="space-y-1">
+                          <p className="text-base font-extrabold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
+                          <p className="text-base font-semibold text-muted-foreground">Original report card signed by previous school principal.</p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-4 cursor-pointer group">
+                        <Checkbox
+                          className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          checked={psaVerified}
+                          onCheckedChange={(c) => setPsaVerified(!!c)}
+                        />
+                        <div className="space-y-1">
+                          <p className="text-base font-extrabold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
+                          <p className="text-base font-semibold text-muted-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Required Documents
-                  </h3>
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-6">
-                    <label className="flex items-start gap-4 cursor-pointer group">
-                      <Checkbox
-                        className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                        checked={sf9Verified}
-                        onCheckedChange={(c) => setSf9Verified(!!c)}
-                      />
-                      <div className="space-y-1">
-                        <p className="text-base font-extrabold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
-                        <p className="text-base font-semibold text-muted-foreground">Original report card signed by previous school principal.</p>
-                      </div>
-                    </label>
+                {/* Action Footer */}
+                <div className="p-4 sm:p-6 border-t border-border bg-muted/10 flex items-center gap-4">
+                  {!(sf9Verified && psaVerified) && (
+                    <Button
+                      onClick={enrollTemporary}
+                      disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                      variant="outline"
+                      className="h-14 px-8 text-base leading-tight font-extrabold uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Enroll as Temporary (Missing Docs)
+                    </Button>
+                  )}
 
-                    <label className="flex items-start gap-4 cursor-pointer group">
-                      <Checkbox
-                        className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                        checked={psaVerified}
-                        onCheckedChange={(c) => setPsaVerified(!!c)}
-                      />
-                      <div className="space-y-1">
-                        <p className="text-base font-extrabold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
-                        <p className="text-base font-semibold text-muted-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Footer */}
-              <div className="p-4 sm:p-6 border-t border-border bg-muted/10 flex items-center gap-4">
-                {!(sf9Verified && psaVerified) && (
                   <Button
-                    onClick={enrollTemporary}
-                    disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                    variant="outline"
-                    className="h-14 px-8 text-base leading-tight font-extrabold uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
+                    onClick={approveLearner}
+                    disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                    className={cn(
+                      "flex-1 h-14 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
+                      sf9Verified && psaVerified && !duplicateInfo
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted opacity-50"
+                    )}
                   >
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    Enroll as Temporary (Missing Docs)
+                    {processing ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Approving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                        Officially Enroll
+                      </>
+                    )}
                   </Button>
-                )}
-
-                <Button
-                  onClick={approveLearner}
-                  disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                  className={cn(
-                    "flex-1 h-14 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
-                    sf9Verified && psaVerified && !duplicateInfo
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted opacity-50"
-                  )}
-                >
-                  {processing ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Approving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 mr-2" />
-                      Officially Enroll
-                    </>
-                  )}
-                </Button>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center flex-col gap-4 text-muted-foreground p-8 text-center">
+                <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-2">
+                  <Search className="h-10 w-10 text-muted-foreground/40" />
+                </div>
+                <h3 className="font-extrabold text-xl text-foreground">No Learner Selected</h3>
+                <p className="font-extrabold text-base leading-tight max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
               </div>
-            </>
-          ) : (
-            <div className="h-full flex items-center justify-center flex-col gap-4 text-muted-foreground p-8 text-center">
-              <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-2">
-                <Search className="h-10 w-10 text-muted-foreground/40" />
-              </div>
-              <h3 className="font-extrabold text-xl text-foreground">No Learner Selected</h3>
-              <p className="font-extrabold text-base leading-tight max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       </Card>
 
       {/* Duplication Sentinel Blocking Modal */}

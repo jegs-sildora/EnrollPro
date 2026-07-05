@@ -742,7 +742,7 @@ export default function Step2Family() {
                     "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
                     data.primaryContact === option.value
                       ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border bg-white hover:bg-muted/50",
+                      : "border-border bg-muted hover:bg-muted/50",
                   )}>
                   <div
                     className={cn(
@@ -832,7 +832,7 @@ export default function Step2Family() {
                       {...register("contactNumber")}
                       placeholder="09XX-XXX-XXXX"
                       className={cn(
-                        "h-11 font-extrabold bg-white",
+                        "h-11 font-extrabold bg-muted",
                         errors.contactNumber &&
                         "border-destructive focus-visible:ring-destructive",
                       )}
@@ -912,7 +912,7 @@ export default function Step2Family() {
                           id={contactField}
                           {...register(contactField)}
                           placeholder="09XX-XXX-XXXX"
-                          className="h-11 font-extrabold bg-white"
+                          className="h-11 font-extrabold bg-muted"
                           inputMode="tel"
                           maxLength={13}
                           onInput={(event) => {

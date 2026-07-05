@@ -418,7 +418,7 @@ export default function ECRTemplateManager() {
       {/* Benefits Card */}
       <Card className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-white shadow-sm">
+          <div className="p-3 rounded-lg bg-muted shadow-sm">
             <BookOpen className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1">
@@ -429,15 +429,15 @@ export default function ECRTemplateManager() {
               across all subjects.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-white/60 rounded-lg p-3 border border-blue-100">
+              <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs font-semibold text-blue-900 mb-1">✓ Time Saver</p>
                 <p className="text-xs text-blue-700">Teachers don't manually type student names</p>
               </div>
-              <div className="bg-white/60 rounded-lg p-3 border border-blue-100">
+              <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs font-semibold text-blue-900 mb-1">✓ Standardized</p>
                 <p className="text-xs text-blue-700">All teachers use the same format</p>
               </div>
-              <div className="bg-white/60 rounded-lg p-3 border border-blue-100">
+              <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs font-semibold text-blue-900 mb-1">✓ Auto-Fill</p>
                 <p className="text-xs text-blue-700">Student data pre-populated automatically</p>
               </div>
@@ -461,7 +461,7 @@ export default function ECRTemplateManager() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 border rounded-md text-sm bg-white"
+            className="px-3 py-2 border rounded-md text-sm bg-muted"
           >
             <option value="ALL">All Status</option>
             <option value="ACTIVE">Active Only</option>
@@ -643,7 +643,7 @@ export default function ECRTemplateManager() {
                   setUploadError('');
                 }}
                 className={`flex-1 px-4 py-2 rounded-md text-sm  transition-colors ${uploadMode === 'single'
-                  ? 'bg-white shadow-sm text-slate-900'
+                  ? 'bg-muted shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
                 disabled={uploading || bulkUploading}
@@ -658,7 +658,7 @@ export default function ECRTemplateManager() {
                   setUploadError('');
                 }}
                 className={`flex-1 px-4 py-2 rounded-md text-sm  transition-colors ${uploadMode === 'bulk'
-                  ? 'bg-white shadow-sm text-slate-900'
+                  ? 'bg-muted shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
                 disabled={uploading || bulkUploading}
@@ -689,7 +689,7 @@ export default function ECRTemplateManager() {
                     id="subjectType"
                     value={uploadSubjectType}
                     onChange={(e) => setUploadSubjectType(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white"
+                    className="w-full px-3 py-2 border rounded-md text-sm bg-muted"
                   >
                     <option value="">— None (use subject name match only) —</option>
                     <option value="CORE">CORE — English, Filipino, AP, EsP (30% WW / 50% PT / 20% QA)</option>
@@ -793,7 +793,7 @@ export default function ECRTemplateManager() {
                                 <select
                                   value={item.subjectType}
                                   onChange={(e) => updateBulkUploadItem(index, 'subjectType', e.target.value)}
-                                  className="w-full px-2 py-1.5 border rounded-md text-sm bg-white mt-1"
+                                  className="w-full px-2 py-1.5 border rounded-md text-sm bg-muted mt-1"
                                   disabled={item.status !== 'pending'}
                                 >
                                   <option value="">— None —</option>
@@ -838,13 +838,13 @@ export default function ECRTemplateManager() {
             <Card className="p-3 bg-blue-50 border-blue-200">
               <p className="text-xs font-semibold text-blue-900 mb-2">Available Placeholders:</p>
               <div className="grid grid-cols-2 gap-1 text-xs text-blue-800">
-                <div><code className="bg-white px-1 rounded">{'{{SCHOOL_NAME}}'}</code></div>
-                <div><code className="bg-white px-1 rounded">{'{{TEACHER_NAME}}'}</code></div>
-                <div><code className="bg-white px-1 rounded">{'{{SUBJECT}}'}</code></div>
-                <div><code className="bg-white px-1 rounded">{'{{GRADE_LEVEL}}'}</code></div>
-                <div><code className="bg-white px-1 rounded">{'{{SECTION}}'}</code></div>
-                <div><code className="bg-white px-1 rounded">{'{{SCHOOL_YEAR}}'}</code></div>
-                <div className="col-span-2"><code className="bg-white px-1 rounded">{'{{STUDENT_LIST}}'}</code> - Insert students here</div>
+                <div><code className="bg-muted px-1 rounded">{'{{SCHOOL_NAME}}'}</code></div>
+                <div><code className="bg-muted px-1 rounded">{'{{TEACHER_NAME}}'}</code></div>
+                <div><code className="bg-muted px-1 rounded">{'{{SUBJECT}}'}</code></div>
+                <div><code className="bg-muted px-1 rounded">{'{{GRADE_LEVEL}}'}</code></div>
+                <div><code className="bg-muted px-1 rounded">{'{{SECTION}}'}</code></div>
+                <div><code className="bg-muted px-1 rounded">{'{{SCHOOL_YEAR}}'}</code></div>
+                <div className="col-span-2"><code className="bg-muted px-1 rounded">{'{{STUDENT_LIST}}'}</code> - Insert students here</div>
               </div>
             </Card>
           </div>

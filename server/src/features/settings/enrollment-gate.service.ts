@@ -22,7 +22,8 @@ function toManilaDateToken(date: Date): number {
   return year * 10000 + month * 100 + day;
 }
 
-export function isEnrollmentOpen(year: SchoolYear): boolean {
+export function isEnrollmentOpen(year: SchoolYear, systemPhase?: string): boolean {
+  if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
 
   const todayToken = toManilaDateToken(new Date());
 
@@ -43,8 +44,8 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
  * Early Registration window — if the admin has both windows open at once,
  * BOSY enrollment is considered open.
  */
-export function isRegularEnrollmentWindowOpen(year: SchoolYear): boolean {
-
+export function isRegularEnrollmentWindowOpen(year: SchoolYear, systemPhase?: string): boolean {
+  if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
 
   const todayToken = toManilaDateToken(new Date());
   return Boolean(
@@ -57,11 +58,11 @@ export function isRegularEnrollmentWindowOpen(year: SchoolYear): boolean {
 
 export function getEnrollmentPhase(
   year: SchoolYear,
+  systemPhase?: string
 ):
   | "REGULAR_ENROLLMENT"
   | "CLOSED" {
-
-
+  if (systemPhase === "OFFICIAL_ENROLLMENT") return "REGULAR_ENROLLMENT";
 
   const todayToken = toManilaDateToken(new Date());
 

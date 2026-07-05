@@ -33,13 +33,13 @@ export function ClassRecordMobileList({
   getGradeColor,
 }: ClassRecordMobileListProps) {
   return (
-    <Card className="lg:hidden border-0 shadow-lg shadow-slate-200/40 rounded-[2rem] overflow-hidden bg-white">
+    <Card className="lg:hidden border-0 shadow-lg shadow-slate-200/40 rounded-[2rem] overflow-hidden bg-muted">
       <CardHeader className="p-4 border-b border-slate-100 flex flex-row items-center justify-between">
         <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
           {isHGClass ? "Homeroom Guidance" : "Class Ledger"}
         </h2>
         <Select value={selectedTerm} onValueChange={(val) => val && onTermChange(val)}>
-          <SelectTrigger className="h-10 w-24 bg-white border-slate-200 text-xs font-extrabold uppercase rounded-xl shadow-sm px-3">
+          <SelectTrigger className="h-10 w-24 bg-muted border-slate-200 text-xs font-extrabold uppercase rounded-xl shadow-sm px-3">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl border-slate-200 shadow-2xl p-2">
@@ -78,7 +78,7 @@ export function ClassRecordMobileList({
               key={record.student.id}
               type="button"
               onClick={() => onOpenEditor(record.student.id)}
-              className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm active:scale-[0.995] transition"
+              className="w-full rounded-2xl border border-slate-200 bg-muted p-4 text-left shadow-sm active:scale-[0.995] transition"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">

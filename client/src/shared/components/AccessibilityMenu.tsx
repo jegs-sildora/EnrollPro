@@ -35,7 +35,7 @@ export function AccessibilityMenu() {
 				</Tooltip>
 			</TooltipProvider>
 			<PopoverContent
-				className='w-64 bg-white'
+				className='w-64 bg-muted'
 				align='end'
 			>
 				<div className='space-y-4'>

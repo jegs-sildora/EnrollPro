@@ -285,7 +285,7 @@ export default function UserManagement() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -298,7 +298,7 @@ export default function UserManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -311,7 +311,7 @@ export default function UserManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -324,7 +324,7 @@ export default function UserManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -337,7 +337,7 @@ export default function UserManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -353,7 +353,7 @@ export default function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white p-0">
+      <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted p-0">
         <CardHeader className="border-b border-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

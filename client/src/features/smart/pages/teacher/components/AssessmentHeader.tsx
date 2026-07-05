@@ -56,9 +56,9 @@ export function AssessmentHeader({
     <>
       {/* ── Per-column Quick Meta Editor ─────────────────────────────── */}
       {selectedColumn && (
-        <div ref={metaEditorRef} className="bg-white w-full border-b border-slate-100">
+        <div ref={metaEditorRef} className="bg-muted w-full border-b border-slate-100">
           <div className="px-5 py-2">
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm animate-fade-in">
+            <div className="bg-muted border border-slate-100 rounded-2xl shadow-sm animate-fade-in">
               <div className="flex items-end gap-4 px-5 py-3">
                 {/* Inputs */}
                 <div className="flex-1 grid grid-cols-2 gap-4">
@@ -115,9 +115,9 @@ export function AssessmentHeader({
 
       {/* ── Optional Assessment Details (bulk editor) ────────────────── */}
       {showAssessmentDetails && (
-        <div ref={assessmentDetailsRef} className="bg-white w-full border-b border-slate-100">
+        <div ref={assessmentDetailsRef} className="bg-muted w-full border-b border-slate-100">
           <div className="px-4 py-1.5">
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-2xl border border-slate-100 bg-muted shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 px-4 pt-2.5 pb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                   Optional Assessment Details

@@ -188,7 +188,7 @@ export default function AdminLayout() {
         )}>
           {sidebarCollapsed ? (
             <div
-              className="w-12 h-12 rounded-lg bg-white border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden transition-transform duration-200 ease-out p-1 scale-[0.85]"
+              className="w-12 h-12 rounded-lg bg-muted border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden transition-transform duration-200 ease-out p-1 scale-[0.85]"
             >
               {logoUrl ? (
                 <img
@@ -203,7 +203,7 @@ export default function AdminLayout() {
           ) : (
             <div className="flex items-center w-full min-w-[240px] transition-all duration-200">
               <div className="w-12 h-12 flex flex-shrink-0 items-center justify-center">
-                <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden p-1">
+                <div className="w-12 h-12 rounded-lg bg-muted border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden p-1">
                   {logoUrl ? (
                     <img
                       src={logoUrl.startsWith("http") ? logoUrl : `${SERVER_URL}${logoUrl}`}
@@ -294,7 +294,7 @@ export default function AdminLayout() {
                           className={cn(
                             "w-full flex items-center rounded-full text-[14px]  transition-all duration-200 group overflow-hidden py-1.5",
                             sidebarCollapsed ? "px-0 justify-center h-10 w-10 mx-auto" : "px-4",
-                            hasActiveChild ? "text-[#0F1729]" : "text-[#0F1729] hover:bg-white/80"
+                            hasActiveChild ? "text-[#0F1729]" : "text-[#0F1729] hover:bg-muted/80"
                           )}
                           style={{
                             backgroundColor: hasActiveChild && !sidebarCollapsed ? 'rgba(var(--theme-primary-rgb), 0.1)' : 'transparent',
@@ -350,7 +350,7 @@ export default function AdminLayout() {
                                       className={cn(
                                         "ml-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase whitespace-nowrap",
                                         isActive
-                                          ? "bg-white/20 text-white/90"
+                                          ? "bg-muted/20 text-white/90"
                                           : "bg-amber-100 text-amber-700"
                                       )}
                                     >
@@ -442,7 +442,7 @@ export default function AdminLayout() {
                         sidebarCollapsed ? "px-0 justify-center h-10 w-10 mx-auto" : "px-4",
                         isActive
                           ? "text-white shadow-sm"
-                          : "text-[#0F1729] hover:bg-white/80"
+                          : "text-[#0F1729] hover:bg-muted/80"
                       )}
                       style={{
                         backgroundColor: isActive ? 'var(--theme-primary)' : 'transparent',
@@ -461,7 +461,7 @@ export default function AdminLayout() {
 
         {/* User Profile at Bottom */}
         <div className={cn(
-          "p-4 border-t border-slate-100 transition-all duration-200 bg-white/20 overflow-hidden",
+          "p-4 border-t border-slate-100 transition-all duration-200 bg-muted/20 overflow-hidden",
           sidebarCollapsed ? "px-2 py-4" : "p-4"
         )}>
           <div className={cn(
@@ -485,7 +485,7 @@ export default function AdminLayout() {
               </div>
               <button
                 onClick={handleLogout}
-                className="p-1.5 rounded-lg hover:bg-white hover:text-red-600 text-slate-400 transition-colors duration-200 ml-1"
+                className="p-1.5 rounded-lg hover:bg-muted hover:text-red-600 text-slate-400 transition-colors duration-200 ml-1"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -501,7 +501,7 @@ export default function AdminLayout() {
         sidebarCollapsed ? "lg:pl-[70px]" : "lg:pl-[280px]"
       )}>
         {/* Top navbar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6">
+        <header className="sticky top-0 z-30 h-16 bg-muted/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6">
           <div className="h-full flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button

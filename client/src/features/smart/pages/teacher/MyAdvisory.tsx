@@ -116,7 +116,7 @@ export default function MyAdvisory() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-[60vh] p-4">
-        <div className="text-center max-w-sm p-10 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100">
+        <div className="text-center max-w-sm p-10 bg-muted rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100">
           <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-rose-50 flex items-center justify-center">
             <UserCircle className="w-10 h-10 text-rose-500" />
           </div>
@@ -136,7 +136,7 @@ export default function MyAdvisory() {
   if (!data?.hasAdvisory) {
     return (
       <div className="flex items-center justify-center h-[60vh] p-4">
-        <div className="text-center max-w-md p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50">
+        <div className="text-center max-w-md p-10 bg-muted rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50">
           <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-300">
             <ClipboardList className="w-10 h-10" />
           </div>
@@ -201,7 +201,7 @@ export default function MyAdvisory() {
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Header Section - Refined Glass Style */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-white border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-muted border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
         <div
           className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
           style={{ backgroundColor: `${colors.primary}15` }}
@@ -291,7 +291,7 @@ export default function MyAdvisory() {
           { label: "MALE LEARNERS", value: data.stats?.maleCount || 0, icon: UserCircle, color: "blue" },
           { label: "FEMALE LEARNERS", value: data.stats?.femaleCount || 0, icon: UserCircle, color: "pink" },
         ].map((stat) => (
-          <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 overflow-hidden rounded-[2rem] bg-white group hover:-translate-y-1 transition-all duration-300">
+          <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 overflow-hidden rounded-[2rem] bg-muted group hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6 flex items-center gap-5">
               <div
                 className={cn(
@@ -316,7 +316,7 @@ export default function MyAdvisory() {
       </div>
 
       {/* Main Directory Table */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 bg-white rounded-[2.5rem] overflow-hidden">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 bg-muted rounded-[2.5rem] overflow-hidden">
         <CardHeader className="border-b border-slate-50 p-8 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight uppercase">Student Directory</h2>

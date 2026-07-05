@@ -217,7 +217,15 @@ function toManilaDateToken(value: string | Date): number {
 function getEnrollmentWindowStatus(
   openDate: string | null | undefined,
   closeDate: string | null | undefined,
+  isOfficialPhase: boolean = false
 ) {
+  if (isOfficialPhase) {
+    return {
+      label: ` ENROLLMENT OPEN`,
+      color: "bg-green-100 text-green-800",
+    };
+  }
+
   if (!openDate || !closeDate) {
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
@@ -601,8 +609,9 @@ export default function SchoolYearTab() {
       getEnrollmentWindowStatus(
         activeYear?.enrollOpenDate ?? null,
         activeYear?.enrollCloseDate ?? null,
+        systemPhase === "OFFICIAL_ENROLLMENT"
       ),
-    [activeYear?.enrollCloseDate, activeYear?.enrollOpenDate],
+    [activeYear?.enrollCloseDate, activeYear?.enrollOpenDate, systemPhase],
   );
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
@@ -996,7 +1005,7 @@ export default function SchoolYearTab() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
-            className="fixed inset-0 z-[200] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white/75 backdrop-blur-2xl"
+            className="fixed inset-0 z-[200] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-muted/75 backdrop-blur-2xl"
             role="status"
             aria-live="polite"
             aria-label="Running school year rollover"
@@ -1084,7 +1093,7 @@ export default function SchoolYearTab() {
 
 
       {!loading && isZeroState ? (
-        <Card className="shadow-lg bg-white">
+        <Card className="shadow-lg bg-muted">
           <CardContent className="pt-12 pb-14 flex flex-col items-center text-center">
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
               <School className="h-8 w-8" />
@@ -1162,30 +1171,29 @@ export default function SchoolYearTab() {
                       className="grid grid-cols-1 md:grid-cols-3 gap-4"
                       disabled={isArchived}
                     >
-                      <Label
-                        htmlFor="OFFICIAL_ENROLLMENT"
-                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                      >
-                        <RadioGroupItem value="OFFICIAL_ENROLLMENT" id="OFFICIAL_ENROLLMENT" className="sr-only" />
-                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">Official Enrollment</span>
-                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Opens the public enrollment forms and processes normal verify/confirm workflows.</span>
-                      </Label>
-                      <Label
-                        htmlFor="CLASSES_ONGOING"
-                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                      >
-                        <RadioGroupItem value="CLASSES_ONGOING" id="CLASSES_ONGOING" className="sr-only" />
-                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">Classes Ongoing (Late)</span>
-                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Public forms remain open, but all new submissions are permanently tagged as Late Enrollees.</span>
-                      </Label>
-                      <Label
-                        htmlFor="EOSY_CLOSING"
-                        className="group relative flex flex-col cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                      >
-                        <RadioGroupItem value="EOSY_CLOSING" id="EOSY_CLOSING" className="sr-only" />
-                        <span className="font-extrabold text-foreground mb-1 block group-[&:has([data-state=checked])]:text-primary">EOSY Closing</span>
-                        <span className="text-sm font-bold text-foreground block group-[&:has([data-state=checked])]:text-primary">Locks public enrollment forms and readies the database for end-of-year grade finalization.</span>
-                      </Label>
+                      {[
+                        { value: "OFFICIAL_ENROLLMENT", title: "Official Enrollment", desc: "Opens the public enrollment forms and processes normal verify/confirm workflows." },
+                        { value: "CLASSES_ONGOING", title: "Classes Ongoing (Late)", desc: "Public forms remain open, but all new submissions are permanently tagged as Late Enrollees." },
+                        { value: "EOSY_CLOSING", title: "EOSY Closing", desc: "Locks public enrollment forms and readies the database for end-of-year grade finalization." }
+                      ].map(opt => {
+                        const isChecked = (isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")) === opt.value;
+                        return (
+                          <Label
+                            key={opt.value}
+                            htmlFor={opt.value}
+                            className={cn(
+                              "relative flex min-h-32 flex-col cursor-pointer rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                              isChecked
+                                ? "border-primary ring-1 ring-primary/20"
+                                : "border-border hover:border-primary hover:bg-muted/20"
+                            )}
+                          >
+                            <RadioGroupItem value={opt.value} id={opt.value} className="absolute left-4 top-4" />
+                            <span className="text-base font-extrabold leading-tight block text-foreground">{opt.title}</span>
+                            <span className="text-sm font-bold mt-2 block text-muted-foreground">{opt.desc}</span>
+                          </Label>
+                        );
+                      })}
                     </RadioGroup>
 
                     {selectedPhase && selectedPhase !== systemPhase && (
@@ -1215,22 +1223,27 @@ export default function SchoolYearTab() {
                       }}
                       className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                     >
-                      <Label
-                        htmlFor="TRIMESTER"
-                        className="group relative flex flex-col justify-center cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                      >
-                        <RadioGroupItem value="TRIMESTER" id="TRIMESTER" className="sr-only" />
-                        <span className="font-extrabold text-foreground block group-[&:has([data-state=checked])]:text-primary">3-Term System</span>
-                        <span className="text-sm font-bold text-foreground mt-1 block group-[&:has([data-state=checked])]:text-primary">Mandated DO 9, s. 2026</span>
-                      </Label>
-                      <Label
-                        htmlFor="QUARTERS"
-                        className="group relative flex flex-col justify-center cursor-pointer rounded-lg border-2 border-border bg-white p-4 transition-colors hover:border-primary/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                      >
-                        <RadioGroupItem value="QUARTERS" id="QUARTERS" className="sr-only" />
-                        <span className="font-extrabold text-foreground block group-[&:has([data-state=checked])]:text-primary">4-Quarter System</span>
-                        <span className="text-sm font-bold text-foreground mt-1 block group-[&:has([data-state=checked])]:text-primary">Traditional academic calendar</span>
-                      </Label>
+                      {[
+                        { value: "TRIMESTER", title: "3-Term System"},
+                        { value: "QUARTERS", title: "4-Quarter System"}
+                      ].map(opt => {
+                        const isChecked = (localCalendarState.termFormat ?? activeYear.termFormat ?? "TRIMESTER") === opt.value;
+                        return (
+                          <Label
+                            key={opt.value}
+                            htmlFor={opt.value}
+                            className={cn(
+                              "relative flex flex-col items-center justify-center cursor-pointer rounded-lg border bg-card p-4 min-h-32 text-center shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                              isChecked
+                                ? "border-primary ring-1 ring-primary/20"
+                                : "border-border hover:border-primary hover:bg-muted/20"
+                            )}
+                          >
+                            <RadioGroupItem value={opt.value} id={opt.value} className="absolute left-4 top-4" />
+                            <span className="text-base font-extrabold leading-tight block text-foreground">{opt.title}</span>
+                          </Label>
+                        );
+                      })}
                     </RadioGroup>
                   </div>
 
@@ -1251,7 +1264,7 @@ export default function SchoolYearTab() {
                       <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
                         <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
                         <div className="flex items-center gap-3 flex-1 w-full">
-                          <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                          <div className="flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
                             <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
                             <HybridDatePicker
                               value={term.start || ""}
@@ -1263,7 +1276,7 @@ export default function SchoolYearTab() {
                             />
                           </div>
                           <span className="text-foreground font-extrabold">to</span>
-                          <div className="flex-1 px-4 py-2 bg-white rounded-lg border border-border shadow-sm relative">
+                          <div className="flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
                             <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
                             <HybridDatePicker
                               value={term.end || ""}
@@ -1286,7 +1299,7 @@ export default function SchoolYearTab() {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
                           <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide">
-                            Official Intake Period (BOSY)
+                            Official Enrollment Period (BOSY)
                           </h4>
                         </div>
                         <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">

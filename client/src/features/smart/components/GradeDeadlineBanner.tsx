@@ -43,7 +43,7 @@ function OverdueBanner({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-red-200 bg-white shadow-lg shadow-red-100/40 animate-fade-in">
+    <div className="overflow-hidden rounded-2xl border-2 border-red-200 bg-muted shadow-lg shadow-red-100/40 animate-fade-in">
       {/* Thin red accent bar */}
       <div className="h-1 bg-gradient-to-r from-red-600 to-rose-400 w-full" />
 
@@ -109,7 +109,7 @@ function OverdueBanner({
           </div>
 
           {/* Rows — capped height with scroll if many */}
-          <div className="divide-y divide-red-50 bg-white max-h-[260px] overflow-y-auto">
+          <div className="divide-y divide-red-50 bg-muted max-h-[260px] overflow-y-auto">
             {incompleteClasses.map((cls, idx) => {
               const pct = cls.totalStudents > 0
                 ? Math.round((cls.gradedCount / cls.totalStudents) * 100)
@@ -319,7 +319,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
         <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg">
+          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-muted/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg">
             <Siren className="w-7 h-7 text-white animate-pulse" />
           </div>
 
@@ -342,7 +342,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
               <Link to="/teacher/classes">
                 <Button
                   size="sm"
-                  className="h-12 px-7 rounded-2xl bg-white text-rose-600 hover:bg-rose-50 font-extrabold text-[10px] tracking-widest uppercase border-0 shadow-2xl shadow-rose-800/30 transition-all active:scale-95 group"
+                  className="h-12 px-7 rounded-2xl bg-muted text-rose-600 hover:bg-rose-50 font-extrabold text-[10px] tracking-widest uppercase border-0 shadow-2xl shadow-rose-800/30 transition-all active:scale-95 group"
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   GO TO CLASS RECORDS

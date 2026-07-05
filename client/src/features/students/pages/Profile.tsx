@@ -243,7 +243,7 @@ export default function StudentProfile() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between bg-white p-6 rounded-xl border shadow-sm">
+      <div className="flex items-center justify-between bg-muted p-6 rounded-xl border shadow-sm">
         <div className="flex items-center gap-6">
           <Button
             variant="ghost"
@@ -328,7 +328,7 @@ export default function StudentProfile() {
           setSearchParams(next, { replace: true });
         }}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="personal"
             className="flex-1 min-w-32 py-2 gap-2 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
@@ -804,7 +804,7 @@ export default function StudentProfile() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-6 space-y-4">
-                        <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
+                        <div className="p-4 bg-muted rounded-xl border border-amber-200 space-y-3">
                           <p className="text-base font-extrabold text-slate-600 leading-relaxed italic">
                             "Learners lacking transfer credentials or with private
                             school debt must be admitted temporarily but
@@ -1214,7 +1214,7 @@ export default function StudentProfile() {
                               </p>
                             </div>
                           ) : (
-                            <div className="bg-white/50 p-3 rounded-lg border border-amber-200">
+                            <div className="bg-muted/50 p-3 rounded-lg border border-amber-200">
                               <p className="text-base font-extrabold text-amber-900">
                                 PSA Deadline:{" "}
                                 <span className="text-rose-600 font-extrabold underline">
@@ -1233,8 +1233,8 @@ export default function StudentProfile() {
                               "p-3 rounded-lg border",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
-                                ? "bg-white/50 border-emerald-100"
-                                : "bg-white/50 border-amber-100",
+                                ? "bg-muted/50 border-emerald-100"
+                                : "bg-muted/50 border-amber-100",
                             )}>
                             <p
                               className={cn(
@@ -1279,7 +1279,7 @@ export default function StudentProfile() {
                             </div>
                           </div>
 
-                          <div className="bg-white/50 p-3 rounded-lg border border-rose-100">
+                          <div className="bg-muted/50 p-3 rounded-lg border border-rose-100">
                             <p className="text-base font-extrabold text-rose-900 leading-relaxed">
                               Requirement Deadline:{" "}
                               <span className="text-rose-600">

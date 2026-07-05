@@ -88,7 +88,7 @@ export const STATUS_CONFIG: Record<
   },
   APPROVED: {
     label: "Approved",
-    className: "bg-white text-green-700 border-green-500",
+    className: "bg-muted text-green-700 border-green-500",
   },
   READY_FOR_ENROLLMENT: {
     label: "Ready for Enrollment",

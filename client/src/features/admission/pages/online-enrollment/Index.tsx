@@ -70,6 +70,8 @@ export default function Apply() {
   };
 
   const isWithinOfficialBosyEnrollmentWindow = (() => {
+    if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
+
     if (!enrollOpenDate || !enrollCloseDate) {
       return enrollmentPhase === "REGULAR_ENROLLMENT";
     }
@@ -222,7 +224,7 @@ export default function Apply() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-6 py-8 px-6 sm:px-10 bg-white/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
+                className="text-center space-y-6 py-8 px-6 sm:px-10 bg-muted/60 backdrop-blur-md rounded-lg border border-white/20 shadow-2xl relative overflow-hidden w-full">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-destructive/50 to-transparent" />
                 <div className="space-y-6 relative z-10">
                   {logoUrl ? (

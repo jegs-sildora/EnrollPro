@@ -168,7 +168,7 @@ const LedgerRow = React.memo(
 
     const cellClass = "text-center text-[11px] font-extrabold border-r border-slate-200 p-0 h-9 w-14 min-w-[56px] max-w-[56px]";
     const inputClass =
-      "w-full h-full bg-transparent text-center focus:bg-white focus:ring-1 focus:ring-inset focus:ring-indigo-500/30 outline-none transition-all px-0.5 font-extrabold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+      "w-full h-full bg-transparent text-center focus:bg-muted focus:ring-1 focus:ring-inset focus:ring-indigo-500/30 outline-none transition-all px-0.5 font-extrabold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
     return (
       <TableRow
@@ -183,7 +183,7 @@ const LedgerRow = React.memo(
         <TableCell
           className={`text-center font-extrabold text-[11px] border-r border-b border-slate-200 w-10 min-w-[40px] max-w-[40px] sticky left-0 p-1 transition-colors ${isHps
             ? "text-indigo-300 z-[18] bg-slate-800 border-y border-l border-slate-700 bg-clip-padding"
-            : "text-slate-300 z-10 bg-white group-hover:bg-slate-50/80"
+            : "text-slate-300 z-10 bg-muted group-hover:bg-slate-50/80"
             }`}
           style={rowStyle}
         >
@@ -194,7 +194,7 @@ const LedgerRow = React.memo(
         <TableCell
           className={`font-mono text-[11px]  border-r border-b border-slate-200 px-1 truncate w-32 min-w-[128px] max-w-[128px] sticky left-[40px] transition-colors ${isHps
             ? "text-slate-500 z-[18] bg-slate-800 border-y border-slate-700 bg-clip-padding"
-            : "text-slate-400 z-10 bg-white group-hover:bg-slate-50/80"
+            : "text-slate-400 z-10 bg-muted group-hover:bg-slate-50/80"
             }`}
           style={rowStyle}
         >
@@ -205,7 +205,7 @@ const LedgerRow = React.memo(
         <TableCell
           className={`border-r border-b border-slate-200 px-2 min-w-[256px] sticky left-[168px] transition-colors ${isHps
             ? "z-[18] bg-slate-800 border-y border-slate-700 bg-clip-padding shadow-[2px_0_8px_-1px_rgba(0,0,0,0.35)]"
-            : "z-10 bg-white group-hover:bg-slate-50/80 shadow-[2px_0_8px_-1px_rgba(0,0,0,0.06)]"
+            : "z-10 bg-muted group-hover:bg-slate-50/80 shadow-[2px_0_8px_-1px_rgba(0,0,0,0.06)]"
             }`}
           style={rowStyle}
         >
@@ -611,13 +611,13 @@ export function ClassRecordTable({
     <div className="hidden lg:block w-full relative z-[15]">
       {/* ── Sticky Header Stack (pins Card Header + settings panels + table headers + HPS row as ONE) ── */}
       <div
-        className="sticky z-[29] bg-white border-x border-t border-slate-200/60 rounded-t-2xl shadow-sm isolate"
+        className="sticky z-[29] bg-muted border-x border-t border-slate-200/60 rounded-t-2xl shadow-sm isolate"
         style={{ top: `${topNavHeight}px` }}
       >
         {/* Card Header bar */}
         <div
           ref={ledgerHeaderRef}
-          className="bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between gap-4 rounded-t-2xl"
+          className="bg-muted border-b border-slate-100 px-5 py-3 flex items-center justify-between gap-4 rounded-t-2xl"
         >
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-extrabold text-slate-900 tracking-tight uppercase">Class Ledger</h2>
@@ -625,7 +625,7 @@ export function ClassRecordTable({
               <Button
                 variant="ghost"
                 onClick={() => onSeparateByGenderChange(false)}
-                className={`h-7 px-3 rounded-[10px] text-[11px] font-extrabold uppercase tracking-widest transition-all ${!separateByGender ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                className={`h-7 px-3 rounded-[10px] text-[11px] font-extrabold uppercase tracking-widest transition-all ${!separateByGender ? "bg-muted text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                   }`}
               >
                 Alphabetical
@@ -633,7 +633,7 @@ export function ClassRecordTable({
               <Button
                 variant="ghost"
                 onClick={() => onSeparateByGenderChange(true)}
-                className={`h-7 px-3 rounded-[10px] text-[11px] font-extrabold uppercase tracking-widest transition-all ${separateByGender ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                className={`h-7 px-3 rounded-[10px] text-[11px] font-extrabold uppercase tracking-widest transition-all ${separateByGender ? "bg-muted text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                   }`}
               >
                 Gendered
@@ -670,7 +670,7 @@ export function ClassRecordTable({
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Period:</span>
               <Select value={selectedTerm} onValueChange={(val) => val && onTermChange(val)}>
-                <SelectTrigger className="h-8 w-20 bg-white border-slate-200 text-[11px] font-extrabold uppercase rounded-xl shadow-sm px-3">
+                <SelectTrigger className="h-8 w-20 bg-muted border-slate-200 text-[11px] font-extrabold uppercase rounded-xl shadow-sm px-3">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 shadow-2xl p-1">
@@ -690,16 +690,16 @@ export function ClassRecordTable({
         </div>
 
         {/* Assessment panels */}
-        <div className="relative z-20 bg-white">
+        <div className="relative z-20 bg-muted">
           {assessmentHeaderNode}
         </div>
 
         {/* Table Column Headers & HPS Row (horizontally scrollable, synchronized with table body) */}
         <div
           ref={headerScrollRef}
-          className="w-full overflow-x-hidden relative z-10 bg-white border-t border-slate-200/60"
+          className="w-full overflow-x-hidden relative z-10 bg-muted border-t border-slate-200/60"
         >
-          <div className="relative bg-white min-w-full">
+          <div className="relative bg-muted min-w-full">
             <Table className="border-separate border-spacing-0 table-fixed min-w-full">
               {renderColGroup()}
               <TableHeader>
@@ -720,13 +720,13 @@ export function ClassRecordTable({
                       Written Work ({effectiveWeights?.ww ?? classAssignment.subject.writtenWorkWeight}%)
                       <button
                         disabled={wwCount <= 1}
-                        className="w-5 h-5 rounded-full bg-white text-indigo-600 shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="w-5 h-5 rounded-full bg-muted text-indigo-600 shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                         onClick={() => onRemoveTask("WW")}
                       >
                         <Minus className="w-2.5 h-2.5" />
                       </button>
                       <button
-                        className="w-5 h-5 rounded-full bg-white text-indigo-600 shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center"
+                        className="w-5 h-5 rounded-full bg-muted text-indigo-600 shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center"
                         onClick={() => onAddTask("WW")}
                       >
                         <Plus className="w-2.5 h-2.5" />
@@ -742,13 +742,13 @@ export function ClassRecordTable({
                       Perf. Tasks ({effectiveWeights?.pt ?? classAssignment.subject.perfTaskWeight}%)
                       <button
                         disabled={ptCount <= 1}
-                        className="w-5 h-5 rounded-full bg-white text-purple-600 shadow-sm border border-purple-200 hover:bg-purple-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="w-5 h-5 rounded-full bg-muted text-purple-600 shadow-sm border border-purple-200 hover:bg-purple-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                         onClick={() => onRemoveTask("PT")}
                       >
                         <Minus className="w-2.5 h-2.5" />
                       </button>
                       <button
-                        className="w-5 h-5 rounded-full bg-white text-purple-600 shadow-sm border border-purple-200 hover:bg-purple-600 hover:text-white transition-all flex items-center justify-center"
+                        className="w-5 h-5 rounded-full bg-muted text-purple-600 shadow-sm border border-purple-200 hover:bg-purple-600 hover:text-white transition-all flex items-center justify-center"
                         onClick={() => onAddTask("PT")}
                       >
                         <Plus className="w-2.5 h-2.5" />
@@ -772,20 +772,20 @@ export function ClassRecordTable({
                 </TableRow>
 
                 {/* ── Row 2: Column sub-headers ── */}
-                <TableRow ref={subRowRef} className="hover:bg-transparent border-0 h-9 bg-white transition-none">
-                  <TableHead className="w-10 min-w-[40px] max-w-[40px] text-center text-[11px] font-extrabold text-slate-400 uppercase border-l border-r border-b border-slate-200 bg-white sticky left-0 z-[25] bg-clip-padding">#</TableHead>
-                  <TableHead className="w-32 min-w-[128px] max-w-[128px] text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 px-1 bg-white sticky left-[40px] z-[25] bg-clip-padding">LRN</TableHead>
-                  <TableHead className="min-w-[256px] text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 px-2 bg-white sticky left-[168px] z-[25] bg-clip-padding shadow-[2px_0_8px_-1px_rgba(0,0,0,0.06)]">Full Name</TableHead>
+                <TableRow ref={subRowRef} className="hover:bg-transparent border-0 h-9 bg-muted transition-none">
+                  <TableHead className="w-10 min-w-[40px] max-w-[40px] text-center text-[11px] font-extrabold text-slate-400 uppercase border-l border-r border-b border-slate-200 bg-muted sticky left-0 z-[25] bg-clip-padding">#</TableHead>
+                  <TableHead className="w-32 min-w-[128px] max-w-[128px] text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 px-1 bg-muted sticky left-[40px] z-[25] bg-clip-padding">LRN</TableHead>
+                  <TableHead className="min-w-[256px] text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 px-2 bg-muted sticky left-[168px] z-[25] bg-clip-padding shadow-[2px_0_8px_-1px_rgba(0,0,0,0.06)]">Full Name</TableHead>
 
                   {Array.from({ length: wwCount }).map((_, i) => (
-                    <TableHead key={`h-ww-${i}`} className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 bg-white bg-clip-padding sticky z-20 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors" onClick={() => onCellFocus("WW", i)}>{i + 1}</TableHead>
+                    <TableHead key={`h-ww-${i}`} className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 bg-muted bg-clip-padding sticky z-20 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors" onClick={() => onCellFocus("WW", i)}>{i + 1}</TableHead>
                   ))}
                   <TableHead className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-500 uppercase border-r border-b border-slate-200 bg-slate-100 bg-clip-padding sticky z-20">Total</TableHead>
                   <TableHead className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-indigo-600 uppercase border-r border-b border-slate-200 bg-indigo-50 bg-clip-padding sticky z-20">PS</TableHead>
                   <TableHead className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-indigo-700 uppercase border-r border-b border-slate-200 bg-indigo-100 bg-clip-padding sticky z-20">WS</TableHead>
 
                   {Array.from({ length: ptCount }).map((_, i) => (
-                    <TableHead key={`h-pt-${i}`} className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 bg-white bg-clip-padding sticky z-20 cursor-pointer hover:bg-purple-50 hover:text-purple-600 transition-colors" onClick={() => onCellFocus("PT", i)}>{i + 1}</TableHead>
+                    <TableHead key={`h-pt-${i}`} className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-400 uppercase border-r border-b border-slate-200 bg-muted bg-clip-padding sticky z-20 cursor-pointer hover:bg-purple-50 hover:text-purple-600 transition-colors" onClick={() => onCellFocus("PT", i)}>{i + 1}</TableHead>
                   ))}
                   <TableHead className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-slate-500 uppercase border-r border-b border-slate-200 bg-slate-100 bg-clip-padding sticky z-20">Total</TableHead>
                   <TableHead className="w-14 min-w-[56px] max-w-[56px] px-1 text-center text-[11px] font-extrabold text-purple-600 uppercase border-r border-b border-slate-200 bg-purple-50 bg-clip-padding sticky z-20">PS</TableHead>
@@ -827,9 +827,9 @@ export function ClassRecordTable({
       <div
         ref={bodyScrollRef}
         onScroll={handleBodyScroll}
-        className="w-full overflow-x-auto overflow-y-clip relative z-10 bg-white rounded-b-2xl border-x border-b border-slate-200/60 shadow-sm scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
+        className="w-full overflow-x-auto overflow-y-clip relative z-10 bg-muted rounded-b-2xl border-x border-b border-slate-200/60 shadow-sm scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
       >
-        <div className="relative bg-white min-w-full">
+        <div className="relative bg-muted min-w-full">
           <Table className="border-separate border-spacing-0 table-fixed min-w-full">
             {renderColGroup()}
             <TableBody>

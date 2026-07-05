@@ -249,7 +249,7 @@ export default function Step4PreviousSchool() {
                   "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-11",
                   selectedLastSchoolType === lt.value
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
+                    : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
                 <span className="font-extrabold text-base leading-tight ">
                   {lt.label}

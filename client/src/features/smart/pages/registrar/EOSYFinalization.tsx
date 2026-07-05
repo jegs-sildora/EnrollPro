@@ -144,8 +144,8 @@ export default function EOSYFinalization() {
     <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "EOSY Finalization" }]} />
 
-      <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-        <CardHeader className="border-b border-slate-100 bg-white pb-6">
+      <Card className="border-slate-200 shadow-sm overflow-hidden bg-muted">
+        <CardHeader className="border-b border-slate-100 bg-muted pb-6">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex flex-col gap-3">
               <div>
@@ -197,7 +197,7 @@ export default function EOSYFinalization() {
                   <div className="flex flex-wrap items-center gap-4">
                     {/* Section Dropdown */}
                     <Select value={selectedSectionId} onValueChange={setSelectedSectionId}>
-                      <SelectTrigger className="w-[280px] rounded-xl border-gray-200 bg-white">
+                      <SelectTrigger className="w-[280px] rounded-xl border-gray-200 bg-muted">
                         <SelectValue placeholder="— Select a section —">
                           {(() => {
                             const s = sections.find((s) => String(s.id) === selectedSectionId);
@@ -219,7 +219,7 @@ export default function EOSYFinalization() {
                     {/* School Year Dropdown */}
                     {schoolYears.length > 0 && (
                       <Select value={selectedSchoolYearId} onValueChange={setSelectedSchoolYearId}>
-                        <SelectTrigger className="w-[140px] rounded-xl border-gray-200 bg-white">
+                        <SelectTrigger className="w-[140px] rounded-xl border-gray-200 bg-muted">
                           <SelectValue placeholder="Select SY">
                             {schoolYears.find(sy => String(sy.id) === selectedSchoolYearId)?.yearLabel}
                           </SelectValue>
@@ -245,7 +245,7 @@ export default function EOSYFinalization() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
                       placeholder="Search learners..."
-                      className="pl-9 rounded-xl border-slate-200 bg-white shadow-sm focus:ring-primary/20"
+                      className="pl-9 rounded-xl border-slate-200 bg-muted shadow-sm focus:ring-primary/20"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -257,7 +257,7 @@ export default function EOSYFinalization() {
 
           {/* Table Area */}
           {selectedSectionId ? (
-            <div className="bg-white">
+            <div className="bg-muted">
               {recordsLoading ? (
                 <div className="flex flex-col items-center justify-center py-32 text-center">
                   <Loader2 className="w-10 h-10 animate-spin text-slate-300 mb-4" />
@@ -273,7 +273,7 @@ export default function EOSYFinalization() {
               ) : (
                 <>
                   {/* Table Header/Metadata */}
-                  <div className="px-6 py-4 bg-white border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="px-6 py-4 bg-muted border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="text-sm">
                       <span className="text-slate-500">Learner records for </span>
                       <span className="font-extrabold text-slate-900">

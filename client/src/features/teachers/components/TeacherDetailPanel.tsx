@@ -386,7 +386,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         sileo.success({ title: "Faculty/Staff Record Created", description: "The faculty or staff record has been saved." });
       } else {
         await api.patch(`/teachers/${teacher!.id}`, profilePayload);
-        
+
         const originalPortalActive = teacher!.userAccount?.isActive ?? teacher!.isActive ?? true;
         if (data.portalActive !== undefined && data.portalActive !== originalPortalActive) {
           try {
@@ -431,7 +431,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         >
           <SheetHeader className="bg-primary px-6 py-6 space-y-1 relative shrink-0">
             <div className="flex items-center gap-4">
-              <div className="size-16 rounded-2xl bg-white/10 flex items-center justify-center font-extrabold text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
+              <div className="size-16 rounded-2xl bg-muted/10 flex items-center justify-center font-extrabold text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
                 {(formFirstName || teacher?.firstName || "N").charAt(0)}
                 {(formLastName || teacher?.lastName || "N").charAt(0)}
               </div>

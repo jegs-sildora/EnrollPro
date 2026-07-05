@@ -69,7 +69,7 @@ export function GradeEditModal({
 }: GradeEditModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden bg-white">
+      <DialogContent className="w-full max-w-3xl rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden bg-muted">
         {selectedRecord && (
           <div className="max-h-[85vh] overflow-y-auto">
             <div className="px-5 pt-5 pb-4 border-b border-slate-100">

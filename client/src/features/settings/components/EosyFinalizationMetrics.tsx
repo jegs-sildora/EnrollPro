@@ -25,7 +25,7 @@ export function EosyFinalizationMetrics() {
   if (!hasBlockers) return null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm w-full">
+    <div className="bg-muted border border-gray-200 rounded-lg p-6 mb-6 shadow-sm w-full">
       <h3 className="text-gray-900 font-semibold text-lg border-b pb-3 mb-4">
         Classes to Finish Before Starting the New School Year
       </h3>

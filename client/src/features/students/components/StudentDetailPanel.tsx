@@ -1758,7 +1758,7 @@ export function StudentDetailPanel({
             <PreviousSchool applicant={typedStudentShim} />
             <Classifications applicant={typedStudentShim} />
 
-            <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-sm p-5 space-y-4">
+            <div className="bg-muted border border-slate-200/80 rounded-xl overflow-hidden shadow-sm p-5 space-y-4">
               <div className="font-extrabold uppercase text-base leading-tight tracking-wide text-foreground flex items-center gap-2 border-b border-border/40 pb-3">
                 <FileBadge2 className="h-4 w-4 text-primary" />
                 PORTAL ACCESS & SECURITY
@@ -1927,7 +1927,7 @@ export function StudentDetailPanel({
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button
-                    className="bg-white text-gray-700"
+                    className="bg-muted text-gray-700"
                     variant="outline"
                     onClick={() => setShowTransferOutDialog(false)}>
                     Cancel
@@ -2021,7 +2021,7 @@ export function StudentDetailPanel({
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button
-                    className="bg-white text-gray-700"
+                    className="bg-muted text-gray-700"
                     variant="outline"
                     onClick={() => setShowDropoutDialog(false)}>
                     Cancel

@@ -124,7 +124,7 @@ export default function SystemHealth() {
           <button
             onClick={() => void fetchAll(true)}
             disabled={refreshing || syncing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-muted text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -150,7 +150,7 @@ export default function SystemHealth() {
       {health && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Overall</p>
                 {health.status === "HEALTHY" ? (
@@ -163,7 +163,7 @@ export default function SystemHealth() {
               <p className="text-xs text-slate-500 mt-1">Response: {formatDuration(health.responseTimeMs)}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Node Uptime</p>
                 <Server className="w-5 h-5 text-slate-600" />
@@ -172,7 +172,7 @@ export default function SystemHealth() {
               <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString()}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Database</p>
                 <Database className="w-5 h-5 text-slate-600" />
@@ -181,7 +181,7 @@ export default function SystemHealth() {
               <p className="text-xs text-slate-500 mt-1">Latency: {health.local.database.latencyMs} ms</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Heap Used</p>
                 <Clock3 className="w-5 h-5 text-slate-600" />
@@ -191,7 +191,7 @@ export default function SystemHealth() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="rounded-xl border border-slate-200 bg-muted p-4">
             <h2 className="text-sm font-semibold text-slate-800 mb-3">External Services</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {externalServices.map((service) => (
@@ -215,7 +215,7 @@ export default function SystemHealth() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="rounded-xl border border-slate-200 bg-muted p-4">
             <h2 className="text-sm font-semibold text-slate-800 mb-2">Sync Circuit Breaker</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
               <div className="rounded-lg border border-slate-200 p-3">
@@ -242,7 +242,7 @@ export default function SystemHealth() {
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="rounded-xl border border-slate-200 bg-muted p-4">
             <h2 className="text-sm font-semibold text-slate-800 mb-3">Recent Sync History</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">

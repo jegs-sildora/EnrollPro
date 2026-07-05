@@ -55,7 +55,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
   const gridColsClass = activeCardsCount === 1 ? "md:grid-cols-1" : activeCardsCount === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 
   return (
-    <div className="space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
+    <div className="flex flex-col flex-1 space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
       {!isArchived && (
         <Alert
           style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}
@@ -87,38 +87,43 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         </Alert>
       )}
 
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col w-full">
-        <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
-          <div className="flex flex-col items-center gap-1">
-            <h3 className="text-base sm:text-lg font-extrabold text-foreground">Total Official Enrollment</h3>
-            <div className="text-5xl sm:text-6xl font-extrabold" style={{ color: "hsl(var(--primary))" }}>
-              <AnimatedNumber value={stats?.kpiHeader?.enrolledTotal ?? 0} />
+      <div className={cn("flex flex-col w-full overflow-hidden", (activeCardsCount === 0 && !isArchived) ? "flex-1" : "")}>
+        <div className="flex flex-col flex-1">
+          {/* Top Hero Section */}
+          <div className="relative flex-1 flex flex-col items-center justify-center p-10 sm:p-14 min-h-[250px]">
+            <div className="absolute inset-0 bg-muted rounded-xl pointer-events-none border border-primary shadow-sm" />
+            <div className="relative z-10 flex flex-col items-center gap-2 text-center">
+              <h3 className="text-2xl font-extrabold text-foreground uppercase tracking-widest">Total Official Enrollment</h3>
+              <div className="text-7xl sm:text-[100px] leading-none font-black tracking-tighter my-2 drop-shadow-sm" style={{ color: "hsl(var(--primary))" }}>
+                <AnimatedNumber value={stats?.kpiHeader?.enrolledTotal ?? 0} />
+              </div>
+              <p className="text-lg sm:text-xl font-extrabold text-foreground">Officially Enrolled JHS Learners</p>
             </div>
-            <p className="text-base font-extrabold text-foreground">Officially Enrolled JHS Learners</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 border-t pt-6">
+          {/* Grade Breakdown Footer */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-6 mt-auto">
             {Array.of(7, 8, 9, 10).map((grade, idx) => {
               const b = stats?.gradeLevelBreakdown?.at(idx);
               return (
                 <div
                   key={grade}
                   className={cn(
-                    "text-center p-4 rounded-xl border flex flex-col justify-center transition-colors",
+                    "text-center p-5 rounded-xl border shadow-sm flex flex-col justify-center transition-all hover:shadow-md hover:-translate-y-0.5",
                     getGradeLevelBadgeStyles(grade.toString())
                   )}
                 >
-                  <p className=" font-extrabold mb-1 uppercase tracking-wider">Grade {grade}</p>
-                  <p className="text-4xl font-extrabold">
+                  <p className="font-extrabold mb-1 uppercase tracking-wider opacity-90">Grade {grade}</p>
+                  <p className="text-4xl sm:text-5xl font-black drop-shadow-sm mb-1">
                     <AnimatedNumber value={b?.current ?? 0} />
                   </p>
-                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-current/20 w-full">
+                  <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-current/20 w-full">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider opacity-80 mb-0.5">Male</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 mb-0.5">Male</span>
                       <span className="text-lg font-extrabold">{b?.male ?? 0}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider opacity-80 mb-0.5">Female</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 mb-0.5">Female</span>
                       <span className="text-lg font-extrabold">{b?.female ?? 0}</span>
                     </div>
                   </div>
@@ -126,8 +131,8 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {isArchived ? (
         <section

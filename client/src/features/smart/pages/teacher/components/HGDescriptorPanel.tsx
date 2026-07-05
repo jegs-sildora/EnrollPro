@@ -30,7 +30,7 @@ export function HGDescriptorPanel({
   onDescriptorUpdate,
 }: HGDescriptorPanelProps) {
   return (
-    <Card className="hidden lg:block border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+    <Card className="hidden lg:block border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted">
       <CardHeader className="p-8 border-0 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Homeroom Guidance Descriptors</h2>
@@ -39,7 +39,7 @@ export function HGDescriptorPanel({
         <div className="flex items-center gap-4">
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Period:</span>
           <Select value={selectedTerm} onValueChange={(val) => val && onTermChange(val)}>
-            <SelectTrigger className="h-11 w-40 bg-white border-slate-200 text-sm font-extrabold uppercase rounded-xl shadow-sm px-6">
+            <SelectTrigger className="h-11 w-40 bg-muted border-slate-200 text-sm font-extrabold uppercase rounded-xl shadow-sm px-6">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-200 shadow-2xl p-2">
@@ -60,7 +60,7 @@ export function HGDescriptorPanel({
           const isSaving = savingDescriptorStudentId === record.student.id;
 
           return (
-            <div key={record.student.id} className="grid grid-cols-[52px_140px_minmax(200px,1fr)_minmax(280px,360px)] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <div key={record.student.id} className="grid grid-cols-[52px_140px_minmax(200px,1fr)_minmax(280px,360px)] items-center gap-3 rounded-xl border border-slate-200 bg-muted px-4 py-3">
               <p className="text-xs font-extrabold text-slate-500">{index + 1}</p>
               <p className="text-xs font-mono text-slate-500">{record.student.lrn}</p>
               <p className="text-sm font-extrabold text-slate-800">{record.student.lastName}, {record.student.firstName}</p>

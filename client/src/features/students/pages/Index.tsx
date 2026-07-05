@@ -1081,11 +1081,11 @@ export default function Students() {
       ];
       return activeTab === "active" ? allColumns.filter(col => col.id !== "status") : allColumns;
     }, [
-      activeTab,
-      enableHomogeneousSections,
-      homogeneousSectionCount,
-      sections,
-    ]);
+    activeTab,
+    enableHomogeneousSections,
+    homogeneousSectionCount,
+    sections,
+  ]);
 
   const renderContent = () => (
     <div className="space-y-6">
@@ -1100,7 +1100,7 @@ export default function Students() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   placeholder="Search by name, ID, or LRN..."
-                  className="w-full h-10 pl-9 bg-white border-gray-300 uppercase font-extrabold"
+                  className="w-full h-10 pl-9 bg-muted border-gray-300 uppercase font-extrabold"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -1579,7 +1579,7 @@ export default function Students() {
         value={activeTab}
         onValueChange={handleTabChange}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="active"
             className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">

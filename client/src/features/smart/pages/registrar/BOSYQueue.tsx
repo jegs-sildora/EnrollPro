@@ -272,7 +272,7 @@ export default function BOSYQueue() {
                 <div className="flex items-center gap-2">
                   <span>Rows per page:</span>
                   <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
-                    <SelectTrigger className="h-9 w-20 rounded-lg border-slate-200 bg-white shadow-sm">
+                    <SelectTrigger className="h-9 w-20 rounded-lg border-slate-200 bg-muted shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -290,7 +290,7 @@ export default function BOSYQueue() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={page <= 1}
                   onClick={() => setPage(1)}
                 >
@@ -299,7 +299,7 @@ export default function BOSYQueue() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
@@ -318,7 +318,7 @@ export default function BOSYQueue() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={page >= meta.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
@@ -327,7 +327,7 @@ export default function BOSYQueue() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-400"
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-muted text-slate-400"
                   disabled={page >= meta.totalPages}
                   onClick={() => setPage(meta.totalPages)}
                 >

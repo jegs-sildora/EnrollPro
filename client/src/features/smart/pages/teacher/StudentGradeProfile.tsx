@@ -144,7 +144,7 @@ export default function StudentGradeProfilePage() {
       {/* Student Info Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <Card className="lg:col-span-2 border-0 shadow-xl shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
+        <Card className="lg:col-span-2 border-0 shadow-xl shadow-gray-200/50 bg-muted overflow-hidden rounded-2xl p-0">
           <CardHeader className="border-b border-gray-100 px-6 py-5" style={{ backgroundColor: `${colors.primary}08` }}>
             <div className="flex items-center gap-4">
               <div
@@ -244,14 +244,14 @@ export default function StudentGradeProfilePage() {
         <Card className="border-0 shadow-xl shadow-gray-200/50 overflow-hidden rounded-2xl text-white p-0" style={{ backgroundColor: colors.primary }}>
           <CardContent className="p-6 h-full flex flex-col">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+              <div className="p-2.5 rounded-xl bg-muted/20 backdrop-blur-sm">
                 <Award className="w-5 h-5" />
               </div>
               <h3 className="font-extrabold text-lg">Academic Summary</h3>
             </div>
 
             <div className="space-y-4 flex-1">
-              <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+              <div className="p-4 rounded-xl bg-muted/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">General Average</p>
                 <p className="text-4xl font-extrabold">
                   {summary.generalAverage !== null ? summary.generalAverage.toFixed(2) : "N/A"}
@@ -272,7 +272,7 @@ export default function StudentGradeProfilePage() {
                 </div>
               )}
 
-              <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+              <div className="p-4 rounded-xl bg-muted/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">Status</p>
                 <Badge className={`${summary.promotionStatus === "PROMOTED" ? "text-white" :
                   summary.promotionStatus === "CONDITIONALLY PROMOTED" ? "bg-amber-400/30 text-amber-100" :
@@ -285,7 +285,7 @@ export default function StudentGradeProfilePage() {
                 </Badge>
               </div>
 
-              <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+              <div className="p-4 rounded-xl bg-muted/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">Progress</p>
                 <p className="text-lg font-semibold">
                   {summary.completedSubjects} / {summary.totalSubjects} Subjects Graded
@@ -297,7 +297,7 @@ export default function StudentGradeProfilePage() {
       </div>
 
       {/* Grades Table */}
-      <Card className="border-0 shadow-xl shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
+      <Card className="border-0 shadow-xl shadow-gray-200/50 bg-muted overflow-hidden rounded-2xl p-0">
         <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -427,7 +427,7 @@ export default function StudentGradeProfilePage() {
       </Card>
 
       {/* DepEd Grading Legend */}
-      <Card className="border-0 shadow-lg shadow-gray-200/50 bg-white overflow-hidden rounded-2xl p-0">
+      <Card className="border-0 shadow-lg shadow-gray-200/50 bg-muted overflow-hidden rounded-2xl p-0">
         <CardHeader className="border-b border-gray-100 px-6 py-4">
           <CardTitle className="text-sm font-extrabold text-gray-700">DepEd Grading Scale</CardTitle>
         </CardHeader>

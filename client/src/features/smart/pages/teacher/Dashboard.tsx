@@ -282,7 +282,7 @@ export default function TeacherDashboard() {
       )}
 
       {/* Hero Welcome Section - Refined for "Professional Settings" */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-white border border-slate-200 p-8 md:p-12 shadow-xl shadow-slate-200/50">
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-muted border border-slate-200 p-8 md:p-12 shadow-xl shadow-slate-200/50">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 -skew-x-12 translate-x-1/2" />
         <div className="absolute top-0 right-1/4 w-px h-full bg-slate-100" />
 
@@ -324,7 +324,7 @@ export default function TeacherDashboard() {
                 </Button>
               </Link>
               <Link to="/teacher/classes">
-                <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95 font-extrabold">
+                <Button variant="outline" className="h-14 px-8 rounded-2xl bg-muted border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95 font-extrabold">
                   <BookOpen className="w-5 h-5 mr-3" />
                   Class Records
                 </Button>
@@ -338,7 +338,7 @@ export default function TeacherDashboard() {
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Overall Passing</p>
                 <p className="text-4xl font-extrabold text-slate-900">{stats?.summary.overallPassingRate.toFixed(0)}%</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
+              <div className="w-14 h-14 rounded-2xl bg-muted shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
                 <TrendingUp className="w-7 h-7 text-emerald-500" />
               </div>
             </div>
@@ -347,7 +347,7 @@ export default function TeacherDashboard() {
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Grade Submission</p>
                 <p className="text-4xl font-extrabold text-slate-900">{stats?.summary.gradeSubmissionRate.toFixed(0)}%</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
+              <div className="w-14 h-14 rounded-2xl bg-muted shadow-sm flex items-center justify-center group-hover:scale-110 transition-all">
                 <FileCheck className="w-7 h-7 text-indigo-500" />
               </div>
             </div>
@@ -387,7 +387,7 @@ export default function TeacherDashboard() {
             desc: "Successful submissions"
           },
         ].map((stat) => (
-          <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-3xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 bg-white">
+          <Card key={stat.label} className="border-0 shadow-lg shadow-slate-200/50 rounded-3xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 bg-muted">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className={`p-3 rounded-2xl ${stat.bg} ${stat.fg} group-hover:scale-110 transition-transform`}>
@@ -420,7 +420,7 @@ export default function TeacherDashboard() {
       )}
 
       {/* ── Performance Mastery ── Full Width */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden flex flex-col bg-white">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden flex flex-col bg-muted">
         <CardHeader className="p-8 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-3">
@@ -438,7 +438,7 @@ export default function TeacherDashboard() {
                 if (val) setSelectedGradeLevel(val);
                 setSelectedSection("all");
               }}>
-                <SelectTrigger className="h-9 w-[110px] bg-white border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
+                <SelectTrigger className="h-9 w-[110px] bg-muted border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
                   <SelectValue placeholder="Grade" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 shadow-xl">
@@ -449,7 +449,7 @@ export default function TeacherDashboard() {
                 </SelectContent>
               </Select>
               <Select value={selectedSection} onValueChange={(val) => val && setSelectedSection(val)}>
-                <SelectTrigger className="h-9 w-[130px] bg-white border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
+                <SelectTrigger className="h-9 w-[130px] bg-muted border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-wider shadow-sm focus:ring-2 focus:ring-slate-100 transition-all">
                   <SelectValue placeholder="Section" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 shadow-xl">
@@ -511,7 +511,7 @@ export default function TeacherDashboard() {
       </Card>
 
       {/* ── Grading Status ── Full Width Big Card */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted">
         <CardHeader className="p-8 pb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-slate-100 text-slate-900">
@@ -542,7 +542,7 @@ export default function TeacherDashboard() {
                         </div>
                         <span className="text-xl font-extrabold" style={{ color: barColor }}>{percentage}%</span>
                       </div>
-                      <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+                      <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
                         <div
                           className="h-full rounded-full transition-all duration-1000 ease-out"
                           style={{ width: `${percentage}%`, backgroundColor: barColor }}
@@ -574,7 +574,7 @@ export default function TeacherDashboard() {
       </Card>
 
       {/* ── Academic Honors ── Full Width */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted">
         <CardHeader className="p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
@@ -671,7 +671,7 @@ export default function TeacherDashboard() {
       </Card>
 
       {/* ── Students Needing Attention ── Full Width Big Card */}
-      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-white border-t-[8px] border-t-rose-500">
+      <Card className="border-0 shadow-2xl shadow-slate-200/40 rounded-[2.5rem] overflow-hidden bg-muted border-t-[8px] border-t-rose-500">
         <CardHeader className="p-8 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -695,7 +695,7 @@ export default function TeacherDashboard() {
                 {stats.summary.studentsAtRisk.map((student, idx) => (
                   <div key={idx} className="p-6 rounded-3xl bg-rose-50/40 border border-rose-100 hover:bg-rose-50 hover:border-rose-200 transition-all flex flex-col gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-rose-500 shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-muted shadow-sm flex items-center justify-center text-rose-500 shrink-0">
                         <Users className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">

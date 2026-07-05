@@ -1158,7 +1158,7 @@ export default function Homerooms() {
           value={activeGradeId}
           onValueChange={setActiveGradeId}
           className="w-full">
-          <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+          <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
             {groups.map((g) => (
               <TabsTrigger
                 key={g.gradeLevelId}
@@ -1245,10 +1245,9 @@ export default function Homerooms() {
         title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
         description={
           formSheetMode === "create"
-            ? `Add a ${
-              createCategory
-                ? SECTION_CATEGORY_CONFIG[createCategory].title
-                : "section"
+            ? `Add a ${createCategory
+              ? SECTION_CATEGORY_CONFIG[createCategory].title
+              : "section"
             } masterlist for ${createGlName}.`
             : `Update configuration for section ${sectionFormData.name}.`
         }

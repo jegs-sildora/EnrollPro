@@ -583,7 +583,7 @@ export default function Teachers() {
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              className="w-full h-10 pl-9 bg-white text-base border-gray-300 uppercase font-extrabold"
+              className="w-full h-10 pl-9 bg-muted text-base border-gray-300 uppercase font-extrabold"
               aria-label="Search faculty and staff"
               placeholder="Search name, Employee ID, mobile number, subject area, ..."
               value={activeFilter}
@@ -599,7 +599,7 @@ export default function Teachers() {
               onValueChange={(value) =>
                 onStatusFilterChange(value as TeacherStatusFilter)
               }>
-              <SelectTrigger className="h-10 bg-white">
+              <SelectTrigger className="h-10 bg-muted">
                 <SelectValue placeholder="Service Status" />
               </SelectTrigger>
               <SelectContent className=" font-extrabold">
@@ -617,7 +617,7 @@ export default function Teachers() {
               onValueChange={(value) =>
                 onDesignationFilterChange(value as TeacherDesignationFilter)
               }>
-              <SelectTrigger className="h-10 bg-white">
+              <SelectTrigger className="h-10 bg-muted">
                 <SelectValue placeholder="Plantilla / Designation" />
               </SelectTrigger>
               <SelectContent>
@@ -637,7 +637,7 @@ export default function Teachers() {
             <Select
               value={departmentFilter}
               onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="h-10 bg-white min-w-[160px]">
+              <SelectTrigger className="h-10 bg-muted min-w-[160px]">
                 <SelectValue placeholder="Subject" />
               </SelectTrigger>
               <SelectContent>
@@ -709,7 +709,7 @@ export default function Teachers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <p className="text-base leading-tight text-foreground text-balance font-extrabold">
-            
+
           </p>
         </div>
         <Button
@@ -732,7 +732,7 @@ export default function Teachers() {
       {/* Premium KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Faculty & Staff */}
-        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
             <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Total Faculty & Staff
@@ -747,7 +747,7 @@ export default function Teachers() {
         </div>
 
         {/* Active */}
-        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
             <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Active Personnel
@@ -762,7 +762,7 @@ export default function Teachers() {
         </div>
 
         {/* Inactive / On Leave */}
-        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
             <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Inactive / On Leave
@@ -777,7 +777,7 @@ export default function Teachers() {
         </div>
 
         {/* Class Advisers */}
-        <div className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
             <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
               Class Advisers
@@ -793,7 +793,7 @@ export default function Teachers() {
       </div>
 
       {/* Teacher list table */}
-      <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
         {/* Control Bar (Filters) */}
         <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
           {controlBar}

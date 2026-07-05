@@ -224,7 +224,7 @@ export default function LearnerDashboard() {
         </defs>
         <rect width="100%" height="100%" fill="url(#learner-dashboard-pixel-grid)" />
       </svg>
-      <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm print:hidden">
+      <header className="sticky top-0 z-50 w-full bg-muted border-b border-gray-200 shadow-sm print:hidden">
         <div className="flex h-14 items-center justify-between px-4 sm:px-6 mx-auto max-w-6xl">
           <div className="flex items-center gap-2">
             {data?.schoolLogoUrl ? (
@@ -269,7 +269,7 @@ export default function LearnerDashboard() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] overflow-hidden bg-white relative z-10 print:h-auto print:overflow-visible">
+      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] overflow-hidden bg-muted relative z-10 print:h-auto print:overflow-visible">
         {error && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-center gap-3 shadow-md">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />

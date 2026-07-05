@@ -864,7 +864,7 @@ export default function ClassRecordView() {
         <div className={`fixed top-20 right-6 z-[100] flex items-center gap-4 px-6 py-4 rounded-[1.5rem] shadow-2xl border-0 animate-slide-in-right ${error ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"}`}>
           {error ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
           <span className="text-sm font-extrabold uppercase tracking-widest">{error || success}</span>
-          <button onClick={() => { setError(''); setSuccess(''); }} className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+          <button onClick={() => { setError(''); setSuccess(''); }} className="ml-4 p-1 hover:bg-muted/20 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
         </div>
       )}
 

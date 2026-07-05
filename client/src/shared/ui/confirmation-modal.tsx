@@ -174,7 +174,7 @@ export function ConfirmationModal({
             disabled={loading}
             className={cn(
               "flex-1 h-12 rounded-lg font-extrabold text-sm",
-              "border border-gray-200 bg-white text-gray-700",
+              "border border-gray-200 bg-muted text-gray-700",
               "hover:bg-gray-50 active:bg-gray-100",
               "transition-all duration-150 active:scale-[0.97]",
             )}>

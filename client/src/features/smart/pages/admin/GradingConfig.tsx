@@ -283,11 +283,11 @@ export default function GradingConfig() {
                 Per the Revised Guidelines on Classroom Assessment (April 2026), weights are now aligned across Core, Math, and Science subjects.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="bg-white rounded-lg px-3 py-2 border border-white/80">
+                <div className="bg-muted rounded-lg px-3 py-2 border border-white/80">
                   <span className="text-xs text-gray-500  block">Core, Math &amp; Science</span>
                   <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 50% · TA 30%</span>
                 </div>
-                <div className="bg-white rounded-lg px-3 py-2 border border-white/80">
+                <div className="bg-muted rounded-lg px-3 py-2 border border-white/80">
                   <span className="text-xs text-gray-500  block">MAPEH &amp; TLE</span>
                   <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 60% · TA 20%</span>
                 </div>
@@ -311,7 +311,7 @@ export default function GradingConfig() {
           const Icon = info.icon;
 
           return (
-            <Card key={config.id} className="p-0 gap-0 border-0 shadow-lg overflow-hidden bg-white">
+            <Card key={config.id} className="p-0 gap-0 border-0 shadow-lg overflow-hidden bg-muted">
               {/* Card Header — fills full width including corners */}
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between" style={{ backgroundColor: `${colors.primary}0d` }}>
                 <div className="flex items-center gap-3">
@@ -461,7 +461,7 @@ export default function GradingConfig() {
       </div>
 
       {/* Change History */}
-      <Card className="p-0 gap-0 border-0 shadow-lg bg-white overflow-hidden">
+      <Card className="p-0 gap-0 border-0 shadow-lg bg-muted overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3" style={{ backgroundColor: `${colors.primary}06` }}>
           <History className="w-4 h-4" style={{ color: colors.primary }} />
           <div>

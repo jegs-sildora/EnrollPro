@@ -108,7 +108,7 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 bg-white"
+        className="w-auto p-0 bg-muted"
         align="center">
         <Calendar
           // Use a key that forces re-mount when opening or when the date changes externally.

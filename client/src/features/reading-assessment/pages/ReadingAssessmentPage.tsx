@@ -435,7 +435,7 @@ export default function ReadingAssessmentPage() {
         }}
         className="w-full"
       >
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           {INTAKE_TABS.map((tab) => (
             <TabsTrigger
               key={tab.key}

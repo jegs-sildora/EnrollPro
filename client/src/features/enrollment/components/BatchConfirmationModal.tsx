@@ -290,7 +290,7 @@ export function BatchConfirmationModal({
           className="w-full">
           {/* Animated System Tabs */}
           <div className="px-8 pt-6 bg-background">
-            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-white border border-border rounded-xl relative shadow-sm">
+            <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
               <TabsTrigger
                 value="scan"
                 className="flex-1 sm:flex-none py-2 px-6 gap-2 font-extrabold uppercase text-base relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all rounded-lg">

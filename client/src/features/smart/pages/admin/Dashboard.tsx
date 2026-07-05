@@ -175,7 +175,7 @@ export default function AdminDashboard() {
         ].map((stat) => (
           <Card
             key={stat.label}
-            className="group border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 bg-white overflow-hidden"
+            className="group border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 bg-muted overflow-hidden"
           >
             <CardContent className="p-6 h-full flex flex-col">
               <div className="flex items-start justify-between flex-1">
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
 
       {/* System Status Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-white p-0">
+        <Card className="border-0 shadow-lg shadow-gray-200/50 rounded-xl bg-muted p-0">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <Card className="lg:col-span-2 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white overflow-hidden p-0">
+        <Card className="lg:col-span-2 border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted overflow-hidden p-0">
           <CardHeader className="border-b border-gray-100 px-6 py-4" style={{ backgroundColor: `${colors.primary}08` }}>
             <div className="flex items-center justify-between">
               <div>
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-white p-0">
+        <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl bg-muted p-0">
           <CardHeader className="border-b border-gray-100 px-6 py-4">
             <CardTitle className="text-lg" style={{ color: '#111827' }}>Quick Actions</CardTitle>
             <CardDescription>Common administrative tasks</CardDescription>
@@ -357,15 +357,15 @@ export default function AdminDashboard() {
                 Overview of all registered users in the system by role type.
               </p>
               <div className="flex flex-wrap gap-4 mt-4">
-                <div className="bg-white/10 rounded-xl px-4 py-2">
+                <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Teachers</span>
                   <p className="text-xl font-extrabold">{stats.totalTeachers}</p>
                 </div>
-                <div className="bg-white/10 rounded-xl px-4 py-2">
+                <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Admins</span>
                   <p className="text-xl font-extrabold">{stats.totalAdmins}</p>
                 </div>
-                <div className="bg-white/10 rounded-xl px-4 py-2">
+                <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Registrars</span>
                   <p className="text-xl font-extrabold">{stats.totalRegistrars}</p>
                 </div>

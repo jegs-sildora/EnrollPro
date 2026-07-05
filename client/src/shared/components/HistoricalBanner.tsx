@@ -25,6 +25,8 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   const {
     viewingSchoolYearLabel,
     viewingSchoolYearId,
+    activeSchoolYearLabel,
+    triggerSchoolYearSwitch,
     setViewingSY,
     setHistoricalCorrectionToken,
     historicalCorrectionExpiresAt,
@@ -64,8 +66,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   if (!isHistoricalReadOnly) return null;
 
   const handleSwitchToActive = () => {
-    setViewingSY(null, null);
-    setTimeout(() => window.location.reload(), 50);
+    triggerSchoolYearSwitch(null, null, activeSchoolYearLabel);
   };
 
   const handleRelock = () => {

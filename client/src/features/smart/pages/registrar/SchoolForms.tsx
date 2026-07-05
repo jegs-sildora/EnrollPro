@@ -414,7 +414,7 @@ export default function SchoolForms() {
 
   // Render SF9 Content Helper
   const renderSF9Content = (data: SF9Data) => (
-    <div className="bg-white border-2 border-gray-400 shadow-xl print-form print-form-sf9 p-8 mb-8">
+    <div className="bg-muted border-2 border-gray-400 shadow-xl print-form print-form-sf9 p-8 mb-8">
       {/* Header with DepEd Logo */}
       <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-gray-400">
         <div className="w-20">
@@ -652,7 +652,7 @@ export default function SchoolForms() {
 
   // Render SF10 Content Helper
   const renderSF10Content = (data: SF10Data) => (
-    <div className="bg-white border-2 border-gray-400 shadow-xl print-form p-8 mb-8">
+    <div className="bg-muted border-2 border-gray-400 shadow-xl print-form p-8 mb-8">
       {/* Header with DepEd Logo */}
       <div className="flex items-start justify-between mb-4 pb-4 border-b-2 border-gray-400">
         <div className="w-20">
@@ -809,7 +809,7 @@ export default function SchoolForms() {
           </table>
 
           {/* Remarks and Certification Section */}
-          <div className="border-t-2 border-gray-600 p-2 bg-white">
+          <div className="border-t-2 border-gray-600 p-2 bg-muted">
             <div className="text-xs mb-2">
               <div className="flex items-center justify-between mb-1">
                 <div>
@@ -1007,7 +1007,7 @@ export default function SchoolForms() {
             return (
               <Card
                 key={form.id}
-                className={`group border-0 shadow-lg shadow-gray-200/50 transition-all duration-300 bg-white overflow-hidden rounded-2xl p-0 ${isDev ? 'opacity-75 grayscale-[0.3]' : 'hover:shadow-xl'}`}
+                className={`group border-0 shadow-lg shadow-gray-200/50 transition-all duration-300 bg-muted overflow-hidden rounded-2xl p-0 ${isDev ? 'opacity-75 grayscale-[0.3]' : 'hover:shadow-xl'}`}
               >
                 <CardHeader className="border-b border-gray-100 px-6 py-4" style={{ backgroundColor: isDev ? '#f8fafc' : `${themeColors.primary}08` }}>
                   <div className="flex items-center gap-3">
@@ -1349,7 +1349,7 @@ export default function SchoolForms() {
         </div>
 
         {/* SF9 Form - Official DepEd Format */}
-        <div ref={sf9PrintRef} className="bg-white border-2 border-gray-400 shadow-xl print-form print-form-sf9 p-8">
+        <div ref={sf9PrintRef} className="bg-muted border-2 border-gray-400 shadow-xl print-form print-form-sf9 p-8">
           {/* Header with DepEd Logo */}
           <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-gray-400">
             <div className="w-20">
@@ -1608,7 +1608,7 @@ export default function SchoolForms() {
         </div>
 
         {/* SF10 Form - Official DepEd Format */}
-        <div ref={sf10PrintRef} className="bg-white border-2 border-gray-400 shadow-xl print-form p-8">
+        <div ref={sf10PrintRef} className="bg-muted border-2 border-gray-400 shadow-xl print-form p-8">
           {/* Header with DepEd Logo */}
           <div className="flex items-start justify-between mb-4 pb-4 border-b-2 border-gray-400">
             <div className="w-20">
@@ -1765,7 +1765,7 @@ export default function SchoolForms() {
               </table>
 
               {/* Remarks and Certification Section */}
-              <div className="border-t-2 border-gray-600 p-2 bg-white">
+              <div className="border-t-2 border-gray-600 p-2 bg-muted">
                 <div className="text-xs mb-2">
                   <div className="flex items-center justify-between mb-1">
                     <div>

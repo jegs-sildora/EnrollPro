@@ -290,7 +290,7 @@ export default function RegistrarEOSYWorkspace() {
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
-                className="w-full bg-white border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-base leading-tight font-extrabold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full bg-muted border-2 border-slate-200 rounded-lg pl-10 pr-4 py-2 text-base leading-tight font-extrabold focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Filter by name or LRN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
