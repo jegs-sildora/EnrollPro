@@ -249,6 +249,7 @@ export default function BOSYPage() {
           targetGrade === "ALL" ? undefined : Number(targetGrade),
         search: activeQueueSearch || undefined,
         previousSectionName: previousSectionName !== "ALL" ? previousSectionName : undefined,
+        curricularProgram: curricularProgram !== "ALL" ? curricularProgram : undefined,
         page: queuePage,
         limit: queueLimit,
       });
@@ -268,6 +269,7 @@ export default function BOSYPage() {
     repairReadySchoolYearId,
     activeQueueSearch,
     previousSectionName,
+    curricularProgram,
   ]);
 
   useEffect(() => {
@@ -536,7 +538,7 @@ export default function BOSYPage() {
   }, [setTitle]);
 
   return (
-    <div className="flex h-[calc(100vh-120px)] min-h-0 flex-col">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <PhaseBanner />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
@@ -635,7 +637,7 @@ export default function BOSYPage() {
                           "relative flex min-h-32 flex-col rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           queueState === filterVal
                             ? "border-primary ring-1 ring-primary/20"
-                            : "border-border hover:border-primary hover:bg-muted/20",
+                            : "border-border hover:border-primary",
                         )}>
                         <div className={cn(
                           "absolute left-4 top-4 flex aspect-square h-4 w-4 items-center justify-center rounded-full border text-primary ring-offset-background",
@@ -657,7 +659,7 @@ export default function BOSYPage() {
                           )}>
                           {value}
                         </span>
-                        <span className="mt-1 text-sm font-extrabold text-muted-foreground">
+                        <span className="mt-1 text-sm font-extrabold text-foreground">
                           {subBadge}
                         </span>
                       </button>
@@ -666,7 +668,7 @@ export default function BOSYPage() {
 
                   <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col flex-1 h-full min-h-0 overflow-hidden">
                     <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6">
-                      <div className="relative w-full xl:w-80 shrink-0">
+                      <div className="relative w-full flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                           placeholder="Search by LRN, Last Name, or First Name..."
@@ -721,7 +723,13 @@ export default function BOSYPage() {
                               }}
                             >
                               <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-                                <SelectValue placeholder="All Programs" />
+                                <SelectValue placeholder="All Programs">
+                                  {curricularProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
+                                    : curricularProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
+                                      : curricularProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
+                                        : curricularProgram === "REGULAR" ? "Regular BEC"
+                                          : "All Programs"}
+                                </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
@@ -889,10 +897,10 @@ export default function BOSYPage() {
                     onOpenChange={(open) => {
                       if (!open && !revokeBusy) setRevokeTarget(null);
                     }}
-                    title="Revoke Confirmation"
+                    title="Unenroll"
                     variant="danger"
                     loading={revokeBusy}
-                    confirmText="Revoke Confirmation"
+                    confirmText="Unenroll"
                     onConfirm={() => { void executeRevokeConfirmation(); }}
                     description={
                       <>

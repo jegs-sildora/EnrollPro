@@ -976,7 +976,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         <AnimatePresence mode="wait">
           <PageTransition
             routeKey={location.pathname}
-            className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
+            className="flex-1 flex flex-col min-w-0 py-3 px-6">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />
             ) : (

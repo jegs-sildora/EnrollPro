@@ -52,6 +52,17 @@ export interface GradeLevelFinalizationItem {
   percent: number
 }
 
+export interface HistoricalSummary {
+  promotedTotal: number
+  conditionallyPromotedTotal: number
+  retainedTotal: number
+  jhsCompletersTotal: number
+  jhsCompletersMale: number
+  jhsCompletersFemale: number
+  transferredOutTotal: number
+  droppedOutTotal: number
+}
+
 export interface DashboardStats {
   systemPhase: string
   isArchived: boolean
@@ -94,16 +105,8 @@ export interface DashboardStats {
     transferredLearnersCount: number
     droppedLearnersCount: number
   }
-  historicalSummary: {
-    promotedTotal: number
-    conditionallyPromotedTotal: number
-    retainedTotal: number
-    jhsCompletersTotal: number
-    jhsCompletersMale: number
-    jhsCompletersFemale: number
-    transferredOutTotal: number
-    droppedOutTotal: number
-  }
+  historicalSummary: HistoricalSummary
+  precedingHistoricalSummary?: HistoricalSummary | null
   criticalSections: Array<{
     id: string
     name: string

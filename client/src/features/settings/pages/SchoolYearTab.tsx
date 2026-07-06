@@ -484,13 +484,7 @@ export default function SchoolYearTab() {
   useEffect(() => {
     // Check for bridge state
     if (location.state?.highlightUpcoming) {
-      // Small delay to ensure data is fetched and form is ready
-      const timer = setTimeout(() => {
-        handlePrepareRollover();
-        // Clear state to prevent re-triggering on manual tab changes
-        window.history.replaceState({}, document.title);
-      }, 500);
-      return () => clearTimeout(timer);
+      // Bridge state removed - transitions are handled in EOSY module now
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
@@ -725,7 +719,7 @@ export default function SchoolYearTab() {
   };
 
   const handleActivateNext = async () => {
-    if (activeYear && !isRolloverReady) {
+    if (activeYear) {
       return;
     }
 
@@ -738,22 +732,13 @@ export default function SchoolYearTab() {
       return;
     }
 
-    const isRolloverFlow = Boolean(activeYear);
-
     setCreating(true);
-    if (isRolloverFlow) {
-      setRolloverLoaderStep(0);
-      setIsRolloverFinishing(false);
-      setIsRolloverLoaderOpen(true);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const derivedSchedule = buildSchoolYearSchedule(
         editClassOpening,
         editClassEnd,
       );
-      const resolvedYearLabel =
-        editYearLabel.trim() || derivedSchedule.yearLabel;
+      const resolvedYearLabel = editYearLabel.trim() || derivedSchedule.yearLabel;
 
       const activationPayload = {
         yearLabel: resolvedYearLabel,
@@ -765,34 +750,12 @@ export default function SchoolYearTab() {
         enrollCloseDate: derivedSchedule.enrollCloseDate.toISOString(),
       };
 
-      const requestPath = activeYear
-        ? "/school-years/rollover"
-        : "/school-years/activate";
-      const requestPayload = activeYear
-        ? {
-          yearLabel: activationPayload.yearLabel,
-          classOpeningDate: activationPayload.classOpeningDate,
-          classEndDate: activationPayload.classEndDate,
-          pin: rolloverPin,
-        }
-        : {
-          ...activationPayload,
-          cloneFromId: null,
-        };
+      const requestPayload = {
+        ...activationPayload,
+        cloneFromId: archivedYears.length > 0 ? archivedYears[0].id : null,
+      };
 
-      if (isRolloverFlow) {
-        setRolloverLoaderStep(1);
-      }
-
-      const res = await api.post(requestPath, requestPayload);
-
-      if (isRolloverFlow) {
-        setRolloverLoaderStep(2);
-      }
-
-      const rolloverSummary =
-        (res.data.rolloverSummary as RolloverSummary | null | undefined) ??
-        null;
+      const res = await api.post("/school-years/activate", requestPayload);
 
       setSettings({
         activeSchoolYearId: res.data.year.id,
@@ -800,103 +763,28 @@ export default function SchoolYearTab() {
         viewingSchoolYearId: null,
       });
 
-      if (isRolloverFlow) {
-        setRolloverLoaderStep(3);
-      }
-
-      const successDescription = activeYear
-        ? rolloverSummary
-          ? `School Year ${res.data.year.yearLabel} is now active with empty class lists. ${rolloverSummary.pendingConfirmations} returning learner(s) are waiting for confirmation. ${rolloverSummary.remedialHolds} Grade 10 remedial case(s) are on hold.`
-          : `School Year ${res.data.year.yearLabel} is now active.`
-        : `School Year ${res.data.year.yearLabel} is now active.`;
-
-      if (isRolloverFlow) {
-        pendingSuccessToastRef.current = () => {
-          sileo.success({
-            title: activeYear ? "Rollover Completed" : "School Year Activated",
-            description: successDescription,
-          });
-        };
-      } else {
-        sileo.success({
-          title: activeYear ? "Rollover Completed" : "School Year Activated",
-          description: successDescription,
-        });
-      }
+      sileo.success({
+        title: "School Year Activated",
+        description: `School Year ${res.data.year.yearLabel} is now active.`,
+      });
 
       setShowNextForm(false);
-      setRolloverPin("");
-      setRolloverReadiness(null);
       setRolloverDraftBaseline(null);
 
-      if (isRolloverFlow) {
-        setRolloverLoaderStep(4);
-      }
-
       await fetchData();
-
-      if (isRolloverFlow) {
-        setIsRolloverFinishing(true);
-        await new Promise((resolve) =>
-          setTimeout(resolve, ROLLOVER_CLOSE_COUNTDOWN_SECONDS * 1000),
-        );
-      }
     } catch (err) {
-      pendingSuccessToastRef.current = null;
       toastApiError(err as never);
     } finally {
       setCreating(false);
-      if (isRolloverFlow) {
-        setIsRolloverLoaderOpen(false);
-        setIsRolloverFinishing(false);
-        if (!prefersReducedMotion) {
-          await new Promise((resolve) => setTimeout(resolve, 420));
-        }
-        pendingSuccessToastRef.current?.();
-        pendingSuccessToastRef.current = null;
-        setRolloverLoaderStep(0);
-      }
     }
   };
 
-  const handlePrepareRollover = () => {
+  const handlePrepareActivation = () => {
     if (activeYear) {
-      const activeOpeningDate = activeYear.classOpeningDate
-        ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
-        : undefined;
-      const parsedStartYear = parseStartYearFromLabel(activeYear.yearLabel);
+      return;
+    }
 
-      const nextStartYear = activeOpeningDate
-        ? activeOpeningDate.getUTCFullYear() + 1
-        : parsedStartYear
-          ? parsedStartYear + 1
-          : null;
-
-      if (activeOpeningDate && nextStartYear) {
-        const classEndTemplate = activeYear.classEndDate
-          ? normalizeDateToManila(new Date(activeYear.classEndDate))
-          : undefined;
-
-        const nextOpeningDate = utcNoonDate(
-          nextStartYear,
-          activeOpeningDate.getUTCMonth(),
-          activeOpeningDate.getUTCDate(),
-        );
-
-        const nextSchedule = buildSchoolYearSchedule(
-          nextOpeningDate,
-          classEndTemplate,
-        );
-        setYearLabel(nextSchedule.yearLabel);
-        setClassOpening(nextSchedule.classOpeningDate);
-        setClassEnd(nextSchedule.classEndDate);
-        setRolloverDraftBaseline({
-          yearLabel: nextSchedule.yearLabel,
-          classOpeningDate: nextSchedule.classOpeningDate.toISOString(),
-          classEndDate: nextSchedule.classEndDate.toISOString(),
-        });
-      }
-    } else if (editClassOpening && editClassEnd) {
+    if (editClassOpening && editClassEnd) {
       // First time initialization
       setRolloverDraftBaseline({
         yearLabel: editYearLabel.trim(),
@@ -905,17 +793,7 @@ export default function SchoolYearTab() {
       });
     }
 
-    setRolloverPin("");
-    setRolloverReadiness(null);
     setShowNextForm(true);
-
-    if (activeYear) {
-      void getRolloverReadiness()
-        .then(setRolloverReadiness)
-        .catch((error: unknown) => {
-          toastApiError(error as Parameters<typeof toastApiError>[0]);
-        });
-    }
   };
 
   const handleSaveCalendarSettings = async () => {
@@ -1109,7 +987,7 @@ export default function SchoolYearTab() {
             <Button
               size="lg"
               className="font-extrabold shadow-md bg-[#800000] hover:bg-[#600000] text-white border-none"
-              onClick={handlePrepareRollover}>
+              onClick={handlePrepareActivation}>
               <Plus className="mr-2 h-5 w-5" /> Configure S.Y.{" "}
               {nextRolloverYearLabel}
             </Button>
@@ -1182,15 +1060,15 @@ export default function SchoolYearTab() {
                             key={opt.value}
                             htmlFor={opt.value}
                             className={cn(
-                              "relative flex min-h-32 flex-col cursor-pointer rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                              "relative flex min-h-32 flex-col cursor-pointer rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors",
                               isChecked
-                                ? "border-primary ring-1 ring-primary/20"
+                                ? "border-primary"
                                 : "border-border hover:border-primary hover:bg-muted/20"
                             )}
                           >
                             <RadioGroupItem value={opt.value} id={opt.value} className="absolute left-4 top-4" />
                             <span className="text-base font-extrabold leading-tight block text-foreground">{opt.title}</span>
-                            <span className="text-sm font-bold mt-2 block text-muted-foreground">{opt.desc}</span>
+                            <span className="text-sm font-bold mt-2 block text-foreground">{opt.desc}</span>
                           </Label>
                         );
                       })}
@@ -1524,14 +1402,10 @@ export default function SchoolYearTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5" />
-              {activeYear
-                ? `Start New School Year: ${editYearLabel}`
-                : `Configure Inaugural Academic Year: ${editYearLabel}`}
+              Configure Inaugural Academic Year: {editYearLabel}
             </DialogTitle>
             <DialogDescription>
-              {activeYear
-                ? `Archive ${activeYear.yearLabel}, open empty class lists, and prepare returning learners for confirmation.`
-                : "Set the official start and end dates for the system's first active school year."}
+              Set the official start and end dates for the system's first active school year.
             </DialogDescription>
           </DialogHeader>
 
@@ -1582,68 +1456,13 @@ export default function SchoolYearTab() {
               </div>
             </div>
 
-            {activeYear && (
-              <div className="p-4 border rounded-lg space-y-3">
-                <p className="text-base font-extrabold">
-                  What happens when the new school year starts
-                </p>
-                <p className="text-sm text-foreground">
-                  The completed school year will be archived. These required
-                  steps are applied automatically:
-                </p>
-                <ul className="list-disc space-y-1 pl-5 text-sm font-semibold">
-                  <li>Copy the section structure with no learners or advisers.</li>
-                  <li>Begin the official enrollment count at zero.</li>
-                  <li>
-                    Place eligible returning learners in Pending Confirmations.
-                  </li>
-                  <li>
-                    Create SF1 records only after confirmation and section
-                    assignment.
-                  </li>
-                </ul>
-
-                {rolloverReadiness &&
-                  rolloverReadiness.blockers.length > 0 && (
-                    <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
-                      <p className="font-extrabold text-amber-900">
-                        Finish these classes before starting the new school year:
-                      </p>
-                      <ul className="mt-2 space-y-1 text-sm text-amber-950">
-                        {rolloverReadiness.blockers.map((blocker) => (
-                          <li
-                            key={`${blocker.gradeLevel}-${blocker.sectionName}`}
-                          >
-                            {blocker.gradeLevel} - {blocker.sectionName}:{" "}
-                            {blocker.unfinishedLearnerCount} unfinished learner
-                            record(s)
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                <div className="space-y-2 border-t pt-3">
-                  <Label>Six-digit administrator PIN</Label>
-                  <AdminPinInput
-                    value={rolloverPin}
-                    onChange={setRolloverPin}
-                    disabled={creating || isRolloverLoaderOpen}
-                    ariaLabel="Administrator PIN for starting the new school year"
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 space-y-4">
               <div className="flex items-center gap-2 text-destructive font-extrabold text-sm  uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>
               <p className="text-base font-extrabold leading-relaxed">
-                {activeYear
-                  ? "Executing rollover will archive the current academic cycle. This action cannot be reversed."
-                  : "Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database."}
+                Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database.
               </p>
             </div>
 
@@ -1652,33 +1471,11 @@ export default function SchoolYearTab() {
                 variant="outline"
                 className="font-extrabold"
                 onClick={() => {
-                  if (isRolloverLoaderOpen) {
-                    return;
-                  }
                   setShowNextForm(false);
                   setRolloverDraftBaseline(null);
-                }}
-                disabled={isRolloverLoaderOpen}>
+                }}>
                 Cancel
               </Button>
-              {activeYear && (
-                <Button
-                  variant="default"
-                  className="font-extrabold"
-                  onClick={handleUpdateRolloverDraft}
-                  disabled={
-                    creating ||
-                    updatingDraft ||
-                    isRolloverLoaderOpen ||
-                    !editYearLabel.trim() ||
-                    !editClassOpening ||
-                    !editClassEnd ||
-                    !isRolloverDraftChanged ||
-                    isLabelTaken
-                  }>
-                  {updatingDraft ? "Updating..." : "Save Draft"}
-                </Button>
-              )}
               <Button
                 onClick={handleActivateNext}
                 className={cn(
@@ -1688,31 +1485,14 @@ export default function SchoolYearTab() {
                 disabled={
                   creating ||
                   updatingDraft ||
-                  isRolloverLoaderOpen ||
                   !editYearLabel.trim() ||
                   !editClassOpening ||
                   !editClassEnd ||
-                  isLabelTaken ||
-                  (activeYear &&
-                    (!isRolloverReady || !/^\d{6}$/.test(rolloverPin)))
+                  isLabelTaken
                 }>
-                {creating
-                  ? activeYear
-                    ? "Running rollover..."
-                    : "Activating..."
-                  : activeYear
-                    ? "Start New School Year"
-                    : `Activate SY ${editYearLabel}`}
+                {creating ? "Activating..." : `Activate SY ${editYearLabel}`}
               </Button>
             </div>
-            {activeYear && !isRolloverReady && (
-              <div className="flex items-center justify-end gap-1 text-sm font-extrabold text-amber-700">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <span>
-                  Complete all EOSY records and lock every class first.
-                </span>
-              </div>
-            )}
           </div>
         </DialogContent>
       </Dialog>

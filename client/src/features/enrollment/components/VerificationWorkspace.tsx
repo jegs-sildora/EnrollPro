@@ -417,16 +417,14 @@ export function VerificationWorkspace() {
         <div className="flex-1 flex min-h-0">
           {/* LEFT PANE */}
           <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
-            <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Pending Verification
-                </CardTitle>
-                <Badge variant="outline" className="font-extrabold bg-background border-border">
-                  {filteredVerifications.length} Queue
-                </Badge>
-              </div>
+            <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between w-full">
+              <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                <FileText className="h-4 w-4 text-primary" />
+                Pending Verification
+              </CardTitle>
+              <Badge variant="outline" className="font-extrabold bg-background border-border">
+                {filteredVerifications.length} Queue
+              </Badge>
             </div>
             <div className="flex-1 overflow-auto p-2 space-y-2">
               {filteredVerifications.length === 0 ? (

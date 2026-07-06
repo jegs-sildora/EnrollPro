@@ -134,7 +134,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         </div>
       </div>
 
-      {isArchived ? (
+      {isArchived && (
         <section
           aria-label="Archived school year final outcomes"
           className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
@@ -150,7 +150,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
             footer={`${stats.historicalSummary.jhsCompletersMale} Male | ${stats.historicalSummary.jhsCompletersFemale} Female`}
           />
           <HistoricalSummaryCard
-            title="Student Departures"
+            title="Transferred & Dropped"
             value={
               stats.historicalSummary.transferredOutTotal
               + stats.historicalSummary.droppedOutTotal
@@ -158,113 +158,141 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
             footer={`${stats.historicalSummary.transferredOutTotal} Transferred Out | ${stats.historicalSummary.droppedOutTotal} Dropped Out`}
           />
         </section>
-      ) : activeCardsCount > 0 && (
+      )}
+
+      {!isArchived && activeCardsCount > 0 && (
         <div className={cn("grid grid-cols-1 gap-6", gridColsClass)}>
           {pendingTotal > 0 && (
             <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col overflow-hidden">
-          <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
-            <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Pending Enrollment</h3>
-            <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
-              <div className={cn("text-5xl sm:text-6xl font-extrabold", pendingTotal > 0 ? "text-primary" : "")}>
-                <AnimatedNumber value={pendingTotal} />
+              <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
+                <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Pending Enrollment</h3>
+                <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
+                  <div className={cn("text-5xl sm:text-6xl font-extrabold", pendingTotal > 0 ? "text-primary" : "")}>
+                    <AnimatedNumber value={pendingTotal} />
+                  </div>
+                  <p className="mt-2 font-bold text-center w-full truncate">Incoming Grade 7 Learners</p>
+                </div>
               </div>
-              <p className="mt-2 font-bold text-center w-full truncate">Incoming Grade 7 Learners</p>
-            </div>
-          </div>
-          <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
-            {pendingTotal === 0 ? (
-              <div className="flex items-center justify-center w-full">
-                <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
-                  <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-end text-right w-full @container">
-                {isEnrollmentOpen ? (
-                  <button
-                    onClick={() => navigate("/continuing-learners?tab=incoming")}
-                    className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
-                    style={{ color: "hsl(var(--primary))" }}
-                  >
-                    Process Early Registrants <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
-                  </button>
+              <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
+                {pendingTotal === 0 ? (
+                  <div className="flex items-center justify-center w-full">
+                    <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
+                      <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
+                    </span>
+                  </div>
                 ) : (
-                  <span className="font-semibold  cursor-not-allowed select-none whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full text-right">
-                    Enrollment Closed
-                  </span>
+                  <div className="flex items-center justify-end text-right w-full @container">
+                    {isEnrollmentOpen ? (
+                      <button
+                        onClick={() => navigate("/continuing-learners?tab=incoming")}
+                        className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
+                        style={{ color: "hsl(var(--primary))" }}
+                      >
+                        Process Early Registrants <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
+                      </button>
+                    ) : (
+                      <span className="font-semibold  cursor-not-allowed select-none whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full text-right">
+                        Enrollment Closed
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        </Card>
+            </Card>
           )}
 
           {unassignedTotal > 0 && (
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col overflow-hidden">
-          <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
-            <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Unsectioned Learners</h3>
-            <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
-              <div className={cn("text-5xl sm:text-6xl font-extrabold", unassignedTotal > 0 ? "text-primary" : "")}>
-                <AnimatedNumber value={unassignedTotal} />
+            <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col overflow-hidden">
+              <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
+                <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Unsectioned Learners</h3>
+                <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
+                  <div className={cn("text-5xl sm:text-6xl font-extrabold", unassignedTotal > 0 ? "text-primary" : "")}>
+                    <AnimatedNumber value={unassignedTotal} />
+                  </div>
+                  <p className="mt-2 font-bold text-center w-full truncate">Pending SF1 Placement</p>
+                </div>
               </div>
-              <p className="mt-2 font-bold text-center w-full truncate">Pending SF1 Placement</p>
-            </div>
-          </div>
-          <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
-            {unassignedTotal === 0 ? (
-              <div className="flex items-center justify-center w-full">
-                <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
-                  <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
-                </span>
+              <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
+                {unassignedTotal === 0 ? (
+                  <div className="flex items-center justify-center w-full">
+                    <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
+                      <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-end text-right w-full @container">
+                    <button
+                      onClick={() => navigate("/monitoring/enrollment")}
+                      className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      Assign Class Sections <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center justify-end text-right w-full @container">
-                <button
-                  onClick={() => navigate("/monitoring/enrollment")}
-                  className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
-                  style={{ color: "hsl(var(--primary))" }}
-                >
-                  Assign Class Sections <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </Card>
+            </Card>
           )}
 
           {deficientTotal > 0 && (
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col overflow-hidden">
-          <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
-            <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Lacking Documentary Requirements</h3>
-            <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
-              <div className={cn("text-5xl sm:text-6xl font-extrabold", deficientTotal > 0 ? "text-primary" : "")}>
-                <AnimatedNumber value={deficientTotal} />
+            <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col overflow-hidden">
+              <div className="px-4 sm:px-6 py-6 flex flex-col flex-1 relative min-h-[180px]">
+                <h3 className="absolute top-5 left-4 sm:left-6 text-base sm:text-lg font-extrabold text-foreground text-left max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] truncate">Lacking Documentary Requirements</h3>
+                <div className="flex flex-col items-center justify-center flex-1 w-full h-full pt-10">
+                  <div className={cn("text-5xl sm:text-6xl font-extrabold", deficientTotal > 0 ? "text-primary" : "")}>
+                    <AnimatedNumber value={deficientTotal} />
+                  </div>
+                  <p className="mt-2 font-bold text-center w-full truncate">Pending SF9 / PSA Birth Certificate</p>
+                </div>
               </div>
-              <p className="mt-2 font-bold text-center w-full truncate">Pending SF9 / PSA Birth Certificate</p>
-            </div>
-          </div>
-          <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
-            {deficientTotal === 0 ? (
-              <div className="flex items-center justify-center w-full">
-                <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
-                  <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
-                </span>
+              <div className="px-4 sm:px-6 py-4 border-t border-border/40 bg-muted/30 flex items-center min-h-[60px] w-full">
+                {deficientTotal === 0 ? (
+                  <div className="flex items-center justify-center w-full">
+                    <span className="text-xs sm:text-sm font-bold text-emerald-600 flex items-center whitespace-nowrap">
+                      <Check className="w-4 h-4 mr-1.5 shrink-0" /> All records up to date
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-end text-right w-full @container">
+                    <button
+                      onClick={() => navigate("/continuing-learners?tab=incoming")}
+                      className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      Update Learner Credentials <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center justify-end text-right w-full @container">
-                <button
-                  onClick={() => navigate("/continuing-learners?tab=incoming")}
-                  className="font-bold flex items-center justify-end group hover:opacity-80 transition-opacity whitespace-nowrap text-[clamp(10px,9cqw,14px)] w-full"
-                  style={{ color: "hsl(var(--primary))" }}
-                >
-                  Update Learner Credentials <span className="ml-1 transition-transform group-hover:translate-x-1 shrink-0">&rarr;</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </Card>
+            </Card>
           )}
         </div>
+      )}
+
+      {!isArchived && stats.precedingHistoricalSummary && (
+        <section
+          aria-label="Preceding school year historical baseline"
+          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
+        >
+          <HistoricalSummaryCard
+            title="EOSY Promotion Status"
+            value={stats.precedingHistoricalSummary.promotedTotal}
+            footer="Preceding School Year Baseline"
+          />
+          <HistoricalSummaryCard
+            title="Official JHS Completers"
+            value={stats.precedingHistoricalSummary.jhsCompletersTotal}
+            footer="Preceding School Year Baseline"
+          />
+          <HistoricalSummaryCard
+            title="Transferred & Dropped"
+            value={
+              stats.precedingHistoricalSummary.transferredOutTotal
+              + stats.precedingHistoricalSummary.droppedOutTotal
+            }
+            footer="Preceding School Year Baseline"
+          />
+        </section>
       )}
 
 

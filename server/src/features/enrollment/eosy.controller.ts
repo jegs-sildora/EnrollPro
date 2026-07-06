@@ -741,6 +741,9 @@ export async function finalizeSchoolYear(
             term4End: shiftYear(updated.term4End),
           },
         });
+        
+        const { cloneSchoolYearStructure } = await import("./../school-year/services/school-year-controller-shared.service.js");
+        await cloneSchoolYearStructure(updated.id, nextSy.id);
       }
       
       // Update global active school year and phase in settings

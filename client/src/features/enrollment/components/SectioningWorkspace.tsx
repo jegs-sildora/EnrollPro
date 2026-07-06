@@ -352,9 +352,9 @@ export function SectioningWorkspace() {
 
       {/* ── Workspace ── */}
       <div className="flex-1 min-h-0">
-        <div className="h-full flex gap-6 min-h-0">
+        <Card className="h-full flex shadow-sm border-none bg-card overflow-hidden min-h-0">
           {/* LEFT PANE: UNSECTIONED POOL */}
-          <Card className="flex-[1.2] flex flex-col shadow-sm border border-border overflow-hidden bg-card">
+          <div className="flex-[1.2] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -391,7 +391,7 @@ export function SectioningWorkspace() {
             <div className="flex-1 overflow-auto p-0 relative">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-primary z-10 border-b border-border">
-                  <tr className="text-[10px] font-extrabold uppercase text-primary-foreground tracking-widest">
+                  <tr className="text-sm font-extrabold uppercase text-primary-foreground tracking-widest">
                     <th className="p-4 w-10">
                       <Checkbox
                         className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
@@ -455,13 +455,13 @@ export function SectioningWorkspace() {
                               <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
                                 {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                                 {l.duplicateFlag && (
-                                  <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4">DUPLICATE DETECTED - RESOLVE OVER COUNTER</Badge>
+                                  <Badge variant="destructive" className="text-sm px-1 py-0 h-4">DUPLICATE DETECTED - RESOLVE OVER COUNTER</Badge>
                                 )}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] font-extrabold uppercase text-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
-                                <Badge variant="outline" className="text-[9px] uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
-                                <Badge variant="outline" className="text-[9px] uppercase font-extrabold">
+                                <span className="text-sm font-extrabold uppercase text-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
+                                <Badge variant="outline" className="text-sm uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
+                                <Badge variant="outline" className="text-sm uppercase font-extrabold">
                                   {SCP_SHORT_LABELS[l.programType] ?? l.programType}
                                 </Badge>
                               </div>
@@ -477,10 +477,10 @@ export function SectioningWorkspace() {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
 
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <Card className="flex-1 flex flex-col shadow-sm border border-border overflow-hidden bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div>
@@ -556,12 +556,12 @@ export function SectioningWorkspace() {
                               <Users className="h-4 w-4" />
                             </Button>
                           </h4>
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
+                          <span className="text-sm font-extrabold uppercase tracking-widest text-foreground">
                             {s.adviser || "No Adviser Assigned"}
                           </span>
                         </div>
                         <Badge variant="outline" className={cn(
-                          "text-[9px] font-extrabold uppercase bg-background",
+                          "text-sm font-extrabold uppercase bg-background",
                           s.programType === "REGULAR" ? "text-foreground border-border" : "text-primary border-primary/30"
                         )}>
                           {SCP_SHORT_LABELS[s.programType] ?? s.programType}
@@ -569,7 +569,7 @@ export function SectioningWorkspace() {
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-base font-extrabold">
-                          <span className="text-foreground uppercase tracking-widest text-[10px]">Capacity Fill</span>
+                          <span className="text-foreground uppercase tracking-widest text-sm">Capacity Fill</span>
                           <span className={cn(isOverCapacity ? "text-destructive font-extrabold" : "text-foreground/70")}>
                             {s.currentCount} / {s.maxCapacity} {isOverCapacity && <AlertTriangle className="inline h-3 w-3 ml-1" />}
                           </span>
@@ -612,8 +612,8 @@ export function SectioningWorkspace() {
                 )}
               </Button>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
 
       <ConfirmationModal

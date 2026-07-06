@@ -25,6 +25,9 @@ export const pageVariants: Variants = {
   animate: {
     opacity: 1,
     y: 0,
+    transitionEnd: {
+      transform: "none",
+    },
   },
   exit: {
     opacity: 0,

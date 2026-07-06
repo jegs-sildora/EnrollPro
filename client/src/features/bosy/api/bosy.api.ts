@@ -29,6 +29,7 @@ export interface BOSYQueueParams {
   status?: string;
   search?: string;
   previousSectionName?: string;
+  curricularProgram?: string;
 }
 
 export async function getBOSYQueue(

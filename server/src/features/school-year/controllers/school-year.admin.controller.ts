@@ -428,24 +428,41 @@ async function carryOverEligibleLearners(
         activeSchoolYearId: true,
       },
     });
-    let activeYear = null;
-    if (schoolSetting?.activeSchoolYearId) {
-      activeYear = await prisma.schoolYear.findUnique({
-        where: { id: schoolSetting.activeSchoolYearId },
-      });
-    }
 
-    if (!activeYear) {
-      activeYear = await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
+    const draftTarget = await prisma.schoolYear.findUnique({
+      where: { yearLabel: resolvedYearLabel },
+      select: { clonedFromId: true }
+    });
+
+    let sourceSchoolYearId: number | null = null;
+    if (draftTarget?.clonedFromId) {
+      sourceSchoolYearId = draftTarget.clonedFromId;
+    } else if (schoolSetting?.activeSchoolYearId) {
+      sourceSchoolYearId = schoolSetting.activeSchoolYearId;
+    } else {
+      const lastArchived = await prisma.schoolYear.findFirst({
+        where: { status: "ARCHIVED" },
         orderBy: { createdAt: "desc" },
       });
+      if (lastArchived) sourceSchoolYearId = lastArchived.id;
     }
+
+    if (!sourceSchoolYearId) {
+      res.status(422).json({
+        message:
+          "No active or recently archived school year found. Use School Year initialization instead.",
+      });
+      return;
+    }
+
+    const activeYear = await prisma.schoolYear.findUnique({
+      where: { id: sourceSchoolYearId }
+    });
 
     if (!activeYear) {
       res.status(422).json({
         message:
-          "No active school year found. Use School Year initialization instead.",
+          "Source school year not found.",
       });
       return;
     }

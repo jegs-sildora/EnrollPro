@@ -786,16 +786,7 @@ export default function Homerooms() {
 
 
 
-  useEffect(() => {
-    if (!ayId) return;
-
-    api
-      .get("/bosy/tle-programs", { params: { schoolYearId: ayId } })
-      .then((res) => setTlePrograms(res.data.programs ?? res.data))
-      .catch(() => {
-        /* non-critical */
-      });
-  }, [ayId]);
+  // TLE Programs removed to fix 404
 
   const fetchEligibleTeachers = useCallback(
     async (

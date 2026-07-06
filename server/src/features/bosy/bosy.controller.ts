@@ -132,6 +132,10 @@ export async function getBosyQueue(
       typeof req.query.previousSectionName === "string" && req.query.previousSectionName.length > 0
         ? req.query.previousSectionName
         : undefined;
+    const curricularProgram =
+      typeof req.query.curricularProgram === "string" && req.query.curricularProgram.length > 0
+        ? req.query.curricularProgram
+        : undefined;
     const page = parsePositiveInt(req.query.page, 1);
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
 
@@ -143,6 +147,7 @@ export async function getBosyQueue(
       status,
       search,
       previousSectionName,
+      curricularProgram,
       page,
       limit,
     });

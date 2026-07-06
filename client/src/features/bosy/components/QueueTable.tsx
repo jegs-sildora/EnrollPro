@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/data-table";
@@ -208,7 +209,7 @@ function QueueMobileCard({
           disabled={isBusy}
           onClick={() => onRevokeConfirmation(item)}>
           {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Revoke Confirmation
+          Unenroll
         </Button>
       );
     }
@@ -517,7 +518,7 @@ export function QueueTable({
                 disabled={isBusy}
                 onClick={() => onRevokeConfirmation(r)}>
                 {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Revoke Confirmation
+                Unenroll
               </Button>
               <ActionMenuButton
                 busy={isBusy}
@@ -550,102 +551,116 @@ export function QueueTable({
     allowActions,
   ]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-      </div>
-    );
-  }
-
   return (
-    <>
-      <div className="space-y-3 md:hidden">
-        {isSearching ? (
-          <div className="rounded-2xl border border-border bg-background">
-            <div className="flex h-64 flex-col items-center justify-center space-y-4">
-              <CheckCircle2 className="h-10 w-10 animate-pulse text-slate-400" />
-              <div className="flex flex-col items-center space-y-1">
-                <p className="text-lg font-extrabold text-slate-600">Searching...</p>
-                <p className="text-sm text-slate-400">Scanning DepEd records...</p>
+    <AnimatePresence mode="wait">
+      {loading ? (
+        <motion.div
+          key="loader"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center justify-center h-48 w-full"
+        >
+          <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex flex-col flex-1 h-full w-full min-h-0"
+        >
+          <div className="space-y-3 md:hidden">
+            {isSearching ? (
+              <div className="rounded-2xl border border-border bg-background">
+                <div className="flex h-64 flex-col items-center justify-center space-y-4">
+                  <CheckCircle2 className="h-10 w-10 animate-pulse text-slate-400" />
+                  <div className="flex flex-col items-center space-y-1">
+                    <p className="text-lg font-extrabold text-slate-600">Searching...</p>
+                    <p className="text-sm text-slate-400">Scanning DepEd records...</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ) : items.length > 0 ? (
-          items.map((item) => {
-            const rowId = String(item.applicationId);
-            const selected = Boolean(rowSelection[rowId]);
+            ) : items.length > 0 ? (
+              items.map((item) => {
+                const rowId = String(item.applicationId);
+                const selected = Boolean(rowSelection[rowId]);
 
-            return (
-              <QueueMobileCard
-                key={rowId}
-                item={item}
-                queueState={queueState}
-                allowActions={allowActions}
-                selected={selected}
-                onSelectionChange={(checked) =>
-                  onRowSelectionChange((prev) => ({
-                    ...prev,
-                    [rowId]: checked,
-                  }))
-                }
-                onConfirmSingle={onConfirmSingle}
-                onTransferRequest={onTransferRequest}
-                onRevokeConfirmation={onRevokeConfirmation}
-                onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
-                confirmingIds={confirmingIds}
-                busyActionIds={busyActionIds}
-              />
-            );
-          })
-        ) : (
-          <div className="rounded-2xl border border-border bg-background">
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
-              <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                return (
+                  <QueueMobileCard
+                    key={rowId}
+                    item={item}
+                    queueState={queueState}
+                    allowActions={allowActions}
+                    selected={selected}
+                    onSelectionChange={(checked) =>
+                      onRowSelectionChange((prev) => ({
+                        ...prev,
+                        [rowId]: checked,
+                      }))
+                    }
+                    onConfirmSingle={onConfirmSingle}
+                    onTransferRequest={onTransferRequest}
+                    onRevokeConfirmation={onRevokeConfirmation}
+                    onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
+                    confirmingIds={confirmingIds}
+                    busyActionIds={busyActionIds}
+                  />
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-border bg-background">
+                <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
+                  <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <p className="text-base font-extrabold text-foreground">
+                    No continuing learners match this intake status.
+                  </p>
+                  <p className="px-4 text-center text-sm">
+                    Select another target grade or check the learner name or LRN.
+                  </p>
+                </div>
               </div>
-              <p className="text-base font-extrabold text-foreground">
-                No continuing learners match this intake status.
-              </p>
-              <p className="px-4 text-center text-sm">
-                Select another target grade or check the learner name or LRN.
-              </p>
-            </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
-      <DataTable
-      containerHeight="100%"
-      className="border-x-0 border-b-0 border-t-0 rounded-none h-full flex-1"
-      tableClassName="w-full table-fixed"
-      emptyStateContent={
-        <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
-          <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
-            <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+          <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
+            <DataTable
+              containerHeight="100%"
+              className="border-x-0 border-b-0 border-t-0 rounded-none h-full flex-1"
+              tableClassName="w-full table-fixed"
+              emptyStateContent={
+                <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
+                  <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <p className="text-base font-extrabold text-foreground">
+                    No continuing learners match this intake status.
+                  </p>
+                  <p className="text-sm">
+                    Select another target grade or check the learner name or LRN.
+                  </p>
+                </div>
+              }
+              columns={columns}
+              data={items}
+              getRowId={(row) => String(row.applicationId)}
+              forceEmptyState={Boolean(isSearching)}
+              rowSelection={rowSelection}
+              onRowSelectionChange={onRowSelectionChange}
+              prependBodyRow={
+                isSearching ? (
+                  <TableSearchIndicator colSpan={4} />
+                ) : null
+              }
+            />
           </div>
-          <p className="text-base font-extrabold text-foreground">
-            No continuing learners match this intake status.
-          </p>
-          <p className="text-sm">
-            Select another target grade or check the learner name or LRN.
-          </p>
-        </div>
-      }
-      columns={columns}
-      data={items}
-      getRowId={(row) => String(row.applicationId)}
-      forceEmptyState={Boolean(isSearching)}
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        prependBodyRow={
-          isSearching ? (
-          <TableSearchIndicator colSpan={4} />
-        ) : null
-      }
-    />
-      </div>
-    </>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

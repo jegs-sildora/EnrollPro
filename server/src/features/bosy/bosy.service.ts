@@ -335,6 +335,7 @@ export async function getBOSYQueue(params: {
   status?: string;
   search?: string;
   previousSectionName?: string;
+  curricularProgram?: string;
   page: number;
   limit: number;
 }): Promise<BOSYQueuePage> {
@@ -346,6 +347,7 @@ export async function getBOSYQueue(params: {
     status,
     search,
     previousSectionName,
+    curricularProgram,
     page,
     limit,
   } = params;
@@ -386,24 +388,32 @@ export async function getBOSYQueue(params: {
     ...(targetGradeOrder
       ? { gradeLevel: { displayOrder: targetGradeOrder } }
       : {}),
+    ...(curricularProgram && curricularProgram !== "ALL"
+      ? {
+        OR: [
+          { applicantType: curricularProgram as ApplicantType },
+          { assignedProgram: curricularProgram as ApplicantType },
+        ],
+      }
+      : {}),
     ...(queueState
       ? {
-          ...getQueueStateWhere(queueState),
-        }
+        ...getQueueStateWhere(queueState),
+      }
       : status
-      ? {
+        ? {
           status:
             status.trim() === "ENROLLED"
               ? {
-                  in: [
-                    "OFFICIALLY_ENROLLED",
-                    "ENROLLED",
-                    "SECTIONED",
-                  ] as ApplicationStatus[],
-                }
+                in: [
+                  "OFFICIALLY_ENROLLED",
+                  "ENROLLED",
+                  "SECTIONED",
+                ] as ApplicationStatus[],
+              }
               : (status.trim() as ApplicationStatus),
         }
-      : {}),
+        : {}),
     ...(learnerConditions.length > 0
       ? { learner: { AND: learnerConditions } }
       : {}),
@@ -452,27 +462,27 @@ export async function getBOSYQueue(params: {
   const learnerIds = applications.map((a) => a.learner.id);
   const priorRecords = previousSchoolYearId
     ? await prisma.enrollmentHistory.findMany({
-    where: {
-      learnerId: { in: learnerIds },
-      schoolYearId: previousSchoolYearId,
-    },
-    orderBy: { createdAt: "desc" },
-    distinct: ["learnerId"],
-    select: {
-      learnerId: true,
-      genAve: true,
-      academicDeficiencyNote: true,
-      learnerProfileSnapshot: true,
-      section: {
-        select: {
-          name: true,
+      where: {
+        learnerId: { in: learnerIds },
+        schoolYearId: previousSchoolYearId,
+      },
+      orderBy: { createdAt: "desc" },
+      distinct: ["learnerId"],
+      select: {
+        learnerId: true,
+        genAve: true,
+        academicDeficiencyNote: true,
+        learnerProfileSnapshot: true,
+        section: {
+          select: {
+            name: true,
+          },
+        },
+        adviser: {
+          select: { firstName: true, lastName: true },
         },
       },
-      adviser: {
-        select: { firstName: true, lastName: true },
-      },
-    },
-  })
+    })
     : [];
 
   const priorByLearner = new Map(
@@ -627,20 +637,20 @@ export async function syncBOSYQueue(
     liveSourceRecords.flatMap((record) =>
       record.eosyStatus
         ? [{
-            learnerId: record.learnerId,
-            eosyStatus: record.eosyStatus,
-            sourceGradeOrder: record.section.gradeLevel.displayOrder,
-            applicantType: record.enrollmentApplication.applicantType,
-            assignedProgram: record.enrollmentApplication.assignedProgram,
-            isPrivacyConsentGiven:
-              record.enrollmentApplication.isPrivacyConsentGiven,
-            guardianRelationship:
-              record.enrollmentApplication.guardianRelationship,
-            hasNoMother: record.enrollmentApplication.hasNoMother,
-            hasNoFather: record.enrollmentApplication.hasNoFather,
-            contactNumber: record.enrollmentApplication.contactNumber,
-            guardianName: record.enrollmentApplication.guardianName,
-          }]
+          learnerId: record.learnerId,
+          eosyStatus: record.eosyStatus,
+          sourceGradeOrder: record.section.gradeLevel.displayOrder,
+          applicantType: record.enrollmentApplication.applicantType,
+          assignedProgram: record.enrollmentApplication.assignedProgram,
+          isPrivacyConsentGiven:
+            record.enrollmentApplication.isPrivacyConsentGiven,
+          guardianRelationship:
+            record.enrollmentApplication.guardianRelationship,
+          hasNoMother: record.enrollmentApplication.hasNoMother,
+          hasNoFather: record.enrollmentApplication.hasNoFather,
+          contactNumber: record.enrollmentApplication.contactNumber,
+          guardianName: record.enrollmentApplication.guardianName,
+        }]
         : [],
     );
 
@@ -805,7 +815,7 @@ export async function confirmReturn(
       hasSf9CertificationLetter: true,
       gradeLevel: { select: { displayOrder: true } },
       learner: {
-        select: { 
+        select: {
           id: true, lrn: true, firstName: true, lastName: true,
           hasPsaBirthCertificate: true, missingRequirements: true
         },
@@ -932,7 +942,7 @@ export async function revokeConfirmedReturn(
   if (application.status !== "READY_FOR_SECTIONING") {
     throw Object.assign(
       new Error(
-        `Cannot revoke confirmation: application is in status "${application.status}", expected "READY_FOR_SECTIONING".`,
+        `Cannot Unenroll: application is in status "${application.status}", expected "READY_FOR_SECTIONING".`,
       ),
       { status: 422 },
     );
@@ -1062,7 +1072,7 @@ export async function bulkConfirmReturn(
       });
       continue;
     }
-    
+
     confirmed.push(id);
 
     const documentReadiness = classifyDocumentReadiness({
@@ -1135,14 +1145,14 @@ export async function getJHSCompleters(params: {
     status: "JHS_COMPLETER" as const,
     ...(search
       ? {
-          AND: search.split(/\s+/).filter(Boolean).map(term => ({
-            OR: [
-              { firstName: { contains: term, mode: "insensitive" as const } },
-              { lastName: { contains: term, mode: "insensitive" as const } },
-              { lrn: { contains: term, mode: "insensitive" as const } },
-            ]
-          }))
-        }
+        AND: search.split(/\s+/).filter(Boolean).map(term => ({
+          OR: [
+            { firstName: { contains: term, mode: "insensitive" as const } },
+            { lastName: { contains: term, mode: "insensitive" as const } },
+            { lrn: { contains: term, mode: "insensitive" as const } },
+          ]
+        }))
+      }
       : {}),
   };
 
@@ -1204,16 +1214,16 @@ export async function getPhase2Queue(params: {
     ...(admissionChannel ? { admissionChannel } : {}),
     ...(search
       ? {
-          learner: {
-            AND: search.split(/\s+/).filter(Boolean).map(term => ({
-              OR: [
-                { firstName: { contains: term, mode: "insensitive" as const } },
-                { lastName: { contains: term, mode: "insensitive" as const } },
-                { lrn: { contains: term, mode: "insensitive" as const } },
-              ]
-            }))
-          }
+        learner: {
+          AND: search.split(/\s+/).filter(Boolean).map(term => ({
+            OR: [
+              { firstName: { contains: term, mode: "insensitive" as const } },
+              { lastName: { contains: term, mode: "insensitive" as const } },
+              { lrn: { contains: term, mode: "insensitive" as const } },
+            ]
+          }))
         }
+      }
       : {}),
   };
 
