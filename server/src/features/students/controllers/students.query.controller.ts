@@ -472,7 +472,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const historicalGrades = histories.map(h => ({
         gradeLevel: h.gradeLevel.name,
         genAve: h.genAve,
-        schoolYear: h.schoolYear.yearLabel
+        schoolYear: h.schoolYear.yearLabel,
+        completedAt: h.createdAt
       }));
 
       const activeAdviser =

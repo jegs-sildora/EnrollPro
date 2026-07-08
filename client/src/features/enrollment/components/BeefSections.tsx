@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/lib/utils";
 
 interface SectionProps {
   title: string;
@@ -25,7 +26,7 @@ function DataSection({ title, icon, children }: SectionProps) {
         {icon && <span className="text-primary">{icon}</span>}
         <span className="uppercase">{title}</span>
       </div>
-      <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-extrabold">
+      <div className="text-base leading-tight font-extrabold divide-y divide-border border-b-0">
         {children}
       </div>
     </div>
@@ -56,15 +57,16 @@ function DataItem({
   if (!valid && !mutedIfInvalid) return null;
 
   return (
-    <>
-      <span className="text-foreground">{label}:</span>
-      <span
-        className={
+    <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+      <div className="p-3 text-foreground bg-muted/30">{label}:</div>
+      <div
+        className={cn(
+          "p-3 flex items-center",
           !valid ? "text-gray-300 font-extrabold" : "uppercase"
-        }>
+        )}>
         {valid ? String(value) : "—"}
-      </span>
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -248,16 +250,16 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     relationship: string | null;
   }) => {
     return (
-      <React.Fragment key={c.label}>
-        <span className="text-foreground flex items-center gap-1.5">
+      <div key={c.label} className="grid grid-cols-[180px_1fr] divide-x divide-border">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center gap-1.5 flex-wrap">
           {c.label}:
           {c.isPrimary && (
-            <span className="text-base bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
+            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
               PRIMARY
             </span>
           )}
-        </span>
-        <div className="flex flex-col">
+        </div>
+        <div className="p-3 flex flex-col justify-center">
           {c.fullName ? (
             <>
               <span className="uppercase">{c.fullName}</span>
@@ -272,7 +274,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
             <span className="text-gray-300 font-extrabold">—</span>
           )}
         </div>
-      </React.Fragment>
+      </div>
     );
   };
 
@@ -364,62 +366,70 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
         value={learnerType}
       />
 
-      <span className="text-foreground">IP Community:</span>
-      <div>
-        {isIp ? (
-          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
-            ✓ IP Member ({applicant.ipGroupName || "No Group"})
-          </Badge>
-        ) : (
-          <span className="text-foreground/60 uppercase">No</span>
-        )}
+      <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center">IP Community:</div>
+        <div className="p-3 flex items-center">
+          {isIp ? (
+            <div className="text-foreground">
+              ({applicant.ipGroupName || "No Group"})
+            </div>
+          ) : (
+            <span className="text-foreground uppercase">No</span>
+          )}
+        </div>
       </div>
 
-      <span className="text-foreground">4Ps Beneficiary:</span>
-      <div>
-        {is4Ps ? (
-          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">
-            ✓ 4Ps Beneficiary ({applicant.householdId4Ps || "No ID"})
-          </Badge>
-        ) : (
-          <span className="text-foreground/60 uppercase">No</span>
-        )}
+      <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center">4Ps Beneficiary:</div>
+        <div className="p-3 flex items-center">
+          {is4Ps ? (
+            <div className="text-foreground">
+              ({applicant.householdId4Ps || "No ID"})
+            </div>
+          ) : (
+            <span className="text-foreground uppercase">No</span>
+          )}
+        </div>
       </div>
 
-      <span className="text-foreground">Disability:</span>
-      <div>
-        {isPwd ? (
-          <div className="space-y-2">
-            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-rose-200">
-              ✓ Has Disability
-            </Badge>
-            {applicant.disabilityTypes?.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {applicant.disabilityTypes.map((t) => (
-                  <Badge
-                    key={t}
-                    variant="outline"
-                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-base">
-                    {t}
-                  </Badge>
-                ))}
+      <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center">Disability:</div>
+        <div className="p-3 flex items-center">
+          {isPwd ? (
+            <div className="space-y-2">
+              <div className="text-foreground">
+                Has Disability
               </div>
-            )}
-          </div>
-        ) : (
-          <span className="text-foreground/60 uppercase">None</span>
-        )}
+              {applicant.disabilityTypes?.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {applicant.disabilityTypes.map((t) => (
+                    <Badge
+                      key={t}
+                      variant="outline"
+                      className="border-rose-200 text-rose-700 h-5 px-1.5 text-base">
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-foreground uppercase">None</span>
+          )}
+        </div>
       </div>
 
-      <span className="text-foreground">Balik-Aral:</span>
-      <div>
-        {isBalikAral ? (
-          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">
-            ✓ Returning (Last: {applicant.lastYearEnrolled})
-          </Badge>
-        ) : (
-          <span className="text-foreground/60 uppercase">No</span>
-        )}
+      <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+        <div className="p-3 text-foreground bg-muted/30 flex items-center">Balik-Aral:</div>
+        <div className="p-3 flex items-center">
+          {isBalikAral ? (
+            <div className="text-foreground">
+              ✓ Returning (Last: {applicant.lastYearEnrolled})
+            </div>
+          ) : (
+            <span className="text-foreground uppercase">No</span>
+          )}
+        </div>
       </div>
     </DataSection>
   );

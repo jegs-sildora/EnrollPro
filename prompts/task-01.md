@@ -1,29 +1,29 @@
-# SYSTEM DIRECTIVE Learner Registry Tab State and Data Scoping Architecture v172.0
+# SYSTEM DIRECTIVE Junior High School Completer Profile Architecture v174.0
 
-**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software for Bacolod City local high schools. The user interface must maintain permanent access to institutional alumni records to support daily registrar transcript requests. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
+**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software. The user interface must dynamically adapt to protect historical data integrity when rendering permanent alumni records. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
 
-**Core Mandate** You must establish a permanent three tab visibility structure within the Master Learner Registry. Before writing new code you must verify the existing global School Year state consumption logic. The Completers and Alumni tab must be detached from the global academic year filter to serve as a permanent institutional database while the Active Masterlist and Inactive tabs continue to strictly respect the selected timeline.
+**Core Mandate** You must implement conditional rendering inside the Student Detail Panel to transform the interface into a read only historical view when the learner possesses a Junior High School Completer status. You must remove all active operational controls and replace them with institutional document generation capabilities.
 
-Execute the implementation across the following four logical phases
+Execute the interface transformation across the following four visual zones
 
-## 1 Pre Implementation Code Verification
-Audit the current registry state management before applying modifications.
-* Verify how the Learner Registry component currently consumes the global School Year state.
-* Identify the exact database query parameters feeding the Completers and Alumni tab to ensure you can safely detach the date filter.
-* Confirm that all three tabs are currently mounted in the user interface component tree and remove any dynamic unmounting logic.
+## 1 Header and Status Identifiers
+Reconfigure the primary profile metadata to reflect graduation status.
+* Change the top container title from ENROLLED LEARNER DETAILS to ALUMNI RECORD DETAILS
+* Replace the green officially enrolled status badge with a distinct gold badge reading JHS COMPLETER
+* Update the grade level header to read TERMINAL GRADE 10 SECTION to indicate their final placement before graduation
+* Replace the current enrollment information block with a COMPLETION RECORD block displaying the official date of graduation and the specific academic school year completed
 
-## 2 Permanent Tab Visibility Configuration
-Ensure registrar staff retain immediate access to all student cohorts.
-* Remove any conditional rendering logic that hides the Completers and Alumni tab when the active school year is selected.
-* Lock the User Interface to permanently display Active Masterlist Completers and Alumni and Inactive tabs side by side.
+## 2 Action Bar Replacement
+Eliminate destructive data operations for permanent records.
+* Remove the TRANSFERRED OUT and DROPPED OUT buttons from the bottom action bar entirely because a graduate cannot alter their completion status
+* Replace the bottom action bar with a single primary brand colored button titled GENERATE FORM 137 SF10 to support immediate transcript requests for walk in alumni
 
-## 3 Global Context Override for Alumni
-Restructure the data scoping for institutional graduates.
-* Configure the Completers and Alumni data query to explicitly ignore the global School Year dropdown value.
-* Retrieve and display the complete historical roster of every learner who has successfully graduated from the institution.
-* Inject a new data column strictly titled Batch Year Completed into the alumni table to allow registrars to sort the global historical list rapidly.
+## 3 Record Freezing and Security
+Protect the integrity of historical demographic data.
+* Remove the EDIT LEARNER DATA button from the header to prevent standard administrative staff from altering permanent historical records
+* Remove the entire PORTAL ACCESS AND SECURITY block from the bottom of the panel because graduates no longer require active software login credentials or password resets
 
-## 4 Timeline Strictness for Active and Inactive Pools
-Maintain chronological accuracy for operational rosters and attrition tracking.
-* Ensure the Active Masterlist tab queries exclusively the enrolled learners for the exact academic year currently selected in the global dropdown.
-* Ensure the Inactive tab queries exclusively the dropped and transferred learners recorded during the exact academic year currently selected in the global dropdown.
+## 4 Historical Academic Preservation
+Maintain maximum visibility for transcript data.
+* Ensure the Historical Final Averages table remains prominently displayed and expanded by default as this is the primary data point registrars verify for returning graduates
+* Retain all personal information and demographic data strictly as read only text elements

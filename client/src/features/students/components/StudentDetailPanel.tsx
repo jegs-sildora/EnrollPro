@@ -23,6 +23,12 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -77,6 +83,19 @@ interface FamilyMember {
   relationship: string;
   fullName?: string;
 }
+
+const getProgramBadge = (type: string | undefined | null) => {
+  if (!type || type === "REGULAR" || type === "LATE_ENROLLEE") return { short: "BEC", full: "Basic Education Curriculum" };
+  switch (type) {
+    case "SCIENCE_TECHNOLOGY_AND_ENGINEERING": return { short: "STE", full: "Science, Technology, and Engineering" };
+    case "SPECIAL_PROGRAM_IN_THE_ARTS": return { short: "SPA", full: "Special Program in the Arts" };
+    case "SPECIAL_PROGRAM_IN_SPORTS": return { short: "SPS", full: "Special Program in Sports" };
+    case "SPECIAL_PROGRAM_IN_JOURNALISM": return { short: "SPJ", full: "Special Program in Journalism" };
+    case "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE": return { short: "SPFL", full: "Special Program in Foreign Language" };
+    case "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION": return { short: "SPTVE", full: "Special Program in Technical Vocational Education" };
+    default: return { short: type, full: type };
+  }
+};
 
 export interface StudentDetail {
   id: number;
@@ -139,6 +158,7 @@ export interface StudentDetail {
     gradeLevel: string;
     genAve: number;
     schoolYear: string;
+    completedAt?: string;
   }[];
 }
 
@@ -319,6 +339,7 @@ export function StudentDetailPanel({
   const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
 
   const showSkeleton = useDelayedLoading(loading);
+  const isJhsCompleter = student?.learnerStatus === "JHS_COMPLETER";
 
   const fetchStudent = useCallback(async () => {
     setLoading(true);
@@ -741,14 +762,29 @@ export function StudentDetailPanel({
 
   const typedStudentShim = studentShim as unknown as ApplicantDetail;
 
+  const jhsRecord = student.historicalGrades?.find(g => g.gradeLevel === "Grade 10");
+  const displaySchoolYear = isJhsCompleter && jhsRecord
+    ? jhsRecord.schoolYear
+    : student.schoolYear;
+  const displayGraduationDate = isJhsCompleter && jhsRecord?.completedAt
+    ? formatDate(jhsRecord.completedAt)
+    : formatDate(student.updatedAt);
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold">
         <div>
           <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Enrolled Learner Details
+            {isJhsCompleter ? (
+              <>
+                Alumni Record Details
+              </>
+            ) : (
+              <>
+                Enrolled Learner Details
+              </>
+            )}
           </SheetTitle>
         </div>
       </div>
@@ -788,21 +824,26 @@ export function StudentDetailPanel({
                   : student.fullName}
               </h3>
               <div className="flex items-center justify-center gap-2 mt-1 font-extrabold">
-                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-3 py-1 rounded-full text-[11px] uppercase  shadow-sm">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Officially Enrolled
-                </Badge>
-                {student.applicantType === "LATE_ENROLLEE" && (
-                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 gap-1 px-3 py-1 rounded-full text-[11px] uppercase  shadow-sm font-extrabold">
-                    🕒 Late Enrollee
+                {isJhsCompleter ? (
+                  <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
+                    JHS Completer
+                  </Badge>
+                ) : (
+                  <Badge className="bg-emerald-600 text-white gap-1 px-3 py-1 rounded-md uppercase  shadow-sm">
+                    Officially Enrolled
+                  </Badge>
+                )}
+                {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-extrabold">
+                    Late Enrollee
                   </Badge>
                 )}
               </div>
-              {!isEditing && canEditProfile && (
+              {!isEditing && canEditProfile && !isJhsCompleter && (
                 <div className="mt-4 flex justify-center w-full px-2">
                   <Button
                     variant="default"
-                    className="font-extrabold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-full transition-all active:scale-[0.98]"
+                    className="font-extrabold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
                     onClick={handleEditClick}>
                     <UserRoundPen className="mr-2 h-5 w-5 shrink-0" />
                     Edit Learner Data
@@ -813,31 +854,41 @@ export function StudentDetailPanel({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
-            <div>
-              <p className="text-base uppercase text-foreground mb-1">
-                Grade Level & Section
-              </p>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "font-extrabold px-2.5 py-0.5 rounded-full",
-                    getGradeLevelBadgeStyles(student.gradeLevel),
-                  )}>
-                  {student.gradeLevel}
-                </Badge>
-                {student.enrollment?.section && (
+            {!isJhsCompleter ? (
+              <div>
+                <p className="text-base uppercase text-foreground mb-1">
+                  Grade Level & Section
+                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-base font-extrabold text-foreground">
-                    - {student.enrollment.section}
+                    {student.gradeLevel}
+                    {student.enrollment?.section && ` - ${student.enrollment.section}`}
                   </span>
-                )}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="font-extrabold px-2 py-0 rounded-md cursor-help"
+                        >
+                          {getProgramBadge(student.applicantType).short}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{getProgramBadge(student.applicantType).full}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div></div>
+            )}
             <div className="text-left sm:text-right">
-              <p className="text-base uppercase text-foreground">
+              <p className="uppercase text-foreground">
                 Learner Reference Number
               </p>
-              <p className="text-base leading-tight tabular-nums">
+              <p className="leading-tight tabular-nums">
                 {student.lrn || "N/A"}
               </p>
             </div>
@@ -881,34 +932,55 @@ export function StudentDetailPanel({
         </div>
 
         {/* Enrollment Information Section */}
-        <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-          <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-primary" />
-            Enrollment Information
+        {isJhsCompleter ? (
+          <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden border-amber-200">
+            <div className="p-3 font-extrabold text-base leading-tight bg-amber-50 text-amber-700 border-b border-amber-200 flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-amber-700" />
+              Completion Record
+            </div>
+            <div className="text-base leading-tight font-extrabold divide-y divide-amber-200">
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-amber-200">
+                <div className="p-3 text-foreground bg-amber-50/50">School Year:</div>
+                <div className="p-3 bg-amber-50/50">{displaySchoolYear}</div>
+              </div>
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-amber-200">
+                <div className="p-3 text-foreground bg-amber-50/50">Date of Graduation:</div>
+                <div className="p-3 bg-amber-50/50">
+                  {displayGraduationDate}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-extrabold">
-            <span className="text-foreground">School Year:</span>
-            <span>{student.schoolYear}</span>
-            <span className="text-foreground">Enrolled At:</span>
-            <span>
-              {student.enrollment?.enrolledAt
-                ? formatDate(student.enrollment.enrolledAt)
-                : "N/A"}
-            </span>
-            <span className="text-foreground">Enrolled By:</span>
-            <span className="uppercase">
-              {student.enrollment?.enrolledBy || "N/A"}
-            </span>
-            {student.enrollment?.advisingTeacher && (
-              <>
-                <span className="text-foreground">Advising Teacher:</span>
-                <span className="uppercase">
-                  {student.enrollment.advisingTeacher}
-                </span>
-              </>
-            )}
+        ) : (
+          <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
+            <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-primary" />
+              Enrollment Information
+            </div>
+            <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-extrabold">
+              <span className="text-foreground">School Year:</span>
+              <span>{student.schoolYear}</span>
+              <span className="text-foreground">Enrolled At:</span>
+              <span>
+                {student.enrollment?.enrolledAt
+                  ? formatDate(student.enrollment.enrolledAt)
+                  : "N/A"}
+              </span>
+              <span className="text-foreground">Enrolled By:</span>
+              <span className="uppercase">
+                {student.enrollment?.enrolledBy || "N/A"}
+              </span>
+              {student.enrollment?.advisingTeacher && (
+                <>
+                  <span className="text-foreground">Advising Teacher:</span>
+                  <span className="uppercase">
+                    {student.enrollment.advisingTeacher}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Lifecycle Outcome (if any) */}
         {student.enrollment?.eosyStatus && (
@@ -972,24 +1044,24 @@ export function StudentDetailPanel({
               <FileBadge2 className="h-4 w-4 text-primary" />
               Historical Final Averages
             </div>
-            <div className="p-4 text-base leading-tight">
+            <div className="text-base leading-tight">
               {student.historicalGrades.length > 0 ? (
-                <table className="w-full text-center border-collapse">
+                <table className="w-full text-center border-collapse border border-border">
                   <thead>
-                    <tr className="font-extrabold border-b">
-                      <th className="text-foreground pb-2 font-extrabold text-center">Grade Level</th>
-                      <th className="text-foreground pb-2 font-extrabold text-center">Final Gen Ave</th>
-                      <th className="text-foreground pb-2 font-extrabold text-center">School Year</th>
+                    <tr className="font-extrabold border-b border-border bg-muted/30">
+                      <th className="text-foreground p-3 border-r border-border font-extrabold text-center">Grade Level</th>
+                      <th className="text-foreground p-3 border-r border-border font-extrabold text-center">Final Gen Ave</th>
+                      <th className="text-foreground p-3 font-extrabold text-center">School Year</th>
                     </tr>
                   </thead>
                   <tbody>
                     {student.historicalGrades.map((hg, idx) => (
-                      <tr key={idx} className="font-extrabold">
-                        <td className="py-2">{hg.gradeLevel}</td>
-                        <td className="py-2">
+                      <tr key={idx} className="font-extrabold border-b border-border last:border-b-0">
+                        <td className="p-3 border-r border-border">{hg.gradeLevel}</td>
+                        <td className="p-3 border-r border-border">
                           {hg.genAve != null ? hg.genAve.toFixed(2) : "N/A"}
                         </td>
-                        <td className="py-2">{hg.schoolYear}</td>
+                        <td className="p-3">{hg.schoolYear}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1758,74 +1830,76 @@ export function StudentDetailPanel({
             <PreviousSchool applicant={typedStudentShim} />
             <Classifications applicant={typedStudentShim} />
 
-            <div className="bg-muted border border-slate-200/80 rounded-xl overflow-hidden shadow-sm p-5 space-y-4">
-              <div className="font-extrabold uppercase text-base leading-tight tracking-wide text-foreground flex items-center gap-2 border-b border-border/40 pb-3">
-                <FileBadge2 className="h-4 w-4 text-primary" />
-                PORTAL ACCESS & SECURITY
-              </div>
+            {!isJhsCompleter && (
+              <div className="bg-muted border border-slate-200/80 rounded-md overflow-hidden shadow-sm p-5 space-y-4">
+                <div className="font-extrabold uppercase text-base leading-tight tracking-wide text-foreground flex items-center gap-2 border-b border-border/40 pb-3">
+                  <FileBadge2 className="h-4 w-4 text-primary" />
+                  PORTAL ACCESS & SECURITY
+                </div>
 
-              <div className="space-y-2 ">
-                <Label className="text-base font-extrabold uppercase text-foreground">
-                  Student Portal Access
-                </Label>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    disabled={isPortalActionSubmitting}
-                    onClick={() => handleTogglePortalAccess(true)}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
-                      portalActive
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-border hover:bg-muted/50 text-foreground"
-                    )}
-                  >
-                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
-                    Allow Login (Active)
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPortalActionSubmitting}
-                    onClick={() => handleTogglePortalAccess(false)}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
-                      !portalActive
-                        ? "border-amber-500 bg-amber-50 text-amber-700"
-                        : "border-border hover:bg-muted/50 text-foreground"
-                    )}
-                  >
-                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
-                    Block Login (Disabled)
-                  </button>
+                <div className="space-y-2 ">
+                  <Label className="text-base font-extrabold uppercase text-foreground">
+                    Student Portal Access
+                  </Label>
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      disabled={isPortalActionSubmitting}
+                      onClick={() => handleTogglePortalAccess(true)}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                        portalActive
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                          : "border-border hover:bg-muted/50 text-foreground"
+                      )}
+                    >
+                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
+                      Allow Login (Active)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPortalActionSubmitting}
+                      onClick={() => handleTogglePortalAccess(false)}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                        !portalActive
+                          ? "border-amber-500 bg-amber-50 text-amber-700"
+                          : "border-border hover:bg-muted/50 text-foreground"
+                      )}
+                    >
+                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
+                      Block Login (Disabled)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <Label className="text-base font-extrabold uppercase text-foreground">
+                    Password Control
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={defaultPasswordInput}
+                      onChange={(e) => setDefaultPasswordInput(e.target.value)}
+                      placeholder="Enter default password"
+                      className="h-11 font-extrabold text-base bg-background"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                      onClick={handleResetPassword}
+                      className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                    >
+                      Reset to Default Password
+                    </Button>
+                  </div>
+                  <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                    This will reset the learner's portal password to the value above and force a password change on next login.
+                  </p>
                 </div>
               </div>
-
-              <div className="space-y-2 pt-2">
-                <Label className="text-base font-extrabold uppercase text-foreground">
-                  Password Control
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    value={defaultPasswordInput}
-                    onChange={(e) => setDefaultPasswordInput(e.target.value)}
-                    placeholder="Enter default password"
-                    className="h-11 font-extrabold text-base bg-background"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
-                    onClick={handleResetPassword}
-                    className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
-                  >
-                    Reset to Default Password
-                  </Button>
-                </div>
-                <p className="text-xs font-extrabold leading-tight text-foreground/60">
-                  This will reset the learner's portal password to the value above and force a password change on next login.
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="pt-4 border-t text-base uppercase text-foreground flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
@@ -1842,7 +1916,19 @@ export function StudentDetailPanel({
       </div>
 
       {/* Action Footer */}
-      {isEditing ? (
+      {isJhsCompleter ? (
+        <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              className="flex-1 font-extrabold text-base sm:text-base h-9 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+              onClick={() => sileo.success({ title: "Form Generated", description: "Form 137 SF10 generation is coming soon." })}>
+              <FileBadge2 className="h-4 w-4 mr-2" />
+              Generate Form 137 SF10
+            </Button>
+          </div>
+        </div>
+      ) : isEditing ? (
         <div className="p-4 bg-muted/10 border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row">
           <Button
             variant="outline"

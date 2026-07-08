@@ -67,7 +67,7 @@ const SheetContent = React.forwardRef<
 				{children}
 				{showClose ? (
 					<DialogPrimitive.Close className={cn(
-						'absolute right-6 top-5 rounded-full bg-primary-foreground p-2 text-primary opacity-90 ring-offset-[hsl(var(--background))] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))]',
+						'absolute right-6 top-3 rounded-full p-2 text-primary-foreground ring-offset-[hsl(var(--background))] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))]',
 						motionClassNames.closeButton,
 					)}>
 						<X className='h-5 w-5' />
