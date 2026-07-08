@@ -247,6 +247,7 @@ export async function findStudents(query: {
           orderBy: { schoolYear: { yearLabel: "desc" } },
           take: 1,
           include: {
+            schoolYear: { select: { yearLabel: true } },
             gradeLevel: true,
             enrollmentRecord: {
               include: {
@@ -267,11 +268,15 @@ export async function findStudents(query: {
       const latestApp = l.enrollmentApplications[0];
       return {
         ...latestApp,
+        id: latestApp?.id || l.id,
+        learnerId: l.id,
+        createdAt: latestApp?.createdAt || l.createdAt,
         learner: l,
         // Ensure status reflects the learner's actual status if no application status matches
         status: latestApp?.status || (l.status === "JHS_COMPLETER" ? "ALUMNI" : "INACTIVE"),
         gradeLevel: latestApp?.gradeLevel,
         enrollmentRecord: latestApp?.enrollmentRecord,
+        schoolYear: latestApp?.schoolYear,
       };
     });
 
@@ -408,15 +413,35 @@ export async function findStudents(query: {
   }
 
   const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
-  const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
-    (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus),
-  ) ?? false;
+  
+  if (learnerStatus === "DROPPED,TRANSFERRED_OUT") {
+    enrollmentRecordFilters.eosyStatus = { in: ["DROPPED_OUT", "TRANSFERRED_OUT"] };
+    delete where.status; // Override default application status filter
+    delete learnerWhere.status;
+  } else if (learnerStatus === "DROPPED") {
+    enrollmentRecordFilters.eosyStatus = "DROPPED_OUT";
+    delete where.status;
+    delete learnerWhere.status;
+  } else if (learnerStatus === "TRANSFERRED_OUT") {
+    enrollmentRecordFilters.eosyStatus = "TRANSFERRED_OUT";
+    delete where.status;
+    delete learnerWhere.status;
+  } else if (learnerStatus === "JHS_COMPLETER") {
+    enrollmentRecordFilters.eosyStatus = "PROMOTED";
+    where.gradeLevel = { name: "Grade 10" };
+    delete where.status;
+    delete learnerWhere.status;
+  } else {
+    const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
+      (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus),
+    ) ?? false;
 
-  if (shouldExcludeInactiveOutcomes) {
-    enrollmentRecordFilters.OR = [
-      { eosyStatus: null },
-      { eosyStatus: { notIn: [...INACTIVE_OUTCOMES] } },
-    ];
+    if (shouldExcludeInactiveOutcomes) {
+      enrollmentRecordFilters.OR = [
+        { eosyStatus: null },
+        { eosyStatus: { notIn: [...INACTIVE_OUTCOMES] } },
+      ];
+    }
   }
 
   if (resolvedGradeLevelId) where.gradeLevelId = resolvedGradeLevelId;

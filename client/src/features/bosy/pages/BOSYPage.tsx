@@ -5,7 +5,7 @@ import {
   useRef,
   startTransition,
 } from "react";
-import { useSearchParams } from "react-router";
+
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -78,7 +78,6 @@ import { QueueTable } from "../components/QueueTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { VerificationWorkspace } from "@/features/enrollment/components/VerificationWorkspace";
 
 import { sileo } from "sileo";
@@ -147,7 +146,7 @@ export default function BOSYPage() {
     "y",
     "sm",
   );
-  const [searchParams, setSearchParams] = useSearchParams();
+
   const queryClient = useQueryClient();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
@@ -167,7 +166,8 @@ export default function BOSYPage() {
   const repairedSchoolYearRef = useRef<number | null>(null);
 
   const [queueState, setQueueState] = useState<BOSYQueueState>("PENDING");
-  const [targetGrade, setTargetGrade] = useState<string>("ALL");
+  const targetGrade = useSettingsStore((s) => s.uiPreferences.bosyGradeId);
+  const setTargetGrade = (grade: string) => useSettingsStore.getState().updateUiPreference("bosyGradeId", grade);
   const {
     inputValue: queueSearch,
     setInputValue: setQueueSearch,
@@ -528,12 +528,8 @@ export default function BOSYPage() {
   };
 
   const setTitle = useHeaderStore((s) => s.setTitle);
-  const tabParam = searchParams.get("tab");
-  const activeTab = tabParam === "incoming" ? "incoming" : "continuing";
-
-  const setActiveTab = (value: string) => {
-    setSearchParams({ tab: value });
-  };
+  const activeTab = useSettingsStore((s) => s.uiPreferences.bosyTab);
+  const setActiveTab = (tab: string) => useSettingsStore.getState().updateUiPreference("bosyTab", tab);
 
   useEffect(() => {
     setTitle("Learner Enrollment");
@@ -542,7 +538,6 @@ export default function BOSYPage() {
 
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
-      <PhaseBanner />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger

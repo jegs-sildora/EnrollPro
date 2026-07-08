@@ -132,6 +132,7 @@ interface Student {
   updatedAt: string;
   studentPhoto?: string | null;
   portalStatus?: string;
+  schoolYear?: { yearLabel: string } | string;
 }
 
 
@@ -295,8 +296,7 @@ const getInitials = (firstName?: string | null, lastName?: string | null): strin
 
 export default function Students() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedTab = searchParams.get("tab");
+  const requestedTab = useSettingsStore((s) => s.uiPreferences.studentsTab);
   const activeTab: StudentTab = VALID_TABS.includes(
     (requestedTab ?? "") as StudentTab,
   )
@@ -396,7 +396,7 @@ export default function Students() {
       sortOrder,
     };
 
-    if (ayId) {
+    if (ayId && activeTab !== "completers") {
       params.schoolYearId = ayId;
     }
 
@@ -612,7 +612,7 @@ export default function Students() {
             ? "bg-emerald-50 text-emerald-700 border-emerald-100"
             : isDropped
               ? "bg-red-50 text-red-700 border-red-100"
-              : "bg-slate-50 text-slate-600 border-slate-100"
+              : "bg-primary text-primary-foreground"
         )}>
         {label}
       </Badge>
@@ -773,8 +773,8 @@ export default function Students() {
     [],
   );
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value }, { replace: true });
+  const handleTabChange = (val: string) => {
+    useSettingsStore.getState().updateUiPreference("studentsTab", val);
     setPage(1);
   };
 
@@ -904,9 +904,9 @@ export default function Students() {
         {
           id: "lastName",
           accessorKey: "lastName",
-          size: 500,
+          size: 350,
           minSize: 260,
-          maxSize: 400,
+          maxSize: 500,
           meta: { skeletonClassName: "w-[200px]" },
           header: ({ column }) => (
             <DataTableColumnHeader
@@ -976,10 +976,18 @@ export default function Students() {
               <span className="font-extrabold text-sm leading-tight text-center uppercase">
                 {formatSectionLabel(row.original.section)}
               </span>
+              {activeTab === "completers" && (() => {
+                const sy = row.original.schoolYear
+                const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel
+                return label ? (
+                  <span className="text-sm text-foreground font-extrabold leading-tight">
+                    {label}
+                  </span>
+                ) : null
+              })()}
             </div>
           ),
         },
-
         {
           id: "status",
           size: 150,
@@ -1067,14 +1075,14 @@ export default function Students() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+                className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewDetails(row.original.id);
                 }}
               >
                 <Eye className="w-4 h-4 mr-2" />
-                View
+                Profile
               </Button>
             </div>
           ),
@@ -1457,7 +1465,7 @@ export default function Students() {
                     virtualize={true}
                     estimatedRowHeight={60}
                     className="border-none rounded-none h-full"
-                    tableClassName="min-w-[980px] table-fixed"
+                    tableClassName="min-w-[1200px] table-fixed"
                     containerHeight="100%"
                     prependBodyRow={
                       isSearching ? (
@@ -1518,7 +1526,7 @@ export default function Students() {
   }, [setTitle]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
 
       {/* Tabs */}

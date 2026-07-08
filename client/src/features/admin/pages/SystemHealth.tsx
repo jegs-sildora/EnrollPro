@@ -19,7 +19,6 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
-import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";

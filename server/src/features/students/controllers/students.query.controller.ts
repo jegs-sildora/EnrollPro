@@ -188,8 +188,14 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
   export const getStudents = async (req: Request, res: Response) => {
     try {
       // Prioritize query param, but fallback to the global SY context (req.schoolYearId)
-      const schoolYearId = parsePositiveInt(req.query.schoolYearId) ?? req.schoolYearId;
+      const rawSchoolYearId = parsePositiveInt(req.query.schoolYearId) ?? req.schoolYearId;
       const learnerStatus = parseQueryString(req.query.learnerStatus);
+
+      // JHS_COMPLETER (alumni) queries must bypass the school year context
+      // to trigger the global search path in findStudents. Alumni are a
+      // permanent institutional record that is not scoped to any single year.
+      const isAlumniQuery = learnerStatus?.includes("JHS_COMPLETER")
+      const schoolYearId = isAlumniQuery ? undefined : rawSchoolYearId
 
       if (!schoolYearId && !learnerStatus) {
         return res.status(400).json({
@@ -223,6 +229,11 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           applicant.familyMembers as FamilyMemberLike[],
         );
 
+        // Extract the school year label for Batch/Year Completed column
+        const schoolYearInfo = "schoolYear" in applicant
+          ? (applicant as StudentSearchItem & { schoolYear?: { yearLabel: string } }).schoolYear
+          : undefined
+
         return {
           learningProgram:
             applicant.enrollmentRecord?.section?.programType ||
@@ -253,6 +264,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           tleSpecialization: null,
           studentPhoto: applicant.learner?.studentPhoto || null,
           portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
+          schoolYear: schoolYearInfo,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
         };

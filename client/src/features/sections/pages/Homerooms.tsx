@@ -574,7 +574,8 @@ export default function Homerooms() {
     (!isHistoricalReadOnly || hasOverride) &&
     systemPhase !== "EOSY_CLOSING";
 
-  const [activeGradeId, setActiveGradeId] = useState<string>("");
+  const activeGradeId = useSettingsStore((s) => s.uiPreferences.homeroomsGradeId);
+  const setActiveGradeId = (id: string) => useSettingsStore.getState().updateUiPreference("homeroomsGradeId", id);
 
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const handleInlineAdviserChange = async (section: SectionItem, newAdviserId: string) => {
@@ -723,9 +724,10 @@ export default function Homerooms() {
 
       // Auto-select first grade tab if none is active
       if (res.data.gradeLevels && res.data.gradeLevels.length > 0) {
-        setActiveGradeId(
-          (prev) => prev || String(res.data.gradeLevels[0].gradeLevelId),
-        );
+        const currentId = useSettingsStore.getState().uiPreferences.homeroomsGradeId;
+        if (!currentId) {
+          setActiveGradeId(String(res.data.gradeLevels[0].gradeLevelId));
+        }
       }
     } catch (err) {
       showSectionsErrorToast("load", err);
@@ -1122,7 +1124,7 @@ export default function Homerooms() {
   }, [setTitle]);
 
   return (
-    <div className="space-y-6 ">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
       {showSkeleton ? (
         <div className="space-y-6">

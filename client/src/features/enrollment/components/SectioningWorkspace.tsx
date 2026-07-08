@@ -8,7 +8,6 @@ import {
   ChevronDown,
   LayoutGrid,
   Info,
-  CheckCircle2,
   AlertTriangle,
   Loader2,
   MoreHorizontal,
@@ -43,6 +42,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import { useSectioningStore } from "@/store/sectioning.slice";
+import { useSettingsStore } from "@/store/settings.slice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ import {
   type LearnerType,
 } from "@enrollpro/shared";
 
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import ViewMasterlist from "@/features/sections/pages/ViewMasterlist";
 
 interface SectionSummary {
@@ -354,7 +356,8 @@ export function SectioningWorkspace() {
 
   const queryClient = useQueryClient();
 
-  const [activeGradeLevelId, setActiveGradeLevelId] = useState<string>("");
+  const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
+  const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
     queryKey: queryKeys.sectioningSections(),
@@ -417,7 +420,7 @@ export function SectioningWorkspace() {
     setSortConfig({ key, direction });
   };
 
-  const [filterSex, setFilterSex] = useState<string>("all");
+  const [filterProgram, setFilterProgram] = useState<string>("all");
   const {
     inputValue: searchQuery,
     setInputValue: setSearchQuery,
@@ -438,10 +441,13 @@ export function SectioningWorkspace() {
   }, [gradeLevelsResponse]);
 
   useEffect(() => {
-    if (gradeLevels.length > 0 && !activeGradeLevelId) {
-      setActiveGradeLevelId(String(gradeLevels[0].id));
+    if (gradeLevels.length > 0) {
+      const isValid = gradeLevels.some(g => String(g.id) === activeGradeLevelId);
+      if (!isValid) {
+        setActiveGradeLevelId(String(gradeLevels[0].id));
+      }
     }
-  }, [gradeLevels, activeGradeLevelId]);
+  }, [gradeLevels, activeGradeLevelId, setActiveGradeLevelId]);
 
   const isDraftActive = draftPlacement !== null;
   const isLockedIn = selectedAppIds.length > 0 || isDraftActive;
@@ -482,7 +488,7 @@ export function SectioningWorkspace() {
 
   const filteredPool = useMemo(() => {
     return currentGradePool.filter((l) => {
-      if (filterSex !== "all" && l.sex !== filterSex) return false;
+      if (filterProgram !== "all" && l.programType !== filterProgram) return false;
       if (activeSearchQuery) {
         const q = activeSearchQuery.toLowerCase();
         const fullName = `${l.lastName} ${l.firstName}`.toLowerCase();
@@ -492,7 +498,7 @@ export function SectioningWorkspace() {
       }
       return true;
     });
-  }, [currentGradePool, activeSearchQuery, filterSex]);
+  }, [currentGradePool, activeSearchQuery, filterProgram]);
 
   const filteredAndSortedPool = useMemo(() => {
     const result = [...filteredPool];
@@ -828,7 +834,7 @@ export function SectioningWorkspace() {
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs
         value={activeGradeLevelId}
         onValueChange={(val) => {
@@ -893,10 +899,10 @@ export function SectioningWorkspace() {
       )}
 
       {/* ── Workspace ── */}
-      <div>
-        <Card className="flex shadow-sm border-none bg-card overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+        <Card className="flex flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
           {/* LEFT PANE: UNSECTIONED POOL */}
-          <div className="flex-1 flex flex-col border-r border-border bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-r border-border bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -919,29 +925,37 @@ export function SectioningWorkspace() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
                     placeholder="Search LRN or Name..."
-                    className="pl-9 h-10 border-border focus:ring-primary/20 bg-background"
+                    className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Select
-                  value={filterSex}
-                  onValueChange={setFilterSex}>
-                  <SelectTrigger className="w-32 h-10 border-border bg-background">
-                    <SelectValue placeholder="Gender" />
+                  value={filterProgram}
+                  onValueChange={setFilterProgram}>
+                  <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-extrabold transition-colors">
+                    <SelectValue placeholder="All Programs">
+                      {filterProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
+                        : filterProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
+                          : filterProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
+                            : filterProgram === "REGULAR" ? "BEC"
+                              : "All Programs"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Genders</SelectItem>
-                    <SelectItem value="MALE">Boys</SelectItem>
-                    <SelectItem value="FEMALE">Girls</SelectItem>
+                    <SelectItem value="all" className="leading-tight font-extrabold">All Programs</SelectItem>
+                    <SelectItem value="REGULAR" className="leading-tight font-extrabold">BEC</SelectItem>
+                    <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
+                    <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
+                    <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
-            <div className="p-0 relative">
+            <div className="p-0 relative flex-1 overflow-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-muted z-10 border-b border-border">
-                  <tr className="font-extrabold uppercase">
+                  <tr className="uppercase">
                     <th className="p-4 w-10">
                       <Checkbox
                         className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
@@ -960,9 +974,9 @@ export function SectioningWorkspace() {
                         }}
                       />
                     </th>
-                    <th className="p-4">Learner Detail</th>
+                    <th className="p-4 font-extrabold">Learner Detail</th>
                     <th
-                      className="p-4 cursor-pointer  select-none"
+                      className="p-4 cursor-pointer  select-none font-extrabold"
                       onClick={() => handleSort("genAve")}>
                       <div className="flex items-center gap-1 justify-center">
                         Final Gen Ave
@@ -1060,7 +1074,7 @@ export function SectioningWorkspace() {
                                 draftSectionByApplicationId.has(
                                   l.applicationId,
                                 ) && (
-                                  <span className="mt-2 font-extrabold uppercase text-primary text-left">
+                                  <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
                                     Section:{" "}
                                     {draftSectionByApplicationId.get(
                                       l.applicationId,
@@ -1087,7 +1101,7 @@ export function SectioningWorkspace() {
           </div>
 
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <div className="flex-1 flex flex-col bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div>
@@ -1115,11 +1129,11 @@ export function SectioningWorkspace() {
                   isHistoricalReadOnly
                 }
                 onClick={generateDraftPlacement}
-                className="font-extrabold text-base uppercase tracking-normal gap-1">
+                className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-lg">
                 AUTO ASSIGN SECTIONS
               </Button>
             </CardHeader>
-            <div className="p-4 space-y-3 relative">
+            <div className="p-4 space-y-3 relative flex-1 overflow-auto">
               {displayedRosters.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                   <Info className="h-8 w-8" />
@@ -1483,59 +1497,42 @@ export function SectioningWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <ConfirmationModal
         open={commitDialogOpen}
-        onOpenChange={setCommitDialogOpen}>
-        <DialogContent className="w-full max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>FINALIZE OFFICIAL SECTIONS</DialogTitle>
-            <DialogDescription>
+        onOpenChange={setCommitDialogOpen}
+        title="FINALIZE OFFICIAL SECTIONS"
+        description={
+          <div className="space-y-4">
+            <p className="font-extrabold">
               This action will lock the assignments and update the official school records
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-            <p className="text-base font-extrabold">
-              {draftLearnerCount} learner(s) will be officially placed in their respective classes
             </p>
-            {hasDraftOverflow && (
-              <label className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950">
-                <Checkbox
-                  checked={allowCapacityOverride}
-                  onCheckedChange={(checked) =>
-                    setAllowCapacityOverride(checked === true)
-                  }
-                  className="mt-1"
-                />
-                <span className="text-sm font-bold">
-                  Allow capacity override for sections marked over capacity.
-                </span>
-              </label>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCommitDialogOpen(false)}
-              disabled={commitProcessing}>
-              Cancel
-            </Button>
-            <Button
-              onClick={commitDraftPlacement}
-              disabled={
-                commitProcessing || (hasDraftOverflow && !allowCapacityOverride)
-              }>
-              {commitProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Committing...
-                </>
-              ) : (
-                "Commit Final Sectioning"
+            <div className="space-y-3 rounded-lg border bg-muted p-4 text-left">
+              <p className="text-base font-extrabold text-foreground">
+                {draftLearnerCount} learner(s) will be officially placed in their respective classes
+              </p>
+              {hasDraftOverflow && (
+                <label className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 cursor-pointer">
+                  <Checkbox
+                    checked={allowCapacityOverride}
+                    onCheckedChange={(checked) =>
+                      setAllowCapacityOverride(checked === true)
+                    }
+                    className="mt-1 bg-white"
+                  />
+                  <span className="text-sm font-bold">
+                    Allow capacity override for sections marked over capacity.
+                  </span>
+                </label>
               )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        }
+        onConfirm={commitDraftPlacement}
+        confirmText="Commit Final Sectioning"
+        loading={commitProcessing}
+        confirmDisabled={hasDraftOverflow && !allowCapacityOverride}
+        variant="primary"
+      />
     </div>
   );
 }

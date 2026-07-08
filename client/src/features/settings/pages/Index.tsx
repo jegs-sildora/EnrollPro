@@ -18,22 +18,19 @@ const VALID_TABS = [
 type SettingsTab = (typeof VALID_TABS)[number];
 
 export default function Settings() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedTab = searchParams.get("tab");
-  const wizard = searchParams.get("wizard");
-  const defaultTab = wizard === "new-school-year" ? "school-year" : "profile";
+  const { activeSchoolYearId, uiPreferences, updateUiPreference } = useSettingsStore();
+  const requestedTab = uiPreferences.settingsTab;
 
   const activeTab: SettingsTab = VALID_TABS.includes(
     (requestedTab ?? "") as SettingsTab,
   )
-    ? ((requestedTab as SettingsTab) ?? defaultTab)
-    : defaultTab;
+    ? (requestedTab as SettingsTab)
+    : "profile";
 
   const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value }, { replace: true });
+    updateUiPreference("settingsTab", value);
   };
 
-  const { activeSchoolYearId } = useSettingsStore();
   useEffect(() => {
     async function checkStatus() {
       if (!activeSchoolYearId) return;
@@ -54,8 +51,9 @@ export default function Settings() {
   }, [setTitle]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs
+        value={activeTab}
         onValueChange={handleTabChange}
         className="w-full">
         <TabsList className="w-full flex flex-col sm:flex-row h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">

@@ -90,6 +90,7 @@ import { HistoricalBanner } from "../components/HistoricalBanner";
 import { useHistoricalReadOnly } from "../hooks/useHistoricalReadOnly";
 import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionModal";
 import { SchoolYearTransitionLoader } from "@/shared/components/SchoolYearTransitionLoader";
+import { PhaseBanner } from "@/shared/components/PhaseBanner";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -974,6 +975,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           open={showCorrectionModal}
           onOpenChange={setShowCorrectionModal}
         />
+
+        <PhaseBanner />
 
         {/* Page content */}
         <AnimatePresence mode="wait">

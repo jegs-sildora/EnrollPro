@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useHeaderStore } from "@/store/header.slice";
 import { SectioningWorkspace } from "../components/SectioningWorkspace";
-import { PhaseBanner } from "@/shared/components/PhaseBanner";
 
 export default function EnrollmentManagement() {
   const setTitle = useHeaderStore((s) => s.setTitle);
@@ -12,8 +11,7 @@ export default function EnrollmentManagement() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-col space-y-4 sm:space-y-6">
-      <PhaseBanner />
+    <div className="flex flex-col flex-1 h-full w-full min-h-0">
       <SectioningWorkspace />
     </div>
   );

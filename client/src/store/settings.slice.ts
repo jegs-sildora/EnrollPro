@@ -70,6 +70,18 @@ export interface SettingsState {
   initialized: boolean;
   isSwitchingSchoolYear: boolean;
   switchingToSchoolYearLabel: string | null;
+  uiPreferences: {
+    bosyTab: string;
+    studentsTab: string;
+    settingsTab: string;
+    homeroomsGradeId: string;
+    bosyGradeId: string;
+    sectioningGradeId: string;
+    readingAssessmentTab: string;
+    intakeTab: string;
+    eosyTab: string;
+  };
+  updateUiPreference: (key: keyof SettingsState["uiPreferences"], value: string) => void;
   setSettings: (settings: Partial<SettingsState>) => void;
   setViewingSY: (
     id: number | null,
@@ -137,6 +149,24 @@ export const useSettingsStore = create<SettingsState>()(
       activeCorrection: null,
       isHydrated: false,
       initialized: false,
+      uiPreferences: {
+        bosyTab: "incoming",
+        studentsTab: "official",
+        settingsTab: "general",
+        homeroomsGradeId: "",
+        bosyGradeId: "ALL",
+        sectioningGradeId: "",
+        readingAssessmentTab: "bosy",
+        intakeTab: "enrolled",
+        eosyTab: "summary",
+      },
+      updateUiPreference: (key, value) => 
+        set((state) => ({
+          uiPreferences: {
+            ...state.uiPreferences,
+            [key]: value
+          }
+        })),
       setSettings: (settings) =>
         set((state) => ({ ...state, ...settings, initialized: true })),
       setViewingSY: (id, status, label) =>

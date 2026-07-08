@@ -4,7 +4,6 @@ import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
-import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -447,7 +446,6 @@ export default function TeacherEosyDashboard() {
   return (
     <>
       <div className="flex flex-col min-h-0 pb-6">
-        <PhaseBanner />
 
         <div className="bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
           <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
