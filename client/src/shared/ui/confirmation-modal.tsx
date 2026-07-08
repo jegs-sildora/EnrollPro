@@ -119,6 +119,7 @@ export function ConfirmationModal({
       open={open}
       onOpenChange={onOpenChange}>
       <DialogContent
+        aria-describedby={undefined}
         className={cn(
           "w-full max-w-3xl rounded-lg p-8 overflow-hidden",
           "bg-sidebar shadow-2xl",

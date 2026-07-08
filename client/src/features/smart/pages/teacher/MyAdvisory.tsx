@@ -352,7 +352,7 @@ export default function MyAdvisory() {
             </div>
             <Input
               type="text"
-              placeholder="Search by name or LRN..."
+              placeholder="Search LRN, First Name, Last Name… or LRN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-14 h-12 text-xs font-extrabold bg-slate-50 border-0 rounded-2xl transition-all placeholder:text-slate-400"

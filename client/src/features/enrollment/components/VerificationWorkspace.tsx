@@ -354,8 +354,8 @@ export function VerificationWorkspace() {
           <div className="relative w-full xl:w-84 shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by LRN, Last Name, or First Name..."
-              className="w-full h-10 pl-9 bg-muted border-gray-300 font-semibold"
+              placeholder="Search LRN, First Name, Last Name…"
+              className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -419,7 +419,6 @@ export function VerificationWorkspace() {
           <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
             <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between w-full">
               <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                <FileText className="h-4 w-4 text-primary" />
                 Pending Verification
               </CardTitle>
               <Badge variant="outline" className="font-extrabold bg-background border-border">

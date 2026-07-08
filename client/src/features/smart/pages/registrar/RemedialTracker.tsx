@@ -76,7 +76,7 @@ export default function RemedialTracker() {
               </div>
             </div>
             <Input
-              placeholder="Search by name or LRN..."
+              placeholder="Search LRN, First Name, Last Name… or LRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-56 rounded-xl border-gray-200"

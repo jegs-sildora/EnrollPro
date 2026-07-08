@@ -967,7 +967,7 @@ export default function Students() {
               <Badge
                 variant="outline"
                 className={cn(
-                  "font-extrabold px-2.5 py-0.5 rounded-full uppercase",
+                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
                   getGradeLevelBadgeStyles(row.original.gradeLevel)
                 )}
               >
@@ -1048,8 +1048,8 @@ export default function Students() {
                         {acronym}
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-slate-800 text-white">
-                      <p className="font-semibold text-sm">{displayName}</p>
+                    <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                      <p className="font-bold text-sm">{displayName}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -1108,7 +1108,7 @@ export default function Students() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by name, ID, or LRN..."
+                  placeholder="Search LRN, First Name, Last Name…"
                   className="w-full h-10 pl-9 bg-muted border-gray-300 uppercase font-extrabold"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -1642,6 +1642,7 @@ export default function Students() {
         }}>
         <SheetContent
           side="right"
+          aria-describedby={undefined}
           className="p-0 flex flex-row border-l overflow-visible w-full sm:w-auto sm:max-w-none"
           style={
             isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined

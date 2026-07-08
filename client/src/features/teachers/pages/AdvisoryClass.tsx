@@ -201,10 +201,10 @@ export default function AdvisoryClass() {
           <div className="flex w-full justify-end py-3 pr-2">
             <span
               onClick={() => setSelectedStudentId(learner.id)}
-              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
+              className="inline-flex h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
             >
               <Eye className="w-4 h-4 mr-2" />
-              View
+              Profile
             </span>
           </div>
         </TableCell>
@@ -385,6 +385,7 @@ export default function AdvisoryClass() {
         }}>
         <SheetContent
           side="right"
+          aria-describedby={undefined}
           className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
           {retainedStudentId && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">

@@ -240,7 +240,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
             "REGULAR",
           dateEnrolled:
             applicant.enrollmentRecord?.enrolledAt || applicant.createdAt,
-          id: applicant.id || applicant.learner?.id,
+          id: applicant.learner?.id || (applicant as any).learnerId || applicant.id,
           lrn: applicant.learner?.lrn,
           fullName: applicant.learner ? buildFullName(applicant.learner) : "",
           firstName: applicant.learner?.firstName,
@@ -428,19 +428,6 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         let familyMembersToUse = appForYear?.familyMembers || snapshotData?.familyMembers || [];
         let previousSchoolToUse = appForYear?.previousSchool || null;
 
-        if (!appForYear && !snapshotData) {
-          appForYear = await prisma.enrollmentApplication.findFirst({
-            where: { learnerId: actualLearnerId },
-            orderBy: { schoolYearId: 'desc' },
-            include: { addresses: true, familyMembers: true, previousSchool: true }
-          });
-          if (appForYear) {
-            addressesToUse = appForYear.addresses;
-            familyMembersToUse = appForYear.familyMembers;
-            previousSchoolToUse = appForYear.previousSchool;
-          }
-        }
-
         // Create a dummy applicant-like object to satisfy the frontend mapped type
         applicant = {
           id: fallbackLearner.id, // Fake ID for the UI
@@ -491,9 +478,28 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const activeAdviser =
         (applicant.enrollmentRecord as any)?.adviser ?? applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher ?? null;
 
-      const addresses = (applicant.addresses || []) as AddressLike[];
-      const familyMembers = (applicant.familyMembers ||
-        []) as FamilyMemberLike[];
+      let addresses = (applicant.addresses || []) as AddressLike[];
+      let familyMembers = (applicant.familyMembers || []) as FamilyMemberLike[];
+      let previousSchool = applicant.previousSchool || null;
+
+      if (!addresses.length || !familyMembers.length) {
+        const latestAppWithData = await prisma.enrollmentApplication.findFirst({
+          where: { 
+            learnerId: actualLearnerId,
+            OR: [
+              { addresses: { some: {} } },
+              { familyMembers: { some: {} } }
+            ]
+          },
+          orderBy: { schoolYearId: 'desc' },
+          include: { addresses: true, familyMembers: true, previousSchool: true }
+        });
+        if (latestAppWithData) {
+          if (!addresses.length) addresses = latestAppWithData.addresses as AddressLike[];
+          if (!familyMembers.length) familyMembers = latestAppWithData.familyMembers as FamilyMemberLike[];
+          if (!previousSchool) previousSchool = latestAppWithData.previousSchool;
+        }
+      }
       const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
       const permanentAddr = addresses.find(
         (a) => a.addressType === "PERMANENT",
@@ -504,7 +510,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       const parentOrGuardian = pickParentOrGuardian(familyMembers);
 
       const student = {
-        id: applicant.id,
+        id: applicant.learner?.id || applicant.learnerId || applicant.id,
         lrn: applicant.learner?.lrn,
         fullName: applicant.learner ? buildFullName(applicant.learner) : "",
         firstName: applicant.learner?.firstName,
@@ -539,10 +545,12 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           : null,
         portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
         isIpCommunity: applicant.learner?.isIpCommunity,
+        ipGroupName: applicant.learner?.ipGroupName,
         is4PsBeneficiary: applicant.learner?.is4PsBeneficiary,
         isLearnerWithDisability: applicant.learner?.isLearnerWithDisability,
         disabilityTypes: applicant.learner?.disabilityTypes,
         isBalikAral: applicant.learner?.isBalikAral,
+        motherTongue: applicant.learner?.motherTongue,
         trackingNumber: applicant.trackingNumber,
         status: applicant.status,
         applicantType: applicant.applicantType,
@@ -566,6 +574,12 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
                   ? applicant.enrollmentRecord.enrolledBy 
                   : `${applicant.enrollmentRecord.enrolledBy.lastName || ""}, ${applicant.enrollmentRecord.enrolledBy.firstName || ""}`)
                 : "System / Unknown",
+              eosyStatus: applicant.enrollmentRecord.eosyStatus,
+              dropOutReason: applicant.enrollmentRecord.dropOutReason,
+              dropOutDate: applicant.enrollmentRecord.dropOutDate,
+              transferOutDate: applicant.enrollmentRecord.transferOutDate,
+              transferOutSchoolName: applicant.enrollmentRecord.transferOutSchoolName,
+              transferOutReason: applicant.enrollmentRecord.transferOutReason,
             }
           : null,
         createdAt: applicant.createdAt,

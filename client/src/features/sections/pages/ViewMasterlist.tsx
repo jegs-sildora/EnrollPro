@@ -489,6 +489,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         }}>
         <SheetContent
           side="right"
+          aria-describedby={undefined}
           className="p-0 flex flex-col border-l overflow-visible w-full sm:w-[600px] lg:w-[800px] max-w-none">
           {retainedStudentId && (
             <div className="flex-1 flex flex-col h-full overflow-hidden">

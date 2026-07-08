@@ -53,7 +53,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 import { Badge } from "@/shared/ui/badge";
 import { motion } from "motion/react";
-import { cn } from "@/shared/lib/utils";
+import { cn, formatScpType } from "@/shared/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 
 interface Teacher {
@@ -332,31 +332,58 @@ function SectionCard({
   );
   return (
     <div
-      className="rounded-lg border bg-card p-5 space-y-4 hover:border-primary/40 transition-colors cursor-pointer group flex flex-col h-full"
-      onClick={onViewMasterlist}
-      role="button"
-      tabIndex={0}
+      className={cn(
+        "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full",
+        section.enrolledCount > 0
+          ? "hover:border-primary/40 transition-colors cursor-pointer group"
+          : "opacity-80"
+      )}
+      onClick={section.enrolledCount > 0 ? onViewMasterlist : undefined}
+      role={section.enrolledCount > 0 ? "button" : undefined}
+      tabIndex={section.enrolledCount > 0 ? 0 : undefined}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onViewMasterlist();
+        if (section.enrolledCount > 0 && (e.key === "Enter" || e.key === " ")) {
+          onViewMasterlist();
+        }
       }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-extrabold text-base text-foreground truncate uppercase">
+          <p className="font-extrabold text-foreground uppercase">
             {toTitleCase(section.name)}
           </p>
           {section.programType !== "REGULAR" && (
-            <Badge
-              variant="outline"
-              className="mt-1 text-sm font-extrabold uppercase">
-              {scpTypeLabels[section.programType] ?? section.programType}
-            </Badge>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="mt-1 text-sm font-extrabold uppercase cursor-help">
+                    {scpTypeLabels[section.programType] ?? section.programType}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                  <p className="font-bold text-sm">
+                    {formatScpType(section.programType).replace("Tech-Voc Education", "Tech-Voc")}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {section.isHomogeneous && section.programType === "REGULAR" && (
-            <Badge
-              variant="outline"
-              className="mt-1 text-sm font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200">
-              Top BEC Section
-            </Badge>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="mt-1 text-sm font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200 cursor-help">
+                    Top BEC Section
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                  <p className="font-bold text-sm">Basic Education Curriculum</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
         {canMutate && (
@@ -389,7 +416,7 @@ function SectionCard({
         <div className="flex items-center justify-between border-t border-border/50 pt-4">
           <div className="flex items-center gap-2 w-full">
             <div className="flex flex-col w-full min-w-0 pr-2">
-              <span className="text-sm font-extrabold uppercase text-foreground mb-0.5">
+              <span className="font-extrabold uppercase text-foreground mb-0.5">
                 Adviser
               </span>
               {canMutate ? (
@@ -397,18 +424,18 @@ function SectionCard({
                   <Select
                     value={selectedAdviser}
                     onValueChange={setSelectedAdviser}>
-                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 text-sm font-extrabold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
+                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-extrabold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
                       <SelectValue placeholder="UNASSIGNED" />
                     </SelectTrigger>
                     <SelectContent className="font-extrabold uppercase max-h-[300px]">
-                      <SelectItem value="none" className="text-xs text-foreground">UNASSIGNED</SelectItem>
+                      <SelectItem value="none" className="text-foreground">UNASSIGNED</SelectItem>
                       {section.advisingTeacher && !teachers.some(t => t.id === section.advisingTeacher!.id) && (
-                        <SelectItem value={String(section.advisingTeacher.id)} className="text-xs">
+                        <SelectItem value={String(section.advisingTeacher.id)}>
                           {section.advisingTeacher.name}
                         </SelectItem>
                       )}
                       {teachers.map((t) => (
-                        <SelectItem key={t.id} value={String(t.id)} className="text-xs">
+                        <SelectItem key={t.id} value={String(t.id)}>
                           {t.name}
                         </SelectItem>
                       ))}
@@ -431,8 +458,8 @@ function SectionCard({
         </div>
 
         <div className="space-y-1.5 border-t border-border/50 pt-4">
-          <div className="flex items-center justify-between text-xs font-extrabold">
-            <span className="text-muted-foreground uppercase tracking-wider">
+          <div className="flex items-center justify-between font-extrabold">
+            <span className="text-foreground uppercase">
               Enrolled
             </span>
             <span className="text-foreground">
@@ -480,6 +507,7 @@ function SectionCard({
             <Button
               className="w-full mt-4 font-extrabold"
               variant="default"
+              disabled={section.enrolledCount === 0}
               onClick={(e) => {
                 e.stopPropagation();
                 onViewMasterlist();
@@ -545,11 +573,11 @@ export default function Homerooms() {
                 )
               }
               disabled={!canAddCategory}
-              className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground">
+              className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-foreground">
               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
               </div>
-              <span className="mt-2 text-sm font-extrabold uppercase">
+              <span className="mt-2 text-base font-extrabold uppercase">
                 Add Section
               </span>
               <span className="max-w-xs text-center text-sm font-semibold normal-case">

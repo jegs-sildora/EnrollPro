@@ -168,7 +168,7 @@ export default function BOSYQueue() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by name or LRN..."
+                  placeholder="Search LRN, First Name, Last Name… or LRN..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 w-64 rounded-xl border-gray-200"

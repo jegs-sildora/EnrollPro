@@ -415,6 +415,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     <>
       <Sheet open={open} onOpenChange={handleCloseAttempt}>
         <SheetContent
+          side="right"
+          aria-describedby={undefined}
           onPointerDownOutside={(e) => {
             if (isDirty) {
               e.preventDefault();

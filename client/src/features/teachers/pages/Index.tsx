@@ -478,7 +478,7 @@ export default function Teachers() {
             return (
               <div className="flex w-full justify-center py-3">
                 <span className="font-extrabold text-base leading-tight text-center uppercase">
-                  None
+                  —
                 </span>
               </div>
             );
@@ -489,7 +489,7 @@ export default function Teachers() {
               <Badge
                 variant="outline"
                 className={cn(
-                  "font-extrabold px-2.5 py-0.5 rounded-full uppercase",
+                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
                   getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
                 )}
               >
@@ -528,10 +528,10 @@ export default function Teachers() {
                 className={cn(
                   "font-extrabold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
                   isEnrolled
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-800 border-2"
                     : isLeave
-                      ? "bg-amber-50 text-amber-700 border-amber-100"
-                      : "bg-slate-50 text-slate-600 border-slate-100"
+                      ? "bg-amber-50 text-amber-700 border-amber-800 border-2"
+                      : "bg-slate-50 text-slate-600 border-slate-800 border-2"
                 )}>
                 {label}
               </Badge>
@@ -557,7 +557,7 @@ export default function Teachers() {
             <Button
               variant="outline"
               size="sm"
-              className="h-9 items-center justify-center rounded-xl border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+              className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setViewingTeacher(row.original);
@@ -565,7 +565,7 @@ export default function Teachers() {
               }}
             >
               <Eye className="w-4 h-4 mr-2" />
-              View
+              Profile
             </Button>
           </div>
         ),
@@ -621,12 +621,12 @@ export default function Teachers() {
                 <SelectValue placeholder="Plantilla / Designation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Plantilla / Designations</SelectItem>
+                <SelectItem value="all" className="font-extrabold">All Plantilla / Designations</SelectItem>
                 {availableDesignationFilters.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className=" font-extrabold">
+                    className="font-extrabold">
                     {option.label}
                   </SelectItem>
                 ))}
@@ -641,7 +641,7 @@ export default function Teachers() {
                 <SelectValue placeholder="Subject" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Subjects</SelectItem>
+                <SelectItem value="all" className="font-extrabold">All Subjects</SelectItem>
                 {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
                   <SelectItem
                     className=" font-extrabold"
@@ -717,7 +717,7 @@ export default function Teachers() {
             setViewingTeacher(null);
             setIsPanelOpen(true);
           }}
-          className="font-extrabold uppercase tracking-wide">
+          className="font-extrabold uppercase tracking-wide rounded-lg">
           <UserPlusIcon className="w-4 h-4 mr-2" />
           Add Faculty/Staff
         </Button>
@@ -734,22 +734,19 @@ export default function Teachers() {
         {/* Total Faculty & Staff */}
         <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
+            <p className="font-extrabold text-foreground uppercase">
               Total Faculty & Staff
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-gray-900">
+            <p className="mt-1 text-3xl font-extrabold text-foreground">
               {teachers.length}
             </p>
-          </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-            <UsersIcon className="w-6 h-6" />
           </div>
         </div>
 
         {/* Active */}
         <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
+            <p className="font-extrabold text-foreground uppercase">
               Active Personnel
             </p>
             <p className="mt-1 text-3xl font-extrabold text-green-600">
@@ -764,10 +761,10 @@ export default function Teachers() {
         {/* Inactive / On Leave */}
         <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
+            <p className="font-extrabold text-foreground uppercase">
               Inactive / On Leave
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-gray-900">
+            <p className="mt-1 text-3xl font-extrabold text-foreground">
               {teachers.filter((t) => !t.isActive).length}
             </p>
           </div>
@@ -779,7 +776,7 @@ export default function Teachers() {
         {/* Class Advisers */}
         <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
           <div>
-            <p className="text-xs font-extrabold tracking-wider text-gray-500 uppercase">
+            <p className="font-extrabold text-foreground uppercase">
               Class Advisers
             </p>
             <p className="mt-1 text-3xl font-extrabold text-orange-600">

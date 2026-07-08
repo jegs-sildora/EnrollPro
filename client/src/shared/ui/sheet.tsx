@@ -60,6 +60,7 @@ const SheetContent = React.forwardRef<
 			<SheetOverlay />
 			<DialogPrimitive.Content
 				ref={ref}
+				aria-describedby={props["aria-describedby"] ?? undefined}
 				className={cn(sheetVariants({ side }), className, "outline-none flex flex-col")}
 				{...props}
 			>

@@ -666,8 +666,8 @@ export default function BOSYPage() {
                       <div className="relative w-full flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
-                          placeholder="Search by LRN, Last Name, or First Name..."
-                          className="w-full h-10 pl-9 bg-muted border-gray-300 font-semibold"
+                          placeholder="Search LRN, First Name, Last Name…"
+                          className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
                           value={queueSearch}
                           onChange={(e) => {
                             setQueueSearch(e.target.value);

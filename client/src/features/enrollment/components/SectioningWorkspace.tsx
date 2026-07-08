@@ -807,23 +807,23 @@ export function SectioningWorkspace() {
     : null;
   const compatibleMoveSections = selectedDraftLearner
     ? (draftPlacement?.rosters.filter(
-        (roster) =>
-          roster.section.id !== selectedDraftLearner.sectionId &&
-          getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
-            roster.section.programType,
-          ),
-      ) ?? [])
+      (roster) =>
+        roster.section.id !== selectedDraftLearner.sectionId &&
+        getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
+          roster.section.programType,
+        ),
+    ) ?? [])
     : [];
   const compatibleSwapLearners = selectedDraftLearner
     ? (draftPlacement?.rosters.flatMap((roster) =>
-        roster.learners.filter(
-          (learner) =>
-            learner.applicationId !== selectedDraftLearner.applicationId &&
-            getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
-              roster.section.programType,
-            ),
-        ),
-      ) ?? [])
+      roster.learners.filter(
+        (learner) =>
+          learner.applicationId !== selectedDraftLearner.applicationId &&
+          getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
+            roster.section.programType,
+          ),
+      ),
+    ) ?? [])
     : [];
   const draftSectionByApplicationId = new Map<number, string>(
     draftPlacement?.rosters.flatMap((roster) =>
@@ -850,8 +850,8 @@ export function SectioningWorkspace() {
               className={cn(
                 "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg",
                 isLockedIn &&
-                  activeGradeLevelId !== String(g.id) &&
-                  "opacity-40 cursor-not-allowed bg-muted/20",
+                activeGradeLevelId !== String(g.id) &&
+                "opacity-40 cursor-not-allowed bg-muted/20",
               )}>
               {activeGradeLevelId === String(g.id) && (
                 <motion.div
@@ -924,8 +924,8 @@ export function SectioningWorkspace() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
-                    placeholder="Search LRN or Name..."
-                    className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold"
+                    placeholder="Search LRN, First Name, Last Name…"
+                    className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold uppercase"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -1031,8 +1031,8 @@ export function SectioningWorkspace() {
                                   checked
                                     ? [...prev, l.applicationId]
                                     : prev.filter(
-                                        (id) => id !== l.applicationId,
-                                      ),
+                                      (id) => id !== l.applicationId,
+                                    ),
                                 );
                               }}
                             />
@@ -1176,8 +1176,8 @@ export function SectioningWorkspace() {
                           ? "bg-primary/5 border-primary shadow-sm"
                           : "bg-background hover:bg-muted/50 border-border",
                         draftPlacement &&
-                          isExpanded &&
-                          "border-primary/50 bg-primary/5",
+                        isExpanded &&
+                        "border-primary/50 bg-primary/5",
                       )}>
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div>
