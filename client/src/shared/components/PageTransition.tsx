@@ -1,6 +1,11 @@
 import { motion } from "motion/react";
 import type { ReactNode, ComponentProps } from "react";
-import { pageTransition, pageVariants } from "@/shared/lib/motion";
+import {
+  createFadeShiftVariants,
+  createMotionTransition,
+  getReducedMotionProps,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 
 interface PageTransitionProps extends ComponentProps<typeof motion.div> {
   children: ReactNode;
@@ -8,14 +13,19 @@ interface PageTransitionProps extends ComponentProps<typeof motion.div> {
 }
 
 export function PageTransition({ children, routeKey, ...props }: PageTransitionProps) {
+  const motionPreferences = useMotionPreferences();
+  const variants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 }
+  };
+
   return (
     <motion.div
       key={routeKey}
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
+      variants={variants}
+      transition={createMotionTransition(motionPreferences, "normal")}
+      {...getReducedMotionProps(motionPreferences.reduceMotion)}
       {...props}
     >
       {children}

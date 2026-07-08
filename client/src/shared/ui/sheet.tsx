@@ -3,6 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { motionClassNames } from '@/shared/lib/motion';
 
 const Sheet = DialogPrimitive.Root;
 
@@ -17,7 +18,8 @@ const SheetOverlay = React.forwardRef<
 	<DialogPrimitive.Overlay
 		ref={ref}
 		className={cn(
-			"fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+			"fixed inset-0 z-50 bg-black/72 backdrop-blur-[1px]",
+			motionClassNames.overlay,
 			className
 		)}
 		{...props}
@@ -26,7 +28,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-	'fixed z-50 gap-4 bg-[hsl(var(--background))] p-6 shadow-lg transition ease-in-out',
+	'fixed z-50 gap-4 bg-[hsl(var(--background))] p-6 shadow-lg transition-[box-shadow,border-color,background-color] [transition-duration:var(--motion-duration-fast)] [transition-timing-function:var(--motion-ease-smooth)]',
 	{
 		variants: {
 			side: {
@@ -63,7 +65,10 @@ const SheetContent = React.forwardRef<
 			>
 				{children}
 				{showClose ? (
-					<DialogPrimitive.Close className='absolute right-6 top-5 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
+					<DialogPrimitive.Close className={cn(
+						'absolute right-6 top-5 rounded-full bg-primary-foreground p-2 text-primary opacity-90 ring-offset-[hsl(var(--background))] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))]',
+						motionClassNames.closeButton,
+					)}>
 						<X className='h-5 w-5' />
 						<span className='sr-only'>Close</span>
 					</DialogPrimitive.Close>

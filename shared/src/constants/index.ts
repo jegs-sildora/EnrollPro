@@ -269,6 +269,7 @@ export const LearnerTypeEnum = z.enum([
   "OSCYA",
   "ALS",
 ]);
+export type LearnerType = z.infer<typeof LearnerTypeEnum>;
 export const ApplicantTypeEnum = z.enum([
   "REGULAR",
   "LATE_ENROLLEE",
@@ -279,7 +280,60 @@ export const ApplicantTypeEnum = z.enum([
   "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
+export type ApplicantType = z.infer<typeof ApplicantTypeEnum>;
 export const AdmissionChannelEnum = z.enum(["ONLINE", "F2F"]);
+
+export interface ScpGuardrailLearner {
+  learnerType: LearnerType;
+  isBalikAral: boolean;
+  applicantType: ApplicantType;
+  assignedProgram: ApplicantType | null;
+}
+
+export function getEffectiveProgramType(
+  learner: Pick<ScpGuardrailLearner, "applicantType" | "assignedProgram">,
+): ApplicantType {
+  return learner.assignedProgram ?? learner.applicantType;
+}
+
+export function isSpecialCurricularProgramType(
+  programType: ApplicantType,
+): boolean {
+  return programType !== "REGULAR" && programType !== "LATE_ENROLLEE";
+}
+
+export function isScpRestrictedAutoDraftLearner(
+  learner: ScpGuardrailLearner,
+): boolean {
+  const effectiveProgram = getEffectiveProgramType(learner);
+  return (
+    learner.learnerType === "TRANSFEREE" ||
+    learner.learnerType === "RETURNING" ||
+    learner.isBalikAral ||
+    effectiveProgram === "REGULAR"
+  );
+}
+
+export function getAutoDraftProgramType(
+  learner: ScpGuardrailLearner,
+): ApplicantType {
+  return isScpRestrictedAutoDraftLearner(learner)
+    ? "REGULAR"
+    : getEffectiveProgramType(learner);
+}
+
+export function getAllowedSectionProgramsForPlacement(
+  learner: ScpGuardrailLearner,
+): ApplicantType[] {
+  const effectiveProgram = getEffectiveProgramType(learner);
+  if (!isScpRestrictedAutoDraftLearner(learner)) {
+    return [effectiveProgram];
+  }
+
+  return Array.from(
+    new Set<ApplicantType>(["REGULAR", effectiveProgram]),
+  );
+}
 export const DocumentStatusEnum = z.enum([
   "SUBMITTED",
   "VERIFIED",
@@ -869,6 +923,7 @@ export const ScpTypeEnum = z.enum([
 export const SectioningMethodEnum = z.enum([
   "BATCH_ALGORITHM",
   "INLINE_SLOTTING",
+  "MANUAL_OVERRIDE",
   "MANUAL_REASSIGNMENT",
   "TRANSFER",
 ]);

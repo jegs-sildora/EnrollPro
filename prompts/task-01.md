@@ -1,25 +1,29 @@
-# SYSTEM DIRECTIVE: Active Master Dashboard Historical Baseline Aggregation v160.0
+# SYSTEM DIRECTIVE Context Aware Section Card Routing and Roster Management v170.0
 
-**Context Persona:** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data-density, high-security, offline-first public school software. Master dashboards during active enrollment cycles must surface terminal academic benchmarks from the immediately preceding academic year to provide campus administrators with historical baseline targets and rollover pool verification. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
+**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software. The user interface must employ context aware interaction models that dynamically switch between inline staging reviews and full viewport official roster management based on the active system state. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
 
-**Core Mandate:** You must configure the bottom summary tier of the active academic year Master Dashboard to query and render terminal historical data pulled directly from the preceding archived school year. Rather than initializing at zero, these cards must display baseline metrics from the prior academic cycle to contextualize active Beginning of School Year enrollment queues while utilizing standardized educational administration terminology.
+**Core Mandate** You must implement a dual state interaction model for the section cards. The system must evaluate if a temporary draft placement is currently active. If a draft is active the section card must expand inline to show the staging roster. If no draft is active and the section contains committed learners the card must act as a navigation link routing the user to a dedicated full width official masterlist page equipped with unassignment controls.
 
-Execute the following three baseline data queries on the active dashboard:
+Execute the implementation across the following three logical branches
 
-## 1. Preceding Promotion Status Baseline Query
-Configure the first bottom summary card to query historical promotion counts from the prior academic year.
-* Title the card strictly as EOSY Promotion Status.
-* Query and display the finalized count of promoted, conditionally promoted, and retained learners strictly from the preceding archived school year database.
-* Render a subtle header label indicating that the displayed values reflect preceding school year baseline totals to contextualize the active rollover queue.
+## 1. Draft Mode Inline Expansion
+Maintain the user within the dual pane workspace during staging reviews.
+* Detect if the Generate Draft Placement state is active via the presence of uncommitted staging data.
+* Configure the section card to act as an inline accordion toggle when draft mode is active.
+* Expand the card to render the temporary draft roster displaying learner name sex general average and a secondary menu for manual override actions.
+* Prevent page routing during this phase to preserve uncommitted staging data.
 
-## 2. Preceding Junior High School Completers Baseline Query
-Configure the second bottom summary card to display historical graduation counts.
-* Title the card strictly as Official JHS Completers.
-* Query and display the finalized total count and gender distribution of Grade 10 completers strictly from the preceding archived school year.
-* Ensure campus leadership can reference these historical completion figures directly from the active workspace during institutional planning.
+## 2. Live Mode Full Width Navigation
+Utilize maximum viewport space for official committed records.
+* Detect when the system is in standard operational mode with no active draft placements.
+* Configure the section card to act strictly as a page router when clicked.
+* Navigate the user to a dedicated full screen page that renders the official Department of Education School Form 1 split table layout.
+* Ensure this dedicated page queries and renders only officially committed database records separating male and female learners into distinct grids.
 
-## 3. Preceding Transferred & Dropped Baseline Query
-Configure the third bottom summary card to display historical campus population loss using formal administrative nomenclature.
-* Title the card strictly as Transferred & Dropped.
-* Query and display the finalized counts of transferred out and dropped out learners strictly from the preceding archived school year.
-* Provide campus guidance counselors and registrars with immediate access to historical attrition metrics to establish baseline retention targets for the active academic year.
+## 3. Official Roster Unassignment Controls
+Enable safe mid year roster adjustments prior to academic phase finalization.
+* Render a direct action button on every learner row within the full width official masterlist page.
+* Label this control strictly as Unassign to accurately reflect the removal of the learner from the classroom without altering their overarching active campus enrollment status.
+* Execute a database transaction upon clicking that strips the section association and returns the learner profile safely to the global unassigned holding pool.
+
+Ensure it is responsive across all devices.

@@ -1,21 +1,21 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams } from "react-router";
-import { Link } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import {
   Users,
   FileDown,
-  Printer,
-  Loader2,
   AlertTriangle,
   UserPlus,
   Venus,
   Mars,
-  Eye
+  Eye,
+  Loader2,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { StudentDetailPanel } from "@/features/students/components/StudentDetailPanel";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/shared/ui/table";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -23,16 +23,8 @@ import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { sileo } from "sileo";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { useNavigate } from "react-router";
 import { useHeaderStore } from "@/store/header.slice";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -90,19 +82,28 @@ interface SectionTeachersResponse {
   teachers: SectionTeacherOption[];
 }
 
-export default function ViewMasterlist() {
-  const { sectionId } = useParams();
+export interface ViewMasterlistProps {
+  sectionId?: number;
+  onBack?: () => void;
+  mode?: "homeroom" | "sectioning";
+}
+
+export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode = "homeroom" }: ViewMasterlistProps = {}) {
+  const params = useParams();
+  const resolvedSectionId = propSectionId || Number(params.sectionId);
 
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
   const isHistoricalReadOnly = useHistoricalReadOnly();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [exportingSf1, setExportingSf1] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [unassignProcessingId, setUnassignProcessingId] = useState<number | null>(null);
 
   const [section, setSection] = useState<SectionDetails | null>(null);
   const [masterlist, setMasterlist] = useState<LearnerRecord[]>([]);
@@ -110,15 +111,15 @@ export default function ViewMasterlist() {
   const retainedStudentId = useRetainedSheetValue(selectedStudentId);
 
   const fetchMasterlistData = useCallback(async () => {
-    if (!sectionId || !ayId) return;
+    if (!resolvedSectionId || !ayId) return;
     setLoading(true);
     try {
       const [masterlistRes, teachersRes] = await Promise.all([
-        api.get<MasterlistResponse>(`/sections/${sectionId}/masterlist`),
+        api.get<MasterlistResponse>(`/sections/${resolvedSectionId}/masterlist`),
         api.get<SectionTeachersResponse>(`/sections/teachers?schoolYearId=${ayId}`)
       ]);
       
-      if (masterlistRes.data.section.schoolYearId !== ayId) {
+      if (masterlistRes.data.section.schoolYearId !== ayId && !propSectionId) {
         navigate("/sections", { replace: true });
         return;
       }
@@ -132,30 +133,41 @@ export default function ViewMasterlist() {
     } finally {
       setLoading(false);
     }
-  }, [sectionId, ayId]);
+  }, [resolvedSectionId, ayId, propSectionId, navigate]);
 
   useEffect(() => {
     void fetchMasterlistData();
   }, [fetchMasterlistData]);
 
-  const handleInlineAdviserChange = async (newAdviserId: string) => {
-    if (!sectionId) return;
+  const handleUnassign = async (enrollmentApplicationId: number) => {
+    setUnassignProcessingId(enrollmentApplicationId);
     try {
-      await api.post(`/sections/${sectionId}/handover-adviser`, {
-        newAdviserId: newAdviserId === "none" ? null : parseInt(newAdviserId),
+      await api.post(`/sectioning/masterlist/unassign`, {
+        enrollmentApplicationId,
+        reason: "Manual unassignment to pool",
       });
-      sileo.success({ title: "Success", description: "Class adviser updated successfully." });
-    } catch (err: unknown) {
-      console.error(err);
-      sileo.error({ title: "Error", description: "Failed to update class adviser." });
+      sileo.success({
+        title: "Unassigned",
+        description: "Learner returned to unassigned pool.",
+      });
+      void queryClient.invalidateQueries({ queryKey: ["sectioning", "pool"] });
+      void queryClient.invalidateQueries({ queryKey: ["sectioning", "sections-summary"] });
+      void fetchMasterlistData();
+    } catch (err: any) {
+      sileo.error({
+        title: "Failed",
+        description: err.response?.data?.message || "Could not unassign learner.",
+      });
+    } finally {
+      setUnassignProcessingId(null);
     }
   };
 
   const handleDownloadSf1 = async () => {
-    if (!sectionId) return;
+    if (!resolvedSectionId) return;
     setExportingSf1(true);
     try {
-      const res = await api.get(`/sections/${sectionId}/masterlist/sf1`, {
+      const res = await api.get(`/sections/${resolvedSectionId}/masterlist/sf1`, {
         responseType: "blob",
       });
       const blob = new Blob([res.data], {
@@ -177,6 +189,7 @@ export default function ViewMasterlist() {
       setExportingSf1(false);
     }
   };
+
   const maleLearners = useMemo(
     () => [...masterlist].filter((l) => l.sex === "MALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
     [masterlist]
@@ -185,18 +198,6 @@ export default function ViewMasterlist() {
     () => [...masterlist].filter((l) => l.sex === "FEMALE").sort((a, b) => a.lastName.localeCompare(b.lastName)),
     [masterlist]
   );
-
-  const getProgramTypeLabel = (pt: string) => {
-    switch (pt) {
-      case "REGULAR": return "Basic Education Curriculum — Regular / Heterogeneous";
-      case "SCIENCE_TECHNOLOGY_AND_ENGINEERING":
-      case "STE": return "Special Curricular Program — Science, Technology, and Engineering (STE)";
-      case "SPA": return "Special Program in the Arts (SPA)";
-      case "SPS": return "Special Program in Sports (SPS)";
-      case "BEC_HOMO": return "Basic Education Curriculum — Homogeneous";
-      default: return pt;
-    }
-  };
 
   const formatDate = (d: string) => {
     if (!d) return "—";
@@ -225,57 +226,88 @@ export default function ViewMasterlist() {
     return age;
   };
 
-  const renderLearnerRow = (learner: LearnerRecord, index: number) => {
-    const age = calculateAgeAsOfJuneFirst(learner.birthdate);
-    let remark = "";
-    if (learner.sf1Remarks) {
-      remark = learner.sf1Remarks;
-    }
-
-    return (
-      <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
-        <TableCell className="text-center font-extrabold text-base text-muted-foreground py-3">
-          {index}
-        </TableCell>
-        <TableCell className="text-center font-extrabold text-base py-3">
-          {learner.lrn || "—"}
-        </TableCell>
-        <TableCell className="py-3 pl-2 min-w-[200px]">
-          <span className="font-extrabold text-base uppercase block leading-tight">
-            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
-          </span>
-        </TableCell>
-        <TableCell className="text-center py-3 whitespace-nowrap">
-          {learner.birthdate ? (
-            <span className="text-base font-extrabold">{formatDate(learner.birthdate)}</span>
-          ) : (
-            <span className="text-sm italic text-muted-foreground">Requires DOB Update</span>
-          )}
-        </TableCell>
-        <TableCell className="text-center font-extrabold text-base py-3">
-          {age !== null ? age : "—"}
-        </TableCell>
-        <TableCell className="text-center py-3">
-          {remark && (
-            <span className="text-sm font-extrabold uppercase text-foreground">
-              {remark}
-            </span>
-          )}
-        </TableCell>
-        <TableCell className="text-right py-3 pr-2">
-          <div className="flex w-full justify-end py-3 pr-2">
-            <span
-              onClick={() => setSelectedStudentId(learner.id)}
-              className="inline-flex h-9 items-center justify-center rounded-xl border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View
-            </span>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  };
+  const renderTable = (data: LearnerRecord[], title: string, sex: "MALE" | "FEMALE") => (
+    <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 className={`font-extrabold text-lg uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
+          {title}
+        </h3>
+        <span className="font-extrabold text-sm text-foreground uppercase">
+          Total: {data.length}
+        </span>
+      </div>
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex-1">
+        <div className="overflow-x-auto">
+          <Table className="relative w-full">
+            <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
+              <TableRow className="hover:bg-muted border-none">
+                <TableHead className="text-center font-extrabold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
+                <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
+                <TableHead className="text-right font-extrabold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y">
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center text-foreground font-extrabold">
+                    No {title.toLowerCase()} assigned.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((learner, idx) => {
+                  const age = calculateAgeAsOfJuneFirst(learner.birthdate);
+                  return (
+                    <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
+                      <TableCell className="text-center font-extrabold text-sm text-foreground py-3">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="py-3 pl-4">
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-sm uppercase text-foreground leading-tight">
+                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
+                          </span>
+                          <span className="text-sm font-bold uppercase text-foreground mt-0.5">
+                            {learner.lrn || "NO LRN"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right py-3 pr-4">
+                        {mode === "sectioning" ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="font-extrabold uppercase"
+                            disabled={unassignProcessingId === learner.enrollmentApplicationId}
+                            onClick={() => handleUnassign(learner.enrollmentApplicationId)}
+                          >
+                            {unassignProcessingId === learner.enrollmentApplicationId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Unenroll"
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="font-extrabold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                            onClick={() => setSelectedStudentId(learner.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Profile
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
 
   const setTitle = useHeaderStore((s) => s.setTitle);
 
@@ -285,22 +317,35 @@ export default function ViewMasterlist() {
     } else {
       setTitle("Masterlist");
     }
-    return () => setTitle(null);
-  }, [section, setTitle]);
+    return () => {
+      if (mode === "sectioning") {
+        setTitle("Class Sectioning and SF1");
+      } else {
+        setTitle(null);
+      }
+    };
+  }, [section, setTitle, mode]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="mb-4">
-        <Link
-          to="/sections"
-          className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
-        >
-          ← Back to Class Sections Lobby
-        </Link>
+        {onBack ? (
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
+          >
+            ← Back to Section Workspace
+          </button>
+        ) : (
+          <Link
+            to="/sections"
+            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
+          >
+            ← Back to Class Sections Lobby
+          </Link>
+        )}
       </div>
 
-      {/* Toolbar Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -318,19 +363,18 @@ export default function ViewMasterlist() {
                 Total Seated: <span className="text-foreground">{masterlist.length} / {section?.maxCapacity || 0}</span>
               </span>
               <div className="w-px h-4 bg-border" />
-              <span className="flex items-center gap-1.5 text-blue-600">
+              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
                 <Mars className="h-4 w-4" /> Male: {maleLearners.length}
-              </span>
+              </Badge>
               <div className="w-px h-4 bg-border" />
-              <span className="flex items-center gap-1.5 text-pink-600">
+              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
                 <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
-              </span>
+              </Badge>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Masterlist Table Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
           <div>
@@ -339,7 +383,7 @@ export default function ViewMasterlist() {
             </CardTitle>
           </div>
           <div className="flex items-center gap-3">
-            {!isHistoricalReadOnly && (
+            {!isHistoricalReadOnly && mode === "homeroom" && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -382,7 +426,7 @@ export default function ViewMasterlist() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+        <CardContent className="p-0">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -402,80 +446,28 @@ export default function ViewMasterlist() {
                       No Enrolled Learners
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed px-4">
-                      This class section has no enrolled learners yet. Click "+ Add Learner to Masterlist" above to encode students individually.
+                      This class section has no enrolled learners yet.
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </div>
           ) : (
-            <div className="flex-1 overflow-auto bg-muted/5 relative min-h-[500px] flex flex-col p-4">
-              <div className="flex flex-col rounded-lg overflow-hidden border border-border shadow-sm max-h-full">
-                <div className="bg-background overflow-auto flex-1 relative">
-                  <Table className="relative min-w-[900px]">
-                    <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
-                      <TableRow className="hover:bg-muted border-none">
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">#</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">LRN</TableHead>
-                        <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER NAME</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[160px] tracking-wide">BIRTHDATE</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[80px] tracking-wide">AGE</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[140px] tracking-wide">REMARKS</TableHead>
-                        <TableHead className="text-right font-extrabold text-foreground h-11 w-[160px] pr-4">ACTION</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Male Learners */}
-                      {maleLearners.length > 0 && (
-                        <>
-                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
-                            <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold tracking-widest text-blue-700 uppercase px-2">
-                                <span>MALE LEARNERS</span>
-                                <span>Total: {maleLearners.length}</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {maleLearners.map((learner, idx) => renderLearnerRow(learner, idx + 1))}
-                        </>
-                      )}
-
-                      {/* Female Learners */}
-                      {femaleLearners.length > 0 && (
-                        <>
-                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
-                            <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold tracking-widest text-pink-700 uppercase px-2">
-                                <span>FEMALE LEARNERS</span>
-                                <span>Total: {femaleLearners.length}</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {femaleLearners.map((learner, idx) => renderLearnerRow(learner, idx + 1))}
-                        </>
-                      )}
-
-                      {maleLearners.length === 0 && femaleLearners.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground font-extrabold">
-                            No Learners Enrolled
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+            <div className="p-4">
+              <div className="flex flex-col xl:flex-row gap-6">
+                {renderTable(maleLearners, "Male Learners", "MALE")}
+                {renderTable(femaleLearners, "Female Learners", "FEMALE")}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {sectionId && section && (
+      {resolvedSectionId && section && (
         <InsertLateEnrolleeDrawer
           open={showDrawer}
           onOpenChange={setShowDrawer}
-          sectionId={Number(sectionId)}
+          sectionId={Number(resolvedSectionId)}
           sectionName={section.name}
           gradeLevelId={section.gradeLevelId}
           gradeLevelName={section.gradeLevel}
@@ -513,8 +505,6 @@ export default function ViewMasterlist() {
           )}
         </SheetContent>
       </Sheet>
-
     </div>
   );
 }
-

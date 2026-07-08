@@ -3,6 +3,7 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
+import { motionClassNames } from "@/shared/lib/motion";
 
 function extractTextValue(node: React.ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
@@ -29,12 +30,13 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background placeholder:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed [&>span]:truncate [&>span]:text-left",
+      motionClassNames.controlSurface,
       className,
     )}
     {...props}>
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className={cn("h-4 w-4 opacity-50", motionClassNames.controlIndicator)} />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -47,7 +49,8 @@ const SelectScrollUpButton = React.forwardRef<
   <SelectPrimitive.ScrollUpButton
     ref={ref}
     className={cn(
-      "flex cursor-default items-center justify-center py-1.5 transition-all duration-500 ease-in-out hover:bg-primary/10 text-primary-foreground data-[state=visible]:animate-in data-[state=visible]:fade-in-0 data-[state=visible]:slide-in-from-bottom-2 data-[state=hidden]:animate-out data-[state=hidden]:fade-out-0 data-[state=hidden]:slide-out-to-top-2",
+      "flex cursor-default items-center justify-center py-1.5 text-primary-foreground hover:bg-primary/10 data-[state=visible]:animate-in data-[state=visible]:fade-in-0 data-[state=visible]:slide-in-from-bottom-2 data-[state=hidden]:animate-out data-[state=hidden]:fade-out-0 data-[state=hidden]:slide-out-to-top-2",
+      motionClassNames.controlSurface,
       className,
     )}
     {...props}>
@@ -63,7 +66,8 @@ const SelectScrollDownButton = React.forwardRef<
   <SelectPrimitive.ScrollDownButton
     ref={ref}
     className={cn(
-      "flex cursor-default items-center justify-center py-1.5 transition-all duration-500 ease-in-out hover:bg-primary/10 text-primary-foreground data-[state=visible]:animate-in data-[state=visible]:fade-in-0 data-[state=visible]:slide-in-from-top-2 data-[state=hidden]:animate-out data-[state=hidden]:fade-out-0 data-[state=hidden]:slide-out-to-bottom-2",
+      "flex cursor-default items-center justify-center py-1.5 text-primary-foreground hover:bg-primary/10 data-[state=visible]:animate-in data-[state=visible]:fade-in-0 data-[state=visible]:slide-in-from-top-2 data-[state=hidden]:animate-out data-[state=hidden]:fade-out-0 data-[state=hidden]:slide-out-to-bottom-2",
+      motionClassNames.controlSurface,
       className,
     )}
     {...props}>
@@ -94,7 +98,8 @@ const SelectContent = React.forwardRef<
       <SelectPrimitive.Content
         ref={ref}
         className={cn(
-          "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border border-gray-200 bg-muted shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border border-gray-200 bg-muted shadow-lg",
+          motionClassNames.floatingContent,
           position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className,
@@ -149,10 +154,11 @@ const SelectItem = React.forwardRef<
       textValue={safeTextValue}
       className={cn(
         "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-base outline-none focus:bg-primary focus:text-primary-foreground data-disabled:pointer-events-none ",
+        motionClassNames.controlSurface,
         className,
       )}
       {...props}>
-      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <span className={cn("absolute left-2 flex h-3.5 w-3.5 items-center justify-center", motionClassNames.controlIndicator)}>
         <SelectPrimitive.ItemIndicator>
           <Check className="h-4 w-4 text-primary-foreground" />
         </SelectPrimitive.ItemIndicator>

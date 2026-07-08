@@ -9,24 +9,24 @@
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 
-  --animate-modal-in: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-modal-out: modal-out 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-in: fade-in 0.2s ease-out forwards;
-  --animate-out: fade-out 0.15s ease-in forwards;
+  --animate-modal-in: modal-in var(--motion-duration-normal) var(--motion-ease-smooth) forwards;
+  --animate-modal-out: modal-out var(--motion-duration-fast) var(--motion-ease-sharp) forwards;
+  --animate-in: fade-in var(--motion-duration-fast) var(--motion-ease-smooth) forwards;
+  --animate-out: fade-out var(--motion-duration-fast) var(--motion-ease-sharp) forwards;
 
-  --animate-sheet-in-right: sheet-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-out-right: sheet-out-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-in-left: sheet-in-left 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-out-left: sheet-out-left 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-in-top: sheet-in-top 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-out-top: sheet-out-top 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-in-bottom: sheet-in-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-sheet-out-bottom: sheet-out-bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-sheet-in-right: sheet-in-right var(--motion-duration-slow) var(--motion-ease-smooth) forwards;
+  --animate-sheet-out-right: sheet-out-right var(--motion-duration-normal) var(--motion-ease-sharp) forwards;
+  --animate-sheet-in-left: sheet-in-left var(--motion-duration-slow) var(--motion-ease-smooth) forwards;
+  --animate-sheet-out-left: sheet-out-left var(--motion-duration-normal) var(--motion-ease-sharp) forwards;
+  --animate-sheet-in-top: sheet-in-top var(--motion-duration-slow) var(--motion-ease-smooth) forwards;
+  --animate-sheet-out-top: sheet-out-top var(--motion-duration-normal) var(--motion-ease-sharp) forwards;
+  --animate-sheet-in-bottom: sheet-in-bottom var(--motion-duration-slow) var(--motion-ease-smooth) forwards;
+  --animate-sheet-out-bottom: sheet-out-bottom var(--motion-duration-normal) var(--motion-ease-sharp) forwards;
 
-  --animate-fade-in: fadeIn 0.4s ease-out forwards;
-  --animate-slide-up: slideUp 0.5s ease-out forwards;
-  --animate-slide-in-right: slideInRight 0.4s ease-out forwards;
-  --animate-scale-in: scaleIn 0.3s ease-out forwards;
+  --animate-fade-in: fade-in var(--motion-duration-normal) var(--motion-ease-smooth) forwards;
+  --animate-slide-up: slide-up var(--motion-duration-slow) var(--motion-ease-smooth) forwards;
+  --animate-slide-in-right: slide-in-right var(--motion-duration-normal) var(--motion-ease-smooth) forwards;
+  --animate-scale-in: scale-in var(--motion-duration-fast) var(--motion-ease-smooth) forwards;
   --animate-float: float 4s ease-in-out infinite;
   --animate-gradient: gradient-shift 8s ease infinite;
 
@@ -103,12 +103,7 @@
     }
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
+  @keyframes slide-up {
     from { 
       opacity: 0;
       transform: translateY(20px);
@@ -119,7 +114,7 @@
     }
   }
 
-  @keyframes slideInRight {
+  @keyframes slide-in-right {
     from { 
       opacity: 0;
       transform: translateX(20px);
@@ -130,7 +125,7 @@
     }
   }
 
-  @keyframes scaleIn {
+  @keyframes scale-in {
     from { 
       opacity: 0;
       transform: scale(0.95);
@@ -172,6 +167,16 @@
 }
 
 :root {
+  --motion-duration-instant: 80ms;
+  --motion-duration-fast: 160ms;
+  --motion-duration-normal: 240ms;
+  --motion-duration-slow: 340ms;
+  --motion-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-distance-xs: 4px;
+  --motion-distance-sm: 8px;
+  --motion-distance-md: 12px;
+
   /* ─── PERMANENT MAIN LAYER — never overridden by logo extraction ─── */
   --background: 220 15% 99%;
   --foreground: 222 47% 11%;
@@ -281,6 +286,29 @@
   --shadow-glow: 0 0 40px rgba(52, 211, 153, 0.15);
 
   color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-instant: 1ms;
+    --motion-duration-fast: 1ms;
+    --motion-duration-normal: 1ms;
+    --motion-duration-slow: 1ms;
+    --motion-distance-xs: 0px;
+    --motion-distance-sm: 0px;
+    --motion-distance-md: 0px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .animate-float,
+  .animate-gradient {
+    animation: none !important;
+  }
 }
 
 @theme inline {
@@ -497,16 +525,16 @@
 
   /* Animation utilities */
   .animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
+    animation: var(--animate-fade-in);
   }
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out forwards;
+    animation: var(--animate-slide-up);
   }
   .animate-slide-in-right {
-    animation: slideInRight 0.4s ease-out forwards;
+    animation: var(--animate-slide-in-right);
   }
   .animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
+    animation: var(--animate-scale-in);
   }
   .animate-float {
     animation: float 4s ease-in-out infinite;
@@ -514,6 +542,51 @@
   .animate-gradient {
     background-size: 200% 200%;
     animation: gradient-shift 8s ease infinite;
+  }
+
+  .motion-ui-overlay {
+    @apply data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0;
+    animation-duration: var(--motion-duration-fast);
+    animation-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-dialog-content {
+    @apply data-[state=open]:animate-modal-in data-[state=closed]:animate-modal-out;
+  }
+
+  .motion-ui-floating-content,
+  .motion-ui-floating-subcontent {
+    @apply data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
+    animation-duration: var(--motion-duration-fast);
+    animation-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-navigation-content {
+    animation-duration: var(--motion-duration-normal);
+    animation-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-navigation-viewport,
+  .motion-ui-navigation-indicator {
+    animation-duration: var(--motion-duration-fast);
+    animation-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-close-button {
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-tab-content {
+    @apply data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-2;
+    animation-duration: var(--motion-duration-fast);
+    animation-timing-function: var(--motion-ease-smooth);
+  }
+
+  .motion-ui-collapsible-content {
+    @apply overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down;
+    animation-duration: var(--motion-duration-normal);
+    animation-timing-function: var(--motion-ease-smooth);
   }
 
   /* Glass morphism utilities */

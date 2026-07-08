@@ -58,10 +58,10 @@ export default function Settings() {
       <Tabs
         onValueChange={handleTabChange}
         className="w-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-col sm:flex-row h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="profile"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+            className="w-full sm:flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
             {activeTab === "profile" && (
               <motion.div
                 layoutId="settings-active-pill"
@@ -69,11 +69,11 @@ export default function Settings() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 uppercase", activeTab === "profile" ? "text-primary-foreground" : "text-foreground")}>School Profile</span>
+            <span className={cn("relative z-20 uppercase text-sm sm:text-base", activeTab === "profile" ? "text-primary-foreground" : "text-foreground")}>School Profile</span>
           </TabsTrigger>
           <TabsTrigger
             value="school-year"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+            className="w-full sm:flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
             {activeTab === "school-year" && (
               <motion.div
                 layoutId="settings-active-pill"
@@ -81,7 +81,7 @@ export default function Settings() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 uppercase", activeTab === "school-year" ? "text-primary-foreground" : "text-foreground")}>School Year Management</span>
+            <span className={cn("relative z-20 uppercase text-sm sm:text-base", activeTab === "school-year" ? "text-primary-foreground" : "text-foreground")}>School Year Management</span>
           </TabsTrigger>
         </TabsList>
 

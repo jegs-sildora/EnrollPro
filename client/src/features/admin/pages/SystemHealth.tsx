@@ -19,6 +19,8 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
+import { PhaseBanner } from "@/shared/components/PhaseBanner";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -47,6 +49,7 @@ interface HealthResponse {
     cpus: number;
     totalMemory: number;
     freeMemory: number;
+    status: string;
   };
   counts: {
     users: number;
@@ -64,6 +67,8 @@ interface StatsResponse {
   activeUsers: number;
   usersByRole: Record<string, number>;
   systemStatus: string;
+  totalEnrollments: number;
+  totalSections: number;
 }
 
 function formatBytes(bytes: number) {
@@ -104,8 +109,6 @@ export default function SystemHealth() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  const showSkeleton = useDelayedLoading(loading);
 
   const fetchHealthData = useCallback(async () => {
     setLoading(true);
@@ -173,6 +176,10 @@ export default function SystemHealth() {
     return () => setTitle(null);
   }, [setTitle]);
 
+  if (loading || !health || !stats) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -205,28 +212,18 @@ export default function SystemHealth() {
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Database className="h-5 w-5 text-primary" />
-              {showSkeleton ? (
-                <Skeleton className="h-6 w-20" />
-              ) : (
-                health?.database.status || "—"
-              )}
+              {health?.database.status || "—"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-base leading-tight">
-            {showSkeleton ? (
-              <Skeleton className="h-4 w-40" />
-            ) : (
-              <>
-                <Badge
-                  variant="outline"
-                  className={statusClass(health?.database.status || "DOWN")}>
-                  {health?.database.status || "DOWN"}
-                </Badge>
-                <p className="text-foreground">
-                  Avg query: {health?.database.avgQueryMs ?? 0} ms
-                </p>
-              </>
-            )}
+            <Badge
+              variant="outline"
+              className={statusClass(health?.database.status || "DOWN")}>
+              {health?.database.status || "DOWN"}
+            </Badge>
+            <p className="text-foreground">
+              Avg query: {health?.database.avgQueryMs ?? 0} ms
+            </p>
           </CardContent>
         </Card>
 
@@ -237,25 +234,16 @@ export default function SystemHealth() {
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Users className="h-5 w-5 text-primary" />
-              {showSkeleton ? (
-                <Skeleton className="h-6 w-20" />
-              ) : (
-                (stats?.activeUsers ?? 0)
-              )}
+              {stats?.activeUsers ?? 0}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-base leading-tight">
-            {showSkeleton ? (
-              <Skeleton className="h-4 w-36" />
-            ) : (
-              <>
-                <Badge
-                  variant="outline"
-                  className={statusClass(stats?.systemStatus || "DOWN")}>
-                  System: {stats?.systemStatus || "DOWN"}
-                </Badge>
-              </>
-            )}
+            <p className="text-foreground">
+              Total enrollments: {stats?.totalEnrollments ?? 0}
+            </p>
+            <p className="text-foreground">
+              Sections created: {stats?.totalSections ?? 0}
+            </p>
           </CardContent>
         </Card>
 
@@ -266,22 +254,14 @@ export default function SystemHealth() {
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Server className="h-5 w-5 text-primary" />
-              {showSkeleton ? (
-                <Skeleton className="h-6 w-24" />
-              ) : (
-                formatUptime(health?.server.uptime ?? 0)
-              )}
+              {health?.server.status || "—"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-base leading-tight">
-            {showSkeleton ? (
-              <Skeleton className="h-4 w-44" />
-            ) : (
-              <p className="text-foreground">
-                {health?.server.platform}/{health?.server.arch} • Node{" "}
-                {health?.server.nodeVersion}
-              </p>
-            )}
+            <p className="text-foreground">
+              {health?.server.platform}/{health?.server.arch} • Node{" "}
+              {health?.server.nodeVersion}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -298,22 +278,13 @@ export default function SystemHealth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {showSkeleton ? (
-              <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, idx) => (
-                  <Skeleton
-                    key={`counts-${idx}`}
-                    className="h-4 w-full"
-                  />
-                ))}
-              </div>
-            ) : (
-              <DataTable
-                columns={countColumns}
-                data={countData}
-                loading={loading}
-              />
-            )}
+            <DataTable<MetricRow, unknown>
+              columns={countColumns}
+              data={countData}
+              loading={false}
+              className="border-none rounded-none"
+              tableClassName="min-w-0"
+            />
           </CardContent>
         </Card>
 
@@ -328,16 +299,7 @@ export default function SystemHealth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {showSkeleton ? (
-              <div className="space-y-2">
-                {Array.from({ length: 8 }).map((_, idx) => (
-                  <Skeleton
-                    key={`runtime-${idx}`}
-                    className="h-4 w-full"
-                  />
-                ))}
-              </div>
-            ) : health ? (
+            {health ? (
               <div className="space-y-3 text-base leading-tight">
                 <div className="flex items-center justify-between">
                   <span className="text-foreground flex items-center gap-1">

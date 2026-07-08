@@ -19,6 +19,7 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
+import { createMotionTransition, useMotionPreferences } from "@/shared/lib/motion";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -160,6 +161,7 @@ export function DataTable<TData, TValue>({
   dense = false,
   isRowClickable,
 }: DataTableProps<TData, TValue>) {
+  const motionPreferences = useMotionPreferences();
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -258,7 +260,7 @@ export function DataTable<TData, TValue>({
               key="loading-body"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={createMotionTransition(motionPreferences, "fast")}
               className="relative">
               {Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`} className="bg-background">
@@ -302,7 +304,7 @@ export function DataTable<TData, TValue>({
               key="data-body"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={createMotionTransition(motionPreferences, "fast")}
               className="relative">
               {prependBodyRow}
               {virtualize
@@ -362,7 +364,7 @@ export function DataTable<TData, TValue>({
               key="prepend-body"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={createMotionTransition(motionPreferences, "fast")}
               className="relative">
               {prependBodyRow}
             </MotionTableBody>
@@ -371,7 +373,7 @@ export function DataTable<TData, TValue>({
               key="empty-body"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={createMotionTransition(motionPreferences, "fast")}
               className="relative">
               <TableRow key="no-results">
                 <TableCell

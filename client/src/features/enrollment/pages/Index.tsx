@@ -12,7 +12,7 @@ export default function EnrollmentManagement() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] min-h-0 space-y-4 sm:space-y-6">
+    <div className="flex flex-col space-y-4 sm:space-y-6">
       <PhaseBanner />
       <SectioningWorkspace />
     </div>

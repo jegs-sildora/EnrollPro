@@ -1080,8 +1080,10 @@ export async function autoDistributeUnassigned(
         ?? application.previousSchool?.generalAverage
         ?? application.learner.previousGenAve
         ?? 0,
-      programType:
-        application.assignedProgram ?? application.applicantType,
+      learnerType: application.learnerType,
+      isBalikAral: application.learner.isBalikAral,
+      applicantType: application.applicantType,
+      assignedProgram: application.assignedProgram,
     })),
     sections: sections.map((section) => ({
       id: section.id,

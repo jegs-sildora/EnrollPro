@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { queryClient } from "@/shared/lib/queryClient";
 
 export interface PaletteColor {
   hsl: string;
@@ -163,8 +164,6 @@ export const useSettingsStore = create<SettingsState>()(
             switchingToSchoolYearLabel: null,
           });
           
-          // Dynamically import queryClient to avoid circular dependency issues at the top level
-          const { queryClient } = await import("@/shared/lib/queryClient");
           queryClient.invalidateQueries();
         }, 2000);
       },
@@ -186,7 +185,6 @@ export const useSettingsStore = create<SettingsState>()(
             initialized: true,
           }));
           
-          const { queryClient } = await import("@/shared/lib/queryClient");
           queryClient.invalidateQueries();
           
           window.dispatchEvent(new CustomEvent("ROLLOVER_COMPLETE"));

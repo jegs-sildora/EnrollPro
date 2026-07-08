@@ -1,6 +1,6 @@
 import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
 import type React from "react";
-import { useNavigate, useLocation, Link, Outlet } from "react-router";
+import { useNavigate, useLocation, Link, useOutlet } from "react-router";
 import { Toaster, sileo } from "sileo";
 import {
   LayoutDashboard,
@@ -127,7 +127,7 @@ function UserNav() {
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-sm">
               {initials}
             </div>
-            <div className="flex flex-col items-start leading-tight">
+            <div className="hidden md:flex flex-col items-start leading-tight">
               <span className="text-sm font-black text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
@@ -276,14 +276,16 @@ function SYSwitcher() {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="flex items-center gap-3 px-4 py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
               <Calendar className="text-foreground w-4 h-4" />
-              <span className="text-sm text-foreground whitespace-nowrap font-extrabold">
+              <span className="text-xs sm:text-sm text-foreground whitespace-nowrap font-extrabold">
                 {currentLabel}
               </span>
-              {renderStatusBadge(currentYear?.status)}
-              <ChevronsUpDown className="text-foreground w-4 h-4" />
+              <div className="hidden md:block">
+                {renderStatusBadge(currentYear?.status)}
+              </div>
+              <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base " text-foreground>
@@ -740,6 +742,7 @@ function formatPhaseName(phase: string | null): string {
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
   const title = useHeaderStore((s) => s.title);
+  const outlet = useOutlet();
   const {
     selectedAccentHsl,
     colorScheme,
@@ -939,7 +942,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             className="mr-2 h-4!"
           />
           {title && (
-            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none whitespace-nowrap mr-4">
+            <h1 className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight leading-none truncate max-w-[120px] sm:max-w-[240px] md:max-w-none mr-2 sm:mr-4">
               {title}
             </h1>
           )}
@@ -953,10 +956,10 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             ) : null}
           </div>
 
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2 sm:gap-4">
             <SYSwitcher />
 
-            <div className="flex items-center gap-1 border-x px-3 h-8">
+            <div className="hidden lg:flex items-center gap-1 border-x px-1.5 sm:px-3 h-8">
               <AccessibilityMenu />
             </div>
 
@@ -976,11 +979,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         <AnimatePresence mode="wait">
           <PageTransition
             routeKey={location.pathname}
-            className="flex-1 flex flex-col min-w-0 py-3 px-6">
+            className="flex-1 flex flex-col min-w-0 py-3 px-4 sm:px-6">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />
             ) : (
-              children || <Outlet />
+              children || outlet
             )}
           </PageTransition>
         </AnimatePresence>

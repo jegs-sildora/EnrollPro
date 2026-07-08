@@ -349,8 +349,8 @@ export default function RegistrarEOSYWorkspace() {
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
-                            "font-extrabold text-[10px]",
-                            record.enrollmentApplication.learner.sex === "MALE" ? "border-blue-200 text-blue-700 bg-blue-50" : "border-pink-200 text-pink-700 bg-pink-50"
+                            "text-[10px] uppercase font-extrabold px-1.5 py-0 border-2",
+                            record.enrollmentApplication.learner.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600" : "bg-pink-600/10 text-pink-600 border-pink-600"
                           )}>
                             {record.enrollmentApplication.learner.sex === "MALE" ? "M" : "F"}
                           </Badge>

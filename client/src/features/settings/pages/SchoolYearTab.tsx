@@ -875,7 +875,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <fieldset disabled={isArchived} className="space-y-6 relative pb-24 group">
+    <fieldset disabled={isArchived} className="space-y-6 relative pb-24 group min-w-0">
       <AnimatePresence>
         {isRolloverLoaderOpen && (
           <motion.div
@@ -1007,10 +1007,10 @@ export default function SchoolYearTab() {
                     <CardTitle
                       className="flex items-center gap-2 text-xl font-extrabold text-foreground"
                     >
-                      <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                      <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                         <CalendarIcon className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="break-words min-w-0">
                         {activeYear ? (
                           <>Current School Year: {activeYear.yearLabel}</>
                         ) : (
@@ -1028,13 +1028,13 @@ export default function SchoolYearTab() {
                   {/* System Academic Phase */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide">
+                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
                             System Academic Phase
                           </h4>
                         </div>
-                        <p className="text-base font-bold text-foreground rounded-md inline-block">
+                        <p className="text-base font-bold text-foreground rounded-md inline-block break-words whitespace-normal">
                           Control the current phase of the academic year. This affects how late enrollments are processed.
                         </p>
                       </div>
@@ -1046,7 +1046,7 @@ export default function SchoolYearTab() {
                           setSelectedPhase(value);
                         }
                       }}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-4"
                       disabled={isArchived}
                     >
                       {[
@@ -1060,15 +1060,15 @@ export default function SchoolYearTab() {
                             key={opt.value}
                             htmlFor={opt.value}
                             className={cn(
-                              "relative flex min-h-32 flex-col cursor-pointer rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors",
+                              "relative flex flex-col cursor-pointer rounded-lg border bg-card p-4 text-left shadow-sm transition-colors text-foreground",
                               isChecked
-                                ? "border-primary"
+                                ? "border-primary ring-1 ring-primary text-primary"
                                 : "border-border hover:border-primary hover:bg-muted/20"
                             )}
                           >
-                            <RadioGroupItem value={opt.value} id={opt.value} className="absolute left-4 top-4" />
-                            <span className="text-base font-extrabold leading-tight block text-foreground">{opt.title}</span>
-                            <span className="text-sm font-bold mt-2 block text-foreground">{opt.desc}</span>
+                            <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
+                            <span className="text-lg uppercase font-extrabold leading-tight block break-words">{opt.title}</span>
+                            <span className="text-sm font-bold mt-2 block break-words whitespace-normal">{opt.desc}</span>
                           </Label>
                         );
                       })}
@@ -1090,7 +1090,7 @@ export default function SchoolYearTab() {
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-extrabold text-base text-foreground uppercase tracking-wide">
+                      <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
                         DepEd Term Configuration
                       </h4>
                     </div>
@@ -1111,14 +1111,14 @@ export default function SchoolYearTab() {
                             key={opt.value}
                             htmlFor={opt.value}
                             className={cn(
-                              "relative flex flex-col items-center justify-center cursor-pointer rounded-lg border bg-card p-4 min-h-32 text-center shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                              "relative flex flex-col items-center justify-center cursor-pointer rounded-lg border bg-card p-4 min-h-26 text-center shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 text-foreground",
                               isChecked
-                                ? "border-primary ring-1 ring-primary/20"
+                                ? "border-primary ring-1 ring-primary text-primary"
                                 : "border-border hover:border-primary hover:bg-muted/20"
                             )}
                           >
-                            <RadioGroupItem value={opt.value} id={opt.value} className="absolute left-4 top-4" />
-                            <span className="text-base font-extrabold leading-tight block text-foreground">{opt.title}</span>
+                            <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
+                            <span className="text-lg uppercase font-extrabold leading-tight block break-words">{opt.title}</span>
                           </Label>
                         );
                       })}
@@ -1134,38 +1134,38 @@ export default function SchoolYearTab() {
                     </div>
 
                     {[
-                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
-                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
-                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
-                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
+                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "1st Quarter" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
+                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "2nd Quarter" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
+                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "3rd Quarter" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
+                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "4th Quarter", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => (
                       <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
                         <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
-                        <div className="flex items-center gap-3 flex-1 w-full">
-                          <div className="flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
-                            <HybridDatePicker
-                              value={term.start || ""}
-                              onChange={(val) => {
-                                setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
-                              }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
-                              placeholder="MM/DD/YYYY"
-                            />
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
+                              <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
+                              <HybridDatePicker
+                                value={term.start || ""}
+                                onChange={(val) => {
+                                  setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
+                                }}
+                                className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
+                                placeholder="MM/DD/YYYY"
+                              />
+                            </div>
+                            <span className="text-foreground font-extrabold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
+                            <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
+                              <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
+                              <HybridDatePicker
+                                value={term.end || ""}
+                                onChange={(val) => {
+                                  setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
+                                }}
+                                className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
+                                placeholder="MM/DD/YYYY"
+                              />
+                            </div>
                           </div>
-                          <span className="text-foreground font-extrabold">to</span>
-                          <div className="flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
-                            <HybridDatePicker
-                              value={term.end || ""}
-                              onChange={(val) => {
-                                setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
-                              }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
-                              placeholder="MM/DD/YYYY"
-                            />
-                          </div>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -1174,18 +1174,18 @@ export default function SchoolYearTab() {
                   {/* BOSY Enrollment Period */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide">
+                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
                             Official Enrollment Period (BOSY)
                           </h4>
                         </div>
-                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block">
+                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block break-words whitespace-normal">
                           Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
                         </p>
                       </div>
                       <span
-                        className={`inline-flex items-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
+                        className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
                         {enrollmentPhaseStatus.label}
                       </span>
                     </div>
@@ -1339,42 +1339,44 @@ export default function SchoolYearTab() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-center uppercase font-extrabold">School Year</TableHead>
-                      <TableHead className="text-center uppercase font-extrabold">
-                        Beginning of School Year (BOSY)
-                      </TableHead>
-                      <TableHead className="text-center uppercase font-extrabold">
-                        End of School Year (EOSY)
-                      </TableHead>
-                      <TableHead className="text-center uppercase font-extrabold">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {archivedYears.map((year) => (
-                      <TableRow key={year.id}>
-                        <TableCell className="font-extrabold text-center uppercase font-extrabold">
-                          S.Y. {year.yearLabel}
-                        </TableCell>
-                        <TableCell className="text-center uppercase font-extrabold">
-                          {formatManilaDate(year.classOpeningDate)}
-                        </TableCell>
-                        <TableCell className="text-center uppercase font-extrabold">
-                          {formatManilaDate(year.classEndDate)}
-                        </TableCell>
-                        <TableCell className="text-center uppercase font-extrabold">
-                          <Badge
-                            variant="outline"
-                            className="gap-1 border-slate-300 text-slate-700 bg-slate-100">
-                            Archived
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    <div className="overflow-x-auto w-full -mx-4 px-4 sm:mx-0 sm:px-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-center uppercase font-extrabold">School Year</TableHead>
+                            <TableHead className="text-center uppercase font-extrabold">
+                              Beginning of School Year (BOSY)
+                            </TableHead>
+                            <TableHead className="text-center uppercase font-extrabold">
+                              End of School Year (EOSY)
+                            </TableHead>
+                            <TableHead className="text-center uppercase font-extrabold">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {archivedYears.map((year) => (
+                            <TableRow key={year.id}>
+                              <TableCell className="font-extrabold text-center uppercase font-extrabold whitespace-nowrap">
+                                S.Y. {year.yearLabel}
+                              </TableCell>
+                              <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                                {formatManilaDate(year.classOpeningDate)}
+                              </TableCell>
+                              <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                                {formatManilaDate(year.classEndDate)}
+                              </TableCell>
+                              <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                                <Badge
+                                  variant="outline"
+                                  className="gap-1 border-slate-300 text-slate-700 bg-slate-100">
+                                  Archived
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
               </CardContent>
             </Card>
           )}

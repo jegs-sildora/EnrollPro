@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { motionTokens } from "@/shared/lib/motion";
 import {
   ENROLLMENT_SUB_MENU_OPTIONS,
   type EnrollmentSubMenu,
@@ -32,7 +33,7 @@ export function EnrollmentWorkflowTabs({
               <motion.div
                 layoutId="enrollment-active-pill"
                 className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                transition={motionTokens.spring.pill}
               />
             )}
             <span

@@ -67,6 +67,13 @@ import {
 } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import {
+  createFadeShiftVariants,
+  createMotionTransition,
+  getReducedMotionProps,
+  motionTokens,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 import { QueueTable } from "../components/QueueTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
@@ -133,22 +140,18 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
+  const motionPreferences = useMotionPreferences();
+  const tabPanelVariants = createFadeShiftVariants(
+    motionPreferences,
+    "y",
+    "y",
+    "sm",
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const { ayLabel } = useSchoolYearContext();
-  let priorSyLabel = "25-26";
-  if (ayLabel) {
-    const parts = ayLabel.split("-");
-    if (parts.length === 2) {
-      const start = parseInt(parts[0], 10);
-      const end = parseInt(parts[1], 10);
-      if (!isNaN(start) && !isNaN(end)) {
-        priorSyLabel = `${start - 1}-${end - 1}`;
-      }
-    }
-  }
   const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const syId =
     typeof resolvedSchoolYearId === "number" &&
@@ -550,7 +553,7 @@ export default function BOSYPage() {
               <motion.div
                 layoutId="bosy-active-pill"
                 className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                transition={motionTokens.spring.pill}
               />
             )}
             <span className={cn("relative z-20 text-base uppercase", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
@@ -565,7 +568,7 @@ export default function BOSYPage() {
               <motion.div
                 layoutId="bosy-active-pill"
                 className="absolute inset-0 bg-primary shadow-sm rounded-lg"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                transition={motionTokens.spring.pill}
               />
             )}
             <span className={cn("relative z-20 text-base uppercase", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
@@ -578,10 +581,9 @@ export default function BOSYPage() {
           {activeTab === "continuing" && (
             <motion.div
               key="continuing"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              variants={tabPanelVariants}
+              transition={createMotionTransition(motionPreferences, "fast")}
+              {...getReducedMotionProps(motionPreferences.reduceMotion)}
               className="flex-1 flex min-h-0 flex-col w-full h-full"
             >
               <TabsContent
@@ -589,7 +591,7 @@ export default function BOSYPage() {
                 forceMount
                 className="m-0 flex min-h-0 flex-1 flex-col h-full focus-visible:outline-none ring-0"
               >
-                <div className="flex flex-col flex-1 h-full w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+                <div className="flex flex-col flex-1 h-full w-full min-w-0 overflow-hidden space-y-4 sm:space-y-4">
                   <div
                     className="flex flex-col md:flex-row md:items-center justify-end gap-4"
                   >
@@ -600,7 +602,7 @@ export default function BOSYPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 p-1">
                     {[
                       {
                         label: "Pending Enrollment",
@@ -610,7 +612,7 @@ export default function BOSYPage() {
                         isPrimaryMetric: false,
                       },
                       {
-                        label: "Confirmed and Ready for Section Assignment",
+                        label: "Ready for Section Assignment",
                         subBadge: `Included in the S.Y. ${ayLabel || "2026–2027"} enrollment total`,
                         value: readiness?.confirmedReadyCount ?? 0,
                         filterVal: "CONFIRMED" as const,
@@ -634,34 +636,32 @@ export default function BOSYPage() {
                         }}
                         aria-pressed={queueState === filterVal}
                         className={cn(
-                          "relative flex min-h-32 flex-col rounded-lg border bg-card p-4 pt-12 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          "relative flex h-full flex-col rounded-xl border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
                           queueState === filterVal
-                            ? "border-primary ring-1 ring-primary/20"
+                            ? "border-primary ring-1 ring-primary text-primary"
                             : "border-border hover:border-primary",
                         )}>
-                        <div className={cn(
-                          "absolute left-4 top-4 flex aspect-square h-4 w-4 items-center justify-center rounded-full border text-primary ring-offset-background",
-                          queueState === filterVal ? "border-primary" : "border-primary"
-                        )}>
-                          {queueState === filterVal && (
-                            <div className="h-2 w-2 rounded-full bg-current" />
-                          )}
+                        <div className="flex h-full flex-col">
+                          <div>
+                            <span className="block text-lg font-extrabold leading-snug ">
+                              {label}
+                            </span>
+                          </div>
+                          <div className="mt-auto flex flex-col gap-2">
+                            <span
+                              className={cn(
+                                "text-4xl font-extrabold leading-none tracking-tight",
+                                isPrimaryMetric && value > 0
+                                  ? "text-primary"
+                                  : "text-primary",
+                              )}>
+                              {value}
+                            </span>
+                            <span className="text-sm leading-snug font-extrabold">
+                              {subBadge}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-base font-extrabold leading-tight text-foreground">
-                          {label}
-                        </span>
-                        <span
-                          className={cn(
-                            "mt-4 text-4xl font-extrabold leading-none",
-                            isPrimaryMetric && value > 0
-                              ? "text-primary"
-                              : "text-foreground",
-                          )}>
-                          {value}
-                        </span>
-                        <span className="mt-1 text-sm font-extrabold text-foreground">
-                          {subBadge}
-                        </span>
                       </button>
                     ))}
                   </div>
@@ -727,13 +727,13 @@ export default function BOSYPage() {
                                   {curricularProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
                                     : curricularProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
                                       : curricularProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
-                                        : curricularProgram === "REGULAR" ? "Regular BEC"
+                                        : curricularProgram === "REGULAR" ? "BEC"
                                           : "All Programs"}
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
-                                <SelectItem value="REGULAR" className="leading-tight font-extrabold">Regular BEC</SelectItem>
+                                <SelectItem value="REGULAR" className="leading-tight font-extrabold">BEC</SelectItem>
                                 <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
                                 <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
                                 <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
@@ -769,7 +769,6 @@ export default function BOSYPage() {
                     <CardContent className="p-0 flex flex-col flex-1 min-h-0">
                       <div className="overflow-hidden bg-muted/5 w-full flex-1 flex flex-col min-h-0">
                         <QueueTable
-                          priorSyLabel={priorSyLabel}
                           items={queueItems}
                           loading={queueLoading}
                           isSearching={isSearching}
@@ -1029,10 +1028,9 @@ export default function BOSYPage() {
           {activeTab === "incoming" && (
             <motion.div
               key="incoming"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              variants={tabPanelVariants}
+              transition={createMotionTransition(motionPreferences, "fast")}
+              {...getReducedMotionProps(motionPreferences.reduceMotion)}
               className="flex-1 flex min-h-0 flex-col w-full"
             >
               <TabsContent

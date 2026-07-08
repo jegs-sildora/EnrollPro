@@ -24,9 +24,15 @@ import {
   cn,
   getGradeLevelBadgeStyles,
 } from "@/shared/lib/utils";
+import {
+  createFadeShiftVariants,
+  createMotionTransition,
+  createScaleFadeVariants,
+  getReducedMotionProps,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 
 interface QueueTableProps {
-  priorSyLabel: string;
   items: BOSYQueueItem[];
   loading: boolean;
   isSearching?: boolean;
@@ -174,6 +180,7 @@ function QueueMobileCard({
   confirmingIds: Set<number>;
   busyActionIds: Set<number>;
 }) {
+  const motionPreferences = useMotionPreferences();
   const learnerName = buildLearnerDisplayName(item);
   const isConfirming = confirmingIds.has(item.applicationId);
   const isBusy = busyActionIds.has(item.applicationId);
@@ -249,7 +256,11 @@ function QueueMobileCard({
   })();
 
   return (
-    <article
+    <motion.article
+      layout
+      variants={createScaleFadeVariants(motionPreferences, 0.985)}
+      transition={createMotionTransition(motionPreferences, "fast")}
+      {...getReducedMotionProps(motionPreferences.reduceMotion)}
       className={cn(
         "rounded-2xl border border-border bg-background p-4 shadow-sm",
         selected && "border-primary bg-primary/5",
@@ -295,7 +306,7 @@ function QueueMobileCard({
                 {item.academicStatus ? (
                   <Badge
                     className={cn(
-                      "rounded-md border-transparent px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-white",
+                      "rounded-md border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
                       item.academicStatus === "PROMOTED"
                         ? "bg-emerald-600 hover:bg-emerald-600"
                         : item.academicStatus === "CONDITIONALLY_PROMOTED"
@@ -328,12 +339,11 @@ function QueueMobileCard({
           ) : null}
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
 export function QueueTable({
-  priorSyLabel,
   items,
   loading,
   isSearching,
@@ -348,6 +358,13 @@ export function QueueTable({
   confirmingIds,
   busyActionIds,
 }: QueueTableProps) {
+  const motionPreferences = useMotionPreferences();
+  const fadeVariants = createFadeShiftVariants(
+    motionPreferences,
+    "y",
+    "y",
+    "xs",
+  );
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
       {
@@ -399,7 +416,7 @@ export function QueueTable({
                 {learnerName}
               </span>
               <span
-                className="mt-1 truncate font-bold uppercase text-foreground xl:whitespace-normal"
+                className="mt-1 truncate font-extrabold uppercase text-foreground xl:whitespace-normal"
                 title={r.lrn ?? "NO LRN"}>
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
@@ -436,7 +453,7 @@ export function QueueTable({
             <div className="flex flex-col items-center gap-1 py-3 text-center">
               <Badge
                 className={cn(
-                  "rounded-md border-transparent px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-white",
+                  "rounded-full border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
                   s === "PROMOTED"
                     ? "bg-emerald-600 hover:bg-emerald-600"
                     : s === "CONDITIONALLY_PROMOTED"
@@ -447,8 +464,8 @@ export function QueueTable({
                 {formatAcademicStatusLabel(s)}
               </Badge>
               {genAve && s === "PROMOTED" && (
-                <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground" title={`Gen Ave: ${genAve}`}>
-                  Gen Ave: {genAve}
+                <span className="max-w-full truncate text-sm font-extrabold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
+                  Final Gen Ave: {genAve}
                 </span>
               )}
               {deficiencyText && (
@@ -547,7 +564,6 @@ export function QueueTable({
     onMarkConfirmedTransferOut,
     confirmingIds,
     busyActionIds,
-    priorSyLabel,
     allowActions,
   ]);
 
@@ -556,10 +572,9 @@ export function QueueTable({
       {loading ? (
         <motion.div
           key="loader"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          variants={fadeVariants}
+          transition={createMotionTransition(motionPreferences, "fast")}
+          {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex items-center justify-center h-48 w-full"
         >
           <Loader2 className="h-6 w-6 animate-spin text-foreground" />
@@ -567,13 +582,14 @@ export function QueueTable({
       ) : (
         <motion.div
           key="content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          variants={fadeVariants}
+          transition={createMotionTransition(motionPreferences, "fast")}
+          {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex flex-col flex-1 h-full w-full min-h-0"
         >
-          <div className="space-y-3 md:hidden">
+          <motion.div
+            layout
+            className="space-y-3 md:hidden">
             {isSearching ? (
               <div className="rounded-2xl border border-border bg-background">
                 <div className="flex h-64 flex-col items-center justify-center space-y-4">
@@ -585,7 +601,8 @@ export function QueueTable({
                 </div>
               </div>
             ) : items.length > 0 ? (
-              items.map((item) => {
+              <AnimatePresence mode="popLayout">
+                {items.map((item) => {
                 const rowId = String(item.applicationId);
                 const selected = Boolean(rowSelection[rowId]);
 
@@ -610,7 +627,8 @@ export function QueueTable({
                     busyActionIds={busyActionIds}
                   />
                 );
-              })
+                })}
+              </AnimatePresence>
             ) : (
               <div className="rounded-2xl border border-border bg-background">
                 <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
@@ -618,7 +636,7 @@ export function QueueTable({
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">
-                    No continuing learners match this intake status.
+                    No continuing learners match this enrollment status.
                   </p>
                   <p className="px-4 text-center text-sm">
                     Select another target grade or check the learner name or LRN.
@@ -626,7 +644,7 @@ export function QueueTable({
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
 
           <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
             <DataTable
@@ -639,7 +657,7 @@ export function QueueTable({
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">
-                    No continuing learners match this intake status.
+                    No continuing learners match this enrollment status.
                   </p>
                   <p className="text-sm">
                     Select another target grade or check the learner name or LRN.

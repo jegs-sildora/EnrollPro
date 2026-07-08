@@ -1,31 +1,43 @@
 import { motion } from "motion/react";
-import { Calendar } from "lucide-react";
+import {
+  createFadeShiftVariants,
+  createMotionTransition,
+  getReducedMotionProps,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 
 interface SchoolYearTransitionLoaderProps {
   targetLabel: string | null;
 }
 
 export function SchoolYearTransitionLoader({ targetLabel }: SchoolYearTransitionLoaderProps) {
+  const motionPreferences = useMotionPreferences();
+  const overlayVariants = createFadeShiftVariants(
+    motionPreferences,
+    "y",
+    "y",
+    "xs",
+  );
+
   // Dot bouncing variants
   const dotVariants = {
     initial: { y: 0 },
     animate: {
-      y: [0, -12, 0],
+      y: motionPreferences.reduceMotion ? 0 : [0, -10, 0],
     },
   };
 
   const dotTransition = {
-    duration: 0.6,
-    repeat: Infinity,
+    duration: motionPreferences.durations.slow,
+    repeat: motionPreferences.reduceMotion ? 0 : Infinity,
     ease: "easeInOut",
   } as const;
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
+      variants={overlayVariants}
+      transition={createMotionTransition(motionPreferences, "normal")}
+      {...getReducedMotionProps(motionPreferences.reduceMotion)}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background select-none"
     >
       {/* Background Pixel SVG Grid Pattern */}

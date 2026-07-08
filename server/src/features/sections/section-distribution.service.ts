@@ -2,12 +2,19 @@ import type {
   ApplicantType,
   Sex,
 } from "../../generated/prisma/index.js"
+import {
+  getAutoDraftProgramType,
+  type LearnerType,
+} from "@enrollpro/shared"
 
 export interface DistributionLearner {
   applicationId: number
   sex: Sex
   generalAverage: number
-  programType: ApplicantType
+  learnerType: LearnerType
+  isBalikAral: boolean
+  applicantType: ApplicantType
+  assignedProgram: ApplicantType | null
 }
 
 export interface DistributionSection {
@@ -108,13 +115,15 @@ export function buildBalancedSectionAssignments({
   sections,
 }: BuildBalancedSectionAssignmentsInput): SectionAssignment[] {
   const programTypes = Array.from(
-    new Set(learners.map((learner) => learner.programType)),
+    new Set(learners.map((learner) => getAutoDraftProgramType(learner))),
   )
   const assignments: SectionAssignment[] = []
 
   for (const programType of programTypes) {
     const programLearners = interleaveBySex(
-      learners.filter((learner) => learner.programType === programType),
+      learners.filter(
+        (learner) => getAutoDraftProgramType(learner) === programType,
+      ),
     )
     const programSections = sections.filter(
       (section) => section.programType === programType,

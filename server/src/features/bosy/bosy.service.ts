@@ -768,6 +768,7 @@ export async function syncBOSYQueue(
         applicantType: record.assignedProgram ?? record.applicantType,
         assignedProgram: record.assignedProgram ?? record.applicantType,
         learnerType: "CONTINUING",
+        learningModalities: [],
         status:
           destination.kind === "REMEDIAL_HOLD"
             ? "REMEDIAL_HOLD"

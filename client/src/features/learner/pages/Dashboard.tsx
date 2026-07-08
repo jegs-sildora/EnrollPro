@@ -299,7 +299,7 @@ export default function LearnerDashboard() {
             </aside>
 
             {/* Right Pane (Flat Document Canvas) */}
-            <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-full overflow-y-auto bg-[url('/pixel-grid.svg')] px-4 py-6 lg:px-12 lg:py-8 space-y-12">
+            <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-full overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-12">
               <div className="mb-6 mt-4">
                 <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Learner Dashboard</h1>
                 <p className="text-base leading-tight font-semibold text-muted-foreground mt-1">

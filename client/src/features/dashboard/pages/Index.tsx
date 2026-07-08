@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/shared/api/axiosInstance";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useHeaderStore } from "@/store/header.slice";
 import type { DashboardStats } from "../types";
 
@@ -42,22 +42,7 @@ export default function DashboardIndex() {
   }, [ayId]);
 
   if (loading || !stats) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-[300px]" />
-        <Skeleton className="h-24 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <Skeleton className="h-[400px] lg:col-span-3" />
-          <Skeleton className="h-[400px] lg:col-span-2" />
-        </div>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <PageLoadingSkeleton />;
   }
 
   const phase = stats?.systemPhase;

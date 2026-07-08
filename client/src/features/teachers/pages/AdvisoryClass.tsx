@@ -13,6 +13,7 @@ import {
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import {
   Table,
   TableBody,
@@ -266,13 +267,13 @@ export default function AdvisoryClass() {
                 Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
               </span>
               <div className="w-px h-4 bg-border" />
-              <span className="flex items-center gap-1.5 text-blue-600">
+              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
                 <Mars className="h-4 w-4" /> Male: {maleLearners.length}
-              </span>
+              </Badge>
               <div className="w-px h-4 bg-border" />
-              <span className="flex items-center gap-1.5 text-pink-600">
+              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
                 <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
-              </span>
+              </Badge>
             </div>
           </div>
         </CardHeader>

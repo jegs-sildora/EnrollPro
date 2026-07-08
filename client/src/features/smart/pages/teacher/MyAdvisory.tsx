@@ -403,8 +403,8 @@ export default function MyAdvisory() {
                           <Badge
                             variant="secondary"
                             className={cn(
-                              "text-[9px] font-extrabold uppercase px-3 h-6 rounded-lg border-0",
-                              student.gender?.toLowerCase() === "male" ? "bg-blue-50 text-blue-600" : "bg-pink-50 text-pink-600"
+                              "text-[9px] font-extrabold uppercase px-3 h-6 rounded-lg",
+                              student.gender?.toLowerCase() === "male" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                             )}
                           >
                             {student.gender || 'N/A'}

@@ -260,19 +260,19 @@ export default function SchoolProfileTab() {
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <fieldset disabled={isArchived} className="space-y-8 group">
+          <fieldset disabled={isArchived} className="space-y-8 group min-w-0">
             {/* Institutional Identity */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                  <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <School className="h-5 w-5" />
                   </div>
-                  School Identity
+                  <span className="break-words min-w-0">School Identity</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <FormField
                     control={form.control}
                     name="schoolName"
@@ -364,14 +364,14 @@ export default function SchoolProfileTab() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                  <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  Active Academic Programs
+                  <span className="break-words min-w-0">Active Academic Programs</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
                   <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
@@ -429,7 +429,7 @@ export default function SchoolProfileTab() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <FormField
                     control={form.control}
                     name="facebookPageUrl"
@@ -475,7 +475,7 @@ export default function SchoolProfileTab() {
 
                 <Separator />
 
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                   {/* Logo preview & upload */}
                   <div className="space-y-3">
                     <h4 className="text-base leading-tight font-extrabold">Official School Logo</h4>
@@ -575,14 +575,16 @@ export default function SchoolProfileTab() {
 
             {/* Global Sticky Footer */}
             {!isArchived && isDirty && (
-              <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-4 shadow-lg flex items-center justify-end gap-3 px-6 md:px-8">
-                <span className="text-base leading-tight text-foreground mr-auto hidden sm:inline-block">You have unsaved changes.</span>
-                <Button type="button" variant="outline" onClick={handleDiscard} disabled={isSubmitting}>
-                  Discard Changes
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save Configuration"}
-                </Button>
+              <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8">
+                <span className="text-sm sm:text-base leading-tight text-foreground mr-auto hidden sm:inline-block">You have unsaved changes.</span>
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                  <Button type="button" variant="outline" onClick={handleDiscard} disabled={isSubmitting} className="flex-1 sm:flex-initial py-2 h-auto text-sm sm:text-base">
+                    Discard Changes
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-initial py-2 h-auto text-sm sm:text-base">
+                    {isSubmitting ? "Saving..." : "Save Configuration"}
+                  </Button>
+                </div>
               </div>
             )}
           </fieldset>

@@ -11,24 +11,22 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  MoreHorizontal,
+  MoveRight,
+  ArrowRightLeft,
 } from "lucide-react";
 import { motion } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/shared/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -36,9 +34,29 @@ import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { SectionMasterlistModal } from "./SectionMasterlistModal";
 import { isAxiosError } from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import {
+  getAllowedSectionProgramsForPlacement,
+  getAutoDraftProgramType,
+  type ApplicantType,
+  type LearnerType,
+} from "@enrollpro/shared";
+
+import ViewMasterlist from "@/features/sections/pages/ViewMasterlist";
 
 interface SectionSummary {
   id: number;
@@ -46,6 +64,7 @@ interface SectionSummary {
   gradeLevel: string;
   gradeLevelOrder: number;
   gradeLevelId: number;
+  sortOrder: number;
   tleProgram: string | null;
   tleProgramId: number | null;
   maxCapacity: number;
@@ -53,7 +72,7 @@ interface SectionSummary {
   boys: number;
   girls: number;
   adviser: string;
-  programType: string;
+  programType: ApplicantType;
 }
 
 interface PoolLearner {
@@ -69,7 +88,11 @@ interface PoolLearner {
   tleProgram: string | null;
   tleProgramId: number | null;
   duplicateFlag?: boolean;
-  programType: string;
+  learnerType: LearnerType;
+  isBalikAral: boolean;
+  applicantType: ApplicantType;
+  assignedProgram: ApplicantType | null;
+  programType: ApplicantType;
 }
 
 interface GradeLevelOption {
@@ -86,8 +109,55 @@ interface ApiMessageResponse {
   message?: string;
 }
 
-const SCP_SHORT_LABELS: Record<string, string> = {
-  REGULAR: "Regular / Basic Education",
+interface DraftGenderCounts {
+  boys: number;
+  girls: number;
+}
+
+interface DraftLearnerPlacement extends PoolLearner {
+  sectionId: number;
+  isOverridden: boolean;
+}
+
+interface DraftSectionRoster {
+  section: SectionSummary;
+  learners: DraftLearnerPlacement[];
+  genderCounts: DraftGenderCounts;
+  totalCount: number;
+  isOverCapacity: boolean;
+}
+
+interface DraftPlacement {
+  gradeLevelId: number;
+  generatedAt: string;
+  rosters: DraftSectionRoster[];
+  unplacedLearners: PoolLearner[];
+}
+
+interface DraftMoveAction {
+  type: "MOVE" | "SWAP";
+  learnerApplicationId: number;
+  fromSectionId: number;
+}
+
+interface CommitDraftAssignment {
+  sectionId: number;
+  applicationIds: number[];
+}
+
+interface SkippedApplication {
+  applicationId: number;
+  reason: string;
+}
+
+interface CommitDraftResponse {
+  committedCount: number;
+  skippedApplications: SkippedApplication[];
+}
+
+const SCP_SHORT_LABELS: Partial<Record<ApplicantType, string>> = {
+  REGULAR: "BEC",
+  LATE_ENROLLEE: "Late",
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
   SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
   SPECIAL_PROGRAM_IN_SPORTS: "SPS",
@@ -96,36 +166,209 @@ const SCP_SHORT_LABELS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
 };
 
+const formatLearnerName = (
+  learner: Pick<PoolLearner, "lastName" | "firstName" | "middleName">,
+) => {
+  const middleInitial = learner.middleName?.charAt(0)
+    ? ` ${learner.middleName.charAt(0)}.`
+    : "";
+  return `${learner.lastName}, ${learner.firstName}${middleInitial}`;
+};
+
+const sortLearnersByAverage = (first: PoolLearner, second: PoolLearner) => {
+  const firstAverage = first.genAve ?? -1;
+  const secondAverage = second.genAve ?? -1;
+  return (
+    secondAverage - firstAverage || first.applicationId - second.applicationId
+  );
+};
+
+const interleaveBySex = (learners: PoolLearner[]) => {
+  const males = learners
+    .filter((learner) => learner.sex === "MALE")
+    .sort(sortLearnersByAverage);
+  const females = learners
+    .filter((learner) => learner.sex === "FEMALE")
+    .sort(sortLearnersByAverage);
+  const ordered: PoolLearner[] = [];
+  let maleIndex = 0;
+  let femaleIndex = 0;
+  let preferMale = males.length >= females.length;
+
+  while (maleIndex < males.length || femaleIndex < females.length) {
+    const preferred = preferMale ? males[maleIndex] : females[femaleIndex];
+    const fallback = preferMale ? females[femaleIndex] : males[maleIndex];
+    const selected = preferred ?? fallback;
+    if (!selected) break;
+
+    ordered.push(selected);
+    if (selected.sex === "MALE") maleIndex += 1;
+    else femaleIndex += 1;
+    preferMale = !preferMale;
+  }
+
+  return ordered;
+};
+
+const buildDraftSlots = (sections: SectionSummary[]) => {
+  const ordered = [...sections].sort(
+    (first, second) =>
+      first.sortOrder - second.sortOrder ||
+      first.name.localeCompare(second.name) ||
+      first.id - second.id,
+  );
+  const remainingBySection = new Map(
+    ordered.map((section) => [
+      section.id,
+      Math.max(0, section.maxCapacity - section.currentCount),
+    ]),
+  );
+  const slots: number[] = [];
+  let forward = true;
+
+  while (
+    ordered.some((section) => (remainingBySection.get(section.id) ?? 0) > 0)
+  ) {
+    const pass = forward ? ordered : [...ordered].reverse();
+    for (const section of pass) {
+      const remaining = remainingBySection.get(section.id) ?? 0;
+      if (remaining <= 0) continue;
+      slots.push(section.id);
+      remainingBySection.set(section.id, remaining - 1);
+    }
+    forward = !forward;
+  }
+
+  return slots;
+};
+
+const calculateGenderCounts = (
+  section: SectionSummary,
+  learners: DraftLearnerPlacement[],
+): DraftGenderCounts => ({
+  boys:
+    section.boys + learners.filter((learner) => learner.sex === "MALE").length,
+  girls:
+    section.girls +
+    learners.filter((learner) => learner.sex === "FEMALE").length,
+});
+
+const buildRoster = (
+  section: SectionSummary,
+  learners: DraftLearnerPlacement[],
+): DraftSectionRoster => {
+  const sortedLearners = [...learners].sort(sortLearnersByAverage);
+  const totalCount = section.currentCount + sortedLearners.length;
+  return {
+    section,
+    learners: sortedLearners,
+    genderCounts: calculateGenderCounts(section, sortedLearners),
+    totalCount,
+    isOverCapacity: totalCount > section.maxCapacity,
+  };
+};
+
+const rebuildDraftPlacement = (draft: DraftPlacement): DraftPlacement => ({
+  ...draft,
+  rosters: draft.rosters.map((roster) =>
+    buildRoster(roster.section, roster.learners),
+  ),
+});
+
+const createDraftPlacement = (
+  gradeLevelId: number,
+  learners: PoolLearner[],
+  sections: SectionSummary[],
+): DraftPlacement => {
+  const rostersBySectionId = new Map<number, DraftLearnerPlacement[]>(
+    sections.map((section) => [section.id, []]),
+  );
+  const unplacedLearners: PoolLearner[] = [];
+  const programTypes = Array.from(
+    new Set(learners.map((learner) => getAutoDraftProgramType(learner))),
+  );
+
+  for (const programType of programTypes) {
+    const programLearners = interleaveBySex(
+      learners.filter(
+        (learner) => getAutoDraftProgramType(learner) === programType,
+      ),
+    );
+    const programSections = sections.filter(
+      (section) => section.programType === programType,
+    );
+    const slots = buildDraftSlots(programSections);
+
+    for (const [index, learner] of programLearners.entries()) {
+      const sectionId = slots[index];
+      if (sectionId === undefined) {
+        unplacedLearners.push(learner);
+        continue;
+      }
+
+      const rosterLearners = rostersBySectionId.get(sectionId);
+      if (!rosterLearners) {
+        unplacedLearners.push(learner);
+        continue;
+      }
+
+      rosterLearners.push({
+        ...learner,
+        sectionId,
+        isOverridden: false,
+      });
+    }
+  }
+
+  return {
+    gradeLevelId,
+    generatedAt: new Date().toISOString(),
+    rosters: sections.map((section) =>
+      buildRoster(section, rostersBySectionId.get(section.id) ?? []),
+    ),
+    unplacedLearners,
+  };
+};
 export function SectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
 
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [processing, setProcessing] = useState(false);
-  const [isAutoDistributeModalOpen, setIsAutoDistributeModalOpen] = useState(false);
-  const [masterlistModalSectionId, setMasterlistModalSectionId] = useState<number | null>(null);
+  const [draftPlacement, setDraftPlacement] = useState<DraftPlacement | null>(
+    null,
+  );
+  const [expandedSectionIds, setExpandedSectionIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [draftMoveAction, setDraftMoveAction] =
+    useState<DraftMoveAction | null>(null);
+  const [moveDestinationSectionId, setMoveDestinationSectionId] = useState("");
+  const [swapApplicationId, setSwapApplicationId] = useState("");
+  const [commitDialogOpen, setCommitDialogOpen] = useState(false);
+  const [allowCapacityOverride, setAllowCapacityOverride] = useState(false);
+  const [commitProcessing, setCommitProcessing] = useState(false);
+  const [masterlistModalSectionId, setMasterlistModalSectionId] = useState<
+    number | null
+  >(null);
 
   const queryClient = useQueryClient();
 
   const [activeGradeLevelId, setActiveGradeLevelId] = useState<string>("");
 
-  const {
-    data: sectionsData,
-    isLoading: sectionsInitialLoading,
-  } = useQuery({
+  const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
     queryKey: queryKeys.sectioningSections(),
     queryFn: () =>
-      api.get<SectionSummary[]>("/sectioning/sections-summary").then((r) => r.data),
+      api
+        .get<SectionSummary[]>("/sectioning/sections-summary")
+        .then((r) => r.data),
     enabled: !isHistoricalReadOnly,
     refetchInterval: 5_000,
     refetchOnWindowFocus: true,
     staleTime: 3_000,
   });
 
-  const {
-    data: poolData,
-    isLoading: poolInitialLoading,
-  } = useQuery({
+  const { data: poolData, isLoading: poolInitialLoading } = useQuery({
     queryKey: queryKeys.sectioningPool(),
     queryFn: () =>
       api.get<PoolLearner[]>("/sectioning/pool").then((r) => r.data),
@@ -135,22 +378,27 @@ export function SectioningWorkspace() {
     staleTime: 3_000,
   });
 
-  const {
-    data: gradeLevelsResponse,
-    isLoading: gradeLevelsLoading,
-  } = useQuery({
-    queryKey: ["settings", "grade-levels"],
-    queryFn: () =>
-      api
-        .get<GradeLevelsResponse>("/school-years/grade-levels")
-        .then((response) => response.data),
-    staleTime: 60_000,
-  });
+  const { data: gradeLevelsResponse, isLoading: gradeLevelsLoading } = useQuery(
+    {
+      queryKey: ["settings", "grade-levels"],
+      queryFn: () =>
+        api
+          .get<GradeLevelsResponse>("/school-years/grade-levels")
+          .then((response) => response.data),
+      staleTime: 60_000,
+    },
+  );
 
-  useEffect(() => { if (sectionsData) setSections(sectionsData); }, [sectionsData]);
-  useEffect(() => { if (poolData) setPool(poolData); }, [poolData]);
+  useEffect(() => {
+    if (sectionsData && !draftPlacement) setSections(sectionsData);
+  }, [sectionsData, draftPlacement]);
+  useEffect(() => {
+    if (poolData && !draftPlacement) setPool(poolData);
+  }, [poolData, draftPlacement]);
 
-  const loading = (sectionsInitialLoading || poolInitialLoading || gradeLevelsLoading) && !isHistoricalReadOnly;
+  const loading =
+    (sectionsInitialLoading || poolInitialLoading || gradeLevelsLoading) &&
+    !isHistoricalReadOnly;
 
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
 
@@ -159,7 +407,11 @@ export function SectioningWorkspace() {
 
   const handleSort = (key: "genAve") => {
     let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
     setSortConfig({ key, direction });
@@ -176,9 +428,7 @@ export function SectioningWorkspace() {
   const gradeLevels = useMemo(() => {
     const raw = gradeLevelsResponse?.gradeLevels ?? [];
     const jhs = raw.filter((gradeLevel) =>
-      ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
-        gradeLevel.name,
-      ),
+      ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(gradeLevel.name),
     );
     return jhs.sort((a, b) => {
       const orderA = a.displayOrder ?? parseInt(a.name.replace(/\D/g, "")) ?? 0;
@@ -193,24 +443,38 @@ export function SectioningWorkspace() {
     }
   }, [gradeLevels, activeGradeLevelId]);
 
-  const isLockedIn = selectedAppIds.length > 0;
+  const isDraftActive = draftPlacement !== null;
+  const isLockedIn = selectedAppIds.length > 0 || isDraftActive;
 
   const currentGradeSections = useMemo(() => {
     if (!activeGradeLevelId) return [];
-    return sections.filter((s) => String(s.gradeLevelId) === activeGradeLevelId);
+    return sections.filter(
+      (s) => String(s.gradeLevelId) === activeGradeLevelId,
+    );
   }, [sections, activeGradeLevelId]);
 
   const currentGradePool = useMemo(() => {
     if (!activeGradeLevelId) return [];
     return pool.filter((p) => String(p.gradeLevelId) === activeGradeLevelId);
   }, [pool, activeGradeLevelId]);
+  const draftLearnerCount = useMemo(
+    () =>
+      draftPlacement?.rosters.reduce(
+        (total, roster) => total + roster.learners.length,
+        0,
+      ) ?? 0,
+    [draftPlacement],
+  );
+  const hasDraftOverflow = useMemo(
+    () =>
+      draftPlacement?.rosters.some((roster) => roster.isOverCapacity) ?? false,
+    [draftPlacement],
+  );
   const selectedProgramTypes = useMemo(
     () =>
       new Set(
         currentGradePool
-          .filter((learner) =>
-            selectedAppIds.includes(learner.applicationId),
-          )
+          .filter((learner) => selectedAppIds.includes(learner.applicationId))
           .map((learner) => learner.programType),
       ),
     [currentGradePool, selectedAppIds],
@@ -257,63 +521,271 @@ export function SectioningWorkspace() {
         applicationIds: selectedAppIds,
       });
 
-      const sectionName = currentGradeSections.find((s) => s.id === targetSectionId)?.name;
+      const sectionName = currentGradeSections.find(
+        (s) => s.id === targetSectionId,
+      )?.name;
       sileo.success({
         title: "Assignment Successful",
         description: `Moved ${selectedAppIds.length} learners to ${sectionName}.`,
       });
       setSelectedAppIds([]);
       setTargetSectionId(null);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningSections(),
+      });
     } catch (error: unknown) {
       sileo.error({
         title: "Assignment Failed",
         description:
           (isAxiosError<ApiMessageResponse>(error)
             ? error.response?.data.message
-            : undefined)
-          ?? "An error occurred while moving learners. Please try again.",
+            : undefined) ??
+          "An error occurred while moving learners. Please try again.",
       });
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleAutoDistribute = async () => {
+  const generateDraftPlacement = () => {
     if (!activeGradeLevelId) return;
-    setProcessing(true);
+
+    const parsedGradeLevelId = Number(activeGradeLevelId);
+    const draft = createDraftPlacement(
+      parsedGradeLevelId,
+      currentGradePool,
+      currentGradeSections,
+    );
+    const allSectionIds = draft.rosters.map((roster) => roster.section.id);
+
+    setDraftPlacement(draft);
+    setExpandedSectionIds(new Set(allSectionIds));
+    setSelectedAppIds([]);
+    setTargetSectionId(null);
+    setAllowCapacityOverride(false);
+
+    sileo.success({
+      title: "Draft Placement Generated",
+      description: `${draft.rosters.reduce((total, roster) => total + roster.learners.length, 0)} learner(s) are ready for review.`,
+    });
+  };
+
+  const discardDraft = () => {
+    setDraftPlacement(null);
+    setExpandedSectionIds(new Set());
+    setDraftMoveAction(null);
+    setMoveDestinationSectionId("");
+    setSwapApplicationId("");
+    setAllowCapacityOverride(false);
+    if (sectionsData) setSections(sectionsData);
+    if (poolData) setPool(poolData);
+  };
+
+  const toggleExpandedSection = (sectionId: number) => {
+    setExpandedSectionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      return next;
+    });
+  };
+
+  const findDraftLearner = (applicationId: number) => {
+    if (!draftPlacement) return null;
+    for (const roster of draftPlacement.rosters) {
+      const learner = roster.learners.find(
+        (item) => item.applicationId === applicationId,
+      );
+      if (learner) return learner;
+    }
+    return null;
+  };
+
+  const openMoveDialog = (
+    learnerApplicationId: number,
+    fromSectionId: number,
+  ) => {
+    setDraftMoveAction({ type: "MOVE", learnerApplicationId, fromSectionId });
+    setMoveDestinationSectionId("");
+  };
+
+  const openSwapDialog = (
+    learnerApplicationId: number,
+    fromSectionId: number,
+  ) => {
+    setDraftMoveAction({ type: "SWAP", learnerApplicationId, fromSectionId });
+    setSwapApplicationId("");
+  };
+
+  const executeMove = () => {
+    if (!draftPlacement || !draftMoveAction || draftMoveAction.type !== "MOVE")
+      return;
+    const destinationSectionId = Number(moveDestinationSectionId);
+    if (!Number.isInteger(destinationSectionId) || destinationSectionId <= 0)
+      return;
+
+    setDraftPlacement((current) => {
+      if (!current) return current;
+
+      let movingLearner: DraftLearnerPlacement | null = null;
+      const rosters = current.rosters.map((roster) => {
+        if (roster.section.id !== draftMoveAction.fromSectionId) return roster;
+        const remainingLearners = roster.learners.filter((learner) => {
+          if (learner.applicationId !== draftMoveAction.learnerApplicationId)
+            return true;
+          movingLearner = learner;
+          return false;
+        });
+        return buildRoster(roster.section, remainingLearners);
+      });
+
+      if (!movingLearner) return current;
+
+      const updatedRosters = rosters.map((roster) => {
+        if (roster.section.id !== destinationSectionId || !movingLearner)
+          return roster;
+        return buildRoster(roster.section, [
+          ...roster.learners,
+          {
+            ...movingLearner,
+            sectionId: destinationSectionId,
+            isOverridden: true,
+          },
+        ]);
+      });
+
+      return rebuildDraftPlacement({ ...current, rosters: updatedRosters });
+    });
+
+    setDraftMoveAction(null);
+    setMoveDestinationSectionId("");
+  };
+
+  const executeSwap = () => {
+    if (!draftPlacement || !draftMoveAction || draftMoveAction.type !== "SWAP")
+      return;
+    const otherApplicationId = Number(swapApplicationId);
+    if (!Number.isInteger(otherApplicationId) || otherApplicationId <= 0)
+      return;
+
+    setDraftPlacement((current) => {
+      if (!current) return current;
+
+      const sourceLearner = findDraftLearner(
+        draftMoveAction.learnerApplicationId,
+      );
+      const otherLearner = findDraftLearner(otherApplicationId);
+      if (!sourceLearner || !otherLearner) return current;
+
+      const sourceSectionId = sourceLearner.sectionId;
+      const otherSectionId = otherLearner.sectionId;
+      const rosters = current.rosters.map((roster) => {
+        const swappedLearners = roster.learners.map((learner) => {
+          if (learner.applicationId === sourceLearner.applicationId) {
+            return {
+              ...otherLearner,
+              sectionId: sourceSectionId,
+              isOverridden: true,
+            };
+          }
+          if (learner.applicationId === otherLearner.applicationId) {
+            return {
+              ...sourceLearner,
+              sectionId: otherSectionId,
+              isOverridden: true,
+            };
+          }
+          return learner;
+        });
+        return buildRoster(roster.section, swappedLearners);
+      });
+
+      return rebuildDraftPlacement({ ...current, rosters });
+    });
+
+    setDraftMoveAction(null);
+    setSwapApplicationId("");
+  };
+
+  const commitDraftPlacement = async () => {
+    if (!draftPlacement) return;
+
+    const assignments: CommitDraftAssignment[] = draftPlacement.rosters
+      .filter((roster) => roster.learners.length > 0)
+      .map((roster) => ({
+        sectionId: roster.section.id,
+        applicationIds: roster.learners.map((learner) => learner.applicationId),
+      }));
+    const overrides = draftPlacement.rosters.reduce<Record<number, boolean>>(
+      (accumulator, roster) => {
+        for (const learner of roster.learners) {
+          accumulator[learner.applicationId] = learner.isOverridden;
+        }
+        return accumulator;
+      },
+      {},
+    );
+
+    setCommitProcessing(true);
     try {
-      const res = await api.post<ApiMessageResponse>("/sections/auto-distribute", {
-        gradeLevelId: activeGradeLevelId,
-      });
+      const response = await api.post<CommitDraftResponse>(
+        "/sectioning/commit-draft",
+        {
+          assignments,
+          overrides,
+          allowCapacityOverride,
+        },
+      );
+      const skippedCount = response.data.skippedApplications.length;
+
       sileo.success({
-        title: "Auto-Distribute Successful",
-        description: res.data.message || `Successfully distributed learners.`,
+        title: "Final Sectioning Committed",
+        description:
+          skippedCount > 0
+            ? `${response.data.committedCount} learner(s) committed. ${skippedCount} learner(s) need review.`
+            : `${response.data.committedCount} learner(s) committed to official class sections.`,
       });
-      setIsAutoDistributeModalOpen(false);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
+
+      setCommitDialogOpen(false);
+      discardDraft();
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningPool(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningSections(),
+      });
     } catch (error: unknown) {
       sileo.error({
-        title: "Auto-Distribute Failed",
+        title: "Draft Commit Failed",
         description:
           (isAxiosError<ApiMessageResponse>(error)
             ? error.response?.data.message
-            : undefined)
-          ?? "An error occurred during auto-distribution.",
+            : undefined) ?? "Could not commit the draft sectioning placements.",
       });
     } finally {
-      setProcessing(false);
+      setCommitProcessing(false);
     }
   };
+
+  if (masterlistModalSectionId !== null) {
+    return (
+      <ViewMasterlist
+        sectionId={masterlistModalSectionId}
+        onBack={() => setMasterlistModalSectionId(null)}
+        mode="sectioning"
+      />
+    );
+  }
 
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-base leading-tight font-extrabold text-slate-500 uppercase tracking-widest animate-pulse">
+          <p className="text-base leading-tight font-extrabold text-slate-500 uppercase animate-pulse">
             Loading Workspace...
           </p>
         </div>
@@ -321,11 +793,48 @@ export function SectioningWorkspace() {
     );
   }
 
+  const displayedRosters =
+    draftPlacement?.rosters ??
+    currentGradeSections.map((section) => buildRoster(section, []));
+  const selectedDraftLearner = draftMoveAction
+    ? findDraftLearner(draftMoveAction.learnerApplicationId)
+    : null;
+  const compatibleMoveSections = selectedDraftLearner
+    ? (draftPlacement?.rosters.filter(
+        (roster) =>
+          roster.section.id !== selectedDraftLearner.sectionId &&
+          getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
+            roster.section.programType,
+          ),
+      ) ?? [])
+    : [];
+  const compatibleSwapLearners = selectedDraftLearner
+    ? (draftPlacement?.rosters.flatMap((roster) =>
+        roster.learners.filter(
+          (learner) =>
+            learner.applicationId !== selectedDraftLearner.applicationId &&
+            getAllowedSectionProgramsForPlacement(selectedDraftLearner).includes(
+              roster.section.programType,
+            ),
+        ),
+      ) ?? [])
+    : [];
+  const draftSectionByApplicationId = new Map<number, string>(
+    draftPlacement?.rosters.flatMap((roster) =>
+      roster.learners.map(
+        (learner) => [learner.applicationId, roster.section.name] as const,
+      ),
+    ) ?? [],
+  );
+
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <Tabs value={activeGradeLevelId} onValueChange={(val) => {
-        if (!isLockedIn) setActiveGradeLevelId(val);
-      }} className="flex-shrink-0 mb-6">
+    <div className="flex flex-col">
+      <Tabs
+        value={activeGradeLevelId}
+        onValueChange={(val) => {
+          if (!isLockedIn) setActiveGradeLevelId(val);
+        }}
+        className="flex-shrink-0 mb-6">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger
@@ -334,9 +843,10 @@ export function SectioningWorkspace() {
               disabled={isLockedIn && activeGradeLevelId !== String(g.id)}
               className={cn(
                 "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg",
-                isLockedIn && activeGradeLevelId !== String(g.id) && "opacity-40 cursor-not-allowed bg-muted/20"
-              )}
-            >
+                isLockedIn &&
+                  activeGradeLevelId !== String(g.id) &&
+                  "opacity-40 cursor-not-allowed bg-muted/20",
+              )}>
               {activeGradeLevelId === String(g.id) && (
                 <motion.div
                   layoutId="enrollment-grade-pill"
@@ -344,27 +854,65 @@ export function SectioningWorkspace() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className={cn("relative z-20 text-base uppercase", activeGradeLevelId === String(g.id) ? "text-primary-foreground" : "text-foreground")}>{g.name.replace(/grade\s*/i, "Grade ")}</span>
+              <span
+                className={cn(
+                  "relative z-20 text-base uppercase",
+                  activeGradeLevelId === String(g.id)
+                    ? "text-primary-foreground"
+                    : "text-foreground",
+                )}>
+                {g.name.replace(/grade\s*/i, "Grade ")}
+              </span>
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
 
+      {draftPlacement && (
+        <div className="mb-4 rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-base font-extrabold uppercase">
+                TEMPORARY SECTIONS PENDING REVIEW
+              </p>
+              <p className="text-sm font-bold">
+                {draftLearnerCount} learner(s) are currently assigned across{" "}
+                {
+                  draftPlacement.rosters.filter(
+                    (roster) => roster.learners.length > 0,
+                  ).length
+                }{" "}
+                section(s) pending final approval
+              </p>
+            </div>
+            <Badge className="w-fit bg-amber-600 text-white hover:bg-amber-600">
+              Reviewing Temporary List
+            </Badge>
+          </div>
+        </div>
+      )}
+
       {/* ── Workspace ── */}
-      <div className="flex-1 min-h-0">
-        <Card className="h-full flex shadow-sm border-none bg-card overflow-hidden min-h-0">
+      <div>
+        <Card className="flex shadow-sm border-none bg-card overflow-hidden">
           {/* LEFT PANE: UNSECTIONED POOL */}
-          <div className="flex-[1.2] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col border-r border-border bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <Users className="h-5 w-5 text-primary" />
-                    Unassigned Learners
+                    LEARNERS WAITING FOR SECTIONING
                   </CardTitle>
-                  <CardDescription className="text-sm font-extrabold text-foreground">Unassigned learners awaiting placement.</CardDescription>
+                  <CardDescription className="text-sm font-extrabold text-foreground">
+                    Enrolled learners awaiting sections
+                  </CardDescription>
                 </div>
-                <Badge variant="outline" className="font-extrabold bg-background border-border">{selectedAppIds.length} Selected</Badge>
+                <Badge
+                  variant="outline"
+                  className="font-extrabold bg-background border-border">
+                  {selectedAppIds.length} Selected
+                </Badge>
               </div>
               <div className="flex gap-2 mt-4">
                 <div className="relative flex-1">
@@ -376,7 +924,9 @@ export function SectioningWorkspace() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Select value={filterSex} onValueChange={setFilterSex}>
+                <Select
+                  value={filterSex}
+                  onValueChange={setFilterSex}>
                   <SelectTrigger className="w-32 h-10 border-border bg-background">
                     <SelectValue placeholder="Gender" />
                   </SelectTrigger>
@@ -388,64 +938,87 @@ export function SectioningWorkspace() {
                 </Select>
               </div>
             </CardHeader>
-            <div className="flex-1 overflow-auto p-0 relative">
+            <div className="p-0 relative">
               <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 bg-primary z-10 border-b border-border">
-                  <tr className="text-sm font-extrabold uppercase text-primary-foreground tracking-widest">
+                <thead className="sticky top-0 bg-muted z-10 border-b border-border">
+                  <tr className="font-extrabold uppercase">
                     <th className="p-4 w-10">
                       <Checkbox
-                        className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-                        checked={selectedAppIds.length === filteredPool.length && filteredPool.length > 0}
+                        className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                        checked={
+                          selectedAppIds.length === filteredPool.length &&
+                          filteredPool.length > 0
+                        }
+                        disabled={isDraftActive}
                         onCheckedChange={(checked) => {
-                          if (checked) setSelectedAppIds(filteredPool.map((l) => l.applicationId));
+                          if (isDraftActive) return;
+                          if (checked)
+                            setSelectedAppIds(
+                              filteredPool.map((l) => l.applicationId),
+                            );
                           else setSelectedAppIds([]);
                         }}
                       />
                     </th>
                     <th className="p-4">Learner Detail</th>
-                    <th className="p-4 cursor-pointer hover:bg-primary/90 transition-colors select-none" onClick={() => handleSort("genAve")}>
-                      <div className="flex items-center gap-1">
-                        Gen Ave
-                        {sortConfig?.key === "genAve" && (
-                          sortConfig.direction === "asc" ? <ChevronUp className="h-3 w-3 text-primary-foreground" /> : <ChevronDown className="h-3 w-3 text-primary-foreground" />
-                        )}
+                    <th
+                      className="p-4 cursor-pointer  select-none"
+                      onClick={() => handleSort("genAve")}>
+                      <div className="flex items-center gap-1 justify-center">
+                        Final Gen Ave
+                        {sortConfig?.key === "genAve" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ChevronUp className="h-3 w-3 text-primary" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-primary" />
+                          ))}
                       </div>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border text-base leading-tight bg-card">
+                <tbody className="divide-y divide-border text-base leading-tight bg-card text-center">
                   {filteredAndSortedPool.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="p-12 text-center text-foreground font-extrabold">
+                      <td
+                        colSpan={3}
+                        className="p-12 text-center text-foreground font-extrabold">
                         No learners match your criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredAndSortedPool.map((l) => {
-                      const isSelected = selectedAppIds.includes(l.applicationId);
+                      const isSelected = selectedAppIds.includes(
+                        l.applicationId,
+                      );
                       return (
                         <tr
                           key={l.applicationId}
                           onClick={() => {
+                            if (isDraftActive) return;
                             setSelectedAppIds((prev) =>
                               prev.includes(l.applicationId)
                                 ? prev.filter((id) => id !== l.applicationId)
-                                : [...prev, l.applicationId]
+                                : [...prev, l.applicationId],
                             );
                           }}
                           className={cn(
-                            "group cursor-pointer transition-colors hover:bg-muted/50",
-                            isSelected && "bg-primary/5 hover:bg-primary/10"
-                          )}
-                        >
-                          <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                            "group cursor-pointer transition-colors",
+                            isSelected && "bg-primary/5 hover:bg-primary/10",
+                          )}>
+                          <td
+                            className="p-4"
+                            onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={isSelected}
+                              disabled={isDraftActive}
                               onCheckedChange={(checked) => {
+                                if (isDraftActive) return;
                                 setSelectedAppIds((prev) =>
                                   checked
                                     ? [...prev, l.applicationId]
-                                    : prev.filter((id) => id !== l.applicationId)
+                                    : prev.filter(
+                                        (id) => id !== l.applicationId,
+                                      ),
                                 );
                               }}
                             />
@@ -453,22 +1026,56 @@ export function SectioningWorkspace() {
                           <td className="p-4">
                             <div className="flex flex-col">
                               <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
-                                {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
+                                {l.lastName}, {l.firstName}{" "}
+                                {l.middleName?.charAt(0)
+                                  ? `${l.middleName.charAt(0)}.`
+                                  : ""}
                                 {l.duplicateFlag && (
-                                  <Badge variant="destructive" className="text-sm px-1 py-0 h-4">DUPLICATE DETECTED - RESOLVE OVER COUNTER</Badge>
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-sm px-1 py-0 h-4">
+                                    DUPLICATE DETECTED - RESOLVE OVER COUNTER
+                                  </Badge>
                                 )}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-sm font-extrabold uppercase text-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
-                                <Badge variant="outline" className="text-sm uppercase font-extrabold border-border text-foreground">{l.sex}</Badge>
-                                <Badge variant="outline" className="text-sm uppercase font-extrabold">
-                                  {SCP_SHORT_LABELS[l.programType] ?? l.programType}
+                                <span className="text-sm font-extrabold uppercase text-foreground">
+                                  {l.lrn || "NO LRN"}
+                                </span>
+                                <Badge
+                                  className={cn(
+                                    "text-sm uppercase font-extrabold",
+                                    l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                  )}>
+                                  {l.sex}
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="text-sm uppercase font-extrabold">
+                                  {SCP_SHORT_LABELS[l.programType] ??
+                                    l.programType}
                                 </Badge>
                               </div>
+                              {draftPlacement &&
+                                draftSectionByApplicationId.has(
+                                  l.applicationId,
+                                ) && (
+                                  <span className="mt-2 font-extrabold uppercase text-primary text-left">
+                                    Section:{" "}
+                                    {draftSectionByApplicationId.get(
+                                      l.applicationId,
+                                    )}{" "}
+                                    (Draft)
+                                  </span>
+                                )}
                             </div>
                           </td>
-                          <td className="p-4 font-extrabold text-foreground/80">
-                            {l.genAve ? l.genAve.toFixed(2) : <span className="text-foreground/50">--</span>}
+                          <td className="p-4 font-extrabold text-foreground">
+                            {l.genAve ? (
+                              l.genAve.toFixed(2)
+                            ) : (
+                              <span className="text-foreground">--</span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -480,110 +1087,259 @@ export function SectioningWorkspace() {
           </div>
 
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <LayoutGrid className="h-5 w-5 text-primary" />
-                    Available Sections
+                    {draftPlacement
+                      ? "TEMPORARY CLASS LISTS"
+                      : "Available Sections"}
                   </CardTitle>
-                  <CardDescription className="text-foreground text-sm font-extrabold">Select destination to move {selectedAppIds.length || '0'} learners.</CardDescription>
+                  <CardDescription className="text-foreground text-sm font-extrabold">
+                    {draftPlacement
+                      ? "Please review the temporary assignments before creating the official lists"
+                      : `Select destination to move ${selectedAppIds.length || "0"} learners.`}
+                  </CardDescription>
                 </div>
-                <Button
-                  size="sm"
-                  variant="default"
-                  disabled={currentGradePool.length === 0 || processing}
-                  onClick={() => setIsAutoDistributeModalOpen(true)}
-                  className="font-extrabold text-base uppercase tracking-normal gap-1"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  Auto-Distribute
-                </Button>
               </div>
+
+              <Button
+                size="sm"
+                variant="default"
+                disabled={
+                  currentGradePool.length === 0 ||
+                  processing ||
+                  isDraftActive ||
+                  isHistoricalReadOnly
+                }
+                onClick={generateDraftPlacement}
+                className="font-extrabold text-base uppercase tracking-normal gap-1">
+                AUTO ASSIGN SECTIONS
+              </Button>
             </CardHeader>
-            <div className="flex-1 overflow-auto p-4 space-y-3 relative">
-              {currentGradeSections.length === 0 ? (
+            <div className="p-4 space-y-3 relative">
+              {displayedRosters.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                   <Info className="h-8 w-8" />
-                  <span className="font-extrabold text-base leading-tight">No sections defined for this grade.</span>
+                  <span className="font-extrabold text-base leading-tight">
+                    No sections defined for this grade.
+                  </span>
                 </div>
               ) : (
-                currentGradeSections.map((s) => {
-                  const isOverCapacity = s.currentCount >= s.maxCapacity;
-                  const isSelected = targetSectionId === s.id;
+                displayedRosters.map((roster) => {
+                  const s = roster.section;
+                  const isOverCapacity =
+                    roster.isOverCapacity || roster.totalCount >= s.maxCapacity;
+                  const isSelected =
+                    !draftPlacement && targetSectionId === s.id;
+                  const isExpanded = expandedSectionIds.has(s.id);
                   const isProgramCompatible =
-                    selectedProgramTypes.size === 0
-                    || (
-                      selectedProgramTypes.size === 1
-                      && selectedProgramTypes.has(s.programType)
-                    );
+                    draftPlacement ||
+                    selectedProgramTypes.size === 0 ||
+                    (selectedProgramTypes.size === 1 &&
+                      selectedProgramTypes.has(s.programType));
 
                   return (
                     <div
                       key={s.id}
                       onClick={() => {
-                        if (isProgramCompatible) setTargetSectionId(s.id);
+                        if (draftPlacement) {
+                          toggleExpandedSection(s.id);
+                          return;
+                        }
+                        if (s.currentCount > 0) {
+                          setMasterlistModalSectionId(s.id);
+                        } else if (isProgramCompatible) {
+                          setTargetSectionId(s.id);
+                        }
                       }}
                       className={cn(
                         "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
-                        !isProgramCompatible
-                        && "cursor-not-allowed opacity-45",
+                        !isProgramCompatible && "cursor-not-allowed opacity-45",
                         isSelected
                           ? "bg-primary/5 border-primary shadow-sm"
-                          : "bg-background hover:bg-muted/50 border-border"
-                      )}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-0 right-0 p-2">
-                          <CheckCircle2 className="h-5 w-5 text-primary" />
-                        </div>
-                      )}
-                      <div className="flex items-start justify-between mb-3">
+                          : "bg-background hover:bg-muted/50 border-border",
+                        draftPlacement &&
+                          isExpanded &&
+                          "border-primary/50 bg-primary/5",
+                      )}>
+                      <div className="flex items-start justify-between gap-3 mb-3">
                         <div>
-                          <h4 className={cn("font-extrabold text-lg uppercase transition-colors flex items-center gap-2", isSelected ? "text-primary" : "text-foreground")}>
+                          <h4
+                            className={cn(
+                              "font-extrabold text-lg uppercase transition-colors flex items-center gap-2",
+                              isSelected ? "text-primary" : "text-foreground",
+                            )}>
                             {s.name}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-foreground hover:text-primary hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMasterlistModalSectionId(s.id);
-                              }}
-                              title="View Section Masterlist"
-                            >
-                              <Users className="h-4 w-4" />
-                            </Button>
                           </h4>
-                          <span className="text-sm font-extrabold uppercase tracking-widest text-foreground">
+                          <span className="text-sm font-extrabold uppercase text-foreground">
                             {s.adviser || "No Adviser Assigned"}
                           </span>
                         </div>
-                        <Badge variant="outline" className={cn(
-                          "text-sm font-extrabold uppercase bg-background",
-                          s.programType === "REGULAR" ? "text-foreground border-border" : "text-primary border-primary/30"
-                        )}>
-                          {SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                        </Badge>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {draftPlacement && roster.isOverCapacity && (
+                            <Badge
+                              variant="destructive"
+                              className="text-sm font-extrabold uppercase">
+                              Over Capacity
+                            </Badge>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-sm font-extrabold uppercase bg-background",
+                              s.programType === "REGULAR"
+                                ? "text-foreground border-border"
+                                : "text-primary border-primary/30",
+                            )}>
+                            {SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                          </Badge>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-base font-extrabold">
-                          <span className="text-foreground uppercase tracking-widest text-sm">Capacity Fill</span>
-                          <span className={cn(isOverCapacity ? "text-destructive font-extrabold" : "text-foreground/70")}>
-                            {s.currentCount} / {s.maxCapacity} {isOverCapacity && <AlertTriangle className="inline h-3 w-3 ml-1" />}
+                          <span className="text-foreground uppercase text-sm">
+                            Capacity Fill
+                          </span>
+                          <span
+                            className={cn(
+                              isOverCapacity
+                                ? "text-destructive font-extrabold"
+                                : "text-foreground",
+                            )}>
+                            {roster.totalCount} / {s.maxCapacity}{" "}
+                            {isOverCapacity && (
+                              <AlertTriangle className="inline h-3 w-3 ml-1" />
+                            )}
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="flex items-center gap-2 text-sm font-extrabold uppercase text-foreground">
+                          <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2">
+                            Male: {roster.genderCounts.boys}
+                          </Badge>
+                          <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2">
+                            Female: {roster.genderCounts.girls}
+                          </Badge>
+                          {draftPlacement && (
+                            <Badge variant="secondary">
+                              Draft: {roster.learners.length}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="h-2 rounded-full bg-card overflow-hidden">
                           <div
                             className={cn(
                               "h-full rounded-full transition-all",
-                              isOverCapacity ? "bg-destructive" : isSelected ? "bg-primary" : "bg-primary/40"
+                              roster.isOverCapacity
+                                ? "bg-destructive"
+                                : isSelected
+                                  ? "bg-primary"
+                                  : "bg-primary",
                             )}
-                            style={{ width: `${Math.min((s.currentCount / s.maxCapacity) * 100, 100)}%` }}
+                            style={{
+                              width: `${Math.min((roster.totalCount / s.maxCapacity) * 100, 100)}%`,
+                            }}
                           />
                         </div>
                       </div>
+
+                      {draftPlacement && isExpanded && (
+                        <div
+                          className="mt-4 overflow-hidden rounded-lg border bg-card"
+                          onClick={(event) => event.stopPropagation()}>
+                          <table className="w-full text-left text-sm">
+                            <thead className="bg-muted text-foreground">
+                              <tr className="font-extrabold uppercase">
+                                <th className="p-3">Learner</th>
+                                <th className="p-3 text-center">Sex</th>
+                                <th className="p-3 text-center">Gen Ave</th>
+                                <th className="p-3 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {roster.learners.length === 0 ? (
+                                <tr>
+                                  <td
+                                    colSpan={4}
+                                    className="p-4 text-center font-extrabold text-foreground">
+                                    No drafted learners in this section.
+                                  </td>
+                                </tr>
+                              ) : (
+                                roster.learners.map((learner) => (
+                                  <tr key={learner.applicationId}>
+                                    <td className="p-3">
+                                      <div className="flex flex-col">
+                                        <span className="font-extrabold uppercase text-foreground">
+                                          {formatLearnerName(learner)}
+                                        </span>
+                                        <span className="font-bold uppercase text-foreground">
+                                          {learner.lrn ?? "NO LRN"}
+                                          {learner.isOverridden && (
+                                            <Badge className="ml-2 bg-amber-600 text-white hover:bg-amber-600">
+                                              Manual Override
+                                            </Badge>
+                                          )}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="p-3 font-extrabold text-center">
+                                      <Badge
+                                        className={cn(
+                                          "uppercase",
+                                          learner.sex === "MALE"
+                                            ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2"
+                                            : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                        )}>
+                                        {learner.sex}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-3 font-extrabold text-center">
+                                      {learner.genAve?.toFixed(2) ?? "--"}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              openMoveDialog(
+                                                learner.applicationId,
+                                                s.id,
+                                              )
+                                            }>
+                                            <MoveRight className="mr-2 h-4 w-4" />
+                                            Move to Section
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              openSwapDialog(
+                                                learner.applicationId,
+                                                s.id,
+                                              )
+                                            }>
+                                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                            Swap Placement
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -592,47 +1348,194 @@ export function SectioningWorkspace() {
 
             {/* Action Footer */}
             <div className="p-4 border-t border-border bg-muted/20">
-              <Button
-                onClick={assignLearners}
-                disabled={selectedAppIds.length === 0 || !targetSectionId || processing || isHistoricalReadOnly}
-                className={cn(
-                  "w-full h-12 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
-                  selectedAppIds.length > 0 && targetSectionId
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-muted text-foreground hover:bg-muted"
-                )}
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Assigning...
-                  </>
-                ) : (
-                  `Assign to Section (${selectedAppIds.length})`
-                )}
-              </Button>
+              {draftPlacement ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button
+                    variant="outline"
+                    onClick={discardDraft}
+                    disabled={commitProcessing}
+                    className="h-12 text-base font-extrabold uppercase">
+                    CANCEL TEMPORARY SECTIONS
+                  </Button>
+                  <Button
+                    onClick={() => setCommitDialogOpen(true)}
+                    disabled={
+                      commitProcessing ||
+                      draftLearnerCount === 0 ||
+                      isHistoricalReadOnly
+                    }
+                    className="h-12 text-base font-extrabold uppercase">
+                    FINALIZE OFFICIAL SECTIONS
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={assignLearners}
+                  disabled={
+                    selectedAppIds.length === 0 ||
+                    !targetSectionId ||
+                    processing ||
+                    isHistoricalReadOnly
+                  }
+                  className={cn(
+                    "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
+                    selectedAppIds.length > 0 && targetSectionId
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      : "bg-muted text-foreground hover:bg-muted",
+                  )}>
+                  {processing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Assigning...
+                    </>
+                  ) : (
+                    `Assign to Section (${selectedAppIds.length})`
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </Card>
       </div>
 
-      <ConfirmationModal
-        open={isAutoDistributeModalOpen}
-        onOpenChange={setIsAutoDistributeModalOpen}
-        title="Confirm Auto-Distribute"
-        description="WARNING: This will automatically distribute all currently unassigned learners into available sections. The algorithm will strictly balance Male/Female ratios and evenly distribute Final General Averages across all regular sections using a Serpentine distribution model. Are you sure you want to proceed?"
-        confirmText={processing ? "Distributing..." : "Execute Auto-Distribute"}
-        onConfirm={handleAutoDistribute}
-        variant="danger"
-      />
+      <Dialog
+        open={draftMoveAction?.type === "MOVE"}
+        onOpenChange={(open) => !open && setDraftMoveAction(null)}>
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Move to Section</DialogTitle>
+            <DialogDescription>
+              Move the learner to another compatible section in this draft.
+            </DialogDescription>
+          </DialogHeader>
+          <Select
+            value={moveDestinationSectionId}
+            onValueChange={setMoveDestinationSectionId}>
+            <SelectTrigger className="h-11 font-extrabold">
+              <SelectValue placeholder="Select destination section" />
+            </SelectTrigger>
+            <SelectContent>
+              {compatibleMoveSections.map((roster) => (
+                <SelectItem
+                  key={roster.section.id}
+                  value={String(roster.section.id)}>
+                  {roster.section.name} ({roster.totalCount}/
+                  {roster.section.maxCapacity})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDraftMoveAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={executeMove}
+              disabled={!moveDestinationSectionId}>
+              Move to Section
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {masterlistModalSectionId !== null && (
-        <SectionMasterlistModal
-          sectionId={masterlistModalSectionId}
-          onClose={() => setMasterlistModalSectionId(null)}
-        />
-      )}
+      <Dialog
+        open={draftMoveAction?.type === "SWAP"}
+        onOpenChange={(open) => !open && setDraftMoveAction(null)}>
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Swap Placement</DialogTitle>
+            <DialogDescription>
+              Exchange this learner with another compatible learner in the
+              draft.
+            </DialogDescription>
+          </DialogHeader>
+          <Select
+            value={swapApplicationId}
+            onValueChange={setSwapApplicationId}>
+            <SelectTrigger className="h-11 font-extrabold">
+              <SelectValue placeholder="Select learner to swap" />
+            </SelectTrigger>
+            <SelectContent>
+              {compatibleSwapLearners.map((learner) => (
+                <SelectItem
+                  key={learner.applicationId}
+                  value={String(learner.applicationId)}>
+                  {formatLearnerName(learner)} -{" "}
+                  {learner.genAve?.toFixed(2) ?? "No Gen Ave"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDraftMoveAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={executeSwap}
+              disabled={!swapApplicationId}>
+              Swap Placement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={commitDialogOpen}
+        onOpenChange={setCommitDialogOpen}>
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>FINALIZE OFFICIAL SECTIONS</DialogTitle>
+            <DialogDescription>
+              This action will lock the assignments and update the official school records
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+            <p className="text-base font-extrabold">
+              {draftLearnerCount} learner(s) will be officially placed in their respective classes
+            </p>
+            {hasDraftOverflow && (
+              <label className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950">
+                <Checkbox
+                  checked={allowCapacityOverride}
+                  onCheckedChange={(checked) =>
+                    setAllowCapacityOverride(checked === true)
+                  }
+                  className="mt-1"
+                />
+                <span className="text-sm font-bold">
+                  Allow capacity override for sections marked over capacity.
+                </span>
+              </label>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCommitDialogOpen(false)}
+              disabled={commitProcessing}>
+              Cancel
+            </Button>
+            <Button
+              onClick={commitDraftPlacement}
+              disabled={
+                commitProcessing || (hasDraftOverflow && !allowCapacityOverride)
+              }>
+              {commitProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Committing...
+                </>
+              ) : (
+                "Commit Final Sectioning"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

@@ -236,7 +236,7 @@ export default function BOSYQueue() {
                         </TableCell>
                         <TableCell>
                           {item.sex
-                            ? <Badge className={item.sex === "Male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}>{item.sex}</Badge>
+                            ? <Badge className={`${item.sex?.toUpperCase() === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"} uppercase`}>{item.sex}</Badge>
                             : <span className="text-gray-400">N/A</span>}
                         </TableCell>
                         <TableCell>{item.gradeLevelName || "—"}</TableCell>

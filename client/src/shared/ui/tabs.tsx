@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@/shared/lib/utils';
+import { motionClassNames } from '@/shared/lib/motion';
 
 const Tabs = TabsPrimitive.Root;
 
@@ -8,9 +9,9 @@ const TabsList = React.forwardRef<
 	React.ComponentRef<typeof TabsPrimitive.List>,
 	React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
-	<TabsPrimitive.List
-		ref={ref}
-		className={cn(
+		<TabsPrimitive.List
+			ref={ref}
+			className={cn(
 			'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-[hsl(var(--muted-foreground))]',
 			className,
 		)}
@@ -23,10 +24,11 @@ const TabsTrigger = React.forwardRef<
 	React.ComponentRef<typeof TabsPrimitive.Trigger>,
 	React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => (
-	<TabsPrimitive.Trigger
-		ref={ref}
-		className={cn(
-			'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-extrabold ring-offset-[hsl(var(--background))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=active]:bg-[hsl(var(--primary))] data-[state=active]:text-[hsl(var(--primary-foreground))] data-[state=active]:shadow-sm data-[state=active]:font-extrabold cursor-pointer',
+		<TabsPrimitive.Trigger
+			ref={ref}
+			className={cn(
+			'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-extrabold ring-offset-[hsl(var(--background))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=active]:bg-[hsl(var(--primary))] data-[state=active]:text-[hsl(var(--primary-foreground))] data-[state=active]:shadow-sm data-[state=active]:font-extrabold cursor-pointer',
+			motionClassNames.controlSurface,
 			className,
 		)}
 		{...props}
@@ -38,10 +40,11 @@ const TabsContent = React.forwardRef<
 	React.ComponentRef<typeof TabsPrimitive.Content>,
 	React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
-	<TabsPrimitive.Content
-		ref={ref}
-		className={cn(
+		<TabsPrimitive.Content
+			ref={ref}
+			className={cn(
 			'mt-2 ring-offset-[hsl(var(--background))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2',
+			motionClassNames.tabContent,
 			className,
 		)}
 		{...props}

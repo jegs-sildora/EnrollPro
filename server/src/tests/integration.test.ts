@@ -130,19 +130,63 @@ function testDocumentReadinessClassification(): void {
 function testBalancedSectionAssignments(): void {
   const assignments = buildBalancedSectionAssignments({
     learners: [
-      { applicationId: 1, sex: "MALE", generalAverage: 96, programType: "REGULAR" },
-      { applicationId: 2, sex: "FEMALE", generalAverage: 95, programType: "REGULAR" },
-      { applicationId: 3, sex: "MALE", generalAverage: 91, programType: "REGULAR" },
-      { applicationId: 4, sex: "FEMALE", generalAverage: 90, programType: "REGULAR" },
+      {
+        applicationId: 1,
+        sex: "MALE",
+        generalAverage: 96,
+        learnerType: "CONTINUING",
+        isBalikAral: false,
+        applicantType: "REGULAR",
+        assignedProgram: null,
+      },
+      {
+        applicationId: 2,
+        sex: "FEMALE",
+        generalAverage: 95,
+        learnerType: "CONTINUING",
+        isBalikAral: false,
+        applicantType: "REGULAR",
+        assignedProgram: null,
+      },
+      {
+        applicationId: 3,
+        sex: "MALE",
+        generalAverage: 91,
+        learnerType: "CONTINUING",
+        isBalikAral: false,
+        applicantType: "REGULAR",
+        assignedProgram: null,
+      },
+      {
+        applicationId: 4,
+        sex: "FEMALE",
+        generalAverage: 90,
+        learnerType: "CONTINUING",
+        isBalikAral: false,
+        applicantType: "REGULAR",
+        assignedProgram: null,
+      },
       {
         applicationId: 5,
         sex: "FEMALE",
         generalAverage: 94,
-        programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        learnerType: "CONTINUING",
+        isBalikAral: false,
+        applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        assignedProgram: null,
+      },
+      {
+        applicationId: 6,
+        sex: "MALE",
+        generalAverage: 93,
+        learnerType: "TRANSFEREE",
+        isBalikAral: false,
+        applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        assignedProgram: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
       },
     ],
     sections: [
-      { id: 11, sortOrder: 1, maxCapacity: 2, currentCount: 0, programType: "REGULAR" },
+      { id: 11, sortOrder: 1, maxCapacity: 3, currentCount: 0, programType: "REGULAR" },
       { id: 12, sortOrder: 2, maxCapacity: 2, currentCount: 0, programType: "REGULAR" },
       {
         id: 21,
@@ -154,13 +198,14 @@ function testBalancedSectionAssignments(): void {
     ],
   })
 
-  assert.equal(assignments.length, 5)
+  assert.equal(assignments.length, 6)
   assert.equal(assignments.find((item) => item.applicationId === 5)?.sectionId, 21)
+  assert.notEqual(assignments.find((item) => item.applicationId === 6)?.sectionId, 21)
 
   const regularAssignments = assignments.filter((item) => item.applicationId !== 5)
   const section11 = regularAssignments.filter((item) => item.sectionId === 11)
   const section12 = regularAssignments.filter((item) => item.sectionId === 12)
-  assert.equal(section11.length, 2)
+  assert.equal(section11.length, 3)
   assert.equal(section12.length, 2)
 
   const learnerSex = new Map([

@@ -2,6 +2,9 @@
 // router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router";
 import { Loader2 } from "lucide-react";
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
+import { motion } from "motion/react";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
@@ -9,43 +12,62 @@ import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
 import LearnerAuthLayout from "@/shared/layouts/LearnerAuthLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
-
-import Login from "@/features/auth/pages/Login";
-import Dashboard from "@/features/dashboard/pages/Index";
-import LearnerLogin from "@/features/learner/pages/Login";
-import LearnerDashboard from "@/features/learner/pages/Dashboard";
-
-import Enrollment from "@/features/enrollment/pages/Index";
-import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
-import RegistrarEOSYWorkspace from "@/features/enrollment/pages/RegistrarEOSYWorkspace";
-import Students from "@/features/students/pages/Index";
-import Profile from "@/features/students/pages/Profile";
-
-import ChangePassword from "@/features/auth/components/ChangePasswordModal";
-import Homerooms from "@/features/sections/pages/Homerooms"
-import ViewMasterlist from "@/features/sections/pages/ViewMasterlist"
-import AuditLogs from "@/features/audit-logs/pages/Index";
-import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
 
-// Admin Pages
-import SystemHealth from "@/features/admin/pages/SystemHealth";
-import Teachers from "@/features/teachers/pages/Index";
-import IntakeDashboard from "@/features/intake/pages/IntakeDashboard";
-
-
-
-import Monitor from "@/features/admission/pages/online-enrollment/Monitor";
-
-import Apply from "@/features/admission/pages/online-enrollment/Index";
-
-import BOSYPage from "@/features/bosy/pages/BOSYPage";
-import TeacherEosyDashboard from "@/features/teachers/pages/EosyDashboard";
-import AdvisoryClass from "@/features/teachers/pages/AdvisoryClass";
-import { lazy, Suspense } from "react";
-
 const SMARTLayout = lazy(() => import("@/features/smart/layouts/SMARTLayout"));
+const Login = lazy(() => import("@/features/auth/pages/Login"));
+const Dashboard = lazy(() => import("@/features/dashboard/pages/Index"));
+const LearnerLogin = lazy(() => import("@/features/learner/pages/Login"));
+const LearnerDashboard = lazy(() => import("@/features/learner/pages/Dashboard"));
+const Enrollment = lazy(() => import("@/features/enrollment/pages/Index"));
+const EosyUpdating = lazy(() => import("@/features/enrollment/pages/EosyIndex"));
+const RegistrarEOSYWorkspace = lazy(
+  () => import("@/features/enrollment/pages/RegistrarEOSYWorkspace"),
+);
+const Students = lazy(() => import("@/features/students/pages/Index"));
+const Profile = lazy(() => import("@/features/students/pages/Profile"));
+const ChangePassword = lazy(
+  () => import("@/features/auth/components/ChangePasswordModal"),
+);
+const AuditLogs = lazy(() => import("@/features/audit-logs/pages/Index"));
+const Settings = lazy(() => import("@/features/settings/pages/Index"));
+const Homerooms = lazy(() => import("@/features/sections/pages/Homerooms"));
+const ViewMasterlist = lazy(
+  () => import("@/features/sections/pages/ViewMasterlist"),
+);
+const SystemHealth = lazy(() => import("@/features/admin/pages/SystemHealth"));
+const Teachers = lazy(() => import("@/features/teachers/pages/Index"));
+const IntakeDashboard = lazy(() => import("@/features/intake/pages/IntakeDashboard"));
+const Monitor = lazy(() => import("@/features/admission/pages/online-enrollment/Monitor"));
+const Apply = lazy(() => import("@/features/admission/pages/online-enrollment/Index"));
+const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
+const TeacherEosyDashboard = lazy(
+  () => import("@/features/teachers/pages/EosyDashboard"),
+);
+const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
 import { smartRoutes } from "@/features/smart/routes";
+
+function PageFallback() {
+  return <PageLoadingSkeleton withDelay={true} />;
+}
+
+function renderLazyPage(
+  Component: LazyExoticComponent<ComponentType>,
+) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="flex-1 flex flex-col min-h-0 min-w-0 h-full w-full"
+      >
+        <Component />
+      </motion.div>
+    </Suspense>
+  );
+}
 
 export const router = createBrowserRouter([
   {
@@ -53,15 +75,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/smart",
-        element: (
-          <Suspense fallback={
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-              <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-            </div>
-          }>
-            <SMARTLayout />
-          </Suspense>
-        ),
+        element: renderLazyPage(SMARTLayout),
         children: smartRoutes,
       },
 
@@ -71,19 +85,19 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/learner/login",
-            element: <LearnerLogin />,
+            element: renderLazyPage(LearnerLogin),
           },
           {
             path: "/learner/change-password",
-            element: <ChangePassword />,
+            element: renderLazyPage(ChangePassword),
           },
           {
             path: "/learner/setup-password",
-            element: <ChangePassword />,
+            element: renderLazyPage(ChangePassword),
           },
           {
             path: "/learner/portal",
-            element: <LearnerDashboard />,
+            element: renderLazyPage(LearnerDashboard),
           },
         ],
       },
@@ -94,16 +108,16 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/enrollment",
-            element: <Apply />,
+            element: renderLazyPage(Apply),
           },
 
           {
             path: "/monitor",
-            element: <Monitor />,
+            element: renderLazyPage(Monitor),
           },
           {
             path: "/change-password",
-            element: <ChangePassword />,
+            element: renderLazyPage(ChangePassword),
           },
         ],
       },
@@ -114,7 +128,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/staff/login",
-            element: <Login />,
+            element: renderLazyPage(Login),
           },
         ],
       },
@@ -132,7 +146,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "/dashboard",
-                element: <Dashboard />,
+                element: renderLazyPage(Dashboard),
               },
               {
                 path: "/applications",
@@ -145,7 +159,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/monitoring/enrollment",
-                element: <Enrollment />,
+                element: renderLazyPage(Enrollment),
               },
               {
                 path: "/monitoring/enrollment/walk-in",
@@ -158,31 +172,31 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/eosy",
-                element: <EosyUpdating />,
+                element: renderLazyPage(EosyUpdating),
               },
               {
                 path: "/eosy/workspace",
-                element: <RegistrarEOSYWorkspace />,
+                element: renderLazyPage(RegistrarEOSYWorkspace),
               },
               {
                 path: "/continuing-learners",
-                element: <BOSYPage />,
+                element: renderLazyPage(BOSYPage),
               },
               {
                 path: "/students",
-                element: <Students />,
+                element: renderLazyPage(Students),
               },
               {
                 path: "/students/:id",
-                element: <Profile />,
+                element: renderLazyPage(Profile),
               },
               {
                 path: "/sections",
-                element: <Homerooms />,
+                element: renderLazyPage(Homerooms),
               },
               {
                 path: "/sections/view-masterlist/:sectionId",
-                element: <ViewMasterlist />,
+                element: renderLazyPage(ViewMasterlist),
               },
               {
                 path: "/monitoring/enrollment/requirements",
@@ -204,11 +218,11 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/settings",
-                element: <Settings />,
+                element: renderLazyPage(Settings),
               },
               {
                 path: "/intake",
-                element: <IntakeDashboard />,
+                element: renderLazyPage(IntakeDashboard),
               },
               // Protected routes for System Admin Only
               {
@@ -216,15 +230,15 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     path: "/teachers",
-                    element: <Teachers />,
+                    element: renderLazyPage(Teachers),
                   },
                   {
                     path: "/admin/system",
-                    element: <SystemHealth />,
+                    element: renderLazyPage(SystemHealth),
                   },
                   {
                     path: "/audit-logs",
-                    element: <AuditLogs />,
+                    element: renderLazyPage(AuditLogs),
                   },
                 ],
               },
@@ -251,11 +265,11 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "/teacher/eosy",
-                element: <TeacherEosyDashboard />,
+                element: renderLazyPage(TeacherEosyDashboard),
               },
               {
                 path: "/teacher/advisory",
-                element: <AdvisoryClass />,
+                element: renderLazyPage(AdvisoryClass),
               },
             ],
           },

@@ -330,7 +330,7 @@ export default function EOSYFinalization() {
                                   {rec.lastName}, {rec.firstName} {rec.middleName ?? ""}
                                 </TableCell>
                                 <TableCell>
-                                  <Badge className={rec.sex === "Male" ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-pink-50 text-pink-700 border-pink-100"} variant="outline">
+                                  <Badge className={`${rec.sex?.toUpperCase() === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"} uppercase`}>
                                     {rec.sex ?? "—"}
                                   </Badge>
                                 </TableCell>

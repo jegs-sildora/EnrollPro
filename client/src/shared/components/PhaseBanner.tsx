@@ -4,11 +4,24 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { AnimatePresence, motion } from "motion/react";
+import {
+  createFadeShiftVariants,
+  createMotionTransition,
+  getReducedMotionProps,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 
 export function PhaseBanner() {
   const { systemPhase } = useSettingsStore();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const motionPreferences = useMotionPreferences();
+  const bannerVariants = createFadeShiftVariants(
+    motionPreferences,
+    "y",
+    "y",
+    "xs",
+  );
 
   useEffect(() => {
     if (systemPhase === "CLASSES_ONGOING") {
@@ -25,11 +38,11 @@ export function PhaseBanner() {
   }
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, height: 0 }}
+        variants={bannerVariants}
+        transition={createMotionTransition(motionPreferences, "fast")}
+        {...getReducedMotionProps(motionPreferences.reduceMotion)}
         className="mb-6"
       >
         <Alert className="bg-amber-50 border-amber-200 text-amber-900 relative">

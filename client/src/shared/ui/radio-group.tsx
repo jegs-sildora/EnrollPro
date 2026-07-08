@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 
 import { cn } from '@/shared/lib/utils';
+import { motionClassNames } from '@/shared/lib/motion';
 
 const RadioGroup = React.forwardRef<
 	React.ComponentRef<typeof RadioGroupPrimitive.Root>,
@@ -25,13 +26,17 @@ const RadioGroupItem = React.forwardRef<
 		<RadioGroupPrimitive.Item
 			ref={ref}
 			className={cn(
-				'aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center relative',
+				'aspect-square relative flex h-4 w-4 items-center justify-center rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed',
+				motionClassNames.controlSurface,
 				className,
 			)}
 			{...props}
 		>
-			<RadioGroupPrimitive.Indicator className='flex items-center justify-center h-full w-full'>
-				<div className='h-2 w-2 rounded-full bg-current' />
+			<RadioGroupPrimitive.Indicator className={cn(
+				'flex h-full w-full items-center justify-center data-[state=checked]:scale-100 data-[state=unchecked]:scale-75 data-[state=unchecked]:opacity-0',
+				motionClassNames.controlIndicator,
+			)}>
+				<div className='h-2 w-2 rounded-full bg-current shadow-sm' />
 			</RadioGroupPrimitive.Indicator>
 		</RadioGroupPrimitive.Item>
 	);

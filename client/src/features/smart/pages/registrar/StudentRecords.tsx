@@ -496,7 +496,7 @@ export default function StudentRecords() {
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge className={student.gender?.toUpperCase() === "MALE" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}>
+                          <Badge className={`${student.gender?.toUpperCase() === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"} uppercase`}>
                             {student.gender}
                           </Badge>
                           <Badge style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
@@ -560,7 +560,7 @@ export default function StudentRecords() {
                               </div>
                             </TableCell>
                             <TableCell className="py-4">
-                              <Badge className={student.gender?.toUpperCase() === "MALE" || student.gender?.toUpperCase() === "M" ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-pink-50 text-pink-700 border-pink-100"} variant="outline">
+                              <Badge className={`${student.gender?.toUpperCase() === "MALE" || student.gender?.toUpperCase() === "M" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"} uppercase`}>
                                 {student.gender}
                               </Badge>
                             </TableCell>

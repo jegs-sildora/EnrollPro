@@ -1,6 +1,12 @@
 import { Loader2, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { motion, AnimatePresence } from "motion/react";
+import {
+  createMotionTransition,
+  createScaleFadeVariants,
+  getReducedMotionProps,
+  useMotionPreferences,
+} from "@/shared/lib/motion";
 
 interface BulkConfirmBarProps {
   selectedCount: number;
@@ -15,13 +21,17 @@ export function BulkConfirmBar({
   onConfirm,
   onClear,
 }: BulkConfirmBarProps) {
+  const motionPreferences = useMotionPreferences();
+  const barVariants = createScaleFadeVariants(motionPreferences, 0.98);
+
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="popLayout">
       {selectedCount > 0 && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          layout
+          variants={barVariants}
+          transition={createMotionTransition(motionPreferences, "fast")}
+          {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2 border border-border">
           <span className="text-base font-extrabold uppercase text-foreground">
             {selectedCount} selected

@@ -25,6 +25,7 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { useHeaderStore } from "@/store/header.slice";
 
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -1278,62 +1279,8 @@ export default function Students() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col overflow-hidden">
-                <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="rounded-xl border bg-[hsl(var(--card))] p-3 space-y-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </div>
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <div className="h-2 w-10 bg-muted/50 rounded" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="h-2 w-10 bg-muted/50 rounded" />
-                          <Skeleton className="h-3 w-12" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="h-2 w-10 bg-muted/50 rounded" />
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="h-2 w-10 bg-muted/50 rounded" />
-                          <Skeleton className="h-3 w-20" />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2">
-                        <Skeleton className="h-9 flex-1 rounded-md" />
-                        <Skeleton className="h-9 w-10 rounded-md" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
-                  <DataTable<Student, unknown>
-                    columns={columns}
-                    data={[]}
-                    loading={true}
-                    virtualize={true}
-                    estimatedRowHeight={60}
-                    className="border-none rounded-none h-full"
-                    tableClassName="min-w-[980px] table-fixed"
-                    containerHeight="100%"
-                    sorting={sorting}
-                    onSortingChange={onSortingChange}
-                    getRowClassName={() => "group"}
-                  />
-                </div>
+                className="flex-1 flex flex-col overflow-hidden p-6">
+                <PageLoadingSkeleton />
               </motion.div>
             ) : (
               <motion.div
