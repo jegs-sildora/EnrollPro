@@ -14,6 +14,7 @@ import {
   getPreviousSections,
   type BOSYQueueState,
 } from "./bosy.service.js";
+import { broadcastBosyInvalidation } from "../../lib/realtime-events.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -78,6 +79,8 @@ export async function syncBosyQueueHandler(
       recordId: schoolYearId,
       req,
     });
+
+    broadcastBosyInvalidation(schoolYearId);
 
     res.json(result);
   } catch (error) {
@@ -183,6 +186,8 @@ export async function confirmReturnHandler(
       req,
     });
 
+    broadcastBosyInvalidation(req.schoolYearId);
+
     res.json(result);
   } catch (error) {
     next(error);
@@ -215,6 +220,8 @@ export async function markTransferRequestHandler(
       recordId: applicationId,
       req,
     });
+
+    broadcastBosyInvalidation(req.schoolYearId);
 
     res.json(result);
   } catch (error) {
@@ -249,6 +256,8 @@ export async function revokeConfirmedReturnHandler(
       req,
     });
 
+    broadcastBosyInvalidation(req.schoolYearId);
+
     res.json(result);
   } catch (error) {
     next(error);
@@ -281,6 +290,8 @@ export async function markConfirmedTransferOutHandler(
       recordId: applicationId,
       req,
     });
+
+    broadcastBosyInvalidation(req.schoolYearId);
 
     res.json(result);
   } catch (error) {
@@ -333,6 +344,8 @@ export async function bulkConfirmReturnHandler(
       recordId: parsedSchoolYearId,
       req,
     });
+
+    broadcastBosyInvalidation(parsedSchoolYearId);
 
     res.json(result);
   } catch (error) {

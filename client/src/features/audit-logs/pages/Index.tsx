@@ -27,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
@@ -65,6 +67,9 @@ interface FilterMetadata {
 }
 
 const PAGE_SIZE = 20;
+const AUDIT_LOG_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "audit-logs:list",
+];
 
 function formatTimestamp(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -243,14 +248,14 @@ export default function AuditLogs() {
     actors: [],
   });
 
-  const fetchFilterMeta = async () => {
+  const fetchFilterMeta = useCallback(async () => {
     try {
       const res = await api.get("/audit-logs/filters");
       setFilterMeta(res.data);
     } catch (err) {
       console.error("Failed to fetch filter metadata", err);
     }
-  };
+  }, []);
 
   const handlePresetDate = (daysBack: number | null) => {
     const today = new Date();
@@ -274,7 +279,7 @@ export default function AuditLogs() {
     if (isSystemAdmin) {
       fetchFilterMeta();
     }
-  }, [isSystemAdmin]);
+  }, [fetchFilterMeta, isSystemAdmin]);
 
   const columns = useMemo<ColumnDef<AuditLogRow>[]>(
     () => [
@@ -475,6 +480,18 @@ export default function AuditLogs() {
   useEffect(() => {
     fetchLogs(page);
   }, [fetchLogs, page]);
+
+  const refreshAuditLogs = useCallback(() => {
+    void fetchLogs(page);
+    if (isSystemAdmin) {
+      void fetchFilterMeta();
+    }
+  }, [fetchFilterMeta, fetchLogs, isSystemAdmin, page]);
+
+  useRealtimeRefresh({
+    topics: AUDIT_LOG_REALTIME_TOPICS,
+    onRefresh: refreshAuditLogs,
+  });
 
   const handleExport = async () => {
     setExporting(true);

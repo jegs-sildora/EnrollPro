@@ -4,6 +4,7 @@ import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 
 
 /**
@@ -68,6 +69,8 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
     // Officially enrolling a single late-enrollee/returning student triggers immediate sync
     if (application.status === "VERIFIED") {
     }
+
+    broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
 
     return res.json({
       success: true,
@@ -167,6 +170,12 @@ export async function batchConfirmConfirmationSlips(
       }
       return updates;
     });
+
+    const firstResult = results[0];
+    broadcastEnrollmentInvalidation(
+      firstResult?.schoolYearId ?? req.schoolYearId,
+      results.map((application) => application.learnerId),
+    );
 
     return res.json({
       success: true,
@@ -300,6 +309,8 @@ export async function syncSmartGrades(req: Request, res: Response) {
       await prisma.$transaction(updates);
     }
 
+    broadcastEnrollmentInvalidation(schoolYearId);
+
     return res.json({
       success: true,
       syncedCount: updates.length,
@@ -422,6 +433,8 @@ export async function finalizeIntake(req: Request, res: Response) {
     req,
   });
 
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
   return res.json({
     success: true,
     message: "Intake finalized. Learner is now queued for batch sectioning.",
@@ -506,6 +519,8 @@ export async function flagDeficient(req: Request, res: Response) {
     recordId: applicationId,
     req,
   });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
 
   return res.json({
     success: true,
@@ -611,6 +626,8 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
 
       return application;
     });
+
+    broadcastEnrollmentInvalidation(result.schoolYearId, [result.learnerId]);
 
     return res.status(201).json({ message: "Walk-in application directly encoded", application: result });
   } catch (error) {

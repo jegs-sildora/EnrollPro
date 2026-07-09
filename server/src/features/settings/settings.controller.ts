@@ -11,6 +11,18 @@ import {
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { getEnrollmentPhase, isRegularEnrollmentWindowOpen } from "./enrollment-gate.service.js";
 import { activeLocks } from "../admin/historical-correction.controller.js";
+import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+
+function broadcastSettingsInvalidation(): void {
+  broadcastRealtimeInvalidation({
+    topics: [
+      "settings:public",
+      "homerooms:sections",
+      "sectioning:sections",
+      "dashboard:summary",
+    ],
+  });
+}
 
 async function getOrCreateSettings() {
   let settings = await prisma.schoolSetting.findFirst({
@@ -153,6 +165,8 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
     req,
   });
 
+  broadcastSettingsInvalidation();
+
   res.json(updated);
 }
 
@@ -187,6 +201,8 @@ export async function updateSystemPhase(req: Request, res: Response): Promise<vo
   });
 
   const updated = await prisma.schoolSetting.findFirst();
+
+  broadcastSettingsInvalidation();
 
   res.json({ message: "System phase updated", updated });
 }
@@ -242,6 +258,8 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
     description: "Admin uploaded school logo and accent color extracted",
     req,
   });
+
+  broadcastSettingsInvalidation();
 
   res.json({
     logoUrl: updated.logoUrl,
@@ -306,6 +324,8 @@ export async function selectAccentColor(
     req,
   });
 
+  broadcastSettingsInvalidation();
+
   res.json({
     selectedAccentHsl: updated.selectedAccentHsl,
     colorScheme: updated.colorScheme,
@@ -340,6 +360,8 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
       "Admin removed school logo — accent color reset to default blue",
     req,
   });
+
+  broadcastSettingsInvalidation();
 
   res.json({
     logoUrl: updated.logoUrl,
@@ -393,6 +415,8 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
     req,
   });
 
+  broadcastSettingsInvalidation();
+
   res.json(updated);
 }
 
@@ -416,6 +440,8 @@ export async function updateAlgorithm(req: Request, res: Response): Promise<void
     description: `Admin updated sectioning and algorithmic rules`,
     req,
   });
+
+  broadcastSettingsInvalidation();
 
   res.json(updated);
 }

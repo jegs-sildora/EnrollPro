@@ -3,6 +3,10 @@ import axios from "axios";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import {
+  broadcastDomainInvalidation,
+  broadcastEosyInvalidation,
+} from "../../lib/realtime-events.js";
 
 /**
  * POST /api/integration/smart/sections/:id/sync-grades
@@ -143,6 +147,13 @@ export async function syncSmartSectionGrades(
       req,
     });
 
+    broadcastEosyInvalidation(
+      section.schoolYearId,
+      [section.id],
+      section.enrollmentRecords.map((record) => record.enrollmentApplication.learner.id),
+    );
+    broadcastDomainInvalidation({ topics: ["integration:hub"] });
+
     res.json({
       success: true,
       sectionId,
@@ -182,6 +193,10 @@ export async function syncAtlasFaculty(
         subjectType: "Teacher",
         recordId: req.user!.userId,
         req,
+      });
+
+      broadcastDomainInvalidation({
+        topics: ["integration:hub", "teachers:list"],
       });
 
       res.json({
@@ -237,6 +252,14 @@ export async function broadcastPhase1(
       req,
     });
 
+    broadcastDomainInvalidation({
+      topics: [
+        "integration:hub",
+        "enrollment:pending-verifications",
+        "enrollment:applications",
+      ],
+    });
+
     res.json({
       success: true,
       results: { atlas: atlasStatus, aims: aimsStatus },
@@ -269,6 +292,10 @@ export async function broadcastPhase2(
       subjectType: "System",
       recordId: 2,
       req,
+    });
+
+    broadcastDomainInvalidation({
+      topics: ["integration:hub", "students:list", "homerooms:sections"],
     });
 
     res.json({

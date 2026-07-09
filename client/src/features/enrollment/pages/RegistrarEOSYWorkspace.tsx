@@ -50,8 +50,16 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { cn } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useSearchParams, useNavigate } from "react-router";
-import type { EosyStatus } from "@enrollpro/shared";
+import type { EosyStatus, RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+
+const REGISTRAR_EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "eosy:sections",
+  "eosy:records",
+  "teacher:advisory",
+  "school-years:list",
+];
 
 interface SectionRecord {
   id: number;
@@ -130,6 +138,12 @@ export default function RegistrarEOSYWorkspace() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useRealtimeRefresh({
+    topics: REGISTRAR_EOSY_REALTIME_TOPICS,
+    schoolYearId: activeSchoolYearId,
+    onRefresh: fetchData,
+  });
 
   // Bulk Macro: Mark All as PROMOTED
   const handleMarkAllPromoted = () => {

@@ -46,6 +46,16 @@ import { Sf10Tracking, type Sf10Request } from "@/features/students/components/t
 import { useAuthStore } from "@/store/auth.slice";
 import axios from "axios";
 import { useHeaderStore } from "@/store/header.slice";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+
+const STUDENT_PROFILE_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "students:detail",
+  "students:list",
+  "homerooms:sections",
+  "sectioning:sections",
+  "audit-logs:list",
+];
 
 type StudentRecordHistoryEntry = {
   id: number;
@@ -169,6 +179,20 @@ export default function StudentProfile() {
       void fetchSf10Requests();
     }
   }, [activeTab, student?.learnerId, fetchSf10Requests]);
+
+  const refreshStudentProfile = useCallback(() => {
+    void refetch();
+    setRecordHistoryLoaded(false);
+    if (activeTab === "sf10") {
+      void fetchSf10Requests();
+    }
+  }, [activeTab, fetchSf10Requests, refetch]);
+
+  useRealtimeRefresh({
+    topics: STUDENT_PROFILE_REALTIME_TOPICS,
+    schoolYearId: student?.schoolYearId,
+    onRefresh: refreshStudentProfile,
+  });
 
   const setTitle = useHeaderStore((s) => s.setTitle);
 

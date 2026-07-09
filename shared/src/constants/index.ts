@@ -76,6 +76,46 @@ export const TrackingCurrentStepEnum = z.enum([
   "ENROLLED",
 ]);
 
+export const REALTIME_INVALIDATION_TOPICS = [
+  "school-years:list",
+  "enrollment:pending-verifications",
+  "enrollment:applications",
+  "bosy:queue",
+  "bosy:readiness",
+  "students:list",
+  "students:detail",
+  "teachers:list",
+  "teachers:detail",
+  "teacher:advisory",
+  "homerooms:sections",
+  "homerooms:teachers",
+  "homerooms:adviser-candidates",
+  "sectioning:sections",
+  "sectioning:pool",
+  "eosy:sections",
+  "eosy:records",
+  "intake:listings",
+  "reading-assessment:queue",
+  "audit-logs:list",
+  "integration:hub",
+  "system:health",
+  "dashboard:summary",
+  "settings:public",
+] as const;
+
+export type RealtimeInvalidationTopic =
+  (typeof REALTIME_INVALIDATION_TOPICS)[number];
+
+export interface RealtimeInvalidationEvent {
+  type: "invalidate";
+  topics: RealtimeInvalidationTopic[];
+  schoolYearId?: number | null;
+  teacherIds?: number[];
+  sectionIds?: number[];
+  learnerIds?: number[];
+  emittedAt: string;
+}
+
 export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof TrackingStatusEnum>

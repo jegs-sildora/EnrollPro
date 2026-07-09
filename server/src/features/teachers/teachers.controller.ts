@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { SectionAdviserStatus, Role } from "../../generated/prisma/index.js";
+import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 
 // Helper functions for data normalization
 function formatTeacherName(teacher: {
@@ -58,6 +59,31 @@ function parseDateOnly(val: unknown): Date | null {
   if (!val) return null;
   const d = new Date(val as string);
   return isNaN(d.getTime()) ? null : d;
+}
+
+function broadcastTeacherInvalidation({
+  schoolYearId,
+  teacherIds,
+  sectionIds,
+}: {
+  schoolYearId?: number | null;
+  teacherIds?: number[];
+  sectionIds?: number[];
+}): void {
+  broadcastRealtimeInvalidation({
+    topics: [
+      "teachers:list",
+      "teachers:detail",
+      "homerooms:teachers",
+      "homerooms:adviser-candidates",
+      "homerooms:sections",
+      "sectioning:sections",
+      "dashboard:summary",
+    ],
+    schoolYearId,
+    teacherIds,
+    sectionIds,
+  });
 }
 
 type TeacherIdentityConflictField = "employeeId" | "email";
@@ -387,6 +413,11 @@ export async function store(req: Request, res: Response) {
       req,
     });
 
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [teacher.id],
+    });
+
     res.json({ teacher });
   } catch (error: unknown) {
     const conflictField = getTeacherIdentityConflictField(error);
@@ -543,6 +574,11 @@ export async function update(req: Request, res: Response) {
       });
     }
 
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [id],
+    });
+
     res.json({
       teacher: {
         ...updatedTeacher,
@@ -625,6 +661,11 @@ export async function deactivate(req: Request, res: Response) {
       req,
     });
 
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [id],
+    });
+
     res.json({ teacher });
   } catch (error: unknown) {
     const err = error as Error;
@@ -662,6 +703,11 @@ export async function reactivate(req: Request, res: Response) {
       subjectType: "Teacher",
       recordId: id,
       req,
+    });
+
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [id],
     });
 
     res.json({ teacher });
@@ -714,6 +760,11 @@ export async function updateServiceStatus(req: Request, res: Response) {
       subjectType: "Teacher",
       recordId: id,
       req,
+    });
+
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [id],
     });
 
     res.json({ teacher });
@@ -999,6 +1050,12 @@ export async function upsertDesignation(req: Request, res: Response) {
       req,
     });
 
+    broadcastTeacherInvalidation({
+      schoolYearId: payload.schoolYearId,
+      teacherIds: [id],
+      sectionIds: advisorySectionId ? [advisorySectionId] : undefined,
+    });
+
     res.json({
       designation: {
         ...designation,
@@ -1150,6 +1207,11 @@ export async function togglePortalAccess(req: Request, res: Response) {
       subjectType: "Teacher",
       recordId: id,
       req,
+    });
+
+    broadcastTeacherInvalidation({
+      schoolYearId: req.schoolYearId,
+      teacherIds: [id],
     });
 
     res.json({ teacher: updatedTeacher });

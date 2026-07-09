@@ -91,6 +91,7 @@ import { useHistoricalReadOnly } from "../hooks/useHistoricalReadOnly";
 import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionModal";
 import { SchoolYearTransitionLoader } from "@/shared/components/SchoolYearTransitionLoader";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
+import { useRealtimeInvalidations } from "@/shared/hooks/useRealtimeInvalidations";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -742,6 +743,8 @@ function formatPhaseName(phase: string | null): string {
 }
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
+  useRealtimeInvalidations();
+
   const title = useHeaderStore((s) => s.title);
   const outlet = useOutlet();
   const {

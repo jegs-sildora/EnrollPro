@@ -3,6 +3,7 @@ import { prisma } from "../../../lib/prisma.js";
 import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
 import { findStudents, getStudentsSummary } from "../students.service.js";
+import { broadcastStudentInvalidation } from "../../../lib/realtime-events.js";
 
 const getRequestUserId = (req: Request): number | null => {
   const userId = (req as any).user?.userId;
@@ -136,6 +137,8 @@ const getRequestUserId = (req: Request): number | null => {
         },
       });
 
+      broadcastStudentInvalidation(record.schoolYearId, [record.learnerId]);
+
       res
         .status(201)
         .json({ message: "Health record added successfully", record });
@@ -208,6 +211,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(record.schoolYearId, [record.learnerId]);
 
       res.json({ message: "Health record updated successfully", record });
     } catch (error) {

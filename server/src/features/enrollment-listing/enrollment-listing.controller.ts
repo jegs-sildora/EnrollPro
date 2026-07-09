@@ -1,7 +1,28 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
+import { broadcastDomainInvalidation } from "../../lib/realtime-events.js";
 
 type AuthRequest = Request & { user?: { id: number } };
+
+function broadcastIntakeInvalidation(
+  schoolYearId?: number | null,
+  learnerIds?: number[],
+): void {
+  broadcastDomainInvalidation({
+    topics: [
+      "intake:listings",
+      "reading-assessment:queue",
+      "enrollment:applications",
+      "enrollment:pending-verifications",
+      "sectioning:pool",
+      "students:list",
+      "students:detail",
+      "dashboard:summary",
+    ],
+    schoolYearId,
+    learnerIds,
+  });
+}
 
 export async function list(req: Request, res: Response) {
   const schoolYearId = Number(req.query.schoolYearId);
@@ -71,6 +92,8 @@ export async function create(req: Request, res: Response) {
     include: { createdBy: { select: { firstName: true, lastName: true } } },
   });
 
+  broadcastIntakeInvalidation(listing.schoolYearId);
+
   res.status(201).json({ listing });
 }
 
@@ -94,6 +117,8 @@ export async function updateStatus(req: Request, res: Response) {
     data: { status },
   });
 
+  broadcastIntakeInvalidation(updated.schoolYearId);
+
   res.json({ listing: updated });
 }
 
@@ -107,6 +132,7 @@ export async function remove(req: Request, res: Response) {
   }
 
   await prisma.enrollmentListing.delete({ where: { id } });
+  broadcastIntakeInvalidation(existing.schoolYearId);
   res.status(204).send();
 }
 
@@ -204,11 +230,15 @@ export async function updateReadingProfile(req: Request, res: Response) {
     },
     select: {
       id: true,
+      schoolYearId: true,
+      learnerId: true,
       readingProfileLevel: true,
       readingProfileNotes: true,
       readingProfileAssessedAt: true,
     },
   });
+
+  broadcastIntakeInvalidation(updated.schoolYearId, [updated.learnerId]);
 
   res.json({ application: updated });
 }
@@ -236,8 +266,14 @@ export async function updateConfirmationSlip(req: Request, res: Response) {
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: { confirmationConsent: isConfirmationSlipReceived },
-    select: { confirmationConsent: true },
+    select: {
+      confirmationConsent: true,
+      schoolYearId: true,
+      learnerId: true,
+    },
   });
+
+  broadcastIntakeInvalidation(updated.schoolYearId, [updated.learnerId]);
 
   res.json({ application: { id: applicationId, isConfirmationSlipReceived: updated.confirmationConsent } });
 }
@@ -330,6 +366,8 @@ export async function assessListing(req: Request, res: Response) {
     data: { readingLevel: readingLevel as any, status: "PROCESSED" },
   });
 
+  broadcastIntakeInvalidation(updated.schoolYearId);
+
   res.json({ listing: updated });
 }
 
@@ -377,10 +415,14 @@ export async function assessApplicationForIntake(req: Request, res: Response) {
     select: {
       id: true,
       status: true,
+      schoolYearId: true,
+      learnerId: true,
       readingProfileLevel: true,
       readingProfileAssessedAt: true,
     },
   });
+
+  broadcastIntakeInvalidation(updated.schoolYearId, [updated.learnerId]);
 
   res.json({ application: updated });
 }
@@ -469,6 +511,8 @@ export async function confirmListing(req: Request, res: Response) {
     },
   });
 
+  broadcastIntakeInvalidation(updated.schoolYearId);
+
   res.json({ listing: updated });
 }
 
@@ -483,7 +527,7 @@ export async function officializeApplication(req: Request, res: Response) {
 
   const existing = await prisma.enrollmentApplication.findUnique({
     where: { id: applicationId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, schoolYearId: true, learnerId: true },
   });
   if (!existing) {
     res.status(404).json({ message: "Application not found." });
@@ -507,6 +551,8 @@ export async function officializeApplication(req: Request, res: Response) {
 
 
   });
+
+  broadcastIntakeInvalidation(existing.schoolYearId, [existing.learnerId]);
 
   res.json({ message: "Application officialized successfully." });
 }

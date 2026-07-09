@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
+import { broadcastDomainInvalidation } from '../../lib/realtime-events.js';
 
 export async function auditLog({
 	userId,
@@ -34,5 +35,9 @@ export async function auditLog({
 			ipAddress: req.ip ?? '0.0.0.0',
 			userAgent: (req.headers['user-agent'] as string) ?? null,
 		},
+	});
+
+	broadcastDomainInvalidation({
+		topics: ["audit-logs:list"],
 	});
 }

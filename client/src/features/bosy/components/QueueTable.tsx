@@ -657,7 +657,7 @@ export function QueueTable({
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">
-                    No continuing learners match this enrollment status.
+                    No continuing learners match this enrollmentted status.
                   </p>
                   <p className="text-sm">
                     Select another target grade or check the learner name or LRN.

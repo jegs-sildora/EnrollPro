@@ -24,6 +24,8 @@ import { sileo } from "sileo";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 
 import {
   Tooltip,
@@ -39,6 +41,14 @@ import {
 } from "@/shared/ui/card";
 
 import InsertLateEnrolleeDrawer from "../components/InsertLateEnrolleeDrawer";
+
+const MASTERLIST_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "homerooms:sections",
+  "sectioning:sections",
+  "students:list",
+  "students:detail",
+  "teachers:list",
+];
 
 interface LearnerRecord {
   id: number;
@@ -138,6 +148,12 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   useEffect(() => {
     void fetchMasterlistData();
   }, [fetchMasterlistData]);
+
+  useRealtimeRefresh({
+    topics: MASTERLIST_REALTIME_TOPICS,
+    schoolYearId: ayId,
+    onRefresh: fetchMasterlistData,
+  });
 
   const handleUnassign = async (enrollmentApplicationId: number) => {
     setUnassignProcessingId(enrollmentApplicationId);

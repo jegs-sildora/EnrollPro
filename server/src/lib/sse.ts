@@ -1,12 +1,33 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import {
+  REALTIME_INVALIDATION_TOPICS,
+  type RealtimeInvalidationEvent,
+  type RealtimeInvalidationTopic,
+} from "@enrollpro/shared";
 
-export interface SseEvent {
-  type: string;
-  keys: string[];
+interface SseClient {
+  res: Response;
+  heartbeat: ReturnType<typeof setInterval>;
 }
 
-// Keep track of all active SSE connections
-const activeClients = new Set<Response>();
+const activeClients = new Set<SseClient>();
+
+function writeSseEvent(
+  client: SseClient,
+  eventName: string,
+  payload: unknown,
+): void {
+  client.res.write(`event: ${eventName}\n`);
+  client.res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function isRealtimeInvalidationTopic(
+  value: string,
+): value is RealtimeInvalidationTopic {
+  return REALTIME_INVALIDATION_TOPICS.includes(
+    value as RealtimeInvalidationTopic,
+  );
+}
 
 /**
  * Middleware to establish an SSE connection
@@ -18,16 +39,45 @@ export function streamEvents(req: Request, res: Response) {
   res.setHeader("X-Accel-Buffering", "no"); // Important for NGINX/reverse proxies
   res.flushHeaders();
 
-  // Add to active clients
-  activeClients.add(res);
+  const client: SseClient = {
+    res,
+    heartbeat: setInterval(() => {
+      res.write(":\n\n");
+    }, 25_000),
+  };
 
-  // Send an initial heartbeat
+  activeClients.add(client);
   res.write(":\n\n");
 
-  // Remove from active clients on close
   req.on("close", () => {
-    activeClients.delete(res);
+    clearInterval(client.heartbeat);
+    activeClients.delete(client);
   });
+}
+
+export function broadcastRealtimeInvalidation(
+  event: Omit<RealtimeInvalidationEvent, "type" | "emittedAt"> & {
+    emittedAt?: string;
+  },
+): void {
+  if (event.topics.length === 0) {
+    return;
+  }
+
+  const payload: RealtimeInvalidationEvent = {
+    type: "invalidate",
+    ...event,
+    emittedAt: event.emittedAt ?? new Date().toISOString(),
+  };
+
+  for (const client of activeClients) {
+    try {
+      writeSseEvent(client, "invalidate", payload);
+    } catch {
+      clearInterval(client.heartbeat);
+      activeClients.delete(client);
+    }
+  }
 }
 
 /**
@@ -35,12 +85,6 @@ export function streamEvents(req: Request, res: Response) {
  * @param keys The React Query keys that should be invalidated
  */
 export function broadcastInvalidation(keys: string[]) {
-  const event: SseEvent = { type: "INVALIDATE", keys };
-  const payload = `data: ${JSON.stringify(event)}\n\n`;
-  
-  for (const client of activeClients) {
-    // Attempt to write, but if it fails we could remove them, 
-    // although req.on("close") usually handles it.
-    client.write(payload);
-  }
+  const topics = keys.filter(isRealtimeInvalidationTopic);
+  broadcastRealtimeInvalidation({ topics });
 }

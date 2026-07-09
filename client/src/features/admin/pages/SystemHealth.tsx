@@ -25,6 +25,15 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { useHeaderStore } from "@/store/header.slice";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+
+const SYSTEM_HEALTH_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "system:health",
+  "dashboard:summary",
+  "school-years:list",
+  "audit-logs:list",
+];
 
 interface HealthResponse {
   database: {
@@ -129,6 +138,11 @@ export default function SystemHealth() {
   useEffect(() => {
     fetchHealthData();
   }, [fetchHealthData]);
+
+  useRealtimeRefresh({
+    topics: SYSTEM_HEALTH_REALTIME_TOPICS,
+    onRefresh: fetchHealthData,
+  });
 
   const userRoles = useMemo(() => {
     if (!stats) return [];

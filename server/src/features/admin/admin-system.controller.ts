@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import os from "os";
+import { broadcastDomainInvalidation } from "../../lib/realtime-events.js";
 
 export async function getSystemStatus(req: Request, res: Response) {
   try {
@@ -98,6 +99,11 @@ export async function lockBosy(req: Request, res: Response) {
       req,
     });
 
+    broadcastDomainInvalidation({
+      topics: ["system:health", "dashboard:summary", "school-years:list"],
+      schoolYearId: updated.id,
+    });
+
     res.json({
       message: "BOSY successfully locked. SF1 masterlists finalized.",
       status: updated.status,
@@ -149,6 +155,11 @@ export async function unlockBosy(req: Request, res: Response) {
       actionType: "BOSY_UNLOCKED",
       description: `Admin triggered EMERGENCY BOSY UNLOCK. Justification: ${justification}`,
       req,
+    });
+
+    broadcastDomainInvalidation({
+      topics: ["system:health", "dashboard:summary", "school-years:list"],
+      schoolYearId: updated.id,
     });
 
     res.json({

@@ -4,6 +4,7 @@ import { prisma } from "../../../lib/prisma.js";
 import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
 import { findStudents, getStudentsSummary } from "../students.service.js";
+import { broadcastStudentInvalidation } from "../../../lib/realtime-events.js";
 
 const getRequestUserId = (req: Request): number | null => {
   const userId = (req as any).user?.userId;
@@ -217,6 +218,8 @@ const getRequestUserId = (req: Request): number | null => {
         },
       });
 
+      broadcastStudentInvalidation(updated!.schoolYearId, [updated!.learnerId]);
+
       res.json({ message: "Student updated successfully", student: updated });
     } catch (error) {
       console.error("Error updating student:", error);
@@ -267,6 +270,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
 
       res.json({ message: "Portal PIN reset successfully", pin: newPin });
     } catch (error) {
@@ -340,6 +345,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(updated.schoolYearId, [updated.learnerId]);
 
       res.json({ message: "Deficiency cleared successfully", student: updated });
     } catch (error) {
@@ -429,6 +436,8 @@ const getRequestUserId = (req: Request): number | null => {
         },
       });
 
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
+
       res.json({ 
         message: isPsa 
           ? "PSA Birth Certificate verified successfully" 
@@ -483,6 +492,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
 
       res.json({ message: "LRN updated successfully", learner: updated });
     } catch (error) {
@@ -551,6 +562,8 @@ const getRequestUserId = (req: Request): number | null => {
         },
       });
 
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
+
       res.json({ message: "Student marked as dropped out successfully" });
     } catch (error) {
       console.error("Error marking dropout:", error);
@@ -616,6 +629,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
 
       res.json({ message: "Student marked as transferred out successfully" });
     } catch (error) {
@@ -690,6 +705,8 @@ const getRequestUserId = (req: Request): number | null => {
         },
       });
 
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
+
       res.json({ message: "Student portal password reset successfully" });
     } catch (error: unknown) {
       const err = error as Error;
@@ -759,6 +776,8 @@ const getRequestUserId = (req: Request): number | null => {
           userAgent: req.headers["user-agent"] || null,
         },
       });
+
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
 
       res.json({ message: `Portal access status updated to ${isActive ? "ACTIVE" : "LOCKED"}` });
     } catch (error: unknown) {

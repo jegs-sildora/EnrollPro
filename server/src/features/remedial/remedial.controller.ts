@@ -2,6 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import type { Prisma } from "../../generated/prisma/index.js";
+import {
+  broadcastBosyInvalidation,
+  broadcastEosyInvalidation,
+} from "../../lib/realtime-events.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -247,6 +251,9 @@ export async function resolveRemedial(
       recordId: learnerId,
       req,
     });
+
+    broadcastBosyInvalidation(schoolYearId, [learnerId]);
+    broadcastEosyInvalidation(schoolYearId, undefined, [learnerId]);
 
     res.json({
       message: "Remedial case resolved successfully.",

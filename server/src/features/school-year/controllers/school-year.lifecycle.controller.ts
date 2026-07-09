@@ -3,6 +3,7 @@ import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveScho
 import { normalizeDateToUtcNoon } from "../school-year.service.js";
 import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
+import { broadcastSchoolYearInvalidation } from "../../../lib/realtime-events.js";
 
 
 
@@ -66,6 +67,7 @@ function parseSchoolYearId(req: Request): number {
       } });
 
     const updated = await prisma.schoolYear.findUnique({ where: { id } });
+    broadcastSchoolYearInvalidation(id);
     res.json({ year: updated });
   }
 
@@ -115,6 +117,8 @@ function parseSchoolYearId(req: Request): number {
       subjectType: "SchoolYear",
       recordId: id,
       } });
+
+    broadcastSchoolYearInvalidation(id);
 
     res.json({ message: "School year deleted" });
   }

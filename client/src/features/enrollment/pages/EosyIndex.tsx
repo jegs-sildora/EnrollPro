@@ -58,6 +58,15 @@ import { sileo } from "sileo";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate, useNavigate } from "react-router";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+
+const EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "eosy:sections",
+  "eosy:records",
+  "teacher:advisory",
+  "school-years:list",
+];
 
 export interface EnrollmentRecord {
   id: number;
@@ -532,6 +541,18 @@ export default function EosyUpdating() {
     }, [activeTab, isHistoricalReadOnly, fetchSectionsAndGrades, fetchGradeRecords, fetchExportLockState])
   );
 
+  const refreshEosyWorkspace = useCallback(() => {
+    if (!activeTab || isHistoricalReadOnly) return;
+    void fetchSectionsAndGrades();
+    void fetchGradeRecords(activeTab, true);
+    void fetchExportLockState();
+  }, [activeTab, fetchExportLockState, fetchGradeRecords, fetchSectionsAndGrades, isHistoricalReadOnly]);
+
+  useRealtimeRefresh({
+    topics: EOSY_REALTIME_TOPICS,
+    schoolYearId: ayId,
+    onRefresh: refreshEosyWorkspace,
+  });
 
   const handleStatusChange = useCallback(
     async (

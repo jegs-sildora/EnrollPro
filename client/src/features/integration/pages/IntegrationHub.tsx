@@ -24,6 +24,8 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 
 // --- Types ---
 
@@ -53,6 +55,14 @@ interface AuditLogResponse {
 }
 
 // --- Internal Components ---
+
+const INTEGRATION_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "integration:hub",
+  "students:list",
+  "teachers:list",
+  "homerooms:sections",
+  "audit-logs:list",
+];
 
 const HealthCard = memo(({ system }: { system: EcosystemSystem }) => {
   const Icon = system.icon;
@@ -210,6 +220,12 @@ function IntegrationHub() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useRealtimeRefresh({
+    topics: INTEGRATION_REALTIME_TOPICS,
+    schoolYearId: activeSchoolYearId,
+    onRefresh: fetchData,
+  });
 
   const handleSyncAction = async (phase: string) => {
     setIsSyncing(phase);

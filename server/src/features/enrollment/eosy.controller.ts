@@ -5,6 +5,10 @@ import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
 import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
 import { getHistoricalProfileSnapshot } from "../school-year/services/school-year-rollover.service.js";
+import {
+  broadcastEosyInvalidation,
+  broadcastSchoolYearInvalidation,
+} from "../../lib/realtime-events.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -314,6 +318,8 @@ export async function updateEosyRecord(
       req,
     });
 
+    broadcastEosyInvalidation(updated.schoolYearId, [updated.sectionId], [updated.learnerId]);
+
     res.json(updated);
   } catch (error) {
     next(error);
@@ -393,6 +399,8 @@ export async function batchUpdateEosyRecords(
 
       return { count, sectionName: section.name };
     });
+
+    broadcastEosyInvalidation(section.schoolYearId, [section.id]);
 
     res.json({
       message: `Successfully processed ${result.count} updates for ${result.sectionName}.`,
@@ -496,6 +504,8 @@ export async function finalizeSection(
       req,
     });
 
+    broadcastEosyInvalidation(updated.schoolYearId, [updated.id]);
+
     res.json(updated);
   } catch (error) {
     next(error);
@@ -547,6 +557,8 @@ export async function reopenSection(
       newValue: "false",
       req,
     });
+
+    broadcastEosyInvalidation(updated.schoolYearId, [updated.id]);
 
     res.json(updated);
   } catch (error) {
@@ -767,6 +779,8 @@ export async function finalizeSchoolYear(
     });
 
     const state = await getSchoolYearExportLockState(syId);
+    broadcastEosyInvalidation(syId);
+    broadcastSchoolYearInvalidation(syId);
     res.json({ schoolYear: updated, exportLock: state, nextSchoolYear: nextYearLabel ? (await prisma.schoolYear.findUnique({ where: { yearLabel: nextYearLabel } })) : null });
   } catch (error) {
     next(error);
@@ -827,6 +841,8 @@ export async function unlockSchoolYearEosy(
     });
 
     const state = await getSchoolYearExportLockState(updated.id);
+    broadcastEosyInvalidation(updated.id);
+    broadcastSchoolYearInvalidation(updated.id);
     res.json({ schoolYear: updated, exportLock: state });
   } catch (error) {
     next(error);
@@ -1484,6 +1500,8 @@ export async function batchUpdateGradeRecords(
       return { count };
     });
 
+    broadcastEosyInvalidation(parseInt(String(schoolYearId), 10));
+
     res.json({
       message: `Successfully processed ${result.count} updates.`,
     });
@@ -1635,6 +1653,12 @@ export async function finalizeGradeLevel(
       });
     });
 
+    broadcastEosyInvalidation(
+      syId,
+      targetSectionId ? [targetSectionId] : sections.map((section) => section.id),
+      records.map((record) => record.learnerId),
+    );
+
     res.json({
       message: isGlobal
         ? "Grade level finalized successfully."
@@ -1707,6 +1731,8 @@ export async function unlockGradeLevelEosy(
       });
     });
 
+    broadcastEosyInvalidation(syId, sections.map((section) => section.id));
+
     res.json({ success: true, message: "Grade level successfully unlocked." });
 
     broadcastEosyUpdate({ type: "GRADE_LEVEL_UNLOCKED", gradeLevelId: glId });
@@ -1756,6 +1782,8 @@ export async function unlockSectionEosy(
         req,
       });
     });
+
+    broadcastEosyInvalidation(section.schoolYearId, [section.id]);
 
     res.json({ success: true, message: "Section roster successfully unlocked." });
 
@@ -1952,6 +1980,11 @@ export async function overrideEosyRecord(
       type: "SECTION_FINALIZED",
       sectionId: record.sectionId,
     });
+    broadcastEosyInvalidation(
+      updated.schoolYearId,
+      [updated.sectionId],
+      [updated.learnerId],
+    );
 
     res.json({ success: true, record: updated });
   } catch (error) {

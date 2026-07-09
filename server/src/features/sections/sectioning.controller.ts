@@ -4,6 +4,30 @@ import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
 import { Prisma, SectioningMethod } from "../../generated/prisma/index.js";
 import { getAllowedSectionProgramsForPlacement } from "@enrollpro/shared";
+import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+
+function broadcastSectioningInvalidation({
+  schoolYearId,
+  sectionIds,
+  learnerIds,
+}: {
+  schoolYearId?: number | null;
+  sectionIds?: number[];
+  learnerIds?: number[];
+}): void {
+  broadcastRealtimeInvalidation({
+    topics: [
+      "sectioning:sections",
+      "sectioning:pool",
+      "homerooms:sections",
+      "students:list",
+      "dashboard:summary",
+    ],
+    schoolYearId,
+    sectionIds,
+    learnerIds,
+  });
+}
 
 /**
  * TLE Sectioning Workspace: Returns sections with current M/F counts and TLE tracks.
@@ -279,6 +303,12 @@ export async function assignBulk(req: Request, res: Response) {
       subjectType: "Section",
       recordId: sectionId,
       req,
+    });
+
+    broadcastSectioningInvalidation({
+      schoolYearId,
+      sectionIds: [sectionId],
+      learnerIds: apps.map((app) => app.learnerId),
     });
 
     return res.json({ 
@@ -633,6 +663,16 @@ export async function commitDraft(req: Request, res: Response) {
         allowCapacityOverride: payload.allowCapacityOverride,
       },
       req,
+    });
+
+    broadcastSectioningInvalidation({
+      schoolYearId: req.schoolYearId,
+      sectionIds: Array.from(
+        new Set(committedApplications.map((application) => application.sectionId)),
+      ),
+      learnerIds: committedApplications
+        .map((application) => applicationsById.get(application.applicationId)?.learnerId)
+        .filter((learnerId): learnerId is number => typeof learnerId === "number"),
     });
 
     return res.json({

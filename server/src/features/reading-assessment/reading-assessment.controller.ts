@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
+import { broadcastDomainInvalidation } from "../../lib/realtime-events.js";
 
 const VALID_READING_LEVELS = [
   "INDEPENDENT",
@@ -287,9 +288,22 @@ export async function recordReadingLevel(
     select: {
       id: true,
       status: true,
+      schoolYearId: true,
+      learnerId: true,
       readingProfileLevel: true,
       readingProfileAssessedAt: true,
     },
+  });
+
+  broadcastDomainInvalidation({
+    topics: [
+      "reading-assessment:queue",
+      "intake:listings",
+      "students:list",
+      "students:detail",
+    ],
+    schoolYearId: updated.schoolYearId,
+    learnerIds: [updated.learnerId],
   });
 
   res.json({ application: updated });

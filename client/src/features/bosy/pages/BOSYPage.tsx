@@ -79,8 +79,18 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { VerificationWorkspace } from "@/features/enrollment/components/VerificationWorkspace";
+import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 
 import { sileo } from "sileo";
+
+const BOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
+  "bosy:queue",
+  "bosy:readiness",
+  "enrollment:applications",
+  "students:list",
+  "school-years:list",
+];
 
 function formatNoShowStatus(status: string): string {
   const map: Record<string, string> = {
@@ -283,7 +293,16 @@ export default function BOSYPage() {
     void fetchQueue();
   }, [fetchQueue]);
 
+  const refreshBosyWorkspace = useCallback(() => {
+    void fetchReadiness();
+    void fetchQueue();
+  }, [fetchQueue, fetchReadiness]);
 
+  useRealtimeRefresh({
+    topics: BOSY_REALTIME_TOPICS,
+    schoolYearId: syId,
+    onRefresh: refreshBosyWorkspace,
+  });
 
 
 

@@ -4,6 +4,7 @@ import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
 import { broadcastEosyUpdate } from "./eosy-events.service.js";
+import { broadcastEosyInvalidation } from "../../lib/realtime-events.js";
 
 function normalizeAcademicDeficiencyNote(
   eosyStatus: EosyStatus | null | undefined,
@@ -299,6 +300,8 @@ export async function submitTeacherAdvisory(
         },
       });
     });
+    broadcastEosyInvalidation(schoolYearId, [section.id]);
+
     res.json({ success: true, message: "EOSY Grades and Statuses submitted successfully." });
 
     // Broadcast real-time update

@@ -15,9 +15,45 @@ import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { buildBalancedSectionAssignments } from "./section-distribution.service.js";
+import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 
 
 const sectioningEngine = new SectioningEngine(prisma as unknown as PrismaClient);
+
+function broadcastSectionInvalidation({
+  schoolYearId,
+  sectionIds,
+  teacherIds,
+  learnerIds,
+}: {
+  schoolYearId: number;
+  sectionIds?: number[];
+  teacherIds?: number[];
+  learnerIds?: number[];
+}): void {
+  broadcastRealtimeInvalidation({
+    topics: [
+      "teachers:list",
+      "homerooms:sections",
+      "homerooms:teachers",
+      "homerooms:adviser-candidates",
+      "sectioning:sections",
+      "sectioning:pool",
+      "students:list",
+      "dashboard:summary",
+    ],
+    schoolYearId,
+    sectionIds,
+    teacherIds,
+    learnerIds,
+  });
+}
+
+function numericIds(values: Array<number | string | null | undefined>): number[] {
+  return values
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0);
+}
 
 export async function getBatchPrerequisites(req: Request, res: Response) {
   const { gradeLevelId } = req.params;
@@ -562,6 +598,12 @@ export async function createSection(
       req,
     });
 
+    broadcastSectionInvalidation({
+      schoolYearId: section.schoolYearId,
+      sectionIds: [section.id],
+      teacherIds: numericIds([advisingTeacherId]),
+    });
+
     res.json({ section });
   } catch (error: unknown) {
     console.error("[createSection Error]", error);
@@ -747,6 +789,15 @@ export async function updateSection(
       req,
     });
 
+    broadcastSectionInvalidation({
+      schoolYearId: section.schoolYearId,
+      sectionIds: [section.id],
+      teacherIds: numericIds([
+        existing.advisers[0]?.teacherId,
+        advisingTeacherId,
+      ]),
+    });
+
     res.json({ section });
   } catch (error: unknown) {
     const prismaError = error as {
@@ -817,6 +868,11 @@ export async function deleteSection(
     subjectType: "Section",
     recordId: id,
     req,
+  });
+
+  broadcastSectionInvalidation({
+    schoolYearId: section.schoolYearId,
+    sectionIds: [section.id],
   });
 
   res.json({ message: "Section deleted successfully" });
@@ -1141,6 +1197,14 @@ export async function autoDistributeUnassigned(
     req,
   });
 
+  broadcastSectionInvalidation({
+    schoolYearId,
+    sectionIds: Array.from(new Set(assignments.map((a) => a.sectionId))),
+    learnerIds: numericIds(
+      assignments.map((a) => learnerIdByApplicationId.get(a.applicationId)),
+    ),
+  });
+
   res.json({ message: "Successfully auto-distributed learners", assignedCount: assignments.length });
 }
 
@@ -1262,8 +1326,12 @@ export async function inlineSlotLearner(
     where: { id: enrollmentApplicationId },
     select: { learnerId: true },
   });
-  if (app) {
-  }
+
+  broadcastSectionInvalidation({
+    schoolYearId,
+    sectionIds: [sectionId],
+    learnerIds: app ? [app.learnerId] : undefined,
+  });
 
   res.json({ record });
 }
@@ -1365,6 +1433,12 @@ export async function handoverAdviser(req: Request, res: Response) {
       req,
     });
 
+    broadcastSectionInvalidation({
+      schoolYearId: section.schoolYearId,
+      sectionIds: [sectionId],
+      teacherIds: numericIds([currentActive.teacherId, substituteTeacherId]),
+    });
+
     res.json({ message: "Handover executed successfully" });
   } catch (error: unknown) {
     const err = error as Error;
@@ -1425,6 +1499,12 @@ export async function transferLearner(req: Request, res: Response) {
         req,
       });
 
+      broadcastSectionInvalidation({
+        schoolYearId: application.schoolYearId,
+        sectionIds: [application.enrollmentRecord.sectionId],
+        learnerIds: [application.learnerId],
+      });
+
       res.json({ message: "Learner unassigned successfully" });
     } else {
       // Transfer learner
@@ -1443,6 +1523,15 @@ export async function transferLearner(req: Request, res: Response) {
         subjectType: "Section",
         recordId: targetSectionId,
         req,
+      });
+
+      broadcastSectionInvalidation({
+        schoolYearId: application.schoolYearId,
+        sectionIds: [
+          application.enrollmentRecord.sectionId,
+          Number(targetSectionId),
+        ],
+        learnerIds: [application.learnerId],
       });
 
       res.json({

@@ -8,6 +8,7 @@ import {
   executeSchoolYearRollover,
   RolloverNotReadyError,
 } from "../services/school-year-rollover.service.js";
+import { broadcastSchoolYearInvalidation } from "../../../lib/realtime-events.js";
 
 
 
@@ -361,6 +362,8 @@ async function carryOverEligibleLearners(
       },
     });
 
+    broadcastSchoolYearInvalidation(year.id);
+
     res.status(201).json({ year: full });
   }
 
@@ -498,6 +501,8 @@ async function carryOverEligibleLearners(
         userAgent: req.headers["user-agent"] ?? null,
       });
 
+      broadcastSchoolYearInvalidation(result.year.id);
+
       res.status(201).json(result);
     } catch (error: unknown) {
       if (error instanceof RolloverNotReadyError) {
@@ -631,6 +636,8 @@ async function carryOverEligibleLearners(
         clonedFromId: activeYear?.id ?? null,
       },
     });
+
+    broadcastSchoolYearInvalidation(draft.id);
 
     res.json({
       rolloverDraft: draft,
@@ -770,6 +777,8 @@ async function carryOverEligibleLearners(
     const isCalendarDateUpdate =
       classOpeningDate !== undefined || classEndDate !== undefined;
 
+    broadcastSchoolYearInvalidation(updated.id);
+
     res.json({ year: updated });
   }
 
@@ -818,6 +827,8 @@ async function carryOverEligibleLearners(
 
     const isCalendarDateUpdate = classOpeningDate !== undefined || classEndDate !== undefined;
     const isYearLabelUpdate = yearLabel !== undefined;
+
+    broadcastSchoolYearInvalidation(updated.id);
 
     res.json({ year: updated });
   }
