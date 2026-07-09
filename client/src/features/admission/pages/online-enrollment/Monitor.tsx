@@ -1,8 +1,8 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
 import TrackApplication from "./Track";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -11,7 +11,7 @@ export default function Monitor() {
   const { schoolName, logoUrl } = useSettingsStore();
 
   return (
-    <GuestLayout>
+<GuestLayout>
       <div className="relative min-h-screen flex flex-col">
         <div
           className="fixed inset-0 -z-10"

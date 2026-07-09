@@ -390,7 +390,7 @@ export default function ECRTemplateManager() {
   };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -400,7 +400,7 @@ export default function ECRTemplateManager() {
   };
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import {
   useState,
   useEffect,
@@ -93,7 +94,6 @@ import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
-import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
@@ -1528,7 +1528,7 @@ export default function Students() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+<div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
 
       {/* Tabs */}

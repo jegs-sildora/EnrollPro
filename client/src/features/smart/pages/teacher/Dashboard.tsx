@@ -275,7 +275,7 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+<div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Grade Submission Deadline Banner */}
       {data.gradeDeadline && (
         <GradeDeadlineBanner deadline={data.gradeDeadline} />

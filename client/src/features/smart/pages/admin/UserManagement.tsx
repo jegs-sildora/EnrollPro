@@ -270,7 +270,7 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+<div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>

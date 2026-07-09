@@ -119,11 +119,11 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
                   </p>
                   <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-current/20 w-full">
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 mb-0.5">Male</span>
+                      <span className="text-sm font-extrabold uppercase tracking-wider mb-0.5">Male</span>
                       <span className="text-lg font-extrabold">{b?.male ?? 0}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 mb-0.5">Female</span>
+                      <span className="text-sm font-extrabold uppercase tracking-wider mb-0.5">Female</span>
                       <span className="text-lg font-extrabold">{b?.female ?? 0}</span>
                     </div>
                   </div>

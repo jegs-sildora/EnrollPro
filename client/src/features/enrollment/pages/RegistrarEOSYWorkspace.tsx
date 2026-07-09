@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useHeaderStore } from "@/store/header.slice";
 import {
@@ -48,7 +49,6 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { cn } from "@/shared/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
 import { useSearchParams, useNavigate } from "react-router";
 import type { EosyStatus, RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -266,7 +266,7 @@ export default function RegistrarEOSYWorkspace() {
   const isLocked = section.isEosyFinalized;
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+<div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">

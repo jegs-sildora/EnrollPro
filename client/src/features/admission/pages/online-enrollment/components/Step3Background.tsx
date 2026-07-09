@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useFormContext } from "react-hook-form";
 import type { EnrollmentFormData } from "../types";
 import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2 } from "../types";
@@ -7,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Badge } from "@/shared/ui/badge";
 import { Lock } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 
 export default function Step3Background() {
   const { register, watch, setValue } = useFormContext<EnrollmentFormData>();

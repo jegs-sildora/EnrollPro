@@ -194,7 +194,7 @@ export default function SystemHealth() {
   }
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <p className="text-base leading-tight font-extrabold text-foreground">
@@ -202,7 +202,7 @@ export default function SystemHealth() {
           </p>
           {lastUpdated && (
             <p className="text-base text-foreground">
-              Last updated: {lastUpdated.toLocaleString("en-US")}
+              Last updated: {lastUpdated.toLocaleString("en-US", { timeZone: 'Asia/Manila' })}
             </p>
           )}
         </div>

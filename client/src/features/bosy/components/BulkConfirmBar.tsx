@@ -1,6 +1,6 @@
+import { motion, AnimatePresence } from "motion/react";
 import { Loader2, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { motion, AnimatePresence } from "motion/react";
 import {
   createMotionTransition,
   createScaleFadeVariants,

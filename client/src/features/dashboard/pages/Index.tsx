@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import api from "@/shared/api/axiosInstance";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
@@ -80,18 +81,30 @@ export default function DashboardIndex() {
 
   const phase = stats?.systemPhase;
 
+  let content;
+
   if (stats.isArchived || viewingStatus === "ARCHIVED") {
-    return <PhaseOfficial stats={stats} />;
+    content = <PhaseOfficial stats={stats} />;
+  } else if (phase === "OFFICIAL_ENROLLMENT") {
+    content = <PhaseOfficial stats={stats} />;
+  } else if (phase === "EOSY_CLOSING") {
+    content = <PhaseEOSY stats={stats} />;
+  } else {
+    // Fallback / Default for CLASSES_ONGOING and any other phases like PRE_REGISTRATION
+    content = <PhaseOngoing stats={stats} />;
   }
 
-  if (phase === "OFFICIAL_ENROLLMENT") {
-    return <PhaseOfficial stats={stats} />;
-  }
-  
-  if (phase === "EOSY_CLOSING") {
-    return <PhaseEOSY stats={stats} />;
-  }
-
-  // Fallback / Default for CLASSES_ONGOING and any other phases like PRE_REGISTRATION
-  return <PhaseOngoing stats={stats} />;
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className="flex-1 flex flex-col w-full h-full min-h-0 min-w-0"
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
+  );
 }

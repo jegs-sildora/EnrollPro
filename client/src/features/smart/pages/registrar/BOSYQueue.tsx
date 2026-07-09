@@ -117,7 +117,7 @@ export default function BOSYQueue() {
     : items;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "BOSY Queue" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

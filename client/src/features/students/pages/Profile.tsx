@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import {
   ArrowLeft,
@@ -28,7 +29,6 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
@@ -96,7 +96,7 @@ const formatRecordHistoryAction = (actionType: string): string => {
 };
 
 const formatRecordHistoryTimestamp = (value: string): string =>
-  new Date(value).toLocaleString("en-US", {
+  new Date(value).toLocaleString("en-US", { timeZone: 'Asia/Manila', 
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -265,7 +265,7 @@ export default function StudentProfile() {
     );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+<div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between bg-muted p-6 rounded-xl border shadow-sm">
         <div className="flex items-center gap-6">

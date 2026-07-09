@@ -62,7 +62,7 @@ interface LearnerDashboardResponse {
   active_quarter: number;
 }function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-PH", {
+  return d.toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -202,7 +202,7 @@ export default function LearnerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+<div className="min-h-screen bg-background relative">
       <svg
         className="fixed inset-0 h-full w-full opacity-[0.08] pointer-events-none z-0 print:hidden"
         xmlns="http://www.w3.org/2000/svg"

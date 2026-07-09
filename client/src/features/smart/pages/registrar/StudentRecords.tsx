@@ -86,7 +86,7 @@ const formatDate = (dateString?: string) => {
   if (!dateString) return "-";
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -323,7 +323,7 @@ export default function StudentRecords() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[

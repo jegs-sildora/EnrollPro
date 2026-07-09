@@ -1,6 +1,6 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -817,7 +817,7 @@ export default function IntakeDashboard() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+<div className="space-y-6 p-6">
 
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +31,6 @@ import {
   cn,
 } from "@/shared/lib/utils";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "motion/react";
 
 
 import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
@@ -330,7 +330,7 @@ export default function TrackApplication({
 
 
   return (
-    <div
+<div
       className={cn(
         "max-w-4xl mx-auto p-4 md:p-8 transition-all duration-500",
       )}>

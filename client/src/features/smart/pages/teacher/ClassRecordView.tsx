@@ -858,7 +858,7 @@ export default function ClassRecordView() {
   const stickyOffset = assessmentDetailsTop + assessmentPanelOffset;
 
   return (
-    <div className="space-y-8 animate-fade-in w-full px-6 pb-12">
+<div className="space-y-8 animate-fade-in w-full px-6 pb-12">
       {/* Toast Messages */}
       {(error || success) && (
         <div className={`fixed top-20 right-6 z-[100] flex items-center gap-4 px-6 py-4 rounded-[1.5rem] shadow-2xl border-0 animate-slide-in-right ${error ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"}`}>

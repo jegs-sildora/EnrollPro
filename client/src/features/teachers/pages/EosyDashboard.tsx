@@ -444,7 +444,7 @@ export default function TeacherEosyDashboard() {
   }
 
   return (
-    <>
+<>
       <div className="flex flex-col min-h-0 pb-6">
 
         <div className="bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">

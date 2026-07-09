@@ -1,6 +1,6 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { motion, AnimatePresence } from "motion/react";
 import { AlertCircle, BookOpen, Info } from "lucide-react";
 
 import type { EnrollmentFormData } from "../types";

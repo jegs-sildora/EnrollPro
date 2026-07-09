@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
+<div
       className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-[#f8fafc] via-primary/8 to-accent/6"
       style={{
         '--primary': 'var(--theme-primary)',

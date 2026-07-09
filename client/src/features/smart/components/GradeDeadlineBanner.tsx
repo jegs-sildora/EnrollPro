@@ -13,7 +13,7 @@ interface GradeDeadlineBannerProps {
 }
 
 function formatDeadlineDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("en-PH", {
+  return new Date(isoDate).toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
     month: "long",
     day: "numeric",
     year: "numeric",

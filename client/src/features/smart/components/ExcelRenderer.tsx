@@ -152,7 +152,7 @@ export const ExcelRenderer: React.FC<ExcelRendererProps> = ({
     // Handle dates
     if (cell.type === 'date') {
       const date = new Date(cell.value);
-      return date.toLocaleDateString();
+      return date.toLocaleDateString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' });
     }
 
     // Handle numbers with formatting

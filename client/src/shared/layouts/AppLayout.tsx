@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link, useOutlet } from "react-router";
@@ -57,7 +58,6 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHeaderStore } from "@/store/header.slice";
 import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
-import { motion, AnimatePresence } from "motion/react";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
   Dialog,

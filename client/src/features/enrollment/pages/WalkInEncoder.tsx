@@ -858,7 +858,7 @@ export default function WalkInEncoder() {
   }, [setTitle]);
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-left">
         <div className="space-y-1">
           <p className="text-base leading-tight text-foreground font-extrabold">

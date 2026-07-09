@@ -112,7 +112,7 @@ export default function RegistrarDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900">Registrar Dashboard</h1>

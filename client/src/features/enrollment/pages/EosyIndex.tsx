@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -1347,7 +1347,7 @@ export default function EosyUpdating() {
   }
 
   return (
-    <>
+<>
       <div className="flex flex-col pb-8">
 
 

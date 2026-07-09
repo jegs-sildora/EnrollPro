@@ -154,7 +154,7 @@ export default function GradingConfig() {
 
       // Add to history
       setConfigHistory(prev => [{
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila',  month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Updated grading weights'
       }, ...prev.slice(0, 4)]);
@@ -179,7 +179,7 @@ export default function GradingConfig() {
 
       // Add to history
       setConfigHistory(prev => [{
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila',  month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Reset all weights to DepEd default values'
       }, ...prev.slice(0, 4)]);
@@ -222,7 +222,7 @@ export default function GradingConfig() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+<div className="space-y-8 animate-fade-in">
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>

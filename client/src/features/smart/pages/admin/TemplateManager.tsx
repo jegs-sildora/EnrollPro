@@ -471,7 +471,7 @@ export default function TemplateManager() {
   };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -481,7 +481,7 @@ export default function TemplateManager() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+<div className="space-y-6 p-6">
       {/* Header Section */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>

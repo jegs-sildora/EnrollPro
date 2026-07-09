@@ -134,7 +134,7 @@ export default function AdvisoryClass() {
 
   const formatDate = (d?: string | null) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-US", {
+    return new Date(d).toLocaleDateString("en-US", { timeZone: 'Asia/Manila', 
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -281,7 +281,7 @@ export default function AdvisoryClass() {
   }
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       {/* Unified Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">

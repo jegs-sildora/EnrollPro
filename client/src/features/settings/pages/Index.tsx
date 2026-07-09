@@ -1,10 +1,10 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useSearchParams } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import SchoolProfileTab from "./SchoolProfileTab";
 import SchoolYearTab from "./SchoolYearTab";
 import { cn } from "@/shared/lib/utils";
 
-import { motion, AnimatePresence } from "motion/react";
 
 import { useSettingsStore } from "@/store/settings.slice";
 import { useCallback, useEffect } from "react";
@@ -53,7 +53,7 @@ export default function Settings() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+<div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs
         value={activeTab}
         onValueChange={guardedTabChange}

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
@@ -6,7 +7,6 @@ import EnrollmentForm from "./EnrollmentForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
 import { IntakeChoice } from "./components/IntakeChoice";
 
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
@@ -116,7 +116,7 @@ export default function Apply() {
   };
 
   return (
-    <GuestLayout>
+<GuestLayout>
       <div
         className={cn(
           "relative min-h-screen flex flex-col",

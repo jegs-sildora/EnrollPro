@@ -1278,7 +1278,7 @@ export default function Homerooms() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+<div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
       {showSkeleton ? (
         <div className="space-y-6">

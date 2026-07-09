@@ -1055,7 +1055,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     <div className="p-3 bg-muted/10 text-center">
                       <p className="text-[10px] font-extrabold text-foreground/50 uppercase tracking-widest">
-                        Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
+                        Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
                       </p>
                     </div>
                   </div>

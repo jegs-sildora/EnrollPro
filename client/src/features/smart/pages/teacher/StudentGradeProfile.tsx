@@ -49,7 +49,7 @@ function getMasteryLevel(grade: number | null): { label: string; color: string; 
 // Format date helper
 function formatDate(dateString?: string): string {
   if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString("en-PH", {
+  return new Date(dateString).toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -127,7 +127,7 @@ export default function StudentGradeProfilePage() {
   const fullName = `${student.lastName}, ${student.firstName} ${student.middleName ? `${student.middleName.charAt(0)}.` : ""} ${student.suffix || ""}`.trim();
 
   return (
-    <div className="space-y-8 animate-fade-in">
+<div className="space-y-8 animate-fade-in">
       {/* Header with Back Button */}
       <div className="flex items-center gap-4">
         <Link to="/teacher/advisory">

@@ -141,7 +141,7 @@ export default function EOSYFinalization() {
   const heldCount = records.filter((r) => !r.promoted && r.finalStatus !== "PROMOTED" && r.finalStatus).length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "EOSY Finalization" }]} />
 
       <Card className="border-slate-200 shadow-sm overflow-hidden bg-muted">

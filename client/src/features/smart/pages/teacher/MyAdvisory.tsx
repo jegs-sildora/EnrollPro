@@ -199,7 +199,7 @@ export default function MyAdvisory() {
   });
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+<div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Header Section - Refined Glass Style */}
       <div className="relative overflow-hidden rounded-[2.5rem] bg-muted border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
         <div

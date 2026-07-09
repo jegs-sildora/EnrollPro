@@ -1846,7 +1846,7 @@ export default function SchoolForms() {
 
   // Loading or fallback
   return (
-    <div className="flex items-center justify-center h-64">
+<div className="flex items-center justify-center h-64">
       <p className="text-gray-500">Loading...</p>
     </div>
   );

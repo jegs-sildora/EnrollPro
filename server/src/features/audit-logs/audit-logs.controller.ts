@@ -21,12 +21,31 @@ const parsePositiveInt = (value: unknown): number | undefined => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 };
 
-const parseDateValue = (value: unknown): Date | undefined => {
+const parseManilaDateStart = (value: unknown): Date | undefined => {
   const normalized = parseQueryString(value);
-  if (!normalized) {
-    return undefined;
+  if (!normalized) return undefined;
+  
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [_, y, m, d] = match;
+    return new Date(`${y}-${m}-${d}T00:00:00+08:00`);
   }
+  
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+};
 
+const parseManilaDateEnd = (value: unknown): Date | undefined => {
+  const normalized = parseQueryString(value);
+  if (!normalized) return undefined;
+  
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [_, y, m, d] = match;
+    const start = new Date(`${y}-${m}-${d}T00:00:00+08:00`);
+    return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+  }
+  
   const parsed = new Date(normalized);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
@@ -106,8 +125,8 @@ export async function index(req: Request, res: Response) {
 
     const actionType = parseQueryString(req.query.actionType);
     const userId = parsePositiveInt(req.query.userId);
-    const dateFrom = parseDateValue(req.query.dateFrom);
-    const dateTo = parseDateValue(req.query.dateTo);
+    const dateFrom = parseManilaDateStart(req.query.dateFrom);
+    const dateTo = parseManilaDateEnd(req.query.dateTo);
 
     const where: Prisma.AuditLogWhereInput = {};
     if (actionType) {
@@ -210,8 +229,8 @@ export async function exportCsv(req: Request, res: Response) {
 
     const actionType = parseQueryString(req.query.actionType);
     const userId = parsePositiveInt(req.query.userId);
-    const dateFrom = parseDateValue(req.query.dateFrom);
-    const dateTo = parseDateValue(req.query.dateTo);
+    const dateFrom = parseManilaDateStart(req.query.dateFrom);
+    const dateTo = parseManilaDateEnd(req.query.dateTo);
 
     const where: Prisma.AuditLogWhereInput = {};
     if (actionType) {

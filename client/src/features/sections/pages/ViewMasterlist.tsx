@@ -217,7 +217,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
 
   const formatDate = (d: string) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-US", {
+    return new Date(d).toLocaleDateString("en-US", { timeZone: 'Asia/Manila', 
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -343,7 +343,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   }, [section, setTitle, mode]);
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       <div className="mb-4">
         {onBack ? (
           <button

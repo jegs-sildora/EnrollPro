@@ -39,7 +39,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
       cell: ({ row }) => (
         <div className="flex items-center gap-2 text-foreground font-extrabold">
           <Clock3 className="h-3 w-3" />
-          {new Date(row.original.timestamp).toLocaleString()}
+          {new Date(row.original.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
         </div>
       ),
     },

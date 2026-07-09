@@ -11,7 +11,7 @@ export default function EnrollmentManagement() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-col flex-1 h-full w-full min-h-0">
+<div className="flex flex-col flex-1 h-full w-full min-h-0">
       <SectioningWorkspace />
     </div>
   );

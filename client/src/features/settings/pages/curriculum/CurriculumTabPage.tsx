@@ -20,8 +20,7 @@ export default function CurriculumTabPage() {
   } = useCurriculumScpConfigs();
 
   const currentYearInManila = parseInt(
-    new Date().toLocaleDateString("en-US", {
-      timeZone: "Asia/Manila",
+    new Date().toLocaleDateString("en-US", { timeZone: 'Asia/Manila',
       year: "numeric",
     }),
     10,
@@ -62,7 +61,7 @@ export default function CurriculumTabPage() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
+<div className="space-y-6 pb-24">
       {!loading && (
         <>
           <Card>

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState, useMemo } from "react";
 import {
   Check,
@@ -29,7 +30,6 @@ import {
 } from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
 import { Badge } from "@/shared/ui/badge";
-import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";

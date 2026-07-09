@@ -72,7 +72,7 @@ export default function TeachingLoad() {
   const minutesToHours = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Teaching Load" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

@@ -113,7 +113,7 @@ export default function SystemHealth() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+<div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">System Health</h1>
@@ -169,7 +169,7 @@ export default function SystemHealth() {
                 <Server className="w-5 h-5 text-slate-600" />
               </div>
               <p className="mt-2 text-xl font-extrabold text-slate-900">{formatUptime(health.local.uptimeSeconds)}</p>
-              <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString()}</p>
+              <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-muted p-4">
@@ -271,7 +271,7 @@ export default function SystemHealth() {
 
                       return (
                         <tr key={item.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-4 text-slate-700">{new Date(item.startedAt).toLocaleString()}</td>
+                          <td className="py-2 pr-4 text-slate-700">{new Date(item.startedAt).toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}</td>
                           <td className="py-2 pr-4 text-slate-700">{item.source}</td>
                           <td className="py-2 pr-4">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>{item.status}</span>

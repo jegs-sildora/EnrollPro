@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { memo, useState, useEffect, useMemo } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
@@ -29,7 +30,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { motion, AnimatePresence } from "motion/react";
 import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 const schema = z

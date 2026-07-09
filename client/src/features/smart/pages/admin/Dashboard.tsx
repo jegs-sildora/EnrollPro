@@ -130,7 +130,7 @@ export default function AdminDashboard() {
   const { stats, recentLogs, systemStatus } = data;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+<div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
                 <div>
                   <p className="text-sm  text-gray-500 whitespace-pre-line leading-tight">{stat.label}</p>
                   <p className="text-3xl font-extrabold mt-2" style={{ color: '#111827' }}>
-                    {stat.value.toLocaleString()}
+                    {stat.value.toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}
                   </p>
                 </div>
                 <div

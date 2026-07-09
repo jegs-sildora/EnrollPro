@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/axiosInstance";
@@ -15,7 +16,6 @@ import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { Eye, BookOpen } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
-import { motion } from "motion/react";
 
 import {
   UsersIcon,
@@ -721,7 +721,7 @@ export default function Teachers() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
+<div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
 
       {!ayId ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-base leading-tight text-foreground">

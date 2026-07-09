@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import React, {
   useState,
   useEffect,
@@ -58,7 +59,6 @@ import { cn, formatScpType } from "@/shared/lib/utils";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { TableSkeleton } from "@/shared/ui/table-skeleton";
-import { motion, AnimatePresence } from "motion/react";
 
 interface Props {
   isOpen: boolean;

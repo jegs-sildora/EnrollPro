@@ -65,7 +65,7 @@ export function formatDateTime(value: string | null): string {
     return "-";
   }
 
-  return new Date(value).toLocaleString("en-US", {
+  return new Date(value).toLocaleString("en-US", { timeZone: 'Asia/Manila', 
     year: "numeric",
     month: "short",
     day: "numeric",

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import {
   useState,
   useEffect,
@@ -6,7 +7,6 @@ import {
   startTransition,
 } from "react";
 
-import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   Loader2,
@@ -560,7 +560,7 @@ export default function BOSYPage() {
   }, [setTitle]);
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+<div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger

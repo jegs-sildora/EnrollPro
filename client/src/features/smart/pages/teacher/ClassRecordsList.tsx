@@ -294,7 +294,7 @@ export default function ClassRecordsList() {
   const hasArchived = archivedClasses.length > 0;
 
   return (
-    <div className="space-y-10 animate-fade-in max-w-7xl mx-auto pb-12">
+<div className="space-y-10 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Grade Submission Deadline Banner */}
       {gradeDeadline && (
         <GradeDeadlineBanner deadline={gradeDeadline} hideLink />

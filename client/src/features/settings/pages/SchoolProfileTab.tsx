@@ -277,7 +277,7 @@ export default function SchoolProfileTab() {
 
 
   return (
-    <div className="space-y-6">
+<div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <fieldset disabled={isArchived} className="space-y-8 group min-w-0">

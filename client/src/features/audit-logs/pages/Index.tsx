@@ -73,6 +73,7 @@ const AUDIT_LOG_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
 
 function formatTimestamp(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
+    timeZone: "Asia/Manila",
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -259,16 +260,15 @@ export default function AuditLogs() {
 
   const handlePresetDate = (daysBack: number | null) => {
     const today = new Date();
-    const to = today.toISOString().slice(0, 10);
+    const to = today.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
     let from = "";
     if (daysBack !== null) {
-      const fromDate = new Date();
-      fromDate.setDate(today.getDate() - daysBack);
-      from = fromDate.toISOString().slice(0, 10);
+      const fromDate = new Date(today.getTime() - daysBack * 24 * 60 * 60 * 1000);
+      from = fromDate.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
     } else {
       // This Month
-      const fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
-      from = fromDate.toISOString().slice(0, 10);
+      const manilaYm = today.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 7);
+      from = `${manilaYm}-01`;
     }
     setDateFrom(from);
     setDateTo(to);
@@ -538,30 +538,6 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="font-extrabold text-base"
-            onClick={() => fetchLogs(page)}
-            disabled={loading}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-          {isSystemAdmin && (
-            <Button
-              className="font-extrabold text-base"
-              onClick={handleExport}
-              disabled={exporting}>
-              <Download className="h-4 w-4 mr-2" />
-              {exporting ? "Exporting..." : "Download Activity Report"}
-            </Button>
-          )}
-        </div>
-      </div>
-
       {forbidden ? (
         <Card className="border-none shadow-sm">
           <CardContent className="py-10">
@@ -580,10 +556,31 @@ export default function AuditLogs() {
       ) : (
         <>
           <Card className="border-none shadow-sm">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base font-extrabold uppercase text-foreground">
                 Search Filters
               </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="font-extrabold text-base"
+                  onClick={() => fetchLogs(page)}
+                  disabled={loading}>
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </Button>
+                {isSystemAdmin && (
+                  <Button
+                    className="font-extrabold text-base"
+                    onClick={handleExport}
+                    disabled={exporting}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {exporting ? "Exporting..." : "Download Activity Report"}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-4">

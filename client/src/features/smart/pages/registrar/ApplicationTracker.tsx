@@ -113,7 +113,7 @@ export default function ApplicationTracker() {
     : applications;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+<div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Applications" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -234,7 +234,7 @@ export default function ApplicationTracker() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-gray-600">
-                            {app.createdAt ? new Date(app.createdAt).toLocaleDateString("en-PH") : "—"}
+                            {app.createdAt ? new Date(app.createdAt).toLocaleDateString("en-PH", { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' }) : "—"}
                           </TableCell>
                         </TableRow>
                       );

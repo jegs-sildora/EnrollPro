@@ -6,7 +6,6 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test:integration": "tsx src/tests/integration.test.ts",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "db:seed": "tsx prisma/seeds/seed.ts",
