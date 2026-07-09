@@ -118,7 +118,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         api.get<MasterlistResponse>(`/sections/${resolvedSectionId}/masterlist`),
         api.get<SectionTeachersResponse>(`/sections/teachers?schoolYearId=${ayId}`)
       ]);
-      
+
       if (masterlistRes.data.section.schoolYearId !== ayId && !propSectionId) {
         navigate("/sections", { replace: true });
         return;
@@ -236,11 +236,11 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           Total: {data.length}
         </span>
       </div>
-      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm flex-1">
+      <div className="flex-1">
         <div className="overflow-x-auto">
           <Table className="relative w-full">
-            <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
-              <TableRow className="hover:bg-muted border-none">
+            <TableHeader className="border-b border-border bg-transparent">
+              <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="text-center font-extrabold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
                 <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
                 <TableHead className="text-right font-extrabold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
@@ -248,7 +248,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
             </TableHeader>
             <TableBody className="divide-y">
               {data.length === 0 ? (
-                <TableRow>
+                <TableRow className="border-b-0">
                   <TableCell colSpan={3} className="h-24 text-center text-foreground font-extrabold">
                     No {title.toLowerCase()} assigned.
                   </TableCell>
@@ -353,7 +353,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               <span className="text-base font-extrabold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-extrabold uppercase text-foreground">
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-extrabold uppercase text-foreground">
                 {section?.advisingTeacher ? section.advisingTeacher.name : "UNASSIGNED"}
               </span>
             </div>
@@ -373,9 +373,9 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
             </div>
           </div>
         </CardHeader>
-      </Card>
 
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <hr className="border-border" />
+
         <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
           <div>
             <CardTitle className="text-base sm:text-lg font-extrabold">

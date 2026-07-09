@@ -848,7 +848,7 @@ export function SectioningWorkspace() {
               value={String(g.id)}
               disabled={isLockedIn && activeGradeLevelId !== String(g.id)}
               className={cn(
-                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg",
+                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md",
                 isLockedIn &&
                 activeGradeLevelId !== String(g.id) &&
                 "opacity-40 cursor-not-allowed bg-muted/20",
@@ -856,7 +856,7 @@ export function SectioningWorkspace() {
               {activeGradeLevelId === String(g.id) && (
                 <motion.div
                   layoutId="enrollment-grade-pill"
-                  className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                  className="absolute inset-0 bg-primary shadow-sm rounded-md"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
@@ -875,7 +875,7 @@ export function SectioningWorkspace() {
       </Tabs>
 
       {draftPlacement && (
-        <div className="mb-4 rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
+        <div className="mb-4 rounded-md border-2 border-amber-400 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-base font-extrabold uppercase">
@@ -908,10 +908,10 @@ export function SectioningWorkspace() {
                 <div className="space-y-1">
                   <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <Users className="h-5 w-5 text-primary" />
-                    LEARNERS WAITING FOR SECTIONING
+                    LEARNERS READY FOR SECTIONING
                   </CardTitle>
                   <CardDescription className="text-sm font-extrabold text-foreground">
-                    Enrolled learners awaiting sections
+                    Enrolled learners ready to be sectioned
                   </CardDescription>
                 </div>
                 <Badge
@@ -1104,7 +1104,7 @@ export function SectioningWorkspace() {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="space-y-1">
                   <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
                     <LayoutGrid className="h-5 w-5 text-primary" />
                     {draftPlacement
@@ -1129,7 +1129,7 @@ export function SectioningWorkspace() {
                   isHistoricalReadOnly
                 }
                 onClick={generateDraftPlacement}
-                className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-lg">
+                className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
                 AUTO ASSIGN SECTIONS
               </Button>
             </CardHeader>
@@ -1261,7 +1261,7 @@ export function SectioningWorkspace() {
 
                       {draftPlacement && isExpanded && (
                         <div
-                          className="mt-4 overflow-hidden rounded-lg border bg-card"
+                          className="mt-4 overflow-hidden rounded-md border bg-card"
                           onClick={(event) => event.stopPropagation()}>
                           <table className="w-full text-left text-sm">
                             <thead className="bg-muted text-foreground">
@@ -1506,12 +1506,12 @@ export function SectioningWorkspace() {
             <p className="font-extrabold">
               This action will lock the assignments and update the official school records
             </p>
-            <div className="space-y-3 rounded-lg border bg-muted p-4 text-left">
+            <div className="space-y-3 rounded-md border bg-muted p-4 text-left">
               <p className="text-base font-extrabold text-foreground">
                 {draftLearnerCount} learner(s) will be officially placed in their respective classes
               </p>
               {hasDraftOverflow && (
-                <label className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 cursor-pointer">
+                <label className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 cursor-pointer">
                   <Checkbox
                     checked={allowCapacityOverride}
                     onCheckedChange={(checked) =>

@@ -37,6 +37,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
 import { auditContext } from "./lib/context.js";
+import { streamEvents } from "./lib/sse.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -171,6 +172,7 @@ apiRouter.get("/health", (_req, res) => {
 apiRouter.get("/ping", (_req, res) => {
   res.send("pong");
 });
+apiRouter.get("/events/stream", streamEvents);
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/system", systemRoutes);
 apiRouter.use("/settings", settingsRoutes);

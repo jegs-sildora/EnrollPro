@@ -557,7 +557,7 @@ export default function Teachers() {
             <Button
               variant="outline"
               size="sm"
-              className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+              className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setViewingTeacher(row.original);
@@ -717,7 +717,7 @@ export default function Teachers() {
             setViewingTeacher(null);
             setIsPanelOpen(true);
           }}
-          className="font-extrabold uppercase tracking-wide rounded-lg">
+          className="font-extrabold uppercase tracking-wide rounded-md">
           <UserPlusIcon className="w-4 h-4 mr-2" />
           Add Faculty/Staff
         </Button>
@@ -730,64 +730,79 @@ export default function Teachers() {
       ) : null}
 
       {/* Premium KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total Faculty & Staff */}
-        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
-          <div>
-            <p className="font-extrabold text-foreground uppercase">
-              Total Faculty & Staff
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-foreground">
-              {teachers.length}
-            </p>
-          </div>
-        </div>
+      {(() => {
+        const totalCount = teachers.length;
+        const activeCount = teachers.filter((t) => t.isActive).length;
+        const inactiveCount = teachers.filter((t) => !t.isActive).length;
+        const classAdvisersCount = teachers.filter((t) => t.designation?.isClassAdviser).length;
 
-        {/* Active */}
-        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
-          <div>
-            <p className="font-extrabold text-foreground uppercase">
-              Active Personnel
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-green-600">
-              {teachers.filter((t) => t.isActive).length}
-            </p>
-          </div>
-          <div className="p-3 bg-green-50 text-green-600 rounded-lg">
-            <UserCheckIcon className="w-6 h-6" />
-          </div>
-        </div>
+        const kpiCards = [
+          {
+            key: "total",
+            title: "Total Faculty & Staff",
+            value: totalCount,
+            valueClass: "text-foreground",
+            icon: null,
+            iconWrapperClass: "",
+            show: true, // Always show total
+          },
+          {
+            key: "active",
+            title: "Active Personnel",
+            value: activeCount,
+            valueClass: "text-green-600",
+            iconWrapperClass: "bg-green-50 text-green-600",
+            show: activeCount > 0,
+          },
+          {
+            key: "inactive",
+            title: "Inactive / On Leave",
+            value: inactiveCount,
+            valueClass: "text-foreground",
+            iconWrapperClass: "bg-amber-50 text-amber-600",
+            show: inactiveCount > 0,
+          },
+          {
+            key: "advisers",
+            title: "Class Advisers",
+            value: classAdvisersCount,
+            valueClass: "text-orange-600",
+            iconWrapperClass: "bg-orange-50 text-orange-600",
+            show: classAdvisersCount > 0,
+          },
+        ];
 
-        {/* Inactive / On Leave */}
-        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
-          <div>
-            <p className="font-extrabold text-foreground uppercase">
-              Inactive / On Leave
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-foreground">
-              {teachers.filter((t) => !t.isActive).length}
-            </p>
-          </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
-            <UserMinusIcon className="w-6 h-6" />
-          </div>
-        </div>
+        const visibleCards = kpiCards.filter((card) => card.show);
 
-        {/* Class Advisers */}
-        <div className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-xl shadow-sm">
-          <div>
-            <p className="font-extrabold text-foreground uppercase">
-              Class Advisers
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-orange-600">
-              {teachers.filter((t) => t.designation?.isClassAdviser).length}
-            </p>
+        const gridColsClass =
+          visibleCards.length === 1
+            ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1"
+            : visibleCards.length === 2
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
+            : visibleCards.length === 3
+            ? "grid-cols-1 sm:grid-cols-3 lg:grid-cols-3"
+            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+
+        return (
+          <div className={cn("grid gap-4", gridColsClass)}>
+            {visibleCards.map((card) => (
+              <div
+                key={card.key}
+                className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-md shadow-sm"
+              >
+                <div>
+                  <p className="font-extrabold text-foreground uppercase">
+                    {card.title}
+                  </p>
+                  <p className={cn("mt-1 text-3xl font-extrabold", card.valueClass)}>
+                    {card.value}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
-            <BookOpenIcon className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Teacher list table */}
       <div className="flex-1 min-h-0 bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">

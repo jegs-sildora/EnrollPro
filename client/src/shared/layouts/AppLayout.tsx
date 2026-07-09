@@ -244,7 +244,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-[11px] font-black uppercase tracking-wider whitespace-nowrap rounded-full",
+          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-md",
           badge.className,
         )}>
         {badge.label}
@@ -331,7 +331,7 @@ function SYSwitcher() {
               <div className="border-b border-slate-100 my-2" />
 
               <div className="text-sm font-bold text-foreground mb-2 px-2 uppercase tracking-wide">
-                Archived Records
+                Archived School Years
               </div>
               {archivedYears.length > 0 ? (
                 archivedYears.map((y) => (
@@ -339,10 +339,10 @@ function SYSwitcher() {
                     key={y.id}
                     onClick={() => handleSelectYear(y)}
                     className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
+                      "flex w-full items-center gap-2 px-3 py-2 transition-colors",
                       y.id === currentId
-                        ? "bg-slate-50 font-bold text-slate-900"
-                        : "hover:bg-slate-50 text-slate-700",
+                        ? "bg-slate-50 font-bold text-foreground"
+                        : "hover:bg-slate-50",
                     )}>
                     <span className="w-4 text-slate-600">
                       {y.id === currentId ? <Check className="h-3.5 w-3.5" /> : null}
@@ -352,7 +352,7 @@ function SYSwitcher() {
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-sm text-foreground">No archived records available.</div>
+                <div className="px-3 py-2 text-sm text-foreground">No archived school years available.</div>
               )}
             </div>
           </motion.div>

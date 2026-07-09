@@ -91,7 +91,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         <div className="flex flex-col flex-1">
           {/* Top Hero Section */}
           <div className="relative flex-1 flex flex-col items-center justify-center p-10 sm:p-14 min-h-[250px]">
-            <div className="absolute inset-0 bg-muted rounded-xl pointer-events-none border border-primary shadow-sm" />
+            <div className="absolute inset-0 bg-muted rounded-md pointer-events-none border border-primary shadow-sm" />
             <div className="relative z-10 flex flex-col items-center gap-2 text-center">
               <h3 className="text-2xl font-extrabold text-foreground uppercase tracking-widest">Total Official Enrollment</h3>
               <div className="text-7xl sm:text-[100px] leading-none font-black tracking-tighter my-2 drop-shadow-sm" style={{ color: "hsl(var(--primary))" }}>
@@ -109,7 +109,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
                 <div
                   key={grade}
                   className={cn(
-                    "text-center p-5 rounded-xl border shadow-sm flex flex-col justify-center transition-all hover:shadow-md hover:-translate-y-0.5",
+                    "text-center p-5 rounded-md border shadow-sm flex flex-col justify-center transition-all hover:shadow-md hover:-translate-y-0.5",
                     getGradeLevelBadgeStyles(grade.toString())
                   )}
                 >

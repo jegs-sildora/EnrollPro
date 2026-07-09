@@ -159,58 +159,91 @@ export default function AdvisoryClass() {
     return age;
   };
 
-  const renderLearnerRow = (record: AdvisoryRecord, index: number) => {
-    const learner = record.enrollmentApplication.learner;
-    const age = calculateAgeAsOfJuneFirst(learner.birthdate);
-    let remark = "";
-    if (record.sf1Remarks) {
-      remark = record.sf1Remarks;
-    }
-
-    return (
-      <TableRow key={record.id} className="hover:bg-muted/50 transition-colors group">
-        <TableCell className="text-center font-extrabold text-base text-muted-foreground py-3">
-          {index}
-        </TableCell>
-        <TableCell className="text-center font-extrabold text-base py-3">
-          {learner.lrn || "—"}
-        </TableCell>
-        <TableCell className="py-3 pl-2 min-w-[200px]">
-          <span className="font-extrabold text-base uppercase block leading-tight">
-            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
-          </span>
-        </TableCell>
-        <TableCell className="text-center py-3 whitespace-nowrap">
-          {learner.birthdate ? (
-            <span className="text-base font-extrabold">{formatDate(learner.birthdate)}</span>
-          ) : (
-            <span className="text-sm italic text-muted-foreground">Requires DOB Update</span>
-          )}
-        </TableCell>
-        <TableCell className="text-center font-extrabold text-base py-3">
-          {age !== null ? age : "—"}
-        </TableCell>
-        <TableCell className="text-center py-3">
-          {remark && (
-            <span className="text-sm font-extrabold uppercase text-foreground">
-              {remark}
-            </span>
-          )}
-        </TableCell>
-        <TableCell className="text-right py-3 pr-2">
-          <div className="flex w-full justify-end py-3 pr-2">
-            <span
-              onClick={() => setSelectedStudentId(learner.id)}
-              className="inline-flex h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm  text-primary transition-all border-2 border-primary group-hover:bg-primary group-hover:shadow-sm group-hover:text-primary-foreground group-hover:font-extrabold cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Profile
-            </span>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  };
+  const renderTable = (data: AdvisoryRecord[], title: string, sex: "MALE" | "FEMALE") => (
+    <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 className={`font-extrabold text-lg uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
+          {title}
+        </h3>
+        <span className="font-extrabold text-sm text-foreground uppercase">
+          Total: {data.length}
+        </span>
+      </div>
+      <div className="flex-1">
+        <div className="overflow-x-auto">
+          <Table className="relative w-full">
+            <TableHeader className="border-b border-border bg-transparent">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="text-center font-extrabold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
+                <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
+                <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">BIRTHDATE</TableHead>
+                <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">AGE</TableHead>
+                <TableHead className="text-right font-extrabold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y">
+              {data.length === 0 ? (
+                <TableRow className="border-b-0">
+                  <TableCell colSpan={5} className="h-24 text-center text-foreground font-extrabold">
+                    No {title.toLowerCase()} assigned.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((record, idx) => {
+                  const learner = record.enrollmentApplication.learner;
+                  const age = calculateAgeAsOfJuneFirst(learner.birthdate);
+                  const remark = record.sf1Remarks || "";
+                  return (
+                    <TableRow key={record.id} className="hover:bg-muted/50 transition-colors group">
+                      <TableCell className="text-center font-extrabold text-sm text-foreground py-3">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="py-3 pl-4">
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-sm uppercase text-foreground leading-tight">
+                            {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
+                          </span>
+                          <span className="text-sm font-bold uppercase text-foreground mt-0.5">
+                            {learner.lrn || "NO LRN"}
+                          </span>
+                          {remark && (
+                            <span className="text-xs font-bold uppercase text-amber-600 mt-0.5">
+                              {remark}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center py-3">
+                        {learner.birthdate ? (
+                          <span className="text-sm font-extrabold">{formatDate(learner.birthdate)}</span>
+                        ) : (
+                          <span className="text-xs italic text-muted-foreground">Needs Update</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center font-extrabold text-sm py-3">
+                        {age !== null ? age : "—"}
+                      </TableCell>
+                      <TableCell className="text-right py-3 pr-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="font-extrabold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                          onClick={() => setSelectedStudentId(learner.id)}
+                        >
+                          <Eye className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline">Profile</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
 
   const setTitle = useHeaderStore((s) => s.setTitle);
 
@@ -249,43 +282,39 @@ export default function AdvisoryClass() {
 
   return (
     <div className="space-y-6">
-      {/* Toolbar Card */}
+      {/* Unified Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex justify-end items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
+            <span className="text-foreground">
+              Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
+            </span>
+            <div className="w-px h-4 bg-border" />
+            <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+              <Mars className="h-4 w-4" /> Male: {maleLearners.length}
+            </Badge>
+            <div className="w-px h-4 bg-border" />
+            <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+              <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <hr className="border-border" />
+
+        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
+          <div className="flex flex-col gap-2">
+            <CardTitle className="text-base sm:text-lg font-extrabold">
+              Enrolled Learner Records
+            </CardTitle>
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-base font-extrabold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-xl text-base font-extrabold uppercase text-foreground">
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-extrabold uppercase text-foreground">
                 {section.advisingTeacher ? section.advisingTeacher.name : "ASSIGNED (YOU)"}
               </span>
             </div>
-
-            <div className="flex items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
-              <span className="text-foreground">
-                Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
-              </span>
-              <div className="w-px h-4 bg-border" />
-              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
-                <Mars className="h-4 w-4" /> Male: {maleLearners.length}
-              </Badge>
-              <div className="w-px h-4 bg-border" />
-              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
-                <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Masterlist Table Card */}
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-        <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
-          <div>
-            <CardTitle className="text-base sm:text-lg font-extrabold">
-              Enrolled Learner Records
-            </CardTitle>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -303,7 +332,8 @@ export default function AdvisoryClass() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+        
+        <CardContent className="p-0">
           {records.length === 0 ? (
             <div className="flex py-16 w-full items-center justify-center">
               <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
@@ -323,54 +353,10 @@ export default function AdvisoryClass() {
               </Card>
             </div>
           ) : (
-            <div className="flex-1 overflow-auto bg-muted/5 relative min-h-[500px] flex flex-col p-4">
-              <div className="flex flex-col rounded-lg overflow-hidden border border-border shadow-sm max-h-full">
-                <div className="bg-background overflow-auto flex-1 relative">
-                  <Table className="relative min-w-[900px]">
-                    <TableHeader className="bg-muted z-20 sticky top-0 shadow-sm border-b">
-                      <TableRow className="hover:bg-muted border-none">
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">#</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">LRN</TableHead>
-                        <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER NAME</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[160px] tracking-wide">BIRTHDATE</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[80px] tracking-wide">AGE</TableHead>
-                        <TableHead className="text-center font-extrabold text-foreground h-11 w-[140px] tracking-wide">REMARKS</TableHead>
-                        <TableHead className="text-right font-extrabold text-foreground h-11 w-[160px] pr-4">ACTION</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Male Learners */}
-                      {maleLearners.length > 0 && (
-                        <>
-                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
-                            <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold tracking-widest text-blue-700 uppercase px-2">
-                                <span>MALE LEARNERS</span>
-                                <span>Total: {maleLearners.length}</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {maleLearners.map((record, idx) => renderLearnerRow(record, idx + 1))}
-                        </>
-                      )}
-
-                      {/* Female Learners */}
-                      {femaleLearners.length > 0 && (
-                        <>
-                          <TableRow className="bg-slate-50 border-y border-border hover:bg-slate-50">
-                            <TableCell colSpan={7} className="py-3">
-                              <div className="flex justify-between font-extrabold tracking-widest text-pink-700 uppercase px-2">
-                                <span>FEMALE LEARNERS</span>
-                                <span>Total: {femaleLearners.length}</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {femaleLearners.map((record, idx) => renderLearnerRow(record, idx + 1))}
-                        </>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+            <div className="p-4">
+              <div className="flex flex-col xl:flex-row gap-6">
+                {renderTable(maleLearners, "Male Learners", "MALE")}
+                {renderTable(femaleLearners, "Female Learners", "FEMALE")}
               </div>
             </div>
           )}

@@ -539,15 +539,15 @@ export default function BOSYPage() {
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
+        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
             value="continuing"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "continuing" && (
               <motion.div
                 layoutId="bosy-active-pill"
-                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                className="absolute inset-0 bg-primary shadow-sm rounded-md"
                 transition={motionTokens.spring.pill}
               />
             )}
@@ -557,12 +557,12 @@ export default function BOSYPage() {
           </TabsTrigger>
           <TabsTrigger
             value="incoming"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "incoming" && (
               <motion.div
                 layoutId="bosy-active-pill"
-                className="absolute inset-0 bg-primary shadow-sm rounded-lg"
+                className="absolute inset-0 bg-primary shadow-sm rounded-md"
                 transition={motionTokens.spring.pill}
               />
             )}
@@ -631,7 +631,7 @@ export default function BOSYPage() {
                         }}
                         aria-pressed={queueState === filterVal}
                         className={cn(
-                          "relative flex h-full flex-col rounded-xl border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
+                          "relative flex h-full flex-col rounded-md border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
                           queueState === filterVal
                             ? "border-primary ring-1 ring-primary text-primary"
                             : "border-border hover:border-primary",
