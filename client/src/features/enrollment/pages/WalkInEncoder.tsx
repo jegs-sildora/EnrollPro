@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Calendar as CalendarIcon, AlertTriangle, Search, Loader2, Mars, Venus, User } from "lucide-react";
 import { isAxiosError } from "axios";
@@ -33,6 +33,7 @@ import {
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
+import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "ALS";
 type AcademicStatus = "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
@@ -198,11 +199,15 @@ export default function WalkInEncoder() {
     () => normalizeLrn(searchParams.get("lrn") ?? ""),
     [searchParams],
   );
+  const cleanFormState = useMemo<WalkInFormState>(
+    () => ({
+      ...INITIAL_FORM_STATE,
+      lrn: initialLrn,
+    }),
+    [initialLrn],
+  );
 
-  const [formData, setFormData] = useState<WalkInFormState>(() => ({
-    ...INITIAL_FORM_STATE,
-    lrn: initialLrn,
-  }));
+  const [formData, setFormData] = useState<WalkInFormState>(() => cleanFormState);
   const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -603,9 +608,14 @@ export default function WalkInEncoder() {
     return true;
   };
 
-  const handleResetForm = () => {
-    setFormData(INITIAL_FORM_STATE);
-    setInterceptorLrn("");
+  const isWalkInFormDirty = useMemo(
+    () => JSON.stringify(formData) !== JSON.stringify(cleanFormState),
+    [cleanFormState, formData],
+  );
+
+  const handleResetForm = useCallback(() => {
+    setFormData(cleanFormState);
+    setInterceptorLrn(initialLrn);
     setIsFormUnlocked(false);
     setShowNoLrnBanner(false);
     setCreatedAppId(null);
@@ -616,7 +626,15 @@ export default function WalkInEncoder() {
     setDateInput("");
     setDuplicateInfo(null);
     setShowDuplicateModal(false);
-  };
+  }, [cleanFormState, initialLrn]);
+
+  useUnsavedChanges({
+    id: "standalone-walk-in-encoder",
+    label: "Walk-in enrollment form",
+    isDirty: isWalkInFormDirty && !submitting,
+    isSubmitting: submitting,
+    onDiscard: handleResetForm,
+  });
 
   const handleSubmit = () => {
     if (duplicateInfo) {

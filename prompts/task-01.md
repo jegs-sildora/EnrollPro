@@ -1,29 +1,25 @@
-# SYSTEM DIRECTIVE Junior High School Completer Profile Architecture v174.0
+# SYSTEM DIRECTIVE Inline Metric Toolbar Architecture v176.0
 
-**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software. The user interface must dynamically adapt to protect historical data integrity when rendering permanent alumni records. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
+**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software. The user interface must maximize vertical viewport space by integrating key performance indicators directly into the table toolbar structure. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
 
-**Core Mandate** You must implement conditional rendering inside the Student Detail Panel to transform the interface into a read only historical view when the learner possesses a Junior High School Completer status. You must remove all active operational controls and replace them with institutional document generation capabilities.
+**Core Mandate** You must abandon the large summary card layout and implement an inline metric status bar nested directly inside the table container above the filtering controls. This status bar must match the vertical height of standard input fields and function as clickable data filters.
 
-Execute the interface transformation across the following four visual zones
+Execute the implementation across the following three design rules
 
-## 1 Header and Status Identifiers
-Reconfigure the primary profile metadata to reflect graduation status.
-* Change the top container title from ENROLLED LEARNER DETAILS to ALUMNI RECORD DETAILS
-* Replace the green officially enrolled status badge with a distinct gold badge reading JHS COMPLETER
-* Update the grade level header to read TERMINAL GRADE 10 SECTION to indicate their final placement before graduation
-* Replace the current enrollment information block with a COMPLETION RECORD block displaying the official date of graduation and the specific academic school year completed
+## 1 Toolbar Integration
+Embed the metrics directly into the table header container.
+* Render a horizontal flex container immediately above the search bar and dropdown menus.
+* Set the height of this container to match standard input elements to maintain visual vertical rhythm.
 
-## 2 Action Bar Replacement
-Eliminate destructive data operations for permanent records.
-* Remove the TRANSFERRED OUT and DROPPED OUT buttons from the bottom action bar entirely because a graduate cannot alter their completion status
-* Replace the bottom action bar with a single primary brand colored button titled GENERATE FORM 137 SF10 to support immediate transcript requests for walk in alumni
+## 2 Inline Metric Formatting
+Transform large cards into sleek status indicators.
+* Render each metric as a compact horizontal group containing the title and the numerical value.
+* Utilize vertical dividers to separate the four metric groups cleanly from one another.
+* Ensure zero values remain visible to provide complete institutional context to the school principal.
 
-## 3 Record Freezing and Security
-Protect the integrity of historical demographic data.
-* Remove the EDIT LEARNER DATA button from the header to prevent standard administrative staff from altering permanent historical records
-* Remove the entire PORTAL ACCESS AND SECURITY block from the bottom of the panel because graduates no longer require active software login credentials or password resets
+## 3 Interactive Filter States
+Maintain interactive filtering without bulky visual weight.
+* Configure each inline metric group to act as a clickable button that filters the faculty list below it.
+* Apply a bold text weight and a subtle primary color background tint to the actively selected metric group to indicate the current view.
 
-## 4 Historical Academic Preservation
-Maintain maximum visibility for transcript data.
-* Ensure the Historical Final Averages table remains prominently displayed and expanded by default as this is the primary data point registrars verify for returning graduates
-* Retain all personal information and demographic data strictly as read only text elements
+Work in the Faculty & Staff Masterlist page

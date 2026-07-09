@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
@@ -41,6 +41,10 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
 import FinalizeEnrollmentModal from "@/features/intake/components/FinalizeEnrollmentModal";
 import { useHeaderStore } from "@/store/header.slice";
+import {
+  useGuardedTabChange,
+  useUnsavedChanges,
+} from "@/shared/hooks/useUnsavedChanges";
 
 const READING_LEVELS = [
   { value: "INDEPENDENT", label: "Independent", color: "text-emerald-600" },
@@ -209,7 +213,7 @@ function PreListingTab({
     reset,
     watch,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isDirty },
   } = useForm<PreListingFormValues>({
     resolver: zodResolver(preListingSchema),
     mode: "onChange",
@@ -267,6 +271,27 @@ function PreListingTab({
     onError: (e) => {
       toastApiError(e as AxiosError<{ message?: string }>);
     },
+  });
+
+  const resetPreListingForm = useCallback(
+    () =>
+      reset({
+        learnerType: "NEW_ENROLLEE",
+        gradeLevel: "GRADE 7",
+        lrn: "",
+        lastName: "",
+        firstName: "",
+        middleName: "",
+      }),
+    [reset],
+  );
+
+  useUnsavedChanges({
+    id: "intake-pre-listing-form",
+    label: "Intake pre-listing form",
+    isDirty,
+    isSubmitting: createListingMutation.isPending,
+    onDiscard: resetPreListingForm,
   });
 
   const deleteListingMutation = useMutation({
@@ -738,6 +763,7 @@ function ConfirmationTab({
 
 export default function IntakeDashboard() {
   const [activeTab, setActiveTab] = useState("pre-listing");
+  const guardedSetActiveTab = useGuardedTabChange(setActiveTab);
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel, viewingSchoolYearLabel } =
     useSettingsStore();
 
@@ -793,7 +819,7 @@ export default function IntakeDashboard() {
   return (
     <div className="space-y-6 p-6">
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={guardedSetActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger value="pre-listing" className="text-base font-extrabold uppercase tracking-normal relative rounded-lg data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "pre-listing" && (

@@ -30,6 +30,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { motion, AnimatePresence } from "motion/react";
+import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 const schema = z
   .object({
@@ -80,7 +81,8 @@ export function ChangePasswordForm({
     handleSubmit,
     control,
     watch,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -112,6 +114,14 @@ export function ChangePasswordForm({
   const handleFormSubmit = async (data: z.infer<typeof schema>) => {
     await onSubmit(data.newPassword);
   };
+
+  useUnsavedChanges({
+    id: "change-password-form",
+    label: "Change password form",
+    isDirty: isDirty && !loading,
+    isSubmitting: loading,
+    onDiscard: () => reset(),
+  });
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>

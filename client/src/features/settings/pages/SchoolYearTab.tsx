@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { sileo } from "sileo";
 import { AnimatePresence, motion } from "motion/react";
@@ -56,6 +56,10 @@ import {
 } from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { AdminPinInput } from "@/shared/components/AdminPinInput";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
 import {
   getRolloverReadiness,
   type RolloverReadinessPayload,
@@ -328,6 +332,7 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 
 export default function SchoolYearTab() {
   const location = useLocation();
+  const { confirmOrRun } = useUnsavedChangesPrompt();
   const {
     setSettings,
     activeSchoolYearId,
@@ -565,6 +570,28 @@ export default function SchoolYearTab() {
     );
   }, [localCalendarState, activeYear]);
 
+  const resetCalendarSettings = useCallback(() => {
+    if (!activeYear) return;
+
+    setLocalCalendarState({
+      termFormat: activeYear.termFormat ?? "TRIMESTER",
+      term1Start: activeYear.term1Start ? activeYear.term1Start.split("T")[0] : "",
+      term1End: activeYear.term1End ? activeYear.term1End.split("T")[0] : "",
+      term2Start: activeYear.term2Start ? activeYear.term2Start.split("T")[0] : "",
+      term2End: activeYear.term2End ? activeYear.term2End.split("T")[0] : "",
+      term3Start: activeYear.term3Start ? activeYear.term3Start.split("T")[0] : "",
+      term3End: activeYear.term3End ? activeYear.term3End.split("T")[0] : "",
+      term4Start: activeYear.term4Start ? activeYear.term4Start.split("T")[0] : "",
+      term4End: activeYear.term4End ? activeYear.term4End.split("T")[0] : "",
+      enrollOpenDate: activeYear.enrollOpenDate
+        ? activeYear.enrollOpenDate.split("T")[0]
+        : "",
+      enrollCloseDate: activeYear.enrollCloseDate
+        ? activeYear.enrollCloseDate.split("T")[0]
+        : "",
+    });
+  }, [activeYear]);
+
   const isRolloverReady = activeYear
     ? rolloverReadiness?.ready === true
     : true;
@@ -633,6 +660,59 @@ export default function SchoolYearTab() {
       currentRolloverDraft.classEndDate !== rolloverDraftBaseline.classEndDate
     );
   }, [currentRolloverDraft, rolloverDraftBaseline]);
+
+  const discardRolloverDraftChanges = useCallback(() => {
+    if (rolloverDraftBaseline) {
+      setYearLabel(rolloverDraftBaseline.yearLabel);
+      setClassOpening(normalizeDateToManila(new Date(rolloverDraftBaseline.classOpeningDate)));
+      setClassEnd(normalizeDateToManila(new Date(rolloverDraftBaseline.classEndDate)));
+    } else if (defaults) {
+      setYearLabel(defaults.yearLabel);
+      setClassOpening(
+        defaults.classOpeningDate
+          ? normalizeDateToManila(new Date(defaults.classOpeningDate))
+          : undefined,
+      );
+      setClassEnd(
+        defaults.classEndDate
+          ? normalizeDateToManila(new Date(defaults.classEndDate))
+          : undefined,
+      );
+    }
+
+    setShowNextForm(false);
+    setRolloverDraftBaseline(null);
+    setRolloverPin("");
+    setRolloverReadiness(null);
+  }, [defaults, rolloverDraftBaseline]);
+
+  const requestCloseNextForm = useCallback(() => {
+    if (isRolloverLoaderOpen) {
+      return;
+    }
+
+    confirmOrRun(discardRolloverDraftChanges);
+  }, [confirmOrRun, discardRolloverDraftChanges, isRolloverLoaderOpen]);
+
+  useUnsavedChanges({
+    id: "settings-school-year-rollover-draft",
+    label: "School year setup form",
+    isDirty:
+      showNextForm &&
+      isRolloverDraftChanged &&
+      !creating &&
+      !updatingDraft &&
+      !isRolloverLoaderOpen,
+    isSubmitting: creating || updatingDraft || isRolloverLoaderOpen,
+    onDiscard: discardRolloverDraftChanges,
+  });
+
+  useUnsavedChanges({
+    id: "settings-school-year-calendar",
+    label: "School calendar settings",
+    isDirty: !isArchived && isCalendarChanged,
+    onDiscard: resetCalendarSettings,
+  });
 
   const handleClassOpeningChange = (date?: Date) => {
     setClassOpening(date ? normalizeDateToManila(date) : undefined);
@@ -1035,44 +1115,50 @@ export default function SchoolYearTab() {
                           </h4>
                         </div>
                         <p className="text-base font-bold text-foreground rounded-md inline-block break-words whitespace-normal">
-                          Control the current phase of the academic year. This affects how late enrollments are processed.
+                          Control school year status and new learner intake
                         </p>
                       </div>
                     </div>
-                    <RadioGroup
-                      value={isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")}
-                      onValueChange={(value: string) => {
-                        if (isAcademicPhase(value)) {
-                          setSelectedPhase(value);
-                        }
-                      }}
-                      className="grid grid-cols-1 lg:grid-cols-3 gap-4"
-                      disabled={isArchived}
-                    >
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       {[
-                        { value: "OFFICIAL_ENROLLMENT", title: "Official Enrollment", desc: "Opens the public enrollment forms and processes normal verify/confirm workflows." },
-                        { value: "CLASSES_ONGOING", title: "Classes Ongoing (Late)", desc: "Public forms remain open, but all new submissions are permanently tagged as Late Enrollees." },
-                        { value: "EOSY_CLOSING", title: "EOSY Closing", desc: "Locks public enrollment forms and readies the database for end-of-year grade finalization." }
+                        { value: "OFFICIAL_ENROLLMENT", title: "Official Enrollment", desc: "Opens the enrollment form for regular learner acceptance" },
+                        { value: "CLASSES_ONGOING", title: "Classes Ongoing (Late)", desc: "Closes the enrollment form but allows registrars to manually encode late walk in learners" },
+                        { value: "EOSY_CLOSING", title: "EOSY Closing", desc: "Closes the enrollment form and prepares for final grade calculations" }
                       ].map(opt => {
                         const isChecked = (isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")) === opt.value;
                         return (
-                          <Label
+                          <button
+                            type="button"
                             key={opt.value}
-                            htmlFor={opt.value}
+                            onClick={() => {
+                              if (isAcademicPhase(opt.value)) {
+                                setSelectedPhase(opt.value);
+                              }
+                            }}
+                            aria-pressed={isChecked}
                             className={cn(
-                              "relative flex flex-col cursor-pointer rounded-lg border bg-card p-4 text-left shadow-sm transition-colors text-foreground",
+                              "relative flex h-full flex-col rounded-md border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
                               isChecked
                                 ? "border-primary ring-1 ring-primary text-primary"
-                                : "border-border hover:border-primary hover:bg-muted/20"
+                                : "border-border hover:border-primary"
                             )}
                           >
-                            <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
-                            <span className="text-lg uppercase font-extrabold leading-tight block break-words">{opt.title}</span>
-                            <span className="text-sm font-bold mt-2 block break-words whitespace-normal">{opt.desc}</span>
-                          </Label>
+                            <div className="flex h-full flex-col">
+                              <div>
+                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
+                                  {opt.title}
+                                </span>
+                              </div>
+                              <div className="mt-auto flex flex-col gap-2">
+                                <span className="text-sm font-extrabold mb-2 break-words whitespace-normal">
+                                  {opt.desc}
+                                </span>
+                              </div>
+                            </div>
+                          </button>
                         );
                       })}
-                    </RadioGroup>
+                    </div>
 
                     {selectedPhase && selectedPhase !== systemPhase && (
                       <div className="mt-6 flex justify-end">
@@ -1094,35 +1180,38 @@ export default function SchoolYearTab() {
                         DepEd Term Configuration
                       </h4>
                     </div>
-                    <RadioGroup
-                      value={localCalendarState.termFormat ?? activeYear.termFormat ?? "TRIMESTER"}
-                      onValueChange={(value: string) => {
-                        setLocalCalendarState(prev => ({ ...prev, termFormat: value }));
-                      }}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {[
                         { value: "TRIMESTER", title: "3-Term System"},
                         { value: "QUARTERS", title: "4-Quarter System"}
                       ].map(opt => {
                         const isChecked = (localCalendarState.termFormat ?? activeYear.termFormat ?? "TRIMESTER") === opt.value;
                         return (
-                          <Label
+                          <button
+                            type="button"
                             key={opt.value}
-                            htmlFor={opt.value}
+                            onClick={() => {
+                              setLocalCalendarState(prev => ({ ...prev, termFormat: opt.value }));
+                            }}
+                            aria-pressed={isChecked}
                             className={cn(
-                              "relative flex flex-col items-center justify-center cursor-pointer rounded-lg border bg-card p-4 min-h-26 text-center shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 text-foreground",
+                              "relative flex h-full flex-col items-center justify-center rounded-md border bg-card p-4 text-center shadow-sm transition-colors text-foreground",
                               isChecked
                                 ? "border-primary ring-1 ring-primary text-primary"
-                                : "border-border hover:border-primary hover:bg-muted/20"
+                                : "border-border hover:border-primary"
                             )}
                           >
-                            <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
-                            <span className="text-lg uppercase font-extrabold leading-tight block break-words">{opt.title}</span>
-                          </Label>
+                            <div className="flex h-full flex-col justify-center">
+                              <div>
+                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
+                                  {opt.title}
+                                </span>
+                              </div>
+                            </div>
+                          </button>
                         );
                       })}
-                    </RadioGroup>
+                    </div>
                   </div>
 
                   {/* Term Date rows */}
@@ -1393,12 +1482,13 @@ export default function SchoolYearTab() {
           if (isRolloverLoaderOpen) {
             return;
           }
-          setShowNextForm(open);
-          if (!open) {
-            setRolloverDraftBaseline(null);
-            setRolloverPin("");
-            setRolloverReadiness(null);
+
+          if (open) {
+            setShowNextForm(true);
+            return;
           }
+
+          requestCloseNextForm();
         }}>
         <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1472,10 +1562,7 @@ export default function SchoolYearTab() {
               <Button
                 variant="outline"
                 className="font-extrabold"
-                onClick={() => {
-                  setShowNextForm(false);
-                  setRolloverDraftBaseline(null);
-                }}>
+                onClick={requestCloseNextForm}>
                 Cancel
               </Button>
               <Button

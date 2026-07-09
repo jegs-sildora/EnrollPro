@@ -7,9 +7,10 @@ import { cn } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useSettingsStore } from "@/store/settings.slice";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import api from "@/shared/api/axiosInstance";
 import { useHeaderStore } from "@/store/header.slice";
+import { useGuardedTabChange } from "@/shared/hooks/useUnsavedChanges";
 
 const VALID_TABS = [
   "profile",
@@ -27,9 +28,10 @@ export default function Settings() {
     ? (requestedTab as SettingsTab)
     : "profile";
 
-  const handleTabChange = (value: string) => {
+  const handleTabChange = useCallback((value: string) => {
     updateUiPreference("settingsTab", value);
-  };
+  }, [updateUiPreference]);
+  const guardedTabChange = useGuardedTabChange(handleTabChange);
 
   useEffect(() => {
     async function checkStatus() {
@@ -54,7 +56,7 @@ export default function Settings() {
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs
         value={activeTab}
-        onValueChange={handleTabChange}
+        onValueChange={guardedTabChange}
         className="w-full">
         <TabsList className="w-full flex flex-col sm:flex-row h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger

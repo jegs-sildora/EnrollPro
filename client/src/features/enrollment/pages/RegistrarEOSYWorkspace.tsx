@@ -53,6 +53,7 @@ import { useSearchParams, useNavigate } from "react-router";
 import type { EosyStatus, RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 const REGISTRAR_EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "eosy:sections",
@@ -157,6 +158,31 @@ export default function RegistrarEOSYWorkspace() {
   const handleStatusChange = (recordId: number, status: EosyStatus) => {
     setLocalStatuses(prev => ({ ...prev, [recordId]: status }));
   };
+
+  const hasUnsavedStatusChanges = useMemo(
+    () =>
+      records.some(
+        (record) =>
+          (localStatuses[record.id] ?? null) !== (record.eosyStatus ?? null),
+      ),
+    [localStatuses, records],
+  );
+
+  const discardLocalStatuses = useCallback(() => {
+    const initial: Record<number, EosyStatus> = {};
+    records.forEach((record) => {
+      if (record.eosyStatus) initial[record.id] = record.eosyStatus;
+    });
+    setLocalStatuses(initial);
+  }, [records]);
+
+  useUnsavedChanges({
+    id: "registrar-eosy-workspace",
+    label: "Registrar EOSY status edits",
+    isDirty: hasUnsavedStatusChanges,
+    isSubmitting: saving,
+    onDiscard: discardLocalStatuses,
+  });
 
   const summary = useMemo(() => {
     const counts: Record<string, number> = {

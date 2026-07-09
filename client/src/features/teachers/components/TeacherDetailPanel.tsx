@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +48,10 @@ import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
   getDesignationPool,
 } from "@enrollpro/shared";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
 
 interface TeacherDetailPanelProps {
   teacher: Teacher | null;
@@ -157,13 +161,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const [teachingLoad, setTeachingLoad] = useState<TeachingLoadItem[]>([]);
   const [loadLoading, setLoadLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const { confirmOrRun } = useUnsavedChangesPrompt();
 
   const isTeachingStaff = useMemo(() => {
     return teacher?.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
   }, [teacher]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
   const [isPortalActionSubmitting, setIsPortalActionSubmitting] = useState(false);
   const [defaultPasswordInput, setDefaultPasswordInput] = useState("");
@@ -350,13 +354,29 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     else if (!open) setTeachingLoad([]);
   }, [teacher, open]);
 
-  const handleCloseAttempt = (nextOpen: boolean) => {
-    if (!nextOpen && isDirty) {
-      setShowUnsavedModal(true);
+  const discardProfileChanges = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  const closePanel = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const handleCloseAttempt = useCallback((nextOpen: boolean) => {
+    if (nextOpen) {
+      onOpenChange(true);
       return;
     }
-    onOpenChange(nextOpen);
-  };
+    confirmOrRun(closePanel);
+  }, [closePanel, confirmOrRun, onOpenChange]);
+
+  useUnsavedChanges({
+    id: "teacher-detail-panel",
+    label: "Faculty/Staff profile",
+    isDirty: open && isDirty,
+    isSubmitting,
+    onDiscard: discardProfileChanges,
+  });
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -420,13 +440,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           onPointerDownOutside={(e) => {
             if (isDirty) {
               e.preventDefault();
-              setShowUnsavedModal(true);
+              confirmOrRun(closePanel);
             }
           }}
           onEscapeKeyDown={(e) => {
             if (isDirty) {
               e.preventDefault();
-              setShowUnsavedModal(true);
+              confirmOrRun(closePanel);
             }
           }}
           className="p-0 flex flex-col h-full border-l-0 overflow-hidden"
@@ -1059,21 +1079,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           </form>
         </SheetContent>
       </Sheet>
-
-      <ConfirmationModal
-        open={showUnsavedModal}
-        onOpenChange={setShowUnsavedModal}
-        title="Unsaved Changes"
-        description="You have unsaved changes in this profile. Closing this panel will remove those changes."
-        confirmText="Discard Changes"
-        cancelText="Keep Editing"
-        onConfirm={() => {
-          reset();
-          setShowUnsavedModal(false);
-          onOpenChange(false);
-        }}
-        variant="danger"
-      />
 
       <ConfirmationModal
         open={showResetPasswordConfirm}

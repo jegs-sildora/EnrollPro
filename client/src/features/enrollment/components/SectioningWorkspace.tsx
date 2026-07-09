@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
@@ -59,6 +59,10 @@ import {
 
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import ViewMasterlist from "@/features/sections/pages/ViewMasterlist";
+import {
+  useGuardedTabChange,
+  useUnsavedChanges,
+} from "@/shared/hooks/useUnsavedChanges";
 
 interface SectionSummary {
   id: number;
@@ -404,6 +408,9 @@ export function SectioningWorkspace() {
     !isHistoricalReadOnly;
 
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
+  const guardedSetActiveGradeLevelId = useGuardedTabChange(
+    setActiveGradeLevelId,
+  );
 
   type SortConfig = { key: "genAve"; direction: "asc" | "desc" } | null;
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
@@ -579,7 +586,7 @@ export function SectioningWorkspace() {
     });
   };
 
-  const discardDraft = () => {
+  const discardDraft = useCallback(() => {
     setDraftPlacement(null);
     setExpandedSectionIds(new Set());
     setDraftMoveAction(null);
@@ -588,7 +595,15 @@ export function SectioningWorkspace() {
     setAllowCapacityOverride(false);
     if (sectionsData) setSections(sectionsData);
     if (poolData) setPool(poolData);
-  };
+  }, [poolData, sectionsData]);
+
+  useUnsavedChanges({
+    id: "sectioning-draft-placement",
+    label: "Draft section placement",
+    isDirty: isDraftActive,
+    isSubmitting: commitProcessing,
+    onDiscard: discardDraft,
+  });
 
   const toggleExpandedSection = (sectionId: number) => {
     setExpandedSectionIds((prev) => {
@@ -838,7 +853,14 @@ export function SectioningWorkspace() {
       <Tabs
         value={activeGradeLevelId}
         onValueChange={(val) => {
-          if (!isLockedIn) setActiveGradeLevelId(val);
+          if (isDraftActive) {
+            guardedSetActiveGradeLevelId(val);
+            return;
+          }
+
+          if (selectedAppIds.length === 0) {
+            setActiveGradeLevelId(val);
+          }
         }}
         className="flex-shrink-0 mb-6">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
@@ -846,10 +868,15 @@ export function SectioningWorkspace() {
             <TabsTrigger
               key={g.id}
               value={String(g.id)}
-              disabled={isLockedIn && activeGradeLevelId !== String(g.id)}
+              disabled={
+                selectedAppIds.length > 0 &&
+                !isDraftActive &&
+                activeGradeLevelId !== String(g.id)
+              }
               className={cn(
                 "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md",
-                isLockedIn &&
+                selectedAppIds.length > 0 &&
+                !isDraftActive &&
                 activeGradeLevelId !== String(g.id) &&
                 "opacity-40 cursor-not-allowed bg-muted/20",
               )}>

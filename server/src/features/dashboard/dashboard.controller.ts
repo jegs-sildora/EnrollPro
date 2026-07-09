@@ -565,56 +565,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           where: { enrollmentRecords: { some: { schoolYearId, dropOutDate: { not: null } } } }
         });
 
-    let precedingHistoricalSummary = null;
-    if (!isArchived) {
-      const precedingYear = await prisma.schoolYear.findFirst({
-        where: { status: "ARCHIVED" },
-        orderBy: { id: "desc" },
-      });
-      if (precedingYear) {
-        const precPromotedTotal = await prisma.enrollmentHistory.count({
-          where: { schoolYearId: precedingYear.id, eosyStatus: "PROMOTED" },
-        });
-        const precConditionallyPromotedTotal = await prisma.enrollmentHistory.count({
-          where: { schoolYearId: precedingYear.id, eosyStatus: "CONDITIONALLY_PROMOTED" },
-        });
-        const precRetainedTotal = await prisma.enrollmentHistory.count({
-          where: { schoolYearId: precedingYear.id, eosyStatus: "RETAINED" },
-        });
-        const precJhsCompleterRecords = gradeTenId ? await prisma.enrollmentHistory.findMany({
-          where: {
-            schoolYearId: precedingYear.id,
-            gradeLevelId: gradeTenId,
-            eosyStatus: "PROMOTED",
-          },
-          select: { learner: { select: { sex: true } } },
-        }) : [];
-        const precJhsCompletersMale = precJhsCompleterRecords.filter(
-          (r) => r.learner.sex === "MALE",
-        ).length;
-        const precJhsCompletersFemale = precJhsCompleterRecords.filter(
-          (r) => r.learner.sex === "FEMALE",
-        ).length;
-
-        const precTransferredOutTotal = await prisma.enrollmentHistory.count({
-          where: { schoolYearId: precedingYear.id, eosyStatus: "TRANSFERRED_OUT" },
-        });
-        const precDroppedOutTotal = await prisma.enrollmentHistory.count({
-          where: { schoolYearId: precedingYear.id, eosyStatus: "DROPPED_OUT" },
-        });
-
-        precedingHistoricalSummary = {
-          promotedTotal: precPromotedTotal,
-          conditionallyPromotedTotal: precConditionallyPromotedTotal,
-          retainedTotal: precRetainedTotal,
-          jhsCompletersTotal: precJhsCompleterRecords.length,
-          jhsCompletersMale: precJhsCompletersMale,
-          jhsCompletersFemale: precJhsCompletersFemale,
-          transferredOutTotal: precTransferredOutTotal,
-          droppedOutTotal: precDroppedOutTotal,
-        };
-      }
-    }
 
     const baseStats = {
       systemPhase,
@@ -668,7 +618,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         transferredOutTotal: cumulativeTransferredCount,
         droppedOutTotal: cumulativeDroppedCount,
       },
-      precedingHistoricalSummary,
       criticalSections,
       totalSections,
       gradeLevelBreakdown,

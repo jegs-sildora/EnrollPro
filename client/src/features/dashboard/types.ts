@@ -106,7 +106,6 @@ export interface DashboardStats {
     droppedLearnersCount: number
   }
   historicalSummary: HistoricalSummary
-  precedingHistoricalSummary?: HistoricalSummary | null
   criticalSections: Array<{
     id: string
     name: string

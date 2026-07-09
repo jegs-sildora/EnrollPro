@@ -6,6 +6,7 @@ import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { UnsavedChangesProvider } from "@/shared/hooks/useUnsavedChanges";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -187,8 +188,8 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <>
+    <UnsavedChangesProvider>
       {children ? <>{children}</> : <Outlet />}
-    </>
+    </UnsavedChangesProvider>
   );
 }

@@ -15,6 +15,7 @@ import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { Eye, BookOpen } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
+import { motion } from "motion/react";
 
 import {
   UsersIcon,
@@ -91,10 +92,11 @@ export default function Teachers() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const [activeFilter, setActiveFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
+  const [personnelTypeFilter, setPersonnelTypeFilter] = useState<"all" | "TEACHING" | "NON_TEACHING">("all");
   const [designationFilter, setDesignationFilter] =
     useState<TeacherDesignationFilter>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [activeMetric, setActiveMetric] = useState<"total" | "active" | "inactive" | "advisers">("total");
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -180,8 +182,8 @@ export default function Teachers() {
     ]);
   }, [ayId, queryClient]);
 
-  const onStatusFilterChange = (value: TeacherStatusFilter) => {
-    setStatusFilter(value);
+  const onPersonnelTypeFilterChange = (value: "all" | "TEACHING" | "NON_TEACHING") => {
+    setPersonnelTypeFilter(value);
   };
 
   const onDesignationFilterChange = (value: TeacherDesignationFilter) => {
@@ -191,7 +193,7 @@ export default function Teachers() {
   // Reset page when filters or limit change
   useEffect(() => {
     setPage(1);
-  }, [activeFilter, statusFilter, designationFilter, departmentFilter, limit]);
+  }, [activeFilter, personnelTypeFilter, designationFilter, departmentFilter, activeMetric, limit]);
 
   // eSF7 profile panel handles individual field changes internally
 
@@ -224,9 +226,17 @@ export default function Teachers() {
         !normalizedSearch ||
         buildTeacherSearchIndex(teacher).includes(normalizedSearch);
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" ? teacher.isActive : !teacher.isActive);
+      const matchesPersonnelType = (() => {
+        if (personnelTypeFilter === "all") return true;
+        const isTeaching =
+          teacher.personnelType === "TEACHING" ||
+          (!teacher.personnelType &&
+            (teacher.plantillaPosition?.toUpperCase().includes("TEACHER") ||
+             teacher.plantillaPosition?.toUpperCase().includes("INSTRUCTOR") ||
+             teacher.plantillaPosition?.toUpperCase().includes("PRINCIPAL") ||
+             teacher.plantillaPosition?.toUpperCase().includes("PROFESSOR")));
+        return personnelTypeFilter === "TEACHING" ? isTeaching : !isTeaching;
+      })();
 
       const matchesDesignation =
         designationFilter === "all" ||
@@ -240,19 +250,27 @@ export default function Teachers() {
         (teacher.department ?? "").toUpperCase() ===
         departmentFilter.toUpperCase();
 
+      const matchesActiveMetric =
+        activeMetric === "total" ||
+        (activeMetric === "active" && teacher.isActive) ||
+        (activeMetric === "inactive" && !teacher.isActive) ||
+        (activeMetric === "advisers" && !!teacher.userAccount?.roles?.includes("CLASS_ADVISER"));
+
       return (
         matchesSearch &&
-        matchesStatus &&
+        matchesPersonnelType &&
         matchesDesignation &&
-        matchesDepartment
+        matchesDepartment &&
+        matchesActiveMetric
       );
     });
   }, [
     teachers,
     activeFilter,
-    statusFilter,
+    personnelTypeFilter,
     designationFilter,
     departmentFilter,
+    activeMetric,
   ]);
 
   const sortedTeachers = useMemo(() => {
@@ -595,19 +613,17 @@ export default function Teachers() {
         <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-extrabold shrink-0">
           <div className="w-full sm:w-48">
             <Select
-              value={statusFilter}
+              value={personnelTypeFilter}
               onValueChange={(value) =>
-                onStatusFilterChange(value as TeacherStatusFilter)
+                onPersonnelTypeFilterChange(value as "all" | "TEACHING" | "NON_TEACHING")
               }>
               <SelectTrigger className="h-10 bg-muted">
-                <SelectValue placeholder="Service Status" />
+                <SelectValue placeholder="Personnel Type" />
               </SelectTrigger>
-              <SelectContent className=" font-extrabold">
-                <SelectItem value="all">All Service Status</SelectItem>
-                <SelectItem value="active">Active Personnel</SelectItem>
-                <SelectItem value="inactive">
-                  Inactive / On Leave
-                </SelectItem>
+              <SelectContent className="font-extrabold">
+                <SelectItem value="all">All Personnel Types</SelectItem>
+                <SelectItem value="TEACHING">Teaching Personnel</SelectItem>
+                <SelectItem value="NON_TEACHING">Non-Teaching Personnel</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -661,7 +677,7 @@ export default function Teachers() {
             variant="ghost"
             onClick={() => {
               setActiveFilter("");
-              setStatusFilter("all");
+              setPersonnelTypeFilter("all");
               setDesignationFilter("all");
               setDepartmentFilter("all");
             }}>
@@ -672,7 +688,7 @@ export default function Teachers() {
     ),
     [
       activeFilter,
-      statusFilter,
+      personnelTypeFilter,
       designationFilter,
       departmentFilter,
       availableDesignationFilters,
@@ -700,28 +716,12 @@ export default function Teachers() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Faculty & Staff Masterlist");
+    setTitle("Personnel Masterlist");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
     <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1 text-left">
-          <p className="text-base leading-tight text-foreground text-balance font-extrabold">
-
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setViewingTeacher(null);
-            setIsPanelOpen(true);
-          }}
-          className="font-extrabold uppercase tracking-wide rounded-md">
-          <UserPlusIcon className="w-4 h-4 mr-2" />
-          Add Faculty/Staff
-        </Button>
-      </div>
 
       {!ayId ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-base leading-tight text-foreground">
@@ -729,83 +729,64 @@ export default function Teachers() {
         </div>
       ) : null}
 
-      {/* Premium KPI Cards */}
-      {(() => {
-        const totalCount = teachers.length;
-        const activeCount = teachers.filter((t) => t.isActive).length;
-        const inactiveCount = teachers.filter((t) => !t.isActive).length;
-        const classAdvisersCount = teachers.filter((t) => t.designation?.isClassAdviser).length;
-
-        const kpiCards = [
-          {
-            key: "total",
-            title: "Total Faculty & Staff",
-            value: totalCount,
-            valueClass: "text-foreground",
-            icon: null,
-            iconWrapperClass: "",
-            show: true, // Always show total
-          },
-          {
-            key: "active",
-            title: "Active Personnel",
-            value: activeCount,
-            valueClass: "text-green-600",
-            iconWrapperClass: "bg-green-50 text-green-600",
-            show: activeCount > 0,
-          },
-          {
-            key: "inactive",
-            title: "Inactive / On Leave",
-            value: inactiveCount,
-            valueClass: "text-foreground",
-            iconWrapperClass: "bg-amber-50 text-amber-600",
-            show: inactiveCount > 0,
-          },
-          {
-            key: "advisers",
-            title: "Class Advisers",
-            value: classAdvisersCount,
-            valueClass: "text-orange-600",
-            iconWrapperClass: "bg-orange-50 text-orange-600",
-            show: classAdvisersCount > 0,
-          },
-        ];
-
-        const visibleCards = kpiCards.filter((card) => card.show);
-
-        const gridColsClass =
-          visibleCards.length === 1
-            ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1"
-            : visibleCards.length === 2
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
-            : visibleCards.length === 3
-            ? "grid-cols-1 sm:grid-cols-3 lg:grid-cols-3"
-            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
-
-        return (
-          <div className={cn("grid gap-4", gridColsClass)}>
-            {visibleCards.map((card) => (
-              <div
-                key={card.key}
-                className="flex items-center justify-between p-5 bg-muted border border-gray-200 rounded-md shadow-sm"
-              >
-                <div>
-                  <p className="font-extrabold text-foreground uppercase">
-                    {card.title}
-                  </p>
-                  <p className={cn("mt-1 text-3xl font-extrabold", card.valueClass)}>
-                    {card.value}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
-
       {/* Teacher list table */}
-      <div className="flex-1 min-h-0 bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 bg-muted border border-slate-200 shadow-sm flex flex-col overflow-hidden rounded-md">
+        {/* Inline Metric Toolbar */}
+        {(() => {
+          const totalCount = teachers.length;
+          const activeCount = teachers.filter((t) => t.isActive).length;
+          const inactiveCount = teachers.filter((t) => !t.isActive).length;
+          const classAdvisersCount = teachers.filter((t) => t.userAccount?.roles?.includes("CLASS_ADVISER")).length;
+
+          const metrics = [
+            { key: "total", title: "Total Personnel", value: totalCount },
+            { key: "active", title: "Active Personnel", value: activeCount },
+            { key: "inactive", title: "Inactive / On Leave", value: inactiveCount },
+            { key: "advisers", title: "Class Advisers", value: classAdvisersCount },
+          ] as const;
+
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 h-auto min-h-10 border-b border-gray-200 bg-white shrink-0 md:divide-x md:divide-y-0 divide-y divide-gray-200">
+              {metrics.map((m) => {
+                const isActive = activeMetric === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => setActiveMetric(m.key)}
+                    className={cn(
+                      "relative flex items-center justify-between px-4 py-2 md:py-0 h-10 md:h-full transition-colors uppercase font-extrabold z-10",
+                      isActive
+                        ? "text-primary-foreground bg-primary"
+                        : "text-foreground hover:bg-gray-50"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="personnel-metric-pill"
+                        className="absolute inset-0 bg-primary"
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                      />
+                    )}
+                    <span className="truncate relative z-20">{m.title}</span>
+                    <span className="ml-3 shrink-0 rounded-full bg-primary px-2 py-0.5 text-sm text-primary-foreground relative z-20">{m.value}</span>
+                  </button>
+                );
+              })}
+              <div className="p-1 h-10 md:h-full">
+                <Button
+                  onClick={() => {
+                    setViewingTeacher(null);
+                    setIsPanelOpen(true);
+                  }}
+                  className="w-full h-full font-extrabold uppercase tracking-wide rounded-sm shadow-none">
+                  <UserPlusIcon className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Add Personnel</span>
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Control Bar (Filters) */}
         <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
           {controlBar}

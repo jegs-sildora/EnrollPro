@@ -92,6 +92,7 @@ import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionMod
 import { SchoolYearTransitionLoader } from "@/shared/components/SchoolYearTransitionLoader";
 import { PhaseBanner } from "@/shared/components/PhaseBanner";
 import { useRealtimeInvalidations } from "@/shared/hooks/useRealtimeInvalidations";
+import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -106,6 +107,7 @@ function UserNav() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { confirmOrRun } = useUnsavedChangesPrompt();
 
   const handleLogout = async () => {
     try {
@@ -156,11 +158,14 @@ function UserNav() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer font-bold text-sm"
-            asChild>
-            <Link to="/change-password">
+            onClick={(event) => {
+              event.preventDefault();
+              confirmOrRun(() => navigate("/change-password"));
+            }}>
+            <span className="flex w-full items-center">
               <Settings className="mr-2 h-4 w-4" />
               Change Password
-            </Link>
+            </span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -290,7 +295,7 @@ function SYSwitcher() {
               <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base " text-foreground>
+          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base text-foreground">
             Switch School Year
           </TooltipContent>
         </Tooltip>
@@ -389,9 +394,30 @@ const NavItem = memo(function NavItem({
   pathname: string;
 }) {
   const { selectedAccentHsl, colorScheme } = useSettingsStore();
+  const navigate = useNavigate();
+  const { confirmOrRun } = useUnsavedChangesPrompt();
   const accentHsl =
     selectedAccentHsl ??
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+
+  const handleNavigationClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.shiftKey
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      confirmOrRun(() => navigate(to));
+    },
+    [confirmOrRun, navigate, to],
+  );
 
   let isActive = pathname === to;
 
@@ -430,7 +456,7 @@ const NavItem = memo(function NavItem({
         asChild
         isActive={isActive}
         tooltip={typeof label === "string" ? label : undefined}>
-        <Link to={to}>
+        <Link to={to} onClick={handleNavigationClick}>
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
             <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
@@ -529,7 +555,13 @@ function AppSidebar() {
                 {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider
-                      label="ENROLLMENT & SECTIONING"
+                      label={
+                        systemPhase === "CLASSES_ONGOING"
+                          ? "ACTIVE SCHOOL OPERATIONS"
+                          : systemPhase === "EOSY_CLOSING"
+                            ? "END OF SCHOOL YEAR PROCESSING"
+                            : "ENROLLMENT AND SECTIONING"
+                      }
                       badge={
                         !isEosyArchivedState
                           ? (systemPhase === "EOSY_CLOSING" ? closingOperationsBadge : officialEnrollmentBadge)

@@ -269,31 +269,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         </div>
       )}
 
-      {!isArchived && stats.precedingHistoricalSummary && (
-        <section
-          aria-label="Preceding school year historical baseline"
-          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
-        >
-          <HistoricalSummaryCard
-            title="EOSY Promotion Status"
-            value={stats.precedingHistoricalSummary.promotedTotal}
-            footer="Preceding School Year Baseline"
-          />
-          <HistoricalSummaryCard
-            title="Official JHS Completers"
-            value={stats.precedingHistoricalSummary.jhsCompletersTotal}
-            footer="Preceding School Year Baseline"
-          />
-          <HistoricalSummaryCard
-            title="Transferred & Dropped"
-            value={
-              stats.precedingHistoricalSummary.transferredOutTotal
-              + stats.precedingHistoricalSummary.droppedOutTotal
-            }
-            footer="Preceding School Year Baseline"
-          />
-        </section>
-      )}
 
 
     </div>

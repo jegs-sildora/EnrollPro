@@ -96,6 +96,7 @@ import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 
 interface Student {
   id: number;
@@ -295,6 +296,7 @@ const getInitials = (firstName?: string | null, lastName?: string | null): strin
 };
 
 export default function Students() {
+  const { confirmOrRun } = useUnsavedChangesPrompt();
   const navigate = useNavigate();
   const requestedTab = useSettingsStore((s) => s.uiPreferences.studentsTab);
   const activeTab: StudentTab = VALID_TABS.includes(
@@ -1638,7 +1640,9 @@ export default function Students() {
       <Sheet
         open={selectedStudentId !== null}
         onOpenChange={(open) => {
-          if (!open) setSelectedStudentId(null);
+          if (!open) {
+            confirmOrRun(() => setSelectedStudentId(null));
+          }
         }}>
         <SheetContent
           side="right"

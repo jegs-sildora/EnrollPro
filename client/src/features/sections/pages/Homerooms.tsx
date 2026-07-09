@@ -59,6 +59,10 @@ import {
   REALTIME_INVALIDATION_EVENT,
   type RealtimeInvalidationEvent,
 } from "@/shared/hooks/useRealtimeInvalidations";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
 
 interface Teacher {
   id: number;
@@ -307,6 +311,10 @@ function SectionCard({
   scpTypeLabels,
   teachers,
   onAdviserChange,
+  draftAdviserId,
+  onDraftAdviserChange,
+  onDraftAdviserCancel,
+  allDraftTeacherIds,
 }: {
   section: SectionItem;
   onEdit: () => void;
@@ -316,17 +324,24 @@ function SectionCard({
   scpTypeLabels: Record<string, string>;
   teachers: Teacher[];
   onAdviserChange: (val: string) => void;
+  draftAdviserId?: string;
+  onDraftAdviserChange?: (val: string, initialVal: string) => void;
+  onDraftAdviserCancel?: () => void;
+  allDraftTeacherIds?: Set<string>;
 }) {
   const pct =
     section.fillPercent ??
     Math.round((section.enrolledCount / section.maxCapacity) * 100);
 
   const initialAdviser = section.advisingTeacher ? String(section.advisingTeacher.id) : "none";
-  const [selectedAdviser, setSelectedAdviser] = useState(initialAdviser);
+  const selectedAdviser = draftAdviserId ?? initialAdviser;
 
-  useEffect(() => {
-    setSelectedAdviser(section.advisingTeacher ? String(section.advisingTeacher.id) : "none");
-  }, [section.advisingTeacher]);
+  const dropdownTeachers = useMemo(() => {
+    return teachers.filter((t) => {
+      const tId = String(t.id);
+      return !allDraftTeacherIds?.has(tId) || tId === selectedAdviser;
+    });
+  }, [teachers, allDraftTeacherIds, selectedAdviser]);
 
   const hasPendingAdviserChange = selectedAdviser !== initialAdviser;
 
@@ -337,10 +352,7 @@ function SectionCard({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full",
-        section.enrolledCount > 0
-          ? "hover:border-primary/40 transition-colors cursor-pointer group"
-          : "opacity-80"
+        "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full hover:border-primary/40 transition-colors cursor-pointer group"
       )}
       onClick={section.enrolledCount > 0 ? onViewMasterlist : undefined}
       role={section.enrolledCount > 0 ? "button" : undefined}
@@ -427,18 +439,18 @@ function SectionCard({
                 <div onClick={(e) => e.stopPropagation()} className="w-full -ml-2">
                   <Select
                     value={selectedAdviser}
-                    onValueChange={setSelectedAdviser}>
+                    onValueChange={(val) => onDraftAdviserChange?.(val, initialAdviser)}>
                     <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-extrabold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
                       <SelectValue placeholder="UNASSIGNED" />
                     </SelectTrigger>
                     <SelectContent className="font-extrabold uppercase max-h-[300px]">
                       <SelectItem value="none" className="text-foreground">UNASSIGNED</SelectItem>
-                      {section.advisingTeacher && !teachers.some(t => t.id === section.advisingTeacher!.id) && (
+                      {section.advisingTeacher && !dropdownTeachers.some(t => t.id === section.advisingTeacher!.id) && (
                         <SelectItem value={String(section.advisingTeacher.id)}>
                           {section.advisingTeacher.name}
                         </SelectItem>
                       )}
-                      {teachers.map((t) => (
+                      {dropdownTeachers.map((t) => (
                         <SelectItem key={t.id} value={String(t.id)}>
                           {t.name}
                         </SelectItem>
@@ -493,7 +505,7 @@ function SectionCard({
                 variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedAdviser(initialAdviser);
+                  onDraftAdviserCancel?.();
                 }}>
                 Cancel
               </Button>
@@ -526,6 +538,7 @@ function SectionCard({
 }
 
 export default function Homerooms() {
+  const { confirmOrRun } = useUnsavedChangesPrompt();
   const navigate = useNavigate();
   const renderSectionGroup = (
     category: SectionCategory,
@@ -555,6 +568,10 @@ export default function Homerooms() {
               section={s}
               teachers={teachers}
               onAdviserChange={(val) => handleInlineAdviserChange(s, val)}
+              draftAdviserId={draftAdvisers[s.id]}
+              onDraftAdviserChange={(val, initialVal) => handleDraftAdviserChange(s.id, val, initialVal)}
+              onDraftAdviserCancel={() => handleDraftAdviserCancel(s.id)}
+              allDraftTeacherIds={allDraftTeacherIds}
               scpTypeLabels={offeredScpTypeLabels}
               onEdit={() => handleOpenEdit(s, glName, glDisplayOrder)}
               onDelete={() => {
@@ -621,6 +638,11 @@ export default function Homerooms() {
         advisingTeacherId: newAdviserId === "none" ? null : parseInt(newAdviserId),
       };
       await api.put(`/sections/${section.id}`, payload);
+      setDraftAdvisers((prev) => {
+        const next = { ...prev };
+        delete next[section.id];
+        return next;
+      });
       fetchData();
       sileo.success({
         title: "Adviser updated",
@@ -633,6 +655,36 @@ export default function Homerooms() {
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [draftAdvisers, setDraftAdvisers] = useState<Record<number, string>>({});
+  const allDraftTeacherIds = useMemo(() => new Set(Object.values(draftAdvisers).filter((id) => id !== "none")), [draftAdvisers]);
+
+  const handleDraftAdviserChange = useCallback((sectionId: number, teacherId: string, initialAdviserId: string) => {
+    setDraftAdvisers((prev) => {
+      const next = { ...prev };
+      if (teacherId === initialAdviserId) {
+        delete next[sectionId];
+        return next;
+      }
+      if (teacherId !== "none") {
+        for (const [sId, tId] of Object.entries(next)) {
+          if (tId === teacherId && Number(sId) !== sectionId) {
+            delete next[Number(sId)];
+          }
+        }
+      }
+      next[sectionId] = teacherId;
+      return next;
+    });
+  }, []);
+
+  const handleDraftAdviserCancel = useCallback((sectionId: number) => {
+    setDraftAdvisers((prev) => {
+      const next = { ...prev };
+      delete next[sectionId];
+      return next;
+    });
+  }, []);
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
@@ -650,6 +702,8 @@ export default function Homerooms() {
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
   });
+  const [sectionFormBaseline, setSectionFormBaseline] =
+    useState<SectionFormState | null>(null);
   const [submittingForm, setSubmittingForm] = useState(false);
   const [programOptions, setProgramOptions] = useState<
     { value: string; label: string }[]
@@ -960,7 +1014,7 @@ export default function Homerooms() {
       setCreateGlName(glName);
       setCreateGlDisplayOrder(glDisplayOrder);
       setCreateCategory(category);
-      setSectionFormData({
+      const nextFormData = {
         name: "",
         curriculumProgram: selectedCurriculumProgram,
         programType:
@@ -970,7 +1024,9 @@ export default function Homerooms() {
         adviserId: "none",
         maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
         tleProgramId: null,
-      });
+      };
+      setSectionFormData(nextFormData);
+      setSectionFormBaseline(nextFormData);
       setIsFormSheetOpen(true);
     },
     [programOptions],
@@ -983,7 +1039,7 @@ export default function Homerooms() {
       setCreateCategory(null);
       setCreateGlName(glName);
       setCreateGlDisplayOrder(glDisplayOrder);
-      setSectionFormData({
+      const nextFormData = {
         name: section.name,
         curriculumProgram: section.programType === "REGULAR" ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO") : section.programType,
         programType: section.programType,
@@ -998,12 +1054,44 @@ export default function Homerooms() {
           : "none",
         maxCapacity: section.maxCapacity,
         tleProgramId: section.tleProgramId ?? null,
-      });
+      };
+      setSectionFormData(nextFormData);
+      setSectionFormBaseline(nextFormData);
 
       setIsFormSheetOpen(true);
     },
     [],
   );
+
+  const isSectionFormDirty = useMemo(
+    () =>
+      isFormSheetOpen &&
+      sectionFormBaseline !== null &&
+      JSON.stringify(sectionFormData) !== JSON.stringify(sectionFormBaseline),
+    [isFormSheetOpen, sectionFormBaseline, sectionFormData],
+  );
+
+  const discardSectionFormChanges = useCallback(() => {
+    if (sectionFormBaseline) {
+      setSectionFormData(sectionFormBaseline);
+    }
+    setIsFormSheetOpen(false);
+  }, [sectionFormBaseline]);
+
+  const requestCloseSectionForm = useCallback(() => {
+    confirmOrRun(() => setIsFormSheetOpen(false));
+  }, [confirmOrRun]);
+
+  useUnsavedChanges({
+    id: "section-form-sheet",
+    label:
+      formSheetMode === "create"
+        ? "New section form"
+        : "Section edit form",
+    isDirty: isSectionFormDirty,
+    isSubmitting: submittingForm,
+    onDiscard: discardSectionFormChanges,
+  });
 
   const handleFieldChange = useCallback(
     (field: keyof SectionFormState, value: string | number | null) => {
@@ -1300,7 +1388,13 @@ export default function Homerooms() {
       <SectionFormSheet
         mode={formSheetMode}
         open={isFormSheetOpen}
-        onOpenChange={setIsFormSheetOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsFormSheetOpen(true);
+            return;
+          }
+          requestCloseSectionForm();
+        }}
         title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
         description={
           formSheetMode === "create"
@@ -1313,7 +1407,7 @@ export default function Homerooms() {
         formData={sectionFormData}
         onFieldChange={handleFieldChange}
         onSubmit={handleFormSubmit}
-        onCancel={() => setIsFormSheetOpen(false)}
+        onCancel={requestCloseSectionForm}
         submitting={submittingForm}
         canSubmit={
           !!sectionFormData.name.trim() &&

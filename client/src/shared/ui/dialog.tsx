@@ -16,7 +16,7 @@ const DialogOverlay = React.forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cn(
-      "fixed inset-0 z-50 bg-black/72 backdrop-blur-[1px]",
+      "fixed inset-0 z-[90] bg-black/72 backdrop-blur-[1px]",
       motionClassNames.overlay,
       className,
     )}
@@ -35,7 +35,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       aria-describedby={props["aria-describedby"] ?? undefined}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
+        "fixed left-[50%] top-[50%] z-[100] grid w-full max-w-3xl h-fit max-h-[95vh] overflow-y-auto gap-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg",
         motionClassNames.dialogContent,
         className,
       )}

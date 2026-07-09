@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { sileo } from "sileo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +35,10 @@ import {
 import { updateIdentitySchema } from "@enrollpro/shared/schemas";
 
 import { Switch } from "@/shared/ui/switch";
+import {
+  UnsavedChangesBar,
+  useUnsavedChanges,
+} from "@/shared/hooks/useUnsavedChanges";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -126,7 +130,7 @@ export default function SchoolProfileTab() {
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl ??
     "221 83% 53%";
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = useCallback(async (values: FormValues) => {
     try {
       await api.put("/settings/identity", values);
       setSettings(values);
@@ -138,11 +142,27 @@ export default function SchoolProfileTab() {
     } catch (err) {
       toastApiError(err as never);
     }
-  };
+  }, [form, setSettings]);
 
-  const handleDiscard = () => {
+  const handleDiscard = useCallback(() => {
     form.reset();
-  };
+  }, [form]);
+
+  const handleSaveConfiguration = useMemo(
+    () => form.handleSubmit(onSubmit),
+    [form, onSubmit],
+  );
+
+  useUnsavedChanges({
+    id: "settings-school-profile",
+    label: "School profile",
+    isDirty: !isArchived && isDirty,
+    isSubmitting,
+    onDiscard: handleDiscard,
+    onSave: handleSaveConfiguration,
+    saveLabel: "Save Configuration",
+    showStickyBar: true,
+  });
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -575,17 +595,12 @@ export default function SchoolProfileTab() {
 
             {/* Global Sticky Footer */}
             {!isArchived && isDirty && (
-              <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8">
-                <span className="text-sm sm:text-base leading-tight text-foreground mr-auto hidden sm:inline-block">You have unsaved changes.</span>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                  <Button type="button" variant="outline" onClick={handleDiscard} disabled={isSubmitting} className="flex-1 sm:flex-initial py-2 h-auto text-sm sm:text-base">
-                    Discard Changes
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-initial py-2 h-auto text-sm sm:text-base">
-                    {isSubmitting ? "Saving..." : "Save Configuration"}
-                  </Button>
-                </div>
-              </div>
+              <UnsavedChangesBar
+                isSubmitting={isSubmitting}
+                onDiscard={handleDiscard}
+                onSave={handleSaveConfiguration}
+                saveLabel="Save Configuration"
+              />
             )}
           </fieldset>
         </form>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, FormProvider, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EnrollmentFormSchema, type EnrollmentFormData } from "./types";
@@ -20,6 +20,10 @@ import api from "@/shared/api/axiosInstance";
 import { toUpperCaseRecursive } from "@/shared/lib/utils";
 import { sileo } from "sileo";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
 
 const DRAFT_KEY = "enrollpro_enrollment_draft";
 
@@ -163,6 +167,8 @@ export default function EnrollmentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [hasActiveDraft, setHasActiveDraft] = useState(Boolean(initialDraft));
+  const { confirmOrRun } = useUnsavedChangesPrompt();
 
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
   const [duplicateAction, setDuplicateAction] = useState<"new" | "update" | null>(null);
@@ -178,7 +184,7 @@ export default function EnrollmentForm({
     mode: "onBlur",
   });
 
-  const { handleSubmit, trigger, reset, watch, control, formState: { errors } } = methods;
+  const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty } } = methods;
 
   const validationIssues: ValidationIssue[] = Array.from(
     new Map(
@@ -204,9 +210,28 @@ export default function EnrollmentForm({
   useEffect(() => {
     const subscription = watch((value) => {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      setHasActiveDraft(true);
     });
     return () => subscription.unsubscribe();
   }, [watch]);
+
+  const discardEnrollmentDraft = useCallback(() => {
+    reset({
+      ...DEFAULT_VALUES,
+    });
+    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem("enrollpro_apply_consent");
+    setHasActiveDraft(false);
+    setSubmitError("");
+  }, [reset]);
+
+  useUnsavedChanges({
+    id: "public-online-enrollment",
+    label: "Online enrollment form",
+    isDirty: hasActiveDraft || isDirty,
+    isSubmitting,
+    onDiscard: discardEnrollmentDraft,
+  });
 
   const goToValidationIssue = (issue: ValidationIssue) => {
     if (!issue.fieldPath) {
@@ -348,6 +373,7 @@ export default function EnrollmentForm({
       // Clear session storage
       localStorage.removeItem(DRAFT_KEY);
       localStorage.removeItem("enrollpro_apply_consent");
+      setHasActiveDraft(false);
     } catch (error: unknown) {
       const responseData = (
         error as {
@@ -417,7 +443,7 @@ export default function EnrollmentForm({
     <div className="max-w-6xl mx-auto p-4 md:p-0">
       {onBack && (
         <Button
-          onClick={onBack}
+          onClick={() => confirmOrRun(onBack)}
           className="mb-6 group font-extrabold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Selection
@@ -528,6 +554,7 @@ export default function EnrollmentForm({
                       }
                       reset({ ...DEFAULT_VALUES });
                       localStorage.removeItem(DRAFT_KEY);
+                      setHasActiveDraft(false);
                     } catch (error: any) {
                       setSubmitError(error.response?.data?.message || "Failed to update application.");
                       scrollToTopInstant();

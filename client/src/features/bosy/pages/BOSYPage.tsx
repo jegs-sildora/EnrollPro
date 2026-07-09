@@ -81,6 +81,7 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { VerificationWorkspace } from "@/features/enrollment/components/VerificationWorkspace";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+import { useGuardedTabChange } from "@/shared/hooks/useUnsavedChanges";
 
 import { sileo } from "sileo";
 
@@ -548,7 +549,10 @@ export default function BOSYPage() {
 
   const setTitle = useHeaderStore((s) => s.setTitle);
   const activeTab = useSettingsStore((s) => s.uiPreferences.bosyTab);
-  const setActiveTab = (tab: string) => useSettingsStore.getState().updateUiPreference("bosyTab", tab);
+  const setActiveTab = useCallback((tab: string) => {
+    useSettingsStore.getState().updateUiPreference("bosyTab", tab);
+  }, []);
+  const guardedSetActiveTab = useGuardedTabChange(setActiveTab);
 
   useEffect(() => {
     setTitle("Learner Enrollment");
@@ -557,7 +561,7 @@ export default function BOSYPage() {
 
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
+      <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
             value="continuing"
@@ -671,7 +675,7 @@ export default function BOSYPage() {
                               )}>
                               {value}
                             </span>
-                            <span className="text-sm leading-snug font-extrabold">
+                            <span className="text-sm font-extrabold mb-2">
                               {subBadge}
                             </span>
                           </div>

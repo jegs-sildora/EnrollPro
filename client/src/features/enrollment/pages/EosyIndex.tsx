@@ -60,6 +60,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate, useNavigate } from "react-router";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+import {
+  useGuardedTabChange,
+  useUnsavedChanges,
+} from "@/shared/hooks/useUnsavedChanges";
 
 const EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "eosy:sections",
@@ -338,6 +342,19 @@ export default function EosyUpdating() {
     longitude?: number;
   }>>({});
   const [isCommitting, setIsCommitting] = useState(false);
+  const hasUnsavedEosyChanges = Object.keys(unsavedChanges).length > 0;
+  const discardUnsavedEosyChanges = useCallback(() => {
+    setUnsavedChanges({});
+  }, []);
+  const guardedSetActiveTab = useGuardedTabChange(setActiveTab);
+
+  useUnsavedChanges({
+    id: "eosy-updating",
+    label: "EOSY learner updates",
+    isDirty: hasUnsavedEosyChanges,
+    isSubmitting: isCommitting,
+    onDiscard: discardUnsavedEosyChanges,
+  });
 
   const handleFieldChange = useCallback((
     recordId: number,
@@ -1336,7 +1353,7 @@ export default function EosyUpdating() {
 
 
         {/* ── Grade Tabs + Transition Button Row ── */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+        <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex flex-col">
           <div className="flex items-center gap-4 mb-4 flex-shrink-0">
             <TabsList className="flex-1 flex flex-wrap sm:flex-nowrap h-auto gap-1 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
               {gradeLevels.map((gl) => (

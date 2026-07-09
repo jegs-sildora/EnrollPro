@@ -3,6 +3,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { useCurriculumScpConfigs } from "./hooks/useCurriculumScpConfigs";
 import { ScpProgramCard } from "./components/ScpProgramCard";
+import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 export default function CurriculumTabPage() {
   const {
@@ -28,6 +29,16 @@ export default function CurriculumTabPage() {
 
   const scpYearStart = new Date(currentYearInManila, 0, 1);
   const scpYearEnd = new Date(currentYearInManila, 11, 31);
+
+  useUnsavedChanges({
+    id: "settings-curriculum",
+    label: "Curriculum configuration",
+    isDirty: hasUnsavedChanges,
+    isSubmitting: savingScp,
+    onDiscard: handleDiscardScpChanges,
+    onSave: handleSaveScp,
+    saveLabel: "Save All Curriculum Configurations",
+  });
 
   if (!ayId) {
     return (

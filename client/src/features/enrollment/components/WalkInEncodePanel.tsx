@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -25,8 +25,11 @@ import {
   FormMessage,
 } from "@/shared/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesPrompt,
+} from "@/shared/hooks/useUnsavedChanges";
 
 import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -76,10 +79,10 @@ function getWalkInErrorMessage(error: unknown, fallback: string): string {
 
 export function WalkInEncodePanel() {
   const [open, setOpen] = useState(false);
-  const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
   const queryClient = useQueryClient();
+  const { confirmOrRun } = useUnsavedChangesPrompt();
 
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
@@ -154,23 +157,27 @@ export function WalkInEncodePanel() {
     }
   };
 
-  const resetPanelState = () => {
+  const resetPanelState = useCallback(() => {
     form.reset();
     setNoLrn(false);
-  };
+  }, [form]);
 
-  const closePanel = () => {
+  const closePanel = useCallback(() => {
     resetPanelState();
     setOpen(false);
-  };
+  }, [resetPanelState]);
 
-  const requestClosePanel = () => {
-    if (isDirty) {
-      setShowDiscardModal(true);
-      return;
-    }
-    closePanel();
-  };
+  const requestClosePanel = useCallback(() => {
+    confirmOrRun(closePanel);
+  }, [closePanel, confirmOrRun]);
+
+  useUnsavedChanges({
+    id: "walk-in-encode-panel",
+    label: "Walk-in learner form",
+    isDirty: open && isDirty,
+    isSubmitting,
+    onDiscard: resetPanelState,
+  });
 
   const onSubmit = async (values: DirectEncodeWalkInPayload) => {
     const payload = {
@@ -607,21 +614,6 @@ export function WalkInEncodePanel() {
           </form>
         </Form>
       </SheetContent>
-
-      <ConfirmationModal
-        open={showDiscardModal}
-        onOpenChange={setShowDiscardModal}
-        title="Discard Unsaved Changes?"
-        description="Are you sure you want to discard this encoding session? Unsaved data will be lost."
-        confirmText="Discard Changes"
-        variant="danger"
-        onConfirm={() => {
-          setShowDiscardModal(false);
-          form.reset();
-          setNoLrn(false);
-          setOpen(false);
-        }}
-      />
     </Sheet>
   );
 }

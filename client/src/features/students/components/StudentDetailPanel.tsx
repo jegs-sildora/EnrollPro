@@ -59,6 +59,7 @@ import {
 import { sileo } from "sileo";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
 
 interface Address {
   houseNoStreet?: string;
@@ -441,6 +442,75 @@ export function StudentDetailPanel({
 
     return JSON.stringify(profileForm) !== JSON.stringify(original);
   }, [profileForm, student]);
+
+  const resetProfileEdits = useCallback(() => {
+    if (!student) return;
+
+    setProfileForm({
+      firstName: student.firstName || "",
+      lastName: student.lastName || "",
+      middleName: student.middleName || "",
+      suffix: student.suffix || "",
+      sex: student.sex || "FEMALE",
+      birthDate: student.birthDate
+        ? format(new Date(student.birthDate), "yyyy-MM-dd")
+        : "",
+      contactNumber:
+        student.contactNumber || student.parentGuardianContact || "",
+      motherFirstName: student.motherName?.firstName || "",
+      motherLastName: student.motherName?.lastName || "",
+      motherMiddleName: student.motherName?.middleName || "",
+      fatherFirstName: student.fatherName?.firstName || "",
+      fatherLastName: student.fatherName?.lastName || "",
+      fatherMiddleName: student.fatherName?.middleName || "",
+      guardianFirstName: student.guardianInfo?.firstName || "",
+      guardianLastName: student.guardianInfo?.lastName || "",
+      guardianMiddleName: student.guardianInfo?.middleName || "",
+      houseNoStreet: student.currentAddress?.houseNoStreet || "",
+      sitioPurok:
+        student.currentAddress?.sitio || student.currentAddress?.street || "",
+      region: student.currentAddress?.region || "Negros Island Region (NIR)",
+      province: student.currentAddress?.province || "Negros Occidental",
+      cityMunicipality: student.currentAddress?.cityMunicipality || "",
+      barangay: student.currentAddress?.barangay || "",
+      isIpCommunity: student.isIpCommunity ? "YES" : "NO",
+      ipGroupName: student.ipGroupName || "",
+      is4PsBeneficiary: student.is4PsBeneficiary ? "YES" : "NO",
+      isBalikAral: student.isBalikAral ? "YES" : "NO",
+      disabilityType:
+        student.isLearnerWithDisability &&
+          student.disabilityTypes &&
+          student.disabilityTypes.length > 0
+          ? student.disabilityTypes[0]
+          : "NONE",
+      motherTongue: student.motherTongue || "",
+      religion: student.religion || "",
+      primaryContact:
+        student.contactNumber === student.motherName?.contactNumber &&
+          student.motherName?.contactNumber
+          ? "MOTHER"
+          : student.contactNumber === student.fatherName?.contactNumber &&
+            student.fatherName?.contactNumber
+            ? "FATHER"
+            : student.contactNumber === student.guardianInfo?.contactNumber &&
+              student.guardianInfo?.contactNumber
+              ? "GUARDIAN"
+              : "MOTHER",
+      motherContactNumber: student.motherName?.contactNumber || "",
+      fatherContactNumber: student.fatherName?.contactNumber || "",
+      guardianContactNumber: student.guardianInfo?.contactNumber || "",
+    });
+    setErrors({});
+    setIsEditing(false);
+  }, [student]);
+
+  useUnsavedChanges({
+    id: "student-detail-panel",
+    label: "Learner profile",
+    isDirty: isEditing && isProfileFormDirty,
+    isSubmitting,
+    onDiscard: resetProfileEdits,
+  });
 
   const handleEditClick = () => {
     if (!student) return;
@@ -1933,7 +2003,7 @@ export function StudentDetailPanel({
           <Button
             variant="outline"
             type="button"
-            onClick={() => setIsEditing(false)}
+            onClick={resetProfileEdits}
             disabled={isSubmitting}
             className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted">
             Cancel
