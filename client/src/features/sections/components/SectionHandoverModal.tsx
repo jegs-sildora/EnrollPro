@@ -375,7 +375,7 @@ export function SectionHandoverModal({
             className="font-extrabold uppercase text-base  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing
+                <Loader2 className="mr-2 h-4 w-4 " /> Executing
                 Handover...
               </>
             ) : (

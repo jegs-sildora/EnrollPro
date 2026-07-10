@@ -188,7 +188,7 @@ export function ChangePasswordForm({
           className="w-full h-12 font-extrabold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
           disabled={loading}>
           {loading ? (
-            <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{loadingLabel}</>
+            <><Loader2 className="mr-2 h-5 w-5 " />{loadingLabel}</>
           ) : submitLabel}
         </Button>
       </div>

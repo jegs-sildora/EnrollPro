@@ -390,7 +390,7 @@ export default function ReadingAssessmentPage() {
             onClick={handleRefresh}
             disabled={isFetching}
           >
-            <RefreshCw className={cn("h-5 w-5", isFetching && "animate-spin")} />
+            <RefreshCw className={cn("h-5 w-5", isFetching && "")} />
           </Button>
         </div>
       </div>
@@ -416,7 +416,7 @@ export default function ReadingAssessmentPage() {
             </CardHeader>
             <CardContent className="p-3 pt-0">
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
+                <Loader2 className="h-5 w-5  text-foreground" />
               ) : (
                 <p className="text-2xl font-extrabold">{value}</p>
               )}
@@ -644,7 +644,7 @@ export default function ReadingAssessmentPage() {
                 ))}
                 {philIriSaving && (
                   <div className="flex items-center justify-center gap-2 text-base leading-tight text-foreground">
-                    <Loader2 className="size-4 animate-spin" />
+                    <Loader2 className="size-4 " />
                     <span>Saving…</span>
                   </div>
                 )}
@@ -725,7 +725,7 @@ export default function ReadingAssessmentPage() {
               >
                 {confirmSaving ? (
                   <>
-                    <Loader2 className="size-4 animate-spin mr-2" />
+                    <Loader2 className="size-4  mr-2" />
                     Confirming…
                   </>
                 ) : (
@@ -1133,7 +1133,7 @@ function ContinuingQueueCard({
               >
                 {confirming ? (
                   <>
-                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                    <Loader2 className="size-3.5  mr-1.5" />
                     Confirming...
                   </>
                 ) : isConfirmed ? (

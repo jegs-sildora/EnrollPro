@@ -17,6 +17,7 @@ import {
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useHeaderStore } from "@/store/header.slice";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 
 import {
@@ -1010,9 +1011,7 @@ export default function BOSYPage() {
                         </p>
                         <div className="py-4 space-y-3 text-left">
                           {noShowLoading ? (
-                            <div className="flex items-center justify-center h-32">
-                              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-                            </div>
+                            <DataTableSkeleton rows={8} columns={4} className="rounded-lg" />
                           ) : noShowItems.length > 0 ? (
                             <>
                               <DataTable

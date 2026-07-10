@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState } from "@tanstack/react-table";
 import React, { useState, useRef, type ReactNode } from "react";
-import { motion } from "motion/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import {
@@ -19,7 +18,18 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
-import { createMotionTransition, useMotionPreferences } from "@/shared/lib/motion";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+
+type SkeletonShape = "line" | "pill" | "circle" | "button";
+
+interface DataTableColumnMeta {
+  className?: string;
+  headerClassName?: string;
+  skeletonClassName?: string;
+  customSkeleton?: React.ReactNode;
+  skeletonWidth?: string;
+  skeletonShape?: SkeletonShape;
+}
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -27,6 +37,7 @@ export interface DataTableProps<TData, TValue> {
   getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
   onRowClick?: (row: TData) => void;
   loading?: boolean;
+  loadingBehavior?: "immediate" | "delayed";
   className?: string;
   tableClassName?: string;
   noResultsMessage?: string;
@@ -44,9 +55,9 @@ export interface DataTableProps<TData, TValue> {
   renderRowAfter?: (row: TData, index: number) => ReactNode;
   dense?: boolean;
   isRowClickable?: (row: TData) => boolean;
+  skeletonRowCount?: number;
 }
 
-const MotionTableBody = motion.create(TableBody);
 
 interface TableRowComponentProps<TData> {
   row: Row<TData>;
@@ -143,6 +154,7 @@ export function DataTable<TData, TValue>({
   getRowId,
   onRowClick,
   loading = false,
+  loadingBehavior = "immediate",
   className,
   tableClassName,
   noResultsMessage = "No results.",
@@ -160,8 +172,8 @@ export function DataTable<TData, TValue>({
   renderRowAfter,
   dense = false,
   isRowClickable,
+  skeletonRowCount = 50,
 }: DataTableProps<TData, TValue>) {
-  const motionPreferences = useMotionPreferences();
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -205,6 +217,9 @@ export function DataTable<TData, TValue>({
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const delayedLoading = useDelayedLoading(loading, 200);
+  const showLoadingRows = loadingBehavior === "delayed" ? delayedLoading : loading;
+  const suppressEmptyDuringDelayedLoading = loadingBehavior === "delayed" && loading && !delayedLoading;
 
   return (
     <div
@@ -223,7 +238,7 @@ export function DataTable<TData, TValue>({
                 key={headerGroup.id}
                 className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as { headerClassName?: string; className?: string } | undefined;
+                  const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined;
                   const isPinned = header.column.getIsPinned();
                   const isLeftPinned = isPinned === "left";
                   const isRightPinned = isPinned === "right";
@@ -255,25 +270,23 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          {loading ? (
-            <MotionTableBody
-              key="loading-body"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={createMotionTransition(motionPreferences, "fast")}
-              className="relative">
-              {Array.from({ length: 5 }).map((_, i) => (
+          {showLoadingRows ? (
+            <TableBody className="relative">
+              {Array.from({ length: skeletonRowCount }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`} className="bg-background">
                   {table.getAllLeafColumns().map((column, index) => {
-                    const meta = column.columnDef.meta as
-                      | {
-                        skeletonClassName?: string;
-                        customSkeleton?: React.ReactNode;
-                      }
-                      | undefined;
+                    const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
                     const isPinned = column.getIsPinned();
                     const isLeftPinned = isPinned === "left";
                     const isRightPinned = isPinned === "right";
+                    const skeletonShapeClassName =
+                      meta?.skeletonShape === "circle"
+                        ? "h-8 w-8 rounded-full"
+                        : meta?.skeletonShape === "pill"
+                          ? "h-7 w-24 rounded-full"
+                          : meta?.skeletonShape === "button"
+                            ? "h-10 w-24 rounded-lg"
+                            : "h-5 w-full";
                     return (
                       <TableCell
                         key={index}
@@ -288,9 +301,10 @@ export function DataTable<TData, TValue>({
                         ) : (
                           <Skeleton
                             className={cn(
-                              "h-5 w-full",
+                              skeletonShapeClassName,
                               meta?.skeletonClassName,
                             )}
+                            style={meta?.skeletonWidth ? { width: meta.skeletonWidth } : undefined}
                           />
                         )}
                       </TableCell>
@@ -298,14 +312,9 @@ export function DataTable<TData, TValue>({
                   })}
                 </TableRow>
               ))}
-            </MotionTableBody>
-          ) : !forceEmptyState && rows.length > 0 ? (
-            <MotionTableBody
-              key="data-body"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={createMotionTransition(motionPreferences, "fast")}
-              className="relative">
+            </TableBody>
+          ) : !forceEmptyState && !suppressEmptyDuringDelayedLoading && rows.length > 0 ? (
+            <TableBody className="relative">
               {prependBodyRow}
               {virtualize
                 ? [
@@ -358,23 +367,23 @@ export function DataTable<TData, TValue>({
                     {renderRowAfter?.(row.original, row.index)}
                   </React.Fragment>
                 ))}
-            </MotionTableBody>
+            </TableBody>
           ) : prependBodyRow ? (
-            <MotionTableBody
-              key="prepend-body"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={createMotionTransition(motionPreferences, "fast")}
-              className="relative">
+            <TableBody className="relative">
               {prependBodyRow}
-            </MotionTableBody>
+            </TableBody>
+          ) : suppressEmptyDuringDelayedLoading ? (
+            <TableBody className="relative">
+              <TableRow key="delayed-loading-gap">
+                <TableCell
+                  colSpan={columns.length}
+                  className="p-0">
+                  <div className="h-24" aria-hidden="true" />
+                </TableCell>
+              </TableRow>
+            </TableBody>
           ) : (
-            <MotionTableBody
-              key="empty-body"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={createMotionTransition(motionPreferences, "fast")}
-              className="relative">
+            <TableBody className="relative">
               <TableRow key="no-results">
                 <TableCell
                   colSpan={columns.length}
@@ -386,7 +395,7 @@ export function DataTable<TData, TValue>({
                   )}
                 </TableCell>
               </TableRow>
-            </MotionTableBody>
+            </TableBody>
           )}
         </Table>
       </div>

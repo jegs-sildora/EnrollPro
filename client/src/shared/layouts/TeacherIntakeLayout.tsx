@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate, Link, Outlet } from "react-router";
+import { useNavigate, Link, Outlet, useLocation } from "react-router";
+import { AnimatePresence } from "motion/react";
 import { ChevronDown, LogOut, Settings, School } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
+import { PageTransition } from "@/shared/components/PageTransition";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -124,6 +126,8 @@ function TeacherUserNav() {
 
 export default function TeacherIntakeLayout() {
   const { schoolName, logoUrl } = useSettingsStore();
+  const location = useLocation();
+  const routeKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -157,7 +161,11 @@ export default function TeacherIntakeLayout() {
 
       {/* Page content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-6 scrollbar-thin">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <PageTransition key={routeKey} className="flex min-h-0 flex-1 flex-col">
+            <Outlet />
+          </PageTransition>
+        </AnimatePresence>
       </main>
     </div>
   );

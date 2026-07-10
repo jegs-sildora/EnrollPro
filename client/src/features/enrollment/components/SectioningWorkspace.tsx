@@ -63,6 +63,7 @@ import {
   useGuardedTabChange,
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
+import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface SectionSummary {
   id: number;
@@ -802,16 +803,7 @@ export function SectioningWorkspace() {
   }
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-base leading-tight font-extrabold text-slate-500 uppercase animate-pulse">
-            Loading Workspace...
-          </p>
-        </div>
-      </div>
-    );
+    return <TwoPanelSkeleton />;
   }
 
   const displayedRosters =
@@ -1426,7 +1418,7 @@ export function SectioningWorkspace() {
                   )}>
                   {processing ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 " />
                       Assigning...
                     </>
                   ) : (

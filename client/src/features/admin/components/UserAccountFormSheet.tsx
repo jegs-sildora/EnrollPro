@@ -701,7 +701,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         onClick={() => onResetToDefault?.(customPassword)}
                         disabled={submitting || !customPassword.trim()}
                       >
-                        <RefreshCw className={cn("h-4 w-4 mr-2", submitting && "animate-spin")} />
+                        <RefreshCw className={cn("h-4 w-4 mr-2", submitting && "")} />
                         {submitting ? "Applying..." : "Apply & Reset Password"}
                       </Button>
                     </div>
@@ -755,7 +755,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                           className="h-10 w-10 border-border"
                           onClick={handleGenerate}>
                           <RefreshCw
-                            className={cn("h-4 w-4", isGenerating && "animate-spin")}
+                            className={cn("h-4 w-4", isGenerating && "")}
                           />
                         </Button>
                         <Button

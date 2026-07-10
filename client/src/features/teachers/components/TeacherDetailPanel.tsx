@@ -314,6 +314,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   }, [teacher, reset, open]);
 
   const isAdding = !teacher;
+  const [isEditing, setIsEditing] = useState(isAdding);
+
+  useEffect(() => {
+    if (open) setIsEditing(isAdding);
+  }, [open, isAdding]);
 
   const designationPool = useMemo(() => {
     return getDesignationPool(formRoles);
@@ -495,7 +500,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="firstName"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             className={cn(
@@ -518,7 +523,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="lastName"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             className={cn(
@@ -541,7 +546,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="middleName"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
@@ -556,7 +561,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="suffix"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
@@ -614,7 +619,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="birthdate"
                         control={control}
                         render={({ field }) => (
-                          <HybridDatePicker
+                          <HybridDatePicker disabled={!isEditing}
                             value={field.value || ""}
                             onChange={field.onChange}
                             className={cn(
@@ -651,7 +656,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="employeeId"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
@@ -680,7 +685,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         render={({ field }) => (
                           <>
                             {formRoles.includes("MRF") || designationPool.length === 0 ? (
-                              <Input
+                              <Input disabled={!isEditing}
                                 value={field.value || ""}
                                 onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                                 placeholder="e.g. MASTER TEACHER II"
@@ -689,7 +694,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               />
                             ) : (
                               <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                                <SelectTrigger className="font-extrabold text-base leading-tight h-10">
+                                <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
                                   <SelectValue placeholder="Select position" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[300px]">
@@ -717,7 +722,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                              <SelectTrigger className="font-extrabold text-base leading-tight h-10">
+                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
                                 <SelectValue placeholder="Select subject area" />
                               </SelectTrigger>
                               <SelectContent className="max-h-[300px]">
@@ -743,7 +748,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="functionalAssignment"
                           control={control}
                           render={({ field }) => (
-                            <Input
+                            <Input disabled={!isEditing}
                               {...field}
                               value={field.value || ""}
                               onChange={(e) => field.onChange(e.target.value.toUpperCase())}
@@ -771,7 +776,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={field.onChange} value={field.value || "ACTIVE"}>
-                              <SelectTrigger className="font-extrabold text-base leading-tight h-10">
+                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                               <SelectContent>
@@ -792,7 +797,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             name="serviceEffectiveDate"
                             control={control}
                             render={({ field }) => (
-                              <HybridDatePicker
+                              <HybridDatePicker disabled={!isEditing}
                                 value={field.value || ""}
                                 onChange={field.onChange}
                                 className="h-10 font-extrabold text-base leading-tight"
@@ -809,7 +814,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="serviceRemarks"
                           control={control}
                           render={({ field }) => (
-                            <Textarea
+                            <Textarea disabled={!isEditing}
                               placeholder="e.g., maternity leave, transferred to another school, retired"
                               className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
                               {...field}
@@ -842,7 +847,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="contactNumber"
                         control={control}
                         render={({ field }) => (
-                          <Input
+                          <Input disabled={!isEditing}
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
@@ -881,7 +886,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             { value: "MRF", label: "MRF Staff" },
                           ] as const).map((roleOption) => (
                             <div key={roleOption.value} className="flex items-center space-x-2 bg-background p-2 rounded border border-border">
-                              <Checkbox
+                              <Checkbox disabled={!isEditing}
                                 id={`role-${roleOption.value}`}
                                 checked={field.value.includes(roleOption.value)}
                                 onCheckedChange={(checked) => {
@@ -917,7 +922,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <div className="flex gap-4">
                               <button
                                 type="button"
-                                disabled={isPortalActionSubmitting}
+                                disabled={!isEditing || isPortalActionSubmitting}
                                 onClick={() => field.onChange(true)}
                                 className={cn(
                                   "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
@@ -931,7 +936,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               </button>
                               <button
                                 type="button"
-                                disabled={isPortalActionSubmitting}
+                                disabled={!isEditing || isPortalActionSubmitting}
                                 onClick={() => field.onChange(false)}
                                 className={cn(
                                   "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
@@ -953,7 +958,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           Password Control
                         </Label>
                         <div className="grid grid-cols-2 gap-2">
-                          <Input
+                          <Input disabled={!isEditing}
                             value={defaultPasswordInput}
                             onChange={(e) => setDefaultPasswordInput(e.target.value)}
                             placeholder="Enter default password"
@@ -962,7 +967,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Button
                             type="button"
                             variant="secondary"
-                            disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                            disabled={!isEditing || isPortalActionSubmitting || !defaultPasswordInput.trim()}
                             onClick={handleResetPassword}
                             className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
                           >
@@ -1008,7 +1013,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
                         {loadLoading ? (
                           <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
-                            <RefreshCw className="h-3 w-3 animate-spin" />
+                            <RefreshCw className="h-3 w-3 " />
                             Checking ATLAS...
                           </div>
                         ) : (
@@ -1065,16 +1070,46 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
             </div>
 
             <div className="p-4 bg-background border-t flex gap-3 shrink-0">
-              <Button
-                type="submit"
-                className={cn(
-                  "flex-1 font-extrabold uppercase transition-all duration-200",
-                  !isDirty ? "opacity-50 bg-gray-400 cursor-not-allowed text-white hover:bg-gray-400" : ""
-                )}
-                disabled={!isDirty || isSubmitting}
-              >
-                {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
-              </Button>
+              {!isEditing ? (
+                <Button
+                  type="button"
+                  variant="default"
+                  className="flex-1 font-extrabold uppercase transition-all duration-200"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsEditing(true);
+                  }}
+                >
+                  Edit Profile
+                </Button>
+              ) : (
+                <>
+                  {!isAdding && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="font-extrabold uppercase"
+                      onClick={() => {
+                        discardProfileChanges();
+                        setIsEditing(false);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    type="submit"
+                    className={cn(
+                      "flex-1 font-extrabold uppercase transition-all duration-200",
+                      !isDirty ? "opacity-50 bg-gray-400 cursor-not-allowed text-white hover:bg-gray-400" : ""
+                    )}
+                    disabled={!isDirty || isSubmitting}
+                  >
+                    {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
+                  </Button>
+                </>
+              )}
             </div>
           </form>
         </SheetContent>

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/shared/ui/button"
 import { Badge } from "@/shared/ui/badge"
 import { Input } from "@/shared/ui/input"
+import { Skeleton } from "@/shared/ui/skeleton"
 import type { AdviserCandidate } from "../types"
 
 const HANDOVER_REASON_CATEGORIES = [
@@ -340,8 +341,16 @@ export function AssignAdviserModal({
             <div className="rounded-xl border overflow-hidden">
               <div className="max-h-64 overflow-y-auto divide-y bg-card">
                 {loadingTeachers ? (
-                  <div className="h-44 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-foreground" />
+                  <div className="h-44 space-y-2 p-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div key={index} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-44" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                        <Skeleton className="h-8 w-20 rounded-full" />
+                      </div>
+                    ))}
                   </div>
                 ) : isSearching ? (
                   <div className="h-44 flex flex-col items-center justify-center gap-3 text-center">
@@ -606,7 +615,7 @@ export function AssignAdviserModal({
             >
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 " />
                   Saving...
                 </>
               ) : section?.currentAdviser ? (
@@ -634,7 +643,7 @@ export function AssignAdviserModal({
             >
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 " />
                   Processing...
                 </>
               ) : (

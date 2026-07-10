@@ -2014,7 +2014,7 @@ export function StudentDetailPanel({
             disabled={isSubmitting || !isProfileFormDirty}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold uppercase text-base px-6 cursor-pointer">
             {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-4 w-4  mr-2" />
             ) : (
               <CheckCircle2 className="h-4 w-4 mr-2" />
             )}

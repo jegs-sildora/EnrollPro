@@ -24,6 +24,7 @@ import { sileo } from "sileo";
 import { useRetainedSheetValue } from "@/shared/hooks/useRetainedSheetValue";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 
@@ -297,7 +298,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                             onClick={() => handleUnassign(learner.enrollmentApplicationId)}
                           >
                             {unassignProcessingId === learner.enrollmentApplicationId ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 " />
                             ) : (
                               "Unenroll"
                             )}
@@ -434,7 +435,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               {exportingSf1 ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-2 " />
               ) : (
                 <FileDown className="h-4 w-4 mr-2" />
               )}
@@ -444,12 +445,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-base font-extrabold text-foreground">
-                Loading Masterlist Data...
-              </p>
-            </div>
+            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
           ) : masterlist.length === 0 ? (
             <div className="flex py-16 w-full items-center justify-center">
               <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">

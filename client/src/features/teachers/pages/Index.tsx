@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { TeacherDetailPanel } from "../components/TeacherDetailPanel";
 import { DataTable } from "@/shared/ui/data-table";
@@ -129,9 +128,6 @@ export default function Teachers() {
   const teachers = teachersQuery.data?.teachers ?? [];
   const loading = teachersQuery.isPending || teachersQuery.isFetching;
 
-  // Enterprise Standard: Delayed Skeleton for Initial Load (200ms delay)
-  const showSkeleton = useDelayedLoading(loading && isInitialLoad, 200);
-
   const availableDesignationFilters = useMemo<DesignationFilterOption[]>(() => {
     const roles = new Set<string>();
     let hasSubjectTeacher = false;
@@ -232,9 +228,9 @@ export default function Teachers() {
           teacher.personnelType === "TEACHING" ||
           (!teacher.personnelType &&
             (teacher.plantillaPosition?.toUpperCase().includes("TEACHER") ||
-             teacher.plantillaPosition?.toUpperCase().includes("INSTRUCTOR") ||
-             teacher.plantillaPosition?.toUpperCase().includes("PRINCIPAL") ||
-             teacher.plantillaPosition?.toUpperCase().includes("PROFESSOR")));
+              teacher.plantillaPosition?.toUpperCase().includes("INSTRUCTOR") ||
+              teacher.plantillaPosition?.toUpperCase().includes("PRINCIPAL") ||
+              teacher.plantillaPosition?.toUpperCase().includes("PROFESSOR")));
         return personnelTypeFilter === "TEACHING" ? isTeaching : !isTeaching;
       })();
 
@@ -716,12 +712,12 @@ export default function Teachers() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Personnel Masterlist");
+    setTitle("Personnel Directory");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
-<div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
+    <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
 
       {!ayId ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-base leading-tight text-foreground">
@@ -797,7 +793,8 @@ export default function Teachers() {
           <DataTable
             columns={columns}
             data={paginatedTeachers}
-            loading={showSkeleton}
+            loading={loading && isInitialLoad}
+            loadingBehavior="delayed"
             estimatedRowHeight={60}
             className="border-none rounded-none h-full"
             tableClassName="min-w-[980px] table-fixed"

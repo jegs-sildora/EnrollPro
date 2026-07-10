@@ -661,7 +661,7 @@ export function BatchSectioningWizard({
               <div className="max-w-6xl mx-auto py-10 px-6 pb-40">
                 {!previewData && showSkeleton ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                    <Loader2 className="h-12 w-12 text-primary " />
                     <div className="text-center">
                       <p className="text-lg font-extrabold">
                         Executing HNHS Hybrid Algorithm...
@@ -1115,7 +1115,7 @@ export function BatchSectioningWizard({
                       disabled={isCommitting}>
                       {isCommitting ? (
                         <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          <Loader2 className="mr-2 h-5 w-5 " />
                           Committing...
                         </>
                       ) : (

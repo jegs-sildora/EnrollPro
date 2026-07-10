@@ -33,7 +33,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/sections/homerooms": "Class Sections (SF1)",
     "/audit-logs": "Activity Logs",
     "/settings": "System Configuration",
-    "/teachers": "Faculty & Staff",
+    "/teachers": "Personnel Directory",
     "/admin/system": "System Health",
     "/smart": "SMART",
     "/monitoring/enrollment/requirements": "Documentary Requirements",

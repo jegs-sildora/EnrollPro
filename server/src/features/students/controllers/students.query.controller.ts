@@ -261,6 +261,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           gradeLevelId: applicant.gradeLevelId,
           section: applicant.enrollmentRecord?.section?.name || null,
           sectionId: applicant.enrollmentRecord?.sectionId || null,
+          sectionIsHomogeneous: applicant.enrollmentRecord?.section?.isHomogeneous || false,
           tleSpecialization: null,
           studentPhoto: applicant.learner?.studentPhoto || null,
           portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",

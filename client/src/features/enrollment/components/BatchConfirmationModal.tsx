@@ -353,7 +353,7 @@ export function BatchConfirmationModal({
                         <span>1. Scan or Type LRN & Hit Enter</span>
                         {loading && (
                           <div className="flex items-center gap-2 text-primary animate-pulse">
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-3 w-3 " />
                             <span className="text-[9px]">Querying LIS...</span>
                           </div>
                         )}
@@ -606,7 +606,7 @@ export function BatchConfirmationModal({
               onClick={handleProcessBatch}
               className="flex-1 sm:flex-none h-12 px-10 font-extrabold uppercase text-base  shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group">
               {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4  mr-2" />
               ) : (
                 <CheckCircle2 className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
               )}

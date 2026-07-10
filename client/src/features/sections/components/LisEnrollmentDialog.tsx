@@ -26,6 +26,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { format } from "date-fns";
 import { motion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface ProspectiveEnrolee {
   id: number;
@@ -332,12 +333,7 @@ export function LisEnrollmentDialog({
           <TabsContent value="prospective" className="mt-0 outline-none">
             <div className="max-h-[350px] min-h-[250px] overflow-y-auto px-6 py-4">
               {loading && prospectiveList.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                  <p className="text-base font-extrabold uppercase tracking-widest text-slate-500 animate-pulse">
-                    Scanning LIS prospective pool...
-                  </p>
-                </div>
+                <DataTableSkeleton rows={8} columns={6} className="rounded-xl" />
               ) : prospectiveList.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center">
                   <AlertCircle className="h-10 w-10 text-slate-300 mb-3" />
@@ -436,12 +432,7 @@ export function LisEnrollmentDialog({
               </div>
 
               {loading ? (
-                <div className="py-12 flex flex-col items-center justify-center space-y-2">
-                  <Loader2 className="h-7 w-7 animate-spin text-emerald-600" />
-                  <p className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wide">
-                    Querying LIS Database...
-                  </p>
-                </div>
+                <DataTableSkeleton rows={5} columns={4} className="rounded-xl" />
               ) : selectedSearchLearner ? (
                 /* Single Learner Selected Details Form */
                 <div className="p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50/20 space-y-4">
@@ -594,7 +585,7 @@ export function LisEnrollmentDialog({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base uppercase px-6"
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4  mr-2" />
                 ) : (
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                 )}
@@ -607,7 +598,7 @@ export function LisEnrollmentDialog({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base uppercase px-6"
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4  mr-2" />
                 ) : (
                   <UserPlus className="h-4 w-4 mr-2" />
                 )}

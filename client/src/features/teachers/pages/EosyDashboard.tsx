@@ -24,6 +24,7 @@ import { cn } from "@/shared/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
 import { useHeaderStore } from "@/store/header.slice";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface Learner {
   id: number;
@@ -419,12 +420,7 @@ export default function TeacherEosyDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center text-foreground gap-3">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-base leading-tight ">Loading Advisory Records...</p>
-      </div>
-    );
+    return <PageLoadingSkeleton variant="registry" />;
   }
 
   if (!section) {

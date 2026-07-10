@@ -567,7 +567,7 @@ export default function AuditLogs() {
                   onClick={() => fetchLogs(page)}
                   disabled={loading}>
                   <RefreshCw
-                    className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 mr-2 ${loading ? "" : ""}`}
                   />
                   Refresh
                 </Button>

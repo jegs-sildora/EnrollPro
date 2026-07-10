@@ -172,7 +172,7 @@ export function ConfirmationSlipModal({
             <label className="text-base font-extrabold uppercase  text-foreground flex justify-between">
               1. Scan or Type 12-Digit LRN
               {loading && (
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                <Loader2 className="h-3 w-3  text-primary" />
               )}
             </label>
             <Input
@@ -241,7 +241,7 @@ export function ConfirmationSlipModal({
                   onClick={handleConfirm}
                   disabled={confirming}>
                   {confirming ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 " />
                   ) : (
                     <>
                       <UserCheck className="h-6 w-6" />

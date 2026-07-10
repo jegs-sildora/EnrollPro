@@ -211,7 +211,7 @@ export default function SystemHealth() {
           onClick={fetchHealthData}
           disabled={loading}>
           <RefreshCw
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            className={`h-4 w-4 mr-2 ${loading ? "" : ""}`}
           />
           Refresh
         </Button>

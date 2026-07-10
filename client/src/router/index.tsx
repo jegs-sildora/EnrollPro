@@ -1,10 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 // router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router";
-import { Loader2 } from "lucide-react";
+import { useLocation } from "react-router";
 import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
-import { motion } from "motion/react";
-import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { PageLoadingSkeleton, type SkeletonPageVariant } from "@/shared/components/PageLoadingSkeleton";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
@@ -47,8 +46,33 @@ const TeacherEosyDashboard = lazy(
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
 import { smartRoutes } from "@/features/smart/routes";
 
+function getFallbackVariant(pathname: string): SkeletonPageVariant {
+  if (pathname === "/dashboard") return "dashboard";
+  if (
+    pathname === "/students" ||
+    pathname === "/teachers" ||
+    pathname === "/audit-logs" ||
+    pathname.includes("masterlist") ||
+    pathname.includes("eosy") ||
+    pathname.includes("reading-assessment")
+  ) {
+    return "registry";
+  }
+  if (
+    pathname === "/continuing-learners" ||
+    pathname === "/monitoring/enrollment" ||
+    pathname.includes("sectioning")
+  ) {
+    return "twoPanel";
+  }
+  if (pathname === "/sections" || pathname === "/integration") return "cardGrid";
+  if (pathname === "/settings" || pathname.includes("profile")) return "settings";
+  return "generic";
+}
+
 function PageFallback() {
-  return <PageLoadingSkeleton withDelay={true} />;
+  const location = useLocation();
+  return <PageLoadingSkeleton withDelay={true} variant={getFallbackVariant(location.pathname)} />;
 }
 
 function renderLazyPage(
@@ -56,15 +80,9 @@ function renderLazyPage(
 ) {
   return (
     <Suspense fallback={<PageFallback />}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-        className="flex-1 flex flex-col min-h-0 min-w-0 h-full w-full"
-      >
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 h-full w-full">
         <Component />
-      </motion.div>
+      </div>
     </Suspense>
   );
 }

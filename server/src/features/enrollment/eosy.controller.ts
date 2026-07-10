@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
+import type { Prisma } from "../../generated/prisma/index.js";
 import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
 import { getHistoricalProfileSnapshot } from "../school-year/services/school-year-rollover.service.js";
 import {
@@ -113,6 +114,295 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
   };
 }
 
+type EosySectionPayload = Prisma.SectionGetPayload<{
+  include: {
+    gradeLevel: true;
+    _count: { select: { enrollmentRecords: true } };
+    advisers: {
+      include: { teacher: true };
+    };
+  };
+}>;
+
+interface EosyLearnerPayload {
+  id: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  sex?: string | null;
+}
+
+interface EosyRecordPayload {
+  id: number;
+  eosyStatus: EosyStatus | null;
+  academicDeficiencyNote: string | null;
+  dropOutReason: string | null;
+  finalAverage: number | null;
+  nextYearCurriculum: string | null;
+  transferOutDate: Date | null;
+  sectionId: number;
+  section: {
+    id: number;
+    name: string;
+    isEosyFinalized: boolean;
+    programType: string;
+    isHomogeneous: boolean;
+  };
+  enrollmentApplication: {
+    id: number;
+    trackingNumber: string;
+    applicantType: string;
+    reportedGrades: Prisma.JsonValue | null;
+    learner: EosyLearnerPayload;
+  };
+  isScpDemoted: boolean;
+  scpViolation: {
+    subject: string;
+    term: string;
+    actualGrade: number;
+    requiredGrade: number;
+    violationType: string;
+  } | null;
+}
+
+async function loadEosySections(schoolYearId: number): Promise<EosySectionPayload[]> {
+  return prisma.section.findMany({
+    where: {
+      schoolYearId,
+    },
+    include: {
+      gradeLevel: true,
+      _count: {
+        select: { enrollmentRecords: true },
+      },
+      advisers: {
+        where: { status: "ACTIVE" },
+        include: {
+          teacher: true,
+        },
+        take: 1,
+      },
+    },
+    orderBy: [
+      { gradeLevel: { displayOrder: "asc" } },
+      { name: "asc" },
+    ],
+  });
+}
+
+function getEosyGradeLevels(sections: EosySectionPayload[]) {
+  const gradeMap = new Map<number, EosySectionPayload["gradeLevel"]>();
+  for (const section of sections) {
+    if (!gradeMap.has(section.gradeLevelId)) {
+      gradeMap.set(section.gradeLevelId, section.gradeLevel);
+    }
+  }
+
+  return Array.from(gradeMap.values()).sort(
+    (a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99),
+  );
+}
+
+function buildScpMetadata(
+  programType: string | null | undefined,
+  nextYearCurriculum: string | null | undefined,
+  finalAverage: number | null,
+) {
+  const isScp = Boolean(programType && programType !== "REGULAR");
+  const isScpDemoted = nextYearCurriculum === "REGULAR" && isScp;
+
+  let scpViolation: EosyRecordPayload["scpViolation"] = null;
+  if (isScp && finalAverage !== null && finalAverage < 85) {
+    if (finalAverage < 80) {
+      scpViolation = {
+        subject: "MAPEH",
+        term: "Quarter 2",
+        actualGrade: Math.floor(finalAverage),
+        requiredGrade: 80,
+        violationType: "Quarterly Minimum",
+      };
+    } else if (finalAverage < 83) {
+      scpViolation = {
+        subject: "Araling Panlipunan",
+        term: "Final Grade",
+        actualGrade: finalAverage,
+        requiredGrade: 83,
+        violationType: "Subject Final Minimum",
+      };
+    } else {
+      scpViolation = {
+        subject: "Science",
+        term: "Final Grade",
+        actualGrade: finalAverage,
+        requiredGrade: 85,
+        violationType: "Core Subject Minimum",
+      };
+    }
+  }
+
+  return { isScpDemoted, scpViolation };
+}
+
+async function loadEosyGradeRecords(
+  schoolYearId: number,
+  gradeLevelId: number,
+): Promise<EosyRecordPayload[]> {
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { status: true },
+  });
+
+  if (schoolYear?.status === "ARCHIVED") {
+    const historyRecords = await prisma.enrollmentHistory.findMany({
+      where: {
+        schoolYearId,
+        gradeLevelId,
+      },
+      include: {
+        section: {
+          select: {
+            id: true,
+            name: true,
+            isEosyFinalized: true,
+            programType: true,
+            isHomogeneous: true,
+          },
+        },
+        learner: true,
+      },
+      orderBy: [
+        { section: { name: "asc" } },
+        { learner: { lastName: "asc" } },
+        { learner: { firstName: "asc" } },
+      ],
+    });
+
+    return historyRecords.map((record) => {
+      const finalAverage =
+        record.genAve !== null && record.genAve !== undefined
+          ? Number(record.genAve)
+          : null;
+      const section = record.section ?? {
+        id: record.sectionId ?? 0,
+        name: "No Section",
+        isEosyFinalized: true,
+        programType: "REGULAR",
+        isHomogeneous: false,
+      };
+      const scpMetadata = buildScpMetadata(
+        section.programType,
+        null,
+        finalAverage,
+      );
+
+      return {
+        id: record.id,
+        eosyStatus: record.eosyStatus,
+        academicDeficiencyNote: record.academicDeficiencyNote,
+        dropOutReason: null,
+        finalAverage,
+        nextYearCurriculum: null,
+        transferOutDate: null,
+        sectionId: section.id,
+        section,
+        enrollmentApplication: {
+          id: 0,
+          trackingNumber: "",
+          applicantType: "REGULAR",
+          reportedGrades: null,
+          learner: {
+            id: record.learner.id,
+            lrn: record.learner.lrn,
+            firstName: record.learner.firstName,
+            lastName: record.learner.lastName,
+            sex: record.learner.sex,
+          },
+        },
+        ...scpMetadata,
+      };
+    });
+  }
+
+  const records = await prisma.enrollmentRecord.findMany({
+    where: {
+      schoolYearId,
+      section: {
+        gradeLevelId,
+      },
+    },
+    include: {
+      section: {
+        select: {
+          id: true,
+          name: true,
+          isEosyFinalized: true,
+          programType: true,
+          isHomogeneous: true,
+        },
+      },
+      enrollmentApplication: {
+        select: {
+          id: true,
+          trackingNumber: true,
+          applicantType: true,
+          reportedGrades: true,
+          learner: {
+            select: {
+              id: true,
+              lrn: true,
+              firstName: true,
+              lastName: true,
+              sex: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [
+      { section: { name: "asc" } },
+      {
+        enrollmentApplication: {
+          learner: { lastName: "asc" },
+        },
+      },
+      {
+        enrollmentApplication: {
+          learner: { firstName: "asc" },
+        },
+      },
+    ],
+  });
+
+  return records.map((record) => {
+    const finalAverage =
+      record.finalAverage !== null && record.finalAverage !== undefined
+        ? Number(record.finalAverage)
+        : null;
+    const scpMetadata = buildScpMetadata(
+      record.section.programType,
+      record.nextYearCurriculum,
+      finalAverage,
+    );
+
+    return {
+      id: record.id,
+      eosyStatus: record.eosyStatus,
+      academicDeficiencyNote: record.academicDeficiencyNote,
+      dropOutReason: record.dropOutReason,
+      finalAverage,
+      nextYearCurriculum: record.nextYearCurriculum,
+      transferOutDate: record.transferOutDate,
+      sectionId: record.sectionId,
+      section: record.section,
+      enrollmentApplication: {
+        ...record.enrollmentApplication,
+        trackingNumber: record.enrollmentApplication.trackingNumber ?? "",
+      },
+      ...scpMetadata,
+    };
+  });
+}
+
 export async function getEosySections(
   req: Request,
   res: Response,
@@ -120,26 +410,52 @@ export async function getEosySections(
 ) {
   try {
     const { schoolYearId } = req.query;
-    const sections = await prisma.section.findMany({
-      where: {
-        schoolYearId: parseInt(String(schoolYearId)),
-      },
-      include: {
-        gradeLevel: true,
-        _count: {
-          select: { enrollmentRecords: true },
-        },
-        advisers: {
-          where: { status: "ACTIVE" },
-          include: {
-            teacher: true,
-          },
-          take: 1,
-        },
-      },
-      orderBy: [{ gradeLevel: { name: "asc" } }, { name: "asc" }],
-    });
+    const sections = await loadEosySections(parseInt(String(schoolYearId)));
     res.json({ sections });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getEosyWorkspace(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const schoolYearId = req.query.schoolYearId
+      ? parseInt(String(req.query.schoolYearId), 10)
+      : NaN;
+
+    if (!Number.isInteger(schoolYearId)) {
+      throw new AppError(400, "schoolYearId query parameter is required.");
+    }
+
+    const requestedGradeLevelId = req.query.gradeLevelId
+      ? parseInt(String(req.query.gradeLevelId), 10)
+      : null;
+
+    const [sections, exportLock] = await Promise.all([
+      loadEosySections(schoolYearId),
+      getSchoolYearExportLockState(schoolYearId),
+    ]);
+
+    const gradeLevels = getEosyGradeLevels(sections);
+    const activeGradeLevelId =
+      requestedGradeLevelId ??
+      gradeLevels[0]?.id ??
+      null;
+    const records = activeGradeLevelId
+      ? await loadEosyGradeRecords(schoolYearId, activeGradeLevelId)
+      : [];
+
+    res.json({
+      gradeLevels,
+      sections,
+      activeGradeLevelId,
+      records,
+      exportLock,
+    });
   } catch (error) {
     next(error);
   }

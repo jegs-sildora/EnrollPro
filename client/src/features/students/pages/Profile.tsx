@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Lock,
 } from "lucide-react";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
@@ -256,7 +257,7 @@ export default function StudentProfile() {
   };
 
   if (loading)
-    return <div className="p-8 text-center">Loading student profile...</div>;
+    return <PageLoadingSkeleton variant="detail" />;
   if (error || !student)
     return (
       <div className="p-8 text-center text-red-500">

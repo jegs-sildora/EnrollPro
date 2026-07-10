@@ -12,6 +12,7 @@ import { getLearnerApi } from "@/shared/api/axiosInstance";
 
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 
 interface LearnerDashboardResponse {
@@ -195,8 +196,8 @@ export default function LearnerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" />
+      <div className="min-h-screen bg-background p-4 sm:p-6">
+        <PageLoadingSkeleton variant="dashboard" />
       </div>
     );
   }

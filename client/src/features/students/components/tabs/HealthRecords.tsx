@@ -193,7 +193,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
             }}
             disabled={isRefreshing}>
             <RefreshCw
-              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isRefreshing ? "" : ""}`}
             />
             Refresh
           </Button>

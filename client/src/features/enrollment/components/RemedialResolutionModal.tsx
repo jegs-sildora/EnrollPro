@@ -169,7 +169,7 @@ export function RemedialResolutionModal({
             className="font-extrabold uppercase text-base"
             disabled={!isGradeValid || loading}
             onClick={() => void handleSubmit()}>
-            {loading && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+            {loading && <Loader2 className="h-3.5 w-3.5 mr-1.5 " />}
             Save Remedial Result
           </Button>
         </DialogFooter>

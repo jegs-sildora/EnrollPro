@@ -335,7 +335,7 @@ function IntegrationHub() {
               onClick={() => handleSyncAction("phase1")}
               disabled={isSyncing !== null}
             >
-              {isSyncing === "phase1" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
+              {isSyncing === "phase1" ? <RefreshCw className="h-4 w-4 " /> : <Play className="h-4 w-4 fill-current" />}
               Push Verified Applicants
             </Button>
           </CardContent>
@@ -375,7 +375,7 @@ function IntegrationHub() {
               onClick={() => handleSyncAction("phase2")}
               disabled={isSyncing !== null}
             >
-              {isSyncing === "phase2" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {isSyncing === "phase2" ? <RefreshCw className="h-4 w-4 " /> : <Play className="h-4 w-4" />}
               Push Official Masterlists
             </Button>
           </CardContent>

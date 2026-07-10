@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "react-router";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
-import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { UnsavedChangesProvider } from "@/shared/hooks/useUnsavedChanges";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -181,8 +181,8 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
 
   if (!isHydrated || !initialized) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+      <div className="min-h-screen w-screen bg-background p-6">
+        <PageLoadingSkeleton variant="dashboard" />
       </div>
     );
   }

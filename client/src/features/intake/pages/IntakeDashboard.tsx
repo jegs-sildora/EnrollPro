@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import {
   Loader2,
   Plus,
@@ -419,7 +420,7 @@ function PreListingTab({
               className="font-extrabold uppercase text-base tracking-normal"
             >
               {createListingMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 " />
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-1" /> Add to Reading Queue
@@ -433,9 +434,7 @@ function PreListingTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-            </div>
+            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load pre-listing entries.
@@ -552,9 +551,7 @@ function ReadingAssessmentTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-            </div>
+            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the reading queue.
@@ -616,7 +613,7 @@ function ReadingAssessmentTab({
             <Button variant="outline" size="sm" onClick={() => setTarget(null)}>Cancel</Button>
             <Button size="sm" disabled={!readingLevel || assessMutation.isPending} onClick={saveAssessment}
               className="font-extrabold uppercase text-base">
-              {assessMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
+              {assessMutation.isPending ? <Loader2 className="h-4 w-4 " /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -691,9 +688,7 @@ function ConfirmationTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-            </div>
+            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the confirmation queue.

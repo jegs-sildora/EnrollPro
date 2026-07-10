@@ -171,7 +171,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading || !eosyStatus} className="font-extrabold bg-amber-600 hover:bg-amber-700 text-white shadow-md">
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {loading && <Loader2 className="w-4 h-4 mr-2 " />}
             Confirm Override
           </Button>
         </DialogFooter>

@@ -619,7 +619,7 @@ function AppSidebar() {
                       <NavItem
                         to="/teachers"
                         icon={Presentation}
-                        label="Faculty & Staff"
+                        label="Personnel Directory"
                         pathname={pathname}
                       />
                     )}
@@ -794,6 +794,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     selectedAccentHsl ??
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
+  const routeTransitionKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -1016,7 +1017,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         {/* Page content */}
         <AnimatePresence mode="wait">
           <PageTransition
-            routeKey={location.pathname}
+            key={routeTransitionKey}
             className="flex-1 flex flex-col min-w-0 py-3 px-4 sm:px-6">
             {shouldShowNoSchoolYearState ? (
               <NoSchoolYearState />

@@ -26,6 +26,7 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface PendingVerification {
   id: number;
@@ -334,16 +335,7 @@ export function VerificationWorkspace() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          <p className="text-base leading-tight font-extrabold text-slate-500 uppercase tracking-widest animate-pulse">
-            Loading Verifications...
-          </p>
-        </div>
-      </div>
-    );
+    return <TwoPanelSkeleton />;
   }
 
   return (
@@ -662,7 +654,7 @@ export function VerificationWorkspace() {
                   >
                     {processing ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 " />
                         Approving...
                       </>
                     ) : (

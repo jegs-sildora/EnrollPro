@@ -23,6 +23,7 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/lib/utils";
+import { FormSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface Prerequisites {
   steSectionsCount: number;
@@ -216,9 +217,7 @@ export function BatchSectioningParamsModal({
 
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <FormSkeleton sections={2} />
           ) : (
             <>
               {/* Pool summary */}

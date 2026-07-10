@@ -13,6 +13,7 @@ export default function AuthLayout({ children }: { children?: ReactNode }) {
 		(colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
 	const toastTheme = accentForeground === '0 0% 100%' ? 'light' : 'dark';
 	const location = useLocation();
+	const routeKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
 
 	return (
 		<div className='min-h-screen font-sans'>
@@ -22,7 +23,7 @@ export default function AuthLayout({ children }: { children?: ReactNode }) {
 				options={accentHsl ? { fill: `hsl(${accentHsl})` } : undefined}
 			/>
 			<AnimatePresence mode='wait'>
-				<PageTransition routeKey={location.pathname}>
+				<PageTransition key={routeKey}>
 					{children || <Outlet />}
 				</PageTransition>
 			</AnimatePresence>

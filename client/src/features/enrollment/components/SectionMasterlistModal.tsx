@@ -8,6 +8,7 @@ import { sileo } from "sileo";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Badge } from "@/shared/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface SectionMasterlistModalProps {
   sectionId: number;
@@ -105,10 +106,7 @@ export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlist
 
         <div className="flex-1 overflow-auto p-4 relative">
           {isLoading ? (
-            <div className="h-48 flex items-center justify-center flex-col gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-base leading-tight font-extrabold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Masterlist...</span>
-            </div>
+            <DataTableSkeleton rows={8} columns={4} className="rounded-lg" />
           ) : learners.length === 0 ? (
             <div className="h-48 flex items-center justify-center flex-col gap-3 text-muted-foreground">
               <ShieldAlert className="h-10 w-10 opacity-50" />
@@ -158,7 +156,7 @@ export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlist
                           disabled={!selectedTarget || isProcessing}
                           onClick={() => handleTransfer(l.enrollmentApplicationId, selectedTarget)}
                         >
-                          {isProcessing && selectedTarget ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ArrowRightLeft className="h-3 w-3 mr-1" />}
+                          {isProcessing && selectedTarget ? <Loader2 className="h-3 w-3 mr-1 " /> : <ArrowRightLeft className="h-3 w-3 mr-1" />}
                           Move
                         </Button>
                       </div>
@@ -173,7 +171,7 @@ export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlist
                         onClick={() => handleUnassign(l.enrollmentApplicationId)}
                         title="Return to Unassigned Pool"
                       >
-                        {isProcessing && !selectedTarget ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserMinus className="h-3 w-3" />}
+                        {isProcessing && !selectedTarget ? <Loader2 className="h-3 w-3 " /> : <UserMinus className="h-3 w-3" />}
                       </Button>
                     </div>
                   </div>

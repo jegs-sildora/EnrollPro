@@ -1,31 +1,40 @@
 import { motion } from "motion/react";
 import type { ReactNode, ComponentProps } from "react";
 import {
-  createFadeShiftVariants,
-  createMotionTransition,
-  getReducedMotionProps,
   useMotionPreferences,
 } from "@/shared/lib/motion";
 
 interface PageTransitionProps extends ComponentProps<typeof motion.div> {
   children: ReactNode;
-  routeKey: string;
 }
 
-export function PageTransition({ children, routeKey, ...props }: PageTransitionProps) {
+export function PageTransition({ children, ...props }: PageTransitionProps) {
   const motionPreferences = useMotionPreferences();
   const variants = {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 }
+    initial: {
+      opacity: 0,
+      y: motionPreferences.reduceMotion ? 0 : 12,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+    exit: {
+      opacity: 0,
+      y: motionPreferences.reduceMotion ? 0 : -8,
+    },
   };
 
   return (
     <motion.div
-      key={routeKey}
       variants={variants}
-      transition={createMotionTransition(motionPreferences, "normal")}
-      {...getReducedMotionProps(motionPreferences.reduceMotion)}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{
+        duration: motionPreferences.reduceMotion ? 0.16 : 0.4,
+        ease: "easeInOut",
+      }}
       {...props}
     >
       {children}

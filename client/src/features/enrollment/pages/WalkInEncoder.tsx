@@ -906,7 +906,7 @@ export default function WalkInEncoder() {
                 style={{ backgroundColor: accentHsl ? `hsl(${accentHsl})` : "hsl(var(--primary))" }}
               >
                 {isSearchingLrn ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 " />
                 ) : (
                   "Search"
                 )}
@@ -1781,7 +1781,7 @@ export default function WalkInEncoder() {
                   onClick={() => { handleSubmit(); }}>
                   {submitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 " />
                       Saving Profile...
                     </>
                   ) : (
@@ -1822,7 +1822,7 @@ export default function WalkInEncoder() {
             <div className="space-y-3 max-h-[220px] overflow-y-auto border border-slate-100 rounded-lg p-3 bg-slate-50/50">
               {loadingModalSections ? (
                 <div className="flex items-center justify-center py-6 text-base text-slate-400 gap-2 font-extrabold">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 " />
                   Loading sections...
                 </div>
               ) : modalSections.length === 0 ? (
@@ -1887,7 +1887,7 @@ export default function WalkInEncoder() {
             >
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+                  <Loader2 className="mr-2 h-4 w-4  text-white" />
                   Assigning...
                 </>
               ) : (

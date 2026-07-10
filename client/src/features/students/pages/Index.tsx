@@ -6,7 +6,7 @@ import {
   useMemo,
   startTransition,
 } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import {
   Search,
@@ -26,7 +26,6 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { useHeaderStore } from "@/store/header.slice";
 
-import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -129,6 +128,7 @@ interface Student {
   gradeLevelId: number;
   section: string | null;
   sectionId: number | null;
+  sectionIsHomogeneous?: boolean;
   createdAt: string;
   updatedAt: string;
   studentPhoto?: string | null;
@@ -438,6 +438,8 @@ export default function Students() {
     statusFilter,
   ]);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   const studentsQuery = useQuery({
     queryKey: queryKeys.studentsList(studentsQueryParams),
     queryFn: async () => {
@@ -452,11 +454,18 @@ export default function Students() {
       };
     },
     enabled: Boolean(ayId || activeTab === "completers"),
+    placeholderData: keepPreviousData,
   });
 
   const students = studentsQuery.data?.students ?? [];
   const total = studentsQuery.data?.pagination.total ?? 0;
   const loading = studentsQuery.isPending || studentsQuery.isFetching;
+
+  useEffect(() => {
+    if (studentsQuery.data) {
+      setIsInitialLoad(false);
+    }
+  }, [studentsQuery.data]);
 
   const programOptionsQuery = useQuery({
     queryKey: queryKeys.activeAcademicPrograms,
@@ -536,7 +545,7 @@ export default function Students() {
           ) {
             opts.push({
               value: "REGULAR_TOP",
-              label: `BEC (Top ${homogeneousSectionCount})`,
+              label: `BEC (Top ${homogeneousSectionCount || 5})`,
             });
           }
           opts.push({
@@ -1030,14 +1039,10 @@ export default function Students() {
             const displayName = formatScpType(normalizedProgram).replace("Tech-Voc Education", "Tech-Voc");
             let acronym = SCP_ACRONYMS[normalizedProgram] || displayName;
 
-            if (normalizedProgram === "REGULAR" && enableHomogeneousSections && homogeneousSectionCount > 0 && row.original.sectionId) {
-              const isTopBecSection = sections.some(
-                (section) =>
-                  section.id === row.original.sectionId &&
-                  section.isHomogeneous === true,
-              );
+            if (normalizedProgram === "REGULAR" && row.original.sectionId) {
+              const isTopBecSection = row.original.sectionIsHomogeneous === true;
               if (isTopBecSection) {
-                acronym = `BEC (Top ${homogeneousSectionCount})`;
+                acronym = `BEC (Top ${homogeneousSectionCount || 5})`;
               }
             }
 
@@ -1095,7 +1100,6 @@ export default function Students() {
     activeTab,
     enableHomogeneousSections,
     homogeneousSectionCount,
-    sections,
   ]);
 
   const renderContent = () => (
@@ -1281,208 +1285,193 @@ export default function Students() {
           </div>
         </div>
         <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col overflow-hidden p-6">
-                <PageLoadingSkeleton />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="data"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col overflow-hidden">
-                <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
-                  {students.length === 0 ? (
-                    <div className="rounded-xl border p-6 text-center leading-tight font-extrabold">
-                      No learners found for the selected filters.
-                    </div>
-                  ) : (
-                    students.map((student, index) => (
-                      <div
-                        key={`${student.id}-${index}`}
-                        className="rounded-xl border bg-[hsl(var(--card))] p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <UserPhoto
-                              photo={student.studentPhoto}
-                              containerClassName="w-10 h-10 rounded-full shadow-sm border shrink-0"
-                              className="w-full h-full object-cover"
-                              alt={student.fullName}
-                              fallbackIcon={
-                                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
-                                  {getInitials(student.firstName, student.lastName)}
-                                </div>
-                              }
-                            />
-                            <div className="min-w-0">
-                              <p className="font-extrabold uppercase leading-tight break-words">
-                                {student.fullName}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <p className="font-extrabold text-foreground leading-snug">
-                                  {formatLearningProgramLabel(
-                                    student.learningProgram,
-                                  )}
-                                </p>
-                                {student.applicantType === "LATE_ENROLLEE" && (
-                                  <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
-                                    Late Enrolled
-                                  </Badge>
-                                )}
-                              </div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="flex-1 flex flex-col overflow-hidden">
+            <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
+              {students.length === 0 ? (
+                <div className="rounded-xl border p-6 text-center leading-tight font-extrabold">
+                  No learners found for the selected filters.
+                </div>
+              ) : (
+                students.map((student, index) => (
+                  <div
+                    key={`${student.id}-${index}`}
+                    className="rounded-xl border bg-[hsl(var(--card))] p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <UserPhoto
+                          photo={student.studentPhoto}
+                          containerClassName="w-10 h-10 rounded-full shadow-sm border shrink-0"
+                          className="w-full h-full object-cover"
+                          alt={student.fullName}
+                          fallbackIcon={
+                            <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                              {getInitials(student.firstName, student.lastName)}
                             </div>
-                          </div>
-                          {renderLearnerStatus(student)}
-                        </div>
-
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-base">
-                          <div>
-                            <p className="uppercase  font-extrabold text-foreground">
-                              LRN
-                            </p>
-                            <p className="font-extrabold">{student.lrn}</p>
-                          </div>
-                          <div>
-                            <p className="uppercase  font-extrabold text-foreground">
-                              Sex
-                            </p>
-                            <p className="font-extrabold uppercase">
-                              {student.sex === "MALE" || student.sex === "M"
-                                ? "M"
-                                : student.sex === "FEMALE" ||
-                                  student.sex === "F"
-                                  ? "F"
-                                  : student.sex || "—"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="uppercase font-extrabold text-foreground">
-                              Grade Level
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "font-extrabold px-2.5 py-0.5 mt-0.5 rounded-md",
-                                getGradeLevelBadgeStyles(student.gradeLevel)
+                          }
+                        />
+                        <div className="min-w-0">
+                          <p className="font-extrabold uppercase leading-tight break-words">
+                            {student.fullName}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="font-extrabold text-foreground leading-snug">
+                              {formatLearningProgramLabel(
+                                student.learningProgram,
                               )}
-                            >
-                              {student.gradeLevel}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="uppercase  font-extrabold text-foreground">
-                              Section
                             </p>
-                            <p className="font-extrabold">
-                              {formatSectionLabel(student.section)}
-                            </p>
+                            {student.applicantType === "LATE_ENROLLEE" && (
+                              <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
+                                Late Enrolled
+                              </Badge>
+                            )}
                           </div>
                         </div>
+                      </div>
+                      {renderLearnerStatus(student)}
+                    </div>
 
-                        <p className="mt-2 text-[11px] font-extrabold text-foreground">
-                          {activeTab === "active" ? "Enrolled " : "Updated "}
-                          {formatDate(
-                            student.dateEnrolled || student.createdAt,
-                          )}
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-base">
+                      <div>
+                        <p className="uppercase  font-extrabold text-foreground">
+                          LRN
                         </p>
+                        <p className="font-extrabold">{student.lrn}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase  font-extrabold text-foreground">
+                          Sex
+                        </p>
+                        <p className="font-extrabold uppercase">
+                          {student.sex === "MALE" || student.sex === "M"
+                            ? "M"
+                            : student.sex === "FEMALE" ||
+                              student.sex === "F"
+                              ? "F"
+                              : student.sex || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="uppercase font-extrabold text-foreground">
+                          Grade Level
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "font-extrabold px-2.5 py-0.5 mt-0.5 rounded-md",
+                            getGradeLevelBadgeStyles(student.gradeLevel)
+                          )}
+                        >
+                          {student.gradeLevel}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="uppercase  font-extrabold text-foreground">
+                          Section
+                        </p>
+                        <p className="font-extrabold">
+                          {formatSectionLabel(student.section)}
+                        </p>
+                      </div>
+                    </div>
 
-                        <div className="mt-3 flex items-center gap-2">
+                    <p className="mt-2 text-[11px] font-extrabold text-foreground">
+                      {activeTab === "active" ? "Enrolled " : "Updated "}
+                      {formatDate(
+                        student.dateEnrolled || student.createdAt,
+                      )}
+                    </p>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-9 flex-1 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                        onClick={() => handleViewDetails(student.id)}>
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-9 flex-1 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                            onClick={() => handleViewDetails(student.id)}>
-                            <Eye className="h-3.5 w-3.5 mr-1.5" />
-                            View
+                            className="h-9 w-10 px-0 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            aria-label={`Open actions for ${student.fullName}`}>
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="h-9 w-10 px-0 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                                aria-label={`Open actions for ${student.fullName}`}>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="w-56 font-extrabold">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleOpenProfilePage(student.id)
-                                }
-                                className="cursor-pointer">
-                                <Eye className="mr-2 h-4 w-4" />
-                                Open Full Profile
-                              </DropdownMenuItem>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-56 font-extrabold">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleOpenProfilePage(student.id)
+                            }
+                            className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4" />
+                            Open Full Profile
+                          </DropdownMenuItem>
 
-                              {canMutate && (
-                                <DropdownMenuItem
-                                  onClick={() => openAssignLrnDialog(student)}
-                                  className="cursor-pointer">
-                                  <Fingerprint className="mr-2 h-4 w-4" />
-                                  Update LIS LRN
-                                </DropdownMenuItem>
-                              )}
-                              {canMutate && (
-                                <DropdownMenuItem
-                                  onClick={() => openTransferOutDialog(student)}
-                                  className="cursor-pointer text-amber-700 focus:text-amber-700">
-                                  <FileBadge2 className="mr-2 h-4 w-4" />
-                                  Mark as Transferred Out
-                                </DropdownMenuItem>
-                              )}
-                              {canMutate && (
-                                <DropdownMenuItem
-                                  onClick={() => openDropoutDialog(student)}
-                                  className="cursor-pointer text-rose-700 focus:text-rose-700">
-                                  <BadgeAlert className="mr-2 h-4 w-4" />
-                                  Mark as Dropped Out
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                          {canMutate && (
+                            <DropdownMenuItem
+                              onClick={() => openAssignLrnDialog(student)}
+                              className="cursor-pointer">
+                              <Fingerprint className="mr-2 h-4 w-4" />
+                              Update LIS LRN
+                            </DropdownMenuItem>
+                          )}
+                          {canMutate && (
+                            <DropdownMenuItem
+                              onClick={() => openTransferOutDialog(student)}
+                              className="cursor-pointer text-amber-700 focus:text-amber-700">
+                              <FileBadge2 className="mr-2 h-4 w-4" />
+                              Mark as Transferred Out
+                            </DropdownMenuItem>
+                          )}
+                          {canMutate && (
+                            <DropdownMenuItem
+                              onClick={() => openDropoutDialog(student)}
+                              className="cursor-pointer text-rose-700 focus:text-rose-700">
+                              <BadgeAlert className="mr-2 h-4 w-4" />
+                              Mark as Dropped Out
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
-                <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
-                  <DataTable<Student, unknown>
-                    columns={columns}
-                    data={students}
-                    loading={false}
-                    forceEmptyState={isSearching}
-                    virtualize={true}
-                    estimatedRowHeight={60}
-                    className="border-none rounded-none h-full"
-                    tableClassName="min-w-[1200px] table-fixed"
-                    containerHeight="100%"
-                    prependBodyRow={
-                      isSearching ? (
-                        <TableSearchIndicator colSpan={8} />
-                      ) : null
-                    }
-                    noResultsMessage="No learners found for the selected filters."
-                    sorting={sorting}
-                    onSortingChange={onSortingChange}
-                    getRowClassName={() => "group"}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+              <DataTable<Student, unknown>
+                columns={columns}
+                data={students}
+                loading={loading && isInitialLoad}
+                loadingBehavior="delayed"
+                forceEmptyState={isSearching}
+                virtualize={true}
+                estimatedRowHeight={60}
+                className="border-none rounded-none h-full"
+                tableClassName="min-w-[1200px] table-fixed"
+                containerHeight="100%"
+                prependBodyRow={
+                  isSearching ? (
+                    <TableSearchIndicator colSpan={8} />
+                  ) : null
+                }
+                noResultsMessage="No learners found for the selected filters."
+                sorting={sorting}
+                onSortingChange={onSortingChange}
+                getRowClassName={() => "group"}
+              />
+            </div>
+          </motion.div>
 
           <PaginationBar
             page={page}
@@ -1523,12 +1512,12 @@ export default function Students() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Master Learner Registry (LIS)");
+    setTitle("Learner Registry");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
-<div className="flex flex-1 h-full w-full min-h-0 flex-col">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
 
 
       {/* Tabs */}

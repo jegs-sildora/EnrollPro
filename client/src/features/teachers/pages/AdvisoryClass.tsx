@@ -14,6 +14,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import {
   Table,
   TableBody,
@@ -257,11 +258,7 @@ export default function AdvisoryClass() {
   }, [section, setTitle]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center p-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageLoadingSkeleton variant="registry" />;
   }
 
   if (!section) {
@@ -324,7 +321,7 @@ export default function AdvisoryClass() {
               className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               {exportingSf1 ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-2 " />
               ) : (
                 <FileDown className="h-4 w-4 mr-2" />
               )}

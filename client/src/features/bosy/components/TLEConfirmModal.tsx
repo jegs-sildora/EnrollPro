@@ -104,7 +104,7 @@ export function TLEConfirmModal({
             onClick={() => void handleConfirm()}
             className="gap-2">
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 " />
             ) : (
               <CheckCircle2 className="h-4 w-4" />
             )}

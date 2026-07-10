@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -48,6 +49,7 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -286,6 +288,7 @@ function GeofencingPopover({
 }
 
 export default function EosyUpdating() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const {
     activeSchoolYearId,
@@ -306,7 +309,7 @@ export default function EosyUpdating() {
 
   const [overrideRecord, setOverrideRecord] = useState<EnrollmentRecord | null>(null);
 
-  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
@@ -328,7 +331,6 @@ export default function EosyUpdating() {
   const [transitionModalOpen, setTransitionModalOpen] = useState<boolean>(false);
 
   const [transitionLoading, setTransitionLoading] = useState<boolean>(false);
-
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState<Record<number, {
     lrn?: string;
@@ -355,6 +357,32 @@ export default function EosyUpdating() {
     isSubmitting: isCommitting,
     onDiscard: discardUnsavedEosyChanges,
   });
+
+  const recordsQuery = useQuery({
+    queryKey: ["eosy", "grade-records", ayId, activeTab],
+    queryFn: async () => {
+      const res = await api.get(`/eosy/grade/${activeTab}/records?schoolYearId=${ayId}&_t=${Date.now()}`);
+      return (res.data.records || []) as EnrollmentRecord[];
+    },
+    enabled: Boolean(ayId && activeTab),
+  });
+
+  const loadingRecords = Boolean(ayId && activeTab) && (recordsQuery.isPending || recordsQuery.isFetching);
+  const showSkeleton = useDelayedLoading(loadingRecords && isInitialLoad);
+
+  useEffect(() => {
+    if (recordsQuery.data) {
+      setRecords(recordsQuery.data);
+      setIsInitialLoad(false);
+    }
+  }, [recordsQuery.data]);
+
+  useEffect(() => {
+    if (recordsQuery.isError) {
+      toastApiError(recordsQuery.error as never);
+      setIsInitialLoad(false);
+    }
+  }, [recordsQuery.isError, recordsQuery.error]);
 
   const handleFieldChange = useCallback((
     recordId: number,
@@ -478,7 +506,10 @@ export default function EosyUpdating() {
   }, [ayId]);
 
   const fetchSectionsAndGrades = useCallback(async () => {
-    if (!ayId) return;
+    if (!ayId) {
+      setIsInitialLoad(false);
+      return;
+    }
     try {
       const res = await api.get(`/eosy/sections?schoolYearId=${ayId}&_t=${Date.now()}`);
       const rawSections: Section[] = res.data.sections || [];
@@ -496,9 +527,12 @@ export default function EosyUpdating() {
 
       if (grades.length > 0 && !activeTab) {
         setActiveTab(String(grades[0].id));
+      } else if (grades.length === 0) {
+        setIsInitialLoad(false);
       }
     } catch (err) {
       toastApiError(err as never);
+      setIsInitialLoad(false);
     }
   }, [ayId, activeTab]);
 
@@ -520,19 +554,15 @@ export default function EosyUpdating() {
   const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
     if (!gradeLevelId || !ayId) return;
     if (!silent) {
-      setLoadingRecords(true);
       setRowSelection({});
       setSectionFilter("ALL");
     }
-    try {
-      const res = await api.get(`/eosy/grade/${gradeLevelId}/records?schoolYearId=${ayId}&_t=${Date.now()}`);
-      setRecords(res.data.records || []);
-    } catch (err) {
-      if (!silent) toastApiError(err as never);
-    } finally {
-      if (!silent) setLoadingRecords(false);
+    if (gradeLevelId !== activeTab) {
+      setActiveTab(gradeLevelId);
+      return;
     }
-  }, [ayId]);
+    await queryClient.refetchQueries({ queryKey: ["eosy", "grade-records", ayId, gradeLevelId] });
+  }, [activeTab, ayId, queryClient]);
 
   useEffect(() => {
     void fetchSectionsAndGrades();
@@ -901,6 +931,8 @@ export default function EosyUpdating() {
       return a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName);
     });
   }, [records, sectionFilter, searchQuery]);
+
+  const suppressInitialEmptyState = loadingRecords && isInitialLoad && !showSkeleton && filteredRecords.length === 0;
 
   const pendingCount = filteredRecords.filter(r =>
     (r.finalAverage === null || r.finalAverage === undefined) &&
@@ -1551,24 +1583,19 @@ export default function EosyUpdating() {
                   </div>
                 </div>
 
-                <div className="flex flex-col bg-card">
-                  {loadingRecords ? (
-                    <div className="flex flex-col items-center justify-center text-muted-foreground gap-3 py-10">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                      <p className="text-base leading-tight ">Loading {activeGradeName} records...</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <DataTable
-                        columns={columns}
-                        data={filteredRecords}
-                        containerHeight="100%"
-                        rowSelection={rowSelection}
-                        onRowSelectionChange={setRowSelection}
-                        getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
-                      />
-                    </div>
-                  )}
+                <div className="flex flex-col bg-card h-full min-h-0">
+                  <div className="overflow-x-auto flex-1 min-h-0 relative">
+                    <DataTable
+                      columns={columns}
+                      data={filteredRecords}
+                      loading={loadingRecords}
+                      loadingBehavior="delayed"
+                      containerHeight="100%"
+                      rowSelection={rowSelection}
+                      onRowSelectionChange={setRowSelection}
+                      getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>

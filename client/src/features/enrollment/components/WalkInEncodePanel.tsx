@@ -277,7 +277,7 @@ export function WalkInEncodePanel() {
                           <FormItem>
                             <FormLabel className="flex justify-between">
                               <span>Learner Reference Number (LRN)</span>
-                              {isLookingUp && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                              {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
@@ -604,7 +604,7 @@ export function WalkInEncodePanel() {
                 className={`font-extrabold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4  mr-2" />
                 ) : (
                   isCompleteDocs ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <AlertCircle className="h-4 w-4 mr-2" />
                 )}

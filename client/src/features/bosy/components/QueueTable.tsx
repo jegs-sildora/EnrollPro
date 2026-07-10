@@ -28,9 +28,9 @@ import {
   createFadeShiftVariants,
   createMotionTransition,
   createScaleFadeVariants,
-  getReducedMotionProps,
   useMotionPreferences,
 } from "@/shared/lib/motion";
+import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 interface QueueTableProps {
   items: BOSYQueueItem[];
@@ -136,7 +136,7 @@ function ActionMenuButton({
           className="h-9 w-9 rounded-xl border border-border bg-background hover:bg-muted"
         >
           {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 " />
           ) : (
             <MoreHorizontal className="h-4 w-4" />
           )}
@@ -181,6 +181,14 @@ function QueueMobileCard({
   busyActionIds: Set<number>;
 }) {
   const motionPreferences = useMotionPreferences();
+  const isolatedScaleFadeVariants = useMemo(() => {
+    const v = createScaleFadeVariants(motionPreferences, 0.985);
+    return {
+      enter: v.initial,
+      active: v.animate,
+      leave: v.exit,
+    };
+  }, [motionPreferences]);
   const learnerName = buildLearnerDisplayName(item);
   const isConfirming = confirmingIds.has(item.applicationId);
   const isBusy = busyActionIds.has(item.applicationId);
@@ -198,7 +206,7 @@ function QueueMobileCard({
           className="h-11 w-full rounded-xl border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
           disabled={isConfirming || isBusy}
           onClick={() => onConfirmSingle(item.applicationId)}>
-          {isConfirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
           Enroll
         </Button>
       );
@@ -215,7 +223,7 @@ function QueueMobileCard({
           className="h-11 w-full rounded-xl border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
           disabled={isBusy}
           onClick={() => onRevokeConfirmation(item)}>
-          {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
           Unenroll
         </Button>
       );
@@ -258,9 +266,11 @@ function QueueMobileCard({
   return (
     <motion.article
       layout
-      variants={createScaleFadeVariants(motionPreferences, 0.985)}
+      variants={isolatedScaleFadeVariants}
+      initial={motionPreferences.reduceMotion ? false : "enter"}
+      animate={motionPreferences.reduceMotion ? undefined : "active"}
+      exit={motionPreferences.reduceMotion ? undefined : "leave"}
       transition={createMotionTransition(motionPreferences, "fast")}
-      {...getReducedMotionProps(motionPreferences.reduceMotion)}
       className={cn(
         "rounded-2xl border border-border bg-background p-4 shadow-sm",
         selected && "border-primary bg-primary/5",
@@ -365,6 +375,11 @@ export function QueueTable({
     "y",
     "xs",
   );
+  const isolatedFadeVariants = useMemo(() => ({
+    enter: fadeVariants.initial,
+    active: fadeVariants.animate,
+    leave: fadeVariants.exit,
+  }), [fadeVariants]);
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
       {
@@ -509,7 +524,7 @@ export function QueueTable({
                 className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-xl border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                 disabled={isConfirming || isBusy}
                 onClick={() => onConfirmSingle(r.applicationId)}>
-                {isConfirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
                 Enroll
               </Button>
               <ActionMenuButton
@@ -534,7 +549,7 @@ export function QueueTable({
                 className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-xl border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
                 disabled={isBusy}
                 onClick={() => onRevokeConfirmation(r)}>
-                {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
                 Unenroll
               </Button>
               <ActionMenuButton
@@ -568,23 +583,27 @@ export function QueueTable({
   ]);
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       {loading ? (
         <motion.div
           key="loader"
-          variants={fadeVariants}
+          variants={isolatedFadeVariants}
+          initial={motionPreferences.reduceMotion ? false : "enter"}
+          animate={motionPreferences.reduceMotion ? undefined : "active"}
+          exit={motionPreferences.reduceMotion ? undefined : "leave"}
           transition={createMotionTransition(motionPreferences, "fast")}
-          {...getReducedMotionProps(motionPreferences.reduceMotion)}
-          className="flex items-center justify-center h-48 w-full"
+          className="w-full"
         >
-          <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+          <DataTableSkeleton rows={50} columns={4} className="rounded-xl" />
         </motion.div>
       ) : (
         <motion.div
           key="content"
-          variants={fadeVariants}
+          variants={isolatedFadeVariants}
+          initial={motionPreferences.reduceMotion ? false : "enter"}
+          animate={motionPreferences.reduceMotion ? undefined : "active"}
+          exit={motionPreferences.reduceMotion ? undefined : "leave"}
           transition={createMotionTransition(motionPreferences, "fast")}
-          {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex flex-col flex-1 h-full w-full min-h-0"
         >
           <motion.div
@@ -601,7 +620,7 @@ export function QueueTable({
                 </div>
               </div>
             ) : items.length > 0 ? (
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {items.map((item) => {
                 const rowId = String(item.applicationId);
                 const selected = Boolean(rowSelection[rowId]);
@@ -657,7 +676,7 @@ export function QueueTable({
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">
-                    No continuing learners match this enrollmentted status.
+                    No continuing learners match this enrollment status.
                   </p>
                   <p className="text-sm">
                     Select another target grade or check the learner name or LRN.

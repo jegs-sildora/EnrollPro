@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Eye,
   EyeOff,
-  Loader2,
   Lock,
   LogIn,
   Recycle,
@@ -637,10 +636,7 @@ export default function Login() {
                   disabled={isLoading}
                   className="w-full h-11 font-extrabold text-base leading-tight rounded-xl shadow-emerald-sm hover:shadow-emerald transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground">
                   {isLoading ? (
-                    <span className="flex items-center gap-3">
-                      <Loader2 className="animate-spin h-5 w-5" />
-                      Signing in...
-                    </span>
+                    <span>Signing in...</span>
                   ) : (
                     <span className="flex items-center gap-3">
                       <LogIn className="w-5 h-5" />

@@ -21,6 +21,7 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInBusinessDays, format } from "date-fns";
@@ -231,11 +232,16 @@ export default function InsertLateEnrolleeDrawer({
 
               <div className="border border-border rounded-xl overflow-hidden shadow-sm max-h-[300px] overflow-y-auto bg-card">
                 {loading ? (
-                  <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-                    <p className="text-base font-black uppercase  text-foreground animate-pulse">
-                      Scanning LIS Pool...
-                    </p>
+                  <div className="space-y-3 p-4">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={index} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-56" />
+                          <Skeleton className="h-4 w-36" />
+                        </div>
+                        <Skeleton className="h-9 w-28 rounded-lg" />
+                      </div>
+                    ))}
                   </div>
                 ) : isSearching ? (
                   <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
@@ -430,7 +436,7 @@ export default function InsertLateEnrolleeDrawer({
             onClick={handleSlotting}
             className="font-extrabold uppercase text-sm h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
             {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-4 w-4  mr-2" />
             ) : (
               <CheckCircle2 className="h-4 w-4 mr-2" />
             )}

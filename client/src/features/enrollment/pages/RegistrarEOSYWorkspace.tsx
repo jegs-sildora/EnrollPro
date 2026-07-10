@@ -54,6 +54,7 @@ import type { EosyStatus, RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import { useUnsavedChanges } from "@/shared/hooks/useUnsavedChanges";
+import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
 const REGISTRAR_EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "eosy:sections",
@@ -254,11 +255,7 @@ export default function RegistrarEOSYWorkspace() {
   }, [section, setTitle]);
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageLoadingSkeleton variant="registry" />;
   }
 
   if (!section) return <div>Section not found.</div>;
@@ -293,7 +290,7 @@ export default function RegistrarEOSYWorkspace() {
             disabled={finalizing}
             className="font-extrabold"
           >
-            {finalizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : isLocked ? <Unlock className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
+            {finalizing ? <Loader2 className="h-4 w-4  mr-2" /> : isLocked ? <Unlock className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
             {isLocked ? "Re-open Section" : "Finalize & Lock"}
           </Button>
         </div>
@@ -480,7 +477,7 @@ export default function RegistrarEOSYWorkspace() {
               disabled={saving}
               className="font-extrabold rounded-lg shadow-lg shadow-primary/20"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {saving ? <Loader2 className="h-4 w-4  mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               COMMIT STATUSES
             </Button>
           </DialogFooter>

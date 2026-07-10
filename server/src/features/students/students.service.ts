@@ -251,7 +251,7 @@ export async function findStudents(query: {
             gradeLevel: true,
             enrollmentRecord: {
               include: {
-                section: { select: { id: true, name: true, programType: true } },
+                section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
               },
             },
             addresses: true,
@@ -364,7 +364,7 @@ export async function findStudents(query: {
           },
         },
         gradeLevel: true,
-        section: { select: { id: true, name: true, programType: true } },
+        section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
       },
       orderBy: sortBy === "lastName" ? { learner: { lastName: resolvedSortOrder } } : { createdAt: "desc" },
       skip,
@@ -486,7 +486,7 @@ export async function findStudents(query: {
       gradeLevel: true,
       enrollmentRecord: {
         include: {
-          section: { select: { id: true, name: true, programType: true } },
+          section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
         },
       },
       addresses: true,

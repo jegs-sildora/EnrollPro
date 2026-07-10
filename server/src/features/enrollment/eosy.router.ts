@@ -13,6 +13,13 @@ router.get(
 );
 
 router.get(
+  "/workspace",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.getEosyWorkspace,
+);
+
+router.get(
   "/sections",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),

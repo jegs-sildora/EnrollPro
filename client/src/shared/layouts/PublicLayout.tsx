@@ -5,10 +5,11 @@ import { PageTransition } from "@/shared/components/PageTransition";
 
 export default function PublicLayout({ children }: { children?: ReactNode }) {
   const location = useLocation();
+  const routeKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
 
   return (
     <AnimatePresence mode="wait">
-      <PageTransition routeKey={location.pathname}>
+      <PageTransition key={routeKey}>
         {children ? children : <Outlet />}
       </PageTransition>
     </AnimatePresence>

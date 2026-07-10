@@ -3,7 +3,6 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Badge } from "@/shared/ui/badge";
-import { Loader2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { JHSCompleter } from "../types";
 
@@ -114,18 +113,11 @@ export function JHSCompleterTable({
     [],
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-      </div>
-    );
-  }
-
   return (
     <DataTable
       columns={columns}
       data={items}
+      loading={loading}
       forceEmptyState={Boolean(isSearching)}
       rowSelection={{}}
       onRowSelectionChange={() => { }}

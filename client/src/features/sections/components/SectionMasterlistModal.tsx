@@ -193,7 +193,7 @@ export default function SectionMasterlistModal({
   onOpenChange,
 }: SectionMasterlistModalProps) {
   const [data, setData] = useState<MasterlistResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [generatingSf1, setGeneratingSf1] = useState(false);
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
 
@@ -220,6 +220,11 @@ export default function SectionMasterlistModal({
   useEffect(() => {
     if (open && sectionId !== null) {
       void fetchMasterlist(sectionId);
+    } else if (!open) {
+      // Keep loading state ready for next open to avoid empty flash
+      setTimeout(() => setLoading(true), 300);
+    } else {
+      setLoading(false);
     }
   }, [open, sectionId, fetchMasterlist]);
 
@@ -382,7 +387,7 @@ export default function SectionMasterlistModal({
                 onClick={() => void handleGenerateSf1()}
                 className="text-base font-extrabold gap-1.5">
                 {generatingSf1 ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Loader2 className="size-3.5 " />
                 ) : (
                   <FileSpreadsheet className="size-3.5" />
                 )}
