@@ -223,7 +223,7 @@ export default function Attendance() {
   const stats = getStatusStats();
 
   return (
-<div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -433,7 +433,7 @@ export default function Attendance() {
                           placeholder="Add remark..."
                           value={student.remarks || ""}
                           onChange={(e) => handleRemarksChange(student.studentId, e.target.value)}
-                          className="h-10 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-0 rounded-none text-xs  transition-all"
+                          className="h-10 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-0 rounded-md text-xs  transition-all"
                         />
                       </TableCell>
                     </TableRow>

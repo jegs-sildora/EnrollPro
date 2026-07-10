@@ -335,7 +335,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                               parseInt(e.target.value) || 0,
                             )
                           }
-                          className="h-10 w-full rounded-none text-center font-extrabold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:border-transparent"
+                          className="h-10 w-full rounded-md text-center font-extrabold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:border-transparent"
                         />
                         <Button
                           type="button"

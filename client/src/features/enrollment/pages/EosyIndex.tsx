@@ -367,7 +367,7 @@ export default function EosyUpdating() {
     enabled: Boolean(ayId && activeTab),
   });
 
-  const loadingRecords = Boolean(ayId && activeTab) && (recordsQuery.isPending || recordsQuery.isFetching);
+  const loadingRecords = isInitialLoad || (Boolean(ayId && activeTab) && (recordsQuery.isPending || recordsQuery.isFetching));
   const showSkeleton = useDelayedLoading(loadingRecords && isInitialLoad);
 
   useEffect(() => {
@@ -1379,7 +1379,7 @@ export default function EosyUpdating() {
   }
 
   return (
-<>
+    <>
       <div className="flex flex-col pb-8">
 
 
@@ -1423,8 +1423,9 @@ export default function EosyUpdating() {
             )}
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
+          {activeTab ? (
+            <AnimatePresence mode="wait">
+              <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1440,7 +1441,7 @@ export default function EosyUpdating() {
                 </div>
               )}
 
-              <div className="bg-muted border border-slate-200 rounded-none shadow-sm flex flex-col overflow-hidden">
+              <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex flex-col overflow-hidden">
                 <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
                   <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
                     {/* Left Side Actions */}
@@ -1448,7 +1449,7 @@ export default function EosyUpdating() {
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Search learner name or LRN..."
+                          placeholder="Search LRN, First Name, Last Name…"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
@@ -1599,7 +1600,12 @@ export default function EosyUpdating() {
                 </div>
               </div>
             </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+          ) : !isInitialLoad && gradeLevels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-muted/30 border border-dashed rounded-lg mt-4">
+              <p className="text-muted-foreground font-extrabold text-lg">No sections found for this school year.</p>
+            </div>
+          ) : null}
         </Tabs>
 
       </div>

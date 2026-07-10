@@ -434,7 +434,7 @@ function PreListingTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
+            <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load pre-listing entries.
@@ -551,7 +551,7 @@ function ReadingAssessmentTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
+            <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the reading queue.
@@ -688,7 +688,7 @@ function ConfirmationTab({
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
+            <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-base leading-tight font-extrabold text-destructive">
               Unable to load the confirmation queue.
@@ -812,7 +812,7 @@ export default function IntakeDashboard() {
   }
 
   return (
-<div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
 
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab}>
         <TabsList className="grid w-full max-w-2xl grid-cols-3 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">

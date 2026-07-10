@@ -353,7 +353,7 @@ export default function SectionMasterlistModal({
                   <p className="text-base mt-1">This section has no active enrollment records.</p>
                 </div>
               }
-              className="h-auto rounded-none border-0"
+              className="h-auto rounded-md border-0"
             />
           </div>
 

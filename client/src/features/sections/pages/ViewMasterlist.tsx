@@ -218,7 +218,8 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
 
   const formatDate = (d: string) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-US", { timeZone: 'Asia/Manila', 
+    return new Date(d).toLocaleDateString("en-US", {
+      timeZone: 'Asia/Manila',
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -344,7 +345,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   }, [section, setTitle, mode]);
 
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       <div className="mb-4">
         {onBack ? (
           <button
@@ -445,7 +446,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <DataTableSkeleton rows={50} columns={5} className="rounded-none border-0" />
+            <DataTableSkeleton rows={50} columns={5} className="rounded-md border-0" />
           ) : masterlist.length === 0 ? (
             <div className="flex py-16 w-full items-center justify-center">
               <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">

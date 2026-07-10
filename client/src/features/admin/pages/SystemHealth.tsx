@@ -194,7 +194,7 @@ export default function SystemHealth() {
   }
 
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <p className="text-base leading-tight font-extrabold text-foreground">
@@ -295,7 +295,7 @@ export default function SystemHealth() {
               columns={countColumns}
               data={countData}
               loading={false}
-              className="border-none rounded-none"
+              className="border-none rounded-md"
               tableClassName="min-w-0"
             />
           </CardContent>

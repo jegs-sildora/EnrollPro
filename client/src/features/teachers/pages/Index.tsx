@@ -796,7 +796,7 @@ export default function Teachers() {
             loading={loading && isInitialLoad}
             loadingBehavior="delayed"
             estimatedRowHeight={60}
-            className="border-none rounded-none h-full"
+            className="border-none rounded-md h-full"
             tableClassName="min-w-[980px] table-fixed"
             containerHeight="100%"
             sorting={sorting}

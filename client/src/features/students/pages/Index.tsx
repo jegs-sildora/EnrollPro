@@ -1457,7 +1457,7 @@ export default function Students() {
                 forceEmptyState={isSearching}
                 virtualize={true}
                 estimatedRowHeight={60}
-                className="border-none rounded-none h-full"
+                className="border-none rounded-md h-full"
                 tableClassName="min-w-[1200px] table-fixed"
                 containerHeight="100%"
                 prependBodyRow={

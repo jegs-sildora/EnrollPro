@@ -622,30 +622,30 @@ export function QueueTable({
             ) : items.length > 0 ? (
               <AnimatePresence mode="popLayout" initial={false}>
                 {items.map((item) => {
-                const rowId = String(item.applicationId);
-                const selected = Boolean(rowSelection[rowId]);
+                  const rowId = String(item.applicationId);
+                  const selected = Boolean(rowSelection[rowId]);
 
-                return (
-                  <QueueMobileCard
-                    key={rowId}
-                    item={item}
-                    queueState={queueState}
-                    allowActions={allowActions}
-                    selected={selected}
-                    onSelectionChange={(checked) =>
-                      onRowSelectionChange((prev) => ({
-                        ...prev,
-                        [rowId]: checked,
-                      }))
-                    }
-                    onConfirmSingle={onConfirmSingle}
-                    onTransferRequest={onTransferRequest}
-                    onRevokeConfirmation={onRevokeConfirmation}
-                    onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
-                    confirmingIds={confirmingIds}
-                    busyActionIds={busyActionIds}
-                  />
-                );
+                  return (
+                    <QueueMobileCard
+                      key={rowId}
+                      item={item}
+                      queueState={queueState}
+                      allowActions={allowActions}
+                      selected={selected}
+                      onSelectionChange={(checked) =>
+                        onRowSelectionChange((prev) => ({
+                          ...prev,
+                          [rowId]: checked,
+                        }))
+                      }
+                      onConfirmSingle={onConfirmSingle}
+                      onTransferRequest={onTransferRequest}
+                      onRevokeConfirmation={onRevokeConfirmation}
+                      onMarkConfirmedTransferOut={onMarkConfirmedTransferOut}
+                      confirmingIds={confirmingIds}
+                      busyActionIds={busyActionIds}
+                    />
+                  );
                 })}
               </AnimatePresence>
             ) : (
@@ -668,7 +668,7 @@ export function QueueTable({
           <div className="hidden md:flex flex-col flex-1 min-h-0 w-full h-full">
             <DataTable
               containerHeight="100%"
-              className="border-x-0 border-b-0 border-t-0 rounded-none h-full flex-1"
+              className="border-x-0 border-b-0 border-t-0 rounded-md h-full flex-1"
               tableClassName="w-full table-fixed"
               emptyStateContent={
                 <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">

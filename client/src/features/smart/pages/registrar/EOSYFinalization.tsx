@@ -244,7 +244,7 @@ export default function EOSYFinalization() {
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
-                      placeholder="Search learners..."
+                      placeholder="Search LRN, First Name, Last Name…"
                       className="pl-9 rounded-xl border-slate-200 bg-muted shadow-sm focus:ring-primary/20"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
