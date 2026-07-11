@@ -566,7 +566,7 @@ export default function BOSYPage() {
   }, [setTitle]);
 
   return (
-<div className="flex flex-1 h-full w-full min-h-0 flex-col">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
@@ -695,7 +695,7 @@ export default function BOSYPage() {
                       <div className="relative w-full flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
-                          placeholder="Search LRN, First Name, Last Name…"
+                          placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                           className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
                           value={queueSearch}
                           onChange={(e) => {

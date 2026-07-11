@@ -141,7 +141,7 @@ export default function EOSYFinalization() {
   const heldCount = records.filter((r) => !r.promoted && r.finalStatus !== "PROMOTED" && r.finalStatus).length;
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "EOSY Finalization" }]} />
 
       <Card className="border-slate-200 shadow-sm overflow-hidden bg-muted">
@@ -244,7 +244,7 @@ export default function EOSYFinalization() {
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
-                      placeholder="Search LRN, First Name, Last Name…"
+                      placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                       className="pl-9 rounded-xl border-slate-200 bg-muted shadow-sm focus:ring-primary/20"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}

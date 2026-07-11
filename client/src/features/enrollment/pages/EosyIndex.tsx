@@ -1486,194 +1486,194 @@ export default function EosyUpdating() {
           {activeTab ? (
             <AnimatePresence mode="wait">
               {!suppressEmptyState && (
-              <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="w-full flex flex-col space-y-4"
-            >
-              {isScopeFinalized && (
-                <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 shrink-0">
-                  <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
-                    EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER CHANGES ALLOWED.
-                  </span>
-                </div>
-              )}
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full flex flex-col space-y-4"
+                >
+                  {isScopeFinalized && (
+                    <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 shrink-0">
+                      <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
+                        EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER CHANGES ALLOWED.
+                      </span>
+                    </div>
+                  )}
 
-              <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex flex-col overflow-hidden">
-                <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
-                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
-                    {/* Left Side Actions */}
-                    <div className="flex-1 w-full min-w-[200px]">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search LRN, First Name, Last Name…"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
+                  <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex flex-col overflow-hidden">
+                    <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
+                      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
+                        {/* Left Side Actions */}
+                        <div className="flex-1 w-full min-w-[200px]">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 shrink-0">
+                          <Select
+                            value={sectionFilter}
+                            onValueChange={setSectionFilter}
+                          >
+                            <SelectTrigger className="w-56 bg-background border-border font-extrabold">
+                              <SelectValue placeholder="Filter by Section / Adviser" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
+                              {sectionGroups.map(([groupName, secs]) => (
+                                <SelectGroup key={groupName}>
+                                  <SelectLabel className="font-bold text-muted-foreground uppercase text-xs tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
+                                  {secs.map(sec => (
+                                    <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {isScopeFinalized ? (
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => {
+                                if (pendingCount > 0) {
+                                  setSf5WatermarkOpen(true);
+                                } else {
+                                  sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
+                                }
+                              }}>
+                                Export SF5
+                              </Button>
+                              <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
+                                Export SF6
+                              </Button>
+                            </div>
+                          ) : Object.keys(rowSelection).length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Select
+                                value={batchActionStatus}
+                                onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+                                disabled={Object.keys(rowSelection).length === 0}
+                              >
+                                <SelectTrigger className="w-48 bg-background border-border font-extrabold">
+                                  <SelectValue placeholder="Select New Status..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="PROMOTED">PROMOTED</SelectItem>
+                                  <SelectItem value="RETAINED">RETAINED</SelectItem>
+                                  <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
+                                  <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+                                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                onClick={handleBatchUpdate}
+                                disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+                                variant={batchActionStatus ? "default" : "outline"}
+                                className={cn(
+                                  "transition-all font-extrabold px-6",
+                                  batchActionStatus && Object.keys(rowSelection).length > 0
+                                    ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+                                    : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
+                                )}
+                              >
+                                {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Apply to Selected
+                              </Button>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Right Side Status & Finalize */}
+                        <div className="flex flex-wrap items-center gap-4 xl:justify-end">
+                          {/* Status Indicators */}
+                          <div className="flex items-center gap-3">
+                            {pendingCount > 0 && !isScopeFinalized && (
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
+                                {pendingCount} Pending Submissions
+                              </div>
+                            )}
+
+                            {!isScopeFinalized && blockersCount > 0 && (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
+                                      <AlertCircle className="w-3.5 h-3.5" />
+                                      {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
+                                    <p className="font-extrabold mb-2 flex items-center gap-2">
+                                      <AlertCircle className="w-4 h-4" />
+                                      Pending Requirements
+                                    </p>
+                                    <div className="space-y-1.5 text-destructive-foreground/90">
+                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} sections missing School Form 5 (SF5).</p>}
+                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learners require encoded EOSY (Summer) classes.</p>}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+
+                          {/* Finalize Button */}
+                          {!isScopeFinalized && blockersCount === 0 && filteredRecords.length > 0 && (
+                            <Button
+                              onClick={() => setFinalizeModalOpen(true)}
+                              size="lg"
+                              className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
+                            >
+                              Finalize & Lock {targetScopeName}
+                            </Button>
+                          )}
+
+                          {isScopeFinalized && sectionFilter !== "ALL" && !isSchoolYearFinalized && !isHistoricalReadOnly && (
+                            <Button
+                              onClick={() => setUnlockModalOpen(true)}
+                              disabled={unlockLoading}
+                              size="lg"
+                              variant="outline"
+                              className="font-extrabold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
+                            >
+                              Unlock Section Roster
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col bg-card h-full min-h-0">
+                      <div className="overflow-x-auto flex-1 min-h-0 relative">
+                        <DataTable
+                          columns={columns}
+                          data={filteredRecords}
+                          loading={loadingRecords}
+                          loadingBehavior="delayed"
+                          containerHeight="100%"
+                          rowSelection={rowSelection}
+                          onRowSelectionChange={setRowSelection}
+                          getRowClassName={(row: any) => row.isCategoryHeader ? "" : isScopeFinalized || row.section?.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
+                          isHeaderRow={(row: any) => !!row.isCategoryHeader}
+                          renderHeaderRow={(row: any, columnsCount: number) => (
+                            <TableRow key={row.id} className="bg-muted border-y-2 border-border/60 hover:bg-muted">
+                              <TableCell colSpan={columnsCount} className="p-3">
+                                <span className="font-extrabold text-sm text-primary tracking-widest uppercase ml-2">{row.categoryName}</span>
+                              </TableCell>
+                            </TableRow>
+                          )}
                         />
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-3 shrink-0">
-                      <Select
-                        value={sectionFilter}
-                        onValueChange={setSectionFilter}
-                      >
-                        <SelectTrigger className="w-56 bg-background border-border font-extrabold">
-                          <SelectValue placeholder="Filter by Section / Adviser" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
-                          {sectionGroups.map(([groupName, secs]) => (
-                            <SelectGroup key={groupName}>
-                              <SelectLabel className="font-bold text-muted-foreground uppercase text-xs tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
-                              {secs.map(sec => (
-                                <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      {isScopeFinalized ? (
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => {
-                            if (pendingCount > 0) {
-                              setSf5WatermarkOpen(true);
-                            } else {
-                              sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
-                            }
-                          }}>
-                            Export SF5
-                          </Button>
-                          <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
-                            Export SF6
-                          </Button>
-                        </div>
-                      ) : Object.keys(rowSelection).length > 0 ? (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Select
-                            value={batchActionStatus}
-                            onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
-                            disabled={Object.keys(rowSelection).length === 0}
-                          >
-                            <SelectTrigger className="w-48 bg-background border-border font-extrabold">
-                              <SelectValue placeholder="Select New Status..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="PROMOTED">PROMOTED</SelectItem>
-                              <SelectItem value="RETAINED">RETAINED</SelectItem>
-                              <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
-                              <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
-                              <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={handleBatchUpdate}
-                            disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
-                            variant={batchActionStatus ? "default" : "outline"}
-                            className={cn(
-                              "transition-all font-extrabold px-6",
-                              batchActionStatus && Object.keys(rowSelection).length > 0
-                                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-                                : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
-                            )}
-                          >
-                            {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            Apply to Selected
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {/* Right Side Status & Finalize */}
-                    <div className="flex flex-wrap items-center gap-4 xl:justify-end">
-                      {/* Status Indicators */}
-                      <div className="flex items-center gap-3">
-                        {pendingCount > 0 && !isScopeFinalized && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
-                            {pendingCount} Pending Submissions
-                          </div>
-                        )}
-
-                        {!isScopeFinalized && blockersCount > 0 && (
-                          <TooltipProvider delayDuration={200}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                  {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
-                                <p className="font-extrabold mb-2 flex items-center gap-2">
-                                  <AlertCircle className="w-4 h-4" />
-                                  Pending Requirements
-                                </p>
-                                <div className="space-y-1.5 text-destructive-foreground/90">
-                                  {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} sections missing School Form 5 (SF5).</p>}
-                                  {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learners require encoded EOSY (Summer) classes.</p>}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-
-                      {/* Finalize Button */}
-                      {!isScopeFinalized && blockersCount === 0 && filteredRecords.length > 0 && (
-                        <Button
-                          onClick={() => setFinalizeModalOpen(true)}
-                          size="lg"
-                          className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
-                        >
-                          Finalize & Lock {targetScopeName}
-                        </Button>
-                      )}
-
-                      {isScopeFinalized && sectionFilter !== "ALL" && !isSchoolYearFinalized && !isHistoricalReadOnly && (
-                        <Button
-                          onClick={() => setUnlockModalOpen(true)}
-                          disabled={unlockLoading}
-                          size="lg"
-                          variant="outline"
-                          className="font-extrabold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
-                        >
-                          Unlock Section Roster
-                        </Button>
-                      )}
-                    </div>
                   </div>
-                </div>
-
-                <div className="flex flex-col bg-card h-full min-h-0">
-                  <div className="overflow-x-auto flex-1 min-h-0 relative">
-                      <DataTable
-                        columns={columns}
-                        data={filteredRecords}
-                        loading={loadingRecords}
-                        loadingBehavior="delayed"
-                        containerHeight="100%"
-                        rowSelection={rowSelection}
-                        onRowSelectionChange={setRowSelection}
-                        getRowClassName={(row: any) => row.isCategoryHeader ? "" : isScopeFinalized || row.section?.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
-                        isHeaderRow={(row: any) => !!row.isCategoryHeader}
-                        renderHeaderRow={(row: any, columnsCount: number) => (
-                           <TableRow key={row.id} className="bg-muted border-y-2 border-border/60 hover:bg-muted">
-                             <TableCell colSpan={columnsCount} className="p-3">
-                                <span className="font-extrabold text-sm text-primary tracking-widest uppercase ml-2">{row.categoryName}</span>
-                             </TableCell>
-                           </TableRow>
-                        )}
-                      />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+                </motion.div>
               )}
             </AnimatePresence>
           ) : !isInitialLoad && gradeLevels.length === 0 ? (

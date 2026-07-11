@@ -199,7 +199,7 @@ export default function MyAdvisory() {
   });
 
   return (
-<div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Header Section - Refined Glass Style */}
       <div className="relative overflow-hidden rounded-[2.5rem] bg-muted border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
         <div
@@ -352,7 +352,7 @@ export default function MyAdvisory() {
             </div>
             <Input
               type="text"
-              placeholder="Search LRN, First Name, Last Name… or LRN..."
+              placeholder="SEARCH LRN, FIRST NAME, LAST NAME... or LRN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-14 h-12 text-xs font-extrabold bg-slate-50 border-0 rounded-2xl transition-all placeholder:text-slate-400"

@@ -346,7 +346,7 @@ export function VerificationWorkspace() {
           <div className="relative w-full xl:w-84 shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search LRN, First Name, Last Name…"
+              placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
               className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

@@ -48,7 +48,7 @@ export default function RemedialTracker() {
     : items;
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Remedial Tracker" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -76,7 +76,7 @@ export default function RemedialTracker() {
               </div>
             </div>
             <Input
-              placeholder="Search LRN, First Name, Last Name… or LRN..."
+              placeholder="SEARCH LRN, FIRST NAME, LAST NAME... or LRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-56 rounded-xl border-gray-200"

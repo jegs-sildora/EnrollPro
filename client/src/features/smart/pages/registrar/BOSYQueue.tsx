@@ -117,7 +117,7 @@ export default function BOSYQueue() {
     : items;
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "BOSY Queue" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -168,7 +168,7 @@ export default function BOSYQueue() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search LRN, First Name, Last Name… or LRN..."
+                  placeholder="SEARCH LRN, FIRST NAME, LAST NAME... or LRN..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 w-64 rounded-xl border-gray-200"

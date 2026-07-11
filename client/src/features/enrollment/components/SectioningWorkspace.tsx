@@ -943,7 +943,7 @@ export function SectioningWorkspace() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
-                    placeholder="Search LRN, First Name, Last Name…"
+                    placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                     className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold uppercase"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

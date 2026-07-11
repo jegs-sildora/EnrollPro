@@ -942,7 +942,7 @@ function QueueCard({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
-            placeholder="Search LRN, First Name, Last Name…"
+            placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
             className="pl-10 h-11 text-base leading-tight font-extrabold bg-muted/30 border-2 border-transparent focus:border-primary transition-all uppercase"
             value={searchInput}
             onFocus={onSearchFocus}
@@ -1160,7 +1160,7 @@ function ContinuingQueueCard({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
           <Input
-            placeholder="Search LRN, First Name, Last Name…"
+            placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
             className="pl-10 h-11 text-base leading-tight font-extrabold bg-muted/30 border-2 border-transparent focus:border-primary transition-all uppercase"
             value={searchInput}
             onFocus={onSearchFocus}
