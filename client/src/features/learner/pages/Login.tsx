@@ -440,7 +440,7 @@ export default function LearnerLogin() {
                 </Button>
               </form>
 
-              <p className="text-center text-base text-muted-foreground/70 mt-6 leading-relaxed">
+              <p className="text-center text-foreground/50 text-sm mt-6 leading-relaxed">
                 Forgot password? Contact your Class Adviser for a reset.
               </p>
             </CardContent>

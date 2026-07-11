@@ -133,7 +133,7 @@ function ActionMenuButton({
           size="icon"
           variant="outline"
           disabled={disabled}
-          className="h-9 w-9 rounded-xl border border-border bg-background hover:bg-muted"
+          className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted"
         >
           {busy ? (
             <Loader2 className="h-4 w-4 " />
@@ -203,7 +203,7 @@ function QueueMobileCard({
         <Button
           size="sm"
           variant="outline"
-          className="h-11 w-full rounded-xl border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
           disabled={isConfirming || isBusy}
           onClick={() => onConfirmSingle(item.applicationId)}>
           {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -220,7 +220,7 @@ function QueueMobileCard({
         <Button
           size="sm"
           variant="outline"
-          className="h-11 w-full rounded-xl border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
+          className="h-11 w-full rounded-md border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
           disabled={isBusy}
           onClick={() => onRevokeConfirmation(item)}>
           {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -291,7 +291,7 @@ function QueueMobileCard({
                 {learnerName}
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={cn("rounded-full px-3 py-1 text-xs font-extrabold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                <Badge className={cn("rounded-md px-3 py-1 text-xs font-extrabold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
                   {item.gradeLevelName}
                 </Badge>
                 {statusBadge(item)}
@@ -468,7 +468,7 @@ export function QueueTable({
             <div className="flex flex-col items-center gap-1 py-3 text-center">
               <Badge
                 className={cn(
-                  "rounded-full border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
+                  "rounded-md border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
                   s === "PROMOTED"
                     ? "bg-emerald-600 hover:bg-emerald-600"
                     : s === "CONDITIONALLY_PROMOTED"
@@ -521,7 +521,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-xl border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                 disabled={isConfirming || isBusy}
                 onClick={() => onConfirmSingle(r.applicationId)}>
                 {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -546,7 +546,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-xl border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
+                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
                 disabled={isBusy}
                 onClick={() => onRevokeConfirmation(r)}>
                 {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -594,7 +594,7 @@ export function QueueTable({
           transition={createMotionTransition(motionPreferences, "fast")}
           className="w-full"
         >
-          <DataTableSkeleton rows={50} columns={4} className="rounded-xl" />
+          <DataTableSkeleton rows={50} columns={4} className="rounded-md" />
         </motion.div>
       ) : (
         <motion.div
@@ -651,7 +651,7 @@ export function QueueTable({
             ) : (
               <div className="rounded-2xl border border-border bg-background">
                 <div className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 text-foreground">
-                  <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+                  <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">
@@ -672,7 +672,7 @@ export function QueueTable({
               tableClassName="w-full table-fixed"
               emptyStateContent={
                 <div className="flex flex-col items-center justify-center min-h-[220px] max-h-[260px] gap-1.5 text-foreground">
-                  <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+                  <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
                   <p className="text-base font-extrabold text-foreground">

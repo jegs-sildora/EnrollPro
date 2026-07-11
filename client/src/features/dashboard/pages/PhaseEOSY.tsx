@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/shared/ui/alert";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import type { DashboardStats } from "../types";
 
 export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
@@ -22,13 +23,6 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="space-y-6 pb-6" style={{ "--element-track": "340 40% 96%" } as React.CSSProperties}>
-      <Alert style={{ backgroundColor: "#FDF2F8", borderColor: "#FBCFE8" }}>
-        <AlertTitle className="font-extrabold" style={{ color: "#831843" }}>Academic Phase: EOSY Closing</AlertTitle>
-        <AlertDescription className="font-extrabold" style={{ color: "#831843" }}>
-          The school year is closing. Please ensure all class advisers encode final grades and finalize their sections for the official LIS export.
-        </AlertDescription>
-      </Alert>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
           <CardHeader className="px-3 sm:px-6 pb-2">
@@ -39,13 +33,13 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={eosyPendingSections} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
                 Advisers Must Submit EOSY Grades
               </span>
             </div>
             <div className="mt-4 flex justify-end mt-auto pt-4">
               {eosyPendingSections > 0 ? (
-                <Button variant="outline" onClick={() => navigate("/academic-year/sections")} className="">
+                <Button variant="outline" onClick={() => navigate("/eosy?status=pending")} className="">
                   Monitor Sections <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               ) : (
@@ -66,12 +60,12 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={promotedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
                 JHS Completers & Promoted
               </span>
             </div>
             <div className="mt-4 flex justify-end mt-auto pt-4">
-              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted">
+              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted font-bold">
                 <Award className="w-4 h-4 mr-2" /> Ready for Next Year
               </div>
             </div>
@@ -87,12 +81,12 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               <AnimatedNumber value={irregularTotal + retainedTotal} />
             </div>
             <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
+              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
                 Conditional Promoted | Retained
               </span>
             </div>
             <div className="mt-4 flex justify-end mt-auto pt-4">
-              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted">
+              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted font-bold">
                 <AlertTriangle className="w-4 h-4 mr-2" /> Requires Guidance
               </div>
             </div>
@@ -108,10 +102,10 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               <div className="text-5xl sm:text-6xl font-extrabold" style={{ color: "hsl(var(--primary))" }}>
                 {finalizationPercent}%
               </div>
-              <p className="text-sm font-semibold text-foreground">{eosyFinalizedSections} of {totalSections} Sections Officially Closed</p>
+              <p className="text-sm font-bold text-foreground">{eosyFinalizedSections} of {totalSections} Sections Officially Closed</p>
             </div>
 
-            <div className="w-full max-w-md mx-auto mt-6 bg-muted rounded-full h-3 overflow-hidden">
+            <div className="w-full max-w-md mx-auto mt-6 bg-neutral-200 rounded-full h-6 overflow-hidden">
               <div
                 className="bg-primary h-full transition-all duration-1000"
                 style={{ width: `${finalizationPercent}%` }}
@@ -121,33 +115,41 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
         </Card>
       </div>
 
-      <div className="mt-6">
-        {/* Grade Level Masterlist Finalization progress bars */}
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-          <CardHeader className="px-3 sm:px-6 pb-2 text-left">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">
-              Grade Level Finalization Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-6 space-y-6 flex flex-col justify-center">
-            {((stats?.eosyStats?.gradeLevelFinalization ?? []) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => (
-              <div key={g.id} className="space-y-2 text-left">
-                <div className="flex justify-between text-sm font-extrabold text-foreground">
-                  <span>{g.name}</span>
-                  <span>
-                    {g.finalized} / {g.total} Sections ({g.percent}%)
+      <div className="mt-6 flex flex-col w-full overflow-hidden">
+        <h3 className="text-base sm:text-lg font-extrabold text-foreground mb-4 pl-1">
+          Grade Level Finalization Status
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {((stats?.eosyStats?.gradeLevelFinalization ?? []) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => {
+            const gradeNumStr = g.name.replace(/Grade\s+/i, "").trim();
+            return (
+              <div
+                key={g.id}
+                onClick={() => navigate(`/eosy?gradeLevelId=${g.id}&status=pending`)}
+                className={cn(
+                  "text-center p-5 rounded-md border shadow-sm flex flex-col justify-center transition-all cursor-pointer hover:opacity-80 active:scale-[0.98]",
+                  getGradeLevelBadgeStyles(gradeNumStr)
+                )}
+              >
+                <p className="font-extrabold mb-1 uppercase tracking-wider opacity-90">{g.name}</p>
+                <p className="text-4xl sm:text-5xl font-black drop-shadow-sm mb-1">
+                  <AnimatedNumber value={g.percent} />%
+                </p>
+                <div className="flex flex-col items-center mt-4 pt-4 border-t border-current/20 w-full">
+                  <span className="text-sm font-extrabold uppercase tracking-wider mb-2">
+                    {g.finalized} / {g.total} Sections
                   </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-primary h-full transition-all duration-500"
-                    style={{ width: `${g.percent}%` }}
-                  />
+                  <div className="w-full bg-current/20 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-current h-full transition-all duration-500 opacity-90"
+                      style={{ width: `${g.percent}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

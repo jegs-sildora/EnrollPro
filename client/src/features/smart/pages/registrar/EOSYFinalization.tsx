@@ -342,7 +342,7 @@ export default function EOSYFinalization() {
                                     {rec.finalAverage != null && (
                                       rec.isCurrentYear ? (
                                         <Badge variant="outline" className="w-fit text-[10px] py-0 px-1.5 bg-blue-50 text-blue-600 border-blue-200">
-                                          Current SY
+                                          Current S.Y.
                                         </Badge>
                                       ) : (
                                         <Badge variant="outline" className="w-fit text-[10px] py-0 px-1.5 bg-amber-50 text-amber-600 border-amber-200">

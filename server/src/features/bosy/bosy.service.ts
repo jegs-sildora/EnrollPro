@@ -753,44 +753,51 @@ export async function syncBOSYQueue(
     );
     if (!targetGradeLevelId) continue;
 
-    const newApp = await prisma.enrollmentApplication.upsert({
-      where: {
-        uq_enrollment_learner_sy: {
+    try {
+      const newApp = await prisma.enrollmentApplication.upsert({
+        where: {
+          uq_enrollment_learner_sy: {
+            learnerId: record.learnerId,
+            schoolYearId,
+          },
+        },
+        update: {},
+        create: {
           learnerId: record.learnerId,
           schoolYearId,
+          gradeLevelId: targetGradeLevelId,
+          applicantType: record.assignedProgram ?? record.applicantType,
+          assignedProgram: record.assignedProgram ?? record.applicantType,
+          learnerType: "CONTINUING",
+          learningModalities: [],
+          status:
+            destination.kind === "REMEDIAL_HOLD"
+              ? "REMEDIAL_HOLD"
+              : "PENDING_CONFIRMATION",
+          admissionChannel: "F2F",
+          isPrivacyConsentGiven: record.isPrivacyConsentGiven,
+          guardianRelationship: record.guardianRelationship,
+          hasNoMother: record.hasNoMother,
+          hasNoFather: record.hasNoFather,
+          contactNumber: record.contactNumber,
+          guardianName: record.guardianName,
+          encodedById: actingUserId,
+          academicStatus: destination.academicStatus,
+          isRemedialRequired: destination.isRemedialRequired,
         },
-      },
-      update: {},
-      create: {
-        learnerId: record.learnerId,
-        schoolYearId,
-        gradeLevelId: targetGradeLevelId,
-        applicantType: record.assignedProgram ?? record.applicantType,
-        assignedProgram: record.assignedProgram ?? record.applicantType,
-        learnerType: "CONTINUING",
-        learningModalities: [],
-        status:
-          destination.kind === "REMEDIAL_HOLD"
-            ? "REMEDIAL_HOLD"
-            : "PENDING_CONFIRMATION",
-        admissionChannel: "F2F",
-        isPrivacyConsentGiven: record.isPrivacyConsentGiven,
-        guardianRelationship: record.guardianRelationship,
-        hasNoMother: record.hasNoMother,
-        hasNoFather: record.hasNoFather,
-        contactNumber: record.contactNumber,
-        guardianName: record.guardianName,
-        encodedById: actingUserId,
-        academicStatus: destination.academicStatus,
-        isRemedialRequired: destination.isRemedialRequired,
-      },
-    });
+      });
 
-    const trackingNumber = `REG-${startYear}-${String(newApp.id).padStart(5, "0")}`;
-    await prisma.enrollmentApplication.update({
-      where: { id: newApp.id },
-      data: { trackingNumber },
-    });
+      const trackingNumber = `REG-${startYear}-${String(newApp.id).padStart(5, "0")}`;
+      await prisma.enrollmentApplication.update({
+        where: { id: newApp.id },
+        data: { trackingNumber },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        continue;
+      }
+      throw error;
+    }
 
     existingLearnerIds.add(record.learnerId);
     createdCount++;

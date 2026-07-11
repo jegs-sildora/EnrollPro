@@ -56,8 +56,9 @@ export interface DataTableProps<TData, TValue> {
   dense?: boolean;
   isRowClickable?: (row: TData) => boolean;
   skeletonRowCount?: number;
+  isHeaderRow?: (row: TData) => boolean;
+  renderHeaderRow?: (row: TData, columnsCount: number, style?: React.CSSProperties) => ReactNode;
 }
-
 
 interface TableRowComponentProps<TData> {
   row: Row<TData>;
@@ -173,6 +174,8 @@ export function DataTable<TData, TValue>({
   dense = false,
   isRowClickable,
   skeletonRowCount = 50,
+  isHeaderRow,
+  renderHeaderRow,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -329,18 +332,38 @@ export function DataTable<TData, TValue>({
                       />
                     </TableRow>
                   ),
-                  ...virtualItems.map((virtualRow) => (
-                    <TableRowComponent
-                      key={rows[virtualRow.index].id}
-                      ref={rowVirtualizer.measureElement}
-                      data-index={virtualRow.index}
-                      row={rows[virtualRow.index]}
-                      onRowClick={onRowClick}
-                      getRowClassName={getRowClassName}
-                      dense={dense}
-                      isRowClickable={isRowClickable}
-                    />
-                  )),
+                  ...virtualItems.map((virtualRow) => {
+                    const rowData = rows[virtualRow.index].original;
+                    const isHeader = isHeaderRow?.(rowData);
+                    
+                    if (isHeader && renderHeaderRow) {
+                      const renderedHeader = renderHeaderRow(rowData, columns.length);
+                      
+                      return (
+                        <React.Fragment key={rows[virtualRow.index].id}>
+                          {React.isValidElement(renderedHeader) 
+                            ? React.cloneElement(renderedHeader as React.ReactElement<any>, { 
+                                ref: rowVirtualizer.measureElement,
+                                "data-index": virtualRow.index 
+                              })
+                            : renderedHeader}
+                        </React.Fragment>
+                      );
+                    }
+
+                    return (
+                      <TableRowComponent
+                        key={rows[virtualRow.index].id}
+                        ref={rowVirtualizer.measureElement}
+                        data-index={virtualRow.index}
+                        row={rows[virtualRow.index]}
+                        onRowClick={onRowClick}
+                        getRowClassName={getRowClassName}
+                        dense={dense}
+                        isRowClickable={isRowClickable}
+                      />
+                    );
+                  }),
                   virtualItems.length > 0 && (
                     <TableRow
                       key="virtual-padding-bottom"
@@ -355,18 +378,30 @@ export function DataTable<TData, TValue>({
                     </TableRow>
                   ),
                 ]
-                : rows.map((row) => (
-                  <React.Fragment key={row.id}>
-                    <TableRowComponent
-                      row={row}
-                      onRowClick={onRowClick}
-                      getRowClassName={getRowClassName}
-                      dense={dense}
-                      isRowClickable={isRowClickable}
-                    />
-                    {renderRowAfter?.(row.original, row.index)}
-                  </React.Fragment>
-                ))}
+                : rows.map((row) => {
+                  const isHeader = isHeaderRow?.(row.original);
+                  
+                  if (isHeader && renderHeaderRow) {
+                    return (
+                      <React.Fragment key={row.id}>
+                        {renderHeaderRow(row.original, columns.length)}
+                      </React.Fragment>
+                    );
+                  }
+
+                  return (
+                    <React.Fragment key={row.id}>
+                      <TableRowComponent
+                        row={row}
+                        onRowClick={onRowClick}
+                        getRowClassName={getRowClassName}
+                        dense={dense}
+                        isRowClickable={isRowClickable}
+                      />
+                      {renderRowAfter?.(row.original, row.index)}
+                    </React.Fragment>
+                  );
+                })}
             </TableBody>
           ) : prependBodyRow ? (
             <TableBody className="relative">

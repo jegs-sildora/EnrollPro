@@ -12,6 +12,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -52,6 +54,7 @@ import { useHeaderStore } from "@/store/header.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { TableRow, TableCell } from "@/shared/ui/table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
@@ -759,7 +762,7 @@ export default function EosyUpdating() {
     try {
       const sectionIdPayload = sectionFilter === "ALL"
         ? "all"
-        : records.find(r => r.section.name === sectionFilter)?.section?.id ?? "all";
+        : records.find(r => r.section?.name === sectionFilter)?.section?.id ?? "all";
 
       await api.post(`/eosy/grade/${activeTab}/finalize`, {
         schoolYearId: ayId,
@@ -787,7 +790,7 @@ export default function EosyUpdating() {
   const handleUnlockSection = async () => {
     if (sectionFilter === "ALL") return;
 
-    const sectionIdPayload = records.find(r => r.section.name === sectionFilter)?.section?.id;
+    const sectionIdPayload = records.find(r => r.section?.name === sectionFilter)?.section?.id;
     if (!sectionIdPayload) return;
 
     setUnlockLoading(true);
@@ -875,46 +878,76 @@ export default function EosyUpdating() {
 
   const activeGradeName = gradeLevels.find((g) => String(g.id) === activeTab)?.name || "Grade Level";
 
-  const sectionOptions = useMemo(() => {
-    const sectionsSet = new Set<string>();
+  const sectionGroups = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const uniqueSections = new Map<string, any>();
     records.forEach(r => {
-      const name = r.section?.name?.trim();
-      if (name) {
-        sectionsSet.add(name);
+      const sec = r.section;
+      if (sec && sec.name && !uniqueSections.has(sec.name)) {
+        uniqueSections.set(sec.name, sec);
       }
     });
-    return Array.from(sectionsSet).sort();
+
+    uniqueSections.forEach(sec => {
+      let groupName = "BEC";
+      if (sec.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") groupName = "SCIENCE, TECHNOLOGY, AND ENGINEERING";
+      else if (sec.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") groupName = "SPECIAL PROGRAM IN THE ARTS";
+      else if (sec.programType === "SPECIAL_PROGRAM_IN_SPORTS") groupName = "SPECIAL PROGRAM IN SPORTS";
+      else if (sec.programType !== "REGULAR") groupName = "BASIC EDUCATION CURRICULUM";
+      else if (sec.isHomogeneous) groupName = "BASIC EDUCATION CURRICULUM (TOP SECTIONS)";
+
+      if (!map.has(groupName)) map.set(groupName, []);
+      map.get(groupName)!.push(sec.name);
+    });
+
+    const sortedGroups = Array.from(map.entries()).sort((a, b) => {
+      const rank = (name: string) => {
+        if (name.includes("STE")) return 1;
+        if (name.includes("SPA")) return 2;
+        if (name.includes("SPS")) return 3;
+        if (name.includes("SCP")) return 4;
+        if (name.includes("TOP")) return 5;
+        return 6;
+      };
+      return rank(a[0]) - rank(b[0]);
+    });
+
+    sortedGroups.forEach(g => g[1].sort());
+    return sortedGroups;
   }, [records]);
 
   const filteredRecords = useMemo(() => {
     let list = records;
     if (sectionFilter !== "ALL") {
-      list = list.filter(r => r.section.name === sectionFilter);
+      list = list.filter(r => r.section?.name === sectionFilter);
     }
 
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(r => {
-        const { firstName, lastName, lrn } = r.enrollmentApplication.learner;
+        const learner = r.enrollmentApplication?.learner;
+        if (!learner) return false;
+        const { firstName, lastName, lrn } = learner;
         return (
-          firstName.toLowerCase().includes(q) ||
-          lastName.toLowerCase().includes(q) ||
-          (lrn && lrn.toLowerCase().includes(q))
+          (firstName && firstName.toLowerCase().includes(q)) ||
+          (lastName && lastName.toLowerCase().includes(q)) ||
+          (lrn && lrn.toLowerCase().includes(q)) ||
+          (r.section?.name && r.section.name.toLowerCase().includes(q))
         );
       });
     }
 
-    return [...list].sort((a, b) => {
+    const sortedList = [...list].sort((a, b) => {
       // 1. STE
       // 2. SPA
       // 3. SPS
       // 4. PILOT/HOMOGENEOUS
       // 5. HETEROGENEOUS
       const getRank = (r: EnrollmentRecord) => {
-        if (r.section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
-        if (r.section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") return 2;
-        if (r.section.programType === "SPECIAL_PROGRAM_IN_SPORTS") return 3;
-        if (r.section.isHomogeneous) return 4;
+        if (r.section?.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
+        if (r.section?.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") return 2;
+        if (r.section?.programType === "SPECIAL_PROGRAM_IN_SPORTS") return 3;
+        if (r.section?.isHomogeneous) return 4;
         return 5;
       };
 
@@ -924,15 +957,39 @@ export default function EosyUpdating() {
       if (rankA !== rankB) return rankA - rankB;
 
       // Keep section alphabetical order as secondary sort
-      const sectionCompare = a.section.name.localeCompare(b.section.name);
+      const aName = a.section?.name || "";
+      const bName = b.section?.name || "";
+      const sectionCompare = aName.localeCompare(bName);
       if (sectionCompare !== 0) return sectionCompare;
 
       // Finally, student last name
-      return a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName);
+      return a.enrollmentApplication?.learner?.lastName?.localeCompare(b.enrollmentApplication?.learner?.lastName || "") || 0;
     });
+
+    if (sectionFilter !== "ALL") return sortedList; // Do not render headers if a single section is selected
+
+    const withHeaders: any[] = [];
+    let currentCategory = "";
+
+    sortedList.forEach((r) => {
+      let category = "BEC";
+      if (r.section?.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") category = "SCIENCE, TECHNOLOGY, AND ENGINEERING";
+      else if (r.section?.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") category = "SPECIAL PROGRAM IN THE ARTS";
+      else if (r.section?.programType === "SPECIAL_PROGRAM_IN_SPORTS") category = "SPECIAL PROGRAM IN SPORTS";
+      else if (r.section?.programType && r.section.programType !== "REGULAR") category = "BASIC EDUCATION CURRICULUM";
+      else if (r.section?.isHomogeneous) category = "BASIC EDUCATION CURRICULUM (TOP SECTIONS)";
+
+      if (category !== currentCategory) {
+        currentCategory = category;
+        withHeaders.push({ id: `header-${category}`, isCategoryHeader: true, categoryName: category });
+      }
+      withHeaders.push(r);
+    });
+
+    return withHeaders;
   }, [records, sectionFilter, searchQuery]);
 
-  const suppressInitialEmptyState = loadingRecords && isInitialLoad && !showSkeleton && filteredRecords.length === 0;
+  const suppressEmptyState = loadingRecords && !showSkeleton && filteredRecords.length === 0;
 
   const pendingCount = filteredRecords.filter(r =>
     (r.finalAverage === null || r.finalAverage === undefined) &&
@@ -941,7 +998,7 @@ export default function EosyUpdating() {
   ).length;
 
   const scopeRecords = useMemo(() => {
-    return sectionFilter === "ALL" ? records : records.filter(r => r.section.name === sectionFilter);
+    return sectionFilter === "ALL" ? records : records.filter(r => r.section?.name === sectionFilter);
   }, [records, sectionFilter]);
 
   const isScopeFinalized = scopeRecords.length > 0 && scopeRecords.every(r => r.section.isEosyFinalized);
@@ -952,7 +1009,8 @@ export default function EosyUpdating() {
       if (
         (r.finalAverage === null || r.finalAverage === undefined) &&
         r.eosyStatus !== "TRANSFERRED_OUT" &&
-        r.eosyStatus !== "DROPPED_OUT"
+        r.eosyStatus !== "DROPPED_OUT" &&
+        r.section?.name
       ) {
         sets.add(r.section.name);
       }
@@ -1104,7 +1162,9 @@ export default function EosyUpdating() {
           }
 
           return (
-            <span className="text-base font-extrabold uppercase">{row.original.section.name}</span>
+            <div className="flex justify-center w-full">
+              <span className="text-base font-extrabold uppercase">{row.original.section?.name || "--"}</span>
+            </div>
           );
         },
         meta: { className: "min-w-[150px] text-center" }
@@ -1150,7 +1210,7 @@ export default function EosyUpdating() {
           const isFailing = ave < 75;
 
           return (
-            <div className="flex justify-center items-center gap-1">
+            <div className="flex justify-center items-center gap-1 w-full">
               <span className={cn("text-base sm:text-base leading-tight tabular-nums block text-center",
                 isFailing ? "text-red-600 font-extrabold" : "text-gray-900 font-extrabold"
               )}>
@@ -1242,7 +1302,7 @@ export default function EosyUpdating() {
 
           if (hasOverride) {
             return (
-              <div className="flex flex-col gap-1 items-center">
+              <div className="flex flex-col gap-1 items-center justify-center w-full">
                 <Select
                   value={resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                   onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
@@ -1279,7 +1339,7 @@ export default function EosyUpdating() {
 
           if (isSectionFinalized || isScopeFinalized) {
             return (
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center justify-center gap-1 w-full">
                 {isScpDemoted && resolvedStatus === "PROMOTED" ? renderTooltip(renderStatusContent()) : renderStatusContent()}
                 {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
                   <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
@@ -1291,7 +1351,7 @@ export default function EosyUpdating() {
           }
 
           return (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-2 w-full">
               <Select
                 value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
@@ -1425,6 +1485,7 @@ export default function EosyUpdating() {
 
           {activeTab ? (
             <AnimatePresence mode="wait">
+              {!suppressEmptyState && (
               <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 10 }}
@@ -1466,9 +1527,14 @@ export default function EosyUpdating() {
                           <SelectValue placeholder="Filter by Section / Adviser" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ALL" className="font-extrabold">All Sections</SelectItem>
-                          {sectionOptions.map(sec => (
-                            <SelectItem key={sec} value={sec} className="font-extrabold">{sec}</SelectItem>
+                          <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
+                          {sectionGroups.map(([groupName, secs]) => (
+                            <SelectGroup key={groupName}>
+                              <SelectLabel className="font-bold text-muted-foreground uppercase text-xs tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
+                              {secs.map(sec => (
+                                <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1586,20 +1652,29 @@ export default function EosyUpdating() {
 
                 <div className="flex flex-col bg-card h-full min-h-0">
                   <div className="overflow-x-auto flex-1 min-h-0 relative">
-                    <DataTable
-                      columns={columns}
-                      data={filteredRecords}
-                      loading={loadingRecords}
-                      loadingBehavior="delayed"
-                      containerHeight="100%"
-                      rowSelection={rowSelection}
-                      onRowSelectionChange={setRowSelection}
-                      getRowClassName={(row) => isScopeFinalized || row.section.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
-                    />
+                      <DataTable
+                        columns={columns}
+                        data={filteredRecords}
+                        loading={loadingRecords}
+                        loadingBehavior="delayed"
+                        containerHeight="100%"
+                        rowSelection={rowSelection}
+                        onRowSelectionChange={setRowSelection}
+                        getRowClassName={(row: any) => row.isCategoryHeader ? "" : isScopeFinalized || row.section?.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
+                        isHeaderRow={(row: any) => !!row.isCategoryHeader}
+                        renderHeaderRow={(row: any, columnsCount: number) => (
+                           <TableRow key={row.id} className="bg-muted border-y-2 border-border/60 hover:bg-muted">
+                             <TableCell colSpan={columnsCount} className="p-3">
+                                <span className="font-extrabold text-sm text-primary tracking-widest uppercase ml-2">{row.categoryName}</span>
+                             </TableCell>
+                           </TableRow>
+                        )}
+                      />
                   </div>
                 </div>
               </div>
             </motion.div>
+              )}
             </AnimatePresence>
           ) : !isInitialLoad && gradeLevels.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-muted/30 border border-dashed rounded-lg mt-4">

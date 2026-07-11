@@ -68,7 +68,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           <AlertDescription
             className="font-extrabold text-blue-900"
           >
-            Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for SY {ayLabel || "2026-2027"}.
+            Accepting regular enrollment for Grade 7, Transferees, and Balik-Aral for S.Y. {ayLabel || "2026-2027"}.
           </AlertDescription>
         </Alert>
       )}

@@ -622,11 +622,11 @@ export default function Login() {
                       }
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-extrabold text-base leading-tight">
+                    <span className="text-foreground font-extrabold text-base leading-tight">
                       Remember me
                     </span>
                   </label>
-                  <span className="text-gray-400 text-base font-extrabold text-right leading-tight">
+                  <span className="text-foreground/50 text-sm font-extrabold text-right leading-tight">
                     Forgot password?<br />Contact the System Admin.
                   </span>
                 </div>

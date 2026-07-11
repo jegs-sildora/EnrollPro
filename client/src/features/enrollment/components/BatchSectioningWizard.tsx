@@ -601,7 +601,7 @@ export function BatchSectioningWizard({
                     •{" "}
                     {previewData
                       ? `S.Y. ${previewData.schoolYearLabel}`
-                      : `SY ${schoolYearId}`}
+                      : `S.Y. ${schoolYearId}`}
                   </p>
                 </div>
               </div>

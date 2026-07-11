@@ -231,14 +231,19 @@ export default function BOSYPage() {
         canMutate &&
         repairedSchoolYearRef.current !== syId
       ) {
-        const repairResult = await syncBOSYQueue(syId);
         repairedSchoolYearRef.current = syId;
-        if (repairResult.created > 0) {
-          sileo.success({
-            title: "Learner Enrollment Queue Restored",
-            description:
-              `${repairResult.created} learner record(s) were recovered from the previous school year.`,
-          });
+        try {
+          const repairResult = await syncBOSYQueue(syId);
+          if (repairResult.created > 0) {
+            sileo.success({
+              title: "Learner Enrollment Queue Restored",
+              description:
+                `${repairResult.created} learner record(s) were recovered from the previous school year.`,
+            });
+          }
+        } catch (e) {
+          repairedSchoolYearRef.current = null;
+          throw e;
         }
       }
       setRepairReadySchoolYearId(syId);
@@ -834,13 +839,13 @@ export default function BOSYPage() {
                     onConfirm={() => { void executeConfirmSingle(); }}
                     description={
                       <>
-                        <p className="mb-4">
+                        <p className="mb-4 text-base font-bold">
                           Confirm learner enrollment for this school year. Learners with
                           incomplete school requirements will be marked as temporarily
                           enrolled but may still proceed to Class Sectioning and SF1 assignment.
                         </p>
                         {confirmSingleTarget && (
-                          <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
+                          <div className="rounded-md border bg-muted px-4 py-3 space-y-1.5 text-left border-primary border-2">
                             <p className="text-base leading-tight font-extrabold uppercase text-foreground">
                               {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
                               {confirmSingleTarget.middleName

@@ -295,7 +295,7 @@ function SYSwitcher() {
               <ChevronsUpDown className="text-foreground w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base text-foreground">
+          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-base text-primary-foreground">
             Switch School Year
           </TooltipContent>
         </Tooltip>
