@@ -2,19 +2,19 @@
 
 This guide shows how ATLAS can fetch teacher and designation data from EnrollPro.
 
-It also shows how to fetch from sample integration endpoints for testing.
+It also shows how to use the generic faculty route as a compatibility fallback.
 
 ## What ATLAS Should Fetch
 
 ATLAS should fetch these feeds:
 
-1. Default feed (public main source):
+1. Default feed:
 
-- `GET /api/integration/v1/default/atlas/faculty`
+- `GET /api/integration/v1/default/faculty`
 
-2. Keyless sample feed (testing source):
+2. Generic paginated feed:
 
-- `GET /api/integration/v1/sample/teachers`
+- `GET /api/integration/v1/faculty`
 
 ## API-First Rule for ATLAS Startup
 
@@ -72,28 +72,24 @@ curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
 ## 3. Fetch ATLAS Default Feed
 
 ```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/atlas/faculty
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty
 ```
 
 Optional school year override:
 
 ```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/atlas/faculty?schoolYearId=12"
+curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty?schoolYearId=12"
 ```
 
 If `schoolYearId` is not provided, EnrollPro uses active school year.
 
-## 4. Fetch Sample Teachers Feed (No Key)
+## 4. Fetch Generic Faculty Feed
 
 ```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/teachers
+curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/faculty?schoolYearId=12&page=1&limit=50"
 ```
 
-Use sample feed for:
-
-- local testing
-- demo workflows
-- fallback dry runs
+Use this paginated feed when ATLAS needs filtering or incremental ingestion.
 
 ## 5. Minimal Field Mapping for ATLAS
 
@@ -105,8 +101,6 @@ Map these fields into ATLAS teacher records:
 - `specialization` -> `subjectSpecialization`
 - `isClassAdviser` -> `isAdvisor`
 - `advisorySection.name` -> `advisorSectionName`
-- `isTic` -> `isTeacherInCharge`
-- `isTeachingExempt` -> `isLoadExempt`
 
 Meta fields to keep for logging:
 
@@ -123,19 +117,18 @@ async function fetchAtlasFaculty() {
     process.env.ENROLLPRO_INTEGRATION_BASE_URL ||
     "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
 
-  const defaultRes = await fetch(`${integrationBase}/default/atlas/faculty`);
+  const defaultRes = await fetch(`${integrationBase}/default/faculty`);
 
   if (defaultRes.ok) {
     return defaultRes.json();
   }
 
-  // Optional testing fallback
-  const sampleRes = await fetch(`${integrationBase}/sample/teachers`);
-  if (!sampleRes.ok) {
-    throw new Error("Both default and sample ATLAS feeds failed");
+  const genericRes = await fetch(`${integrationBase}/faculty`);
+  if (!genericRes.ok) {
+    throw new Error("Both default and generic ATLAS feeds failed");
   }
 
-  return sampleRes.json();
+  return genericRes.json();
 }
 ```
 
@@ -146,7 +139,7 @@ async function fetchAtlasFaculty() {
 3. Validate required fields.
 4. Upsert teacher records in ATLAS.
 5. Save `generatedAt` and `scopeSchoolYearId` for trace logs.
-6. Use sample feed only for test mode.
+6. Use the generic faculty feed only when pagination or filtering is required.
 
 ## 8. Common Errors
 
@@ -156,5 +149,5 @@ async function fetchAtlasFaculty() {
 
 - ATLAS can pass both health checks.
 - ATLAS can fetch default faculty feed.
-- ATLAS can fetch sample teachers feed.
+- ATLAS can fetch the generic faculty feed.
 - ATLAS waits for API readiness before sync starts.

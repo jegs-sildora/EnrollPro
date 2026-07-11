@@ -2,7 +2,7 @@
 
 This guide shows how SMART can fetch enrolled learner records from EnrollPro.
 
-It also shows how to fetch sample learner records for testing.
+It also shows how to use the generic learner route as a compatibility fallback.
 
 ## What SMART Should Fetch
 
@@ -12,9 +12,9 @@ SMART should fetch these feeds:
 
 - `GET /api/integration/v1/default/smart/students`
 
-2. Keyless sample feed (testing source):
+2. Generic paginated feed:
 
-- `GET /api/integration/v1/sample/students`
+- `GET /api/integration/v1/students`
 
 ## API-First Rule for SMART Startup
 
@@ -76,26 +76,21 @@ curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/smart/stude
 
 If `schoolYearId` is not provided, EnrollPro uses active school year.
 
-## 4. Fetch Sample Students Feed (No Key)
+## 4. Fetch Generic Students Feed
 
 ```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/students
+curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/students?schoolYearId=12&page=1&limit=50"
 ```
 
-Use sample feed for:
-
-- local testing
-- demo import run
-- fallback dry run in non-production
+Use this route when SMART needs generic learner filters or a compatibility fallback.
 
 ## 5. Minimal Field Mapping for SMART
 
 Map these fields into SMART student records:
 
 - `enrollmentApplicationId` -> `sourceEnrollmentId`
-- `learner.externalId` -> `learnerExternalId`
-- `learner.lrn` -> `lrn`
-- `learner.fullName` -> `studentName`
+- `lrn` -> `lrn`
+- `fullName` -> `studentName`
 - `gradeLevel.id` -> `gradeLevelId`
 - `gradeLevel.name` -> `gradeLevelName`
 - `section.id` -> `sectionId`
@@ -126,13 +121,12 @@ async function fetchSmartStudents() {
     return defaultRes.json();
   }
 
-  // Optional testing fallback
-  const sampleRes = await fetch(`${integrationBase}/sample/students`);
-  if (!sampleRes.ok) {
-    throw new Error("Both default and sample SMART feeds failed");
+  const genericRes = await fetch(`${integrationBase}/students`);
+  if (!genericRes.ok) {
+    throw new Error("Both default and generic SMART feeds failed");
   }
 
-  return sampleRes.json();
+  return genericRes.json();
 }
 ```
 
@@ -143,7 +137,7 @@ async function fetchSmartStudents() {
 3. Validate learner and section fields.
 4. Upsert records in SMART.
 5. Save sync metadata (`generatedAt`, school year, total rows).
-6. Use sample feed for testing only.
+6. Use the generic feed only when additional filters are required.
 
 ## 8. Common Errors
 
@@ -153,5 +147,5 @@ async function fetchSmartStudents() {
 
 - SMART can pass both health checks.
 - SMART can fetch default students feed.
-- SMART can fetch sample students feed.
+- SMART can fetch the generic students feed.
 - SMART waits for API readiness before first sync.

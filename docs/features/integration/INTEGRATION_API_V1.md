@@ -2,10 +2,10 @@
 
 ## Overview
 
-This document defines the external read-only integration surface for partner systems such as ATLAS, AIMS, and SMART.
+This document defines the external read-only integration surface for partner systems such as ATLAS, AIMS, SMART, and MRF.
 
 - Base path: /api/integration/v1
-- Access model: public read-only endpoints
+- Access model: public read-only endpoints for compatibility, except the keyed MRF identity feed
 - Data model note: learner primary key is internal Int, external integrations should use learner.externalId (UUID)
 - Scope model: schoolYearId query scoping for roster, faculty, and section routes
 
@@ -31,12 +31,11 @@ Use these guides for subsystem-specific setup and fetch flow.
 - ATLAS fetch guide: [ATLAS_API_GUIDE.md](./ATLAS_API_GUIDE.md)
 - AIMS fetch guide: [AIMS_API_GUIDE.md](./AIMS_API_GUIDE.md)
 - SMART fetch guide: [SMART_API_GUIDE.md](./SMART_API_GUIDE.md)
+- Complete school-year lifecycle: [ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md](./ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
 
 ## Access Mode
 
-All integration routes under `/api/integration/v1` are public and read-only.
-
-Sample routes under `/sample/*` remain intended for non-production demo/testing only.
+Integration routes under `/api/integration/v1` are read-only. Existing ATLAS, AIMS, and SMART routes remain public for compatibility. `/default/mrf/identities` requires `X-Integration-Key` and the server-side `MRF_INTEGRATION_API_KEY` setting.
 
 ## Response Envelopes
 
@@ -402,7 +401,7 @@ Sample response:
 }
 ```
 
-### 7) Default Subsystem Feeds (Public)
+### 7) Default Subsystem Feeds
 
 These endpoints are pre-scoped to active school year when `schoolYearId` is omitted.
 They are designed as direct read-only ingestion feeds for teammate systems.
@@ -410,7 +409,7 @@ They are designed as direct read-only ingestion feeds for teammate systems.
 #### 7.1 ATLAS Default Faculty Feed
 
 - Method: GET
-- Path: /default/atlas/faculty
+- Path: /default/faculty
 - Purpose: ready faculty and designation feed for scheduling engines
 - Auth: public
 
@@ -428,32 +427,29 @@ They are designed as direct read-only ingestion feeds for teammate systems.
 - Purpose: ready learner-context feed for intervention/remediation pipelines
 - Auth: public
 
-All default feed responses include:
+#### 7.4 MRF Identity Feed
+
+- Method: GET
+- Path: /default/mrf/identities
+- Purpose: school-year-scoped learner, teacher, staff, and MRF-role identity reconciliation
+- Auth: `X-Integration-Key`
+- Optional query: `schoolYearId`; active school year is used when omitted
+- Privacy: passwords, birthdates, family details, health information, and audit-security fields are excluded
+
+Default feed responses include school-year scope and generation metadata. The MRF feed additionally returns grouped record counts.
 
 - `meta.sourceSystem`
 - `meta.generatedAt`
 - `meta.scopeSchoolYearId`
 - `meta.scopeSchoolYearLabel`
-- `meta.totalRows`
-
-### 8) Public Sample Feeds (Keyless)
-
-These routes are for non-production demo/testing and only expose deterministic sample records.
-
-- GET /sample/teachers
-- GET /sample/staff
-- GET /sample/students
-
-By default, these routes are enabled outside production. In production, enable explicitly with:
-
-- `INTEGRATION_PUBLIC_SAMPLE_ENABLED=true`
 
 ## HTTP Status Reference
 
 - 200: successful query
 - 400: invalid request parameters
+- 401: missing or invalid MRF integration key
 - 404: scoped resource not found (for example, section outside school year)
-- 503: sample feeds disabled or health degraded due DB outage
+- 503: health degraded due DB or external-service outage
 
 ## Operational Notes
 
@@ -461,4 +457,6 @@ By default, these routes are enabled outside production. In production, enable e
 - Treat aliases as equivalent routes:
   - /learners and /students
   - /faculty and /teachers
-- Default feeds are ingestion-only surfaces. Partner systems (ATLAS/SMART/AIMS) keep mutations in their own APIs.
+- Default feeds are ingestion-only surfaces. Partner systems keep domain mutations in their own APIs.
+- Current rosters recognize `OFFICIALLY_ENROLLED`, `ENROLLED`, and `SECTIONED` as officially placed learners.
+- Explicit archived-school-year requests use `EnrollmentHistory` for learner, SMART, AIMS, section roster, and MRF reconciliation.

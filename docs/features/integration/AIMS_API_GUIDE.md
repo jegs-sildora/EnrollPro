@@ -2,7 +2,7 @@
 
 This guide shows how AIMS can fetch learner context from EnrollPro.
 
-It also shows how to fetch sample learner data for testing.
+It also shows how to use the generic learner route as a compatibility fallback.
 
 ## What AIMS Should Fetch
 
@@ -12,9 +12,9 @@ AIMS should fetch these feeds:
 
 - `GET /api/integration/v1/default/aims/context`
 
-2. Keyless sample feed (testing source):
+2. Generic paginated feed:
 
-- `GET /api/integration/v1/sample/students`
+- `GET /api/integration/v1/learners`
 
 ## API-First Rule for AIMS Startup
 
@@ -76,17 +76,13 @@ curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/aims/contex
 
 If `schoolYearId` is not provided, EnrollPro uses active school year.
 
-## 4. Fetch Sample Students Feed (No Key)
+## 4. Fetch Generic Learner Feed
 
 ```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/students
+curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/learners?schoolYearId=12&page=1&limit=50"
 ```
 
-Use sample feed for:
-
-- local testing
-- model pipeline dry run
-- integration demo
+Use this route when AIMS requires generic learner filters or a compatibility fallback.
 
 ## 5. Minimal Field Mapping for AIMS
 
@@ -124,13 +120,12 @@ async function fetchAimsContext() {
     return defaultRes.json();
   }
 
-  // Optional testing fallback
-  const sampleRes = await fetch(`${integrationBase}/sample/students`);
-  if (!sampleRes.ok) {
-    throw new Error("Both default and sample AIMS feeds failed");
+  const genericRes = await fetch(`${integrationBase}/learners`);
+  if (!genericRes.ok) {
+    throw new Error("Both default and generic AIMS feeds failed");
   }
 
-  return sampleRes.json();
+  return genericRes.json();
 }
 ```
 
@@ -141,7 +136,7 @@ async function fetchAimsContext() {
 3. Validate learner identity fields.
 4. Upsert context records into AIMS store.
 5. Save sync metadata (`generatedAt`, school year, total rows).
-6. Use sample feed in test mode only.
+6. Use the generic feed only when additional filters are required.
 
 ## 8. Common Errors
 
@@ -151,5 +146,5 @@ async function fetchAimsContext() {
 
 - AIMS can pass both health checks.
 - AIMS can fetch default context feed.
-- AIMS can fetch sample students feed.
+- AIMS can fetch the generic learner feed.
 - AIMS waits for API readiness before first sync.

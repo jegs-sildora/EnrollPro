@@ -5,8 +5,11 @@ import { prisma } from "../../lib/prisma.js";
 import {
   buildTeacherName,
   isUuidLike,
+  OFFICIAL_ENROLLMENT_STATUSES,
   parseOptionalText,
   parsePositiveInt,
+  readSnapshotNumber,
+  readSnapshotString,
   resolveSchoolYearScope,
 } from "./integration.shared.js";
 import { SectionAdviserStatus } from "../../generated/prisma/index.js";
@@ -46,8 +49,12 @@ export async function integrationHealth(
       const start = Date.now();
       await axios.get(`${url}/api/health`, { timeout: 3000 });
       return { name, status: "ok", latency: `${Date.now() - start}ms` };
-    } catch (e: any) {
-      return { name, status: "offline", error: e.message };
+    } catch (error: unknown) {
+      return {
+        name,
+        status: "offline",
+        error: error instanceof Error ? error.message : "Health check failed",
+      };
     }
   };
 
@@ -111,16 +118,15 @@ export async function listIntegrationLearners(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const schoolYearId = parsePositiveInt(req.query.schoolYearId);
-  if (!schoolYearId) {
-    res.status(400).json({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "schoolYearId is required and must be a positive integer",
-      },
+  const scopeResult = await resolveSchoolYearScope(req);
+  if ("status" in scopeResult) {
+    res.status(scopeResult.status).json({
+      error: { code: "VALIDATION_ERROR", message: scopeResult.message },
     });
     return;
   }
+  const { scope } = scopeResult;
+  const schoolYearId = scope.schoolYearId;
 
   const page = parsePositiveInt(req.query.page) ?? 1;
   const limit = Math.min(
@@ -153,9 +159,136 @@ export async function listIntegrationLearners(
 
   const search = parseOptionalText(req.query.search);
 
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { status: true },
+  });
+
+  if (schoolYear?.status === "ARCHIVED") {
+    const historyWhere: Prisma.EnrollmentHistoryWhereInput = {
+      schoolYearId,
+      ...(sectionId ? { sectionId } : {}),
+      ...(gradeLevelId ? { gradeLevelId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { learner: { lrn: { contains: search, mode: "insensitive" } } },
+              { learner: { firstName: { contains: search, mode: "insensitive" } } },
+              { learner: { lastName: { contains: search, mode: "insensitive" } } },
+              ...(isUuidLike(search)
+                ? [{ learner: { externalId: search.toLowerCase() } }]
+                : []),
+            ],
+          }
+        : {}),
+    };
+
+    const [total, histories] = await Promise.all([
+      prisma.enrollmentHistory.count({ where: historyWhere }),
+      prisma.enrollmentHistory.findMany({
+        where: historyWhere,
+        orderBy: [
+          { gradeLevel: { displayOrder: "asc" } },
+          { learner: { lastName: "asc" } },
+          { learner: { firstName: "asc" } },
+        ],
+        skip,
+        take: limit,
+        include: {
+          learner: {
+            select: {
+              id: true,
+              externalId: true,
+              lrn: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              extensionName: true,
+              birthdate: true,
+              sex: true,
+              userId: true,
+              isPendingLrnCreation: true,
+              status: true,
+              user: {
+                select: {
+                  accountName: true,
+                  isActive: true,
+                  mustChangePassword: true,
+                },
+              },
+            },
+          },
+          gradeLevel: {
+            select: { id: true, name: true, displayOrder: true },
+          },
+          section: {
+            select: { id: true, name: true, programType: true },
+          },
+        },
+      }),
+    ]);
+
+    res.json({
+      data: histories.map((history) => ({
+        enrollmentApplicationId:
+          readSnapshotNumber(
+            history.learnerProfileSnapshot,
+            "enrollmentApplicationId",
+          ) ?? null,
+        status: "ARCHIVED",
+        learnerType:
+          readSnapshotString(history.learnerProfileSnapshot, "learnerType") ??
+          "CONTINUING",
+        applicantType:
+          readSnapshotString(history.learnerProfileSnapshot, "applicantType") ??
+          history.section?.programType ??
+          "REGULAR",
+        learner: {
+          id: history.learner.id,
+          externalId: history.learner.externalId,
+          lrn: history.learner.lrn,
+          firstName: history.learner.firstName,
+          lastName: history.learner.lastName,
+          middleName: history.learner.middleName,
+          extensionName: history.learner.extensionName,
+          birthdate: history.learner.birthdate,
+          sex: history.learner.sex,
+          userId: history.learner.userId ?? null,
+          isPendingLrnCreation: history.learner.isPendingLrnCreation,
+          learnerStatus: history.learner.status,
+          portalAccount: history.learner.user
+            ? {
+                accountName: history.learner.user.accountName,
+                isActive: history.learner.user.isActive,
+                mustChangePassword: history.learner.user.mustChangePassword,
+              }
+            : null,
+        },
+        schoolYear: {
+          id: scope.schoolYearId,
+          yearLabel: scope.schoolYearLabel,
+        },
+        gradeLevel: history.gradeLevel,
+        section: history.section,
+        enrolledAt: null,
+        eosyStatus: history.eosyStatus,
+        finalAverage: history.genAve,
+      })),
+      meta: {
+        schoolYearId,
+        source: "ENROLLMENT_HISTORY",
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
+    return;
+  }
+
   const where: Record<string, unknown> = {
     schoolYearId,
-    status: { in: ["ENROLLED", "VERIFIED"] },
+    status: { in: OFFICIAL_ENROLLMENT_STATUSES },
     enrollmentRecord: sectionId
       ? {
           is: { sectionId },
@@ -508,7 +641,11 @@ export async function listIntegrationSections(
         _count: {
           select: {
             enrollmentRecords: true,
+            enrollmentHistories: true,
           },
+        },
+        schoolYear: {
+          select: { status: true },
         },
       },
       orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
@@ -520,15 +657,19 @@ export async function listIntegrationSections(
   res.json({
     data: sections.map((section) => {
       const activeAdviser = section.advisers[0]?.teacher ?? null;
+      const enrolledCount =
+        section.schoolYear.status === "ARCHIVED"
+          ? section._count.enrollmentHistories
+          : section._count.enrollmentRecords;
       return {
         id: section.id,
         name: section.name,
         programType: section.programType,
         maxCapacity: section.maxCapacity,
-        enrolledCount: section._count.enrollmentRecords,
+        enrolledCount,
         availableSlots: Math.max(
           0,
-          section.maxCapacity - section._count.enrollmentRecords,
+          section.maxCapacity - enrolledCount,
         ),
         gradeLevel: section.gradeLevel,
         advisingTeacher: activeAdviser
@@ -623,6 +764,116 @@ export async function listSectionLearners(
       error: {
         code: "NOT_FOUND",
         message: "Section not found for the selected school year",
+      },
+    });
+    return;
+  }
+
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: scope.schoolYearId },
+    select: { status: true },
+  });
+
+  if (schoolYear?.status === "ARCHIVED") {
+    const [total, histories] = await Promise.all([
+      prisma.enrollmentHistory.count({
+        where: { sectionId, schoolYearId: scope.schoolYearId },
+      }),
+      prisma.enrollmentHistory.findMany({
+        where: { sectionId, schoolYearId: scope.schoolYearId },
+        orderBy: [
+          { learner: { lastName: "asc" } },
+          { learner: { firstName: "asc" } },
+        ],
+        skip,
+        take: limit,
+        include: {
+          learner: {
+            select: {
+              id: true,
+              externalId: true,
+              lrn: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              extensionName: true,
+              sex: true,
+              birthdate: true,
+              userId: true,
+              isPendingLrnCreation: true,
+              status: true,
+              user: {
+                select: {
+                  accountName: true,
+                  isActive: true,
+                  mustChangePassword: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+    const historicalAdviser = await prisma.enrollmentHistory.findFirst({
+      where: {
+        sectionId,
+        schoolYearId: scope.schoolYearId,
+        adviserId: { not: null },
+      },
+      include: {
+        adviser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
+      },
+    });
+
+    res.json({
+      data: {
+        section: {
+          id: section.id,
+          name: section.name,
+          programType: section.programType,
+          maxCapacity: section.maxCapacity,
+          gradeLevel: section.gradeLevel,
+          advisingTeacher: historicalAdviser?.adviser
+            ? {
+                id: historicalAdviser.adviser.id,
+                name: buildTeacherName(historicalAdviser.adviser),
+              }
+            : null,
+        },
+        learners: histories.map((history) => ({
+          enrollmentRecordId: null,
+          enrolledAt: null,
+          enrollmentApplicationId:
+            readSnapshotNumber(
+              history.learnerProfileSnapshot,
+              "enrollmentApplicationId",
+            ) ?? null,
+          status: "ARCHIVED",
+          learnerType:
+            readSnapshotString(history.learnerProfileSnapshot, "learnerType") ??
+            "CONTINUING",
+          applicantType:
+            readSnapshotString(history.learnerProfileSnapshot, "applicantType") ??
+            section.programType,
+          learner: history.learner,
+          eosyStatus: history.eosyStatus,
+          finalAverage: history.genAve,
+        })),
+      },
+      meta: {
+        scope,
+        source: "ENROLLMENT_HISTORY",
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
       },
     });
     return;

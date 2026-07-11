@@ -168,10 +168,10 @@ curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
 
 Expected `data.status` is `ok`.
 
-#### Sample endpoint check (keyless)
+#### Faculty endpoint check
 
 ```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/teachers
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty
 ```
 
 Expected HTTP 200.
@@ -213,19 +213,20 @@ boot();
 
 Public default feeds:
 
-- ATLAS: `GET /api/integration/v1/default/atlas/faculty`
+- ATLAS: `GET /api/integration/v1/default/faculty`
 - AIMS: `GET /api/integration/v1/default/aims/context`
 - SMART: `GET /api/integration/v1/default/smart/students`
+- MRF: `GET /api/integration/v1/default/mrf/identities` with `X-Integration-Key`
 
 Shared support feed (public):
 
 - Staff list: `GET /api/integration/v1/staff`
 
-Sample feeds (for demo/testing):
+Generic compatibility feeds:
 
-- `GET /api/integration/v1/sample/teachers`
-- `GET /api/integration/v1/sample/staff`
-- `GET /api/integration/v1/sample/students`
+- `GET /api/integration/v1/faculty`
+- `GET /api/integration/v1/staff`
+- `GET /api/integration/v1/learners?schoolYearId=<id>`
 
 ## 4.1 How Teammates Fetch (React Example)
 
@@ -256,7 +257,8 @@ fetchData(staffFeedUrl);
 
 - `400`: Bad query value (for example wrong `schoolYearId`).
 - `404`: Scoped data not found.
-- `503`: Sample feeds disabled in production mode or API degraded.
+- `401`: Missing or invalid MRF integration key.
+- `503`: API or an external dependency is degraded.
 
 ## 6. Troubleshooting
 
@@ -269,9 +271,9 @@ fetchData(staffFeedUrl);
 
 - Confirm EnrollPro API process is running.
 
-3. Sample feeds fail with 503 in production:
+3. MRF identity feed returns 401:
 
-- Ask host to enable `INTEGRATION_PUBLIC_SAMPLE_ENABLED=true`.
+- Confirm MRF sends the same `X-Integration-Key` value configured as `MRF_INTEGRATION_API_KEY` on EnrollPro.
 
 4. Works in browser but fails in app:
 

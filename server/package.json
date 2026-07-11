@@ -22,7 +22,8 @@
     "db:wipe-eosy-2028": "tsx prisma/seeds/wipe_eosy_mock_2028_2029.ts",
     "db:seed-eosy-2030": "tsx prisma/seeds/seed_eosy_mock_2030_2031.ts",
     "db:wipe-eosy-2030": "tsx prisma/seeds/wipe_eosy_mock_2030_2031.ts",
-    "db:reverse-sy": "tsx prisma/seeds/reverse-sy.ts"
+    "db:reverse-sy": "tsx prisma/seeds/reverse-sy.ts",
+    "test:integration": "tsx --test src/tests/*.test.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

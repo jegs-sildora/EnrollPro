@@ -32,6 +32,12 @@ This documentation set is aligned to the current implementation in the EnrollPro
 - Module 4: Teacher Management: [features/teachers/MODULE_4_TEACHER_MANAGEMENT_IMPLEMENTATION_SPEC.md](features/teachers/MODULE_4_TEACHER_MANAGEMENT_IMPLEMENTATION_SPEC.md)
 - Module 5: Grade Level and Sectioning: [features/academic-year/MODULE_5_GRADE_SECTIONING_IMPLEMENTATION_SPEC.md](features/academic-year/MODULE_5_GRADE_SECTIONING_IMPLEMENTATION_SPEC.md)
 
+## Ecosystem integration
+
+- Complete EnrollPro API reference: [features/integration/ENROLLPRO-API.md](features/integration/ENROLLPRO-API.md)
+- BOSY to EOSY school-year lifecycle: [features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
+- External integration v1 contract: [features/integration/INTEGRATION_API_V1.md](features/integration/INTEGRATION_API_V1.md)
+
 ## Note on older docs
 
 Several existing documents under docs/core and docs/features describe target-state behavior that is not fully implemented yet. Keep using them for long-term direction, but use the implementation pack above for current engineering decisions and acceptance testing.

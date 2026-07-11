@@ -1,5 +1,38 @@
 import type { Request } from "express";
+import type { ApplicationStatus, Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
+
+export const OFFICIAL_ENROLLMENT_STATUSES = [
+  "OFFICIALLY_ENROLLED",
+  "ENROLLED",
+  "SECTIONED",
+] satisfies ApplicationStatus[];
+
+type JsonRecord = Record<string, Prisma.JsonValue>;
+
+export function isJsonRecord(value: Prisma.JsonValue | null): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function readSnapshotString(
+  snapshot: Prisma.JsonValue | null,
+  key: string,
+): string | null {
+  if (!isJsonRecord(snapshot)) return null;
+  const value = snapshot[key];
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : null;
+}
+
+export function readSnapshotNumber(
+  snapshot: Prisma.JsonValue | null,
+  key: string,
+): number | null {
+  if (!isJsonRecord(snapshot)) return null;
+  const value = snapshot[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
 
 export type SchoolYearScope = {
   schoolId: number | null;

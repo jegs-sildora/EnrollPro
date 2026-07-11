@@ -10,9 +10,11 @@ import {
 import {
   listDefaultAimsContext,
   listDefaultFaculty,
+  listDefaultMrfIdentities,
   listDefaultSmartStudents,
   listIntegrationStaff,
 } from "./integration.default.controller.js";
+import { requireIntegrationApiKey } from "./integration-api-key.middleware.js";
 
 
 const router: Router = Router();
@@ -31,5 +33,10 @@ router.get("/sections/:sectionId/learners", listSectionLearners);
 router.get("/default/faculty", listDefaultFaculty);
 router.get("/default/smart/students", listDefaultSmartStudents);
 router.get("/default/aims/context", listDefaultAimsContext);
+router.get(
+  "/default/mrf/identities",
+  requireIntegrationApiKey("MRF_INTEGRATION_API_KEY"),
+  listDefaultMrfIdentities,
+);
 
 export default router;

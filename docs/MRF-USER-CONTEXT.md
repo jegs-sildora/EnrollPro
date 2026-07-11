@@ -18,7 +18,7 @@ The `MRF` role represents **Materials Recovery Facility staff** — the on-the-g
 | Provider  | `LOCAL`                     |
 | Points    | 0 (MRF staff do not earn points) |
 
-> MRF accounts are `LOCAL` provider only — they are not synced from EnrollPro or SMART.
+> MRF may retain local operational credentials, but it now consumes EnrollPro's keyed identity feed for learner and personnel reconciliation. Password hashes are never synchronized.
 
 ---
 
@@ -119,13 +119,14 @@ Polling fallback: every **30 seconds** if SSE is unavailable.
 | POST   | `/api/reports`              | Create Quick Log (direct COMPLETED)  |
 | PATCH  | `/api/reports/:id/status`   | Mark IN_PROGRESS or COMPLETED        |
 | POST   | `/api/reports/:id/collect`  | Confirm collection + enter kilos     |
+| GET    | EnrollPro `/api/integration/v1/default/mrf/identities` | Pull school-year-scoped learner, teacher, staff, and MRF-role identity context using `X-Integration-Key` |
 
 ---
 
 ## Key Constraints
 
 - **No points** — MRF staff submitting reports via Quick Log do not earn gamification points (only students do).
-- **No EnrollPro sync** — MRF accounts are always `LOCAL` and must be created manually by an admin.
+- **No password sync** — MRF can reconcile identities from EnrollPro, but credentials and password hashes remain owned by the authenticating system.
 - **No password reset flow** — currently no self-service reset; admin must update directly in DB or via admin panel.
 - **assignedStaffId** — set on a report when dispatched by admin OR auto-set to the staff member's own ID on Quick Log COMPLETED entries.
 - **Bin status auto-update** — any report creation or status change by MRF triggers a bin fill recalculation for that location.
