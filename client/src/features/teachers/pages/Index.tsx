@@ -8,6 +8,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { TeacherDetailPanel } from "../components/TeacherDetailPanel";
 import { DataTable } from "@/shared/ui/data-table";
 import { PaginationBar } from "@/shared/components/PaginationBar";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -98,7 +99,7 @@ export default function Teachers() {
   const [activeMetric, setActiveMetric] = useState<"total" | "active" | "inactive" | "advisers">("total");
 
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = usePaginationLimit(50);
 
   const [sortBy, setSortBy] = useState<string>("lastName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");

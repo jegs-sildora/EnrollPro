@@ -56,6 +56,7 @@ import { Button } from "@/shared/ui/button";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHeaderStore } from "@/store/header.slice";
+import { resolvePageTitle } from "@/shared/hooks/usePageTitle";
 import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -315,11 +316,16 @@ function SYSwitcher() {
               {currentAcademicYear ? (
                 <button
                   key={currentAcademicYear.id}
-                  onClick={() => handleSelectYear(currentAcademicYear)}
+                  onClick={() => {
+                    if (currentAcademicYear.id !== currentId) {
+                      handleSelectYear(currentAcademicYear);
+                    }
+                  }}
+                  disabled={currentAcademicYear.id === currentId}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 transition-colors",
                     currentAcademicYear.id === currentId
-                      ? "bg-slate-100 font-bold text-slate-900"
+                      ? "bg-slate-100 font-bold text-slate-900 cursor-default"
                       : "hover:bg-slate-50 text-slate-700",
                   )}>
                   <span className="w-4 text-slate-600">
@@ -343,11 +349,16 @@ function SYSwitcher() {
                 archivedYears.map((y) => (
                   <button
                     key={y.id}
-                    onClick={() => handleSelectYear(y)}
+                    onClick={() => {
+                      if (y.id !== currentId) {
+                        handleSelectYear(y);
+                      }
+                    }}
+                    disabled={y.id === currentId}
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 transition-colors",
                       y.id === currentId
-                        ? "bg-slate-50 font-bold text-foreground"
+                        ? "bg-slate-50 font-bold text-foreground cursor-default"
                         : "hover:bg-slate-50",
                     )}>
                     <span className="w-4 text-slate-600">
@@ -777,7 +788,7 @@ function formatPhaseName(phase: string | null): string {
 export default function AppLayout({ children }: { children?: ReactNode }) {
   useRealtimeInvalidations();
 
-  const title = useHeaderStore((s) => s.title);
+  const storeTitle = useHeaderStore((s) => s.title);
   const outlet = useOutlet();
   const {
     selectedAccentHsl,
@@ -795,6 +806,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
   const routeTransitionKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
+  const defaultTitle = resolvePageTitle(location.pathname, location.search);
+  const title = storeTitle || defaultTitle;
   const navigate = useNavigate();
 
   useEffect(() => {

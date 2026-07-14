@@ -6,6 +6,7 @@ import {
   useRef,
   startTransition,
 } from "react";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 
 import {
   Search,
@@ -197,7 +198,7 @@ export default function BOSYPage() {
   const [repairReadySchoolYearId, setRepairReadySchoolYearId] =
     useState<number | null>(null);
   const [queuePage, setQueuePage] = useState(1);
-  const [queueLimit, setQueueLimit] = useState(25);
+  const [queueLimit, setQueueLimit] = usePaginationLimit(50);
   const [queueLoading, setQueueLoading] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});

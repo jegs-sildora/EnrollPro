@@ -11,15 +11,7 @@ import {
 } from "react";
 import { useBlocker, useNavigate, type NavigateOptions, type To } from "react-router";
 import { sileo } from "sileo";
-import { AlertTriangle } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 
@@ -60,68 +52,7 @@ function sourceKey(source: UnsavedChangeSource): string {
   return `${source.id}:${source.isDirty ? "dirty" : "clean"}:${source.isSubmitting ? "submitting" : "idle"}`;
 }
 
-function UnsavedChangesDialog({
-  open,
-  loading,
-  onStay,
-  onDiscard,
-}: {
-  open: boolean;
-  loading: boolean;
-  onStay: () => void;
-  onDiscard: () => void;
-}) {
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen && !loading) {
-          onStay();
-        }
-      }}>
-      <DialogContent
-        aria-describedby={undefined}
-        className="w-full max-w-3xl overflow-hidden rounded-lg bg-card p-0 shadow-2xl">
-        <div className="border-b border-border bg-muted/40 px-6 py-5">
-          <DialogHeader className="space-y-2 text-left">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <AlertTriangle className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 space-y-2">
-                <DialogTitle className="text-2xl font-extrabold">
-                  Unsaved Changes
-                </DialogTitle>
-                <DialogDescription className="text-base leading-relaxed text-foreground">
-                  You have changes that are not saved yet. If you leave now,
-                  those changes will be discarded.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-        </div>
 
-        <DialogFooter className="flex flex-col-reverse gap-3 p-4 sm:flex-row sm:items-center sm:justify-end sm:p-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onStay}
-            disabled={loading}
-            className="h-auto flex-1 py-2 text-sm sm:flex-initial sm:text-base">
-            Stay on Page
-          </Button>
-          <Button
-            type="button"
-            onClick={onDiscard}
-            disabled={loading}
-            className="h-auto flex-1 py-2 text-sm sm:flex-initial sm:text-base">
-            {loading ? "Discarding..." : "Discard Changes"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export function UnsavedChangesBar({
   isSubmitting = false,
@@ -388,13 +319,22 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   return (
     <UnsavedChangesContext.Provider value={value}>
       {children}
-      <UnsavedChangesDialog
+      <ConfirmationModal
         open={dialogOpen}
-        loading={discarding}
-        onStay={handleStay}
-        onDiscard={() => {
+        onOpenChange={(open) => {
+          if (!open && !discarding) {
+            handleStay();
+          }
+        }}
+        title="Unsaved Changes"
+        description="You have changes that are not saved yet. If you leave now, those changes will be discarded."
+        variant="danger"
+        confirmText="Discard Changes"
+        cancelText="Stay on Page"
+        onConfirm={() => {
           void handleDiscard();
         }}
+        loading={discarding}
       />
     </UnsavedChangesContext.Provider>
   );

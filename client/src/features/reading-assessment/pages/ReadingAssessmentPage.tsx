@@ -1,4 +1,5 @@
 import { useState, startTransition, useMemo, useEffect } from "react";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { sileo } from "sileo";
 import { motion, AnimatePresence } from "motion/react";
@@ -797,7 +798,7 @@ function QueueCard({
   emptyDescription,
 }: QueueCardProps) {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = usePaginationLimit(50);
 
   useEffect(() => {
     setPage(1);
@@ -1027,7 +1028,7 @@ function ContinuingQueueCard({
   emptyDescription,
 }: ContinuingQueueCardProps) {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = usePaginationLimit(50);
 
   useEffect(() => {
     setPage(1);

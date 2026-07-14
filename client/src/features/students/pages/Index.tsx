@@ -6,6 +6,7 @@ import {
   useMemo,
   startTransition,
 } from "react";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import {
@@ -327,7 +328,7 @@ export default function Students() {
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = usePaginationLimit(50);
   const [sortBy, setSortBy] = useState<string>("lastName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 

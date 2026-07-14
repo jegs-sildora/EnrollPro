@@ -39,7 +39,7 @@ export function BulkConfirmBar({
           <Button
             size="sm"
             variant="default"
-            className="rounded-full font-extrabold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="rounded-md font-extrabold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
             disabled={loading}
             onClick={onConfirm}>
             {loading ? (

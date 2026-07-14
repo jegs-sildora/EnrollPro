@@ -8,7 +8,7 @@ const APP_NAME = "EnrollPro";
  * Maps a pathname to a human-readable page title.
  * Returns null for paths that should use the bare app name (e.g. root redirect).
  */
-function resolvePageTitle(pathname: string, search: string): string | null {
+export function resolvePageTitle(pathname: string, search: string): string | null {
   if (pathname === "/settings") {
     const tab = new URLSearchParams(search).get("tab");
     if (tab === "requirements") {

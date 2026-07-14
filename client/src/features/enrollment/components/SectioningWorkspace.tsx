@@ -1161,7 +1161,36 @@ export function SectioningWorkspace() {
                   </span>
                 </div>
               ) : (
-                displayedRosters.map((roster) => {
+                [
+                  {
+                    title: "Special Curricular Programs (SCP)",
+                    rosters: displayedRosters
+                      .filter((r) => r.section.programType !== "REGULAR")
+                      .sort(
+                        (a, b) =>
+                          a.section.programType.localeCompare(
+                            b.section.programType,
+                          ) || a.section.name.localeCompare(b.section.name),
+                      ),
+                  },
+                  {
+                    title: "Basic Education Curriculum (BEC)",
+                    rosters: displayedRosters
+                      .filter((r) => r.section.programType === "REGULAR")
+                      .sort((a, b) =>
+                        a.section.name.localeCompare(b.section.name),
+                      ),
+                  },
+                ]
+                  .filter((group) => group.rosters.length > 0)
+                  .map((group, groupIdx) => (
+                    <div
+                      key={group.title}
+                      className={cn("space-y-3", groupIdx > 0 && "mt-6")}>
+                      <h3 className="text-center font-extrabold text-foreground uppercase tracking-wider">
+                        {group.title}
+                      </h3>
+                      {group.rosters.map((roster) => {
                   const s = roster.section;
                   const isOverCapacity =
                     roster.isOverCapacity || roster.totalCount >= s.maxCapacity;
@@ -1376,7 +1405,9 @@ export function SectioningWorkspace() {
                     </div>
                   );
                 })
-              )}
+              }
+            </div>
+          )))}
             </div>
 
             {/* Action Footer */}

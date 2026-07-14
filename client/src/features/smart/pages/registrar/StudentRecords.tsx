@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import {
   Users,
   Search,
@@ -151,7 +152,7 @@ export default function StudentRecords() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = usePaginationLimit(50);
 
   // Search input ref for keyboard shortcut
   const searchInputRef = useRef<HTMLInputElement>(null);

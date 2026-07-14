@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 import { CalendarCheck, Loader2, AlertTriangle, RefreshCw, Users, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/smart/components/ui/card";
 import { Badge } from "@/features/smart/components/ui/badge";
@@ -27,7 +28,7 @@ export default function BOSYQueue() {
   const [search, setSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = usePaginationLimit(50);
 
   const load = async (p = 1, l = limit, s = search, g = gradeFilter, silent = false) => {
     if (!silent) setLoading(true);

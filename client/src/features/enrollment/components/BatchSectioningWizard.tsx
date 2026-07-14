@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
+import { usePaginationLimit } from "@/shared/hooks/usePaginationLimit";
 import React, {
   useState,
   useEffect,
@@ -321,7 +322,7 @@ export function BatchSectioningWizard({
     title: string;
     learners: ProposedAssignment[];
   } | null>(null);
-  const [reclassifiedLimit, setReclassifiedLimit] = useState(50);
+  const [reclassifiedLimit, setReclassifiedLimit] = usePaginationLimit(50);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: "sectionName",
