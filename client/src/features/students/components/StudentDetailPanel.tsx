@@ -128,7 +128,6 @@ export interface StudentDetail {
   schoolYear: string;
   schoolYearId: number;
   generalAverage?: number | null;
-  readingProfileLevel?: string | null;
   enrollment: {
     id: number;
     section: string;
@@ -827,7 +826,6 @@ export function StudentDetailPanel({
           ? student.generalAverage
           : student.generalAverage,
     },
-    readingProfileLevel: student.readingProfileLevel,
   };
 
   const typedStudentShim = studentShim as unknown as ApplicantDetail;

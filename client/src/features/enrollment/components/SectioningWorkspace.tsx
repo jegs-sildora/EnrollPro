@@ -73,8 +73,6 @@ interface SectionSummary {
   gradeLevelOrder: number;
   gradeLevelId: number;
   sortOrder: number;
-  tleProgram: string | null;
-  tleProgramId: number | null;
   maxCapacity: number;
   currentCount: number;
   boys: number;
@@ -93,8 +91,6 @@ interface PoolLearner {
   genAve: number | null;
   gradeLevel: string;
   gradeLevelId: number;
-  tleProgram: string | null;
-  tleProgramId: number | null;
   duplicateFlag?: boolean;
   learnerType: LearnerType;
   isBalikAral: boolean;

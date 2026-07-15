@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   ApplicantTypeEnum,
   ApplicationStatusEnum,
-  ReadingProfileLevelEnum,
   SexEnum,
   GradeLevelEnum,
   ScpTypeEnum,
@@ -310,16 +309,6 @@ export const processExitSchema = z.object({
     .trim()
     .min(1, "Reason is required")
     .max(500, "Reason must not exceed 500 characters"),
-});
-
-export const readingProfileUpdateSchema = z.object({
-  readingProfileLevel: ReadingProfileLevelEnum,
-  readingProfileNotes: z
-    .string()
-    .trim()
-    .max(500, "Reading profile notes must not exceed 500 characters")
-    .optional()
-    .nullable(),
 });
 
 export const specialEnrollmentSchema = z

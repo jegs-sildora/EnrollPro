@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import {
   Sheet,
   SheetContent,
@@ -18,14 +17,6 @@ import {
   SheetTitle,
 } from "@/shared/ui/sheet";
 import type { SectionFormState, TeacherOption } from "../types";
-
-const TLE_REQUIRED_DISPLAY_ORDERS = [9, 10];
-
-interface TLEProgramOption {
-  id: number;
-  name: string;
-  category: string;
-}
 
 type SectionFormField = keyof SectionFormState;
 
@@ -45,11 +36,6 @@ interface SectionFormSheetProps {
   teachers: TeacherOption[];
   loadingTeachers?: boolean;
   gradeLevelName?: string;
-  gradeLevelDisplayOrder?: number;
-  tlePrograms?: TLEProgramOption[];
-  /** When set, locks the section type and hides the radio toggle.
-   *  HOMEROOM → forces HOME_ROOM mode; TLE_LAB → forces TLE_LABORATORY mode. */
-  defaultMode?: "HOMEROOM" | "TLE_LAB";
 }
 
 export const SectionFormSheet = memo(function SectionFormSheet({
@@ -68,28 +54,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
   teachers,
   loadingTeachers = false,
   gradeLevelName,
-  gradeLevelDisplayOrder = 0,
-  tlePrograms = [],
-  defaultMode,
 }: SectionFormSheetProps) {
-  const isGrade9Or10 = TLE_REQUIRED_DISPLAY_ORDERS.includes(
-    gradeLevelDisplayOrder,
-  );
-  // When defaultMode is set, override isTleLaboratory accordingly
-  const isTleLaboratory =
-    defaultMode === "TLE_LAB"
-      ? true
-      : defaultMode === "HOMEROOM"
-        ? false
-        : isGrade9Or10 && formData.sectionType === "TLE_LABORATORY";
-  // Show the section-type radio only when there is no forced mode
-  const showSectionTypeRadio = !defaultMode && isGrade9Or10;
-  const selectedTleProgram =
-    isTleLaboratory && formData.tleProgramId != null
-      ? tlePrograms.find((program) => program.id === formData.tleProgramId)
-      : null;
-  const selectedTleProgramName = selectedTleProgram?.name ?? "";
-
   const submitLabel = mode === "create" ? "Create Section" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
 
@@ -133,44 +98,6 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 </div>
                 <div className="px-5 pb-5 pt-4">
                   <div className="space-y-4">
-                    {showSectionTypeRadio && (
-                      <div className="space-y-2">
-                        <Label className="font-extrabold text-base uppercase">Section Type</Label>
-                        <RadioGroup
-                          value={formData.sectionType}
-                          onValueChange={(value) =>
-                            onFieldChange("sectionType", value)
-                          }
-                          className="grid gap-3 sm:grid-cols-2"
-                        >
-                          <div className="flex items-center gap-2 rounded-md border p-3">
-                            <RadioGroupItem
-                              value="HOME_ROOM"
-                              id="section-type-home-room"
-                            />
-                            <Label
-                              htmlFor="section-type-home-room"
-                              className="font-extrabold text-base uppercase cursor-pointer"
-                            >
-                              Home Room
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2 rounded-md border p-3">
-                            <RadioGroupItem
-                              value="TLE_LABORATORY"
-                              id="section-type-tle-laboratory"
-                            />
-                            <Label
-                              htmlFor="section-type-tle-laboratory"
-                              className="font-extrabold text-base uppercase cursor-pointer"
-                            >
-                              TLE Laboratory
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    )}
-
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label className="font-extrabold text-base uppercase">
@@ -183,71 +110,34 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                         />
                       </div>
 
-                      {!isTleLaboratory && (
-                        <div className="space-y-2">
-                          <Label className="font-extrabold text-base uppercase">Curriculum Program</Label>
-                          <Select
-                            value={formData.curriculumProgram}
-                            onValueChange={(value) =>
-                              onFieldChange("curriculumProgram", value)
-                            }>
-                            <SelectTrigger className="font-extrabold">
-                              <SelectValue placeholder="Select Program" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {programOptions.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                  className="font-extrabold uppercase text-base">
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
-
-                    {isTleLaboratory && (
                       <div className="space-y-2">
-                        <Label className="font-extrabold text-base uppercase">TLE Specialization *</Label>
+                        <Label className="font-extrabold text-base uppercase">Curriculum Program</Label>
                         <Select
-                          value={
-                            formData.tleProgramId != null
-                              ? String(formData.tleProgramId)
-                              : ""
-                          }
-                          onValueChange={(v) =>
-                            onFieldChange("tleProgramId", Number(v))
+                          value={formData.curriculumProgram}
+                          onValueChange={(value) =>
+                            onFieldChange("curriculumProgram", value)
                           }>
                           <SelectTrigger className="font-extrabold">
-                            <SelectValue placeholder="Select TLE Program" />
+                            <SelectValue placeholder="Select Program" />
                           </SelectTrigger>
                           <SelectContent>
-                            {tlePrograms.map((p) => (
+                            {programOptions.map((option) => (
                               <SelectItem
-                                key={p.id}
-                                value={String(p.id)}
-                                className="font-extrabold text-base">
-                                {p.name}
+                                key={option.value}
+                                value={option.value}
+                                className="font-extrabold uppercase text-base">
+                                {option.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                    )}
+                    </div>
 
                     <div className="space-y-2">
                       <Label className="font-extrabold text-base uppercase">Section Name *</Label>
                       <Input
-                        placeholder={
-                          isTleLaboratory
-                            ? selectedTleProgramName
-                              ? `e.g., ${selectedTleProgramName} - A`
-                              : "Select a TLE Specialization first"
-                            : "e.g., Rizal, Mabini, Aristotle"
-                        }
+                        placeholder="e.g., Rizal, Mabini, Aristotle"
                         value={formData.name}
                         onChange={(event) =>
                           onFieldChange("name", event.target.value)
@@ -262,11 +152,6 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                         }}
                         className="font-extrabold text-base placeholder:text-foreground/30"
                       />
-                      <p className="text-[10px] text-foreground font-extrabold italic">
-                        {isTleLaboratory
-                          ? `* Specialization is pre-filled. Append a letter to complete the name (e.g., ${selectedTleProgramName || "[Program]"} - A).`
-                          : ''}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -283,7 +168,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 <div className="px-5 pb-5 pt-4">
                   <div className="flex gap-4 w-full">
                     <div className="space-y-2 w-[70%]">
-                      <Label className="font-extrabold text-base uppercase">{isTleLaboratory ? "TLE Instructor" : "Class Adviser"}</Label>
+                      <Label className="font-extrabold text-base uppercase">Class Adviser</Label>
                       <Select
                         value={formData.adviserId}
                         onValueChange={(value) => onFieldChange("adviserId", value)}

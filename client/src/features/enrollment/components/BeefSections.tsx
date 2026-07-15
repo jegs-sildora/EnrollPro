@@ -294,10 +294,6 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
     ? Number(applicant.generalAverage).toFixed(2)
     : null;
 
-  const readingProfile = (
-    applicant as unknown as { readingProfileLevel?: string }
-  ).readingProfileLevel?.replace("_", " ");
-
   // Visibility check
   if (
     !isValid(applicant.lastSchoolName) &&
@@ -341,10 +337,6 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
       <DataItem
         label="General Average"
         value={formattedAve}
-      />
-      <DataItem
-        label="Reading Profile"
-        value={readingProfile}
       />
     </DataSection>
   );

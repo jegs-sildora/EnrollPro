@@ -786,15 +786,6 @@ export default function StudentProfile() {
                               : "N/A"}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-foreground">
-                            Phil-IRI (Reading Profile)
-                          </Label>
-                          <p className="font-extrabold text-lg text-primary uppercase">
-                            {student.readingProfileLevel?.replace("_", " ") ||
-                              "N/A"}
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </CardContent>

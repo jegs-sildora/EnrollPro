@@ -1248,7 +1248,6 @@ export async function getPhase2Queue(params: {
         admissionChannel: true,
         applicantType: true,
         learnerType: true,
-        readingProfileLevel: true,
         learner: {
           select: { id: true, lrn: true, firstName: true, lastName: true, middleName: true },
         },
@@ -1265,7 +1264,6 @@ export async function getPhase2Queue(params: {
     admissionChannel: a.admissionChannel,
     applicantType: a.applicantType,
     learnerType: a.learnerType,
-    readingProfileLevel: a.readingProfileLevel ?? null,
     learnerId: a.learner.id,
     lrn: a.learner.lrn,
     firstName: a.learner.firstName,

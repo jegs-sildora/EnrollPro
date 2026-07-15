@@ -2,20 +2,30 @@ import { Response } from "express";
 
 let clients: Response[] = [];
 
+interface FlushableResponse extends Response {
+  flush?: () => void;
+}
+
+function flushIfAvailable(client: Response): void {
+  const flush = (client as FlushableResponse).flush;
+  if (typeof flush === "function") {
+    flush.call(client);
+  }
+}
+
 // Send a keep-alive comment every 30 seconds to prevent proxies from dropping idle connections
-setInterval(() => {
+const heartbeatInterval = setInterval(() => {
   const heartbeat = ":\n\n";
   clients.forEach((client) => {
     try {
       client.write(heartbeat);
-      if (typeof (client as any).flush === "function") {
-        (client as any).flush();
-      }
-    } catch (e) {
+      flushIfAvailable(client);
+    } catch {
       // Ignore errors if client is disconnected
     }
   });
 }, 30000);
+heartbeatInterval.unref();
 
 export function addEosyClient(res: Response) {
   clients.push(res);
@@ -24,15 +34,13 @@ export function addEosyClient(res: Response) {
   });
 }
 
-export function broadcastEosyUpdate(payload: any) {
+export function broadcastEosyUpdate(payload: unknown) {
   const data = `data: ${JSON.stringify(payload)}\n\n`;
   clients.forEach((client) => {
     try {
       client.write(data);
-      if (typeof (client as any).flush === "function") {
-        (client as any).flush();
-      }
-    } catch (e) {
+      flushIfAvailable(client);
+    } catch {
       // Ignore errors if client is disconnected
     }
   });

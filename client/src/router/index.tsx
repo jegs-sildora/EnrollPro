@@ -36,7 +36,6 @@ const ViewMasterlist = lazy(
 );
 const SystemHealth = lazy(() => import("@/features/admin/pages/SystemHealth"));
 const Teachers = lazy(() => import("@/features/teachers/pages/Index"));
-const IntakeDashboard = lazy(() => import("@/features/intake/pages/IntakeDashboard"));
 const Monitor = lazy(() => import("@/features/admission/pages/online-enrollment/Monitor"));
 const Apply = lazy(() => import("@/features/admission/pages/online-enrollment/Index"));
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
@@ -53,8 +52,7 @@ function getFallbackVariant(pathname: string): SkeletonPageVariant {
     pathname === "/teachers" ||
     pathname === "/audit-logs" ||
     pathname.includes("masterlist") ||
-    pathname.includes("eosy") ||
-    pathname.includes("reading-assessment")
+    pathname.includes("eosy")
   ) {
     return "registry";
   }
@@ -240,7 +238,12 @@ export const router = createBrowserRouter([
               },
               {
                 path: "/intake",
-                element: renderLazyPage(IntakeDashboard),
+                element: (
+                  <Navigate
+                    to="/continuing-learners?tab=incoming"
+                    replace
+                  />
+                ),
               },
               // Protected routes for System Admin Only
               {

@@ -3,7 +3,6 @@ import {
   PrismaClient,
   ApplicantType,
   Sex,
-  ReadingProfileLevel,
 } from "../../../generated/prisma/index.js";
 import { AppError } from "../../../lib/AppError.js";
 import type { SectioningParams } from "@enrollpro/shared";
@@ -26,7 +25,6 @@ export interface SectioningPreview {
     lrn: string | null;
     gender: string | null;
     genAve: number | null;
-    readingProfile: string | null;
     programType: string;
     status: string;
     rankingScore?: number | null;
@@ -533,34 +531,14 @@ export class SectioningEngine {
     const males = pool.filter((a) => a.learner.sex === "MALE");
     const females = pool.filter((a) => a.learner.sex === "FEMALE");
 
-    const isFrustrated = (level: string | null) =>
-      level === "FRUSTRATION" || level === "NON_READER";
-
-    const frustratedMales = males.filter((m) =>
-      isFrustrated(m.readingProfileLevel),
-    );
-    const standardMales = males.filter(
-      (m) => !isFrustrated(m.readingProfileLevel),
-    );
-    const frustratedFemales = females.filter((f) =>
-      isFrustrated(f.readingProfileLevel),
-    );
-    const standardFemales = females.filter(
-      (f) => !isFrustrated(f.readingProfileLevel),
-    );
-
     const sortFn = (a: ApplicantWithRelations, b: ApplicantWithRelations) => {
       const aveA = this.resolveGenAve(a, isGrade7) || 0;
       const aveB = this.resolveGenAve(b, isGrade7) || 0;
       return aveB - aveA;
     };
 
-    [
-      frustratedMales,
-      frustratedFemales,
-      standardMales,
-      standardFemales,
-    ].forEach((p) => p.sort(sortFn));
+    males.sort(sortFn);
+    females.sort(sortFn);
 
     let sectionIndex = 0;
     let direction = 1;
@@ -583,24 +561,13 @@ export class SectioningEngine {
       });
     };
 
-    const frustratedCombined: ApplicantWithRelations[] = [];
-    const maxFrustrated = Math.max(
-      frustratedMales.length,
-      frustratedFemales.length,
-    );
-    for (let i = 0; i < maxFrustrated; i++) {
-      if (frustratedMales[i]) frustratedCombined.push(frustratedMales[i]);
-      if (frustratedFemales[i]) frustratedCombined.push(frustratedFemales[i]);
+    const balancedCombined: ApplicantWithRelations[] = [];
+    const maxLength = Math.max(males.length, females.length);
+    for (let i = 0; i < maxLength; i++) {
+      if (males[i]) balancedCombined.push(males[i]);
+      if (females[i]) balancedCombined.push(females[i]);
     }
-    assignBatch(frustratedCombined);
-
-    const standardCombined: ApplicantWithRelations[] = [];
-    const maxStandard = Math.max(standardMales.length, standardFemales.length);
-    for (let i = 0; i < maxStandard; i++) {
-      if (standardMales[i]) standardCombined.push(standardMales[i]);
-      if (standardFemales[i]) standardCombined.push(standardFemales[i]);
-    }
-    assignBatch(standardCombined);
+    assignBatch(balancedCombined);
   }
 
   private mapToProposed(
@@ -624,7 +591,6 @@ export class SectioningEngine {
       lrn: app.learner.lrn,
       gender: app.learner.sex,
       genAve: isNaN(genAve as number) ? null : genAve,
-      readingProfile: app.readingProfileLevel,
       programType: app.applicantType,
       status: app.status,
       rankingScore: meta?.rankingScore ?? null,

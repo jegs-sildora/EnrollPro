@@ -254,26 +254,6 @@ Base path: `/api/enrollment`
 | PATCH | `/:applicationId/flag-deficient` | Registrar, admin | Record missing documentary requirements |
 | POST | `/walk-in` | Registrar or admin | Directly encode a walk-in learner |
 
-## Enrollment Listings and Intake Queues
-
-Base path: `/api/enrollment-listings`; routes allow registrar, admin, and teacher roles.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/` | List intake pre-listing records |
-| POST | `/` | Create pre-listing record |
-| PATCH | `/:id/status` | Update listing status |
-| DELETE | `/:id` | Delete listing record |
-| GET | `/reading-queue` | Reading assessment queue |
-| GET | `/confirmation-queue` | Confirmation queue |
-| PATCH | `/:id/assess` | Record listing assessment |
-| PATCH | `/applications/:applicationId/intake-assess` | Assess application intake |
-| PATCH | `/:id/intake-confirm` | Confirm listing intake |
-| GET | `/enrolled-learners` | Legacy enrolled learner intake list |
-| PATCH | `/applications/:applicationId/reading-profile` | Update application reading profile |
-| PATCH | `/applications/:applicationId/confirmation-slip` | Update confirmation slip |
-| PATCH | `/applications/:applicationId/officialize` | Officialize a cleared application |
-
 ## BOSY Continuing Learners
 
 Base path: `/api/bosy`
@@ -291,17 +271,6 @@ Base path: `/api/bosy`
 | POST | `/confirmed-transfer-out/:applicationId` | Registrar or admin | Remove an unsectioned confirmed learner from intake |
 | POST | `/bulk-confirm` | Registrar, admin | Confirm multiple continuing learners |
 | GET | `/completers` | Registrar, admin | JHS completer registry |
-
-## Reading Assessment
-
-Base path: `/api/reading-assessment`; routes allow registrar, admin, and teacher roles.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/queue` | General reading assessment queue |
-| GET | `/adviser-queue` | Adviser-scoped queue |
-| GET | `/continuing-queue` | Continuing learner queue |
-| PUT | `/:applicationId` | Record reading profile level and notes |
 
 ## Remedial Processing
 
@@ -488,6 +457,8 @@ The following route families appear in older documents but are not mounted by th
 - `/api/auth/logout-learner`
 - `/api/applications/track/:trackingNumber`
 - generic `/api/applications/:id/verify` and `/api/applications/:id/enroll`
+- `/api/enrollment-listings/*`
+- `/api/reading-assessment/*`
 - `/api/bosy/tle-programs`
 - `/api/bosy/expected-queue`
 - `/api/learner/confirm-return`

@@ -24,7 +24,6 @@ interface ProposedAssignment {
   lrn: string | null;
   gender: string | null;
   genAve: number | null;
-  readingProfile: string | null;
   programType: string;
   status: string;
 }

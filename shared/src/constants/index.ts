@@ -46,13 +46,6 @@ export const APPLICATION_STATUS_VALUES = [
 
 export const ApplicationStatusEnum = z.enum(APPLICATION_STATUS_VALUES);
 
-export const ReadingProfileLevelEnum = z.enum([
-  "INDEPENDENT",
-  "INSTRUCTIONAL",
-  "FRUSTRATION",
-  "NON_READER",
-]);
-
 export const TrackingProgramTypeEnum = z.enum(["REGULAR", "SCP"]);
 
 export const TrackingStatusEnum = z.enum([
@@ -94,8 +87,6 @@ export const REALTIME_INVALIDATION_TOPICS = [
   "sectioning:pool",
   "eosy:sections",
   "eosy:records",
-  "intake:listings",
-  "reading-assessment:queue",
   "audit-logs:list",
   "integration:hub",
   "system:health",
@@ -981,7 +972,6 @@ export type EarlyRegGradeLevel = z.infer<typeof EarlyRegGradeLevelEnum>;
 export type EarlyRegistrationStatus = z.infer<
   typeof EarlyRegistrationStatusEnum
 >;
-export type ReadingProfileLevel = z.infer<typeof ReadingProfileLevelEnum>;
 export type SectioningMethod = z.infer<typeof SectioningMethodEnum>;
 export type TrackingProgramType = z.infer<typeof TrackingProgramTypeEnum>;
 export type TrackingStatus = z.infer<typeof TrackingStatusEnum>;
@@ -1155,22 +1145,3 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
   ],
 };
 
-// ─── TLE Specialization Constants ───────────────────────
-/** Grade displayOrder values that require a TLE program selection */
-export const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10] as const;
-
-export const TLE_CATEGORY_LABELS: Record<string, string> = {
-  HOME_ECONOMICS: "Home Economics",
-  INDUSTRIAL_ARTS: "Industrial Arts",
-  AGRI_FISHERY_ARTS: "Agri-Fishery Arts",
-  ICT: "Information and Communications Technology",
-};
-
-export const TLECategoryEnum = z.enum([
-  "HOME_ECONOMICS",
-  "INDUSTRIAL_ARTS",
-  "AGRI_FISHERY_ARTS",
-  "ICT",
-]);
-
-export type TLECategory = z.infer<typeof TLECategoryEnum>;

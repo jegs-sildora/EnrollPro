@@ -78,21 +78,11 @@ interface ProposedAssignment {
   lrn: string | null;
   gender: string | null;
   genAve: number | null;
-  readingProfile: string | null;
   programType: string;
   status: string;
   rankingScore?: number | null;
   rank?: number | null;
 }
-
-const resolveReadingProfileLabel = (level?: string | null): string => {
-  if (!level) return "-";
-  return level
-    .toLowerCase()
-    .split("_")
-    .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
-    .join(" ");
-};
 
 const isPilotSection = (name: string): boolean => {
   const n = name.toUpperCase();
@@ -206,19 +196,6 @@ const MasterlistRowComponent = React.forwardRef<
       </TableCell>
       <TableCell className="py-3 px-4 text-center  font-extrabold text-base leading-tight tabular-nums">
         {row.genAve?.toFixed(3) || "-"}
-      </TableCell>
-      <TableCell className="py-3 px-4 text-center">
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-base font-extrabold uppercase",
-            row.readingProfile === "FRUSTRATION" ||
-              row.readingProfile === "NON_READER"
-              ? "border-destructive/30 text-destructive bg-destructive/5"
-              : "border-emerald-300 text-emerald-700 bg-emerald-50",
-          )}>
-          {resolveReadingProfileLabel(row.readingProfile)}
-        </Badge>
       </TableCell>
       <TableCell className="py-3 px-4 text-center">
         <div
@@ -980,9 +957,6 @@ export function BatchSectioningWizard({
                                       className="flex items-center justify-center w-full font-extrabold text-base uppercase  hover:opacity-80 transition-opacity">
                                       Gen Ave {getSortIcon("genAve")}
                                     </button>
-                                  </TableHead>
-                                  <TableHead className="text-base uppercase h-12 px-4 text-center">
-                                    Reading
                                   </TableHead>
                                   <TableHead className="h-12 px-4 text-center">
                                     <button

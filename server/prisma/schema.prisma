@@ -33,8 +33,6 @@ model User {
   auditLogs                            AuditLog[]
   encodedEnrollmentApps                EnrollmentApplication[] @relation("EnrollmentAppEncodedBy")
   profileLockedEnrollmentApps          EnrollmentApplication[] @relation("EnrollmentProfileLockedBy")
-  readingProfileAssessedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentReadingProfileAssessedBy")
-  enrollmentListings                   EnrollmentListing[]     @relation("ListingCreatedBy")
   enrollmentRecords                    EnrollmentRecord[]
   recordedHealthRecords                HealthRecord[]          @relation("HealthRecordRecordedBy")
   learnerProfile                       Learner?                @relation("UserLearnerProfile")
@@ -136,7 +134,6 @@ model SchoolYear {
   term4End               DateTime?               @map("term4_end") @db.Date
   term4Start             DateTime?               @map("term4_start") @db.Date
   enrollmentApplications EnrollmentApplication[]
-  enrollmentListings     EnrollmentListing[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
   schoolSettings         SchoolSetting[]
@@ -295,10 +292,6 @@ model EnrollmentApplication {
   isProfileLocked            Boolean                   @default(false) @map("is_profile_locked")
   profileLockedAt            DateTime?                 @map("profile_locked_at") @db.Timestamptz(6)
   profileLockedById          Int?                      @map("profile_locked_by_id")
-  readingProfileLevel        ReadingProfileLevel?      @map("reading_profile_level")
-  readingProfileNotes        String?                   @map("reading_profile_notes")
-  readingProfileAssessedAt   DateTime?                 @map("reading_profile_assessed_at") @db.Timestamptz(6)
-  readingProfileAssessedById Int?                      @map("reading_profile_assessed_by_id")
   batchIntakeMethod          String?                   @map("batch_intake_method")
   confirmationConsent        Boolean?                  @map("confirmation_consent")
   contactNumber              String?                   @map("contact_number")
@@ -322,7 +315,6 @@ model EnrollmentApplication {
   gradeLevel                 GradeLevel                @relation(fields: [gradeLevelId], references: [id])
   learner                    Learner                   @relation(fields: [learnerId], references: [id])
   profileLockedBy            User?                     @relation("EnrollmentProfileLockedBy", fields: [profileLockedById], references: [id])
-  readingProfileAssessedBy   User?                     @relation("EnrollmentReadingProfileAssessedBy", fields: [readingProfileAssessedById], references: [id])
   schoolYear                 SchoolYear                @relation(fields: [schoolYearId], references: [id])
   previousSchool             EnrollmentPreviousSchool?
   enrollmentRecord           EnrollmentRecord?
@@ -506,34 +498,6 @@ model TeacherDesignation {
   @@map("teacher_designations")
 }
 
-/// Pre-listing record captured by enrollment clerk / teacher before full BEEF encoding
-model EnrollmentListing {
-  id                       Int                     @id @default(autoincrement())
-  firstName                String                  @map("first_name")
-  lastName                 String                  @map("last_name")
-  gradeLevel               String                  @map("grade_level")
-  dateCollected            DateTime                @default(now()) @map("date_collected") @db.Timestamptz(6)
-  status                   EnrollmentListingStatus @default(LISTED)
-  schoolYearId             Int                     @map("school_year_id")
-  createdById              Int                     @map("created_by_id")
-  notes                    String?
-  createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  confirmationSlipReceived Boolean                 @default(false) @map("confirmation_slip_received")
-  heightCm                 Float?                  @map("height_cm")
-  learnerType              LearnerType?            @map("learner_type")
-  lrn                      String?
-  middleName               String?                 @map("middle_name")
-  readingLevel             ReadingProfileLevel?    @map("reading_level")
-  weightKg                 Float?                  @map("weight_kg")
-  createdBy                User                    @relation("ListingCreatedBy", fields: [createdById], references: [id])
-  schoolYear               SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-
-  @@index([schoolYearId], map: "idx_enrollment_listings_sy")
-  @@index([createdById], map: "idx_enrollment_listings_created_by")
-  @@map("enrollment_listings")
-}
-
 /// Philippine Standard Geographic Code — Region
 model Region {
   code      String     @id @db.VarChar(10)
@@ -652,15 +616,6 @@ enum ApplicationStatus {
   ARCHIVED_NO_SHOW
   REMEDIAL_HOLD
   REMEDIAL_RESOLVED
-}
-
-enum ReadingProfileLevel {
-  INDEPENDENT
-  INSTRUCTIONAL
-  FRUSTRATION
-  NON_READER
-
-  @@map("reading_profile_level")
 }
 
 enum SystemAcademicPhase {
@@ -815,14 +770,6 @@ enum LearnerStatus {
   TRANSFERRED_OUT
 
   @@map("learner_status")
-}
-
-enum EnrollmentListingStatus {
-  LISTED
-  PROCESSED
-  CONFIRMED
-
-  @@map("enrollment_listing_status")
 }
 
 enum TermFormat {

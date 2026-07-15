@@ -70,14 +70,6 @@ interface Teacher {
   employeeId: string | null;
 }
 
-interface TLEProgram {
-  id: number;
-  name: string;
-  programCode: string;
-  category: string;
-  isActive: boolean;
-}
-
 interface GradeLevelGroup {
   gradeLevelId: number;
   gradeLevelName: string;
@@ -122,7 +114,6 @@ const SECTION_CATEGORY_CONFIG: Record<
 };
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
-const TLE_SECTION_DISPLAY_ORDERS = [9, 10];
 
 function isScpProgram(programType: string): boolean {
   return ![
@@ -190,44 +181,6 @@ function buildSectionDisplayName(
   return `${scpLabel} ${baseLabel}`;
 }
 
-function extractTleSectionSuffix(
-  sectionName: string,
-  tleProgramName: string,
-): string {
-  const normalizedSectionName = sectionName.trim();
-  const normalizedProgramName = tleProgramName.trim();
-
-  if (!normalizedSectionName) return "";
-  if (!normalizedProgramName) return normalizedSectionName;
-
-  const prefix = `${normalizedProgramName} - `;
-  if (normalizedSectionName.toLowerCase().startsWith(prefix.toLowerCase())) {
-    return normalizedSectionName.slice(prefix.length).trim();
-  }
-
-  if (
-    normalizedSectionName.toLowerCase() === normalizedProgramName.toLowerCase()
-  ) {
-    return "";
-  }
-
-  const markerIndex = normalizedSectionName.lastIndexOf(" - ");
-  if (markerIndex >= 0) {
-    return normalizedSectionName.slice(markerIndex + 3).trim();
-  }
-
-  return normalizedSectionName;
-}
-
-function buildTleSectionName(tleProgramName: string, suffix: string): string {
-  const normalizedProgramName = tleProgramName.trim();
-  const normalizedSuffix = suffix.trim();
-
-  if (!normalizedProgramName) return normalizedSuffix;
-  if (!normalizedSuffix) return normalizedProgramName;
-  return `${normalizedProgramName} - ${normalizedSuffix}`;
-}
-
 ;
 
 ;
@@ -290,7 +243,6 @@ interface MasterlistLearner {
   gender: string;
   birthdate: string;
   status: string;
-  readingProfileLevel: string | null;
   isPendingLrnCreation: boolean;
   applicantType: string;
   enrolledAt: string;
@@ -634,7 +586,6 @@ export default function Homerooms() {
         programType: section.programType,
         isHomogeneous: section.isHomogeneous,
         maxCapacity: section.maxCapacity,
-        tleProgramId: section.tleProgramId ?? null,
         advisingTeacherId: newAdviserId === "none" ? null : parseInt(newAdviserId),
       };
       await api.put(`/sections/${section.id}`, payload);
@@ -697,10 +648,8 @@ export default function Homerooms() {
   const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
     name: "",
     programType: "REGULAR",
-    sectionType: "HOME_ROOM",
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
-    tleProgramId: null,
   });
   const [sectionFormBaseline, setSectionFormBaseline] =
     useState<SectionFormState | null>(null);
@@ -718,7 +667,6 @@ export default function Homerooms() {
   const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>(
     [],
   );
-  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
   const [offeredScpTypeLabels, setOfferedScpTypeLabels] = useState<Record<string, string>>({});
 
   const sectionFormProgramOptions = useMemo(() => {
@@ -763,18 +711,6 @@ export default function Homerooms() {
   // Masterlist view state
   const [masterlist, setMasterlist] = useState<MasterlistLearner[]>([]);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
-
-  const resolveTleProgramName = useCallback(
-    (tleProgramId: number | null | undefined) => {
-      if (tleProgramId == null) return "";
-      return (
-        tlePrograms.find((program) => program.id === tleProgramId)?.name ?? ""
-      );
-    },
-    [tlePrograms],
-  );
-
-
 
   const { maleLearners, femaleLearners } = useMemo(() => {
     const males = masterlist
@@ -908,29 +844,20 @@ export default function Homerooms() {
 
 
 
-  // TLE Programs removed to fix 404
-
   const fetchEligibleTeachers = useCallback(
     async (
-      sectionType: "HOME_ROOM" | "TLE_LABORATORY",
-      tleProgramId: number | null,
       excludeSectionId?: number | null,
     ) => {
       if (!ayId) return;
 
       setLoadingTeachers(true);
       try {
-        const params = new URLSearchParams({
-          schoolYearId: String(ayId),
-          sectionType,
-        });
+      const params = new URLSearchParams({
+        schoolYearId: String(ayId),
+      });
 
         if (excludeSectionId) {
           params.set("excludeSectionId", String(excludeSectionId));
-        }
-
-        if (sectionType === "TLE_LABORATORY" && tleProgramId != null) {
-          params.set("tleProgramId", String(tleProgramId));
         }
 
         const res = await api.get(`/sections/teachers?${params.toString()}`);
@@ -954,13 +881,7 @@ export default function Homerooms() {
   useEffect(() => {
     if (!isFormSheetOpen) return;
 
-    const isTleSection =
-      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) &&
-      sectionFormData.sectionType === "TLE_LABORATORY";
-
     void fetchEligibleTeachers(
-      isTleSection ? "TLE_LABORATORY" : "HOME_ROOM",
-      isTleSection ? sectionFormData.tleProgramId : null,
       formSheetMode === "edit" ? editingSectionId : null,
     );
   }, [
@@ -969,8 +890,6 @@ export default function Homerooms() {
     fetchEligibleTeachers,
     formSheetMode,
     isFormSheetOpen,
-    sectionFormData.sectionType,
-    sectionFormData.tleProgramId,
   ]);
 
   useEffect(() => {
@@ -1020,10 +939,8 @@ export default function Homerooms() {
         programType:
           category === "SCP" ? selectedCurriculumProgram : "REGULAR",
         isHomogeneous: categoryConfig.isHomogeneous,
-        sectionType: "HOME_ROOM",
         adviserId: "none",
         maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
-        tleProgramId: null,
       };
       setSectionFormData(nextFormData);
       setSectionFormBaseline(nextFormData);
@@ -1044,16 +961,10 @@ export default function Homerooms() {
         curriculumProgram: section.programType === "REGULAR" ? (section.isHomogeneous ? "REGULAR_HOMO" : "REGULAR_HETERO") : section.programType,
         programType: section.programType,
         isHomogeneous: section.isHomogeneous,
-        sectionType:
-          TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) &&
-            section.tleProgramId
-            ? "TLE_LABORATORY"
-            : "HOME_ROOM",
         adviserId: section.advisingTeacher
           ? section.advisingTeacher.id.toString()
           : "none",
         maxCapacity: section.maxCapacity,
-        tleProgramId: section.tleProgramId ?? null,
       };
       setSectionFormData(nextFormData);
       setSectionFormBaseline(nextFormData);
@@ -1098,80 +1009,19 @@ export default function Homerooms() {
       setSectionFormData((prev) => {
         const next: SectionFormState = { ...prev, [field]: value };
 
-        const currentProgramName = resolveTleProgramName(prev.tleProgramId);
-
-        if (field === "tleProgramId") {
-          const nextProgramName = resolveTleProgramName(Number(value));
-          const currentSuffix = extractTleSectionSuffix(
-            prev.name,
-            currentProgramName,
-          );
-          // Default to "A" when no suffix exists yet (fresh / first-time selection)
-          const suffix = currentSuffix.trim() || "A";
-          next.name = buildTleSectionName(nextProgramName, suffix);
-        }
-
         // Auto-update capacity when program type changes
-        if (field === "programType" && next.sectionType !== "TLE_LABORATORY") {
+        if (field === "programType") {
           next.maxCapacity = DEFAULT_MAX_CAPACITY_REGULAR;
-        }
-
-        if (field === "sectionType") {
-          if (value === "HOME_ROOM") {
-            next.tleProgramId = null;
-          }
-
-          if (value === "TLE_LABORATORY") {
-            // TLE labs operate under REGULAR with specialization track-lock.
-            next.programType = "REGULAR";
-            const suffix = extractTleSectionSuffix(
-              prev.name,
-              currentProgramName,
-            );
-            next.name = buildTleSectionName(currentProgramName, suffix);
-          }
         }
 
         return next;
       });
     },
-    [resolveTleProgramName],
+    [],
   );
 
   const handleFormSubmit = async () => {
     if (!sectionFormData.name.trim()) return;
-
-    const allowTleLaboratory =
-      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder);
-    const isTleLaboratory =
-      allowTleLaboratory && sectionFormData.sectionType === "TLE_LABORATORY";
-
-    if (isTleLaboratory && !sectionFormData.tleProgramId) {
-      sileo.error({
-        title: "TLE Specialization Required",
-        description:
-          "Please select a TLE specialization for TLE Laboratory sections.",
-      });
-      return;
-    }
-
-    if (isTleLaboratory) {
-      const tleProgramName = resolveTleProgramName(
-        sectionFormData.tleProgramId,
-      );
-      const suffix = extractTleSectionSuffix(
-        sectionFormData.name,
-        tleProgramName,
-      );
-      if (!suffix.trim()) {
-        sileo.error({
-          title: "Section Name Suffix Required",
-          description:
-            "Add a suffix (e.g., A, B, C, D, or N) for the selected TLE specialization.",
-        });
-        return;
-      }
-    }
 
     setSubmittingForm(true);
     try {
@@ -1180,15 +1030,13 @@ export default function Homerooms() {
 
       const payload = {
         name: sectionFormData.name.trim(),
-        programType: isTleLaboratory ? "REGULAR" : resolvedProgramType,
-        isHomogeneous: isTleLaboratory ? false : isHomo,
+        programType: resolvedProgramType,
+        isHomogeneous: isHomo,
         advisingTeacherId:
           sectionFormData.adviserId === "none"
             ? null
             : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
-        // tleProgramId is the persistent lab marker for matrix scheduling.
-        tleProgramId: isTleLaboratory ? sectionFormData.tleProgramId : null,
       };
 
       if (formSheetMode === "create") {
@@ -1409,18 +1257,11 @@ export default function Homerooms() {
         onSubmit={handleFormSubmit}
         onCancel={requestCloseSectionForm}
         submitting={submittingForm}
-        canSubmit={
-          !!sectionFormData.name.trim() &&
-          (!TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) ||
-            sectionFormData.sectionType === "HOME_ROOM" ||
-            !!sectionFormData.tleProgramId)
-        }
+        canSubmit={!!sectionFormData.name.trim()}
         programOptions={sectionFormProgramOptions}
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}
         gradeLevelName={createGlName}
-        gradeLevelDisplayOrder={createGlDisplayOrder}
-        tlePrograms={tlePrograms}
       />
 
       <ConfirmationModal

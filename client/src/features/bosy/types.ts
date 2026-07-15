@@ -101,7 +101,6 @@ export interface Phase2QueueItem {
   admissionChannel: string;
   applicantType: string;
   learnerType: string;
-  readingProfileLevel: string | null;
   learnerId: number;
   lrn: string | null;
   firstName: string;

@@ -138,14 +138,6 @@ function getInvalidationPrefixes(
       case "eosy:records":
         prefixes.push(["eosy"]);
         break;
-      case "intake:listings":
-        prefixes.push(["intake"]);
-        prefixes.push(["enrollment-listings"]);
-        break;
-      case "reading-assessment:queue":
-        prefixes.push(["reading-assessment"]);
-        prefixes.push(["adviser"]);
-        break;
       case "audit-logs:list":
         prefixes.push(["audit-logs"]);
         break;

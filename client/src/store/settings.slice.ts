@@ -77,8 +77,6 @@ export interface SettingsState {
     homeroomsGradeId: string;
     bosyGradeId: string;
     sectioningGradeId: string;
-    readingAssessmentTab: string;
-    intakeTab: string;
     eosyTab: string;
   };
   updateUiPreference: (key: keyof SettingsState["uiPreferences"], value: string) => void;
@@ -156,8 +154,6 @@ export const useSettingsStore = create<SettingsState>()(
         homeroomsGradeId: "",
         bosyGradeId: "ALL",
         sectioningGradeId: "",
-        readingAssessmentTab: "bosy",
-        intakeTab: "enrolled",
         eosyTab: "summary",
       },
       updateUiPreference: (key, value) => 

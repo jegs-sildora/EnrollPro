@@ -1,14 +1,10 @@
-export type SectionTypeMode = "HOME_ROOM" | "TLE_LABORATORY";
-
 export interface SectionFormState {
   name: string;
   curriculumProgram?: string;
   programType?: string;
   isHomogeneous?: boolean;
-  sectionType: SectionTypeMode;
   adviserId: string;
   maxCapacity: number;
-  tleProgramId: number | null;
 }
 
 export interface TeacherOption {
@@ -41,6 +37,5 @@ export interface SectionItem {
   maxCapacity: number;
   enrolledCount: number;
   fillPercent: number;
-  tleProgramId?: number | null;
   advisingTeacher: { id: number; name: string } | null;
 }
