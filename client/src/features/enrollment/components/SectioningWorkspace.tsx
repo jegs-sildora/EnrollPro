@@ -64,6 +64,7 @@ import {
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { PageTransition } from "@/shared/components/PageTransition";
 
 interface SectionSummary {
   id: number;
@@ -140,6 +141,92 @@ interface DraftPlacement {
   rosters: DraftSectionRoster[];
   unplacedLearners: PoolLearner[];
 }
+
+interface InlineMasterlistLearner {
+  id: number;
+  enrollmentApplicationId: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  sex: string;
+  genAve: number | null;
+}
+
+interface InlineMasterlistResponse {
+  learners: InlineMasterlistLearner[];
+}
+
+function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, onMoveLearner?: (learnerId: number, currentSectionId: number) => void }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["section-masterlist", sectionId],
+    queryFn: () => api.get<InlineMasterlistResponse>(`/sections/${sectionId}/masterlist`).then(r => r.data),
+  });
+
+  if (isLoading) return <div className="p-4 text-center text-sm font-extrabold text-muted-foreground animate-pulse mt-4 border rounded-md">Loading learners...</div>;
+  if (error || !data) return <div className="p-4 text-center text-sm font-extrabold text-destructive mt-4 border rounded-md">Failed to load learners</div>;
+  if (data.learners.length === 0) return <div className="p-4 text-center text-sm font-extrabold text-foreground mt-4 border rounded-md">No learners assigned yet.</div>;
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-md border bg-card cursor-default" onClick={(e) => e.stopPropagation()}>
+      <table className="w-full text-left text-sm">
+        <thead className="bg-muted text-foreground">
+          <tr className="font-extrabold uppercase">
+            <th className="p-3">Learner</th>
+            <th className="p-3 text-center">Sex</th>
+            <th className="p-3 text-center">Gen Ave</th>
+            <th className="p-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {data.learners.map((l) => (
+            <tr key={l.id} className="hover:bg-muted/50 transition-colors">
+              <td className="p-3">
+                <div className="flex flex-col">
+                  <span className="font-extrabold text-foreground uppercase">
+                    {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
+                  </span>
+                  <span className="text-xs font-extrabold uppercase mt-0.5">
+                    {l.lrn || "NO LRN"}
+                  </span>
+                </div>
+              </td>
+              <td className="p-3 text-center">
+                <Badge className={cn(
+                  "text-[10px] uppercase font-extrabold",
+                  l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                )}>
+                  {l.sex}
+                </Badge>
+              </td>
+              <td className="p-3 text-center font-extrabold text-foreground">
+                {l.genAve?.toFixed(2) ?? "--"}
+              </td>
+              <td className="p-3 text-right">
+                {onMoveLearner && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onMoveLearner(l.enrollmentApplicationId, sectionId)}>
+                        <MoveRight className="mr-2 h-4 w-4" />
+                        Move to Section
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 
 interface DraftMoveAction {
   type: "MOVE" | "SWAP";
@@ -350,6 +437,10 @@ export function SectioningWorkspace() {
   );
   const [draftMoveAction, setDraftMoveAction] =
     useState<DraftMoveAction | null>(null);
+  const [normalMoveAction, setNormalMoveAction] = useState<{
+    learnerApplicationId: number;
+    fromSectionId: number;
+  } | null>(null);
   const [moveDestinationSectionId, setMoveDestinationSectionId] = useState("");
   const [swapApplicationId, setSwapApplicationId] = useState("");
   const [commitDialogOpen, setCommitDialogOpen] = useState(false);
@@ -573,10 +664,12 @@ export function SectioningWorkspace() {
       currentGradePool,
       currentGradeSections,
     );
-    const allSectionIds = draft.rosters.map((roster) => roster.section.id);
+    const populatedSectionIds = draft.rosters
+      .filter((roster) => roster.learners.length > 0)
+      .map((roster) => roster.section.id);
 
     setDraftPlacement(draft);
-    setExpandedSectionIds(new Set(allSectionIds));
+    setExpandedSectionIds(new Set(populatedSectionIds));
     setSelectedAppIds([]);
     setTargetSectionId(null);
     setAllowCapacityOverride(false);
@@ -634,6 +727,14 @@ export function SectioningWorkspace() {
     setMoveDestinationSectionId("");
   };
 
+  const openNormalMoveDialog = (
+    learnerApplicationId: number,
+    fromSectionId: number,
+  ) => {
+    setNormalMoveAction({ learnerApplicationId, fromSectionId });
+    setMoveDestinationSectionId("");
+  };
+
   const openSwapDialog = (
     learnerApplicationId: number,
     fromSectionId: number,
@@ -682,8 +783,52 @@ export function SectioningWorkspace() {
       return rebuildDraftPlacement({ ...current, rosters: updatedRosters });
     });
 
+    setExpandedSectionIds((prev) => {
+      const next = new Set(prev);
+      next.add(destinationSectionId);
+      return next;
+    });
+
     setDraftMoveAction(null);
     setMoveDestinationSectionId("");
+  };
+
+  const executeNormalMove = async () => {
+    if (!normalMoveAction) return;
+    const destinationSectionId = Number(moveDestinationSectionId);
+    if (!Number.isInteger(destinationSectionId) || destinationSectionId <= 0)
+      return;
+
+    setProcessing(true);
+    try {
+      await api.post("/sections/transfer-learner", {
+        targetSectionId: destinationSectionId,
+        enrollmentApplicationId: normalMoveAction.learnerApplicationId,
+      });
+      sileo.success({
+        title: "Assignment Successful",
+        description: "Learner successfully moved to the new section.",
+      });
+      const oldSectionId = normalMoveAction.fromSectionId;
+      setNormalMoveAction(null);
+      setMoveDestinationSectionId("");
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sectioningSections(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["section-masterlist", oldSectionId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["section-masterlist", destinationSectionId],
+      });
+    } catch (error: unknown) {
+      sileo.error({
+        title: "Move Failed",
+        description: "An error occurred while moving the learner. Please try again.",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const executeSwap = () => {
@@ -821,6 +966,13 @@ export function SectioningWorkspace() {
         ),
     ) ?? [])
     : [];
+  const normalMoveSourceSection = normalMoveAction 
+    ? currentGradeSections.find(s => s.id === normalMoveAction.fromSectionId)
+    : null;
+
+  const normalMoveDestinationSections = normalMoveAction && normalMoveSourceSection
+    ? currentGradeSections.filter((s) => s.id !== normalMoveAction.fromSectionId && s.programType === normalMoveSourceSection.programType)
+    : [];
   const compatibleSwapLearners = selectedDraftLearner
     ? (draftPlacement?.rosters.flatMap((roster) =>
       roster.learners.filter(
@@ -918,7 +1070,7 @@ export function SectioningWorkspace() {
       )}
 
       {/* ── Workspace ── */}
-      <div className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+      <PageTransition key={activeGradeLevelId} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
         <Card className="flex flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
           {/* LEFT PANE: UNSECTIONED POOL */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-r border-border bg-card text-card-foreground">
@@ -1211,10 +1363,17 @@ export function SectioningWorkspace() {
                           toggleExpandedSection(s.id);
                           return;
                         }
-                        if (s.currentCount > 0) {
-                          setMasterlistModalSectionId(s.id);
-                        } else if (isProgramCompatible) {
-                          setTargetSectionId(s.id);
+
+                        if (selectedAppIds.length > 0) {
+                          if (isProgramCompatible) {
+                            setTargetSectionId(s.id);
+                          }
+                        } else {
+                          if (s.currentCount > 0) {
+                            setMasterlistModalSectionId(s.id);
+                          } else if (isProgramCompatible) {
+                            setTargetSectionId(s.id);
+                          }
                         }
                       }}
                       className={cn(
@@ -1402,6 +1561,13 @@ export function SectioningWorkspace() {
                           </table>
                         </div>
                       )}
+
+                      {!draftPlacement && s.currentCount > 0 && (
+                        <InlineSectionTable
+                          sectionId={s.id}
+                          onMoveLearner={!isHistoricalReadOnly ? openNormalMoveDialog : undefined}
+                        />
+                      )}
                     </div>
                   );
                 })
@@ -1460,7 +1626,7 @@ export function SectioningWorkspace() {
             </div>
           </div>
         </Card>
-      </div>
+      </PageTransition>
 
       <Dialog
         open={draftMoveAction?.type === "MOVE"}
@@ -1499,6 +1665,56 @@ export function SectioningWorkspace() {
               onClick={executeMove}
               disabled={!moveDestinationSectionId}>
               Move to Section
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!normalMoveAction}
+        onOpenChange={(open) => !open && setNormalMoveAction(null)}>
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Move Assigned Learner</DialogTitle>
+            <DialogDescription>
+              Move the learner to another section in the current grade level.
+            </DialogDescription>
+          </DialogHeader>
+          <Select
+            value={moveDestinationSectionId}
+            onValueChange={setMoveDestinationSectionId}>
+            <SelectTrigger className="h-11 font-extrabold">
+              <SelectValue placeholder="Select destination section" />
+            </SelectTrigger>
+            <SelectContent>
+              {normalMoveDestinationSections.map((section) => (
+                <SelectItem
+                  key={section.id}
+                  value={String(section.id)}>
+                  {section.name} ({section.currentCount}/
+                  {section.maxCapacity})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNormalMoveAction(null)}
+              disabled={processing}>
+              Cancel
+            </Button>
+            <Button
+              onClick={executeNormalMove}
+              disabled={!moveDestinationSectionId || processing}>
+              {processing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Moving...
+                </>
+              ) : (
+                "Move to Section"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

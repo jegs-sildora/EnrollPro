@@ -898,7 +898,16 @@ export async function getSectionMasterlist(
         include: {
           enrollmentApplication: {
             include: {
-              learner: true,
+              learner: {
+                include: {
+                  enrollmentRecords: {
+                    where: { finalAverage: { not: null } },
+                    orderBy: { schoolYearId: "desc" },
+                    take: 1,
+                  },
+                },
+              },
+              previousSchool: { select: { generalAverage: true } },
             },
           },
         },
@@ -939,6 +948,7 @@ export async function getSectionMasterlist(
         sectioningMethod: "MANUAL",
         dateSectioned: hist.createdAt?.toISOString() ?? null,
         sf1Remarks: null,
+        genAve: null,
       }))
     : section.enrollmentRecords.map((record) => ({
         id: record.enrollmentApplication.learner.id,
@@ -955,6 +965,11 @@ export async function getSectionMasterlist(
         sectioningMethod: record.sectioningMethod,
         dateSectioned: record.dateSectioned?.toISOString() ?? null,
         sf1Remarks: record.sf1Remarks ?? null,
+        genAve:
+          record.enrollmentApplication.learner.enrollmentRecords[0]?.finalAverage ??
+          record.enrollmentApplication.previousSchool?.generalAverage ??
+          record.enrollmentApplication.learner.previousGenAve ??
+          null,
       }));
 
   res.json({

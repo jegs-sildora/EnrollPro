@@ -992,7 +992,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             className="mr-2 h-4!"
           />
           {title && (
-            <h1 className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight leading-none truncate max-w-[120px] sm:max-w-[240px] md:max-w-none mr-2 sm:mr-4">
+            <h1 className="text-sm sm:text-base md:text-xl font-black text-foreground tracking-tight leading-none truncate max-w-[120px] sm:max-w-[240px] md:max-w-none mr-2 sm:mr-4 uppercase">
               {title}
             </h1>
           )}

@@ -42,6 +42,7 @@ import {
 } from "@/shared/ui/card";
 
 import InsertLateEnrolleeDrawer from "../components/InsertLateEnrolleeDrawer";
+import { PageTransition } from "@/shared/components/PageTransition";
 
 const MASTERLIST_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "homerooms:sections",
@@ -345,7 +346,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   }, [section, setTitle, mode]);
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       <div className="mb-4">
         {onBack ? (
           <button
@@ -519,6 +520,6 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </PageTransition>
   );
 }
