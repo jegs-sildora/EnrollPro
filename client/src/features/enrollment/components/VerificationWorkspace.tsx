@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+import { motionTokens } from "@/shared/lib/motion";
 import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
@@ -27,6 +29,7 @@ import { cn } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
+
 
 interface PendingVerification {
   id: number;
@@ -120,7 +123,7 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
-  const [verificationStatusFilter, setVerificationStatusFilter] = useState<string>("ALL");
+  const [activeTab, setActiveTab] = useState<"PENDING" | "VERIFIED" | "DEFICIENT">("PENDING");
 
   const {
     data: pendingVerifications = [],
@@ -159,16 +162,16 @@ export function VerificationWorkspace() {
       // Future enhancement: when backend includes program preference in pending verification response
     }
 
-    if (verificationStatusFilter !== "ALL") {
-      if (verificationStatusFilter === "PENDING") {
-        result = result.filter((app) => app.status !== "VERIFIED_ENROLLED");
-      } else if (verificationStatusFilter === "VERIFIED") {
-        result = result.filter((app) => app.status === "VERIFIED_ENROLLED");
-      }
+    if (activeTab === "PENDING") {
+      result = result.filter((app) => app.status === "PENDING_VERIFICATION");
+    } else if (activeTab === "VERIFIED") {
+      result = result.filter((app) => app.status === "VERIFIED" || app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED");
+    } else if (activeTab === "DEFICIENT") {
+      result = result.filter((app) => app.status === "FOR_REVISION");
     }
 
     return result;
-  }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, verificationStatusFilter]);
+  }, [pendingVerifications, activeSearchQuery, intakeCategoryFilter, programFilter, activeTab]);
 
   const selectedApp = useMemo(() => {
     return pendingVerifications.find(app => app.id === selectedAppId);
@@ -343,7 +346,7 @@ export function VerificationWorkspace() {
       <Card className="flex-1 flex flex-col shadow-sm border-none bg-card overflow-hidden">
         {/* Filter Toolbar */}
         <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6 shrink-0">
-          <div className="relative w-full xl:w-84 shrink-0">
+          <div className="relative w-full flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
@@ -386,19 +389,7 @@ export function VerificationWorkspace() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={verificationStatusFilter}
-              onValueChange={(val) => setVerificationStatusFilter(val)}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="leading-tight font-extrabold">All Statuses</SelectItem>
-                <SelectItem value="PENDING" className="leading-tight font-extrabold">Pending Verification</SelectItem>
-                <SelectItem value="VERIFIED" className="leading-tight font-extrabold">Verified Enrolled</SelectItem>
-              </SelectContent>
-            </Select>
+
 
             {!isHistoricalReadOnly && (
               <WalkInEncodePanel />
@@ -409,13 +400,58 @@ export function VerificationWorkspace() {
         <div className="flex-1 flex min-h-0">
           {/* LEFT PANE */}
           <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
-            <div className="p-4 border-b border-border/50 bg-muted/10 shrink-0 flex items-center justify-between w-full">
-              <CardTitle className="text-base leading-tight font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                Pending Verification
-              </CardTitle>
-              <Badge variant="outline" className="font-extrabold bg-background border-border">
-                {filteredVerifications.length} Queue
-              </Badge>
+            <div className="border-b border-border bg-white shrink-0 flex flex-col w-full">
+              {(() => {
+                const metrics = [
+                  {
+                    key: "PENDING",
+                    title: "For Review",
+                    value: pendingVerifications.filter(a => a.status === "PENDING_VERIFICATION").length
+                  },
+                  {
+                    key: "VERIFIED",
+                    title: "Verified",
+                    value: pendingVerifications.filter(a => a.status === "VERIFIED" || a.status === "READY_FOR_SECTIONING" || a.status === "OFFICIALLY_ENROLLED").length
+                  },
+                  {
+                    key: "DEFICIENT",
+                    title: "Deficient",
+                    value: pendingVerifications.filter(a => a.status === "FOR_REVISION").length
+                  }
+                ] as const;
+
+                return (
+                  <div className="grid grid-cols-3 h-10 w-full divide-x divide-gray-200">
+                    {metrics.map((m) => {
+                      const isActive = activeTab === m.key;
+                      return (
+                        <button
+                          key={m.key}
+                          onClick={() => setActiveTab(m.key as any)}
+                          className={cn(
+                            "relative flex items-center justify-between px-3 h-full transition-colors uppercase font-extrabold z-10",
+                            isActive
+                              ? "text-primary-foreground bg-primary"
+                              : "text-foreground hover:bg-gray-50"
+                          )}
+                        >
+                          {isActive && (
+                            <motion.div
+                              layoutId="verification-active-pill"
+                              className="absolute inset-0 bg-primary"
+                              transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                            />
+                          )}
+                          <span className="truncate relative z-20 text-[11px] tracking-wide">{m.title}</span>
+                          <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground relative z-20">
+                            {m.value}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex-1 overflow-auto p-2 space-y-2">
               {filteredVerifications.length === 0 ? (

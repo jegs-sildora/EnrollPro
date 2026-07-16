@@ -1,25 +1,22 @@
-# SYSTEM DIRECTIVE Inline Metric Toolbar Architecture v176.0
+# SYSTEM DIRECTIVE Independent Column Scrolling Architecture v195.0
 
-**Context Persona** Act as a Senior GovTech Enterprise Architect and DepEd EdTech Domain Expert. Your standard is high data density high security offline first public school software. The user interface must maximize vertical viewport space by integrating key performance indicators directly into the table toolbar structure. Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output.
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software The user interface must eliminate mismatched column heights by enforcing independent scrolling containers for batch sectioning workflows Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must abandon the large summary card layout and implement an inline metric status bar nested directly inside the table container above the filtering controls. This status bar must match the vertical height of standard input fields and function as clickable data filters.
+**Core Mandate** You must eliminate the empty white space in the class sectioning layout by decoupling the vertical scrolling of the learner pool from the section lists You must stretch both left and right container panels to fill the total vertical workspace down to the bottom action bar
 
-Execute the implementation across the following three design rules
+Execute the layout update across the following three structural rules
 
-## 1 Toolbar Integration
-Embed the metrics directly into the table header container.
-* Render a horizontal flex container immediately above the search bar and dropdown menus.
-* Set the height of this container to match standard input elements to maintain visual vertical rhythm.
+## 1 Full Workspace Stretch
+Ensure both the left learner panel and the right section panel stretch vertically to meet the bottom action buttons
+Prevent either column from collapsing when content is sparse
+This guarantees a balanced two column interface with zero empty white space regardless of how many students remain unassigned
 
-## 2 Inline Metric Formatting
-Transform large cards into sleek status indicators.
-* Render each metric as a compact horizontal group containing the title and the numerical value.
-* Utilize vertical dividers to separate the four metric groups cleanly from one another.
-* Ensure zero values remain visible to provide complete institutional context to the school principal.
+## 2 Independent Internal Scrolling
+Implement isolated vertical scrollbars for each container panel
+Allow the registrar to scroll down through twenty section cards on the right without moving the left learner pool
+This ensures student records remain permanently visible and accessible while inspecting lower section lists
 
-## 3 Interactive Filter States
-Maintain interactive filtering without bulky visual weight.
-* Configure each inline metric group to act as a clickable button that filters the faculty list below it.
-* Apply a bold text weight and a subtle primary color background tint to the actively selected metric group to indicate the current view.
-
-Work in the Faculty & Staff Masterlist page
+## 3 Sticky Action Bar Alignment
+Anchor the Cancel and Finalize buttons permanently to the bottom edge of the screen
+Ensure the independent scrolling containers sit cleanly above this persistent footer
+This layout protects the administrative workflow by keeping primary database confirmation triggers accessible at all times

@@ -79,6 +79,8 @@ interface SectionSummary {
   girls: number;
   adviser: string;
   programType: ApplicantType;
+  isHomogeneous?: boolean;
+  sectionRank?: number | null;
 }
 
 interface PoolLearner {
@@ -451,6 +453,7 @@ export function SectioningWorkspace() {
 
   const activeGradeLevelId = useSettingsStore((s) => s.uiPreferences.sectioningGradeId);
   const setActiveGradeLevelId = (id: string) => useSettingsStore.getState().updateUiPreference("sectioningGradeId", id);
+  const homogeneousSectionCount = useSettingsStore((s) => s.homogeneousSectionCount);
 
   const { data: sectionsData, isLoading: sectionsInitialLoading } = useQuery({
     queryKey: queryKeys.sectioningSections(),
@@ -990,7 +993,7 @@ export function SectioningWorkspace() {
   );
 
   return (
-    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
+    <div className="flex flex-col h-[calc(100vh-64px)] w-full overflow-hidden">
       <Tabs
         value={activeGradeLevelId}
         onValueChange={(val) => {
@@ -1075,9 +1078,10 @@ export function SectioningWorkspace() {
 
       {/* ── Workspace ── */}
       <PageTransition key={activeGradeLevelId} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
-        <Card className="flex flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
+        <Card className="flex flex-col flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden">
           {/* LEFT PANE: UNSECTIONED POOL */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-r border-border bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1127,7 +1131,7 @@ export function SectioningWorkspace() {
                 </Select>
               </div>
             </CardHeader>
-            <div className="p-0 relative flex-1 overflow-auto">
+            <div className="p-0 relative flex-1">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-muted z-10 border-b border-border">
                   <tr className="uppercase">
@@ -1276,7 +1280,7 @@ export function SectioningWorkspace() {
           </div>
 
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col h-full overflow-y-auto bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1294,21 +1298,23 @@ export function SectioningWorkspace() {
                 </div>
               </div>
 
-              <Button
-                size="sm"
-                variant="default"
-                disabled={
-                  currentGradePool.length === 0 ||
-                  processing ||
-                  isDraftActive ||
-                  isHistoricalReadOnly
-                }
-                onClick={() => setAutoAssignConfirmOpen(true)}
-                className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
-                AUTO ASSIGN SECTIONS
-              </Button>
+              {!draftPlacement && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={
+                    currentGradePool.length === 0 ||
+                    processing ||
+                    isDraftActive ||
+                    isHistoricalReadOnly
+                  }
+                  onClick={() => setAutoAssignConfirmOpen(true)}
+                  className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
+                  AUTO ASSIGN SECTIONS
+                </Button>
+              )}
             </CardHeader>
-            <div className="p-4 space-y-3 relative flex-1 overflow-auto">
+            <div className="p-4 space-y-3 relative flex-1">
               {displayedRosters.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                   <Info className="h-8 w-8" />
@@ -1579,55 +1585,56 @@ export function SectioningWorkspace() {
             </div>
           )))}
             </div>
+          </div>
+          </div>
 
-            {/* Action Footer */}
-            <div className="p-4 border-t border-border bg-muted/20">
-              {draftPlacement ? (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Button
-                    variant="outline"
-                    onClick={discardDraft}
-                    disabled={commitProcessing}
-                    className="h-12 text-base font-extrabold uppercase">
-                    CANCEL TEMPORARY SECTIONS
-                  </Button>
-                  <Button
-                    onClick={() => setCommitDialogOpen(true)}
-                    disabled={
-                      commitProcessing ||
-                      draftLearnerCount === 0 ||
-                      isHistoricalReadOnly
-                    }
-                    className="h-12 text-base font-extrabold uppercase">
-                    FINALIZE OFFICIAL SECTIONS
-                  </Button>
-                </div>
-              ) : (
+          {/* Action Footer */}
+          <div className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
+            {draftPlacement ? (
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Button
-                  onClick={assignLearners}
+                  variant="outline"
+                  onClick={discardDraft}
+                  disabled={commitProcessing}
+                  className="h-12 text-base font-extrabold uppercase">
+                  CANCEL TEMPORARY SECTIONS
+                </Button>
+                <Button
+                  onClick={() => setCommitDialogOpen(true)}
                   disabled={
-                    selectedAppIds.length === 0 ||
-                    !targetSectionId ||
-                    processing ||
+                    commitProcessing ||
+                    draftLearnerCount === 0 ||
                     isHistoricalReadOnly
                   }
-                  className={cn(
-                    "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
-                    selectedAppIds.length > 0 && targetSectionId
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      : "bg-muted text-foreground hover:bg-muted",
-                  )}>
-                  {processing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 " />
-                      Assigning...
-                    </>
-                  ) : (
-                    `Assign to Section (${selectedAppIds.length})`
-                  )}
+                  className="h-12 text-base font-extrabold uppercase">
+                  FINALIZE OFFICIAL SECTIONS
                 </Button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <Button
+                onClick={assignLearners}
+                disabled={
+                  selectedAppIds.length === 0 ||
+                  !targetSectionId ||
+                  processing ||
+                  isHistoricalReadOnly
+                }
+                className={cn(
+                  "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
+                  selectedAppIds.length > 0 && targetSectionId
+                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-muted",
+                )}>
+                {processing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 " />
+                    Assigning...
+                  </>
+                ) : (
+                  `Assign to Section (${selectedAppIds.length})`
+                )}
+              </Button>
+            )}
           </div>
         </Card>
       </PageTransition>
@@ -1779,23 +1786,40 @@ export function SectioningWorkspace() {
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4">
               <p className="font-extrabold text-foreground">
-                How EnrollPro will place learners:
+                How the system will place learners:
               </p>
               <ul className="list-disc space-y-2 pl-5 text-sm font-bold leading-relaxed text-foreground">
-                <li>
-                  Special Curricular Program learners go first to matching SCP
-                  sections such as STE, SPA, or SPS.
-                </li>
-                <li>
-                  BEC Top 5 learners are placed in BEC Top 5 sections when
-                  those sections are available.
-                </li>
+                {(() => {
+                  const availableScp = Array.from(
+                    new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))
+                  );
+
+                  return (
+                    <>
+                      {availableScp.length > 0 ? (
+                        <li>
+                          Special Curricular Program learners go first to matching SCP
+                          sections such as {availableScp.map((p) => SCP_SHORT_LABELS[p] || p).join(", ")}.
+                        </li>
+                      ) : (
+                        <li>
+                          Special Curricular Program learners go first to matching SCP
+                          sections (none currently available).
+                        </li>
+                      )}
+                      <li>
+                        BEC Top learners are placed in BEC Top {homogeneousSectionCount} sections when
+                        those sections are available.
+                      </li>
+                    </>
+                  );
+                })()}
                 <li>
                   Regular BEC learners are placed in regular Basic Education
                   Curriculum sections.
                 </li>
                 <li>
-                  The system balances boys and girls, uses the learner&apos;s
+                  The system balances male and female, uses the learner&apos;s
                   final general average, and checks available section capacity.
                 </li>
                 <li>
@@ -1804,7 +1828,7 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-center text-sm font-extrabold text-primary">
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-sm font-extrabold text-primary">
               Please review the temporary class lists carefully before
               finalizing because finalization creates the official section
               records.
@@ -1816,7 +1840,7 @@ export function SectioningWorkspace() {
           generateDraftPlacement();
         }}
         confirmText="Generate Temporary Sections"
-        cancelText="Review First"
+        cancelText="Cancel"
         variant="primary"
       />
 

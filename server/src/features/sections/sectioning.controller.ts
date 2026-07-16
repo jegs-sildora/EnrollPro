@@ -73,6 +73,8 @@ export async function getSectionsSummary(req: Request, res: Response) {
         gradeLevelOrder: s.gradeLevel.displayOrder,
         sortOrder: s.sortOrder,
         programType: s.programType,
+        isHomogeneous: s.isHomogeneous,
+        sectionRank: s.sectionRank,
         maxCapacity: s.maxCapacity,
         currentCount: s.enrollmentRecords.length,
         boys,

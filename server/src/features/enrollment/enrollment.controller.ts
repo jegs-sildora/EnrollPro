@@ -459,7 +459,9 @@ export async function getPendingVerifications(req: Request, res: Response) {
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      status: "PENDING_VERIFICATION",
+      status: {
+        in: ["PENDING_VERIFICATION", "VERIFIED", "FOR_REVISION"],
+      },
     },
     include: {
       learner: {

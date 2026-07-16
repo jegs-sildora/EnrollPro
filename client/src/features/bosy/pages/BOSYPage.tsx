@@ -602,7 +602,7 @@ export default function BOSYPage() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {activeTab === "continuing" && (
             <motion.div
               key="continuing"
