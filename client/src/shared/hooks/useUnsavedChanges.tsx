@@ -105,6 +105,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const pendingActionRef = useRef<(() => void | Promise<void>) | null>(null);
+  const confirmingDiscardRef = useRef(false);
   const suppressNextNavigationBlockRef = useRef(false);
   const navigate = useNavigate();
 
@@ -237,6 +238,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   }, [confirmOrRun, hasDirtyChanges, navigate]);
 
   const handleStay = useCallback(() => {
+    if (confirmingDiscardRef.current) return;
     pendingActionRef.current = null;
     setDialogOpen(false);
     if (blocker.state === "blocked") {
@@ -245,6 +247,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   }, [blocker]);
 
   const handleDiscard = useCallback(async () => {
+    confirmingDiscardRef.current = true;
     setDiscarding(true);
     try {
       await discardAll();
@@ -259,6 +262,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
       }
 
       if (blocker.state === "blocked") {
+        suppressNextNavigationBlockRef.current = true;
         blocker.proceed();
       }
     } catch (error) {
@@ -274,6 +278,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       setDiscarding(false);
+      confirmingDiscardRef.current = false;
     }
   }, [blocker, discardAll]);
 
@@ -322,7 +327,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
       <ConfirmationModal
         open={dialogOpen}
         onOpenChange={(open) => {
-          if (!open && !discarding) {
+          if (!open && !discarding && !confirmingDiscardRef.current) {
             handleStay();
           }
         }}
@@ -332,6 +337,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
         confirmText="Discard Changes"
         cancelText="Stay on Page"
         onConfirm={() => {
+          confirmingDiscardRef.current = true;
           void handleDiscard();
         }}
         loading={discarding}

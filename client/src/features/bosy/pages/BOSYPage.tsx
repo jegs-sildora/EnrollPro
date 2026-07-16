@@ -758,7 +758,7 @@ export default function BOSYPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
-                                <SelectItem value="REGULAR" className="leading-tight font-extrabold">BEC</SelectItem>
+                                <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
                                 <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
                                 <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
                                 <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>

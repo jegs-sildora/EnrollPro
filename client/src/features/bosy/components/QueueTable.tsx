@@ -220,7 +220,7 @@ function QueueMobileCard({
         <Button
           size="sm"
           variant="outline"
-          className="h-11 w-full rounded-md border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
+          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
           disabled={isBusy}
           onClick={() => onRevokeConfirmation(item)}>
           {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -546,7 +546,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-amber-500 bg-amber-50 px-4 text-sm font-extrabold text-amber-800 transition-all hover:bg-amber-500 hover:text-white"
+                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                 disabled={isBusy}
                 onClick={() => onRevokeConfirmation(r)}>
                 {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}

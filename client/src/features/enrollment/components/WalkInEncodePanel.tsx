@@ -320,7 +320,7 @@ export function WalkInEncodePanel() {
                             }
                           }}
                         />
-                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-600">
+                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground font-bold">
                           Learner has no LRN yet
                         </label>
                       </div>

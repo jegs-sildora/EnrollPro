@@ -14,7 +14,7 @@ import {
   MoveRight,
   ArrowRightLeft,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
@@ -439,6 +439,7 @@ export function SectioningWorkspace() {
   } | null>(null);
   const [moveDestinationSectionId, setMoveDestinationSectionId] = useState("");
   const [swapApplicationId, setSwapApplicationId] = useState("");
+  const [autoAssignConfirmOpen, setAutoAssignConfirmOpen] = useState(false);
   const [commitDialogOpen, setCommitDialogOpen] = useState(false);
   const [allowCapacityOverride, setAllowCapacityOverride] = useState(false);
   const [commitProcessing, setCommitProcessing] = useState(false);
@@ -1041,29 +1042,36 @@ export function SectioningWorkspace() {
         </TabsList>
       </Tabs>
 
-      {draftPlacement && (
-        <div className="mb-4 rounded-md border-2 border-amber-400 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-base font-extrabold uppercase">
-                TEMPORARY SECTIONS PENDING REVIEW
-              </p>
-              <p className="text-sm font-bold">
-                {draftLearnerCount} learner(s) are currently assigned across{" "}
-                {
-                  draftPlacement.rosters.filter(
-                    (roster) => roster.learners.length > 0,
-                  ).length
-                }{" "}
-                section(s) pending final approval
-              </p>
+      <AnimatePresence>
+        {draftPlacement && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto", marginBottom: "1rem" }}
+            exit={{ opacity: 0, y: -20, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden rounded-md border-2 border-primary bg-primary/5 px-4 py-3 text-primary shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-base font-extrabold uppercase">
+                  TEMPORARY SECTIONS PENDING REVIEW
+                </p>
+                <p className="text-sm font-bold text-primary">
+                  {draftLearnerCount} learner(s) are currently assigned across{" "}
+                  {
+                    draftPlacement.rosters.filter(
+                      (roster) => roster.learners.length > 0,
+                    ).length
+                  }{" "}
+                  section(s) pending final approval
+                </p>
+              </div>
+              <Badge className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+                Reviewing Temporary List
+              </Badge>
             </div>
-            <Badge className="w-fit bg-amber-600 text-white hover:bg-amber-600">
-              Reviewing Temporary List
-            </Badge>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Workspace ── */}
       <PageTransition key={activeGradeLevelId} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
@@ -1295,7 +1303,7 @@ export function SectioningWorkspace() {
                   isDraftActive ||
                   isHistoricalReadOnly
                 }
-                onClick={generateDraftPlacement}
+                onClick={() => setAutoAssignConfirmOpen(true)}
                 className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
                 AUTO ASSIGN SECTIONS
               </Button>
@@ -1758,6 +1766,59 @@ export function SectioningWorkspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationModal
+        open={autoAssignConfirmOpen}
+        onOpenChange={setAutoAssignConfirmOpen}
+        title="AUTO ASSIGN TEMPORARY SECTIONS"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-center font-extrabold">
+              This will create temporary class lists for the selected grade
+              level. No official SF1 record will be saved yet.
+            </p>
+            <div className="space-y-3 rounded-md border bg-muted p-4">
+              <p className="font-extrabold text-foreground">
+                How EnrollPro will place learners:
+              </p>
+              <ul className="list-disc space-y-2 pl-5 text-sm font-bold leading-relaxed text-foreground">
+                <li>
+                  Special Curricular Program learners go first to matching SCP
+                  sections such as STE, SPA, or SPS.
+                </li>
+                <li>
+                  BEC Top 5 learners are placed in BEC Top 5 sections when
+                  those sections are available.
+                </li>
+                <li>
+                  Regular BEC learners are placed in regular Basic Education
+                  Curriculum sections.
+                </li>
+                <li>
+                  The system balances boys and girls, uses the learner&apos;s
+                  final general average, and checks available section capacity.
+                </li>
+                <li>
+                  After this, you can still review, move, or swap learners
+                  before clicking Finalize Official Sections.
+                </li>
+              </ul>
+            </div>
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-center text-sm font-extrabold text-primary">
+              Please review the temporary class lists carefully before
+              finalizing because finalization creates the official section
+              records.
+            </p>
+          </div>
+        }
+        onConfirm={() => {
+          setAutoAssignConfirmOpen(false);
+          generateDraftPlacement();
+        }}
+        confirmText="Generate Temporary Sections"
+        cancelText="Review First"
+        variant="primary"
+      />
 
       <ConfirmationModal
         open={commitDialogOpen}
