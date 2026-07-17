@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  LoaderCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +40,8 @@ interface ConfirmationModalProps {
   confirmDisabled?: boolean;
   variant?: ConfirmationModalVariant;
   icon?: LucideIcon;
+  loadingOnly?: boolean;
+  loadingText?: string;
 }
 
 const variantStyles: Record<
@@ -96,6 +99,8 @@ export function ConfirmationModal({
   confirmDisabled = false,
   variant = "danger",
   icon: CustomIcon,
+  loadingOnly = false,
+  loadingText = "Processing...",
 }: ConfirmationModalProps) {
   const { colorScheme, selectedAccentHsl } = useSettingsStore();
 
@@ -166,48 +171,57 @@ export function ConfirmationModal({
           </div>
         </DialogHeader>
 
-        {/* ── Footer — side-by-side, confirm on the left ─────────────── */}
-        <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
-          {/* Cancel */}
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-            className={cn(
-              "flex-1 h-12 rounded-lg font-extrabold text-sm",
-              "border border-gray-200 bg-muted text-gray-700",
-              "hover:bg-gray-50 active:bg-gray-100",
-              "transition-all duration-150 active:scale-[0.97]",
-            )}>
-            {cancelText}
-          </Button>
+        {loadingOnly ? (
+          <div className="mt-7 flex justify-center">
+            <div className="flex w-full max-w-md items-center justify-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-5 py-4 text-sm font-extrabold text-primary">
+              <LoaderCircle className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />
+              <span>{loadingText}</span>
+            </div>
+          </div>
+        ) : (
+          /* ── Footer — side-by-side, confirm on the left ─────────────── */
+          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
+            {/* Cancel */}
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-sm",
+                "border border-gray-200 bg-muted text-gray-700",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "transition-all duration-150 active:scale-[0.97]",
+              )}>
+              {cancelText}
+            </Button>
 
-          {/* Confirm / primary action */}
-          <Button
-            variant="default"
-            onClick={() => {
-              onConfirm();
-              if (!loading) onOpenChange(false);
-            }}
-            disabled={loading || confirmDisabled}
-            className={cn(
-              "flex-1 h-12 rounded-lg font-extrabold text-sm",
-              "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
-              "hover:bg-[hsl(var(--primary)/0.9)]",
-              "shadow-md",
-              "transition-all duration-150 active:scale-[0.97]",
-              confirmClassName,
-            )}>
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4  rounded-full border-2 border-current border-t-transparent" />
-                Processing...
-              </span>
-            ) : (
-              confirmText
-            )}
-          </Button>
-        </DialogFooter>
+            {/* Confirm / primary action */}
+            <Button
+              variant="default"
+              onClick={() => {
+                onConfirm();
+                if (!loading) onOpenChange(false);
+              }}
+              disabled={loading || confirmDisabled}
+              className={cn(
+                "flex-1 h-12 rounded-lg font-extrabold text-sm",
+                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
+                "hover:bg-[hsl(var(--primary)/0.9)]",
+                "shadow-md",
+                "transition-all duration-150 active:scale-[0.97]",
+                confirmClassName,
+              )}>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4  rounded-full border-2 border-current border-t-transparent" />
+                  Processing...
+                </span>
+              ) : (
+                confirmText
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -153,7 +153,7 @@ const SelectItem = React.forwardRef<
       ref={ref}
       textValue={safeTextValue}
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-base outline-none focus:bg-primary focus:text-primary-foreground data-disabled:pointer-events-none ",
+        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-base font-extrabold outline-none focus:bg-primary focus:text-primary-foreground data-disabled:pointer-events-none ",
         motionClassNames.controlSurface,
         className,
       )}

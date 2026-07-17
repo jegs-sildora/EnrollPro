@@ -598,13 +598,24 @@ function ensureSf7PersonnelTiles(
   return tiles;
 }
 
+function applySf7DataAlignment(cell: ExcelJS.Cell): void {
+  cell.alignment = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true,
+    textRotation: 0,
+  };
+}
+
 function setSf7CellValue(
   worksheet: ExcelJS.Worksheet,
   rowNumber: number,
   columnNumber: number,
   value: string | number,
 ): void {
-  worksheet.getRow(rowNumber).getCell(columnNumber).value = value === '' ? null : value;
+  const cell = worksheet.getRow(rowNumber).getCell(columnNumber);
+  cell.value = value === '' ? null : value;
+  applySf7DataAlignment(cell);
 }
 
 function appendSf7CellLine(
@@ -619,6 +630,7 @@ function appendSf7CellLine(
     ? String(cell.value)
     : '';
   cell.value = current ? `${current}\n${value}` : value;
+  applySf7DataAlignment(cell);
 }
 
 function clearSf7TileData(worksheet: ExcelJS.Worksheet, tile: Sf7PersonnelTile): void {

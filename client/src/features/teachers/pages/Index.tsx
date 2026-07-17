@@ -55,6 +55,7 @@ import {
   SelectItem,
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 
 import type {
   Teacher,
@@ -1054,6 +1055,29 @@ export default function Teachers() {
 
       {/* Teacher Detail Panel */}
       {renderedTeacherDetailPanel}
+
+      <ConfirmationModal
+        open={isSf7ExportLoading}
+        onOpenChange={() => undefined}
+        title="Exporting SF7 Compliance Report"
+        description={
+          <div className="space-y-2">
+            <p>
+              EnrollPro is preparing the official School Form 7 personnel assignment list.
+            </p>
+            <p>
+              Please keep this page open while the system fills the school profile,
+              personnel records, teaching loads, and weekly teaching minutes.
+            </p>
+          </div>
+        }
+        onConfirm={() => undefined}
+        loading
+        loadingOnly
+        loadingText="Exporting compliance report..."
+        variant="primary"
+        icon={FileSpreadsheetIcon}
+      />
 
       <Dialog
         open={sf7PreviewOpen}
