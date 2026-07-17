@@ -30,7 +30,7 @@ export function BulkConfirmBar({
         <motion.div
           layout
           variants={barVariants}
-          transition={createMotionTransition(motionPreferences, "fast")}
+          transition={createMotionTransition(motionPreferences, "normal")}
           {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2 border border-border">
           <span className="text-base font-extrabold uppercase text-foreground">

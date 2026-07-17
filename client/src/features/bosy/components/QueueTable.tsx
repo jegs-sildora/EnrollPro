@@ -270,7 +270,7 @@ function QueueMobileCard({
       initial={motionPreferences.reduceMotion ? false : "enter"}
       animate={motionPreferences.reduceMotion ? undefined : "active"}
       exit={motionPreferences.reduceMotion ? undefined : "leave"}
-      transition={createMotionTransition(motionPreferences, "fast")}
+      transition={createMotionTransition(motionPreferences, "normal")}
       className={cn(
         "rounded-2xl border border-border bg-background p-4 shadow-sm",
         selected && "border-primary bg-primary/5",
@@ -591,7 +591,7 @@ export function QueueTable({
           initial={motionPreferences.reduceMotion ? false : "enter"}
           animate={motionPreferences.reduceMotion ? undefined : "active"}
           exit={motionPreferences.reduceMotion ? undefined : "leave"}
-          transition={createMotionTransition(motionPreferences, "fast")}
+          transition={createMotionTransition(motionPreferences, "normal")}
           className="w-full"
         >
           <DataTableSkeleton rows={50} columns={4} className="rounded-md" />
@@ -603,7 +603,7 @@ export function QueueTable({
           initial={motionPreferences.reduceMotion ? false : "enter"}
           animate={motionPreferences.reduceMotion ? undefined : "active"}
           exit={motionPreferences.reduceMotion ? undefined : "leave"}
-          transition={createMotionTransition(motionPreferences, "fast")}
+          transition={createMotionTransition(motionPreferences, "normal")}
           className="flex flex-col flex-1 h-full w-full min-h-0"
         >
           <motion.div

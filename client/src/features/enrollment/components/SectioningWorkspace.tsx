@@ -1093,11 +1093,13 @@ export function SectioningWorkspace() {
                     Enrolled learners ready to be sectioned
                   </CardDescription>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="font-extrabold bg-background border-border">
-                  {selectedAppIds.length} Selected
-                </Badge>
+                {selectedAppIds.length > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="font-extrabold bg-background border-border">
+                    {selectedAppIds.length} Selected
+                  </Badge>
+                )}
               </div>
               <div className="flex gap-2 mt-4">
                 <div className="relative flex-1">
@@ -1123,7 +1125,7 @@ export function SectioningWorkspace() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all" className="leading-tight font-extrabold">All Programs</SelectItem>
-                    <SelectItem value="REGULAR" className="leading-tight font-extrabold">BEC</SelectItem>
+                    <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
                     <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
                     <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
                     <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>

@@ -123,7 +123,7 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
-  const [activeTab, setActiveTab] = useState<"PENDING" | "VERIFIED" | "DEFICIENT">("PENDING");
+  const [activeTab, setActiveTab] = useState<"PENDING" | "VERIFIED" | "INCOMPLETE">("PENDING");
 
   const {
     data: pendingVerifications = [],
@@ -166,7 +166,7 @@ export function VerificationWorkspace() {
       result = result.filter((app) => app.status === "PENDING_VERIFICATION");
     } else if (activeTab === "VERIFIED") {
       result = result.filter((app) => app.status === "VERIFIED" || app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED");
-    } else if (activeTab === "DEFICIENT") {
+    } else if (activeTab === "INCOMPLETE") {
       result = result.filter((app) => app.status === "FOR_REVISION");
     }
 
@@ -414,8 +414,8 @@ export function VerificationWorkspace() {
                     value: pendingVerifications.filter(a => a.status === "VERIFIED" || a.status === "READY_FOR_SECTIONING" || a.status === "OFFICIALLY_ENROLLED").length
                   },
                   {
-                    key: "DEFICIENT",
-                    title: "Deficient",
+                    key: "INCOMPLETE",
+                    title: "INCOMPLETE",
                     value: pendingVerifications.filter(a => a.status === "FOR_REVISION").length
                   }
                 ] as const;
@@ -442,7 +442,7 @@ export function VerificationWorkspace() {
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
-                          <span className="truncate relative z-20 text-[11px] tracking-wide">{m.title}</span>
+                          <span className="truncate relative z-20 text-xs">{m.title}</span>
                           <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground relative z-20">
                             {m.value}
                           </span>

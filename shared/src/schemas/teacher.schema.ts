@@ -4,6 +4,9 @@ import {
   DEPED_TEACHER_DEPARTMENT_VALUES,
   DEPED_TEACHER_SPECIALIZATION_VALUES,
   SexEnum,
+  TEACHER_FUNDING_SOURCE_VALUES,
+  TEACHER_NATURE_OF_APPOINTMENT_VALUES,
+  TEACHER_SCHEDULE_DAY_VALUES,
 } from "../constants/index.js";
 
 const optionalUpperText = z.preprocess((value) => {
@@ -53,6 +56,14 @@ const teacherPlantillaPositionSchema = z.enum(
 const teacherDepartmentSchema = z.enum(DEPED_TEACHER_DEPARTMENT_VALUES);
 
 const teacherSpecializationSchema = z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES);
+const teacherNatureOfAppointmentSchema = z.enum(
+  TEACHER_NATURE_OF_APPOINTMENT_VALUES,
+);
+const teacherFundingSourceSchema = z.enum(TEACHER_FUNDING_SOURCE_VALUES);
+const teacherScheduleDaySchema = z.enum(TEACHER_SCHEDULE_DAY_VALUES);
+const timeOfDaySchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be in HH:MM format");
 
 export const teacherSchemaBase = z
   .object({
@@ -95,6 +106,16 @@ export const teacherSchemaBase = z
         z.union([teacherSpecializationSchema, z.null()]),
       )
       .optional(),
+    undergraduateDegree: optionalUpperText.optional(),
+    postgraduateDegree: optionalUpperText.optional(),
+    majorSpecialization: optionalUpperText.optional(),
+    minorSpecialization: optionalUpperText.optional(),
+    administrativeRemarks: optionalUpperText.optional(),
+    indigenousCommunity: optionalUpperText.optional(),
+    natureOfAppointment: teacherNatureOfAppointmentSchema
+      .optional()
+      .default("REGULAR_PERMANENT"),
+    fundingSource: teacherFundingSourceSchema.optional().default("NATIONAL"),
     department: z
       .preprocess(
         (value) => {
@@ -152,6 +173,35 @@ export const updateTeacherSchema = teacherSchemaBase.extend({
     .optional()
     .nullable(),
   roles: z.array(z.string()).optional(),
+});
+
+export const teacherSchedulePeriodSchema = z
+  .object({
+    id: z.coerce.number().int().positive().optional(),
+    dayOfWeek: teacherScheduleDaySchema,
+    startTime: timeOfDaySchema,
+    endTime: timeOfDaySchema,
+    subjectLabel: optionalUpperText.optional(),
+    sectionLabel: optionalUpperText.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const [startHour, startMinute] = value.startTime.split(":").map(Number);
+    const [endHour, endMinute] = value.endTime.split(":").map(Number);
+    const startTotal = startHour * 60 + startMinute;
+    const endTotal = endHour * 60 + endMinute;
+
+    if (endTotal <= startTotal) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after start time",
+        path: ["endTime"],
+      });
+    }
+  });
+
+export const teacherSchedulePeriodsReplaceSchema = z.object({
+  schoolYearId: z.coerce.number().int().positive("schoolYearId is required"),
+  periods: z.array(teacherSchedulePeriodSchema).max(80),
 });
 
 const optionalDateOnly = z

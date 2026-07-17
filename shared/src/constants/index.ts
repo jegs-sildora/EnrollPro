@@ -921,6 +921,60 @@ export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
   },
 ] as const;
 
+export const TEACHER_NATURE_OF_APPOINTMENT_VALUES = [
+  "REGULAR_PERMANENT",
+  "PROVISIONAL",
+  "SUBSTITUTE",
+  "CONTRACTUAL",
+  "VOLUNTEER",
+  "LOCAL_SCHOOL_BOARD",
+  "OTHER",
+] as const;
+
+export const TEACHER_NATURE_OF_APPOINTMENT_OPTIONS = [
+  { value: "REGULAR_PERMANENT", label: "Regular / Permanent" },
+  { value: "PROVISIONAL", label: "Provisional" },
+  { value: "SUBSTITUTE", label: "Substitute" },
+  { value: "CONTRACTUAL", label: "Contractual" },
+  { value: "VOLUNTEER", label: "Volunteer" },
+  { value: "LOCAL_SCHOOL_BOARD", label: "Local School Board" },
+  { value: "OTHER", label: "Other Appointment" },
+] as const;
+
+export const TEACHER_FUNDING_SOURCE_VALUES = [
+  "NATIONAL",
+  "SPECIAL_EDUCATION_FUND",
+  "LOCAL_SCHOOL_BOARD",
+  "PTA",
+  "NGO",
+  "OTHER",
+] as const;
+
+export const TEACHER_FUNDING_SOURCE_OPTIONS = [
+  { value: "NATIONAL", label: "National" },
+  { value: "SPECIAL_EDUCATION_FUND", label: "Special Education Fund (SEF)" },
+  { value: "LOCAL_SCHOOL_BOARD", label: "Local School Board" },
+  { value: "PTA", label: "PTA" },
+  { value: "NGO", label: "NGO" },
+  { value: "OTHER", label: "Other Fund Source" },
+] as const;
+
+export const TEACHER_SCHEDULE_DAY_VALUES = [
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+] as const;
+
+export const TEACHER_SCHEDULE_DAY_OPTIONS = [
+  { value: "MONDAY", label: "Monday" },
+  { value: "TUESDAY", label: "Tuesday" },
+  { value: "WEDNESDAY", label: "Wednesday" },
+  { value: "THURSDAY", label: "Thursday" },
+  { value: "FRIDAY", label: "Friday" },
+] as const;
+
 // ─── DO 017 s.2025 Early Registration Enums ─────────────
 export const EarlyRegGradeLevelEnum = z.enum(["7", "8", "9", "10"]);
 export const DisabilityTypeEnum = z.enum([

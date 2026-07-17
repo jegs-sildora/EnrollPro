@@ -13,6 +13,9 @@ import {
   Mars,
   Venus,
   ShieldAlert,
+  Clock,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import {
   Sheet,
@@ -39,13 +42,23 @@ import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import {
   cn,
 } from "@/shared/lib/utils";
-import type { Teacher } from "../types";
+import type {
+  Teacher,
+  TeacherFundingSource,
+  TeacherNatureOfAppointment,
+  TeacherScheduleDay,
+  TeacherSchedulePeriod,
+} from "../types";
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
+  TEACHER_FUNDING_SOURCE_OPTIONS,
+  TEACHER_NATURE_OF_APPOINTMENT_OPTIONS,
+  TEACHER_SCHEDULE_DAY_OPTIONS,
   getDesignationPool,
 } from "@enrollpro/shared";
 import {
@@ -79,6 +92,21 @@ interface ApiErrorResponse {
   };
 }
 
+interface TeacherScheduleResponse {
+  periods: TeacherSchedulePeriod[];
+  totalWeeklyMinutes: number;
+}
+
+interface SchedulePeriodDraft {
+  localId: string;
+  id?: number;
+  dayOfWeek: TeacherScheduleDay;
+  startTime: string;
+  endTime: string;
+  subjectLabel: string;
+  sectionLabel: string;
+}
+
 const formSchema = z
   .object({
     firstName: z.string().min(1, "Enter the first name."),
@@ -98,6 +126,29 @@ const formSchema = z
     department: z.string().optional().nullable(),
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
+    undergraduateDegree: z.string().optional().nullable(),
+    postgraduateDegree: z.string().optional().nullable(),
+    majorSpecialization: z.string().optional().nullable(),
+    minorSpecialization: z.string().optional().nullable(),
+    administrativeRemarks: z.string().optional().nullable(),
+    indigenousCommunity: z.string().optional().nullable(),
+    natureOfAppointment: z.enum([
+      "REGULAR_PERMANENT",
+      "PROVISIONAL",
+      "SUBSTITUTE",
+      "CONTRACTUAL",
+      "VOLUNTEER",
+      "LOCAL_SCHOOL_BOARD",
+      "OTHER",
+    ]),
+    fundingSource: z.enum([
+      "NATIONAL",
+      "SPECIAL_EDUCATION_FUND",
+      "LOCAL_SCHOOL_BOARD",
+      "PTA",
+      "NGO",
+      "OTHER",
+    ]),
     roles: z.array(z.string()),
 
     contactNumber: z
@@ -152,6 +203,52 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
   return apiError.response?.data?.message ?? fallback;
 }
 
+function createBlankSchedulePeriod(): SchedulePeriodDraft {
+  return {
+    localId: crypto.randomUUID(),
+    dayOfWeek: "MONDAY",
+    startTime: "07:30",
+    endTime: "08:30",
+    subjectLabel: "",
+    sectionLabel: "",
+  };
+}
+
+function normalizeSchedulePeriod(period: SchedulePeriodDraft): Omit<SchedulePeriodDraft, "localId"> {
+  return {
+    id: period.id,
+    dayOfWeek: period.dayOfWeek,
+    startTime: period.startTime,
+    endTime: period.endTime,
+    subjectLabel: period.subjectLabel.trim().toUpperCase(),
+    sectionLabel: period.sectionLabel.trim().toUpperCase(),
+  };
+}
+
+function scheduleSignature(periods: SchedulePeriodDraft[]): string {
+  return JSON.stringify(periods.map(normalizeSchedulePeriod));
+}
+
+function toScheduleDraft(period: TeacherSchedulePeriod): SchedulePeriodDraft {
+  return {
+    localId: String(period.id),
+    id: period.id,
+    dayOfWeek: period.dayOfWeek,
+    startTime: period.startTime,
+    endTime: period.endTime,
+    subjectLabel: period.subjectLabel ?? "",
+    sectionLabel: period.sectionLabel ?? "",
+  };
+}
+
+function scheduleMinutes(startTime: string, endTime: string): number {
+  const [startHourRaw, startMinuteRaw] = startTime.split(":");
+  const [endHourRaw, endMinuteRaw] = endTime.split(":");
+  const start = Number(startHourRaw) * 60 + Number(startMinuteRaw);
+  const end = Number(endHourRaw) * 60 + Number(endMinuteRaw);
+  return Math.max(0, end - start);
+}
+
 export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   teacher,
   open,
@@ -161,7 +258,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const [teachingLoad, setTeachingLoad] = useState<TeachingLoadItem[]>([]);
   const [loadLoading, setLoadLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [schedulePeriods, setSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
+  const [initialSchedulePeriods, setInitialSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const { confirmOrRun } = useUnsavedChangesPrompt();
+  const { ayId } = useSchoolYearContext();
 
   const isTeachingStaff = useMemo(() => {
     return teacher?.userAccount?.roles?.some(r => ["TEACHER", "CLASS_ADVISER"].includes(r)) ?? false;
@@ -231,6 +333,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       department: "",
       functionalAssignment: "",
       specialization: "",
+      undergraduateDegree: "",
+      postgraduateDegree: "",
+      majorSpecialization: "",
+      minorSpecialization: "",
+      administrativeRemarks: "",
+      indigenousCommunity: "",
+      natureOfAppointment: "REGULAR_PERMANENT",
+      fundingSource: "NATIONAL",
       roles: [],
       contactNumber: "",
       serviceStatus: "ACTIVE",
@@ -282,6 +392,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
+        undergraduateDegree: teacher.undergraduateDegree || "",
+        postgraduateDegree: teacher.postgraduateDegree || "",
+        majorSpecialization: teacher.majorSpecialization || "",
+        minorSpecialization: teacher.minorSpecialization || "",
+        administrativeRemarks: teacher.administrativeRemarks || "",
+        indigenousCommunity: teacher.indigenousCommunity || "",
+        natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
+        fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
         contactNumber: teacher.contactNumber || "",
         serviceStatus: teacher.serviceStatus || "ACTIVE",
@@ -303,6 +421,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         department: "",
         functionalAssignment: "",
         specialization: "",
+        undergraduateDegree: "",
+        postgraduateDegree: "",
+        majorSpecialization: "",
+        minorSpecialization: "",
+        administrativeRemarks: "",
+        indigenousCommunity: "",
+        natureOfAppointment: "REGULAR_PERMANENT",
+        fundingSource: "NATIONAL",
         roles: [],
         contactNumber: "",
         serviceStatus: "ACTIVE",
@@ -359,9 +485,54 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     else if (!open) setTeachingLoad([]);
   }, [teacher, open]);
 
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      if (!teacher || !open || !ayId) {
+        setSchedulePeriods([]);
+        setInitialSchedulePeriods([]);
+        return;
+      }
+
+      setScheduleLoading(true);
+      setScheduleError(null);
+      try {
+        const res = await api.get<TeacherScheduleResponse>(
+          `/teachers/${teacher.id}/schedule-periods`,
+          { params: { schoolYearId: ayId } },
+        );
+        const drafts = res.data.periods.map(toScheduleDraft);
+        setSchedulePeriods(drafts);
+        setInitialSchedulePeriods(drafts);
+      } catch (error: unknown) {
+        setScheduleError(
+          getApiErrorMessage(error, "Could not load the SF7 teaching schedule."),
+        );
+      } finally {
+        setScheduleLoading(false);
+      }
+    };
+
+    void fetchSchedule();
+  }, [teacher, open, ayId]);
+
+  const scheduleDirty = useMemo(
+    () => scheduleSignature(schedulePeriods) !== scheduleSignature(initialSchedulePeriods),
+    [schedulePeriods, initialSchedulePeriods],
+  );
+
+  const totalScheduleMinutes = useMemo(
+    () =>
+      schedulePeriods.reduce(
+        (sum, period) => sum + scheduleMinutes(period.startTime, period.endTime),
+        0,
+      ),
+    [schedulePeriods],
+  );
+
   const discardProfileChanges = useCallback(() => {
     reset();
-  }, [reset]);
+    setSchedulePeriods(initialSchedulePeriods);
+  }, [initialSchedulePeriods, reset]);
 
   const closePanel = useCallback(() => {
     onOpenChange(false);
@@ -378,7 +549,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   useUnsavedChanges({
     id: "teacher-detail-panel",
     label: "Faculty/Staff profile",
-    isDirty: open && isDirty,
+    isDirty: open && (isDirty || scheduleDirty),
     isSubmitting,
     onDiscard: discardProfileChanges,
   });
@@ -399,6 +570,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         department: data.department === "__NONE__" ? "" : data.department,
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
+        undergraduateDegree: data.undergraduateDegree || "",
+        postgraduateDegree: data.postgraduateDegree || "",
+        majorSpecialization: data.majorSpecialization || "",
+        minorSpecialization: data.minorSpecialization || "",
+        administrativeRemarks: data.administrativeRemarks || "",
+        indigenousCommunity: data.indigenousCommunity || "",
+        natureOfAppointment: data.natureOfAppointment,
+        fundingSource: data.fundingSource,
         roles: data.roles,
         contactNumber: data.contactNumber,
         serviceStatus: data.serviceStatus,
@@ -407,10 +586,22 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       };
 
       if (isAdding) {
-        await api.post(`/teachers`, profilePayload);
+        const res = await api.post<{ teacher: Teacher }>(`/teachers`, profilePayload);
+        if (ayId && schedulePeriods.length > 0) {
+          await api.put(`/teachers/${res.data.teacher.id}/schedule-periods`, {
+            schoolYearId: ayId,
+            periods: schedulePeriods.map(normalizeSchedulePeriod),
+          });
+        }
         sileo.success({ title: "Faculty/Staff Record Created", description: "The faculty or staff record has been saved." });
       } else {
         await api.patch(`/teachers/${teacher!.id}`, profilePayload);
+        if (ayId) {
+          await api.put(`/teachers/${teacher!.id}/schedule-periods`, {
+            schoolYearId: ayId,
+            periods: schedulePeriods.map(normalizeSchedulePeriod),
+          });
+        }
 
         const originalPortalActive = teacher!.userAccount?.isActive ?? teacher!.isActive ?? true;
         if (data.portalActive !== undefined && data.portalActive !== originalPortalActive) {
@@ -426,6 +617,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
       if (onSaveSuccess) onSaveSuccess();
       reset(data);
+      setInitialSchedulePeriods(schedulePeriods);
       onOpenChange(false);
     } catch (err: unknown) {
       sileo.error({
@@ -443,13 +635,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
           side="right"
           aria-describedby={undefined}
           onPointerDownOutside={(e) => {
-            if (isDirty) {
+            if (isDirty || scheduleDirty) {
               e.preventDefault();
               confirmOrRun(closePanel);
             }
           }}
           onEscapeKeyDown={(e) => {
-            if (isDirty) {
+            if (isDirty || scheduleDirty) {
               e.preventDefault();
               confirmOrRun(closePanel);
             }
@@ -764,6 +956,315 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           </p>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4 pt-4 border-t border-border mt-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base font-extrabold uppercase text-foreground">
+                          SF7 Profile
+                        </p>
+                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                          Used for School Form 7 personnel reporting.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="font-extrabold uppercase">
+                        School Form 7
+                      </Badge>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Undergraduate Degree</Label>
+                        <Controller
+                          name="undergraduateDegree"
+                          control={control}
+                          render={({ field }) => (
+                            <Input disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              placeholder="e.g. BSED"
+                              className="font-extrabold text-base leading-tight h-10"
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Postgraduate Degree</Label>
+                        <Controller
+                          name="postgraduateDegree"
+                          control={control}
+                          render={({ field }) => (
+                            <Input disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              placeholder="e.g. MAED"
+                              className="font-extrabold text-base leading-tight h-10"
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Major / Specialization</Label>
+                        <Controller
+                          name="majorSpecialization"
+                          control={control}
+                          render={({ field }) => (
+                            <Input disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              placeholder="e.g. MATHEMATICS"
+                              className="font-extrabold text-base leading-tight h-10"
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Minor</Label>
+                        <Controller
+                          name="minorSpecialization"
+                          control={control}
+                          render={({ field }) => (
+                            <Input disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              placeholder="e.g. ENGLISH"
+                              className="font-extrabold text-base leading-tight h-10"
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Nature of Appointment</Label>
+                        <Controller
+                          name="natureOfAppointment"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
+                              value={field.value}
+                            >
+                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
+                                <SelectValue placeholder="Select appointment" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Fund Source</Label>
+                        <Controller
+                          name="fundingSource"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
+                              value={field.value}
+                            >
+                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
+                                <SelectValue placeholder="Select fund source" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-base font-extrabold uppercase text-foreground">IP Community / Ethnic Group</Label>
+                        <Controller
+                          name="indigenousCommunity"
+                          control={control}
+                          render={({ field }) => (
+                            <Input disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              placeholder="Leave blank if not applicable"
+                              className="font-extrabold text-base leading-tight h-10"
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="text-base font-extrabold uppercase text-foreground">Administrative Remarks</Label>
+                        <Controller
+                          name="administrativeRemarks"
+                          control={control}
+                          render={({ field }) => (
+                            <Textarea disabled={!isEditing}
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. school ICT coordinator, guidance-designate, property custodian"
+                              className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
+                            />
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {formPersonnelType === "TEACHING" && (
+                    <div className="space-y-4 pt-4 border-t border-border mt-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-base font-extrabold uppercase text-foreground flex items-center gap-2">
+                            <Clock className="size-4 text-primary" />
+                            SF7 Teaching Schedule
+                          </p>
+                          <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                            Official school-form snapshot. ATLAS remains the external schedule reference.
+                          </p>
+                        </div>
+                        <Badge className="font-extrabold uppercase">
+                          {totalScheduleMinutes} minutes/week
+                        </Badge>
+                      </div>
+
+                      {scheduleError && (
+                        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-extrabold text-destructive">
+                          {scheduleError}
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        {scheduleLoading ? (
+                          <div className="rounded-lg border border-dashed p-4 text-sm font-extrabold text-foreground/60">
+                            Loading SF7 schedule...
+                          </div>
+                        ) : schedulePeriods.length === 0 ? (
+                          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm font-extrabold text-foreground/60">
+                            No SF7 teaching periods encoded yet.
+                          </div>
+                        ) : (
+                          schedulePeriods.map((period, index) => (
+                            <div key={period.localId} className="grid gap-2 rounded-lg border bg-background p-3 sm:grid-cols-[1.1fr_0.8fr_0.8fr_1.2fr_1.2fr_auto]">
+                              <Select
+                                value={period.dayOfWeek}
+                                onValueChange={(value) => {
+                                  const nextDay = value as TeacherScheduleDay;
+                                  setSchedulePeriods((current) =>
+                                    current.map((item, rowIndex) =>
+                                      rowIndex === index ? { ...item, dayOfWeek: nextDay } : item,
+                                    ),
+                                  );
+                                }}
+                              >
+                                <SelectTrigger disabled={!isEditing} className="h-10 font-extrabold">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TEACHER_SCHEDULE_DAY_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                disabled={!isEditing}
+                                type="time"
+                                value={period.startTime}
+                                onChange={(event) => {
+                                  const startTime = event.target.value;
+                                  setSchedulePeriods((current) =>
+                                    current.map((item, rowIndex) =>
+                                      rowIndex === index ? { ...item, startTime } : item,
+                                    ),
+                                  );
+                                }}
+                                className="h-10 font-extrabold"
+                              />
+                              <Input
+                                disabled={!isEditing}
+                                type="time"
+                                value={period.endTime}
+                                onChange={(event) => {
+                                  const endTime = event.target.value;
+                                  setSchedulePeriods((current) =>
+                                    current.map((item, rowIndex) =>
+                                      rowIndex === index ? { ...item, endTime } : item,
+                                    ),
+                                  );
+                                }}
+                                className="h-10 font-extrabold"
+                              />
+                              <Input
+                                disabled={!isEditing}
+                                value={period.subjectLabel}
+                                onChange={(event) => {
+                                  const subjectLabel = event.target.value.toUpperCase();
+                                  setSchedulePeriods((current) =>
+                                    current.map((item, rowIndex) =>
+                                      rowIndex === index ? { ...item, subjectLabel } : item,
+                                    ),
+                                  );
+                                }}
+                                placeholder="Subject"
+                                className="h-10 font-extrabold"
+                              />
+                              <Input
+                                disabled={!isEditing}
+                                value={period.sectionLabel}
+                                onChange={(event) => {
+                                  const sectionLabel = event.target.value.toUpperCase();
+                                  setSchedulePeriods((current) =>
+                                    current.map((item, rowIndex) =>
+                                      rowIndex === index ? { ...item, sectionLabel } : item,
+                                    ),
+                                  );
+                                }}
+                                placeholder="Section"
+                                className="h-10 font-extrabold"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disabled={!isEditing}
+                                onClick={() => {
+                                  setSchedulePeriods((current) =>
+                                    current.filter((_, rowIndex) => rowIndex !== index),
+                                  );
+                                }}
+                                aria-label="Remove teaching period"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!isEditing || scheduleLoading}
+                        onClick={() => {
+                          setSchedulePeriods((current) => [...current, createBlankSchedulePeriod()]);
+                        }}
+                        className="w-full font-extrabold uppercase"
+                      >
+                        <Plus className="mr-2 size-4" />
+                        Add Teaching Period
+                      </Button>
                     </div>
                   )}
 
@@ -1102,9 +1603,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     type="submit"
                     className={cn(
                       "flex-1 font-extrabold uppercase transition-all duration-200",
-                      !isDirty ? "opacity-50 bg-gray-400 cursor-not-allowed text-white hover:bg-gray-400" : ""
+                      !(isDirty || scheduleDirty) ? "opacity-50 bg-gray-400 cursor-not-allowed text-white hover:bg-gray-400" : ""
                     )}
-                    disabled={!isDirty || isSubmitting}
+                    disabled={!(isDirty || scheduleDirty) || isSubmitting}
                   >
                     {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
                   </Button>

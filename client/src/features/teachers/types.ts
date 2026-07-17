@@ -74,7 +74,14 @@ export interface Teacher {
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
-  natureOfAppointment?: "REGULAR_PERMANENT" | "SUBSTITUTE" | "CONTRACTUAL" | "LOCAL_SCHOOL_BOARD" | null;
+  undergraduateDegree: string | null;
+  postgraduateDegree: string | null;
+  majorSpecialization: string | null;
+  minorSpecialization: string | null;
+  administrativeRemarks: string | null;
+  indigenousCommunity: string | null;
+  natureOfAppointment: TeacherNatureOfAppointment;
+  fundingSource: TeacherFundingSource;
   photoPath: string | null;
   birthdate: string | null;
   personnelType: string | null;
@@ -91,6 +98,44 @@ export interface Teacher {
     mustChangePassword: boolean;
     roles?: string[];
   } | null;
+}
+
+export type TeacherNatureOfAppointment =
+  | "REGULAR_PERMANENT"
+  | "PROVISIONAL"
+  | "SUBSTITUTE"
+  | "CONTRACTUAL"
+  | "VOLUNTEER"
+  | "LOCAL_SCHOOL_BOARD"
+  | "OTHER";
+
+export type TeacherFundingSource =
+  | "NATIONAL"
+  | "SPECIAL_EDUCATION_FUND"
+  | "LOCAL_SCHOOL_BOARD"
+  | "PTA"
+  | "NGO"
+  | "OTHER";
+
+export type TeacherScheduleDay =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY";
+
+export interface TeacherSchedulePeriod {
+  id: number;
+  teacherId: number;
+  schoolYearId: number;
+  dayOfWeek: TeacherScheduleDay;
+  startTime: string;
+  endTime: string;
+  subjectLabel: string | null;
+  sectionLabel: string | null;
+  totalMinutes: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TeacherFormState {

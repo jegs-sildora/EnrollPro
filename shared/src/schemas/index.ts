@@ -9,3 +9,4 @@ export * from "./admin.schema.js";
 export * from "./learner.schema.js";
 export * from "./early-registration.schema.js";
 export * from "./walk-in.schema.js";
+export * from "./sf7.schema.js";

@@ -24,7 +24,7 @@ export function AccessibilityMenu() {
 					<TooltipTrigger asChild>
 						<PopoverTrigger asChild>
 							<button
-								className='p-2 text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-900 transition-colors'
+								className='p-2 text-primary rounded-full'
 								aria-label='Accessibility options'
 							>
 								<Accessibility className='size-4' />

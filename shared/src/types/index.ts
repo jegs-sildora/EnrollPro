@@ -35,7 +35,17 @@ import type {
   teacherSchema,
   updateTeacherSchema,
   teacherDesignationSchema,
+  teacherSchedulePeriodSchema,
+  teacherSchedulePeriodsReplaceSchema,
 } from "../schemas/teacher.schema.js";
+import type {
+  sf7AtlasSyncResponseSchema,
+  sf7ImportCommitResponseSchema,
+  sf7ImportCommitSchema,
+  sf7ImportPreviewResponseSchema,
+  sf7ImportPreviewRowSchema,
+  sf7SchedulePeriodPreviewSchema,
+} from "../schemas/sf7.schema.js";
 import type {
   updateIdentitySchema,
   selectAccentSchema,
@@ -127,6 +137,24 @@ export type PublishScpRankingsInput = z.infer<typeof publishScpRankingsSchema>;
 export type TeacherInput = z.infer<typeof teacherSchema>;
 export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>;
 export type TeacherDesignationInput = z.infer<typeof teacherDesignationSchema>;
+export type TeacherSchedulePeriodInput = z.infer<
+  typeof teacherSchedulePeriodSchema
+>;
+export type TeacherSchedulePeriodsReplaceInput = z.infer<
+  typeof teacherSchedulePeriodsReplaceSchema
+>;
+export type Sf7SchedulePeriodPreview = z.infer<
+  typeof sf7SchedulePeriodPreviewSchema
+>;
+export type Sf7ImportPreviewRow = z.infer<typeof sf7ImportPreviewRowSchema>;
+export type Sf7ImportCommitInput = z.infer<typeof sf7ImportCommitSchema>;
+export type Sf7ImportPreviewResponse = z.infer<
+  typeof sf7ImportPreviewResponseSchema
+>;
+export type Sf7ImportCommitResponse = z.infer<
+  typeof sf7ImportCommitResponseSchema
+>;
+export type Sf7AtlasSyncResponse = z.infer<typeof sf7AtlasSyncResponseSchema>;
 
 // ─── Settings Types ────────────────────────────────────
 export type UpdateIdentityInput = z.infer<typeof updateIdentitySchema>;

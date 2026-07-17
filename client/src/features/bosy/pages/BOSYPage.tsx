@@ -578,7 +578,7 @@ export default function BOSYPage() {
               <motion.div
                 layoutId="bosy-active-pill"
                 className="absolute inset-0 bg-primary shadow-sm rounded-md"
-                transition={motionTokens.spring.pill}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
             <span className={cn("relative z-20 text-base uppercase", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
@@ -593,7 +593,7 @@ export default function BOSYPage() {
               <motion.div
                 layoutId="bosy-active-pill"
                 className="absolute inset-0 bg-primary shadow-sm rounded-md"
-                transition={motionTokens.spring.pill}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
             <span className={cn("relative z-20 text-base uppercase", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
@@ -607,7 +607,7 @@ export default function BOSYPage() {
             <motion.div
               key="continuing"
               variants={tabPanelVariants}
-              transition={createMotionTransition(motionPreferences, "fast")}
+              transition={createMotionTransition(motionPreferences, "normal")}
               {...getReducedMotionProps(motionPreferences.reduceMotion)}
               className="flex-1 flex min-h-0 flex-col w-full h-full"
             >
@@ -1052,7 +1052,7 @@ export default function BOSYPage() {
             <motion.div
               key="incoming"
               variants={tabPanelVariants}
-              transition={createMotionTransition(motionPreferences, "fast")}
+              transition={createMotionTransition(motionPreferences, "normal")}
               {...getReducedMotionProps(motionPreferences.reduceMotion)}
               className="flex-1 flex min-h-0 flex-col w-full"
             >

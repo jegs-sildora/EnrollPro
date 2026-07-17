@@ -56,6 +56,14 @@ model Teacher {
   email               String?              @unique(map: "uq_teachers_email") @map("email")
   contactNumber       String?              @map("contact_number")
   specialization      String?
+  undergraduateDegree String?              @map("undergraduate_degree")
+  postgraduateDegree  String?              @map("postgraduate_degree")
+  majorSpecialization String?              @map("major_specialization")
+  minorSpecialization String?              @map("minor_specialization")
+  administrativeRemarks String?            @map("administrative_remarks")
+  indigenousCommunity String?              @map("indigenous_community")
+  natureOfAppointment TeacherNatureOfAppointment @default(REGULAR_PERMANENT) @map("nature_of_appointment")
+  fundingSource       TeacherFundingSource @default(NATIONAL) @map("funding_source")
   isActive            Boolean              @default(true) @map("is_active")
   createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -71,11 +79,32 @@ model Teacher {
   functionalAssignment String?             @map("functional_assignment")
   advisoryHistory     SectionAdviser[]
   teacherDesignations TeacherDesignation[]
+  schedulePeriods     TeacherSchedulePeriod[]
   department          Department?          @relation("DepartmentTeachers", fields: [departmentId], references: [id])
   user                User?                @relation("UserTeacherProfile", fields: [userId], references: [id])
   historicalAdvisories EnrollmentHistory[]
 
   @@map("teachers")
+}
+
+model TeacherSchedulePeriod {
+  id           Int       @id @default(autoincrement())
+  teacherId    Int       @map("teacher_id")
+  schoolYearId Int       @map("school_year_id")
+  dayOfWeek    Weekday   @map("day_of_week")
+  startTime    String    @map("start_time") @db.VarChar(5)
+  endTime      String    @map("end_time") @db.VarChar(5)
+  subjectLabel String?   @map("subject_label")
+  sectionLabel String?   @map("section_label")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, schoolYearId], map: "idx_teacher_schedule_periods_teacher_sy")
+  @@index([schoolYearId], map: "idx_teacher_schedule_periods_school_year_id")
+  @@map("teacher_schedule_periods")
 }
 
 /// Singleton config: school identity (name, logo, accent color) and active school year pointer
@@ -143,6 +172,7 @@ model SchoolYear {
   sectionAdvisers        SectionAdviser[]
   sections               Section[]
   teacherDesignations    TeacherDesignation[]
+  teacherSchedulePeriods TeacherSchedulePeriod[]
   enrollmentHistories    EnrollmentHistory[]
 
   @@map("school_years")
@@ -777,6 +807,39 @@ enum TermFormat {
   QUARTERS
 
   @@map("term_format")
+}
+
+enum TeacherNatureOfAppointment {
+  REGULAR_PERMANENT
+  PROVISIONAL
+  SUBSTITUTE
+  CONTRACTUAL
+  VOLUNTEER
+  LOCAL_SCHOOL_BOARD
+  OTHER
+
+  @@map("teacher_nature_of_appointment")
+}
+
+enum TeacherFundingSource {
+  NATIONAL
+  SPECIAL_EDUCATION_FUND
+  LOCAL_SCHOOL_BOARD
+  PTA
+  NGO
+  OTHER
+
+  @@map("teacher_funding_source")
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+
+  @@map("weekday")
 }
 
 /// Historical ledger of end-of-school-year data

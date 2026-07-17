@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -25,8 +26,27 @@ import {
   SearchIcon,
   FilterXIcon,
   UserPlusIcon,
+  FileSpreadsheetIcon,
+  ChevronDownIcon,
+  UploadIcon,
+  DownloadIcon,
 } from "lucide-react";
 import { Input } from "@/shared/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import {
   Select,
   SelectTrigger,
@@ -43,10 +63,34 @@ import type {
 } from "../types";
 
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
-import { DEPED_TEACHER_DEPARTMENT_OPTIONS } from "@enrollpro/shared";
+import {
+  DEPED_TEACHER_DEPARTMENT_OPTIONS,
+  type Sf7ImportCommitResponse,
+  type Sf7ImportPreviewResponse,
+} from "@enrollpro/shared";
 interface DesignationFilterOption {
   value: string;
   label: string;
+}
+
+const SF7_TEMPLATE_FILENAME =
+  "School Form 7 (SF7) School Personnel Assignment List and Basic Profile.xlsx";
+
+function downloadBrowserFile(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+function formatSf7MatchStatus(status: Sf7ImportPreviewResponse["rows"][number]["matchStatus"]): string {
+  if (status === "MATCHED") return "Matched";
+  if (status === "MISSING_EMPLOYEE_ID") return "Missing Employee ID";
+  return "No Matching Personnel";
 }
 
 function normalizeSearchText(value: string): string {
@@ -106,6 +150,14 @@ export default function Teachers() {
 
   const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const sf7FileInputRef = useRef<HTMLInputElement | null>(null);
+  const [sf7PreviewOpen, setSf7PreviewOpen] = useState(false);
+  const [sf7Preview, setSf7Preview] = useState<Sf7ImportPreviewResponse | null>(null);
+  const [sf7PreviewFileName, setSf7PreviewFileName] = useState<string | null>(null);
+  const [isSf7PreviewLoading, setIsSf7PreviewLoading] = useState(false);
+  const [isSf7CommitLoading, setIsSf7CommitLoading] = useState(false);
+  const [isSf7TemplateLoading, setIsSf7TemplateLoading] = useState(false);
+  const [isSf7ExportLoading, setIsSf7ExportLoading] = useState(false);
 
   const teachersQuery = useQuery({
     queryKey: queryKeys.teachersList(ayId),
@@ -178,6 +230,119 @@ export default function Teachers() {
       queryClient.invalidateQueries({ queryKey: queryKeys.teachersList(ayId) }),
     ]);
   }, [ayId, queryClient]);
+
+  const handleSf7FileSelected = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+      event.target.value = "";
+      if (!file) return;
+
+      const isSupportedFile =
+        file.name.toLowerCase().endsWith(".xlsx") ||
+        file.name.toLowerCase().endsWith(".csv") ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        file.type === "text/csv" ||
+        file.type === "application/csv" ||
+        file.type === "application/vnd.ms-excel";
+
+      if (!isSupportedFile) {
+        sileo.error({
+          title: "Invalid File",
+          description: "Upload an SF7 roster in .xlsx or .csv format only.",
+        });
+        return;
+      }
+
+      const payload = new FormData();
+      payload.append("file", file);
+
+      setIsSf7PreviewLoading(true);
+      setSf7PreviewFileName(file.name);
+      try {
+        const response = await api.post<Sf7ImportPreviewResponse>(
+          "/sf7/import/preview",
+          payload,
+        );
+        setSf7Preview(response.data);
+        setSf7PreviewOpen(true);
+      } catch (error: unknown) {
+        toastApiError(error as never);
+      } finally {
+        setIsSf7PreviewLoading(false);
+      }
+    },
+    [],
+  );
+
+  const handleCommitSf7Preview = useCallback(async () => {
+    if (!sf7Preview) return;
+
+    setIsSf7CommitLoading(true);
+    try {
+      const response = await api.post<Sf7ImportCommitResponse>(
+        "/sf7/import/commit",
+        { rows: sf7Preview.rows },
+      );
+      await invalidateTeacherQueries();
+      setSf7PreviewOpen(false);
+      setSf7Preview(null);
+      setSf7PreviewFileName(null);
+      sileo.success({
+        title: "SF7 Roster Imported",
+        description: `Updated ${response.data.updatedCount} personnel record(s). Skipped ${response.data.skippedCount}.`,
+      });
+    } catch (error: unknown) {
+      toastApiError(error as never);
+    } finally {
+      setIsSf7CommitLoading(false);
+    }
+  }, [invalidateTeacherQueries, sf7Preview]);
+
+  const handleDownloadSf7Template = useCallback(async () => {
+    setIsSf7TemplateLoading(true);
+    try {
+      const response = await api.get<Blob>("/sf7/template", {
+        responseType: "blob",
+      });
+      downloadBrowserFile(response.data, SF7_TEMPLATE_FILENAME);
+      sileo.success({
+        title: "Template Downloaded",
+        description: "Blank SF7 template with dropdown validation has been downloaded.",
+      });
+    } catch (error: unknown) {
+      toastApiError(error as never);
+    } finally {
+      setIsSf7TemplateLoading(false);
+    }
+  }, []);
+
+  const handleExportSf7ComplianceReport = useCallback(async () => {
+    if (!ayId) {
+      sileo.error({
+        title: "School Year Required",
+        description: "Select an active school year before exporting SF7.",
+      });
+      return;
+    }
+
+    setIsSf7ExportLoading(true);
+    try {
+      const response = await api.get<Blob>("/export/sf7", {
+        params: { schoolYearId: ayId },
+        responseType: "blob",
+      });
+      downloadBrowserFile(response.data, `SF7_Compliance_Report_${ayId}.xlsx`);
+      sileo.success({
+        title: "SF7 Export Started",
+        description: "Official personnel assignment list has been downloaded.",
+      });
+    } catch (error: unknown) {
+      toastApiError(error as never);
+    } finally {
+      setIsSf7ExportLoading(false);
+    }
+  }, [ayId]);
 
   const onPersonnelTypeFilterChange = (value: "all" | "TEACHING" | "NON_TEACHING") => {
     setPersonnelTypeFilter(value);
@@ -710,6 +875,14 @@ export default function Teachers() {
     [isPanelOpen, viewingTeacher, invalidateTeacherQueries],
   );
 
+  const sf7RowsNeedingReview = useMemo(
+    () =>
+      sf7Preview?.rows
+        .filter((row) => row.matchStatus !== "MATCHED" || row.issues.length > 0)
+        .slice(0, 50) ?? [],
+    [sf7Preview],
+  );
+
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
@@ -719,6 +892,13 @@ export default function Teachers() {
 
   return (
     <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
+      <input
+        ref={sf7FileInputRef}
+        type="file"
+        accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+        className="hidden"
+        onChange={handleSf7FileSelected}
+      />
 
       {!ayId ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-base leading-tight text-foreground">
@@ -728,6 +908,72 @@ export default function Teachers() {
 
       {/* Teacher list table */}
       <div className="flex-1 min-h-0 bg-muted border border-slate-200 shadow-sm flex flex-col overflow-hidden rounded-md">
+        {/* Dedicated Workspace Toolbar */}
+        <div className="flex flex-row items-center justify-end p-3 gap-2 bg-transparent border-b border-gray-200 shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  isSf7PreviewLoading ||
+                  isSf7TemplateLoading ||
+                  isSf7ExportLoading ||
+                  isSf7CommitLoading
+                }
+                className="h-9 font-extrabold uppercase tracking-wide rounded-sm shadow-none border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <FileSpreadsheetIcon className="w-4 h-4 mr-2 shrink-0" />
+                <span className="truncate">SF7 Actions</span>
+                <ChevronDownIcon className="w-4 h-4 ml-2 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 font-extrabold">
+              <DropdownMenuItem
+                disabled={isSf7PreviewLoading}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  sf7FileInputRef.current?.click();
+                }}
+              >
+                <UploadIcon className="w-4 h-4 mr-2" />
+                Upload SF7 Roster
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isSf7TemplateLoading}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleDownloadSf7Template();
+                }}
+              >
+                <DownloadIcon className="w-4 h-4 mr-2" />
+                Download Blank Template
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={!ayId || isSf7ExportLoading}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleExportSf7ComplianceReport();
+                }}
+              >
+                <FileSpreadsheetIcon className="w-4 h-4 mr-2" />
+                Export Compliance Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            onClick={() => {
+              setViewingTeacher(null);
+              setIsPanelOpen(true);
+            }}
+            className="h-9 font-extrabold uppercase tracking-wide rounded-sm shadow-none"
+          >
+            <UserPlusIcon className="w-4 h-4 mr-2 shrink-0" />
+            <span className="truncate">Add Personnel</span>
+          </Button>
+        </div>
+
         {/* Inline Metric Toolbar */}
         {(() => {
           const totalCount = teachers.length;
@@ -743,7 +989,7 @@ export default function Teachers() {
           ] as const;
 
           return (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 h-auto min-h-10 border-b border-gray-200 bg-white shrink-0 md:divide-x md:divide-y-0 divide-y divide-gray-200">
+            <div className="grid grid-cols-2 lg:grid-cols-4 h-auto min-h-10 border-b border-gray-200 bg-white shrink-0 md:divide-x md:divide-y-0 divide-y divide-gray-200">
               {metrics.map((m) => {
                 const isActive = activeMetric === m.key;
                 return (
@@ -764,22 +1010,11 @@ export default function Teachers() {
                         transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                       />
                     )}
-                    <span className="truncate relative z-20">{m.title}</span>
+                    <span className="relative z-20 whitespace-normal text-center break-words leading-snug">{m.title}</span>
                     <span className="ml-3 shrink-0 rounded-full bg-primary px-2 py-0.5 text-sm text-primary-foreground relative z-20">{m.value}</span>
                   </button>
                 );
               })}
-              <div className="p-1 h-10 md:h-full">
-                <Button
-                  onClick={() => {
-                    setViewingTeacher(null);
-                    setIsPanelOpen(true);
-                  }}
-                  className="w-full h-full font-extrabold uppercase tracking-wide rounded-sm shadow-none">
-                  <UserPlusIcon className="w-4 h-4 mr-2 shrink-0" />
-                  <span className="truncate">Add Personnel</span>
-                </Button>
-              </div>
             </div>
           );
         })()}
@@ -819,6 +1054,123 @@ export default function Teachers() {
 
       {/* Teacher Detail Panel */}
       {renderedTeacherDetailPanel}
+
+      <Dialog
+        open={sf7PreviewOpen}
+        onOpenChange={(open) => {
+          if (isSf7CommitLoading) return;
+          setSf7PreviewOpen(open);
+        }}
+      >
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl uppercase">SF7 Roster Preflight Review</DialogTitle>
+            <DialogDescription>
+              Review the uploaded SF7 roster before writing personnel updates to EnrollPro.
+              Only matched records are eligible for commit.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sf7Preview ? (
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/40 p-3 text-sm font-extrabold text-foreground">
+                File: {sf7PreviewFileName ?? "Selected SF7 roster"}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                <div className="rounded-md border bg-card p-3">
+                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Rows Found</p>
+                  <p className="text-2xl font-extrabold">{sf7Preview.summary.totalRows}</p>
+                </div>
+                <div className="rounded-md border bg-card p-3">
+                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Matched</p>
+                  <p className="text-2xl font-extrabold text-emerald-700">{sf7Preview.summary.matchedRows}</p>
+                </div>
+                <div className="rounded-md border bg-card p-3">
+                  <p className="text-xs font-extrabold uppercase text-muted-foreground">No Employee No.</p>
+                  <p className="text-2xl font-extrabold text-amber-700">{sf7Preview.summary.missingEmployeeIdRows}</p>
+                </div>
+                <div className="rounded-md border bg-card p-3">
+                  <p className="text-xs font-extrabold uppercase text-muted-foreground">No Match</p>
+                  <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.noMatchRows}</p>
+                </div>
+                <div className="rounded-md border bg-card p-3">
+                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Flags</p>
+                  <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.issueCount}</p>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-md border">
+                <div className="border-b bg-muted/50 px-3 py-2 text-sm font-extrabold uppercase">
+                  Preflight Data Grid
+                </div>
+                <div className="max-h-80 overflow-auto">
+                  <table className="w-full min-w-[760px] text-sm">
+                    <thead className="sticky top-0 bg-muted text-left text-xs font-extrabold uppercase text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Employee No.</th>
+                        <th className="px-3 py-2">Name</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2">Preflight Flags</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {(sf7RowsNeedingReview.length > 0 ? sf7RowsNeedingReview : sf7Preview.rows.slice(0, 20)).map((row) => (
+                        <tr key={`${row.rowNumber}-${row.employeeId ?? "none"}`}>
+                          <td className="px-3 py-2 font-extrabold">{row.rowNumber}</td>
+                          <td className="px-3 py-2 font-bold">{row.employeeId ?? "Missing"}</td>
+                          <td className="px-3 py-2 font-extrabold">{row.fullName ?? "Name not readable"}</td>
+                          <td className="px-3 py-2">
+                            <Badge
+                              variant={row.matchStatus === "MATCHED" ? "default" : "destructive"}
+                              className="font-extrabold uppercase"
+                            >
+                              {formatSf7MatchStatus(row.matchStatus)}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2 font-bold text-muted-foreground">
+                            {row.issues.length > 0 ? row.issues.join("; ") : "Ready for commit"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+                Rows with missing employee numbers, duplicate employee numbers, or no matching EnrollPro personnel record will not be written.
+                Formatting warnings are shown so the registrar can verify the roster before committing.
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed p-6 text-center text-sm font-extrabold text-muted-foreground">
+              Waiting for SF7 roster preview.
+            </div>
+          )}
+
+          <DialogFooter className="gap-3 sm:space-x-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSf7CommitLoading}
+              onClick={() => setSf7PreviewOpen(false)}
+              className="font-extrabold"
+            >
+              Review Later
+            </Button>
+            <Button
+              type="button"
+              disabled={!sf7Preview || sf7Preview.summary.matchedRows === 0 || isSf7CommitLoading}
+              onClick={handleCommitSf7Preview}
+              className="font-extrabold"
+            >
+              {isSf7CommitLoading ? "Importing..." : "Commit Valid Records"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
