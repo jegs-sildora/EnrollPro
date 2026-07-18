@@ -10,3 +10,4 @@ export * from "./learner.schema.js";
 export * from "./early-registration.schema.js";
 export * from "./walk-in.schema.js";
 export * from "./sf7.schema.js";
+export * from "./sf1.schema.js";

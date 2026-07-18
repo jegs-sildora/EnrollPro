@@ -12,10 +12,14 @@ import {
 } from "../../generated/prisma/index.js";
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
-import type { SectioningParams } from "@enrollpro/shared";
+import type { SectioningParams, Sf1ImportCommitInput } from "@enrollpro/shared";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { buildBalancedSectionAssignments } from "./section-distribution.service.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+import {
+  commitSf1RosterImport,
+  previewSf1RosterImport,
+} from "./sf1-roster.service.js";
 
 
 const sectioningEngine = new SectioningEngine(prisma as unknown as PrismaClient);
@@ -2001,5 +2005,236 @@ export async function exportSectionSf1(
   );
 
   await wb.xlsx.write(res);
+  res.end();
+}
+
+export async function previewSectionSf1Import(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const sectionId = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isInteger(sectionId) || sectionId <= 0) {
+    res.status(400).json({ message: "A valid section is required." });
+    return;
+  }
+
+  if (!req.file?.buffer) {
+    res.status(400).json({ message: "Upload one SF1 Excel file." });
+    return;
+  }
+
+  try {
+    const preview = await previewSf1RosterImport(sectionId, req.file.buffer);
+    res.json(preview);
+  } catch (error: unknown) {
+    res.status(400).json({
+      message:
+        error instanceof Error
+          ? error.message
+          : "Could not parse the SF1 roster file.",
+    });
+  }
+}
+
+export async function commitSectionSf1Import(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const sectionId = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isInteger(sectionId) || sectionId <= 0) {
+    res.status(400).json({ message: "A valid section is required." });
+    return;
+  }
+
+  try {
+    const result = await commitSf1RosterImport({
+      sectionId,
+      userId: req.user!.userId,
+      input: req.body as Sf1ImportCommitInput,
+    });
+
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      select: { name: true, schoolYearId: true },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SF1_ROSTER_IMPORT_COMMITTED",
+      description: `Imported ${result.committedCount} learner(s) into ${section?.name ?? "section"} from SF1 roster.`,
+      subjectType: "Section",
+      recordId: sectionId,
+      req,
+    });
+
+    if (section) {
+      broadcastRealtimeInvalidation({
+        topics: [
+          "homerooms:sections",
+          "sectioning:sections",
+          "students:list",
+          "students:detail",
+          "dashboard:summary",
+        ],
+        schoolYearId: section.schoolYearId,
+        sectionIds: [sectionId],
+        learnerIds: result.learnerIds,
+      });
+    }
+
+    res.json(result);
+  } catch (error: unknown) {
+    res.status(500).json({
+      message:
+        error instanceof Error
+          ? error.message
+          : "Could not commit the SF1 roster import.",
+    });
+  }
+}
+
+export async function downloadSectionSf1Template(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const sectionId = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isInteger(sectionId) || sectionId <= 0) {
+    res.status(400).json({ message: "A valid section is required." });
+    return;
+  }
+
+  const [section, schoolSetting] = await Promise.all([
+    prisma.section.findUnique({
+      where: { id: sectionId },
+      include: { gradeLevel: true, schoolYear: true },
+    }),
+    prisma.schoolSetting.findFirst({
+      select: { schoolName: true, depedSchoolId: true, division: true },
+    }),
+  ]);
+
+  if (!section) {
+    res.status(404).json({ message: "Section not found." });
+    return;
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("SF1 Template");
+  worksheet.columns = [
+    { width: 14 },
+    { width: 28 },
+    { width: 5 },
+    { width: 13 },
+    { width: 14 },
+    { width: 14 },
+    { width: 12 },
+    { width: 18 },
+    { width: 14 },
+    { width: 16 },
+    { width: 14 },
+    { width: 22 },
+    { width: 22 },
+    { width: 18 },
+    { width: 14 },
+    { width: 16 },
+  ];
+
+  const thin = { style: "thin" as const };
+  const border = { top: thin, left: thin, bottom: thin, right: thin };
+  const headerStyle: Partial<ExcelJS.Style> = {
+    font: { name: "Arial Narrow", size: 9, bold: true },
+    alignment: { horizontal: "center", vertical: "middle", wrapText: true },
+    border,
+  };
+
+  worksheet.mergeCells("A1:P1");
+  worksheet.getCell("A1").value = "School Form 1 (SF1) Roster Import Template";
+  worksheet.getCell("A1").font = { name: "Arial Narrow", size: 13, bold: true };
+  worksheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A2:P2");
+  worksheet.getCell("A2").value =
+    "Use this template for section-level roster import. EnrollPro will use the active section grade, program, and school year.";
+  worksheet.getCell("A2").font = { name: "Arial Narrow", size: 9, italic: true };
+  worksheet.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.getCell("A4").value = "School ID:";
+  worksheet.getCell("B4").value = schoolSetting?.depedSchoolId ?? "";
+  worksheet.getCell("D4").value = "Division:";
+  worksheet.getCell("E4").value = schoolSetting?.division ?? "";
+  worksheet.getCell("A5").value = "School Name:";
+  worksheet.getCell("B5").value = schoolSetting?.schoolName ?? "";
+  worksheet.getCell("D5").value = "School Year:";
+  worksheet.getCell("E5").value = section.schoolYear.yearLabel;
+  worksheet.getCell("G5").value = "Grade:";
+  worksheet.getCell("H5").value = section.gradeLevel.name;
+  worksheet.getCell("J5").value = "Section:";
+  worksheet.getCell("K5").value = section.name;
+
+  const headers = [
+    "LRN",
+    "NAME (Last, First Middle)",
+    "SEX",
+    "BIRTH DATE (MM/DD/YYYY)",
+    "MOTHER TONGUE",
+    "IP ETHNIC GROUP",
+    "RELIGION",
+    "HOUSE/STREET/SITIO",
+    "BARANGAY",
+    "MUNICIPALITY/CITY",
+    "PROVINCE",
+    "FATHER NAME",
+    "MOTHER NAME",
+    "GUARDIAN NAME",
+    "GUARDIAN RELATIONSHIP",
+    "CONTACT NUMBER",
+  ];
+
+  let rowNumber = 7;
+  const writeAnchor = (label: string) => {
+    worksheet.mergeCells(`A${rowNumber}:P${rowNumber}`);
+    const anchor = worksheet.getCell(`A${rowNumber}`);
+    anchor.value = label;
+    anchor.font = { name: "Arial Narrow", size: 10, bold: true };
+    anchor.alignment = { horizontal: "left", vertical: "middle" };
+    rowNumber += 1;
+
+    const headerRow = worksheet.getRow(rowNumber);
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = header;
+      cell.style = headerStyle as ExcelJS.Style;
+    });
+    rowNumber += 1;
+
+    for (let index = 0; index < 20; index += 1) {
+      const row = worksheet.getRow(rowNumber);
+      for (let column = 1; column <= headers.length; column += 1) {
+        const cell = row.getCell(column);
+        cell.border = border;
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          wrapText: true,
+        };
+        cell.font = { name: "Arial Narrow", size: 9 };
+      }
+      rowNumber += 1;
+    }
+  };
+
+  writeAnchor("MALE LEARNERS");
+  rowNumber += 1;
+  writeAnchor("FEMALE LEARNERS");
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="SF1_Template_${section.gradeLevel.name}_${section.name}.xlsx"`,
+  );
+  await workbook.xlsx.write(res);
   res.end();
 }

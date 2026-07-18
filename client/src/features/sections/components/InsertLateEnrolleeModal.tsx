@@ -212,7 +212,7 @@ export function InsertLateEnrolleeModal({
                   placeholder="Search unsectioned learners by LRN or Last Name..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 h-11 font-extrabold border-border shadow-sm focus:ring-primary/20"
+                  className="pl-10 h-11 font-extrabold border-border shadow-sm focus:ring-primary/20 uppercase"
                   autoFocus
                 />
               </div>

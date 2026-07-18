@@ -47,6 +47,14 @@ import type {
   sf7SchedulePeriodPreviewSchema,
 } from "../schemas/sf7.schema.js";
 import type {
+  sf1ImportCommitResponseSchema,
+  sf1ImportCommitSchema,
+  sf1ImportIssueCodeSchema,
+  sf1ImportMatchStatusSchema,
+  sf1ImportPreviewResponseSchema,
+  sf1ImportPreviewRowSchema,
+} from "../schemas/sf1.schema.js";
+import type {
   updateIdentitySchema,
   selectAccentSchema,
   toggleEnrollmentSchema,
@@ -155,6 +163,16 @@ export type Sf7ImportCommitResponse = z.infer<
   typeof sf7ImportCommitResponseSchema
 >;
 export type Sf7AtlasSyncResponse = z.infer<typeof sf7AtlasSyncResponseSchema>;
+export type Sf1ImportIssueCode = z.infer<typeof sf1ImportIssueCodeSchema>;
+export type Sf1ImportMatchStatus = z.infer<typeof sf1ImportMatchStatusSchema>;
+export type Sf1ImportPreviewRow = z.infer<typeof sf1ImportPreviewRowSchema>;
+export type Sf1ImportPreviewResponse = z.infer<
+  typeof sf1ImportPreviewResponseSchema
+>;
+export type Sf1ImportCommitInput = z.infer<typeof sf1ImportCommitSchema>;
+export type Sf1ImportCommitResponse = z.infer<
+  typeof sf1ImportCommitResponseSchema
+>;
 
 // ─── Settings Types ────────────────────────────────────
 export type UpdateIdentityInput = z.infer<typeof updateIdentitySchema>;

@@ -306,11 +306,11 @@ function SectionCard({
       className={cn(
         "rounded-lg border bg-card p-5 space-y-4 flex flex-col h-full hover:border-primary/40 transition-colors cursor-pointer group"
       )}
-      onClick={section.enrolledCount > 0 ? onViewMasterlist : undefined}
-      role={section.enrolledCount > 0 ? "button" : undefined}
-      tabIndex={section.enrolledCount > 0 ? 0 : undefined}
+      onClick={onViewMasterlist}
+      role="button"
+      tabIndex={0}
       onKeyDown={(e) => {
-        if (section.enrolledCount > 0 && (e.key === "Enter" || e.key === " ")) {
+        if (e.key === "Enter" || e.key === " ") {
           onViewMasterlist();
         }
       }}>
@@ -475,7 +475,6 @@ function SectionCard({
             <Button
               className="w-full mt-4 font-extrabold"
               variant="default"
-              disabled={section.enrolledCount === 0}
               onClick={(e) => {
                 e.stopPropagation();
                 onViewMasterlist();

@@ -1181,100 +1181,127 @@ export function SectioningWorkspace() {
                       </td>
                     </tr>
                   ) : (
-                    filteredAndSortedPool.map((l) => {
-                      const isSelected = selectedAppIds.includes(
-                        l.applicationId,
-                      );
-                      return (
-                        <tr
-                          key={l.applicationId}
-                          onClick={() => {
-                            if (isDraftActive) return;
-                            setSelectedAppIds((prev) =>
-                              prev.includes(l.applicationId)
-                                ? prev.filter((id) => id !== l.applicationId)
-                                : [...prev, l.applicationId],
-                            );
-                          }}
-                          className={cn(
-                            "group cursor-pointer transition-colors",
-                            isSelected && "bg-primary/5 hover:bg-primary/10",
-                          )}>
-                          <td
-                            className="p-4"
-                            onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={isDraftActive}
-                              onCheckedChange={(checked) => {
+                    (() => {
+                      const scpLearners = filteredAndSortedPool.filter(l => l.programType !== "REGULAR").sort((a, b) => {
+                        const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 };
+                        const orderA = order[a.programType as keyof typeof order] || 4;
+                        const orderB = order[b.programType as keyof typeof order] || 4;
+                        return orderA - orderB;
+                      });
+                      const becLearners = filteredAndSortedPool.filter(l => l.programType === "REGULAR");
+
+                      const groups = [
+                        { title: "Special Curricular Programs (SCP)", learners: scpLearners },
+                        { title: "Basic Education Curriculum (BEC)", learners: becLearners }
+                      ].filter(g => g.learners.length > 0);
+
+                      return groups.flatMap((group) => {
+                        const headerRow = (
+                          <tr key={`header-${group.title}`} className="bg-muted/50 border-y border-border">
+                            <td colSpan={3} className="py-2.5 px-4 text-center font-extrabold text-foreground uppercase tracking-wider">
+                              {group.title}
+                            </td>
+                          </tr>
+                        );
+
+                        const learnerRows = group.learners.map((l) => {
+                          const isSelected = selectedAppIds.includes(
+                            l.applicationId,
+                          );
+                          return (
+                            <tr
+                              key={l.applicationId}
+                              onClick={() => {
                                 if (isDraftActive) return;
                                 setSelectedAppIds((prev) =>
-                                  checked
-                                    ? [...prev, l.applicationId]
-                                    : prev.filter(
-                                      (id) => id !== l.applicationId,
-                                    ),
+                                  prev.includes(l.applicationId)
+                                    ? prev.filter((id) => id !== l.applicationId)
+                                    : [...prev, l.applicationId],
                                 );
                               }}
-                            />
-                          </td>
-                          <td className="p-4">
-                            <div className="flex flex-col">
-                              <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
-                                {l.lastName}, {l.firstName}{" "}
-                                {l.middleName?.charAt(0)
-                                  ? `${l.middleName.charAt(0)}.`
-                                  : ""}
-                                {l.duplicateFlag && (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-sm px-1 py-0 h-4">
-                                    DUPLICATE DETECTED - RESOLVE OVER COUNTER
-                                  </Badge>
-                                )}
-                              </span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-sm font-extrabold uppercase text-foreground">
-                                  {l.lrn || "NO LRN"}
-                                </span>
-                                <Badge
-                                  className={cn(
-                                    "text-sm uppercase font-extrabold",
-                                    l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
-                                  )}>
-                                  {l.sex}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className="text-sm uppercase font-extrabold">
-                                  {SCP_SHORT_LABELS[l.programType] ??
-                                    l.programType}
-                                </Badge>
-                              </div>
-                              {draftPlacement &&
-                                draftSectionByApplicationId.has(
-                                  l.applicationId,
-                                ) && (
-                                  <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
-                                    Section:{" "}
-                                    {draftSectionByApplicationId.get(
-                                      l.applicationId,
-                                    )}{" "}
-                                    (Draft)
+                              className={cn(
+                                "group cursor-pointer transition-colors",
+                                isSelected && "bg-primary/5 hover:bg-primary/10",
+                              )}>
+                              <td
+                                className="p-4"
+                                onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={isSelected}
+                                  disabled={isDraftActive}
+                                  onCheckedChange={(checked) => {
+                                    if (isDraftActive) return;
+                                    setSelectedAppIds((prev) =>
+                                      checked
+                                        ? [...prev, l.applicationId]
+                                        : prev.filter(
+                                          (id) => id !== l.applicationId,
+                                        ),
+                                    );
+                                  }}
+                                />
+                              </td>
+                              <td className="p-4">
+                                <div className="flex flex-col">
+                                  <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
+                                    {l.lastName}, {l.firstName}{" "}
+                                    {l.middleName?.charAt(0)
+                                      ? `${l.middleName.charAt(0)}.`
+                                      : ""}
+                                    {l.duplicateFlag && (
+                                      <Badge
+                                        variant="destructive"
+                                        className="text-sm px-1 py-0 h-4">
+                                        DUPLICATE DETECTED - RESOLVE OVER COUNTER
+                                      </Badge>
+                                    )}
                                   </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm font-extrabold uppercase text-foreground">
+                                      {l.lrn || "NO LRN"}
+                                    </span>
+                                    <Badge
+                                      className={cn(
+                                        "text-sm uppercase font-extrabold",
+                                        l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                      )}>
+                                      {l.sex}
+                                    </Badge>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-sm uppercase font-extrabold">
+                                      {SCP_SHORT_LABELS[l.programType] ??
+                                        l.programType}
+                                    </Badge>
+                                  </div>
+                                  {draftPlacement &&
+                                    draftSectionByApplicationId.has(
+                                      l.applicationId,
+                                    ) && (
+                                      <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
+                                        Section:{" "}
+                                        {draftSectionByApplicationId.get(
+                                          l.applicationId,
+                                        )}{" "}
+                                        (Draft)
+                                      </span>
+                                    )}
+                                </div>
+                              </td>
+                              <td className="p-4 font-extrabold text-foreground">
+                                {l.genAve ? (
+                                  l.genAve.toFixed(2)
+                                ) : (
+                                  <span className="text-foreground">--</span>
                                 )}
-                            </div>
-                          </td>
-                          <td className="p-4 font-extrabold text-foreground">
-                            {l.genAve ? (
-                              l.genAve.toFixed(2)
-                            ) : (
-                              <span className="text-foreground">--</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
+                              </td>
+                            </tr>
+                          );
+                        });
+
+                        return [headerRow, ...learnerRows];
+                      });
+                    })()
                   )}
                 </tbody>
               </table>
@@ -1590,54 +1617,62 @@ export function SectioningWorkspace() {
           </div>
           </div>
 
-          {/* Action Footer */}
-          <div className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
-            {draftPlacement ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Button
-                  variant="outline"
-                  onClick={discardDraft}
-                  disabled={commitProcessing}
-                  className="h-12 text-base font-extrabold uppercase">
-                  CANCEL TEMPORARY SECTIONS
-                </Button>
-                <Button
-                  onClick={() => setCommitDialogOpen(true)}
-                  disabled={
-                    commitProcessing ||
-                    draftLearnerCount === 0 ||
-                    isHistoricalReadOnly
-                  }
-                  className="h-12 text-base font-extrabold uppercase">
-                  FINALIZE OFFICIAL SECTIONS
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={assignLearners}
-                disabled={
-                  selectedAppIds.length === 0 ||
-                  !targetSectionId ||
-                  processing ||
-                  isHistoricalReadOnly
-                }
-                className={cn(
-                  "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
-                  selectedAppIds.length > 0 && targetSectionId
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-muted text-foreground hover:bg-muted",
-                )}>
-                {processing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 " />
-                    Assigning...
-                  </>
+          <AnimatePresence>
+            {(draftPlacement || selectedAppIds.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
+                {draftPlacement ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Button
+                      variant="outline"
+                      onClick={discardDraft}
+                      disabled={commitProcessing}
+                      className="h-12 text-base font-extrabold uppercase">
+                      CANCEL TEMPORARY SECTIONS
+                    </Button>
+                    <Button
+                      onClick={() => setCommitDialogOpen(true)}
+                      disabled={
+                        commitProcessing ||
+                        draftLearnerCount === 0 ||
+                        isHistoricalReadOnly
+                      }
+                      className="h-12 text-base font-extrabold uppercase">
+                      FINALIZE OFFICIAL SECTIONS
+                    </Button>
+                  </div>
                 ) : (
-                  `Assign to Section (${selectedAppIds.length})`
+                  <Button
+                    onClick={assignLearners}
+                    disabled={
+                      selectedAppIds.length === 0 ||
+                      !targetSectionId ||
+                      processing ||
+                      isHistoricalReadOnly
+                    }
+                    className={cn(
+                      "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
+                      selectedAppIds.length > 0 && targetSectionId
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "bg-muted text-foreground hover:bg-muted",
+                    )}>
+                    {processing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 " />
+                        Assigning...
+                      </>
+                    ) : (
+                      `Assign to Section (${selectedAppIds.length})`
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </Card>
       </PageTransition>
 

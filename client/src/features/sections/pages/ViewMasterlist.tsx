@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import type { ChangeEvent } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Users,
@@ -9,6 +10,9 @@ import {
   Mars,
   Eye,
   Loader2,
+  ChevronDown,
+  Upload,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -17,6 +21,21 @@ import { StudentDetailPanel } from "@/features/students/components/StudentDetail
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/shared/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
@@ -26,7 +45,13 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
 import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
-import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
+import type {
+  RealtimeInvalidationTopic,
+  Sf1ImportCommitInput,
+  Sf1ImportCommitResponse,
+  Sf1ImportPreviewResponse,
+  Sf1ImportPreviewRow,
+} from "@enrollpro/shared";
 
 import {
   Tooltip,
@@ -94,6 +119,35 @@ interface SectionTeachersResponse {
   teachers: SectionTeacherOption[];
 }
 
+function downloadBrowserFile(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  window.URL.revokeObjectURL(url);
+  anchor.remove();
+}
+
+function sanitizeFilenamePart(value: string | null | undefined): string {
+  return (value || "section").replace(/[^a-zA-Z0-9_-]+/g, "-");
+}
+
+function getSf1RowName(row: Sf1ImportPreviewRow): string {
+  const givenNames = [row.firstName, row.middleName, row.extensionName]
+    .filter(Boolean)
+    .join(" ");
+  if (row.lastName && givenNames) return `${row.lastName}, ${givenNames}`;
+  return row.lastName ?? givenNames;
+}
+
+function getSf1StatusLabel(row: Sf1ImportPreviewRow): string {
+  if (row.matchStatus === "VALID_NEW_LEARNER") return "Valid New Learner";
+  if (row.matchStatus === "VALID_EXISTING_LEARNER") return "Valid Existing Learner";
+  return "Blocked";
+}
+
 export interface ViewMasterlistProps {
   sectionId?: number;
   onBack?: () => void;
@@ -107,13 +161,20 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
-  const isHistoricalReadOnly = useHistoricalReadOnly();
+  const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const sf1FileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [exportingSf1, setExportingSf1] = useState(false);
+  const [downloadingSf1Template, setDownloadingSf1Template] = useState(false);
+  const [previewingSf1, setPreviewingSf1] = useState(false);
+  const [committingSf1, setCommittingSf1] = useState(false);
+  const [sf1PreviewOpen, setSf1PreviewOpen] = useState(false);
+  const [sf1PreviewFileName, setSf1PreviewFileName] = useState("");
+  const [sf1Preview, setSf1Preview] = useState<Sf1ImportPreviewResponse | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
   const [unassignProcessingId, setUnassignProcessingId] = useState<number | null>(null);
 
@@ -191,20 +252,116 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
       const blob = new Blob([res.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `SF1_${section?.gradeLevel}_${section?.name}_${ayLabel?.replace("/", "-") || "2026-2027"}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
+      downloadBrowserFile(
+        blob,
+        `SF1_${sanitizeFilenamePart(section?.gradeLevel)}_${sanitizeFilenamePart(section?.name)}_${sanitizeFilenamePart(ayLabel?.replace("/", "-") || "2026-2027")}.xlsx`,
+      );
       sileo.success({ title: "Success", description: "SF1 exported successfully." });
     } catch (err: unknown) {
       console.error("Failed to download SF1 template", err);
       sileo.error({ title: "Error", description: "Failed to download SF1." });
     } finally {
       setExportingSf1(false);
+    }
+  };
+
+  const handleDownloadSf1Template = async () => {
+    if (!resolvedSectionId) return;
+    setDownloadingSf1Template(true);
+    try {
+      const res = await api.get(`/sections/${resolvedSectionId}/masterlist/sf1/template`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      downloadBrowserFile(
+        blob,
+        `SF1_Blank_Template_${sanitizeFilenamePart(section?.gradeLevel)}_${sanitizeFilenamePart(section?.name)}.xlsx`,
+      );
+      sileo.success({
+        title: "Template downloaded",
+        description: "Blank SF1 roster template is ready for encoding.",
+      });
+    } catch (err: unknown) {
+      console.error("Failed to download SF1 blank template", err);
+      sileo.error({
+        title: "Download failed",
+        description: "Could not download the blank SF1 roster template.",
+      });
+    } finally {
+      setDownloadingSf1Template(false);
+    }
+  };
+
+  const handleSf1FileSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const [file] = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!file || !resolvedSectionId) return;
+
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      sileo.error({
+        title: "Invalid file",
+        description: "Upload an Excel .xlsx SF1 roster file.",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setPreviewingSf1(true);
+    try {
+      const res = await api.post<Sf1ImportPreviewResponse>(
+        `/sections/${resolvedSectionId}/masterlist/sf1/import/preview`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+      setSf1Preview(res.data);
+      setSf1PreviewFileName(file.name);
+      setSf1PreviewOpen(true);
+    } catch (err: unknown) {
+      console.error("Failed to preview SF1 roster", err);
+      sileo.error({
+        title: "Preview failed",
+        description: "Could not read the SF1 roster. Check that the file follows the official LIS SF1 layout.",
+      });
+    } finally {
+      setPreviewingSf1(false);
+    }
+  };
+
+  const handleCommitSf1Preview = async () => {
+    if (!resolvedSectionId || !sf1Preview) return;
+    const payload: Sf1ImportCommitInput = { rows: sf1Preview.rows };
+
+    setCommittingSf1(true);
+    try {
+      const res = await api.post<Sf1ImportCommitResponse>(
+        `/sections/${resolvedSectionId}/masterlist/sf1/import/commit`,
+        payload,
+      );
+      sileo.success({
+        title: "SF1 roster imported",
+        description: `${res.data.committedCount} learner record(s) added to this section masterlist.`,
+      });
+      setSf1PreviewOpen(false);
+      setSf1Preview(null);
+      setSf1PreviewFileName("");
+      void queryClient.invalidateQueries({ queryKey: ["students"] });
+      void queryClient.invalidateQueries({ queryKey: ["sectioning"] });
+      void fetchMasterlistData();
+    } catch (err: unknown) {
+      console.error("Failed to commit SF1 roster", err);
+      sileo.error({
+        title: "Import failed",
+        description: "Could not commit the valid SF1 rows. No invalid or conflicted rows were written.",
+      });
+    } finally {
+      setCommittingSf1(false);
     }
   };
 
@@ -347,6 +504,14 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
 
   return (
     <PageTransition className="space-y-6">
+      <input
+        ref={sf1FileInputRef}
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        className="hidden"
+        onChange={handleSf1FileSelected}
+      />
+
       <div className="mb-4">
         {onBack ? (
           <button
@@ -430,19 +595,50 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               </TooltipProvider>
             )}
 
-            <Button
-              variant="outline"
-              onClick={handleDownloadSf1}
-              disabled={exportingSf1 || loading}
-              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
-            >
-              {exportingSf1 ? (
-                <Loader2 className="h-4 w-4 mr-2 " />
-              ) : (
-                <FileDown className="h-4 w-4 mr-2" />
-              )}
-              Export SF1
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exportingSf1 || previewingSf1 || downloadingSf1Template || loading}
+                  className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  SF1 Roster
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 font-extrabold">
+                <DropdownMenuItem
+                  disabled={isHistoricalReadOnly || previewingSf1 || loading}
+                  onClick={() => sf1FileInputRef.current?.click()}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload SF1 Roster
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={downloadingSf1Template || loading}
+                  onClick={() => {
+                    void handleDownloadSf1Template();
+                  }}
+                  className="gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Download Blank Template
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={exportingSf1 || loading}
+                  onClick={() => {
+                    void handleDownloadSf1();
+                  }}
+                  className="gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export Official SF1
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -476,6 +672,171 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={sf1PreviewOpen}
+        onOpenChange={(open) => {
+          if (!committingSf1) setSf1PreviewOpen(open);
+        }}
+      >
+        <DialogContent className="w-full max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="uppercase">SF1 Roster Preflight Review</DialogTitle>
+            <DialogDescription>
+              Review the uploaded SF1 roster before adding valid learners to this section masterlist.
+              Invalid rows and learners already seated in another section will not be imported.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sf1Preview && (
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/20 p-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold uppercase text-muted-foreground">
+                    Uploaded File
+                  </span>
+                  <span className="text-sm font-extrabold text-foreground break-all">
+                    {sf1PreviewFileName || "SF1 roster file"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Rows Found", value: sf1Preview.summary.totalRows },
+                  { label: "Valid Rows", value: sf1Preview.summary.validRows },
+                  { label: "Existing Learners", value: sf1Preview.summary.existingLearners },
+                  { label: "New Learners", value: sf1Preview.summary.newLearners },
+                  { label: "Duplicate LRNs", value: sf1Preview.summary.duplicateLrnRows },
+                  { label: "Other Section Conflicts", value: sf1Preview.summary.crossSectionConflicts },
+                  { label: "Blocked Rows", value: sf1Preview.summary.blockedRows },
+                  {
+                    label: "Target Section",
+                    value: `${sf1Preview.section.gradeLevelName} ${sf1Preview.section.name}`,
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-md border border-border bg-card p-3">
+                    <div className="text-xs font-extrabold uppercase text-muted-foreground">
+                      {item.label}
+                    </div>
+                    <div className="mt-1 text-lg font-extrabold text-foreground">
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="max-h-[45vh] overflow-auto rounded-md border border-border">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted z-10">
+                    <TableRow>
+                      <TableHead className="w-16 font-extrabold">Row</TableHead>
+                      <TableHead className="font-extrabold">Learner</TableHead>
+                      <TableHead className="w-32 font-extrabold">LRN</TableHead>
+                      <TableHead className="w-24 font-extrabold">Sex</TableHead>
+                      <TableHead className="w-44 font-extrabold">Status</TableHead>
+                      <TableHead className="font-extrabold">Action Needed</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(["MALE", "FEMALE"] as const).map((group) => {
+                      const groupRows = sf1Preview.rows.filter((row) => row.genderGroup === group);
+                      if (groupRows.length === 0) return null;
+
+                      return (
+                        <Fragment key={group}>
+                          <TableRow key={`${group}-header`} className="bg-background hover:bg-background">
+                            <TableCell
+                              colSpan={6}
+                              className={`font-extrabold uppercase tracking-widest ${
+                                group === "MALE" ? "text-blue-700" : "text-pink-700"
+                              }`}
+                            >
+                              {group === "MALE" ? "Male Learners" : "Female Learners"}
+                            </TableCell>
+                          </TableRow>
+                          {groupRows.map((row) => (
+                            <TableRow key={`${group}-${row.rowNumber}-${row.lrn}`}>
+                              <TableCell className="font-bold text-muted-foreground">
+                                {row.rowNumber}
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-extrabold uppercase text-foreground">
+                                  {getSf1RowName(row) || "Name not readable"}
+                                </div>
+                                {row.existingSectionName && (
+                                  <div className="text-xs font-bold text-destructive">
+                                    Already seated in {row.existingSectionName}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-bold">{row.lrn || "No valid LRN"}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={`font-extrabold ${
+                                    row.sex === "MALE"
+                                      ? "border-blue-600 text-blue-700"
+                                      : row.sex === "FEMALE"
+                                        ? "border-pink-600 text-pink-700"
+                                        : "border-muted-foreground text-muted-foreground"
+                                  }`}
+                                >
+                                  {row.sex || "Check"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={row.matchStatus === "BLOCKED" ? "destructive" : "outline"}
+                                  className="font-extrabold"
+                                >
+                                  {getSf1StatusLabel(row)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm font-bold text-muted-foreground">
+                                {row.issueMessages.length > 0
+                                  ? row.issueMessages.join("; ")
+                                  : "Ready to commit"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-950">
+                Import uses the current section as the official source for grade level, school year,
+                program type, and section name. Spreadsheet labels that do not match this class will not override EnrollPro.
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={committingSf1}
+              onClick={() => setSf1PreviewOpen(false)}
+              className="font-extrabold"
+            >
+              Review Later
+            </Button>
+            <Button
+              type="button"
+              disabled={!sf1Preview || sf1Preview.summary.validRows === 0 || committingSf1}
+              onClick={() => {
+                void handleCommitSf1Preview();
+              }}
+              className="font-extrabold"
+            >
+              {committingSf1 ? "Committing..." : "Commit Valid Records"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {resolvedSectionId && section && (
         <InsertLateEnrolleeDrawer

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from "multer";
 import {
   listSections,
   listEligibleAdvisers,
@@ -7,6 +8,9 @@ import {
   deleteSection,
   getSectionMasterlist,
   exportSectionSf1,
+  previewSectionSf1Import,
+  commitSectionSf1Import,
+  downloadSectionSf1Template,
   getUnsectionedPool,
   inlineSlotLearner,
   getBatchPrerequisites,
@@ -24,9 +28,30 @@ import {
   updateSectionSchema,
   batchSectioningSchema,
   advisoryHandoverSchema,
+  sf1ImportCommitSchema,
 } from "@enrollpro/shared";
 
 const router: Router = Router();
+
+const sf1Upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    const lowerName = file.originalname.toLowerCase();
+    const lowerMime = file.mimetype.toLowerCase();
+    const isXlsx =
+      lowerMime ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      lowerName.endsWith(".xlsx");
+
+    if (isXlsx) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Only .xlsx School Form 1 roster files are allowed."));
+  },
+});
 
 router.get(
   "/teachers",
@@ -119,6 +144,29 @@ router.get(
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
 	exportSectionSf1,
+);
+
+router.get(
+  "/:id/masterlist/sf1/template",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  downloadSectionSf1Template,
+);
+
+router.post(
+  "/:id/masterlist/sf1/import/preview",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  sf1Upload.single("file"),
+  previewSectionSf1Import,
+);
+
+router.post(
+  "/:id/masterlist/sf1/import/commit",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(sf1ImportCommitSchema),
+  commitSectionSf1Import,
 );
 
 router.get(
