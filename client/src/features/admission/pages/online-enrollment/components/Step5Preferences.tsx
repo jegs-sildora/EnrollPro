@@ -79,6 +79,7 @@ export default function Step5Enrollment() {
 
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
 
+  const isBalikAral = watch("isBalikAral");
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
   const isScpApplication = watch("isScpApplication");
@@ -243,12 +244,18 @@ export default function Step5Enrollment() {
             <button
               key={typeOption.value}
               type="button"
-              onClick={() =>
+              onClick={() => {
                 setValue("learnerType", typeOption.value, {
                   shouldValidate: true,
                   shouldDirty: true,
-                })
-              }
+                });
+                // Sync back to isBalikAral in Step 3
+                if (typeOption.value === "RETURNING") {
+                  setValue("isBalikAral", true, { shouldValidate: true });
+                } else {
+                  setValue("isBalikAral", false, { shouldValidate: true });
+                }
+              }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
                 learnerType === typeOption.value

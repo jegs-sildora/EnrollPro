@@ -20,7 +20,7 @@ export default function AdmissionHeader({
   if (isClosed) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-card shadow-sm">
       <div className="max-w-7xl mx-auto px-4 h-auto py-4 sm:min-h-25 grid grid-cols-[15%_70%_15%] md:grid-cols-[22%_50%_28%] lg:grid-cols-3 items-center gap-1 sm:gap-6 relative">
         {/* 1. School Logo (Mobile) / Logo + Education SVG (Desktop) */}
         <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 overflow-hidden">

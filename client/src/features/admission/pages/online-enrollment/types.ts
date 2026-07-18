@@ -389,6 +389,63 @@ export const EnrollmentFormSchema = z
       });
     }
 
+    if (data.isLearnerWithDisability) {
+      if (!data.specialNeedsCategory) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select either a1 or a2 for Special Needs Category.",
+          path: ["specialNeedsCategory"],
+        });
+      } else {
+        const types = data.disabilityTypes || [];
+        if (types.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please select at least one condition.",
+            path: ["disabilityTypes"],
+          });
+        } else {
+          // Check for sub-options
+          const hasSpecialHealth = types.includes("Special Health Problem/Chronic Disease");
+          const hasVisualImpairment = types.includes("Visual Impairment");
+          
+          let mainSelections = types.filter(
+            t => !SPECIAL_HEALTH_SUB_OPTIONS.includes(t) && !VISUAL_IMPAIRMENT_SUB_OPTIONS.includes(t)
+          );
+
+          if (mainSelections.length > 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Please check only 1 main condition, either from a1 or a2.",
+              path: ["disabilityTypes"],
+            });
+          }
+
+          if (hasSpecialHealth) {
+            const hasSubOption = types.some(t => SPECIAL_HEALTH_SUB_OPTIONS.includes(t));
+            if (!hasSubOption) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select a specific type for Special Health Problem/Chronic Disease.",
+                path: ["disabilityTypes"],
+              });
+            }
+          }
+
+          if (hasVisualImpairment) {
+            const hasSubOption = types.some(t => VISUAL_IMPAIRMENT_SUB_OPTIONS.includes(t));
+            if (!hasSubOption) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select a specific type for Visual Impairment.",
+                path: ["disabilityTypes"],
+              });
+            }
+          }
+        }
+      }
+    }
+
   });
 
 export type EnrollmentFormData = z.infer<typeof EnrollmentFormSchema>;
@@ -399,11 +456,6 @@ export const DISABILITY_TYPES_A1 = [
   "Cerebral Palsy",
   "Emotional-Behavior Disorder",
   "Hearing Impairment",
-];
-
-export const DISABILITY_TYPES_A2 = [
-  "Difficulty in Applying Knowledge",
-  "Difficulty in Communicating",
   "Intellectual Disability",
   "Learning Disability",
   "Multiple Disabilities",
@@ -411,6 +463,14 @@ export const DISABILITY_TYPES_A2 = [
   "Speech/Language Disorder",
   "Special Health Problem/Chronic Disease",
   "Visual Impairment",
+];
+
+export const SPECIAL_HEALTH_SUB_OPTIONS = ["Cancer", "Non-Cancer"];
+export const VISUAL_IMPAIRMENT_SUB_OPTIONS = ["Blind", "Low Vision"];
+
+export const DISABILITY_TYPES_A2 = [
+  "Difficulty in Applying Knowledge",
+  "Difficulty in Communicating",
   "Difficulty in Displaying Interpersonal Behavior (Emotional and Behavioral)",
   "Difficulty in Hearing",
   "Difficulty in Mobility (Walking, Climbing and Grasping)",
@@ -421,6 +481,8 @@ export const DISABILITY_TYPES_A2 = [
 
 export const DISABILITY_TYPES = [
   ...DISABILITY_TYPES_A1,
+  ...SPECIAL_HEALTH_SUB_OPTIONS,
+  ...VISUAL_IMPAIRMENT_SUB_OPTIONS,
   ...DISABILITY_TYPES_A2,
 ];
 

@@ -1,16 +1,17 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useFormContext } from "react-hook-form";
 import type { EnrollmentFormData } from "../types";
-import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2 } from "../types";
+import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2, SPECIAL_HEALTH_SUB_OPTIONS, VISUAL_IMPAIRMENT_SUB_OPTIONS } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+import { cn } from "@/shared/lib/utils";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Badge } from "@/shared/ui/badge";
 import { Lock } from "lucide-react";
 
 export default function Step3Background() {
-  const { register, watch, setValue } = useFormContext<EnrollmentFormData>();
+  const { register, watch, setValue, resetField } = useFormContext<EnrollmentFormData>();
 
   const isIpCommunity = watch("isIpCommunity");
   const is4PsBeneficiary = watch("is4PsBeneficiary");
@@ -28,7 +29,7 @@ export default function Step3Background() {
           <p className="text-base leading-tight font-extrabold text-primary">
             Sensitive Information
           </p>
-          <p className="text-[0.6875rem] text-primary font-extrabold uppercase ">
+          <p className="text-xs text-primary font-extrabold uppercase ">
             All details are kept strictly confidential.
           </p>
         </div>
@@ -43,39 +44,38 @@ export default function Step3Background() {
             </Label>
             <Badge
               variant="outline"
-              className="text-[0.625rem] uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <RadioGroup
-            value={isIpCommunity ? "Yes" : "No"}
-            onValueChange={(val) => setValue("isIpCommunity", val === "Yes")}
-            className="flex gap-8">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="No"
-                id="ip-no"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="ip-no"
-                className="font-extrabold cursor-pointer">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setValue("isIpCommunity", false, { shouldValidate: true })}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                !isIpCommunity
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 No
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="Yes"
-                id="ip-yes"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="ip-yes"
-                className="font-extrabold cursor-pointer">
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setValue("isIpCommunity", true, { shouldValidate: true })}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                isIpCommunity
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 Yes
-              </Label>
-            </div>
-          </RadioGroup>
+              </span>
+            </button>
+          </div>
           <AnimatePresence>
             {isIpCommunity && (
               <motion.div
@@ -83,7 +83,7 @@ export default function Step3Background() {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden p-1">
-                <div className="pt-4 space-y-2 max-w-sm">
+                <div className="pt-4 space-y-2 w-full">
                   <Label
                     htmlFor="ip-group"
                     className="text-base font-extrabold uppercase text-foreground">
@@ -111,39 +111,38 @@ export default function Step3Background() {
             </Label>
             <Badge
               variant="outline"
-              className="text-[0.625rem] uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <RadioGroup
-            value={is4PsBeneficiary ? "Yes" : "No"}
-            onValueChange={(val) => setValue("is4PsBeneficiary", val === "Yes")}
-            className="flex gap-8">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="No"
-                id="4ps-no"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="4ps-no"
-                className="font-extrabold cursor-pointer">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setValue("is4PsBeneficiary", false, { shouldValidate: true })}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                !is4PsBeneficiary
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 No
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="Yes"
-                id="4ps-yes"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="4ps-yes"
-                className="font-extrabold cursor-pointer">
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setValue("is4PsBeneficiary", true, { shouldValidate: true })}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                is4PsBeneficiary
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 Yes
-              </Label>
-            </div>
-          </RadioGroup>
+              </span>
+            </button>
+          </div>
           <AnimatePresence>
             {is4PsBeneficiary && (
               <motion.div
@@ -151,7 +150,7 @@ export default function Step3Background() {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden p-1">
-                <div className="pt-4 space-y-2 max-w-sm">
+                <div className="pt-4 space-y-2 w-full">
                   <Label
                     htmlFor="household-id"
                     className="text-base font-extrabold uppercase text-foreground">
@@ -162,7 +161,7 @@ export default function Step3Background() {
                     id="household-id"
                     {...register("householdId4Ps")}
                     placeholder="Household ID"
-                    className="h-11 font-extrabold"
+                    className="h-11 font-extrabold uppercase"
                     inputMode="numeric"
                     onKeyDown={(e) => {
                       if (
@@ -185,35 +184,40 @@ export default function Step3Background() {
             Is this learner returning to school after a gap of 1 year or more?
             (Balik-Aral) *
           </Label>
-          <RadioGroup
-            value={watch("isBalikAral") ? "Yes" : "No"}
-            onValueChange={(val) => setValue("isBalikAral", val === "Yes")}
-            className="flex gap-8">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="No"
-                id="ba-no"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="ba-no"
-                className="font-extrabold cursor-pointer">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setValue("isBalikAral", false, { shouldValidate: true });
+                resetField("learnerType");
+              }}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                !watch("isBalikAral")
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 No
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="Yes"
-                id="ba-yes"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="ba-yes"
-                className="font-extrabold cursor-pointer">
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setValue("isBalikAral", true, { shouldValidate: true });
+                setValue("learnerType", "RETURNING", { shouldValidate: true });
+              }}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                watch("isBalikAral")
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 Yes
-              </Label>
-            </div>
-          </RadioGroup>
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* SNED / Disability */}
@@ -224,46 +228,43 @@ export default function Step3Background() {
             </Label>
             <Badge
               variant="outline"
-              className="text-[0.625rem] uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <RadioGroup
-            value={isLearnerWithDisability ? "Yes" : "No"}
-            onValueChange={(val) => {
-              setValue("isLearnerWithDisability", val === "Yes");
-              if (val === "No") {
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setValue("isLearnerWithDisability", false, { shouldValidate: true });
                 setValue("specialNeedsCategory", undefined);
                 setValue("disabilityTypes", []);
                 setValue("hasPwdId", false);
-              }
-            }}
-            className="flex gap-8">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="No"
-                id="lwd-no"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="lwd-no"
-                className="font-extrabold cursor-pointer">
+              }}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                !isLearnerWithDisability
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 No
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="Yes"
-                id="lwd-yes"
-                className="w-5 h-5 border-primary text-primary"
-              />
-              <Label
-                htmlFor="lwd-yes"
-                className="font-extrabold cursor-pointer">
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setValue("isLearnerWithDisability", true, { shouldValidate: true })}
+              className={cn(
+                "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                isLearnerWithDisability
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+              )}>
+              <span className="font-extrabold text-base leading-tight ">
                 Yes
-              </Label>
-            </div>
-          </RadioGroup>
+              </span>
+            </button>
+          </div>
 
           <AnimatePresence>
             {isLearnerWithDisability && (
@@ -306,34 +307,82 @@ export default function Step3Background() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden">
                           <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {DISABILITY_TYPES_A1.map((type) => (
-                              <div
-                                key={type}
-                                className="flex items-center space-x-3">
-                                <Checkbox
-                                  id={`disability-${type}`}
-                                  checked={watch("disabilityTypes")?.includes(
-                                    type,
-                                  )}
-                                  onCheckedChange={(checked) => {
-                                    const current =
-                                      watch("disabilityTypes") || [];
-                                    setValue(
-                                      "disabilityTypes",
-                                      checked
-                                        ? [...current, type]
-                                        : current.filter((t) => t !== type),
-                                    );
-                                  }}
-                                  className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
-                                />
-                                <Label
-                                  htmlFor={`disability-${type}`}
-                                  className="text-base leading-tight font-extrabold cursor-pointer">
-                                  {type}
-                                </Label>
-                              </div>
-                            ))}
+                            {DISABILITY_TYPES_A1.map((type) => {
+                              const isChecked = watch("disabilityTypes")?.includes(type);
+                              const subOptions = type === "Special Health Problem/Chronic Disease" 
+                                ? SPECIAL_HEALTH_SUB_OPTIONS 
+                                : type === "Visual Impairment" 
+                                  ? VISUAL_IMPAIRMENT_SUB_OPTIONS 
+                                  : null;
+
+                              return (
+                                <div key={type} className="flex flex-col space-y-3">
+                                  <div className="flex items-center space-x-3">
+                                    <Checkbox
+                                      id={`disability-${type}`}
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        const current = watch("disabilityTypes") || [];
+                                        let newTypes = checked
+                                          ? [...current, type]
+                                          : current.filter((t) => t !== type);
+                                        
+                                        // If unchecking, remove sub-options too
+                                        if (!checked && subOptions) {
+                                          newTypes = newTypes.filter(t => !subOptions.includes(t));
+                                        }
+
+                                        setValue("disabilityTypes", newTypes, { shouldValidate: true });
+                                      }}
+                                      className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                    />
+                                    <Label
+                                      htmlFor={`disability-${type}`}
+                                      className="text-base leading-tight font-extrabold cursor-pointer">
+                                      {type}
+                                    </Label>
+                                  </div>
+
+                                  <AnimatePresence>
+                                    {isChecked && subOptions && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden ml-7 flex flex-col space-y-3"
+                                      >
+                                        {subOptions.map((subType) => (
+                                          <div key={subType} className="flex items-center space-x-3">
+                                            <Checkbox
+                                              id={`disability-${subType}`}
+                                              checked={watch("disabilityTypes")?.includes(subType)}
+                                              onCheckedChange={(checked) => {
+                                                const current = watch("disabilityTypes") || [];
+                                                // Clear other sub-options of the same parent for better UX
+                                                const withoutOtherSubOptions = current.filter(t => !subOptions.includes(t));
+                                                setValue(
+                                                  "disabilityTypes",
+                                                  checked
+                                                    ? [...withoutOtherSubOptions, subType]
+                                                    : current.filter((t) => t !== subType),
+                                                  { shouldValidate: true }
+                                                );
+                                              }}
+                                              className="w-4 h-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                                            />
+                                            <Label
+                                              htmlFor={`disability-${subType}`}
+                                              className="text-sm leading-tight font-extrabold cursor-pointer">
+                                              {subType}
+                                            </Label>
+                                          </div>
+                                        ))}
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              );
+                            })}
                           </div>
                         </motion.div>
                       )}
@@ -408,37 +457,34 @@ export default function Step3Background() {
                     <Label className="text-base leading-tight font-extrabold">
                       b. Does the Learner have a PWD ID?
                     </Label>
-                    <RadioGroup
-                      value={hasPwdId ? "Yes" : "No"}
-                      onValueChange={(val) =>
-                        setValue("hasPwdId", val === "Yes")
-                      }
-                      className="flex gap-8">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value="No"
-                          id="pwd-no"
-                          className="w-5 h-5 border-primary text-primary"
-                        />
-                        <Label
-                          htmlFor="pwd-no"
-                          className="font-extrabold cursor-pointer">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setValue("hasPwdId", false, { shouldValidate: true })}
+                        className={cn(
+                          "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                          !hasPwdId
+                            ? "border-primary bg-primary text-primary-foreground shadow-md"
+                            : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                        )}>
+                        <span className="font-extrabold text-base leading-tight ">
                           No
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value="Yes"
-                          id="pwd-yes"
-                          className="w-5 h-5 border-primary text-primary"
-                        />
-                        <Label
-                          htmlFor="pwd-yes"
-                          className="font-extrabold cursor-pointer">
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setValue("hasPwdId", true, { shouldValidate: true })}
+                        className={cn(
+                          "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
+                          hasPwdId
+                            ? "border-primary bg-primary text-primary-foreground shadow-md"
+                            : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
+                        )}>
+                        <span className="font-extrabold text-base leading-tight ">
                           Yes
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

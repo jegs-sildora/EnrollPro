@@ -223,13 +223,6 @@ function getEnrollmentWindowStatus(
   closeDate: string | null | undefined,
   isOfficialPhase: boolean = false
 ) {
-  if (isOfficialPhase) {
-    return {
-      label: ` ENROLLMENT OPEN`,
-      color: "bg-green-100 text-green-800",
-    };
-  }
-
   if (!openDate || !closeDate) {
     return { label: " UNSCHEDULED", color: "bg-slate-100 text-slate-800" };
   }
@@ -245,7 +238,7 @@ function getEnrollmentWindowStatus(
     };
   }
 
-  if (todayToken > endToken) {
+  if (todayToken > endToken || !isOfficialPhase) {
     return { label: " ENROLLMENT CLOSED", color: "bg-slate-100 text-slate-800" };
   }
 

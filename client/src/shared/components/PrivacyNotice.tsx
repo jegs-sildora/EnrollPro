@@ -58,7 +58,7 @@ export default function PrivacyNotice({
             <div
               ref={scrollContainerRef}
               onScroll={handleNoticeScroll}
-              className="max-h-80 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
+              className="max-h-160 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
               {/* Header Section */}
               <section>
                 <h3 className="font-extrabold text-foreground mb-1 text-base uppercase">
@@ -191,7 +191,7 @@ export default function PrivacyNotice({
 
             <div
               className={cn(
-                "flex items-center justify-center gap-2 text-[0.6875rem] font-extrabold uppercase  transition-all duration-500 py-1",
+                "flex items-center justify-center gap-2 text-xs font-extrabold uppercase  transition-all duration-500 py-1",
                 hasScrolledNotice
                   ? "text-primary"
                   : "text-primary/60 animate-pulse",

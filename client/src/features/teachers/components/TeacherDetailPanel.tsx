@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -702,12 +703,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         )}
                       />
-                      {errors.firstName && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.firstName.message}
-                        </p>
-                      )}
+                      <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-base font-extrabold uppercase text-foreground">Last Name *</Label>
@@ -725,12 +721,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         )}
                       />
-                      {errors.lastName && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.lastName.message}
-                        </p>
-                      )}
+                      <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-base font-extrabold uppercase text-foreground">Middle Name <span className="text-foreground/50 font-extrabold ml-1">(optional)</span></Label>
@@ -821,12 +812,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         )}
                       />
-                      {errors.birthdate && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.birthdate.message}
-                        </p>
-                      )}
+                      <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
                     </div>
                   </div>
                 </div>
@@ -861,12 +847,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         )}
                       />
-                      {errors.employeeId && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.employeeId.message}
-                        </p>
-                      )}
+                      <AnimatedError error={errors.employeeId?.message as string || errors.employeeId as unknown as string} />
                     </div>
 
                     <div className="space-y-1.5">
@@ -949,12 +930,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             />
                           )}
                         />
-                        {errors.functionalAssignment && (
-                          <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                            <ShieldAlert className="w-3.5 h-3.5" />
-                            {errors.functionalAssignment.message}
-                          </p>
-                        )}
+                        <AnimatedError error={errors.functionalAssignment?.message as string || errors.functionalAssignment as unknown as string} />
                       </div>
                     </div>
                   )}
@@ -1358,12 +1334,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           />
                         )}
                       />
-                      {errors.contactNumber && (
-                        <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {errors.contactNumber.message}
-                        </p>
-                      )}
+                      <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                     </div>
                   </div>
 

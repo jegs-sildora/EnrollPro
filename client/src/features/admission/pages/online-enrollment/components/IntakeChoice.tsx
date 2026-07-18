@@ -38,7 +38,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <UserPlus className="h-24 w-24" />
           </div>
           <CardHeader className="pb-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               <UserPlus className="h-6 w-6" />
             </div>
             <CardTitle className="text-2xl font-extrabold">
@@ -80,7 +80,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full h-12 group-hover:bg-primary group-hover:text-white transition-all font-extrabold border-primary/20 text-primary">
+                className="w-full h-12 group-hover:bg-primary group-hover:text-primary-foreground transition-all font-extrabold border-primary/20 text-primary hover:text-primary-foreground hover:bg-primary">
                 Fill out Enrollment Form (BEEF){" "}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -93,7 +93,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <UserCheck className="h-24 w-24" />
           </div>
           <CardHeader className="pb-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-primary-foreground transition-colors">
               <UserCheck className="h-6 w-6" />
             </div>
             <CardTitle className="text-2xl font-extrabold">
@@ -134,7 +134,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full h-12 group-hover:bg-emerald-600 group-hover:text-white hover:bg-emerald-600 hover:text-white transition-all font-extrabold border-emerald-100 text-emerald-700"
+                className="w-full h-12 group-hover:bg-emerald-600 group-hover:text-primary-foreground hover:bg-emerald-600 hover:text-primary-foreground transition-all font-extrabold border-emerald-100 text-emerald-700"
                 asChild>
                 <a href="/Confirmation%20Slip.pdf" download="Confirmation_Slip.pdf">
                   Download Blank Confirmation Slip (PDF) <ArrowRight className="ml-2 h-4 w-4" />

@@ -182,6 +182,7 @@ export default function EnrollmentForm({
       ...DEFAULT_VALUES,
     },
     mode: "onBlur",
+    reValidateMode: "onChange",
   });
 
   const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty } } = methods;
@@ -208,9 +209,12 @@ export default function EnrollmentForm({
 
   // Auto-save draft on every change
   useEffect(() => {
-    const subscription = watch((value) => {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
-      setHasActiveDraft(true);
+    const subscription = watch((value, { name }) => {
+      // Only save if a specific field was changed by the user
+      if (name) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+        setHasActiveDraft(true);
+      }
     });
     return () => subscription.unsubscribe();
   }, [watch]);
@@ -576,7 +580,7 @@ export default function EnrollmentForm({
               <h2 className="text-xl font-extrabold  text-foreground leading-tight">
                 Learner Enrollment Form
               </h2>
-              <p className="text-base leading-tight text-foreground mt-0.5">
+              <p className="text-base leading-tight text-foreground mt-0.5 font-bold">
                 Please complete all required fields below.
               </p>
             </div>
@@ -632,16 +636,17 @@ export default function EnrollmentForm({
                     <AlertCircle className="w-4 h-4" />
                     Please review and complete the following fields to proceed:
                   </div>
-                  <ul className="list-disc pl-6 text-base font-extrabold text-destructive/80 space-y-1">
+                  <ul className="list-disc pl-6 text-base font-extrabold text-destructive space-y-1">
                     {validationIssues.map((issue, index) => (
                       <li key={`${issue.fieldPath}-${index}`}>
                         <a
                           href={`#${issue.fieldPath}`}
+                          data-unsaved-guard-ignore="true"
                           onClick={(event) => {
                             event.preventDefault();
                             goToValidationIssue(issue);
                           }}
-                          className="underline underline-offset-2 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm"
+                          className="underline underline-offset-2 text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm"
                           aria-label={`Fix field ${issue.fieldLabel}`}>
                           {issue.fieldLabel}: {issue.message}
                         </a>

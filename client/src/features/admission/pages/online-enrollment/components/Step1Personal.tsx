@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { Controller, useFormContext } from "react-hook-form";
 import type { EnrollmentFormData } from "../types";
 import { Input } from "@/shared/ui/input";
@@ -271,11 +272,7 @@ export default function Step1Personal() {
           </div>
         )}
 
-        {errors.lrn && (
-          <p className="text-base text-destructive font-extrabold flex items-center gap-1 mt-1">
-            <AlertCircle className="w-3 h-3" /> {errors.lrn.message}
-          </p>
-        )}
+        <AnimatedError error={errors.lrn?.message as string || errors.lrn as unknown as string} />
       </div>
 
       {/* ─── Name & Photo Section ─── */}
@@ -340,11 +337,7 @@ export default function Step1Personal() {
                 "border-destructive focus-visible:ring-destructive",
               )}
             />
-            {errors.lastName && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {errors.lastName.message}
-              </p>
-            )}
+            <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
           </div>
 
           <div className="space-y-1.5">
@@ -364,11 +357,7 @@ export default function Step1Personal() {
                 "border-destructive focus-visible:ring-destructive",
               )}
             />
-            {errors.firstName && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {errors.firstName.message}
-              </p>
-            )}
+            <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
           </div>
 
           <div className="space-y-1.5">
@@ -507,11 +496,7 @@ export default function Step1Personal() {
               </div>
             )}
           />
-          {errors.birthdate && (
-            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {errors.birthdate.message}
-            </p>
-          )}
+          <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
         </div>
 
         <div className="space-y-1.5">
@@ -569,11 +554,7 @@ export default function Step1Personal() {
               </button>
             ))}
           </div>
-          {errors.sex && (
-            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {errors.sex.message}
-            </p>
-          )}
+          <AnimatedError error={errors.sex?.message as string || errors.sex as unknown as string} />
         </div>
       </div>
 
@@ -594,11 +575,7 @@ export default function Step1Personal() {
               errors.placeOfBirth && "border-destructive",
             )}
           />
-          {errors.placeOfBirth && (
-            <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {errors.placeOfBirth.message}
-            </p>
-          )}
+          <AnimatedError error={errors.placeOfBirth?.message as string || errors.placeOfBirth as unknown as string} />
         </div>
 
         <div className="space-y-1.5">
@@ -679,11 +656,7 @@ export default function Step1Personal() {
                 errors.intakeHeightCm && "border-destructive",
               )}
             />
-            {errors.intakeHeightCm && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {errors.intakeHeightCm.message}
-              </p>
-            )}
+            <AnimatedError error={errors.intakeHeightCm?.message as string || errors.intakeHeightCm as unknown as string} />
           </div>
 
           <div className="space-y-1.5">
@@ -703,11 +676,7 @@ export default function Step1Personal() {
                 errors.intakeWeightKg && "border-destructive",
               )}
             />
-            {errors.intakeWeightKg && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {errors.intakeWeightKg.message}
-              </p>
-            )}
+            <AnimatedError error={errors.intakeWeightKg?.message as string || errors.intakeWeightKg as unknown as string} />
           </div>
 
           <div className="space-y-1.5">

@@ -63,7 +63,7 @@ async function seedPSGC() {
   // 3. Cities and Municipalities
   for (const row of data) {
     const type = row.type.toLowerCase();
-    if ((type === "city" || type === "municipality") && !row.name.includes("(Not a Province)")) {
+    if ((type === "city" || type === "municipality" || type === "highly_urbanized_city" || type === "independent_component_city") && !row.name.includes("(Not a Province)")) {
       let provinceCode = row.parent_psgc_id;
       const parentType = typeMap.get(provinceCode);
 

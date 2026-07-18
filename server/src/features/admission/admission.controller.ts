@@ -153,7 +153,7 @@ export async function submitApplication(req: Request, res: Response) {
               sitio: data.currentAddress.sitio || null,
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.province,
+              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
               ? [
@@ -163,7 +163,7 @@ export async function submitApplication(req: Request, res: Response) {
                     sitio: data.permanentAddress.sitio || null,
                     barangay: data.permanentAddress.barangay,
                     cityMunicipality: data.permanentAddress.cityMunicipality,
-                    province: data.permanentAddress.province,
+                    province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
                   },
                 ]
               : []),
@@ -329,7 +329,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
               sitio: data.currentAddress.sitio || null,
               barangay: data.currentAddress.barangay,
               cityMunicipality: data.currentAddress.cityMunicipality,
-              province: data.currentAddress.province,
+              province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
             },
             ...(data.permanentAddress && data.permanentAddress.barangay
               ? [
@@ -339,7 +339,7 @@ export async function updateExistingApplication(req: Request, res: Response) {
                     sitio: data.permanentAddress.sitio || null,
                     barangay: data.permanentAddress.barangay,
                     cityMunicipality: data.permanentAddress.cityMunicipality,
-                    province: data.permanentAddress.province,
+                    province: data.permanentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.permanentAddress.province,
                   },
                 ]
               : []),
@@ -441,8 +441,8 @@ export async function lookupLrn(req: Request, res: Response) {
 
     let region = "";
     if (currentAddress?.province) {
-      const prov = await prisma.province.findUnique({
-        where: { code: currentAddress.province },
+      const prov = await prisma.province.findFirst({
+        where: { name: currentAddress.province },
         select: { regionCode: true },
       });
       if (prov) {
@@ -659,7 +659,7 @@ export async function specialEnrollment(
         sitio: normalizeOptional(data.currentAddress.sitio),
         barangay: data.currentAddress.barangay,
         cityMunicipality: data.currentAddress.cityMunicipality,
-        province: data.currentAddress.province,
+        province: data.currentAddress.cityMunicipality === "CITY OF BACOLOD" ? "CITY OF BACOLOD" : data.currentAddress.province,
       });
     }
 

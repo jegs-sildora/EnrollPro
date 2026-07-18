@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { motion, AnimatePresence } from "motion/react";
 import { memo, useState, useEffect, useMemo } from "react";
 import { Navigate, useSearchParams } from "react-router";
@@ -146,9 +147,7 @@ export function ChangePasswordForm({
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.newPassword && (
-            <p className="text-base font-extrabold text-destructive ml-1">{errors.newPassword.message}</p>
-          )}
+          <AnimatedError error={errors.newPassword?.message as string || errors.newPassword as unknown as string} />
         </div>
 
         <div className="space-y-2">
@@ -163,9 +162,7 @@ export function ChangePasswordForm({
               {...register("confirmPassword")}
             />
           </div>
-          {errors.confirmPassword && (
-            <p className="text-base font-extrabold text-destructive ml-1">{errors.confirmPassword.message}</p>
-          )}
+          <AnimatedError error={errors.confirmPassword?.message as string || errors.confirmPassword as unknown as string} />
         </div>
 
         <SecurityRequirements newPassword={newPasswordValue} confirmPassword={confirmPasswordValue} />

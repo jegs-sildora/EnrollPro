@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -371,11 +372,7 @@ export default function TrackApplication({
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               </div>
-              {errors.trackingNumber && (
-                <p className="text-base text-primary font-extrabold">
-                  {errors.trackingNumber.message}
-                </p>
-              )}
+              <AnimatedError error={errors.trackingNumber?.message as string || errors.trackingNumber as unknown as string} />
             </div>
 
             <Button

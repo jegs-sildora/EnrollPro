@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import type { EnrollmentFormData } from "../types";
@@ -195,11 +196,7 @@ export default function Step4PreviousSchool() {
               </Select>
             )}
 
-            {errors.lastGradeCompleted && (
-              <p className="text-base font-extrabold text-destructive">
-                {errors.lastGradeCompleted.message}
-              </p>
-            )}
+            <AnimatedError error={errors.lastGradeCompleted?.message as string || errors.lastGradeCompleted as unknown as string} />
           </div>
 
           <div className="space-y-2">

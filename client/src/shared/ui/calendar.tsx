@@ -65,17 +65,17 @@ function Calendar({
         ),
         month: cn("flex w-full flex-col gap-4", defaultClassNames.month),
         nav: cn(
-          "absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
+          "absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1 pointer-events-none z-10",
           defaultClassNames.nav,
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none ",
+          "size-(--cell-size) p-0 select-none pointer-events-auto",
           defaultClassNames.button_previous,
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none ",
+          "size-(--cell-size) p-0 select-none pointer-events-auto",
           defaultClassNames.button_next,
         ),
         month_caption: cn(
@@ -90,12 +90,12 @@ function Calendar({
           "relative rounded-(--cell-radius)",
           defaultClassNames.dropdown_root,
         ),
-        dropdown: cn("hidden", defaultClassNames.dropdown),
+        dropdown: cn(defaultClassNames.dropdown),
         caption_label: cn(
           "font-extrabold select-none",
           captionLayout === "label"
             ? "text-sm"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-foreground",
+            : "hidden",
           defaultClassNames.caption_label,
         ),
         table: "w-full border-collapse",
@@ -208,10 +208,9 @@ function Calendar({
               onValueChange={(value) => handleChange(value)}>
               <SelectTrigger
                 className={cn(
-                  "h-8 py-1 font-extrabold  border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1",
-                  className,
+                  "h-8 py-1 px-3 font-extrabold border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1 w-full relative z-10 [&>*]:pointer-events-none cursor-pointer"
                 )}>
-                <SelectValue>{selectedOption?.label}</SelectValue>
+                <SelectValue className="pointer-events-none">{selectedOption?.label}</SelectValue>
               </SelectTrigger>
               <SelectContent
                 position="popper"

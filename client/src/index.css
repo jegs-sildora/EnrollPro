@@ -5,6 +5,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus-visible, > button:focus, > button:focus-visible, > [role="combobox"]:focus, > [role="combobox"][aria-expanded="true"]) > .animated-error {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 @theme {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
@@ -467,7 +472,7 @@
 
 @layer utilities {
   .font-normal {
-    @apply font-semibold;
+    @apply font-bold;
   }
 
   .rdp-day_button[aria-selected="true"]:hover,

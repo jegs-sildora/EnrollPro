@@ -72,7 +72,7 @@ export function AddressCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between h-11 font-extrabold text-left",
+            "w-full justify-between h-11 font-extrabold text-left text-base transition-colors duration-200",
             !value && "text-foreground",
             error && "border-destructive focus-visible:ring-destructive",
             className,
@@ -94,7 +94,7 @@ export function AddressCombobox({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-base font-extrabold"
+            className="h-8 border-0 shadow-none focus-visible:ring-2 p-0 text-base font-extrabold uppercase pl-2 ring-2 ring-primary"
             autoFocus
           />
         </div>

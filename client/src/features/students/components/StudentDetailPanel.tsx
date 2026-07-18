@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import {
@@ -1184,11 +1185,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  {errors.firstName && (
-                    <p className="text-base text-destructive font-extrabold">
-                      {errors.firstName}
-                    </p>
-                  )}
+                  <AnimatedError error={(errors as any).firstName?.message as string || errors.firstName as unknown as string} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1212,11 +1209,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  {errors.lastName && (
-                    <p className="text-base text-destructive font-extrabold">
-                      {errors.lastName}
-                    </p>
-                  )}
+                  <AnimatedError error={(errors as any).lastName?.message as string || errors.lastName as unknown as string} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1282,11 +1275,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background ${errors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  {errors.birthDate && (
-                    <p className="text-base text-destructive font-extrabold">
-                      {errors.birthDate}
-                    </p>
-                  )}
+                  <AnimatedError error={(errors as any).birthDate?.message as string || errors.birthDate as unknown as string} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1308,11 +1297,7 @@ export function StudentDetailPanel({
                       <SelectItem value="FEMALE">FEMALE</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.sex && (
-                    <p className="text-base text-destructive font-extrabold">
-                      {errors.sex}
-                    </p>
-                  )}
+                  <AnimatedError error={(errors as any).sex?.message as string || errors.sex as unknown as string} />
                 </div>
               </div>
 
@@ -1483,11 +1468,7 @@ export function StudentDetailPanel({
                     );
                   })}
                 </div>
-                {errors.contactNumber && (
-                  <p className="text-base text-destructive font-extrabold">
-                    {errors.contactNumber}
-                  </p>
-                )}
+                <AnimatedError error={(errors as any).contactNumber?.message as string || errors.contactNumber as unknown as string} />
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">

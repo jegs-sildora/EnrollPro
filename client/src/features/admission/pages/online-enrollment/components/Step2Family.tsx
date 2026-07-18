@@ -1,3 +1,4 @@
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { AnimatePresence, motion } from "motion/react";
@@ -662,17 +663,14 @@ export default function Step2Family() {
                 ).value.toUpperCase();
               }}
             />
-            {errors.guardianRelationship && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.guardianRelationship.message}
-              </p>
-            )}
+            <AnimatedError error={errors.guardianRelationship?.message as string || errors.guardianRelationship as unknown as string} />
           </div>
         </div>
       </div>
 
-      <Separator className="opacity-50" />
+      {activeContactsCount > 0 && (
+        <>
+          <Separator className="opacity-50" />
 
       <div className="space-y-4">
         <Label className="text-base leading-tight font-extrabold uppercase  text-primary">
@@ -767,12 +765,7 @@ export default function Step2Family() {
             })}
         </div>
 
-        {errors.primaryContact && (
-          <p className="text-base text-destructive font-extrabold flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            {errors.primaryContact.message}
-          </p>
-        )}
+        <AnimatedError error={errors.primaryContact?.message as string || errors.primaryContact as unknown as string} />
       </div>
 
       <div className="space-y-10">
@@ -782,7 +775,7 @@ export default function Step2Family() {
           </h3>
 
           {!data.primaryContact && (
-            <p className="text-base leading-tight text-foreground italic">
+            <p className="text-base leading-tight text-foreground italic font-bold">
               Select a primary contact above before entering contact details.
             </p>
           )}
@@ -843,12 +836,7 @@ export default function Step2Family() {
                         input.value = formatContactNumber(input.value);
                       }}
                     />
-                    {errors.contactNumber && (
-                      <p className="text-base text-destructive font-extrabold flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.contactNumber.message}
-                      </p>
-                    )}
+                    <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                   </div>
                 </div>
               </div>
@@ -928,6 +916,8 @@ export default function Step2Family() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
