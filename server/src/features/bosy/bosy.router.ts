@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
+import { staffIntakePhaseGuard } from "../../middleware/staff-intake-phase.guard.js";
 import {
   getBosyReadiness,
   getBosyQueue,
@@ -49,6 +50,7 @@ router.post(
   "/sync",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  staffIntakePhaseGuard,
   syncBosyQueueHandler,
 );
 
@@ -56,6 +58,7 @@ router.post(
   "/confirm-return/:applicationId",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR", "TEACHER"),
+  staffIntakePhaseGuard,
   confirmReturnHandler,
 );
 
@@ -63,6 +66,7 @@ router.post(
   "/transfer-request/:applicationId",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  staffIntakePhaseGuard,
   markTransferRequestHandler,
 );
 
@@ -70,6 +74,7 @@ router.post(
   "/revoke-confirmation/:applicationId",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  staffIntakePhaseGuard,
   revokeConfirmedReturnHandler,
 );
 
@@ -77,6 +82,7 @@ router.post(
   "/confirmed-transfer-out/:applicationId",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  staffIntakePhaseGuard,
   markConfirmedTransferOutHandler,
 );
 
@@ -84,6 +90,7 @@ router.post(
   "/bulk-confirm",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  staffIntakePhaseGuard,
   bulkConfirmReturnHandler,
 );
 

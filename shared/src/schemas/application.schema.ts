@@ -106,8 +106,6 @@ export const applicationSubmitSchema = z
       .nullable(),
     psaBirthCertNumber: z.string().trim().toUpperCase().optional().nullable(),
 
-    earlyRegistrationId: z.number().int().positive().optional(),
-
     gradeLevel: GradeLevelEnum,
     isScpApplication: z.boolean().default(false),
     scpType: ScpTypeEnum.optional().nullable(),
@@ -602,7 +600,7 @@ const scpDocumentRequirementSchema = z
   .object({
     docId: z.string().trim().min(1),
     policy: z.enum(["REQUIRED", "OPTIONAL", "HIDDEN"]),
-    phase: z.enum(["EARLY_REGISTRATION", "ENROLLMENT"]).optional().nullable(),
+    phase: z.enum(["ENROLLMENT"]).optional().nullable(),
     notes: z.string().optional().nullable(),
   })
   .passthrough();

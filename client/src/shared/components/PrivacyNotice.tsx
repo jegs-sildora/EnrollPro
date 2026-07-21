@@ -69,9 +69,9 @@ export default function PrivacyNotice({
                     <>
                       The Department of Education (DepEd) and {schoolName}{" "}
                       collect personal information only for the{" "}
-                      <strong>BASIC EDUCATION EARLY REGISTRATION</strong>{" "}
-                      process. This helps us plan classrooms, teachers, and
-                      school resources for the incoming School Year.
+                      <strong>ONLINE ENROLLMENT</strong> process. This helps the
+                      school review the learner's information and prepare the
+                      official enrollment record for the incoming School Year.
                     </>
                   ) : (
                     <>
@@ -97,7 +97,7 @@ export default function PrivacyNotice({
                   {isBeerf ? (
                     <>
                       <li>
-                        To process and validate Early Registration applications.
+                        To process and validate online enrollment applications.
                       </li>
                       <li>
                         To estimate learner distribution per Grade Level and
@@ -191,7 +191,7 @@ export default function PrivacyNotice({
 
             <div
               className={cn(
-                "flex items-center justify-center gap-2 text-xs font-extrabold uppercase  transition-all duration-500 py-1",
+                "flex items-center justify-center gap-2 text-sm font-extrabold uppercase  transition-all duration-500 py-1",
                 hasScrolledNotice
                   ? "text-primary"
                   : "text-primary/60 animate-pulse",
@@ -228,7 +228,7 @@ export default function PrivacyNotice({
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}
-              {isBeerf ? "Early Registration" : "Official Enrollment"}.
+              {isBeerf ? "Online Enrollment" : "Official Enrollment"}.
               <span className="text-destructive ml-1">*</span>
             </Label>
           </div>

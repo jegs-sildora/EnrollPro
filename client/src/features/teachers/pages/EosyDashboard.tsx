@@ -194,7 +194,7 @@ export default function TeacherEosyDashboard() {
           const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-sm sm:text-base">
               <span className="font-extrabold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>

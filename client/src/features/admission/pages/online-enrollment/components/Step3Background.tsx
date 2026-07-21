@@ -29,7 +29,7 @@ export default function Step3Background() {
           <p className="text-base leading-tight font-extrabold text-primary">
             Sensitive Information
           </p>
-          <p className="text-xs text-primary font-extrabold uppercase ">
+          <p className="text-sm text-primary font-extrabold uppercase ">
             All details are kept strictly confidential.
           </p>
         </div>

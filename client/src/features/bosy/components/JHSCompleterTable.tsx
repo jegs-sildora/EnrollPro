@@ -28,7 +28,7 @@ export function JHSCompleterTable({
         cell: ({ row }) => {
           const r = row.original;
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-sm sm:text-base">
               <span className="font-extrabold uppercase truncate">
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
@@ -54,7 +54,7 @@ export function JHSCompleterTable({
           <div className="text-center">
             <Badge
               variant="outline"
-              className="text-[10px] font-extrabold uppercase">
+              className="text-sm font-extrabold uppercase">
               {row.original.lastGradeLevel ?? "—"}
             </Badge>
           </div>
@@ -101,7 +101,7 @@ export function JHSCompleterTable({
           <div className="flex justify-center">
             <Badge
               variant="outline"
-              className="text-[10px] font-extrabold uppercase bg-violet-50 border-violet-200 text-violet-700">
+              className="text-sm font-extrabold uppercase bg-violet-50 border-violet-200 text-violet-700">
               JHS Completer
             </Badge>
           </div>

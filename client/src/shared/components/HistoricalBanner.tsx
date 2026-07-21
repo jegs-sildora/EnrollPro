@@ -93,7 +93,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-[0.7rem] font-extrabold hover:bg-background text-rose-900"
+          className="h-7 px-2 text-sm font-extrabold hover:bg-background text-rose-900"
           onClick={handleSwitchToActive}
         >
           Switch to Active Year
@@ -124,7 +124,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
       {hasOverride && (
         <Badge
           variant="outline"
-          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-[0.625rem] font-extrabold uppercase"
+          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-sm font-extrabold uppercase"
         >
           <ShieldAlert className="h-3 w-3 mr-1 animate-pulse" />
           Correction Override Active
@@ -136,7 +136,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[0.7rem] font-extrabold hover:bg-background"
+            className="h-7 px-2 text-sm font-extrabold hover:bg-background"
             onClick={onOpenCorrectionModal}
           >
             <ShieldAlert className="h-3 w-3 mr-1" />
@@ -148,7 +148,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="default"
             size="sm"
-            className="h-7 px-3 text-[0.7rem] font-extrabold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+            className="h-7 px-3 text-sm font-extrabold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
             onClick={handleRelock}
           >
             <X className="h-3 w-3 mr-1" />
@@ -159,7 +159,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-[0.7rem] font-extrabold hover:bg-background"
+          className="h-7 px-2 text-sm font-extrabold hover:bg-background"
           onClick={handleSwitchToActive}
         >
           Switch to Active Year

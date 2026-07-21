@@ -254,7 +254,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         <div className="p-3 text-foreground bg-muted/30 flex items-center gap-1.5 flex-wrap">
           {c.label}:
           {c.isPrimary && (
-            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
+            <span className="text-sm bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
               PRIMARY
             </span>
           )}

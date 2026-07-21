@@ -1,10 +1,49 @@
 import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
-import { Prisma } from "../../generated/prisma/index.js";
+import { Prisma, type SchoolYear } from "../../generated/prisma/index.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { getTrackingPrefix, generateTrackingNumber as generateTrackingNumberStd } from "../../lib/tracking.js";
 import { applicationSubmitSchema } from "@enrollpro/shared";
+import {
+  isPublicEnrollmentOpen,
+  isStaffIntakeAllowed,
+} from "../settings/enrollment-gate.service.js";
+
+interface ActiveEnrollmentSetting {
+  activeSchoolYearId: number
+  systemPhase: string
+  activeSchoolYear: SchoolYear
+}
+
+async function getOpenPublicEnrollmentSetting(
+  res: Response,
+): Promise<ActiveEnrollmentSetting | null> {
+  const setting = await prisma.schoolSetting.findFirst({
+    where: { activeSchoolYearId: { not: null } },
+    include: { activeSchoolYear: true },
+  });
+
+  if (!setting?.activeSchoolYearId || !setting.activeSchoolYear) {
+    res.status(400).json({ message: "No active school year is configured." });
+    return null;
+  }
+
+  if (!isPublicEnrollmentOpen(setting.activeSchoolYear, setting.systemPhase)) {
+    res.status(403).json({
+      code: "PUBLIC_ENROLLMENT_CLOSED",
+      message:
+        "Regular online enrollment is closed. Please visit the School Registrar's Office for walk-in assistance.",
+    });
+    return null;
+  }
+
+  return {
+    activeSchoolYearId: setting.activeSchoolYearId,
+    systemPhase: setting.systemPhase,
+    activeSchoolYear: setting.activeSchoolYear,
+  };
+}
 
 function generateTrackingNumber(): string {
   const year = new Date().getFullYear().toString().slice(-2);
@@ -27,16 +66,9 @@ export async function submitApplication(req: Request, res: Response) {
     const data = parsed.data;
 
     // Get active school year
-    const schoolSetting = await prisma.schoolSetting.findFirst({
-      where: { activeSchoolYearId: { not: null } },
-      include: { activeSchoolYear: true },
-    });
-
-    const activeSchoolYearId = schoolSetting?.activeSchoolYearId;
-    if (!activeSchoolYearId) {
-      res.status(400).json({ message: "No active school year set." });
-      return;
-    }
+    const schoolSetting = await getOpenPublicEnrollmentSetting(res);
+    if (!schoolSetting) return;
+    const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
     // Get grade level id
     const gradeLevelRecord = await prisma.gradeLevel.findFirst({
@@ -237,12 +269,9 @@ export async function updateExistingApplication(req: Request, res: Response) {
 
     const data = parsed.data;
     
-    const schoolSetting = await prisma.schoolSetting.findFirst({ where: { activeSchoolYearId: { not: null } } });
-    const activeSchoolYearId = schoolSetting?.activeSchoolYearId;
-    if (!activeSchoolYearId) {
-      res.status(400).json({ message: "No active school year set." });
-      return;
-    }
+    const schoolSetting = await getOpenPublicEnrollmentSetting(res);
+    if (!schoolSetting) return;
+    const activeSchoolYearId = schoolSetting.activeSchoolYearId;
 
     const lrn = data.hasNoLrn ? null : data.lrn;
     if (!lrn) {
@@ -452,10 +481,7 @@ export async function lookupLrn(req: Request, res: Response) {
 
     const email = guardian?.email || mother?.email || father?.email || "";
 
-    const source =
-      latestApp?.status === "EARLY_REG_SUBMITTED" || latestApp?.status === "PRE_REGISTERED"
-        ? "EARLY_REGISTRATION"
-        : "ENROLLMENT";
+    const source = "ENROLLMENT";
 
     const birthdate = learner.birthdate ? new Date(learner.birthdate).toISOString().slice(0, 10) : "";
 
@@ -520,7 +546,6 @@ export async function lookupLrn(req: Request, res: Response) {
       source,
       status: latestApp?.status || "",
       enrollmentApplicationId: latestApp?.id || null,
-      earlyRegistrationId: source === "EARLY_REGISTRATION" ? latestApp?.id : null,
       applicantType: latestApp?.applicantType || null,
     });
   } catch (error) {
@@ -535,6 +560,15 @@ export async function specialEnrollment(
   next: NextFunction,
 ) {
   try {
+    const setting = await prisma.schoolSetting.findFirst({
+      select: { systemPhase: true },
+    });
+    if (!isStaffIntakeAllowed(setting?.systemPhase)) {
+      throw new AppError(
+        403,
+        "Learner intake is locked during EOSY Closing. Complete enrollment changes before starting year-end processing.",
+      );
+    }
     const data = req.body;
     const {
       firstName,

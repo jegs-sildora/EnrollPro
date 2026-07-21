@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
+import {
+  calculateActiveTally,
+  calculateUtilizationPercent,
+  countDistinctLearners,
+} from "./dashboard.metrics.js";
 
 interface GradeBreakdownAccumulator {
   male: number
@@ -21,6 +26,46 @@ interface DailyIntakePoint extends DailyIntakeAccumulator {
   date: string
 }
 
+interface CurriculumDistributionItem {
+  programType: string
+  label: string
+  count: number
+  isSpecialProgram: boolean
+}
+
+const PROGRAM_LABELS: Record<string, string> = {
+  REGULAR: "Basic Education Curriculum",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
+  SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
+    "Special Program in Technical-Vocational Education",
+  LATE_ENROLLEE: "Regular BEC Late Enrollment",
+};
+
+const ACTIVE_APPLICATION_STATUSES = [
+  "READY_FOR_SECTIONING",
+  "OFFICIALLY_ENROLLED",
+  "ENROLLED",
+  "SECTIONED",
+] as const;
+
+const PENDING_ENROLLMENT_STATUSES = new Set<string>([
+  "PENDING_VERIFICATION",
+  "PENDING_CONFIRMATION",
+  "AWAITING_VERIFICATION",
+]);
+
+function hasText(value: string | null | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
+function isValidLrn(value: string | null | undefined): boolean {
+  return /^\d{12}$/.test(value ?? "");
+}
+
 export async function getStats(req: Request, res: Response): Promise<void> {
   try {
     const schoolYearId = req.schoolYearId;
@@ -38,6 +83,38 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             unassignedTotal: 0,
             deficientTotal: 0,
             enrolledTotal: 0,
+          },
+          summaryRibbon: {
+            totalEnrollment: 0,
+            activeFaculty: 0,
+            enrolledSections: 0,
+            pendingSystemValidations: 0,
+          },
+          curriculumDistribution: [],
+          intakePipeline: [],
+          sectionSaturation: [],
+          sf1Compliance: {
+            invalidLrn: 0,
+            missingBirthdate: 0,
+            missingMotherTongue: 0,
+            missingCurrentAddress: 0,
+            missingGuardianContact: 0,
+            affectedLearners: 0,
+          },
+          activeTally: {
+            verifiedBosyBaseline: 0,
+            lateAdmissions: 0,
+            officiallyDropped: 0,
+            activeTotal: 0,
+          },
+          eosyReadiness: {
+            pendingSections: 0,
+            incompleteLearnerOutcomes: 0,
+            conditionallyPromoted: 0,
+            retained: 0,
+            promotionCompletionPercent: 0,
+            sf5Ready: false,
+            sf6Ready: false,
           },
           gradeLevelBreakdown: [],
           criticalSections: [],
@@ -62,7 +139,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const activeOfficialEnrollmentTotal = isArchived
       ? prisma.enrollmentHistory.count({ where: { schoolYearId } })
       : Promise.all([
-          prisma.enrollmentRecord.count({ where: { schoolYearId } }),
+          prisma.enrollmentRecord.count({
+            where: {
+              schoolYearId,
+              dropOutDate: null,
+              transferOutDate: null,
+            },
+          }),
           prisma.enrollmentApplication.count({
             where: {
               schoolYearId,
@@ -77,12 +160,8 @@ export async function getStats(req: Request, res: Response): Promise<void> {
 
     const [
       enrolledTotal,
-      pendingTotal,
       unassignedTotal,
-      deficientTotal,
-      lateIntakeCount,
       pendingSF10Count,
-      overdueDocumentsCount,
       activeSchoolTallyBOSY,
       activeSchoolTallyLate,
       transferredIn,
@@ -95,24 +174,9 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       irregularTotal
     ] = await Promise.all([
       activeOfficialEnrollmentTotal,
-      isArchived ? Promise.resolve(0) : prisma.enrollmentApplication.count({ where: { status: "PENDING_VERIFICATION", schoolYearId } }),
       isArchived ? Promise.resolve(0) : prisma.enrollmentApplication.count({ where: { status: "READY_FOR_SECTIONING", enrollmentRecord: { is: null }, schoolYearId } }),
-      isArchived ? Promise.resolve(0) : prisma.enrollmentApplication.count({ where: { complianceStatus: "PENDING", schoolYearId } }),
-      
-      // V8.5 Queries (Classes Ongoing)
-      isArchived ? Promise.resolve(0) : prisma.enrollmentApplication.count({ 
-        where: { status: "PENDING_VERIFICATION", isLateEnrollee: true, schoolYearId } 
-      }),
       isArchived ? Promise.resolve(0) : prisma.enrollmentRecord.count({ 
         where: { sf10Status: { in: ["PENDING", "REQUESTED"] }, schoolYearId } 
-      }),
-      isArchived ? Promise.resolve(0) : prisma.learner.count({ 
-        where: { 
-          OR: [
-            { isConditionallyEnrolled: true },
-            { missingRequirements: { isEmpty: false } }
-          ]
-        } 
       }),
       isArchived ? Promise.resolve(0) : prisma.enrollmentRecord.count({ 
         where: { isLateEnrollee: false, schoolYearId } 
@@ -142,6 +206,12 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       where: { schoolYearId },
       include: {
         gradeLevel: true,
+        enrollmentRecords: {
+          select: {
+            dropOutDate: true,
+            transferOutDate: true,
+          },
+        },
         _count: {
           select: isArchived ? { enrollmentHistories: true } : { enrollmentRecords: true }
         }
@@ -153,7 +223,11 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         id: s.id,
         name: `${s.gradeLevel.name} - ${s.name}`,
         capacity: s.maxCapacity || 45,
-        enrolled: isArchived ? s._count.enrollmentHistories : s._count.enrollmentRecords
+        enrolled: isArchived
+          ? s._count.enrollmentHistories
+          : s.enrollmentRecords.filter(
+              (record) => !record.dropOutDate && !record.transferOutDate,
+            ).length,
       }))
       .sort((a, b) => b.enrolled - a.enrolled)
       .slice(0, 3);
@@ -232,8 +306,49 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const applications = await prisma.enrollmentApplication.findMany({
       where: { schoolYearId },
       select: {
+        id: true,
+        learnerId: true,
         gradeLevelId: true,
         learnerType: true,
+        admissionChannel: true,
+        applicantType: true,
+        assignedProgram: true,
+        complianceStatus: true,
+        isLateEnrollee: true,
+        isMissingSf9: true,
+        status: true,
+        contactNumber: true,
+        learner: {
+          select: {
+            lrn: true,
+            birthdate: true,
+            motherTongue: true,
+            hasPsaBirthCertificate: true,
+            missingRequirements: true,
+          },
+        },
+        addresses: {
+          where: { addressType: "CURRENT" },
+          select: {
+            barangay: true,
+            cityMunicipality: true,
+          },
+        },
+        familyMembers: {
+          select: { contactNumber: true },
+        },
+        enrollmentRecord: {
+          select: {
+            id: true,
+            isLateEnrollee: true,
+            dropOutDate: true,
+            transferOutDate: true,
+            eosyStatus: true,
+            section: {
+              select: { programType: true },
+            },
+          },
+        },
       }
     });
 
@@ -262,6 +377,247 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         balikAral: item?.balikAral || 0,
       };
     });
+
+    const activeFaculty = await prisma.teacher.count({
+      where: {
+        isActive: true,
+        serviceStatus: "ACTIVE",
+      },
+    });
+
+    const activeStatusSet = new Set<string>(ACTIVE_APPLICATION_STATUSES);
+    const terminalPipelineStatuses = new Set<string>([
+      "REJECTED",
+      "WITHDRAWN",
+      "ARCHIVED_NO_SHOW",
+      "TRANSFERRED_OUT",
+      "DROPPED",
+      "REMEDIAL_HOLD",
+      "REMEDIAL_RESOLVED",
+    ]);
+    const activeApplications = applications.filter((application) => {
+      const record = application.enrollmentRecord;
+      const hasActiveRecord = Boolean(
+        record && !record.dropOutDate && !record.transferOutDate,
+      );
+      return hasActiveRecord || activeStatusSet.has(application.status);
+    });
+    const pipelineApplications = isArchived
+      ? []
+      : applications.filter(
+          (application) => !terminalPipelineStatuses.has(application.status),
+        );
+
+    const invalidLrnLearners = new Set<number>();
+    const missingBirthdateLearners = new Set<number>();
+    const missingMotherTongueLearners = new Set<number>();
+    const missingAddressLearners = new Set<number>();
+    const missingGuardianContactLearners = new Set<number>();
+    const documentFollowUpLearners = new Set<number>();
+    const pendingValidationLearners = new Set<number>();
+
+    pipelineApplications.forEach((application) => {
+      const learnerId = application.learnerId;
+      const currentAddress = application.addresses[0];
+      const hasAddress = Boolean(
+        currentAddress
+        && hasText(currentAddress.barangay)
+        && hasText(currentAddress.cityMunicipality),
+      );
+      const hasGuardianContact =
+        hasText(application.contactNumber)
+        || application.familyMembers.some((member) =>
+          hasText(member.contactNumber),
+        );
+
+      if (!isValidLrn(application.learner.lrn)) {
+        invalidLrnLearners.add(learnerId);
+      }
+      if (!application.learner.birthdate) {
+        missingBirthdateLearners.add(learnerId);
+      }
+      if (!hasText(application.learner.motherTongue)) {
+        missingMotherTongueLearners.add(learnerId);
+      }
+      if (!hasAddress) {
+        missingAddressLearners.add(learnerId);
+      }
+      if (!hasGuardianContact) {
+        missingGuardianContactLearners.add(learnerId);
+      }
+
+      const hasSf1Gap =
+        !isValidLrn(application.learner.lrn)
+        || !application.learner.birthdate
+        || !hasText(application.learner.motherTongue)
+        || !hasAddress
+        || !hasGuardianContact;
+      const hasDocumentGap =
+        application.complianceStatus === "PENDING"
+        || application.isMissingSf9
+        || !application.learner.hasPsaBirthCertificate
+        || application.learner.missingRequirements.length > 0;
+      const hasQueueValidation =
+        application.status === "PENDING_VERIFICATION"
+        || (
+          application.status === "READY_FOR_SECTIONING"
+          && !application.enrollmentRecord
+        );
+
+      if (hasSf1Gap || hasDocumentGap || hasQueueValidation) {
+        pendingValidationLearners.add(learnerId);
+      }
+      if (hasDocumentGap) documentFollowUpLearners.add(learnerId);
+    });
+
+    const pendingEnrollmentTotal = pipelineApplications.filter(
+      (application) => PENDING_ENROLLMENT_STATUSES.has(application.status),
+    ).length;
+    const lateLearnersToProcess = pipelineApplications.filter(
+      (application) =>
+        application.isLateEnrollee && !application.enrollmentRecord,
+    ).length;
+
+    const curriculumCounts = new Map<string, number>();
+    if (isArchived) {
+      sections.forEach((section) => {
+        const current = curriculumCounts.get(section.programType) ?? 0;
+        curriculumCounts.set(
+          section.programType,
+          current + section._count.enrollmentHistories,
+        );
+      });
+    } else {
+      activeApplications.forEach((application) => {
+        const rawProgram =
+          application.enrollmentRecord?.section.programType
+          ?? application.assignedProgram
+          ?? application.applicantType;
+        const programType = rawProgram === "LATE_ENROLLEE" ? "REGULAR" : rawProgram;
+        curriculumCounts.set(
+          programType,
+          (curriculumCounts.get(programType) ?? 0) + 1,
+        );
+      });
+    }
+
+    const curriculumDistribution: CurriculumDistributionItem[] = Array.from(
+      curriculumCounts.entries(),
+    )
+      .map(([programType, count]) => ({
+        programType,
+        label: PROGRAM_LABELS[programType] ?? programType.replaceAll("_", " "),
+        count,
+        isSpecialProgram: programType !== "REGULAR",
+      }))
+      .sort((a, b) => {
+        if (a.programType === "REGULAR") return -1;
+        if (b.programType === "REGULAR") return 1;
+        return b.count - a.count;
+      });
+
+    const intakePipeline = gradeLevels.map((gradeLevel) => {
+      const gradeApplications = pipelineApplications.filter(
+        (application) => application.gradeLevelId === gradeLevel.id,
+      );
+      let continuingLearners = 0;
+      let walkIn = 0;
+      let transferee = 0;
+
+      gradeApplications.forEach((application) => {
+        if (application.learnerType === "TRANSFEREE") {
+          transferee += 1;
+        } else if (application.learnerType === "CONTINUING") {
+          continuingLearners += 1;
+        } else if (application.admissionChannel === "F2F") {
+          walkIn += 1;
+        }
+      });
+
+      return {
+        gradeLevelId: gradeLevel.id,
+        gradeLevelName: gradeLevel.name,
+        displayOrder: gradeLevel.displayOrder,
+        continuingLearners,
+        walkIn,
+        transferee,
+      };
+    });
+
+    const sectionSaturation = sections
+      .map((section) => {
+        const enrolled = isArchived
+          ? section._count.enrollmentHistories
+          : section.enrollmentRecords.filter(
+              (record) => !record.dropOutDate && !record.transferOutDate,
+            ).length;
+        const capacity = section.maxCapacity || 0;
+        return {
+          id: section.id,
+          name: section.name,
+          gradeLevelName: section.gradeLevel.name,
+          programType: section.programType,
+          capacity,
+          enrolled,
+          utilizationPercent: calculateUtilizationPercent(enrolled, capacity),
+          isOverCapacity: capacity > 0 && enrolled > capacity,
+        };
+      })
+      .sort((a, b) => {
+        if (a.isOverCapacity !== b.isOverCapacity) {
+          return a.isOverCapacity ? -1 : 1;
+        }
+        return b.utilizationPercent - a.utilizationPercent;
+      });
+
+    const activeEnrollmentRecords = applications
+      .map((application) => application.enrollmentRecord)
+      .filter((record): record is NonNullable<typeof record> => Boolean(record));
+    const activeTally = calculateActiveTally(activeEnrollmentRecords);
+
+    const eosyEligibleRecords = activeEnrollmentRecords.filter(
+      (record) => !record.dropOutDate && !record.transferOutDate,
+    );
+    const incompleteLearnerOutcomes = eosyEligibleRecords.filter(
+      (record) => !record.eosyStatus,
+    ).length;
+    const completedOutcomes = eosyEligibleRecords.length - incompleteLearnerOutcomes;
+    const promotionCompletionPercent = eosyEligibleRecords.length === 0
+      ? 0
+      : Math.round((completedOutcomes / eosyEligibleRecords.length) * 100);
+    const eosyReadiness = {
+      pendingSections: eosyPendingSections,
+      incompleteLearnerOutcomes,
+      conditionallyPromoted: irregularTotal,
+      retained: retainedTotal,
+      promotionCompletionPercent,
+      sf5Ready: eosyPendingSections === 0 && incompleteLearnerOutcomes === 0,
+      sf6Ready: eosyPendingSections === 0 && incompleteLearnerOutcomes === 0,
+    };
+
+    const summaryRibbon = {
+      totalEnrollment: enrolledTotal,
+      activeFaculty,
+      enrolledSections: sectionSaturation.filter(
+        (section) => section.enrolled > 0,
+      ).length,
+      pendingSystemValidations: pendingValidationLearners.size,
+    };
+
+    const sf1Compliance = {
+      invalidLrn: invalidLrnLearners.size,
+      missingBirthdate: missingBirthdateLearners.size,
+      missingMotherTongue: missingMotherTongueLearners.size,
+      missingCurrentAddress: missingAddressLearners.size,
+      missingGuardianContact: missingGuardianContactLearners.size,
+      affectedLearners: countDistinctLearners([
+        invalidLrnLearners,
+        missingBirthdateLearners,
+        missingMotherTongueLearners,
+        missingAddressLearners,
+        missingGuardianContactLearners,
+      ]),
+    };
 
     const sectionsList = await prisma.section.findMany({
       where: { schoolYearId },
@@ -355,7 +711,9 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       counts.push(
         isArchived
           ? s._count.enrollmentHistories
-          : s._count.enrollmentRecords,
+          : s.enrollmentRecords.filter(
+              (record) => !record.dropOutDate && !record.transferOutDate,
+            ).length,
       );
       gradeSectionsMap.set(glId, counts);
     });
@@ -573,15 +931,22 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       dailyIntakeVelocity,
       intakeDemographics,
       kpiHeader: {
-        pendingTotal,
+        pendingTotal: isArchived ? 0 : pendingEnrollmentTotal,
         unassignedTotal,
-        deficientTotal,
+        deficientTotal: isArchived ? 0 : documentFollowUpLearners.size,
         enrolledTotal,
       },
+      summaryRibbon,
+      curriculumDistribution,
+      intakePipeline,
+      sectionSaturation,
+      sf1Compliance,
+      activeTally,
+      eosyReadiness,
       v85Stats: {
-        lateIntakeCount,
+        lateIntakeCount: isArchived ? 0 : lateLearnersToProcess,
         pendingSF10Count,
-        overdueDocumentsCount,
+        overdueDocumentsCount: isArchived ? 0 : documentFollowUpLearners.size,
         activeSchoolTallyBOSY,
         activeSchoolTallyLate,
         hasSectionLoadDisparity,

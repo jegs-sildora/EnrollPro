@@ -136,7 +136,7 @@ function UserNav() {
               <span className="text-sm font-black text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="inline-flex mt-0.5 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
+              <span className="inline-flex mt-0.5 px-2 py-0.5 text-sm font-bold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
                 {formatUserRole(user?.roles?.[0])}
               </span>
             </div>
@@ -251,7 +251,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-md",
+          "inline-flex px-2 py-0.5 text-sm font-black uppercase tracking-wider whitespace-nowrap rounded-md",
           badge.className,
         )}>
         {badge.label}
@@ -287,7 +287,7 @@ function SYSwitcher() {
               className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
               <Calendar className="text-foreground w-4 h-4" />
-              <span className="text-xs sm:text-sm text-foreground whitespace-nowrap font-extrabold">
+              <span className="text-sm sm:text-sm text-foreground whitespace-nowrap font-extrabold">
                 {currentLabel}
               </span>
               <div className="hidden md:block">
@@ -383,7 +383,7 @@ const NavDivider = memo(function NavDivider({ label, badge }: { label: string; b
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-300 ease-in-out group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
       <div className="flex items-center gap-2">
-        <span className="text-[0.625rem] font-bold uppercase text-foreground whitespace-nowrap">
+        <span className="text-sm font-bold uppercase text-foreground whitespace-nowrap">
           {label}
         </span>
       </div>
@@ -471,7 +471,7 @@ const NavItem = memo(function NavItem({
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
             <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-[9px] font-normal truncate w-full text-left leading-tight">{subtext}</span>}
+            {subtext && <span className="text-sm font-normal truncate w-full text-left leading-tight">{subtext}</span>}
           </div>
         </Link>
       </SidebarMenuButton>
@@ -485,17 +485,17 @@ function AppSidebar() {
   const { clearAuth } = useAuthStore();
   const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
+  const activeBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
   let officialEnrollmentBadge;
   if (systemPhase === "OFFICIAL_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment</span>;
+    officialEnrollmentBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment</span>;
   } else if (systemPhase === "CLASSES_ONGOING") {
-    officialEnrollmentBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
+    officialEnrollmentBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
   }
 
   let closingOperationsBadge;
   if (systemPhase === "EOSY_CLOSING") {
-    closingOperationsBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-slate-600 text-white uppercase tracking-wide whitespace-nowrap shrink-0">EOSY ARCHIVING</span>;
+    closingOperationsBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-slate-600 text-white uppercase tracking-wide whitespace-nowrap shrink-0">EOSY ARCHIVING</span>;
   }
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 

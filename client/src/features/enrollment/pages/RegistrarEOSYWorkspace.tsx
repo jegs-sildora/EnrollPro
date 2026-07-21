@@ -386,7 +386,7 @@ export default function RegistrarEOSYWorkspace() {
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
-                            "text-[10px] uppercase font-extrabold px-1.5 py-0 border-2",
+                            "text-sm uppercase font-extrabold px-1.5 py-0 border-2",
                             record.enrollmentApplication.learner.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600" : "bg-pink-600/10 text-pink-600 border-pink-600"
                           )}>
                             {record.enrollmentApplication.learner.sex === "MALE" ? "M" : "F"}
@@ -444,28 +444,28 @@ export default function RegistrarEOSYWorkspace() {
           <div className="space-y-3 py-4">
             <div className="bg-slate-50 p-4 rounded-xl border-2 border-slate-100 space-y-2">
               <div className="flex items-center justify-between font-extrabold text-base leading-tight">
-                <span className="text-slate-500 uppercase tracking-widest text-[10px]">Promoted</span>
+                <span className="text-slate-500 uppercase tracking-widest text-sm">Promoted</span>
                 <span className="text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded text-base">{summary.PROMOTED}</span>
               </div>
               <div className="flex items-center justify-between font-extrabold text-base leading-tight">
-                <span className="text-slate-500 uppercase tracking-widest text-[10px]">Conditionally Promoted</span>
+                <span className="text-slate-500 uppercase tracking-widest text-sm">Conditionally Promoted</span>
                 <span className="text-amber-700 bg-amber-100 px-2.5 py-1 rounded text-base">{summary.CONDITIONALLY_PROMOTED}</span>
               </div>
               <div className="flex items-center justify-between font-extrabold text-base leading-tight">
-                <span className="text-slate-500 uppercase tracking-widest text-[10px]">Retained</span>
+                <span className="text-slate-500 uppercase tracking-widest text-sm">Retained</span>
                 <span className="text-red-700 bg-red-100 px-2.5 py-1 rounded text-base">{summary.RETAINED}</span>
               </div>
               <div className="flex items-center justify-between font-extrabold text-base leading-tight">
-                <span className="text-slate-500 uppercase tracking-widest text-[10px]">Dropped Out</span>
+                <span className="text-slate-500 uppercase tracking-widest text-sm">Dropped Out</span>
                 <span className="text-slate-700 bg-slate-200 px-2.5 py-1 rounded text-base">{summary.DROPPED_OUT}</span>
               </div>
               <div className="flex items-center justify-between font-extrabold text-base leading-tight">
-                <span className="text-slate-500 uppercase tracking-widest text-[10px]">Transferred Out</span>
+                <span className="text-slate-500 uppercase tracking-widest text-sm">Transferred Out</span>
                 <span className="text-orange-700 bg-orange-100 px-2.5 py-1 rounded text-base">{summary.TRANSFERRED_OUT}</span>
               </div>
             </div>
 
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase text-center tracking-tighter italic">
+            <p className="text-sm text-slate-400 font-extrabold uppercase text-center tracking-tighter italic">
               ⚠️ This action will generate individual audit trail entries for each learner.
             </p>
           </div>

@@ -153,7 +153,7 @@ const MasterlistRowComponent = React.forwardRef<
             {row.status === "TEMPORARILY_ENROLLED" && (
               <Badge
                 variant="outline"
-                className="h-5 px-1.5 border-amber-300 bg-amber-50 text-amber-700 font-extrabold text-[9px] uppercase  gap-1">
+                className="h-5 px-1.5 border-amber-300 bg-amber-50 text-amber-700 font-extrabold text-sm uppercase  gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" />
                 Temporary
               </Badge>
@@ -186,7 +186,7 @@ const MasterlistRowComponent = React.forwardRef<
         {row.programType !== "REGULAR" && row.rank ? (
           <div className="flex flex-col items-center">
             <span className="font-extrabold text-base leading-tight text-primary">#{row.rank}</span>
-            <span className="text-[9px] font-extrabold text-foreground uppercase">
+            <span className="text-sm font-extrabold text-foreground uppercase">
               Score: {row.rankingScore?.toFixed(2)}
             </span>
           </div>
@@ -754,7 +754,7 @@ export function BatchSectioningWizard({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-5 px-1.5 text-[9px] font-extrabold uppercase  hover:bg-orange-100 flex items-center gap-1"
+                                      className="h-5 px-1.5 text-sm font-extrabold uppercase  hover:bg-orange-100 flex items-center gap-1"
                                       onClick={() => {
                                         setReclassifiedLimit(50);
                                         setViewingReclassified({
@@ -1067,7 +1067,7 @@ export function BatchSectioningWizard({
                       <AlertTriangle className="h-5 w-5 fill-primary text-primary-foreground" />{" "}
                       Final Commitment Required
                     </p>
-                    <p className="text-[11px] text-foreground font-extrabold mt-1">
+                    <p className="text-sm text-foreground font-extrabold mt-1">
                       Clicking the button will write all assignments to the
                       database, mark learners as
                       <span className="font-extrabold text-green-700 mx-1 uppercase">
@@ -1259,7 +1259,7 @@ export function BatchSectioningWizard({
                           <TableCell className="text-center">
                             <Badge
                               variant="outline"
-                              className="text-[9px] font-extrabold uppercase  border-orange-200 text-orange-700 bg-orange-50">
+                              className="text-sm font-extrabold uppercase  border-orange-200 text-orange-700 bg-orange-50">
                               RECLASSIFIED
                             </Badge>
                           </TableCell>

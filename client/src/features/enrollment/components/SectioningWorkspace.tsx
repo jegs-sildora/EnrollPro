@@ -184,14 +184,14 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
                   <span className="font-extrabold text-foreground uppercase">
                     {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                   </span>
-                  <span className="text-xs font-extrabold uppercase mt-0.5">
+                  <span className="text-sm font-extrabold uppercase mt-0.5">
                     {l.lrn || "NO LRN"}
                   </span>
                 </div>
               </td>
               <td className="p-3 text-center">
                 <Badge className={cn(
-                  "text-[10px] uppercase font-extrabold",
+                  "text-sm uppercase font-extrabold",
                   l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                 )}>
                   {l.sex}

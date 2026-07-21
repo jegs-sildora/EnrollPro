@@ -84,7 +84,7 @@ export default function Step5Enrollment() {
   const gradeLevel = watch("gradeLevel");
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
-  const quickLrnLookupId = watch("earlyRegistrationId");
+
   const hasNoLrn = watch("hasNoLrn");
   const artField = watch("artField");
   const sportsList = watch("sportsList");
@@ -104,10 +104,7 @@ export default function Step5Enrollment() {
   const selectedSportsCount = sportsList?.length ?? 0;
 
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
-  const hasQuickLrnLookupSuccess =
-    typeof quickLrnLookupId === "number" && Number.isFinite(quickLrnLookupId);
-  const isProgramSelectionLocked = hasQuickLrnLookupSuccess;
-  const isLockedRegularTrack = isProgramSelectionLocked && !isScpApplication;
+
 
   const availableScpPrograms = useMemo(() => {
     return SCP_PROGRAMS.filter((program) => {
@@ -121,7 +118,7 @@ export default function Step5Enrollment() {
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
 
   const shouldShowScpCard =
-    isScpEligible && !isLockedRegularTrack && hasOfferedScpPrograms;
+    isScpEligible && hasOfferedScpPrograms;
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -398,7 +395,7 @@ export default function Step5Enrollment() {
           </div>
 
           <Select
-            disabled={isProgramSelectionLocked || !isScpEligible}
+            disabled={!isScpEligible}
             value={!isScpApplication ? "REGULAR" : scpType || "REGULAR"}
             onValueChange={(val) => {
               if (val === "REGULAR") {
@@ -428,13 +425,6 @@ export default function Step5Enrollment() {
             <p className="font-extrabold text-base italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               SCP is available only for New Enrollees applying for Grade 7.
-            </p>
-          )}
-
-          {isProgramSelectionLocked && (
-            <p className="font-extrabold text-base italic flex items-center gap-1 text-foreground">
-              <Info className="w-4 h-4" />
-              Learning Program and SCP selection are locked because this form is linked to an existing Early Registration.
             </p>
           )}
 
@@ -478,7 +468,6 @@ export default function Step5Enrollment() {
                       Preferred Art Field <span className="text-destructive">*</span>
                     </Label>
                     <Select
-                      disabled={isProgramSelectionLocked}
                       onValueChange={(value) =>
                         setValue("artField", value, {
                           shouldValidate: true,
@@ -514,7 +503,6 @@ export default function Step5Enrollment() {
                           className="flex items-center space-x-2">
                           <Checkbox
                             id={`sport-${sport}`}
-                            disabled={isProgramSelectionLocked}
                             checked={watch("sportsList")?.includes(sport)}
                             onCheckedChange={(checked) => {
                               const list = watch("sportsList") || [];

@@ -280,11 +280,11 @@ export function InsertLateEnrolleeModal({
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             {learner.promotionGenAve != null ? (
-                              <span className="text-[10px] font-extrabold uppercase text-foreground/70">
+                              <span className="text-sm font-extrabold uppercase text-foreground/70">
                                 GEN AVE: {learner.promotionGenAve.toFixed(2)}
                               </span>
                             ) : (
-                              <span className="text-[10px] font-extrabold uppercase text-foreground/40">
+                              <span className="text-sm font-extrabold uppercase text-foreground/40">
                                 GEN AVE: —
                               </span>
                             )}
@@ -292,13 +292,13 @@ export function InsertLateEnrolleeModal({
                               {isTypeMismatch ? (
                                 <Badge
                                   variant="outline"
-                                  className="text-[9px] font-extrabold uppercase border-red-200 text-red-600 bg-red-50">
+                                  className="text-sm font-extrabold uppercase border-red-200 text-red-600 bg-red-50">
                                   Program Mismatch
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="secondary"
-                                  className="text-[9px] font-extrabold uppercase">
+                                  className="text-sm font-extrabold uppercase">
                                   {learner.applicantType?.replace(/_/g, " ")}
                                 </Badge>
                               )}
@@ -368,7 +368,7 @@ export function InsertLateEnrolleeModal({
                     <p className="text-base font-extrabold text-red-900 uppercase">
                       Attendance Risk
                     </p>
-                    <p className="text-[11px] leading-relaxed text-red-800 font-extrabold">
+                    <p className="text-sm leading-relaxed text-red-800 font-extrabold">
                       {elapsedSchoolDays} school days have already passed.
                       Learner may struggle to meet the 80% DepEd attendance
                       requirement. Ensure catch-up interventions are planned.
@@ -383,7 +383,7 @@ export function InsertLateEnrolleeModal({
                   <p className="text-base font-extrabold text-amber-900 uppercase">
                     Inline Slotting Protection
                   </p>
-                  <p className="text-[11px] leading-relaxed text-amber-800 font-extrabold">
+                  <p className="text-sm leading-relaxed text-amber-800 font-extrabold">
                     This action will bypass the Batch Algorithm. The learner
                     will be added directly to the SF1 masterlist and synced to the
                     grading microservice.
@@ -393,7 +393,7 @@ export function InsertLateEnrolleeModal({
 
               {/* Official Enrollment Date — required for SF10/dateSectioned */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold uppercase text-foreground">
+                <label className="text-sm font-extrabold uppercase text-foreground">
                   Official Enrollment Date *
                 </label>
                 <input
@@ -403,7 +403,7 @@ export function InsertLateEnrolleeModal({
                   onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base leading-tight font-extrabold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
                 />
-                <p className="text-[10px] text-amber-700 font-extrabold">
+                <p className="text-sm text-amber-700 font-extrabold">
                   Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
                 </p>
               </div>

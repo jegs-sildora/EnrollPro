@@ -274,13 +274,11 @@ export default function EnrollmentForm({
         primaryContact,
         guardianRelationship,
         hasExecutedAffidavit: _hasExecutedAffidavit,
-        earlyRegistrationId,
         ...payloadBase
       } = uppercaseData as EnrollmentFormData & {
         contactNumber: string;
         primaryContact: "MOTHER" | "FATHER" | "GUARDIAN";
         hasExecutedAffidavit?: boolean;
-        earlyRegistrationId?: number | null;
         guardianRelationship?: string;
       };
 
@@ -321,18 +319,12 @@ export default function EnrollmentForm({
       const normalizedLrn = data.hasNoLrn
         ? null
         : String(data.lrn ?? "").trim() || null;
-      const normalizedEarlyRegistrationId =
-        typeof earlyRegistrationId === "number" &&
-          Number.isFinite(earlyRegistrationId)
-          ? earlyRegistrationId
-          : null;
+
 
       const payload = {
         ...payloadBase,
         lrn: normalizedLrn,
-        ...(normalizedEarlyRegistrationId !== null
-          ? { earlyRegistrationId: normalizedEarlyRegistrationId }
-          : {}),
+
         mother,
         father,
         guardian: hasGuardianData ? guardian : null,
@@ -690,7 +682,7 @@ export default function EnrollmentForm({
                             </Label>
                           </div>
                           {errors.isCertifiedTrue?.message && (
-                            <p className="text-[0.6875rem] text-destructive font-extrabold pl-14">
+                            <p className="text-sm text-destructive font-extrabold pl-14">
                               {errors.isCertifiedTrue.message}
                             </p>
                           )}

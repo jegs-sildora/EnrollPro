@@ -950,7 +950,7 @@ export default function Students() {
                       LRN: {row.original.lrn}
                     </span>
                     {row.original.applicantType === "LATE_ENROLLEE" && (
-                      <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
+                      <Badge className="h-4 px-1 text-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
                         Late Enrollee
                       </Badge>
                     )}
@@ -1325,7 +1325,7 @@ export default function Students() {
                               )}
                             </p>
                             {student.applicantType === "LATE_ENROLLEE" && (
-                              <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
+                              <Badge className="h-4 px-1 text-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-extrabold">
                                 Late Enrolled
                               </Badge>
                             )}
@@ -1379,7 +1379,7 @@ export default function Students() {
                       </div>
                     </div>
 
-                    <p className="mt-2 text-[11px] font-extrabold text-foreground">
+                    <p className="mt-2 text-sm font-extrabold text-foreground">
                       {activeTab === "active" ? "Enrolled " : "Updated "}
                       {formatDate(
                         student.dateEnrolled || student.createdAt,
@@ -1853,7 +1853,7 @@ export default function Students() {
                 inputMode="numeric"
                 maxLength={12}
               />
-              <p className="text-[11px] text-foreground font-extrabold text-center">
+              <p className="text-sm text-foreground font-extrabold text-center">
                 Must be exactly 12 digits as found in the DepEd LIS portal.
               </p>
             </div>

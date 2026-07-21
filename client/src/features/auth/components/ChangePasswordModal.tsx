@@ -1,6 +1,6 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
 import { motion, AnimatePresence } from "motion/react";
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useMemo, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -48,7 +48,6 @@ const schema = z
     path: ["confirmPassword"],
   });
 
-export { schema as changePasswordSchema };
 
 // --- Shared Reusable Form Component ---
 
@@ -116,12 +115,14 @@ export function ChangePasswordForm({
     await onSubmit(data.newPassword);
   };
 
+  const handleDiscard = useCallback(() => reset(), [reset]);
+
   useUnsavedChanges({
     id: "change-password-form",
     label: "Change password form",
     isDirty: isDirty && !loading,
     isSubmitting: loading,
-    onDiscard: () => reset(),
+    onDiscard: handleDiscard,
   });
 
   return (
@@ -136,7 +137,7 @@ export function ChangePasswordForm({
               id="newPassword"
               type={showPw ? "text" : "password"}
               placeholder="••••••••••••"
-              className={`font-extrabold h-12 pl-10 pr-10 bg-muted/30 border-border focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl ${newPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+              className={`font-extrabold h-12 pl-10 pr-10 bg-muted/30 border-border rounded-xl ${newPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
               {...register("newPassword")}
             />
             <button
@@ -349,10 +350,8 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden font-['Instrument_Sans',sans-serif] px-4">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden font-sans px-4">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
-
         :root {
           --brand: hsl(var(--accent));
           --brand-foreground: hsl(var(--accent-foreground));
@@ -391,7 +390,7 @@ export default function ChangePassword() {
             <CardTitle className="text-3xl font-extrabold ">
               Activate Official Account
             </CardTitle>
-            <CardDescription className="text-base">
+            <CardDescription className="text-base font-extrabold">
               Please replace the initial access key provided by the Registrar with your own private password.
             </CardDescription>
           </CardHeader>

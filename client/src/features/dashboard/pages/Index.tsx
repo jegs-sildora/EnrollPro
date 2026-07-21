@@ -13,6 +13,10 @@ import {
 import { PhaseOfficial } from "./PhaseOfficial";
 import { PhaseOngoing } from "./PhaseOngoing";
 import { PhaseEOSY } from "./PhaseEOSY";
+import {
+  DashboardActionToolbar,
+  DashboardSummaryRibbon,
+} from "../components/DashboardCommandCenter";
 
 interface DashboardStatsResponse {
   stats: DashboardStats
@@ -79,18 +83,27 @@ export default function DashboardIndex() {
     return <PageLoadingSkeleton />;
   }
 
-  const phase = stats?.systemPhase;
+  const phase = stats.systemPhase;
+  const isArchived = stats.isArchived || viewingStatus === "ARCHIVED";
+  const dashboardPhase = phase === "EOSY_CLOSING"
+    ? "EOSY_CLOSING"
+    : phase === "CLASSES_ONGOING"
+      ? "CLASSES_ONGOING"
+      : "ENROLLMENT_OPERATIONS";
 
   let content;
 
-  if (stats.isArchived || viewingStatus === "ARCHIVED") {
+  if (isArchived) {
     content = <PhaseOfficial stats={stats} />;
-  } else if (phase === "OFFICIAL_ENROLLMENT") {
+  } else if (
+    phase === "PRE_REGISTRATION"
+    || phase === "BOSY_ENROLLMENT"
+    || phase === "OFFICIAL_ENROLLMENT"
+  ) {
     content = <PhaseOfficial stats={stats} />;
   } else if (phase === "EOSY_CLOSING") {
     content = <PhaseEOSY stats={stats} />;
   } else {
-    // Fallback / Default for CLASSES_ONGOING and any other phases like PRE_REGISTRATION
     content = <PhaseOngoing stats={stats} />;
   }
 
@@ -101,9 +114,14 @@ export default function DashboardIndex() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
-        className="flex-1 flex flex-col w-full h-full min-h-0 min-w-0"
+        className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 pb-6"
       >
-        {content}
+        <DashboardActionToolbar
+          phase={dashboardPhase}
+          isArchived={isArchived}
+        />
+        <DashboardSummaryRibbon summary={stats.summaryRibbon} />
+        <div className="min-w-0 flex-1">{content}</div>
       </motion.div>
     </AnimatePresence>
   );

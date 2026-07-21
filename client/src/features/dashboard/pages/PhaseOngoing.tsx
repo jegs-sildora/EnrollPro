@@ -1,196 +1,114 @@
-import { useNavigate } from "react-router";
-import { Check, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/shared/ui/alert";
-import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
-import type { DashboardStats } from "../types";
+import { AlertTriangle, BookOpenCheck, School, UserPlus } from "lucide-react"
+import { useNavigate } from "react-router"
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { Button } from "@/shared/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext"
+import {
+  ActiveTallyPanel,
+  ComplianceWarningIcon,
+  OperationalQueueCard,
+  SectionSaturationPanel,
+  Sf1CompliancePanel,
+} from "../components/DashboardCommandCenter"
+import type { DashboardStats } from "../types"
 
 export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
-  const { ayLabel } = useSchoolYearContext();
-  const navigate = useNavigate();
-
-  const pendingTotal = stats?.v85Stats?.lateIntakeCount ?? 0;
-  const unassignedTotal = stats?.v85Stats?.pendingSF10Count ?? 0;
-  const deficientTotal = stats?.v85Stats?.overdueDocumentsCount ?? 0;
+  const navigate = useNavigate()
+  const { ayLabel } = useSchoolYearContext()
+  const lateIntakeCount = stats.v85Stats.lateIntakeCount
+  const unassignedTotal = stats.kpiHeader.unassignedTotal
+  const overdueDocuments = stats.v85Stats.overdueDocumentsCount
+  const overloadedSections = stats.sectionSaturation.filter(
+    (section) => section.isOverCapacity,
+  ).length
 
   return (
-    <div className="space-y-6 pb-6" style={{ "--element-track": "210 40% 96%" } as React.CSSProperties}>
-      <Alert style={{ backgroundColor: "#EFF6FF", borderColor: "#DBEAFE" }}>
-        <AlertTitle className="font-extrabold" style={{ color: "#1E3A8A" }}>Academic Phase: Classes Ongoing</AlertTitle>
-        <AlertDescription className="font-extrabold" style={{ color: "#1E3A8A" }}>
-          Regular BOSY enrollment is closed. All incoming applications are now automatically tagged and itemized as Late Enrollees.
-        </AlertDescription>
-      </Alert>
-
-      {stats?.v85Stats?.hasSectionLoadDisparity && (
-        <Alert style={{ backgroundColor: "#FEF3C7", borderColor: "#FDE68A" }}>
-          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1 text-left">
-            <AlertTitle className="font-extrabold text-amber-900">
-              Section Load Disparity Alert
-            </AlertTitle>
-            <AlertDescription className="text-amber-700 font-extrabold">
-              There is an active student headcount disparity greater than 5 learners within a grade level. Perform a serpentine load rebalancing to optimize advisory workloads.{" "}
-              <button
-                onClick={() => navigate("/monitoring/enrollment")}
-                className="underline font-extrabold cursor-pointer hover:text-amber-800"
-              >
-                Go to Sectioning
-              </button>
-            </AlertDescription>
-          </div>
-        </Alert>
-      )}
-
-      {stats?.v85Stats?.isTemporaryAdmissionExpired && stats?.v85Stats?.expiredTemporaryAdmissionsCount > 0 && (
-        <Alert style={{ backgroundColor: "#FEF2F2", borderColor: "#FEE2E2" }}>
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="space-y-1 text-left">
-            <AlertTitle className="font-extrabold text-rose-955">
-              Expired Temporary Admissions Detected
-            </AlertTitle>
-            <AlertDescription className="text-rose-700 font-extrabold">
-              There are {stats?.v85Stats?.expiredTemporaryAdmissionsCount} learners currently enrolled temporarily whose doc submission deadline (October 31) has expired. Follow up or flag these accounts.{" "}
-              <button
-                onClick={() => navigate("/continuing-learners?tab=incoming")}
-                className="underline font-extrabold cursor-pointer hover:text-rose-800"
-              >
-                Go to Verification Workspace
-              </button>
-            </AlertDescription>
-          </div>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Late Enrollees to Process</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
-              <AnimatedNumber value={pendingTotal} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
-                Appends to SF1 Bottom
-              </span>
-            </div>
-            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
-              <div>
-                {pendingTotal === 0 && (
-                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
-                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => navigate("/continuing-learners?tab=incoming")}
-                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                style={{ color: "hsl(var(--primary))" }}
-              >
-                Process Late Admissions &rarr;
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Pending Form 137 (SF10)</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
-              <AnimatedNumber value={unassignedTotal} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
-                Awaiting SF10 (In) | Requested (Out)
-              </span>
-            </div>
-            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
-              <div>
-                {unassignedTotal === 0 && (
-                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
-                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => navigate("/monitoring/enrollment")}
-                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                style={{ color: "hsl(var(--primary))" }}
-              >
-                Manage Transfer Records &rarr;
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Overdue Documents</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-primary">
-              <AnimatedNumber value={deficientTotal} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-foreground">
-                Unresolved August Deficiencies
-              </span>
-            </div>
-            <div className="mt-6 flex items-center justify-between mt-auto pt-4">
-              <div>
-                {deficientTotal === 0 && (
-                  <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 text-foreground bg-muted">
-                    <Check className="w-4 h-4 mr-2 text-emerald-600" /> No Pending Records
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => navigate("/continuing-learners?tab=incoming")}
-                className="text-sm font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                style={{ color: "hsl(var(--primary))" }}
-              >
-                Follow-up Missing Hardcopies &rarr;
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
+        <p className="text-sm font-extrabold">
+          Classes Ongoing for S.Y. {ayLabel}
+        </p>
+        <p className="text-sm font-semibold">
+          Regular online enrollment is closed. Authorized registrars may still encode late walk-in learners at the campus office.
+        </p>
       </div>
 
-      <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col w-full">
-        <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
-          <div className="flex flex-col items-center gap-1">
-            <h3 className="text-base sm:text-lg font-extrabold text-foreground">Active School Tally</h3>
-            <div className="text-5xl sm:text-6xl font-extrabold" style={{ color: "hsl(var(--primary))" }}>
-              <AnimatedNumber value={(stats?.v85Stats?.activeSchoolTallyBOSY ?? 0) + (stats?.v85Stats?.activeSchoolTallyLate ?? 0)} />
-            </div>
-            <p className="text-sm font-semibold text-foreground">{stats?.v85Stats?.activeSchoolTallyBOSY ?? 0} Official BOSY Baseline • +{stats?.v85Stats?.activeSchoolTallyLate ?? 0} Appended Late Enrollees</p>
-          </div>
+      {(stats.v85Stats.hasSectionLoadDisparity || overloadedSections > 0) && (
+        <Alert className="border-amber-300 bg-amber-50 text-amber-950">
+          <AlertTriangle className="size-5 text-amber-700" />
+          <AlertTitle className="font-extrabold">
+            Class Section Review Required
+          </AlertTitle>
+          <AlertDescription className="font-semibold">
+            {overloadedSections > 0
+              ? `${overloadedSections} class section${overloadedSections === 1 ? " exceeds" : "s exceed"} the configured seat limit.`
+              : "Learner counts differ by more than five within at least one grade level."}
+            {" "}Review section balance before placing additional late enrollees.
+          </AlertDescription>
+        </Alert>
+      )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 border-t pt-4">
-            {Array.of(7, 8, 9, 10).map((grade, idx) => {
-              const b = stats?.gradeLevelBreakdown?.at(idx);
-              return (
-                <div key={grade} className="text-center">
-                  <p className="text-sm font-semibold text-foreground mb-1">Grade {grade}</p>
-                  <p className="text-2xl font-extrabold text-foreground">
-                    <AnimatedNumber value={b?.current ?? 0} />
-                  </p>
-                  <p className="text-xs text-foreground mt-1 ">(+{b?.late ?? 0} Late | -{b?.dropped ?? 0} Dropped)</p>
-                </div>
-              );
-            })}
-          </div>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <OperationalQueueCard
+          title="Late Learners to Process"
+          value={lateIntakeCount}
+          detail="Campus walk-in records awaiting verification"
+          zeroLabel="No Late Enrollment Records Pending"
+          actionLabel="Process Late Walk-In Records"
+          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          icon={<UserPlus className="size-5 text-primary" />}
+        />
+        <OperationalQueueCard
+          title="Unsectioned Learners"
+          value={unassignedTotal}
+          detail="Verified learners not yet listed in an SF1 section"
+          zeroLabel="All Enrolled Learners Have Sections"
+          actionLabel="Review Class Placement"
+          onAction={() => navigate("/monitoring/enrollment")}
+          icon={<School className="size-5 text-primary" />}
+        />
+        <OperationalQueueCard
+          title="Missing School Requirements"
+          value={overdueDocuments}
+          detail="Temporary enrollment requirements still unresolved"
+          zeroLabel="All Required Documents Recorded"
+          actionLabel="Review Missing Requirements"
+          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          icon={<ComplianceWarningIcon active={overdueDocuments > 0} />}
+          warning
+        />
+      </section>
+
+      <ActiveTallyPanel tally={stats.activeTally} />
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <SectionSaturationPanel
+          sections={stats.sectionSaturation}
+          onReview={() => navigate("/sections")}
+        />
+        <Sf1CompliancePanel
+          compliance={stats.sf1Compliance}
+          onReview={() => navigate("/students")}
+        />
+      </section>
+
+      <Card className="border-slate-200 bg-card shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+            <BookOpenCheck className="size-5 text-primary" />
+            Daily Attendance Records
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-3xl text-sm font-semibold text-muted-foreground">
+            SMART is the official source of truth for daily attendance. EnrollPro supplies learner identity and class-section context only.
+          </p>
+          <Button variant="outline" className="hover:bg-primary hover:text-primary-foreground" onClick={() => navigate("/smart")}>
+            Open SMART Attendance
+          </Button>
         </CardContent>
       </Card>
-
-
-
-
     </div>
-  );
+  )
 }

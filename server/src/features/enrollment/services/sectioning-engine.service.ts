@@ -74,7 +74,7 @@ export class SectioningEngine {
 
   // ── Gen Ave Resolver ─────────────────────────────────────────────────────────
   // Resolves the best available general average for an applicant.
-  // G7: SF10 previousSchool data (entered during early registration)
+  // Grade 7: use the previous-school SF10 data recorded during enrollment.
   // G8-10: Learner.previousGenAve (from SMART sync) → prior EnrollmentRecord.finalAverage → previousSchool fallback
   private resolveGenAve(
     app: ApplicantWithRelations,

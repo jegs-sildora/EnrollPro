@@ -692,7 +692,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
             <div className="space-y-4">
               <div className="rounded-md border border-border bg-muted/20 p-4">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-extrabold uppercase text-muted-foreground">
+                  <span className="text-sm font-extrabold uppercase text-muted-foreground">
                     Uploaded File
                   </span>
                   <span className="text-sm font-extrabold text-foreground break-all">
@@ -716,7 +716,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                   },
                 ].map((item) => (
                   <div key={item.label} className="rounded-md border border-border bg-card p-3">
-                    <div className="text-xs font-extrabold uppercase text-muted-foreground">
+                    <div className="text-sm font-extrabold uppercase text-muted-foreground">
                       {item.label}
                     </div>
                     <div className="mt-1 text-lg font-extrabold text-foreground">
@@ -765,7 +765,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                                   {getSf1RowName(row) || "Name not readable"}
                                 </div>
                                 {row.existingSectionName && (
-                                  <div className="text-xs font-bold text-destructive">
+                                  <div className="text-sm font-bold text-destructive">
                                     Already seated in {row.existingSectionName}
                                   </div>
                                 )}

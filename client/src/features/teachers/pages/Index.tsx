@@ -1103,23 +1103,23 @@ export default function Teachers() {
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Rows Found</p>
+                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Rows Found</p>
                   <p className="text-2xl font-extrabold">{sf7Preview.summary.totalRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Matched</p>
+                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Matched</p>
                   <p className="text-2xl font-extrabold text-emerald-700">{sf7Preview.summary.matchedRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-xs font-extrabold uppercase text-muted-foreground">No Employee No.</p>
+                  <p className="text-sm font-extrabold uppercase text-muted-foreground">No Employee No.</p>
                   <p className="text-2xl font-extrabold text-amber-700">{sf7Preview.summary.missingEmployeeIdRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-xs font-extrabold uppercase text-muted-foreground">No Match</p>
+                  <p className="text-sm font-extrabold uppercase text-muted-foreground">No Match</p>
                   <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.noMatchRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-xs font-extrabold uppercase text-muted-foreground">Flags</p>
+                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Flags</p>
                   <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.issueCount}</p>
                 </div>
               </div>
@@ -1130,7 +1130,7 @@ export default function Teachers() {
                 </div>
                 <div className="max-h-80 overflow-auto">
                   <table className="w-full min-w-[760px] text-sm">
-                    <thead className="sticky top-0 bg-muted text-left text-xs font-extrabold uppercase text-muted-foreground">
+                    <thead className="sticky top-0 bg-muted text-left text-sm font-extrabold uppercase text-muted-foreground">
                       <tr>
                         <th className="px-3 py-2">Row</th>
                         <th className="px-3 py-2">Employee No.</th>

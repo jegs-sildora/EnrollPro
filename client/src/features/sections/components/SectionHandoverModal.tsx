@@ -176,7 +176,7 @@ export function SectionHandoverModal({
               </Label>
               <Badge
                 variant="outline"
-                className="text-[9px] font-extrabold uppercase border-amber-200 bg-amber-50 text-amber-700">
+                className="text-sm font-extrabold uppercase border-amber-200 bg-amber-50 text-amber-700">
                 ACTIVE
               </Badge>
             </div>
@@ -188,7 +188,7 @@ export function SectionHandoverModal({
                 <p className="font-extrabold text-base uppercase leading-none">
                   {currentAdviser?.name || "Unassigned"}
                 </p>
-                <p className="text-[11px] font-extrabold text-foreground mt-1">
+                <p className="text-sm font-extrabold text-foreground mt-1">
                   Load tracked until handover date
                 </p>
               </div>
@@ -337,7 +337,7 @@ export function SectionHandoverModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex gap-4">
             <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
             <div className="space-y-1">
-              <p className="text-[11px] font-extrabold uppercase text-amber-800  leading-none">
+              <p className="text-sm font-extrabold uppercase text-amber-800  leading-none">
                 Official DepEd Compliance Notice
               </p>
               <p className="text-base font-extrabold text-amber-700 leading-relaxed">

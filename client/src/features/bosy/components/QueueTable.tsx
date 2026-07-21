@@ -61,7 +61,7 @@ function statusBadge(item: BOSYQueueItem) {
   if (item.status === "PENDING_CONFIRMATION")
     return (
       <Badge
-        className="rounded-md border-amber-100 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-amber-700 hover:bg-amber-50">
+        className="rounded-md border-amber-100 bg-amber-50 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-amber-700 hover:bg-amber-50">
         Pending
       </Badge>
     );
@@ -69,7 +69,7 @@ function statusBadge(item: BOSYQueueItem) {
     return (
       <div className="flex max-w-72 flex-col items-center gap-1.5 text-center">
         <Badge
-          className="rounded-md border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-amber-800 hover:bg-amber-50">
+          className="rounded-md border-amber-200 bg-amber-50 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-amber-800 hover:bg-amber-50">
           Temporarily Enrolled
         </Badge>
         {item.missingDocuments.length > 0 && (
@@ -82,21 +82,21 @@ function statusBadge(item: BOSYQueueItem) {
   if (item.status === "READY_FOR_SECTIONING")
     return (
       <Badge
-        className="rounded-md border-blue-700 bg-blue-600 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-white hover:bg-blue-600">
+        className="rounded-md border-blue-700 bg-blue-600 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-white hover:bg-blue-600">
         Ready for Section Assignment
       </Badge>
     );
   if (item.status === "ENROLLED" || item.status === "OFFICIALLY_ENROLLED")
     return (
       <Badge
-        className="rounded-md border-emerald-700 bg-emerald-600 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-white hover:bg-emerald-600">
+        className="rounded-md border-emerald-700 bg-emerald-600 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-white hover:bg-emerald-600">
         Enrolled
       </Badge>
     );
   return (
     <Badge
       variant="outline"
-      className="rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide">
+      className="rounded-md px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide">
       {formatApplicationStatus(item.status)}
     </Badge>
   );
@@ -291,7 +291,7 @@ function QueueMobileCard({
                 {learnerName}
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={cn("rounded-md px-3 py-1 text-xs font-extrabold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                <Badge className={cn("rounded-md px-3 py-1 text-sm font-extrabold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
                   {item.gradeLevelName}
                 </Badge>
                 {statusBadge(item)}
@@ -309,7 +309,7 @@ function QueueMobileCard({
 
           <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-left">
             <div className="min-w-0">
-              <p className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
                 Last Year Result
               </p>
               <div className="mt-1 flex flex-col items-start gap-1">

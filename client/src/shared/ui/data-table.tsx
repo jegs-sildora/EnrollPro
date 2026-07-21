@@ -113,7 +113,7 @@ function TableRowComponentInner<TData>(
         }
       }}
       className={cn(
-        "text-center text-xs transition-colors bg-background",
+        "text-center text-sm transition-colors bg-background",
         isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
         row.getIsSelected() ? "bg-muted/80 hover:bg-muted/80" : "",
         customClassName,
@@ -249,7 +249,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "text-center font-extrabold text-foreground dark:text-slate-200 text-xs px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
+                        "text-center font-extrabold text-foreground dark:text-slate-200 text-sm px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
                         dense ? "h-8" : "h-11",
                         isPinned ? "z-30" : "z-20",
                         isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",

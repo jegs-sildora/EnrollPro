@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -78,6 +79,7 @@ function getWalkInErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function WalkInEncodePanel() {
+  const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [noLrn, setNoLrn] = useState(false);
@@ -112,6 +114,12 @@ export function WalkInEncodePanel() {
     },
   });
   const { isDirty, isSubmitting } = form.formState;
+
+  useEffect(() => {
+    if (searchParams.get("action") === "walk-in") {
+      setOpen(true);
+    }
+  }, [searchParams]);
 
   const handleLrnLookup = async (lrn: string) => {
     if (lrn.length !== 12) return;
@@ -234,11 +242,11 @@ export function WalkInEncodePanel() {
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-h-14">
             <div className="space-y-0.5">
-              <SheetTitle className="text-base font-extrabold text-primary-foreground uppercase leading-none">
-                Walk-In Direct Encode
+              <SheetTitle className="text-xl font-extrabold text-primary-foreground uppercase leading-none">
+                Walk-In Learner Enrollment
               </SheetTitle>
-              <SheetDescription className="text-base font-extrabold text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
-                Bypass verification and enter Unassigned Pool
+              <SheetDescription className="text-sm font-extrabold text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+                Directly encode learner profile for class assignment
               </SheetDescription>
             </div>
           </div>

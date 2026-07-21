@@ -734,7 +734,7 @@ export function StudentDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-base text-foreground mt-1">
+              className="text-sm sm:text-base text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -1943,7 +1943,7 @@ export function StudentDetailPanel({
                       Reset to Default Password
                     </Button>
                   </div>
-                  <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                  <p className="text-sm font-extrabold leading-tight text-foreground/60">
                     This will reset the learner's portal password to the value above and force a password change on next login.
                   </p>
                 </div>

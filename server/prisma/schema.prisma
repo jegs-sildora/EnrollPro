@@ -242,7 +242,7 @@ model SectionAdviser {
   @@map("section_advisers")
 }
 
-/// Core learner demographics shared between early registration and enrollment
+/// Core learner demographics shared between admission and enrollment
 model Learner {
   id                           Int                     @id @default(autoincrement())
   lrn                          String?                 @unique(map: "uq_learners_lrn") @db.VarChar(12)
@@ -368,7 +368,7 @@ model EnrollmentPreviousSchool {
   @@map("enrollment_previous_schools")
 }
 
-/// Address linked to an application (Early Reg or Enrollment)
+/// Address linked to an application
 model ApplicationAddress {
   id               Int                    @id @default(autoincrement())
   enrollmentId     Int?                   @map("enrollment_id")
@@ -615,7 +615,6 @@ enum Sex {
 }
 
 enum ApplicationStatus {
-  EARLY_REG_SUBMITTED
   PRE_REGISTERED
   PENDING_VERIFICATION
   READY_FOR_SECTIONING

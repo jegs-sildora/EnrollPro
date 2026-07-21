@@ -242,7 +242,7 @@ export default function LearnerDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="hidden sm:inline-flex bg-emerald-50 text-emerald-700 border-emerald-200 uppercase text-[10px] font-extrabold h-5">
+            <Badge variant="outline" className="hidden sm:inline-flex bg-emerald-50 text-emerald-700 border-emerald-200 uppercase text-sm font-extrabold h-5">
               2026-2027 [ACTIVE]
             </Badge>
             <div className="flex items-center gap-2">
@@ -255,7 +255,7 @@ export default function LearnerDashboard() {
                 <span className="text-base font-extrabold text-muted-foreground leading-tight">
                   {user.firstName} {user.lastName}
                 </span>
-                <Badge className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] uppercase w-fit h-4 px-1 py-0 border-0 leading-none mt-[2px]">LEARNER</Badge>
+                <Badge className="bg-slate-900 text-white hover:bg-slate-800 text-sm uppercase w-fit h-4 px-1 py-0 border-0 leading-none mt-[2px]">LEARNER</Badge>
               </div>
             </div>
             <Button

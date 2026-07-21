@@ -54,8 +54,6 @@ export const EnrollmentFormSchema = z
       message: "Acceptance of the Data Privacy Notice is required to proceed.",
     }),
 
-    // Internal Reference
-    earlyRegistrationId: z.number({ message: "Invalid reference format." }).optional().nullable(),
 
     // Section 1: Tracking Numbers
     schoolYear: z.string({ message: "Please select a valid academic year." }).min(1, "Academic year selection is required."),
@@ -314,14 +312,6 @@ export const EnrollmentFormSchema = z
         });
       }
 
-      if (!data.earlyRegistrationId) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "SCP admission requires a verified Early Registration record to proceed.",
-          path: ["earlyRegistrationId"],
-        });
-      }
     }
 
     const isMotherAvailable = !data.hasNoMother;
@@ -530,6 +520,4 @@ export const SPFL_LANGUAGES = [
   "Korean",
 ];
 
-// Aliases for backward compatibility
-export const EarlyRegistrationSchema = EnrollmentFormSchema;
-export type EarlyRegistrationFormData = EnrollmentFormData;
+

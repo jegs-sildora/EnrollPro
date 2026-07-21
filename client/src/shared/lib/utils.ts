@@ -339,7 +339,6 @@ export function getApplicationStatusColorClasses(
   // 1. Pipeline / Transitional (Muted Blues/Indigos)
   if (
     s === "SUBMITTED" ||
-    s === "EARLY_REG_SUBMITTED" ||
     s === "SUBMITTED_BEERF" ||
     s === "SUBMITTED_BEEF" ||
     s === "PRE_REGISTERED"
@@ -506,7 +505,7 @@ export function formatApplicationStatus(
   if (s === "SUBMITTED_BEERF") return "Submitted (BEERF)";
   if (s === "SUBMITTED_BEEF") return "Submitted (BEEF)";
   if (s === "PENDING_BEEF") return "Pending BEEF";
-  if (s === "EARLY_REG_SUBMITTED") return "Early Reg Submitted";
+  if (s === "WITHDRAWN") return "Withdrawn";
   if (s === "READY_FOR_SECTIONING") return "Ready for Sectioning";
   if (s === "READY_FOR_ENROLLMENT") return "Ready for Enrollment";
   if (s === "TRANSFERRING_OUT") return "Transferring Out";

@@ -345,7 +345,7 @@ export function LisEnrollmentDialog({
               ) : (
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-muted">
                   <table className="w-full text-left border-collapse text-base leading-tight">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200">
+                    <thead className="bg-slate-50 text-sm uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-4 w-12 text-center">
                           <Checkbox
@@ -383,17 +383,17 @@ export function LisEnrollmentDialog({
                             {app.sex === "MALE" ? "M" : "F"}
                           </td>
                           <td className="py-2 px-3 text-base">
-                            <Badge variant="secondary" className="text-[10px] font-extrabold">
+                            <Badge variant="secondary" className="text-sm font-extrabold">
                               {app.learnerType}
                             </Badge>
                           </td>
                           <td className="py-2 px-3 text-base">
                             {app.isTemporarilyEnrolled ? (
-                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-extrabold">
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-sm font-extrabold">
                                 Temporary
                               </Badge>
                             ) : (
-                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-extrabold">
+                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-sm font-extrabold">
                                 Official
                               </Badge>
                             )}
@@ -447,7 +447,7 @@ export function LisEnrollmentDialog({
                         <h4 className="font-extrabold text-base uppercase text-slate-800 leading-none">
                           {selectedSearchLearner.lastName}, {selectedSearchLearner.firstName}
                         </h4>
-                        <p className="text-[10px] font-extrabold text-slate-500 uppercase mt-1">
+                        <p className="text-sm font-extrabold text-slate-500 uppercase mt-1">
                           LRN: {selectedSearchLearner.lrn || "PENDING"}
                         </p>
                       </div>
@@ -464,7 +464,7 @@ export function LisEnrollmentDialog({
 
                   <div className="p-3 bg-muted rounded-lg border border-slate-200/60 shadow-sm flex items-center gap-2">
                     <HelpCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <p className="text-[11px] leading-relaxed text-slate-600 font-extrabold">
+                    <p className="text-sm leading-relaxed text-slate-600 font-extrabold">
                       {selectedSearchLearner.enrollmentApplicationId
                         ? "This learner has an active BEEF application. Enrollment will section them instantly."
                         : "Walk-in transferee has no active application in the current school year. Enrolling will auto-generate their BEEF record."}
@@ -489,7 +489,7 @@ export function LisEnrollmentDialog({
               ) : (
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-muted max-h-[220px] overflow-y-auto">
                   <table className="w-full text-left border-collapse text-base leading-tight">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200 sticky top-0">
+                    <thead className="bg-slate-50 text-sm uppercase font-extrabold tracking-wide text-slate-600 border-b border-slate-200 sticky top-0">
                       <tr>
                         <th className="py-2 px-3">Name</th>
                         <th className="py-2 px-3">LRN</th>
@@ -513,7 +513,7 @@ export function LisEnrollmentDialog({
                               size="sm"
                               variant="outline"
                               onClick={() => setSelectedSearchLearner(l)}
-                              className="text-[10px] font-extrabold h-7 uppercase bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                              className="text-sm font-extrabold h-7 uppercase bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                             >
                               Select
                             </Button>
@@ -531,7 +531,7 @@ export function LisEnrollmentDialog({
         {/* Global Enrollment Controls Section */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-extrabold uppercase text-slate-600">
+            <label className="text-sm font-extrabold uppercase text-slate-600">
               Official Enrollment Date *
             </label>
             <input
@@ -544,7 +544,7 @@ export function LisEnrollmentDialog({
           </div>
 
           <div className="flex flex-col justify-center space-y-1.5">
-            <label className="text-[10px] font-extrabold uppercase text-slate-600 flex items-center gap-1.5">
+            <label className="text-sm font-extrabold uppercase text-slate-600 flex items-center gap-1.5">
               <span>Section Capacity Override</span>
             </label>
             <div className="flex items-center gap-2">
@@ -555,7 +555,7 @@ export function LisEnrollmentDialog({
               />
               <label
                 htmlFor="capacity-override"
-                className="text-[11px] font-extrabold text-slate-600 cursor-pointer select-none"
+                className="text-sm font-extrabold text-slate-600 cursor-pointer select-none"
               >
                 Allow override if section is overlimit
               </label>
@@ -566,7 +566,7 @@ export function LisEnrollmentDialog({
         {/* Footer */}
         <DialogFooter className="px-6 py-4 border-t border-slate-100 flex items-center justify-between sm:justify-between bg-slate-50/50 shrink-0">
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[10px] font-extrabold uppercase bg-muted border-slate-200/80">
+            <Badge variant="outline" className="text-sm font-extrabold uppercase bg-muted border-slate-200/80">
               LIS Sync: Active
             </Badge>
           </div>

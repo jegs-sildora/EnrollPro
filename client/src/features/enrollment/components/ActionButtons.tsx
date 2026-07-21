@@ -114,7 +114,6 @@ export function ActionButtons({
   };
 
   const canMarkAsVerified = [
-    "EARLY_REG_SUBMITTED",
     "PENDING_VERIFICATION",
     "SUBMITTED_BEERF",
     "SUBMITTED_BEEF",
@@ -180,7 +179,6 @@ export function ActionButtons({
           {/* Existing action for regular applicants */}
           {isRegular &&
             [
-              "EARLY_REG_SUBMITTED",
               "PENDING_VERIFICATION",
               "SUBMITTED_BEERF",
               "SUBMITTED_BEEF",
@@ -220,7 +218,6 @@ export function ActionButtons({
           {/* SCP: Verify & Schedule first step (pipeline-aware) */}
           {isSCP &&
             [
-              "EARLY_REG_SUBMITTED",
               "PENDING_VERIFICATION",
               "SUBMITTED_BEERF",
               "SUBMITTED_BEEF",

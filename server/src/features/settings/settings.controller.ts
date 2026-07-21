@@ -9,7 +9,10 @@ import {
   contrastForeground,
 } from "./logo-color.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { getEnrollmentPhase, isRegularEnrollmentWindowOpen } from "./enrollment-gate.service.js";
+import {
+  getEnrollmentPhase,
+  isPublicEnrollmentOpen,
+} from "./enrollment-gate.service.js";
 import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
 
@@ -67,7 +70,7 @@ export async function getPublicSettings(
       ? getEnrollmentPhase(contextSy, settings.systemPhase)
       : "CLOSED";
     const isBosyEnrollmentOpen = contextSy
-      ? isRegularEnrollmentWindowOpen(contextSy, settings.systemPhase)
+      ? isPublicEnrollmentOpen(contextSy, settings.systemPhase)
       : false;
 
     const lock = contextSy ? activeLocks.get(contextSy.id) : null;

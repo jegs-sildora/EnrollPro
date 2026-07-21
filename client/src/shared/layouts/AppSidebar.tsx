@@ -45,7 +45,7 @@ function NavBrand({
           {schoolName || "EnrollPro"}
         </span>
         {workspaceName && (
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground line-clamp-1">
+          <span className="text-sm font-extrabold uppercase tracking-wider text-muted-foreground line-clamp-1">
             {workspaceName}
           </span>
         )}
@@ -87,7 +87,7 @@ export function AppSidebar({
       <SidebarContent>
         {groups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-xs font-extrabold uppercase tracking-wider">
+            <SidebarGroupLabel className="text-sm font-extrabold uppercase tracking-wider">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>

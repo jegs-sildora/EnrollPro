@@ -5,6 +5,19 @@ import axios from "axios";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
+import { isStaffIntakeAllowed } from "../settings/enrollment-gate.service.js";
+
+async function assertStaffIntakeAllowed(): Promise<void> {
+  const setting = await prisma.schoolSetting.findFirst({
+    select: { systemPhase: true },
+  });
+  if (!isStaffIntakeAllowed(setting?.systemPhase)) {
+    throw new AppError(
+      403,
+      "Learner intake is locked during EOSY Closing. Complete enrollment changes before starting year-end processing.",
+    );
+  }
+}
 
 
 /**
@@ -24,6 +37,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
   const userId = (req as any).user.id;
 
   try {
+    await assertStaffIntakeAllowed();
     // 1. Validate learner exists and is returning
     const learner = await prisma.learner.findUnique({
       where: { id: learnerId },
@@ -110,6 +124,7 @@ export async function batchConfirmConfirmationSlips(
   }
 
   try {
+    await assertStaffIntakeAllowed();
     const results = await prisma.$transaction(async (tx) => {
       const updates = [];
 
@@ -339,6 +354,7 @@ export async function syncSmartGrades(req: Request, res: Response) {
  *  - Fires Notification Event A (Intake Receipt Confirmation)
  */
 export async function finalizeIntake(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
   const userId = (req as any).user?.id ?? (req as any).user?.userId;
 
   const {
@@ -490,6 +506,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
  * Flags an application as deficient (missing requirements), setting status to FOR_REVISION.
  */
 export async function flagDeficient(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
   const applicationId = Number(req.params.applicationId);
   const userId = (req as any).user?.id ?? (req as any).user?.userId;
 
@@ -535,6 +552,7 @@ export async function flagDeficient(req: Request, res: Response) {
 
 export async function directEncodeWalkIn(req: Request, res: Response) {
   try {
+    await assertStaffIntakeAllowed();
     const payload = req.body;
     const {
       lrn, firstName, lastName, middleName, birthdate, sex,

@@ -340,7 +340,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
+                    <p className="text-sm text-foreground/70 font-extrabold mb-4">
                       Select the staff member's system access level.
                     </p>
                     <div className="space-y-2">
@@ -390,7 +390,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       </span>
                     </div>
                     <div className="px-5 pb-5 pt-4">
-                      <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
+                      <p className="text-sm text-foreground/70 font-extrabold mb-4">
                         Legal name and basic identity details.
                       </p>
 
@@ -491,7 +491,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         </span>
                       </div>
                       <div className="px-5 pb-5 pt-4">
-                        <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
+                        <p className="text-sm text-foreground/70 font-extrabold mb-4">
                           Official DepEd credentials and department assignment.
                         </p>
 
@@ -570,7 +570,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                             </Select>
                           )}
                           {formData.roles.includes("MRF") && (
-                            <p className="text-[10px] text-foreground mt-1.5 leading-snug font-extrabold">
+                            <p className="text-sm text-foreground mt-1.5 leading-snug font-extrabold">
                               <strong className="text-foreground">Note:</strong> Designation is tied to the selected role for MRF accounts and cannot be edited here.
                             </p>
                           )}
@@ -588,7 +588,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                       </span>
                     </div>
                     <div className="px-5 pb-5 pt-4">
-                      <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
+                      <p className="text-sm text-foreground/70 font-extrabold mb-4">
                         Communication channels for notifications.
                       </p>
 
@@ -638,7 +638,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     <div className="space-y-3 p-4 bg-background border rounded-lg">
                       <div className="space-y-1">
                         <Label className=" leading-tight font-extrabold uppercase">System Login Access</Label>
-                        <p className="text-[11px] font-extrabold text-foreground uppercase">
+                        <p className="text-sm font-extrabold text-foreground uppercase">
                           Control whether this account can access the system.
                         </p>
                       </div>
@@ -719,7 +719,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-[11px] text-foreground/70 font-extrabold mb-4">
+                    <p className="text-sm text-foreground/70 font-extrabold mb-4">
                       Initial access credentials.
                     </p>
 
@@ -733,7 +733,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                           onChange={(e) => onFieldChange("accountName", e.target.value.replace(/\s+/g, ""))}
                           className="font-extrabold  leading-tight bg-background text-foreground border-border h-10"
                         />
-                        <p className="text-[10px] text-foreground/70 font-extrabold leading-snug">
+                        <p className="text-sm text-foreground/70 font-extrabold leading-snug">
                           Used for local portal authentication in lieu of a DepEd ID.
                         </p>
                       </div>
@@ -771,7 +771,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         </Button>
                       </div>
                     </div>
-                    <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[10px] font-extrabold text-orange-800 leading-relaxed uppercase">
+                    <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-sm font-extrabold text-orange-800 leading-relaxed uppercase">
                       <div className="flex items-center gap-1.5 mb-1 text-orange-900">
                         <ShieldAlert className="h-3 w-3" />
                         Governance Notice

@@ -23,6 +23,7 @@ import {
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { validate } from "../../middleware/validate.js";
+import { staffIntakePhaseGuard } from "../../middleware/staff-intake-phase.guard.js";
 import {
   createSectionSchema,
   updateSectionSchema,
@@ -80,6 +81,7 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchSectioningSchema),
+  staffIntakePhaseGuard,
   commitBatchSectioning,
 );
 
@@ -87,6 +89,7 @@ router.post(
   "/auto-distribute",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  staffIntakePhaseGuard,
   autoDistributeUnassigned,
 );
 
@@ -166,6 +169,7 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(sf1ImportCommitSchema),
+  staffIntakePhaseGuard,
   commitSectionSf1Import,
 );
 
@@ -180,6 +184,7 @@ router.post(
 	'/:id/inline-slot',
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	staffIntakePhaseGuard,
 	inlineSlotLearner,
 );
 

@@ -104,7 +104,7 @@ export function OneTimePinSuccessDialog({
         <div className="space-y-4 px-6 py-5">
           <div className="grid gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 sm:grid-cols-3">
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
+              <p className="text-sm text-emerald-700/90 font-extrabold uppercase ">
                 Tracking No.
               </p>
               <p className="text-base leading-tight font-extrabold text-emerald-950">
@@ -112,7 +112,7 @@ export function OneTimePinSuccessDialog({
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
+              <p className="text-sm text-emerald-700/90 font-extrabold uppercase ">
                 Grade Level
               </p>
               <p className="text-base leading-tight font-extrabold text-emerald-950">
@@ -120,7 +120,7 @@ export function OneTimePinSuccessDialog({
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
+              <p className="text-sm text-emerald-700/90 font-extrabold uppercase ">
                 Section
               </p>
               <p className="text-base leading-tight font-extrabold text-emerald-950">
@@ -145,7 +145,7 @@ export function OneTimePinSuccessDialog({
           </div>
 
           <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-muted p-4 text-center">
-            <p className="text-[0.65rem] text-emerald-700/90 font-extrabold uppercase ">
+            <p className="text-sm text-emerald-700/90 font-extrabold uppercase ">
               Learner Portal One-Time PIN
             </p>
             <p className=" text-4xl  text-emerald-900 sm:text-5xl font-extrabold">

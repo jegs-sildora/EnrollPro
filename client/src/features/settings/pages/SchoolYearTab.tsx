@@ -269,7 +269,6 @@ interface SYItem {
   _count: {
     sections: number;
     gradeLevels: number;
-    earlyRegistrationApplications: number;
     enrollmentApplications: number;
     enrollmentRecords: number;
   };
@@ -1511,7 +1510,7 @@ export default function SchoolYearTab() {
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
-                  <p className="text-[0.7rem] font-extrabold text-destructive flex items-center gap-1 mt-1">
+                  <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
                     <AlertTriangle className="h-3 w-3" />A school year with this
                     label already exists.
                   </p>

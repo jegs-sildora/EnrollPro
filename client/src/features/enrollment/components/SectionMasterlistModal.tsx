@@ -125,8 +125,8 @@ export function SectionMasterlistModal({ sectionId, onClose }: SectionMasterlist
                         {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                       </span>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-extrabold text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
-                        <Badge variant="outline" className="text-[9px] uppercase font-extrabold px-1.5 py-0 h-4">{l.sex}</Badge>
+                        <span className="text-sm font-extrabold text-muted-foreground tracking-widest">{l.lrn || "NO LRN"}</span>
+                        <Badge variant="outline" className="text-sm uppercase font-extrabold px-1.5 py-0 h-4">{l.sex}</Badge>
                       </div>
                     </div>
 

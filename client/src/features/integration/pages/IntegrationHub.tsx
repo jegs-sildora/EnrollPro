@@ -80,7 +80,7 @@ const HealthCard = memo(({ system }: { system: EcosystemSystem }) => {
           </div>
           <div>
             <CardTitle className="text-base font-extrabold uppercase tracking-tight">{system.name}</CardTitle>
-            <CardDescription className="text-[10px] font-extrabold uppercase opacity-70">{system.description}</CardDescription>
+            <CardDescription className="text-sm font-extrabold uppercase opacity-70">{system.description}</CardDescription>
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -96,32 +96,32 @@ const HealthCard = memo(({ system }: { system: EcosystemSystem }) => {
                 )}></span>
               )}
             </span>
-            <span className="text-[10px] font-extrabold uppercase tracking-wide">
+            <span className="text-sm font-extrabold uppercase tracking-wide">
               {system.status === "connected" ? "Connected" : system.status === "degraded" ? "Degraded" : "Failed"}
             </span>
           </div>
-          <span className="text-[9px] font-extrabold text-foreground">{system.latency}</span>
+          <span className="text-sm font-extrabold text-foreground">{system.latency}</span>
         </div>
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
         <div className="space-y-1.5">
           <div className="flex justify-between items-end">
-            <p className="text-[10px] font-extrabold uppercase text-foreground">Data Parity</p>
-            <Badge variant={isMismatched ? "outline" : "success"} className={cn("h-4.5 text-[9px] font-extrabold uppercase px-1.5", isMismatched ? "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "")}>
+            <p className="text-sm font-extrabold uppercase text-foreground">Data Parity</p>
+            <Badge variant={isMismatched ? "outline" : "success"} className={cn("h-4.5 text-sm font-extrabold uppercase px-1.5", isMismatched ? "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "")}>
               {isMismatched ? `${parityPercent}% Synced` : "100% Parity"}
             </Badge>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-1">
               <Progress value={parityPercent} className="h-1.5" />
-              <div className="flex justify-between text-[9px] font-extrabold uppercase tracking-tighter opacity-60">
+              <div className="flex justify-between text-sm font-extrabold uppercase tracking-tighter opacity-60">
                 <span>EnrollPro: {system.parity.source}</span>
                 <span>{system.name}: {system.parity.target}</span>
               </div>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-foreground/60 border-t pt-3">
+        <div className="flex items-center gap-1.5 text-sm font-extrabold text-foreground/60 border-t pt-3">
           <History className="h-3 w-3" />
           {system.lastSync}
         </div>
@@ -236,7 +236,7 @@ function IntegrationHub() {
 
       sileo.success({
         title: "Broadcast Successful",
-        description: res.data.message || `System synchronization for ${phase === "phase1" ? "Early Registration" : "Official Masterlist"} complete.`,
+        description: res.data.message || `System synchronization for ${phase === "phase1" ? "Enrollment Applications" : "Official Masterlist"} complete.`,
       });
 
       await fetchData();
@@ -310,19 +310,19 @@ function IntegrationHub() {
               </div>
               <div>
                 <CardTitle className="text-lg font-extrabold uppercase tracking-tight">Phase 1 Broadcast</CardTitle>
-                <CardDescription className="text-base font-extrabold uppercase text-primary/70 italic">Early Registration Pipeline</CardDescription>
+                <CardDescription className="text-base font-extrabold uppercase text-primary/70 italic">Enrollment Application Records</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="py-6 space-y-6">
             <div className="space-y-3">
-              <p className="text-base font-extrabold text-foreground leading-relaxed">Push verified Early Registration applicants to preparation systems.</p>
+              <p className="text-base font-extrabold text-foreground leading-relaxed">Send verified enrollment applications to connected school systems.</p>
               <ul className="space-y-2">
                 {[
                   { target: "AIMS", action: "Baseline Assessment Provisioning" },
                   { target: "ATLAS", action: "Section Limit Forecasting" },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[10px] font-extrabold uppercase bg-muted/40 p-2.5 rounded-lg border border-border/50">
+                  <li key={i} className="flex items-center gap-3 text-sm font-extrabold uppercase bg-muted/40 p-2.5 rounded-lg border border-border/50">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     <span className="text-primary tracking-tight">{item.target}:</span>
                     <span className="opacity-70">{item.action}</span>
@@ -361,7 +361,7 @@ function IntegrationHub() {
                   { target: "SMART", action: "Official Grading Sheet Distribution" },
                   { target: "AIMS", action: "Virtual Classroom Generation" },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[10px] font-extrabold uppercase bg-muted/40 p-2.5 rounded-lg border border-border/50">
+                  <li key={i} className="flex items-center gap-3 text-sm font-extrabold uppercase bg-muted/40 p-2.5 rounded-lg border border-border/50">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     <span className="text-primary tracking-tight">{item.target}:</span>
                     <span className="opacity-70">{item.action}</span>

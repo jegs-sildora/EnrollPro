@@ -941,7 +941,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <p className="text-base font-extrabold uppercase text-foreground">
                           SF7 Profile
                         </p>
-                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
                           Used for School Form 7 personnel reporting.
                         </p>
                       </div>
@@ -1105,7 +1105,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <Clock className="size-4 text-primary" />
                             SF7 Teaching Schedule
                           </p>
-                          <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                          <p className="text-sm font-extrabold leading-tight text-foreground/60">
                             Official school-form snapshot. ATLAS remains the external schedule reference.
                           </p>
                         </div>
@@ -1342,7 +1342,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <Label className="text-base font-extrabold uppercase text-foreground">
                       SYSTEM ROLES *
                     </Label>
-                    <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                    <p className="text-sm font-extrabold leading-tight text-foreground/60">
                       Controls what this person can open in EnrollPro.
                     </p>
                     <Controller
@@ -1384,7 +1384,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <Label className="text-base font-extrabold uppercase text-foreground">
                           Portal Access Status
                         </Label>
-                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
                           Toggle whether this teacher can sign in to the portal.
                         </p>
                         <Controller
@@ -1446,7 +1446,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             Reset to Default Password
                           </Button>
                         </div>
-                        <p className="text-xs font-extrabold leading-tight text-foreground/60">
+                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
                           This will reset the teacher's portal password to the value above and force a password change on next login.
                         </p>
                       </div>
@@ -1531,7 +1531,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
 
                     <div className="p-3 bg-muted/10 text-center">
-                      <p className="text-[10px] font-extrabold text-foreground/50 uppercase tracking-widest">
+                      <p className="text-sm font-extrabold text-foreground/50 uppercase tracking-widest">
                         Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
                       </p>
                     </div>

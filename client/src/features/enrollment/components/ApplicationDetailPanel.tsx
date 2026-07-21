@@ -125,7 +125,7 @@ export function ApplicationDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-base text-foreground mt-1">
+              className="text-sm sm:text-base text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -174,7 +174,7 @@ export function ApplicationDetailPanel({
           <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase">
             Application Detail
           </SheetTitle>
-          <SheetDescription className="text-[11px] sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <SheetDescription className="text-sm sm:text-base text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>#{applicant.trackingNumber}</span>
             <span className="hidden sm:inline">|</span>
             <span>
@@ -216,7 +216,7 @@ export function ApplicationDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-base sm:text-[0.625rem] uppercase ">
+              <p className="text-base sm:text-sm uppercase ">
                 Grade Level (Applicant Type)
               </p>
               <p className="text-base sm:text-base leading-tight">
@@ -225,7 +225,7 @@ export function ApplicationDetailPanel({
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-base sm:text-[0.625rem] uppercase ">
+              <p className="text-base sm:text-sm uppercase ">
                 Learner Reference Number
               </p>
               <p className="text-base sm:text-base leading-tight ">{applicant.lrn || "N/A"}</p>
@@ -261,7 +261,7 @@ export function ApplicationDetailPanel({
                   Hide Raw Application JSON
                 </span>
               </summary>
-              <pre className="max-h-56 overflow-auto border-t bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-all">
+              <pre className="max-h-56 overflow-auto border-t bg-background p-3 text-sm leading-relaxed whitespace-pre-wrap break-all">
                 {JSON.stringify(applicant, null, 2)}
               </pre>
             </details>

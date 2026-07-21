@@ -354,7 +354,7 @@ export function BatchConfirmationModal({
                         {loading && (
                           <div className="flex items-center gap-2 text-primary animate-pulse">
                             <Loader2 className="h-3 w-3 " />
-                            <span className="text-[9px]">Querying LIS...</span>
+                            <span className="text-sm">Querying LIS...</span>
                           </div>
                         )}
                       </Label>
@@ -498,7 +498,7 @@ export function BatchConfirmationModal({
                                   </span>
                                   <Badge
                                     variant="outline"
-                                    className="text-[9px] font-extrabold uppercase h-4 px-1.5 border-primary/20 text-primary">
+                                    className="text-sm font-extrabold uppercase h-4 px-1.5 border-primary/20 text-primary">
                                     {s.currentGradeLevel}
                                   </Badge>
                                 </div>
@@ -544,7 +544,7 @@ export function BatchConfirmationModal({
                                 />
                                 <span
                                   className={cn(
-                                    "text-[9px] font-extrabold uppercase ",
+                                    "text-sm font-extrabold uppercase ",
                                     s.isEnrolling
                                       ? "text-emerald-700"
                                       : "text-foreground",

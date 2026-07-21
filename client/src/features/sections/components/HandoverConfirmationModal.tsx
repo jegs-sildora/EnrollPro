@@ -90,7 +90,7 @@ export function HandoverConfirmationModal({
 
         <div className="px-6 py-5 space-y-5">
           <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-4">
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-amber-900 mb-3">
+            <p className="text-sm font-extrabold uppercase tracking-wide text-amber-900 mb-3">
               Adviser Transfer Summary
             </p>
             <div className="flex items-center gap-2 text-base font-extrabold">

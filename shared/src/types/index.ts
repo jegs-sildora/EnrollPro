@@ -86,10 +86,6 @@ import type {
   learnerSetupPasswordSchema,
   learnerAuthResponseSchema,
 } from "../schemas/learner.schema.js";
-import type {
-  earlyRegistrationSubmitSchema,
-  earlyRegGuardianSchema,
-} from "../schemas/early-registration.schema.js";
 
 // ─── Auth Types ────────────────────────────────────────
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -208,9 +204,3 @@ export type LearnerLookupInput = z.infer<typeof learnerLookupSchema>;
 export type LearnerLoginInput = z.infer<typeof learnerLoginSchema>;
 export type LearnerSetupPasswordInput = z.infer<typeof learnerSetupPasswordSchema>;
 export type LearnerAuthResponse = z.infer<typeof learnerAuthResponseSchema>;
-
-// ─── Early Registration Types (DO 017 s.2025) ─────────
-export type EarlyRegistrationSubmitInput = z.infer<
-  typeof earlyRegistrationSubmitSchema
->;
-export type EarlyRegGuardianInput = z.infer<typeof earlyRegGuardianSchema>;

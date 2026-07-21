@@ -40,9 +40,8 @@ export function isEnrollmentOpen(year: SchoolYear, systemPhase?: string): boolea
  * Returns true when the Official BOSY Enrollment (Phase 2) window is currently
  * active, evaluated independently of phase-priority ordering.
  *
- * Unlike `getEnrollmentPhase`, this check is not suppressed by an overlapping
- * Early Registration window — if the admin has both windows open at once,
- * BOSY enrollment is considered open.
+ * Unlike `getEnrollmentPhase`, this check evaluates the configured BOSY
+ * enrollment window directly when multiple school-year dates overlap.
  */
 export function isRegularEnrollmentWindowOpen(year: SchoolYear, systemPhase?: string): boolean {
   if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
@@ -54,6 +53,29 @@ export function isRegularEnrollmentWindowOpen(year: SchoolYear, systemPhase?: st
     todayToken >= toManilaDateToken(year.enrollOpenDate) &&
     todayToken <= toManilaDateToken(year.enrollCloseDate),
   );
+}
+
+/**
+ * Public online enrollment is intentionally narrower than staff intake.
+ * Registrars may process late walk-ins during classes, but families may only
+ * submit online while the official enrollment phase and configured dates agree.
+ */
+export function isPublicEnrollmentOpen(
+  year: Pick<SchoolYear, "enrollOpenDate" | "enrollCloseDate">,
+  systemPhase?: string,
+): boolean {
+  if (systemPhase !== "OFFICIAL_ENROLLMENT") return false;
+  if (!year.enrollOpenDate || !year.enrollCloseDate) return false;
+
+  const todayToken = toManilaDateToken(new Date());
+  return (
+    todayToken >= toManilaDateToken(year.enrollOpenDate)
+    && todayToken <= toManilaDateToken(year.enrollCloseDate)
+  );
+}
+
+export function isStaffIntakeAllowed(systemPhase?: string): boolean {
+  return systemPhase !== "EOSY_CLOSING";
 }
 
 export function getEnrollmentPhase(

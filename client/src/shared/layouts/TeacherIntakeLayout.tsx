@@ -57,14 +57,14 @@ function TeacherUserNav() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-col items-start text-left leading-tight hidden lg:flex">
-              <span className="text-[11px] font-extrabold truncate max-w-[120px]">
+              <span className="text-sm font-extrabold truncate max-w-[120px]">
                 {user?.firstName} {user?.lastName}
               </span>
               <div className="flex justify-start">
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[8px] font-extrabold uppercase px-1 h-3.5 border-none",
+                    "text-sm font-extrabold uppercase px-1 h-3.5 border-none",
                     getRoleColorClasses(user?.roles?.[0]),
                   )}
                 >

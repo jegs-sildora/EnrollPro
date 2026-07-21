@@ -75,6 +75,59 @@ export interface DashboardStats {
     deficientTotal: number
     enrolledTotal: number
   }
+  summaryRibbon: {
+    totalEnrollment: number
+    activeFaculty: number
+    enrolledSections: number
+    pendingSystemValidations: number
+  }
+  curriculumDistribution: Array<{
+    programType: string
+    label: string
+    count: number
+    isSpecialProgram: boolean
+  }>
+  intakePipeline: Array<{
+    gradeLevelId: number
+    gradeLevelName: string
+    displayOrder: number
+    continuingLearners: number
+    walkIn: number
+    transferee: number
+  }>
+  sectionSaturation: Array<{
+    id: number
+    name: string
+    gradeLevelName: string
+    programType: string
+    capacity: number
+    enrolled: number
+    utilizationPercent: number
+    isOverCapacity: boolean
+  }>
+  sf1Compliance: {
+    invalidLrn: number
+    missingBirthdate: number
+    missingMotherTongue: number
+    missingCurrentAddress: number
+    missingGuardianContact: number
+    affectedLearners: number
+  }
+  activeTally: {
+    verifiedBosyBaseline: number
+    lateAdmissions: number
+    officiallyDropped: number
+    activeTotal: number
+  }
+  eosyReadiness: {
+    pendingSections: number
+    incompleteLearnerOutcomes: number
+    conditionallyPromoted: number
+    retained: number
+    promotionCompletionPercent: number
+    sf5Ready: boolean
+    sf6Ready: boolean
+  }
   v85Stats: {
     lateIntakeCount: number
     pendingSF10Count: number

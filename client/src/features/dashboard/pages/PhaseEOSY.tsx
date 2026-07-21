@@ -1,157 +1,141 @@
-import { useNavigate } from "react-router";
-import { ArrowRight, Check, Award, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Button } from "@/shared/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/shared/ui/alert";
-import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
-import type { DashboardStats } from "../types";
+import { Award, ClipboardCheck, FileCheck2, GraduationCap } from "lucide-react"
+import { useNavigate } from "react-router"
+import { Button } from "@/shared/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
+import { Progress } from "@/shared/ui/progress"
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext"
+import {
+  ComplianceWarningIcon,
+  OperationalQueueCard,
+} from "../components/DashboardCommandCenter"
+import type { DashboardStats } from "../types"
 
 export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
-  const { ayLabel } = useSchoolYearContext();
-  const navigate = useNavigate();
-
-  const eosyFinalizedSections = stats?.eosyStats?.eosyFinalizedSections ?? 0;
-  const eosyPendingSections = stats?.eosyStats?.eosyPendingSections ?? 0;
-  const promotedTotal = stats?.eosyStats?.promotedTotal ?? 0;
-  const retainedTotal = stats?.eosyStats?.retainedTotal ?? 0;
-  const irregularTotal = stats?.eosyStats?.irregularTotal ?? 0;
-
-  const totalSections = eosyFinalizedSections + eosyPendingSections;
-  const finalizationPercent = totalSections === 0 ? 0 : Math.round((eosyFinalizedSections / totalSections) * 100);
+  const navigate = useNavigate()
+  const { ayLabel } = useSchoolYearContext()
+  const readiness = stats.eosyReadiness
+  const academicReview = readiness.conditionallyPromoted + readiness.retained
 
   return (
-    <div className="space-y-6 pb-6" style={{ "--element-track": "340 40% 96%" } as React.CSSProperties}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Sections Pending Finalization</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold" style={{ color: "hsl(340, 60%, 50%)" }}>
-              <AnimatedNumber value={eosyPendingSections} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
-                Advisers Must Submit EOSY Grades
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              {eosyPendingSections > 0 ? (
-                <Button variant="outline" onClick={() => navigate("/eosy?status=pending")} className="">
-                  Monitor Sections <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              ) : (
-                <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted">
-                  <Check className="w-4 h-4 mr-2" /> All Finalized
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Successfully Promoted</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-green-600">
-              <AnimatedNumber value={promotedTotal} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
-                JHS Completers & Promoted
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted font-bold">
-                <Award className="w-4 h-4 mr-2" /> Ready for Next Year
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col">
-          <CardHeader className="px-3 sm:px-6 pb-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold text-foreground">Needs Academic Review</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 flex flex-col flex-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-amber-600">
-              <AnimatedNumber value={irregularTotal + retainedTotal} />
-            </div>
-            <div className="mt-2">
-              <span className="inline-flex px-2.5 py-0.5 rounded-full text-sm font-bold bg-muted text-foreground">
-                Conditional Promoted | Retained
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end mt-auto pt-4">
-              <div className="inline-flex items-center justify-center rounded-md text-sm  h-9 px-4 py-2 text-foreground bg-muted font-bold">
-                <AlertTriangle className="w-4 h-4 mr-2" /> Requires Guidance
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3">
+        <p className="text-sm font-extrabold text-slate-900">
+          EOSY Closing for S.Y. {ayLabel}
+        </p>
+        <p className="text-sm font-semibold text-slate-700">
+          Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] lg:col-span-5 flex flex-col">
-          <CardContent className="px-3 sm:px-6 py-8 flex-1 flex flex-col justify-center">
-            <div className="flex flex-col items-center gap-1">
-              <h3 className="text-base sm:text-lg font-extrabold text-foreground">EOSY Finalization Progress</h3>
-              <div className="text-5xl sm:text-6xl font-extrabold" style={{ color: "hsl(var(--primary))" }}>
-                {finalizationPercent}%
-              </div>
-              <p className="text-sm font-bold text-foreground">{eosyFinalizedSections} of {totalSections} Sections Officially Closed</p>
-            </div>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <OperationalQueueCard
+          title="Sections Awaiting Final Review"
+          value={readiness.pendingSections}
+          detail="Class advisers still completing EOSY records"
+          zeroLabel="All Class Sections Finalized"
+          actionLabel="Review Class Sections"
+          onAction={() => navigate("/eosy?status=pending")}
+          icon={<ClipboardCheck className="size-5 text-primary" />}
+        />
+        <OperationalQueueCard
+          title="Incomplete Learner Results"
+          value={readiness.incompleteLearnerOutcomes}
+          detail="Learners without a final EOSY result"
+          zeroLabel="All Learner Outcomes Recorded"
+          actionLabel="Review Final Grade Records"
+          onAction={() => navigate("/eosy")}
+          icon={<ComplianceWarningIcon active={readiness.incompleteLearnerOutcomes > 0} />}
+          warning
+        />
+        <OperationalQueueCard
+          title="Learners Needing Academic Review"
+          value={academicReview}
+          detail="Conditionally promoted and retained learners"
+          zeroLabel="No Academic Deficiency Cases"
+          actionLabel="Review Academic Outcomes"
+          onAction={() => navigate("/eosy")}
+          icon={<Award className="size-5 text-primary" />}
+          warning
+        />
+      </section>
 
-            <div className="w-full max-w-md mx-auto mt-6 bg-neutral-200 rounded-full h-6 overflow-hidden">
-              <div
-                className="bg-primary h-full transition-all duration-1000"
-                style={{ width: `${finalizationPercent}%` }}
-              />
+      <Card className="border-slate-200 bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-extrabold">
+            EOSY Completion Progress
+          </CardTitle>
+          <p className="text-sm font-semibold text-muted-foreground">
+            Learners with recorded final EOSY outcomes across all grade levels.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-4xl font-black text-primary">
+                {readiness.promotionCompletionPercent}%
+              </p>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {stats.eosyStats.promotedTotal} promoted, {readiness.conditionallyPromoted} conditionally promoted, and {readiness.retained} retained
+              </p>
             </div>
+            <GraduationCap className="size-8 text-primary/60" />
+          </div>
+          <Progress value={readiness.promotionCompletionPercent} className="mt-5 h-3" />
+        </CardContent>
+      </Card>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {stats.eosyStats.gradeLevelFinalization.map((grade) => (
+          <button
+            type="button"
+            key={grade.id}
+            onClick={() => navigate(`/eosy?gradeLevelId=${grade.id}&status=pending`)}
+            className="rounded-md border border-slate-200 bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-extrabold text-foreground">{grade.name}</p>
+              <span className="text-lg font-black text-primary">{grade.percent}%</span>
+            </div>
+            <Progress value={grade.percent} className="my-3 h-2" />
+            <p className="text-sm font-bold text-muted-foreground">
+              {grade.finalized} of {grade.total} sections finalized
+            </p>
+          </button>
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card className="border-slate-200 bg-card shadow-sm">
+          <CardContent className="flex items-center justify-between gap-4 p-5">
+            <div>
+              <p className="font-extrabold">School Form 5 Readiness</p>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {readiness.sf5Ready
+                  ? "All section and learner outcomes are complete."
+                  : "Complete pending sections and learner outcomes first."}
+              </p>
+            </div>
+            <FileCheck2 className={readiness.sf5Ready ? "size-7 text-emerald-700" : "size-7 text-amber-700"} />
           </CardContent>
         </Card>
-      </div>
+        <Card className="border-slate-200 bg-card shadow-sm">
+          <CardContent className="flex items-center justify-between gap-4 p-5">
+            <div>
+              <p className="font-extrabold">School Form 6 Readiness</p>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {readiness.sf6Ready
+                  ? "School-level promotion totals are ready for review."
+                  : "School-level totals remain pending EOSY completion."}
+              </p>
+            </div>
+            <FileCheck2 className={readiness.sf6Ready ? "size-7 text-emerald-700" : "size-7 text-amber-700"} />
+          </CardContent>
+        </Card>
+      </section>
 
-      <div className="mt-6 flex flex-col w-full overflow-hidden">
-        <h3 className="text-base sm:text-lg font-extrabold text-foreground mb-4 pl-1">
-          Grade Level Finalization Status
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {((stats?.eosyStats?.gradeLevelFinalization ?? []) as Array<{ id: number; name: string; total: number; finalized: number; percent: number }>).map((g) => {
-            const gradeNumStr = g.name.replace(/Grade\s+/i, "").trim();
-            return (
-              <div
-                key={g.id}
-                onClick={() => navigate(`/eosy?gradeLevelId=${g.id}&status=pending`)}
-                className={cn(
-                  "text-center p-5 rounded-md border shadow-sm flex flex-col justify-center transition-all cursor-pointer hover:opacity-80 active:scale-[0.98]",
-                  getGradeLevelBadgeStyles(gradeNumStr)
-                )}
-              >
-                <p className="font-extrabold mb-1 uppercase tracking-wider opacity-90">{g.name}</p>
-                <p className="text-4xl sm:text-5xl font-black drop-shadow-sm mb-1">
-                  <AnimatedNumber value={g.percent} />%
-                </p>
-                <div className="flex flex-col items-center mt-4 pt-4 border-t border-current/20 w-full">
-                  <span className="text-sm font-extrabold uppercase tracking-wider mb-2">
-                    {g.finalized} / {g.total} Sections
-                  </span>
-                  <div className="w-full bg-current/20 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-current h-full transition-all duration-500 opacity-90"
-                      style={{ width: `${g.percent}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="flex justify-end">
+        <Button className="hover:bg-primary hover:text-primary-foreground" onClick={() => navigate("/eosy")}>Open EOSY Updating</Button>
       </div>
     </div>
-  );
+  )
 }
-

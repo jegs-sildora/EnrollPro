@@ -208,7 +208,7 @@ export default function AdvisoryClass() {
                             {learner.lrn || "NO LRN"}
                           </span>
                           {remark && (
-                            <span className="text-xs font-bold uppercase text-amber-600 mt-0.5">
+                            <span className="text-sm font-bold uppercase text-amber-600 mt-0.5">
                               {remark}
                             </span>
                           )}
@@ -218,7 +218,7 @@ export default function AdvisoryClass() {
                         {learner.birthdate ? (
                           <span className="text-sm font-extrabold">{formatDate(learner.birthdate)}</span>
                         ) : (
-                          <span className="text-xs italic text-muted-foreground">Needs Update</span>
+                          <span className="text-sm italic text-muted-foreground">Needs Update</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center font-extrabold text-sm py-3">

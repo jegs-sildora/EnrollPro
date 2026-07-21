@@ -240,17 +240,17 @@ function GeofencingPopover({
           disabled={disabled}
         >
           <MapPin className={cn("h-4 w-4", isChanged ? "text-amber-500" : "text-muted-foreground")} />
-          <span className="text-[10px]">
+          <span className="text-sm">
             {lat.toFixed(4)}, {lng.toFixed(4)}
           </span>
-          {isChanged && <span className="text-[9px] text-amber-600 font-black uppercase">Unsaved</span>}
+          {isChanged && <span className="text-sm text-amber-600 font-black uppercase">Unsaved</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-4 text-center space-y-3" align="end">
         <h4 className="text-sm font-extrabold uppercase text-foreground leading-none border-b pb-2">
           Residency Geofence Coordinates
         </h4>
-        <p className="text-[11px] text-muted-foreground leading-normal">
+        <p className="text-sm text-muted-foreground leading-normal">
           Click on the map or drag the pin to correct past geofencing coordinates.
         </p>
 
@@ -261,11 +261,11 @@ function GeofencingPopover({
         >
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
             <circle cx="120" cy="90" r="50" fill="rgba(14, 165, 233, 0.05)" stroke="rgba(14, 165, 233, 0.3)" strokeDasharray="3 3" strokeWidth="1.5" />
-            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-[9px] font-extrabold font-sans uppercase">School Geofence Radius (1km)</text>
+            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-sm font-extrabold font-sans uppercase">School Geofence Radius (1km)</text>
             <line x1="120" y1="0" x2="120" y2="180" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
             <line x1="0" y1="90" x2="240" y2="90" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
-            <text x="24" y="20" fill="#64748b" className="text-[8px] font-bold">Brgy. San Jose</text>
-            <text x="175" y="160" fill="#64748b" className="text-[8px] font-bold">Brgy. Taculing</text>
+            <text x="24" y="20" fill="#64748b" className="text-sm font-bold">Brgy. San Jose</text>
+            <text x="175" y="160" fill="#64748b" className="text-sm font-bold">Brgy. Taculing</text>
           </svg>
 
           <div
@@ -281,7 +281,7 @@ function GeofencingPopover({
           </div>
         </div>
 
-        <div className="bg-slate-50 border p-2 rounded text-[11px] font-mono flex flex-col items-center">
+        <div className="bg-slate-50 border p-2 rounded text-sm font-mono flex flex-col items-center">
           <span className="font-extrabold text-foreground">Lat: {lat.toFixed(6)}° N</span>
           <span className="font-extrabold text-foreground">Lng: {lng.toFixed(6)}° E</span>
         </div>
@@ -1078,11 +1078,11 @@ export default function EosyUpdating() {
                     className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
                     placeholder="First Name"
                   />
-                  {isNameChanged && <span className="text-[10px] text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                  {isNameChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
                 </div>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 flex gap-1 items-center">
-                    <span className="text-xs font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
+                    <span className="text-sm font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
                     <Input
                       value={currentLrn || ""}
                       onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
@@ -1090,7 +1090,7 @@ export default function EosyUpdating() {
                       className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
                       placeholder="12-digit LRN"
                     />
-                    {isLrnChanged && <span className="text-[10px] text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                    {isLrnChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
                   </div>
 
                   <GeofencingPopover
@@ -1109,7 +1109,7 @@ export default function EosyUpdating() {
           }
 
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-base">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-sm sm:text-base">
               <span className="font-extrabold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
               </span>
@@ -1156,7 +1156,7 @@ export default function EosyUpdating() {
                     ))}
                   </SelectContent>
                 </Select>
-                {isSectionChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+                {isSectionChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
           }
@@ -1195,7 +1195,7 @@ export default function EosyUpdating() {
                   disabled={isCommitting}
                   className={cn("h-8 w-20 text-center text-sm font-extrabold", isAveChanged && "border-amber-500 focus-visible:ring-amber-500")}
                 />
-                {isAveChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+                {isAveChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
           }
@@ -1332,7 +1332,7 @@ export default function EosyUpdating() {
                     className="h-8 w-full min-w-[220px] text-sm font-bold"
                   />
                 )}
-                {isStatusChanged && <span className="text-[10px] text-amber-600 font-extrabold">Unsaved</span>}
+                {isStatusChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
           }
@@ -1530,7 +1530,7 @@ export default function EosyUpdating() {
                               <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
                               {sectionGroups.map(([groupName, secs]) => (
                                 <SelectGroup key={groupName}>
-                                  <SelectLabel className="font-bold text-muted-foreground uppercase text-xs tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
+                                  <SelectLabel className="font-bold text-muted-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
                                   {secs.map(sec => (
                                     <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
                                   ))}
@@ -1765,7 +1765,7 @@ export default function EosyUpdating() {
                 <span>Document generated with unsubmitted grades</span>
               </DialogDescription>
             </div>
-            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-extrabold border border-red-200">
+            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-extrabold border border-red-200">
               UNFINALIZED
             </div>
           </DialogHeader>
@@ -1801,15 +1801,15 @@ export default function EosyUpdating() {
               <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
                 <div className="text-center w-1/3">
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-xs font-extrabold">Class Adviser</p>
+                  <p className="text-sm font-extrabold">Class Adviser</p>
                 </div>
                 <div className="text-center w-1/3 relative">
                   {/* Blocked Signature Field */}
                   <div className="absolute inset-0 bg-red-100/80 backdrop-blur-sm flex items-center justify-center border-2 border-red-500 border-dashed z-40">
-                    <span className="text-red-700 font-extrabold text-xs uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
+                    <span className="text-red-700 font-extrabold text-sm uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
                   </div>
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-xs font-extrabold">Official Registrar Signature</p>
+                  <p className="text-sm font-extrabold">Official Registrar Signature</p>
                 </div>
               </div>
             </div>

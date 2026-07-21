@@ -95,7 +95,7 @@ function EnrollmentBadge({ status }: { status: string }) {
     className: "bg-muted text--foreground border-border",
   };
   return (
-    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${cfg.className}`}>
+    <Badge variant="outline" className={`text-sm px-1.5 py-0 ${cfg.className}`}>
       {cfg.label}
     </Badge>
   );
@@ -122,9 +122,9 @@ const MASTERLIST_COLUMNS: ColumnDef<TableRow>[] = [
       const r = row.original;
       if (r._kind === "divider") return null;
       return r.lrn ? (
-        <span className="text-[11px] font-extrabold">{r.lrn}</span>
+        <span className="text-sm font-extrabold">{r.lrn}</span>
       ) : (
-        <span className="italic  -foreground text-[10px]">Pending</span>
+        <span className="italic  -foreground text-sm">Pending</span>
       );
     },
   },
@@ -137,7 +137,7 @@ const MASTERLIST_COLUMNS: ColumnDef<TableRow>[] = [
       const r = row.original;
       if (r._kind === "divider") {
         return (
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-foreground/80">
+          <span className="text-sm font-extrabold uppercase tracking-widest text-foreground/80">
             {r.label}{" "}
             <span className="font-normal normal-case">({r.count})</span>
           </span>
@@ -298,7 +298,7 @@ export default function SectionMasterlistModal({
             {/* Historical / Archived year badge */}
             {isHistoricalReadOnly && (
               <div className="mb-2.5">
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="secondary" className="text-sm">
                   {isArchivedYear ? "Archived" : "Historical"} SY {viewingSchoolYearLabel ?? "–"}
                 </Badge>
               </div>
@@ -359,7 +359,7 @@ export default function SectionMasterlistModal({
 
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
-            <p className="text-[11px] text--foreground font-extrabold">
+            <p className="text-sm text--foreground font-extrabold">
               {loading
                 ? "Loading masterlist…"
                 : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}

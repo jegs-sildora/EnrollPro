@@ -2,10 +2,6 @@ export const STATUS_CONFIG: Record<
   string,
   { label: string; className: string }
 > = {
-  EARLY_REG_SUBMITTED: {
-    label: "Early Reg Submitted",
-    className: "bg-slate-100 text-slate-700 border-slate-300",
-  },
   PRE_REGISTERED: {
     label: "Pre-Registered",
     className: "bg-cyan-100 text-cyan-800 border-cyan-300",

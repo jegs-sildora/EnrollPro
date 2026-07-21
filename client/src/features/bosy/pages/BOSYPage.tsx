@@ -84,6 +84,7 @@ import { VerificationWorkspace } from "@/features/enrollment/components/Verifica
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { useGuardedTabChange } from "@/shared/hooks/useUnsavedChanges";
+import { useSearchParams } from "react-router";
 
 import { sileo } from "sileo";
 
@@ -152,6 +153,7 @@ const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
 ];
 
 export default function BOSYPage() {
+  const [searchParams] = useSearchParams();
   const motionPreferences = useMotionPreferences();
   const tabPanelVariants = createFadeShiftVariants(
     motionPreferences,
@@ -562,6 +564,13 @@ export default function BOSYPage() {
   const guardedSetActiveTab = useGuardedTabChange(setActiveTab);
 
   useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab === "continuing" || requestedTab === "incoming") {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams, setActiveTab]);
+
+  useEffect(() => {
     setTitle("Learner Enrollment");
     return () => setTitle(null);
   }, [setTitle]);
@@ -858,7 +867,7 @@ export default function BOSYPage() {
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
+                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
                               {confirmSingleTarget.gradeLevelName}
                             </Badge>
                             {confirmSingleTarget.missingDocuments.length > 0 && (
@@ -907,7 +916,7 @@ export default function BOSYPage() {
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
+                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
                               {transferTarget.gradeLevelName}
                             </Badge>
                           </div>
@@ -944,7 +953,7 @@ export default function BOSYPage() {
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-[10px] font-extrabold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
+                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
                               {revokeTarget.gradeLevelName}
                             </Badge>
                           </div>

@@ -41,56 +41,14 @@ export default function Apply() {
   const {
     schoolName,
     logoUrl,
-    enrollmentPhase,
-    enrollOpenDate,
-    enrollCloseDate,
     activeSchoolYearLabel,
     systemStatus,
     systemPhase,
     facebookPageUrl,
+    isBosyEnrollmentOpen,
   } = useSettingsStore();
-
-  const toManilaDateToken = (value: Date): number => {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Manila",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const parts = formatter.formatToParts(value);
-    const year = Number(
-      parts.find((part) => part.type === "year")?.value ?? "0",
-    );
-    const month = Number(
-      parts.find((part) => part.type === "month")?.value ?? "0",
-    );
-    const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
-
-    return year * 10000 + month * 100 + day;
-  };
-
-  const isWithinOfficialBosyEnrollmentWindow = (() => {
-    if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
-
-    if (!enrollOpenDate || !enrollCloseDate) {
-      return enrollmentPhase === "REGULAR_ENROLLMENT";
-    }
-
-    const open = new Date(enrollOpenDate);
-    const close = new Date(enrollCloseDate);
-    if (Number.isNaN(open.getTime()) || Number.isNaN(close.getTime())) {
-      return enrollmentPhase === "REGULAR_ENROLLMENT";
-    }
-
-    const todayToken = toManilaDateToken(new Date());
-    const openToken = toManilaDateToken(open);
-    const closeToken = toManilaDateToken(close);
-    return todayToken >= openToken && todayToken <= closeToken;
-  })();
-
-  const isEosyClosing = systemPhase === "EOSY_CLOSING";
-  // The forms are closed if we are in EOSY phase or outside the enrollment window
-  const isClosed = isEosyClosing || (!isWithinOfficialBosyEnrollmentWindow && systemPhase !== "CLASSES_ONGOING");
+  const isClassesOngoing = systemPhase === "CLASSES_ONGOING";
+  const isClosed = !isBosyEnrollmentOpen;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -204,12 +162,6 @@ export default function Apply() {
           title={`S.Y. ${activeSchoolYearLabel} ENROLLMENT FORM`}
         />
 
-        {!isClosed && systemPhase === "CLASSES_ONGOING" && (
-          <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-base leading-tight font-extrabold text-center py-3 px-4 shadow-sm relative z-20">
-            Classes have officially started. Submissions will be marked for late processing.
-          </div>
-        )}
-
         <main
           className={cn(
             "px-4 sm:px-6 lg:px-8 flex flex-col flex-1",
@@ -245,26 +197,26 @@ export default function Apply() {
 
                   </div>
 
-                  {isEosyClosing ? (
+                  {isClassesOngoing ? (
                     <div className="space-y-4 max-w-lg mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-2xl font-extrabold text-gray-900 mt-6">
                           Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
                         <p className="text-base text-gray-600 mt-3 leading-relaxed max-w-lg mx-auto text-center">
-                          The online registration period has officially ended. Our teachers are now finalizing the student sections for the upcoming school year.
+                          Classes are already ongoing. New online applications are no longer accepted for this school year.
                         </p>
                       </div>
 
-                      <div className="mt-6 p-5 text-left bg-blue-50 border border-blue-100 rounded-xl max-w-lg mx-auto shadow-sm">
-                        <h3 className="text-sm font-extrabold text-blue-900 uppercase tracking-wider mb-2">Walk-In Enrollment Instructions</h3>
-                        <p className="text-sm text-blue-800 leading-relaxed mb-4">
-                          If you missed the online deadline, you can still enroll your child in person. Please visit the School Registrar's Office during office hours (8:00 AM - 5:00 PM, Monday to Friday).
+                      <div className="mt-6 max-w-lg rounded-md border border-primary/20 bg-primary/5 p-5 text-left shadow-sm">
+                        <h3 className="mb-2 text-sm font-extrabold uppercase text-primary">Late Walk-In Enrollment</h3>
+                        <p className="mb-4 text-sm leading-relaxed text-foreground">
+                          Please visit the School Registrar's Office during office hours. The registrar will check available class sections and encode the learner as a late enrollee when admission is permitted.
                         </p>
-                        <p className="text-sm font-semibold text-blue-900 mb-2">Please bring physical copies of the following:</p>
-                        <ul className="list-disc list-inside text-sm text-blue-800 space-y-1 ml-1">
-                          <li>Original Report Card (DepEd Form 138 / SF9)</li>
-                          <li>PSA Birth Certificate (Bring Original and 1 Photocopy)</li>
+                        <p className="mb-2 text-sm font-bold text-foreground">Bring the available school requirements:</p>
+                        <ul className="ml-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                          <li>Original Report Card (SF9)</li>
+                          <li>PSA Birth Certificate</li>
                           <li>Certificate of Good Moral Character</li>
                         </ul>
                       </div>

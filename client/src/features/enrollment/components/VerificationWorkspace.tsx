@@ -442,8 +442,8 @@ export function VerificationWorkspace() {
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
-                          <span className="truncate relative z-20 text-xs">{m.title}</span>
-                          <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground relative z-20">
+                          <span className="truncate relative z-20 text-sm">{m.title}</span>
+                          <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-sm text-primary-foreground relative z-20">
                             {m.value}
                           </span>
                         </button>
@@ -477,10 +477,10 @@ export function VerificationWorkspace() {
                       </h4>
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline" className={cn("text-[10px] uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
+                      <Badge variant="outline" className={cn("text-sm uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
                         {app.gradeLevel.name}
                       </Badge>
-                      <div className="flex items-center text-[10px] text-muted-foreground font-extrabold">
+                      <div className="flex items-center text-sm text-muted-foreground font-extrabold">
                         <Clock className="w-3 h-3 mr-1" />
                         {format(new Date(app.createdAt), "MMM d, h:mm a")}
                       </div>
@@ -532,18 +532,18 @@ export function VerificationWorkspace() {
                         return (
                           <div className="mt-4 flex items-center justify-between bg-muted/20 border border-border/50 rounded-lg p-3">
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Primary Contact</span>
+                              <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Primary Contact</span>
                               <span className="text-base leading-tight font-extrabold text-foreground">
                                 {primaryContact.lastName}, {primaryContact.firstName}
                               </span>
                             </div>
                             <div className="flex gap-4">
                               <div className="flex flex-col text-right">
-                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Relationship</span>
-                                <Badge variant="secondary" className="text-[10px] font-extrabold uppercase">{primaryContact.relationship}</Badge>
+                                <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Relationship</span>
+                                <Badge variant="secondary" className="text-sm font-extrabold uppercase">{primaryContact.relationship}</Badge>
                               </div>
                               <div className="flex flex-col text-right">
-                                <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">Contact Number</span>
+                                <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Contact Number</span>
                                 <span className="text-base leading-tight font-extrabold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
                               </div>
                             </div>
@@ -575,11 +575,11 @@ export function VerificationWorkspace() {
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
+                          <p className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
                           <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
                         </div>
                         <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
+                          <p className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
                           <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
                         </div>
                       </div>
@@ -593,13 +593,13 @@ export function VerificationWorkspace() {
                     <div className="bg-muted/10 border border-border/50 rounded-xl p-6 space-y-4">
                       <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
+                          <label className="text-sm font-extrabold uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
                           <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-base leading-tight text-muted-foreground font-semibold">
                             {selectedApp.applicantType.replace(/_/g, " ")}
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Official Program Assignment</label>
+                          <label className="text-sm font-extrabold uppercase tracking-widest text-primary">Official Program Assignment</label>
                           <Select value={assignedProgram} onValueChange={setAssignedProgram}>
                             <SelectTrigger className="w-full font-extrabold">
                               <SelectValue placeholder="Select Program" />
@@ -762,7 +762,7 @@ export function VerificationWorkspace() {
                     </div>
                     <div className="flex justify-between text-base font-extrabold">
                       <span className="text-muted-foreground">Status:</span>
-                      <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
+                      <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-sm uppercase">
                         {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
                       </Badge>
                     </div>

@@ -74,7 +74,7 @@ interface ApplicationStatus extends ApplicationTrackResponse {
   }[];
   rejectionReason?: string;
   scpDetail?: { scpType: string };
-  earlyRegistrationId?: number | null;
+
 }
 
 const statusConfig: Record<
@@ -87,10 +87,10 @@ const statusConfig: Record<
   }
 > = {
   SUBMITTED_BEERF: {
-    label: "Submitted BEERF",
+    label: "Enrollment Submitted",
     icon: Clock,
     color: "text-slate-600 bg-slate-50 border-slate-200",
-    desc: "Your Basic Education Early Registration Form has been received and is queued for registrar review.",
+    desc: "Your online enrollment form has been received and is waiting for review by the Registrar's Office.",
   },
   SUBMITTED_BEEF: {
     label: "Submitted BEEF",
@@ -431,7 +431,7 @@ export default function TrackApplication({
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
+                    <p className="text-sm font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <User className="w-3 h-3" /> Learner's Name
                     </p>
                     <p className="font-extrabold text-primary uppercase">
@@ -440,7 +440,7 @@ export default function TrackApplication({
                     </p>
                   </div>
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
+                    <p className="text-sm font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <FileText className="w-3 h-3" /> Grade Level
                     </p>
                     <p className="font-extrabold text-primary uppercase">
@@ -449,7 +449,7 @@ export default function TrackApplication({
                   </div>
 
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-extrabold uppercase text-primary/60  flex items-center justify-center gap-1.5">
+                    <p className="text-sm font-extrabold uppercase text-primary/60  flex items-center justify-center gap-1.5">
                       <BookOpen className="w-3 h-3" /> Learning Program
                     </p>
                     <p className="font-extrabold text-primary uppercase">
@@ -462,7 +462,7 @@ export default function TrackApplication({
 
 
                   <div className="p-5 bg-muted border border-border rounded-2xl space-y-1 text-center md:col-span-3">
-                    <p className="text-[0.625rem] font-extrabold uppercase text-foreground ">
+                    <p className="text-sm font-extrabold uppercase text-foreground ">
                       Date Submitted
                     </p>
                     <p className="text-base font-extrabold text-foreground">
@@ -495,7 +495,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="pt-4 text-center">
-                  <p className="text-[0.6875rem] font-extrabold text-foreground/60 uppercase ">
+                  <p className="text-sm font-extrabold text-foreground/60 uppercase ">
                     Last updated: {format(new Date(), "hh:mm a")}
                   </p>
                 </div>

@@ -43,7 +43,6 @@ export interface SettingsState {
   heterogeneousRoundRobin: boolean;
   isBosyEnrollmentOpen: boolean;
   enrollmentPhase:
-    | "EARLY_REGISTRATION"
     | "REGULAR_ENROLLMENT"
     | "CLOSED"
     | "OVERRIDE";

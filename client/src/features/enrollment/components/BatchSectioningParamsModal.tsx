@@ -262,14 +262,14 @@ export function BatchSectioningParamsModal({
                     Tier 1 — Special Curricular Program (STE)
                   </span>
                   {!isGrade7 && (
-                    <span className="text-[9px] font-extrabold uppercase  text-foreground/60 ml-auto">
+                    <span className="text-sm font-extrabold uppercase  text-foreground/60 ml-auto">
                       Vacancy Fill (Grade 8–10)
                     </span>
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-foreground font-extrabold">
-                    System will sort by Early Registration assessment scores.
+                  <p className="text-sm text-foreground font-extrabold">
+                    The system will arrange learners using their recorded general averages.
                   </p>
                   <div className="flex flex-wrap gap-6">
                     <ParamField
@@ -312,7 +312,7 @@ export function BatchSectioningParamsModal({
                         <div className="space-y-1.5 flex-1">
                           <p
                             className={cn(
-                              "text-[11px] font-extrabold leading-relaxed",
+                              "text-sm font-extrabold leading-relaxed",
                               steClassSizeError
                                 ? "text-destructive font-extrabold"
                                 : "text-foreground",
@@ -351,13 +351,13 @@ export function BatchSectioningParamsModal({
                     Tier 2 — BEC Pilot Slicing
                   </span>
                   {!isGrade7 && (
-                    <span className="text-[9px] font-extrabold uppercase  text-foreground/60 ml-auto">
+                    <span className="text-sm font-extrabold uppercase  text-foreground/60 ml-auto">
                       Vacancy Fill (Grade 8–10)
                     </span>
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-foreground font-extrabold">
+                  <p className="text-sm text-foreground font-extrabold">
                     System will allocate the top{" "}
                     <span className="font-extrabold text-foreground">
                       {params.pilotSectionCount * params.sectionCapacity}
@@ -397,7 +397,7 @@ export function BatchSectioningParamsModal({
                 </div>
                 <div className="p-4 flex items-center gap-4">
                   <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-                  <p className="text-[11px] text-foreground font-extrabold">
+                  <p className="text-sm text-foreground font-extrabold">
                     The remaining{" "}
                     <span className="font-extrabold text-foreground">
                       {remainingAfterSteAndPilot}

@@ -83,13 +83,6 @@ export default function Step1Personal() {
   });
   const [hasNoMiddleName, setHasNoMiddleName] = useState(false);
 
-  const clearLinkedEarlyRegistration = useCallback(() => {
-    setValue("earlyRegistrationId", undefined, {
-      shouldDirty: true,
-      shouldValidate: false,
-    });
-  }, [setValue]);
-
   useEffect(() => {
     if (!canDeclareNoLrn && hasNoLrn) {
       setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: true });
@@ -101,9 +94,8 @@ export default function Step1Personal() {
     if (lrn) {
       setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
     }
-    clearLinkedEarlyRegistration();
     clearErrors("lrn");
-  }, [hasNoLrn, lrn, setValue, clearErrors, clearLinkedEarlyRegistration]);
+  }, [hasNoLrn, lrn, setValue, clearErrors]);
 
   useEffect(() => {
     if (!birthdate) {

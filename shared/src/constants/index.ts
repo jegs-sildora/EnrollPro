@@ -15,7 +15,6 @@ export const SexEnum = z.enum(["MALE", "FEMALE"]);
 export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const APPLICATION_STATUS_VALUES = [
-  "EARLY_REG_SUBMITTED",
   "PRE_REGISTERED",
   "PENDING_VERIFICATION",
   "READY_FOR_SECTIONING",
@@ -111,7 +110,6 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof TrackingStatusEnum>
 > = {
-  EARLY_REG_SUBMITTED: "SUBMITTED",
   PRE_REGISTERED: "SUBMITTED",
   PENDING_VERIFICATION: "IN_REVIEW",
   READY_FOR_SECTIONING: "QUALIFIED_FOR_ENROLLMENT",
@@ -144,7 +142,6 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof ApplicationStatusEnum>[]
 > = {
-  EARLY_REG_SUBMITTED: ["VERIFIED", "REJECTED", "WITHDRAWN"],
   PRE_REGISTERED: ["PENDING_VERIFICATION", "WITHDRAWN"],
   PENDING_VERIFICATION: ["READY_FOR_SECTIONING", "REJECTED", "WITHDRAWN"],
   READY_FOR_SECTIONING: ["OFFICIALLY_ENROLLED", "PENDING_BEEF", "WITHDRAWN"],
@@ -975,8 +972,7 @@ export const TEACHER_SCHEDULE_DAY_OPTIONS = [
   { value: "FRIDAY", label: "Friday" },
 ] as const;
 
-// ─── DO 017 s.2025 Early Registration Enums ─────────────
-export const EarlyRegGradeLevelEnum = z.enum(["7", "8", "9", "10"]);
+// ─── DO 017 s.2025 Enums ─────────────
 export const DisabilityTypeEnum = z.enum([
   "VISUAL",
   "HEARING",
@@ -988,12 +984,6 @@ export const DisabilityTypeEnum = z.enum([
   "AUTISM",
   "CHRONIC_ILLNESS",
   "MULTIPLE",
-]);
-export const EarlyRegistrationStatusEnum = z.enum([
-  "DRAFT",
-  "SUBMITTED",
-  "VERIFIED",
-  "LINKED",
 ]);
 
 export const ScpTypeEnum = z.enum([
@@ -1022,10 +1012,6 @@ export type AssessmentKind = z.infer<typeof AssessmentKindEnum>;
 export type ScpType = z.infer<typeof ScpTypeEnum>;
 export type ApplicationStatus = z.infer<typeof ApplicationStatusEnum>;
 export type DisabilityType = z.infer<typeof DisabilityTypeEnum>;
-export type EarlyRegGradeLevel = z.infer<typeof EarlyRegGradeLevelEnum>;
-export type EarlyRegistrationStatus = z.infer<
-  typeof EarlyRegistrationStatusEnum
->;
 export type SectioningMethod = z.infer<typeof SectioningMethodEnum>;
 export type TrackingProgramType = z.infer<typeof TrackingProgramTypeEnum>;
 export type TrackingStatus = z.infer<typeof TrackingStatusEnum>;

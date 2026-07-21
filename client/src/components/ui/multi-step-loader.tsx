@@ -230,7 +230,7 @@ export const LoaderCore = ({
                 {loadingState.text}
               </div>
               {isFinalStep && isFinalizing ? (
-                <div className="mt-1 text-xs font-extrabold uppercase tracking-wide text-emerald-700">
+                <div className="mt-1 text-sm font-extrabold uppercase tracking-wide text-emerald-700">
                   Final checks complete
                 </div>
               ) : null}

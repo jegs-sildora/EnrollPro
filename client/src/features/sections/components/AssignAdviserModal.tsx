@@ -269,7 +269,7 @@ export function AssignAdviserModal({
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">
+                    <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400 mb-1">
                       Current Adviser
                     </p>
                     <p className="text-base font-extrabold uppercase leading-tight truncate text-slate-800">
@@ -288,7 +288,7 @@ export function AssignAdviserModal({
                     <Lock className="h-3.5 w-3.5 text-slate-400" />
                     <Badge
                       variant="outline"
-                      className="text-[10px] font-extrabold border-red-200 text-red-700 bg-red-50"
+                      className="text-sm font-extrabold border-red-200 text-red-700 bg-red-50"
                     >
                       Active
                     </Badge>
@@ -298,7 +298,7 @@ export function AssignAdviserModal({
             )}
 
             {/* Section label (TASK 2) */}
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
+            <p className="text-sm font-extrabold uppercase tracking-widest text-foreground">
               Available Replacements
             </p>
 
@@ -328,10 +328,10 @@ export function AssignAdviserModal({
                     )}
                   />
                 </div>
-                <span className="text-[11px] font-extrabold text-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
+                <span className="text-sm font-extrabold text-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
                   Show assigned
                   {lockedCount > 0 && (
-                    <span className="ml-1 text-[10px] text-slate-400">({lockedCount})</span>
+                    <span className="ml-1 text-sm text-slate-400">({lockedCount})</span>
                   )}
                 </span>
               </label>
@@ -410,7 +410,7 @@ export function AssignAdviserModal({
                                   {teacher.specialization || "No specialization"}
                                 </p>
                                 {teacher.assignedSection && (
-                                  <p className="text-[11px] font-extrabold text-slate-500 flex items-center gap-1 mt-0.5">
+                                  <p className="text-sm font-extrabold text-slate-500 flex items-center gap-1 mt-0.5">
                                     <Lock className="h-2.5 w-2.5" />
                                     {teacher.assignedSection.gradeLevelName
                                       ? `${teacher.assignedSection.gradeLevelName} — `
@@ -421,7 +421,7 @@ export function AssignAdviserModal({
                               </div>
                               <Badge
                                 variant="outline"
-                                className="text-[10px] font-extrabold border-slate-400 text-slate-600 bg-slate-100 shrink-0"
+                                className="text-sm font-extrabold border-slate-400 text-slate-600 bg-slate-100 shrink-0"
                               >
                                 LOCKED
                               </Badge>
@@ -469,7 +469,7 @@ export function AssignAdviserModal({
                             {fitScore > 0 && (
                               <Badge
                                 variant="outline"
-                                className="text-[9px] font-extrabold border-blue-300 text-blue-700 bg-blue-50 shrink-0"
+                                className="text-sm font-extrabold border-blue-300 text-blue-700 bg-blue-50 shrink-0"
                               >
                                 Program Match
                               </Badge>
@@ -504,7 +504,7 @@ export function AssignAdviserModal({
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
               {/* From */}
               <div className="flex-1 space-y-1 min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400">
                   Transferring From
                 </p>
                 <p className="text-base leading-tight font-extrabold uppercase truncate text-red-700 line-through decoration-red-400">
@@ -522,7 +522,7 @@ export function AssignAdviserModal({
 
               {/* To */}
               <div className="flex-1 space-y-1 min-w-0 text-right">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400">
                   Transferring To
                 </p>
                 <p className="text-base leading-tight font-extrabold uppercase truncate text-emerald-700">
@@ -540,7 +540,7 @@ export function AssignAdviserModal({
             <div className="space-y-4">
               {/* Reason Category */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
+                <label className="text-sm font-extrabold uppercase tracking-widest text-foreground">
                   Reason Category <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -566,7 +566,7 @@ export function AssignAdviserModal({
 
               {/* Specific Justification */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-foreground">
+                <label className="text-sm font-extrabold uppercase tracking-widest text-foreground">
                   Specific Justification <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -581,7 +581,7 @@ export function AssignAdviserModal({
                     "disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                 />
-                <p className="text-[10px] font-extrabold text-foreground text-right">
+                <p className="text-sm font-extrabold text-foreground text-right">
                   {justification.trim().length} characters
                 </p>
               </div>

@@ -94,10 +94,9 @@ interface WalkInFormState {
 }
 
 interface HydrationContextState {
-  source: "ENROLLMENT" | "EARLY_REGISTRATION";
+  source: "ENROLLMENT";
   status: string;
   enrollmentApplicationId: number | null;
-  earlyRegistrationId: number | null;
   applicantType: string | null;
 }
 
@@ -448,10 +447,9 @@ export default function WalkInEncoder() {
       }
 
       setHydrationContext({
-        source: String(payload.source) === "ENROLLMENT" ? "ENROLLMENT" : "EARLY_REGISTRATION",
+        source: "ENROLLMENT",
         status: String(payload.status ?? ""),
         enrollmentApplicationId: typeof payload.enrollmentApplicationId === "number" ? payload.enrollmentApplicationId : null,
-        earlyRegistrationId: typeof payload.earlyRegistrationId === "number" ? payload.earlyRegistrationId : null,
         applicantType: typeof payload.applicantType === "string" ? payload.applicantType : null,
       });
 
@@ -952,7 +950,7 @@ export default function WalkInEncoder() {
           {hydrationContext && isFormUnlocked && (
             <div className="w-full max-w-3xl p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-left flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-                <span className="text-emerald-700 font-extrabold text-xs">✓</span>
+                <span className="text-emerald-700 font-extrabold text-sm">✓</span>
               </div>
               <p className="text-base font-extrabold text-emerald-900">
                 Verified LIS Profile: {formData.lastName}, {formData.firstName}
@@ -981,7 +979,7 @@ export default function WalkInEncoder() {
 
                 {hydrationContext && (
                   <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 mb-4">
-                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-extrabold uppercase">
+                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-extrabold uppercase">
                       Record Found: {hydrationContext.source === "ENROLLMENT" ? "Pending Queue Record" : "Early Registrant"}
                     </Badge>
                     <p className="text-base font-extrabold uppercase text-emerald-800">
@@ -1472,7 +1470,7 @@ export default function WalkInEncoder() {
 
                   <div className={cn("grid gap-4 md:grid-cols-3 transition-opacity duration-200", formData.hasNoMother && "opacity-40 pointer-events-none")}>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">Maiden Last Name</Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">Maiden Last Name</Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.lastName}
                         disabled={formData.hasNoMother}
@@ -1482,7 +1480,7 @@ export default function WalkInEncoder() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">First Name</Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.firstName}
                         disabled={formData.hasNoMother}
@@ -1492,7 +1490,7 @@ export default function WalkInEncoder() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Input
                         value={formData.hasNoMother ? "N/A" : formData.mother.middleName}
                         disabled={formData.hasNoMother}
@@ -1525,7 +1523,7 @@ export default function WalkInEncoder() {
 
                   <div className={cn("grid gap-4 md:grid-cols-4 transition-opacity duration-200", formData.hasNoFather && "opacity-40 pointer-events-none")}>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">Last Name</Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">Last Name</Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.lastName}
                         disabled={formData.hasNoFather}
@@ -1535,7 +1533,7 @@ export default function WalkInEncoder() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">First Name</Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.firstName}
                         disabled={formData.hasNoFather}
@@ -1545,7 +1543,7 @@ export default function WalkInEncoder() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">Middle Name <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Input
                         value={formData.hasNoFather ? "N/A" : formData.father.middleName}
                         disabled={formData.hasNoFather}
@@ -1555,7 +1553,7 @@ export default function WalkInEncoder() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-extrabold uppercase text-slate-600">Suffix <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-sm font-extrabold uppercase text-slate-600">Suffix <span className="text-slate-400 font-normal">(Optional)</span></Label>
                       <Select
                         value={formData.hasNoFather ? "" : formData.father.extensionName}
                         onValueChange={(val) => setContactField("father", "extensionName", val === "NONE" ? "" : val)}
@@ -1664,7 +1662,7 @@ export default function WalkInEncoder() {
                     <h4 className="font-extrabold text-foreground text-sm uppercase mb-4">Guardian Identity Details</h4>
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-extrabold uppercase text-slate-600">Last Name</Label>
+                        <Label className="text-sm font-extrabold uppercase text-slate-600">Last Name</Label>
                         <Input
                           value={formData.guardian.lastName}
                           placeholder="LAST NAME"
@@ -1672,7 +1670,7 @@ export default function WalkInEncoder() {
                           onChange={(e) => setContactField("guardian", "lastName", e.target.value.toUpperCase())}
                         />\n                      </div>\n                      {errors.birthdate && <p className="text-destructive text-sm mt-1">{errors.birthdate}</p>}
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-extrabold uppercase text-slate-600">First Name</Label>
+                        <Label className="text-sm font-extrabold uppercase text-slate-600">First Name</Label>
                         <Input
                           value={formData.guardian.firstName}
                           placeholder="FIRST NAME"
@@ -1681,7 +1679,7 @@ export default function WalkInEncoder() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-extrabold uppercase text-slate-600">Relationship to Learner</Label>
+                        <Label className="text-sm font-extrabold uppercase text-slate-600">Relationship to Learner</Label>
                         <Input
                           value={formData.guardianRelationship}
                           placeholder="AUNT / GRANDPARENT"
@@ -1859,7 +1857,7 @@ export default function WalkInEncoder() {
                           Section {s.name}
                         </span>
                       </div>
-                      <span className="text-xs font-extrabold text-foreground/80 font-mono">
+                      <span className="text-sm font-extrabold text-foreground/80 font-mono">
                         {isFull ? (
                           <span className="text-rose-600 font-extrabold">Full Capacity</span>
                         ) : (
@@ -1995,7 +1993,7 @@ export default function WalkInEncoder() {
                     </div>
                     <div className="flex justify-between text-base font-extrabold">
                       <span className="text-muted-foreground">Status:</span>
-                      <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-[11px] uppercase">
+                      <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-sm uppercase">
                         {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
                       </Badge>
                     </div>

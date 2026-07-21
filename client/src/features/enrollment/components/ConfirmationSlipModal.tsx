@@ -202,7 +202,7 @@ export function ConfirmationSlipModal({
                 </span>
                 <Badge
                   variant="outline"
-                  className="bg-muted text-emerald-700 border-emerald-200 font-extrabold uppercase text-[9px]">
+                  className="bg-muted text-emerald-700 border-emerald-200 font-extrabold uppercase text-sm">
                   {learner.promotionStatus}
                 </Badge>
               </div>
@@ -219,7 +219,7 @@ export function ConfirmationSlipModal({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col p-2 bg-muted rounded border border-emerald-100">
-                    <span className="text-[9px] font-extrabold text-foreground uppercase">
+                    <span className="text-sm font-extrabold text-foreground uppercase">
                       Gen Average
                     </span>
                     <span className="text-lg font-extrabold text-emerald-700">
@@ -227,7 +227,7 @@ export function ConfirmationSlipModal({
                     </span>
                   </div>
                   <div className="flex flex-col p-2 bg-muted rounded border border-emerald-100">
-                    <span className="text-[9px] font-extrabold text-foreground uppercase">
+                    <span className="text-sm font-extrabold text-foreground uppercase">
                       Promotion
                     </span>
                     <span className="text-lg font-extrabold text-emerald-700">
