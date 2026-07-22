@@ -28,6 +28,7 @@ import {
 import { Progress } from "@/shared/ui/progress"
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils"
 import { useAuthStore } from "@/store/auth.slice"
+import { useSettingsStore } from "@/store/settings.slice"
 import type { DashboardStats } from "../types"
 
 type DashboardPhase =
@@ -293,13 +294,13 @@ export function CurriculumDistributionPanel({
   items: DashboardStats["curriculumDistribution"]
   total: number
 }) {
+  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore()
+
   const ALL_PROGRAMS = [
     { programType: "REGULAR", label: "Basic Education Curriculum", isSpecialProgram: false },
-    { programType: "STE", label: "Science Technology and Engineering", isSpecialProgram: true },
-    { programType: "SPA", label: "Special Program in the Arts", isSpecialProgram: true },
-    { programType: "SPS", label: "Special Program in Sports", isSpecialProgram: true },
-    { programType: "SPJ", label: "Special Program in Journalism", isSpecialProgram: true },
-    { programType: "SPFL", label: "Special Program in Foreign Language", isSpecialProgram: true },
+    ...(steEnabled ? [{ programType: "STE", label: "Science Technology and Engineering", isSpecialProgram: true }] : []),
+    ...(spaEnabled ? [{ programType: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
+    ...(spsEnabled ? [{ programType: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
   ]
   const visibleItems = [
     ...ALL_PROGRAMS.map(prog => {
@@ -566,7 +567,7 @@ export function ActiveTallyPanel({
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between rounded-md bg-primary px-5 py-4 text-primary-foreground">
-          <span className="text-sm font-extrabold">Current Active Learner Tally</span>
+          <span className="font-extrabold">Current Active Learner Tally</span>
           <span className="text-3xl font-black">{tally.activeTotal}</span>
         </div>
       </CardContent>

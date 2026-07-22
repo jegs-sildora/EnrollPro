@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpenCheck, School, UserPlus } from "lucide-react"
+import { AlertTriangle, School, UserPlus } from "lucide-react"
 import { useNavigate } from "react-router"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -26,7 +26,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
   return (
     <div className="space-y-4">
       <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
-        <p className="text-sm font-extrabold">
+        <p className="font-extrabold">
           Classes Ongoing for S.Y. {ayLabel}
         </p>
         <p className="text-sm font-semibold">
@@ -93,22 +93,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
         />
       </section>
 
-      <Card className="border-slate-200 bg-card shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base font-extrabold">
-            <BookOpenCheck className="size-5 text-primary" />
-            Daily Attendance Records
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-3xl text-sm font-semibold text-muted-foreground">
-            SMART is the official source of truth for daily attendance. EnrollPro supplies learner identity and class-section context only.
-          </p>
-          <Button variant="outline" className="hover:bg-primary hover:text-primary-foreground" onClick={() => navigate("/smart")}>
-            Open SMART Attendance
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   )
 }
