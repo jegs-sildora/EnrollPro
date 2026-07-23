@@ -23,7 +23,8 @@
     "db:seed-eosy-2030": "tsx prisma/seeds/seed_eosy_mock_2030_2031.ts",
     "db:wipe-eosy-2030": "tsx prisma/seeds/wipe_eosy_mock_2030_2031.ts",
     "db:reverse-sy": "tsx prisma/seeds/reverse-sy.ts",
-    "test:rollover": "tsx src/tests/rollover-compliance.test.ts"
+    "test:rollover": "tsx src/tests/rollover-compliance.test.ts",
+    "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

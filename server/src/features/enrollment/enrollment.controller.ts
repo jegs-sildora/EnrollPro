@@ -1,11 +1,11 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
-import axios from "axios";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 import { isStaffIntakeAllowed } from "../settings/enrollment-gate.service.js";
+import type { ApplicantType } from "../../generated/prisma/index.js";
 
 async function assertStaffIntakeAllowed(): Promise<void> {
   const setting = await prisma.schoolSetting.findFirst({
@@ -34,7 +34,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
     hasUnsettledPrivateAccount,
     originatingSchoolName,
   } = req.body;
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
 
   try {
     await assertStaffIntakeAllowed();
@@ -117,7 +117,7 @@ export async function batchConfirmConfirmationSlips(
       intakeMethod?: string;
     }[];
   };
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
 
   if (!batch || !Array.isArray(batch)) {
     return res.status(400).json({ message: "Batch array is required." });
@@ -205,143 +205,6 @@ export async function batchConfirmConfirmationSlips(
   }
 }
 
-/**
- * POST /api/enrollment/sync-smart-grades
- * Intercepts grade data from S.M.A.R.T. and updates the local Learner database.
- * Supports live Tailscale node fetching with a graceful mock fallback for demo day.
- */
-export async function syncSmartGrades(req: Request, res: Response) {
-  const { gradeLevelId, schoolYearId } = req.body;
-  const apiKey = process.env.SMART_API_KEY;
-  const baseUrl = process.env.SMART_API_BASE_URL;
-  const fallbackEnabled = process.env.SMART_SYNC_FALLBACK_ENABLED === "true";
-
-  if (!apiKey || !baseUrl) {
-    throw new AppError(
-      500,
-      "S.M.A.R.T. API configuration missing (Key or Base URL).",
-    );
-  }
-
-  // Fetch target grade level info for the cohort endpoint
-  const gradeLevel = await prisma.gradeLevel.findUnique({
-    where: { id: gradeLevelId },
-  });
-
-  if (!gradeLevel) {
-    throw new AppError(404, "Grade level not found.");
-  }
-
-  const schoolYear = await prisma.schoolYear.findUnique({
-    where: { id: schoolYearId },
-  });
-
-  if (!schoolYear) {
-    throw new AppError(404, "School year not found.");
-  }
-
-  // Extract numeric grade (e.g., "Grade 8" -> 8)
-  const gradeNumMatch = gradeLevel.name.match(/\d+/);
-  const gradeNum = gradeNumMatch ? gradeNumMatch[0] : "8";
-  const syLabel = schoolYear.yearLabel; // e.g., "2025-2026"
-
-  let smartData: any[] = [];
-  let isFallbackEngaged = false;
-
-  try {
-    // Phase 1: Attempt live fetch from S.M.A.R.T. Tailscale node
-    // Endpoint: GET /api/v1/academic-status/cohort/{gradeLevel}?sy=2025-2026
-    const smartResponse = await axios.get(
-      `${baseUrl}/api/v1/academic-status/cohort/${gradeNum}`,
-      {
-        params: { sy: syLabel },
-        headers: { "X-API-KEY": apiKey },
-        timeout: 5000, // 5 second timeout for demo snappy-ness
-      },
-    );
-
-    smartData = smartResponse.data;
-  } catch (error) {
-    console.warn("S.M.A.R.T. Live Node Unreachable:", (error as Error).message);
-
-    if (fallbackEnabled) {
-      console.log("Demo Guardrail: Engaging Mock Data Fallback...");
-      isFallbackEngaged = true;
-
-      // Add a slight artificial delay for demo flair
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      smartData = [
-        {
-          lrn: "123456789012",
-          generalAverage: 88.5,
-          promotionStatus: "PROMOTED",
-        },
-        {
-          lrn: "987654321098",
-          generalAverage: 92.1,
-          promotionStatus: "PROMOTED",
-        },
-        {
-          lrn: "112233445566",
-          generalAverage: 74.2,
-          promotionStatus: "RETAINED",
-        },
-      ];
-    } else {
-      throw new AppError(
-        503,
-        "S.M.A.R.T. Synchronization Failed. External server is unreachable.",
-      );
-    }
-  }
-
-  // Phase 2: Process synchronization payload
-  const learnersToUpdate = await prisma.learner.findMany({
-    where: {
-      lrn: { in: smartData.map((d) => d.lrn) },
-    },
-    select: { id: true, lrn: true },
-  });
-
-  const foundLrns = new Set(learnersToUpdate.map((l) => l.lrn));
-  const missingInSmart = smartData.filter((d) => !foundLrns.has(d.lrn));
-
-  const updates = smartData
-    .filter((d) => foundLrns.has(d.lrn))
-    .map((student) =>
-      prisma.learner.update({
-        where: { lrn: student.lrn! },
-        data: {
-          previousGenAve: student.generalAverage,
-          promotionStatus: student.promotionStatus,
-        },
-      }),
-    );
-
-  try {
-    if (updates.length > 0) {
-      await prisma.$transaction(updates);
-    }
-
-    broadcastEnrollmentInvalidation(schoolYearId);
-
-    return res.json({
-      success: true,
-      syncedCount: updates.length,
-      missingCount: missingInSmart.length,
-      missingLrns: missingInSmart.map((m) => m.lrn),
-      isFallbackEngaged,
-      message: isFallbackEngaged
-        ? `Demo Mode: Synchronized ${updates.length} records from Local Cache.`
-        : `Successfully synchronized ${updates.length} records from S.M.A.R.T. Live Node.`,
-    });
-  } catch (error) {
-    console.error("Database Update Error:", error);
-    throw new AppError(500, "Failed to persist academic synchronization data.");
-  }
-}
-
 // ─── Intake Finalization ─────────────────────────────────────────────────────
 
 /**
@@ -355,7 +218,7 @@ export async function syncSmartGrades(req: Request, res: Response) {
  */
 export async function finalizeIntake(req: Request, res: Response) {
   await assertStaffIntakeAllowed();
-  const userId = (req as any).user?.id ?? (req as any).user?.userId;
+  const userId = req.user!.userId;
 
   const {
     applicationId,
@@ -372,7 +235,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     checklistVerified: boolean;
     isMissingSf9?: boolean;
     isMissingPsa?: boolean;
-    assignedProgram?: any;
+    assignedProgram?: ApplicantType;
   } = req.body;
 
   if (!applicationId) {
@@ -508,7 +371,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
 export async function flagDeficient(req: Request, res: Response) {
   await assertStaffIntakeAllowed();
   const applicationId = Number(req.params.applicationId);
-  const userId = (req as any).user?.id ?? (req as any).user?.userId;
+  const userId = req.user!.userId;
 
   if (!applicationId || isNaN(applicationId)) {
     throw new AppError(400, "Valid applicationId is required.");
@@ -610,7 +473,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
       const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
 
       // 2. Create Application
-      const applicationStatus = (hasSf9 && hasPsa) ? "OFFICIALLY_ENROLLED" : "TEMPORARILY_ENROLLED";
+      const isTemporarilyEnrolled = !(hasSf9 && hasPsa);
 
       const application = await tx.enrollmentApplication.create({
         data: {
@@ -622,9 +485,9 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",
           trackingNumber: null, // intentionally null for direct encode
-          isTemporarilyEnrolled: applicationStatus === "TEMPORARILY_ENROLLED",
-          encodedById: (req as any).user?.id ?? (req as any).user?.userId,
-          status: applicationStatus,
+          isTemporarilyEnrolled,
+          encodedById: req.user!.userId,
+          status: "READY_FOR_SECTIONING",
           // create previous school if provided
           previousSchool: previousSchoolName ? {
             create: {

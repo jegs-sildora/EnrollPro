@@ -250,7 +250,6 @@ Base path: `/api/enrollment`
 
 | Method | Path | Roles | Purpose |
 | --- | --- | --- | --- |
-| POST | `/sync-smart-grades` | Registrar, admin | Intake-related SMART grade synchronization |
 | POST | `/confirm-slip` | Registrar, admin | Confirm one intake slip |
 | POST | `/batch-confirm` | Registrar, admin | Confirm multiple intake slips |
 | POST | `/finalize-intake` | Registrar, admin | Move a cleared application to sectioning readiness |

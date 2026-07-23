@@ -729,11 +729,11 @@ to specific sections. This happens after Phase 2 enrollment approvals.
 
   SMART is the DepEd system that stores official LRN-linked grade records.
 
-  - POST /api/enrollment/sync-smart-grades
-    Syncs grade data from the SMART external system for currently enrolled
-    learners. Populates Learner.previousGenAve with the official prior-year
-    general average for use in SCP screening and sectioning algorithms.
-    This is a background operation — results are stored on the Learner record.
+  - POST /api/integration/smart/sections/:id/sync-grades
+    Synchronizes the selected section's final published academic outcomes from
+    SMART. The response must include the LRN, final general average, final
+    outcome, learning-area results, publication time, and revision. EnrollPro
+    rejects incomplete payloads and does not fabricate fallback grades.
 
 ────────────────────────────────────────────────────────────────────────────────
 10b. HEALTH RECORDS / SF8 (REGISTRAR)
@@ -1132,10 +1132,11 @@ track application status. No JWT authentication is required.
 
   SMART (Simplified Master Records and Tracking):
     - SMART is the DepEd system containing official LRN-linked grade records.
-    - Sync: POST /api/enrollment/sync-smart-grades
-      Pulls prior-year general averages and stores them in Learner.previousGenAve.
-    - These grades are used as fallback values for SCP screening and batch
-      sectioning when no EOSY finalAverage is available from within the system.
+    - Sync: POST /api/integration/smart/sections/:id/sync-grades
+      Pulls final published section outcomes and stores normalized academic
+      results for EOSY finalization and rollover.
+    - EnrollPro does not generate fallback grades. Missing or malformed SMART
+      outcomes remain readiness blockers.
     - LRN tracking: Learner.isPendingLrnCreation flags learners who submitted
       without an LRN. Once DepEd assigns the LRN via SMART, it is updated in
       the system and the flag is cleared.

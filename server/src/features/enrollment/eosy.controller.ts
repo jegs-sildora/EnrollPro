@@ -810,53 +810,6 @@ export async function finalizeSection(
       data: { isEosyFinalized: true },
     });
 
-    // Hook: Grade 10 Completers Transition
-    // Grade 10 is the end of JHS; promoted learners become Completers
-    if (
-      section.gradeLevel.displayOrder === 10 ||
-      section.gradeLevel.name.includes("10")
-    ) {
-      const promotedRecords = await prisma.enrollmentRecord.findMany({
-        where: {
-          sectionId: sectionId,
-          eosyStatus: "PROMOTED",
-        },
-        select: {
-          enrollmentApplication: {
-            select: {
-              learnerId: true,
-            },
-          },
-        },
-      });
-
-      const learnerIds = promotedRecords.map(
-        (r) => r.enrollmentApplication.learnerId,
-      );
-
-      if (learnerIds.length > 0) {
-        await prisma.learner.updateMany({
-          where: { id: { in: learnerIds } },
-          data: { status: "JHS_COMPLETER" },
-        });
-
-        // Trigger Ecosystem Sync for status update/revocation
-        for (const learnerId of learnerIds) {
-        }
-
-        await auditLog({
-          userId: req.user!.userId,
-          actionType: "LEARNERS_COMPLETED_JHS",
-          description: `Marked ${learnerIds.length} learners from section ${updated.name} as JHS Completers`,
-          subjectType: "Section",
-          recordId: sectionId,
-          req,
-        });
-      }
-    }
-
-    // Hook: Queue Ecosystem Sync for section
-
     await auditLog({
       userId: req.user!.userId,
       actionType: "SECTION_FINALIZED",
@@ -2076,34 +2029,7 @@ export async function finalizeGradeLevel(
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Automated Grade Progression - Update Learner records
-      for (const record of records) {
-        await tx.learner.update({
-          where: { id: record.learnerId },
-          data: {
-            lastGradeLevel: gradeLevel.name,
-            lastYearEnrolled: schoolYear.yearLabel,
-            previousGenAve:
-              record.finalAverage !== null
-                ? parseFloat(String(record.finalAverage))
-                : null,
-            promotionStatus: record.eosyStatus,
-          },
-        });
-
-        // Handle Completer Status for Grade 10
-        if (
-          record.eosyStatus === "PROMOTED" &&
-          (gradeLevel.displayOrder === 10 || gradeLevel.name.includes("10"))
-        ) {
-          await tx.learner.update({
-            where: { id: record.learnerId },
-            data: { status: "JHS_COMPLETER" },
-          });
-        }
-      }
-
-      // 2. Finalize section(s)
+      // Learner progression is applied only by the atomic school-year rollover.
       await tx.section.updateMany({
         where: sectionWhere,
         data: { isEosyFinalized: true },

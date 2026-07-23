@@ -175,9 +175,9 @@ const tests: NamedTest[] = [
     name: "Database enforces one history row per learner identifier and school year",
     run: async () => {
       const indexes = await prisma.$queryRaw<
-        Array<{ indexname: string }>
+        Array<{ indexdef: string }>
       >`
-        SELECT indexname::text AS indexname
+        SELECT indexdef::text AS indexdef
         FROM pg_indexes
         WHERE schemaname = 'public'
           AND tablename = 'enrollment_history'
@@ -185,7 +185,9 @@ const tests: NamedTest[] = [
       assert.ok(
         indexes.some(
           (index) =>
-            index.indexname === "uq_enrollment_history_identifier_sy",
+            index.indexdef.includes("UNIQUE")
+            && index.indexdef.includes("learner_identifier")
+            && index.indexdef.includes("school_year_id"),
         ),
       )
     },

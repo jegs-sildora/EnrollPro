@@ -545,7 +545,7 @@ export async function executeSchoolYearRollover({
 }: ExecuteRolloverInput): Promise<ExecuteRolloverResult> {
   return prisma.$transaction(
     async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${sourceSchoolYearId})`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${sourceSchoolYearId})`;
       const readiness = await getReadiness(
         tx,
         sourceSchoolYearId,

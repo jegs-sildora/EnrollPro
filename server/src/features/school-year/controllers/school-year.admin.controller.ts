@@ -35,6 +35,14 @@ interface RolloverSummary {
   skippedDuplicateRecords: number;
 }
 
+function isSerializableWriteConflict(
+  error: unknown,
+): error is Error & { code: "P2034" } {
+  return error instanceof Error
+    && "code" in error
+    && error.code === "P2034";
+}
+
 function parseStartYearFromLabel(yearLabel: string): number {
   const parsed = Number.parseInt(yearLabel.split("-")[0] ?? "", 10);
   return Number.isInteger(parsed) ? parsed : new Date().getUTCFullYear();
@@ -422,6 +430,14 @@ async function carryOverEligibleLearners(
           code: error.code,
           message: error.message,
           ...error.readiness,
+        });
+        return;
+      }
+      if (isSerializableWriteConflict(error)) {
+        res.status(409).json({
+          code: "ROLLOVER_CONFLICT",
+          message:
+            "Another school year rollover was completed at the same time. Refresh the active school year before trying again.",
         });
         return;
       }

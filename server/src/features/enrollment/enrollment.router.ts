@@ -2,7 +2,6 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import {
-  syncSmartGrades,
   confirmConfirmationSlip,
   batchConfirmConfirmationSlips,
   finalizeIntake,
@@ -12,13 +11,6 @@ import {
 } from "./enrollment.controller.js";
 
 const router: Router = Router();
-
-router.post(
-  "/sync-smart-grades",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  syncSmartGrades,
-);
 
 router.post(
   "/confirm-slip",

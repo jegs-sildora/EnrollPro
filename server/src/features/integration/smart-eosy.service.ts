@@ -124,7 +124,11 @@ export async function syncFinalSmartSectionOutcomes(
 
   const localByLrn = new Map(
     section.enrollmentRecords.flatMap((record) =>
-      record.learner.lrn ? [[record.learner.lrn, record] as const] : [],
+      record.eosyStatus !== "DROPPED_OUT"
+      && record.eosyStatus !== "TRANSFERRED_OUT"
+      && record.learner.lrn
+        ? [[record.learner.lrn, record] as const]
+        : [],
     ),
   );
   const smartByLrn = new Map(
@@ -136,7 +140,10 @@ export async function syncFinalSmartSectionOutcomes(
   const missingSmartLrns = section.enrollmentRecords
     .filter(
       (record) =>
-        record.learner.lrn && !smartByLrn.has(record.learner.lrn),
+        record.eosyStatus !== "DROPPED_OUT"
+        && record.eosyStatus !== "TRANSFERRED_OUT"
+        && record.learner.lrn
+        && !smartByLrn.has(record.learner.lrn),
     )
     .map((record) => record.learner.lrn)
     .filter((lrn): lrn is string => Boolean(lrn));
