@@ -35,12 +35,19 @@ function parseSchoolYearId(req: Request): number {
       return;
     }
 
-    if (status === "ACTIVE") {
-      await prisma.schoolYear.updateMany({
-        where: { status: "ACTIVE", id: { not: id } },
-        data: { status: "ARCHIVED" },
+    const settings = await prisma.schoolSetting.findFirst({
+      select: { activeSchoolYearId: true },
+    });
+    if (settings?.activeSchoolYearId) {
+      res.status(409).json({
+        code: "ROLLOVER_REQUIRED",
+        message:
+          "An operational school year already exists. Use the approved school-year rollover process.",
       });
+      return;
+    }
 
+    if (status === "ACTIVE") {
       await prisma.schoolYear.update({
         where: { id },
         data: { status: "ACTIVE" },

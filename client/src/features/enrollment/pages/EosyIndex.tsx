@@ -105,7 +105,7 @@ export interface EnrollmentRecord {
     id: number;
     trackingNumber: string;
     applicantType: string;
-    reportedGrades?: Record<string, any> | null;
+    reportedGrades?: Record<string, unknown> | null;
     learner: {
       id: number;
       lrn: string | null;
@@ -331,9 +331,7 @@ export default function EosyUpdating() {
   const [reopenLoading, setReopenLoading] = useState<boolean>(false);
 
   const [dismissSuccessCard, setDismissSuccessCard] = useState<boolean>(false);
-  const [transitionModalOpen, setTransitionModalOpen] = useState<boolean>(false);
-
-  const [transitionLoading, setTransitionLoading] = useState<boolean>(false);
+  const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState<Record<number, {
     lrn?: string;
@@ -411,7 +409,7 @@ export default function EosyUpdating() {
       setIsCommitting(true);
 
       try {
-        const validUpdates: Record<number, any> = {};
+        const validUpdates: typeof unsavedChanges = {};
         const revertedRecords: number[] = [];
 
         for (const [idStr, changes] of Object.entries(unsavedChanges)) {
@@ -846,26 +844,46 @@ export default function EosyUpdating() {
   const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
 
 
-  const handleTransitionSubmit = async () => {
-    setTransitionLoading(true);
+  const recordSf5ForScope = async () => {
+    const sections = allSections.filter(
+      (section) =>
+        String(section.gradeLevelId) === activeTab &&
+        (sectionFilter === "ALL" || section.name === sectionFilter),
+    );
+    if (sections.length === 0) return;
+    setRecordingForms(true);
     try {
-      const finalizeRes = await api.post("/eosy/school-year/finalize", { schoolYearId: ayId });
-
-      const nextSy = finalizeRes.data.nextSchoolYear;
-      if (nextSy) {
-        useSettingsStore.getState().triggerRolloverSwitch({
-          activeSchoolYearId: nextSy.id,
-          activeSchoolYearLabel: nextSy.yearLabel,
-          activeSchoolYearStatus: nextSy.status,
-          systemPhase: "OFFICIAL_ENROLLMENT",
-          systemStatus: "ACTIVE",
-        }, nextSy.yearLabel);
-      } else {
-        window.dispatchEvent(new CustomEvent("ROLLOVER_COMPLETE"));
+      for (const section of sections) {
+        await api.post(`/eosy/sections/${section.id}/forms/sf5/record`);
       }
-    } catch (err) {
-      toastApiError(err as Parameters<typeof toastApiError>[0]);
-      setTransitionLoading(false);
+      sileo.success({
+        title: "SF5 officially recorded",
+        description:
+          `${sections.length} class SF5 record(s) were saved for rollover review.`,
+      });
+      await fetchExportLockState();
+    } catch (error: unknown) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setRecordingForms(false);
+    }
+  };
+
+  const recordSf6 = async () => {
+    if (!ayId) return;
+    setRecordingForms(true);
+    try {
+      await api.post(`/eosy/school-years/${ayId}/forms/sf6/record`);
+      sileo.success({
+        title: "SF6 officially recorded",
+        description:
+          "The school-wide SF6 record is ready for rollover review.",
+      });
+      await fetchExportLockState();
+    } catch (error: unknown) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setRecordingForms(false);
     }
   };
 
@@ -880,7 +898,10 @@ export default function EosyUpdating() {
 
   const sectionGroups = useMemo(() => {
     const map = new Map<string, string[]>();
-    const uniqueSections = new Map<string, any>();
+    const uniqueSections = new Map<
+      string,
+      EnrollmentRecord["section"]
+    >();
     records.forEach(r => {
       const sec = r.section;
       if (sec && sec.name && !uniqueSections.has(sec.name)) {
@@ -966,27 +987,7 @@ export default function EosyUpdating() {
       return a.enrollmentApplication?.learner?.lastName?.localeCompare(b.enrollmentApplication?.learner?.lastName || "") || 0;
     });
 
-    if (sectionFilter !== "ALL") return sortedList; // Do not render headers if a single section is selected
-
-    const withHeaders: any[] = [];
-    let currentCategory = "";
-
-    sortedList.forEach((r) => {
-      let category = "BEC";
-      if (r.section?.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") category = "SCIENCE, TECHNOLOGY, AND ENGINEERING";
-      else if (r.section?.programType === "SPECIAL_PROGRAM_IN_THE_ARTS") category = "SPECIAL PROGRAM IN THE ARTS";
-      else if (r.section?.programType === "SPECIAL_PROGRAM_IN_SPORTS") category = "SPECIAL PROGRAM IN SPORTS";
-      else if (r.section?.programType && r.section.programType !== "REGULAR") category = "BASIC EDUCATION CURRICULUM";
-      else if (r.section?.isHomogeneous) category = "BASIC EDUCATION CURRICULUM (TOP SECTIONS)";
-
-      if (category !== currentCategory) {
-        currentCategory = category;
-        withHeaders.push({ id: `header-${category}`, isCategoryHeader: true, categoryName: category });
-      }
-      withHeaders.push(r);
-    });
-
-    return withHeaders;
+    return sortedList;
   }, [records, sectionFilter, searchQuery]);
 
   const suppressEmptyState = loadingRecords && !showSkeleton && filteredRecords.length === 0;
@@ -1054,10 +1055,28 @@ export default function EosyUpdating() {
           const isNameChanged = (unsaved.hasOwnProperty("firstName") && unsaved.firstName !== r.enrollmentApplication.learner.firstName) ||
             (unsaved.hasOwnProperty("lastName") && unsaved.lastName !== r.enrollmentApplication.learner.lastName);
 
-          const reportedGrades = (r.enrollmentApplication.reportedGrades as Record<string, any>) || {};
-          const geofencing = reportedGrades.geofencing || {};
-          const currentLat = unsaved.hasOwnProperty("latitude") ? unsaved.latitude : geofencing.latitude;
-          const currentLng = unsaved.hasOwnProperty("longitude") ? unsaved.longitude : geofencing.longitude;
+          const reportedGrades =
+            r.enrollmentApplication.reportedGrades ?? {};
+          const geofencingValue = reportedGrades.geofencing;
+          const geofencing =
+            typeof geofencingValue === "object" &&
+            geofencingValue !== null
+              ? (geofencingValue as Record<string, unknown>)
+              : {};
+          const storedLatitude =
+            typeof geofencing.latitude === "number"
+              ? geofencing.latitude
+              : null;
+          const storedLongitude =
+            typeof geofencing.longitude === "number"
+              ? geofencing.longitude
+              : null;
+          const currentLat = unsaved.hasOwnProperty("latitude")
+            ? unsaved.latitude
+            : storedLatitude;
+          const currentLng = unsaved.hasOwnProperty("longitude")
+            ? unsaved.longitude
+            : storedLongitude;
           const isCoordsChanged = unsaved.hasOwnProperty("latitude") || unsaved.hasOwnProperty("longitude");
 
           if (hasOverride) {
@@ -1473,12 +1492,15 @@ export default function EosyUpdating() {
             {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
               <Button
                 onClick={() => {
-                  setTransitionModalOpen(true);
+                  useSettingsStore
+                    .getState()
+                    .updateUiPreference("settingsTab", "school-year");
+                  navigate("/settings");
                 }}
                 size="lg"
                 className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
               >
-                Transition to New School Year
+                Review Rollover Readiness
               </Button>
             )}
           </div>
@@ -1541,17 +1563,21 @@ export default function EosyUpdating() {
 
                           {isScopeFinalized ? (
                             <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => {
-                                if (pendingCount > 0) {
-                                  setSf5WatermarkOpen(true);
-                                } else {
-                                  sileo.success({ title: "Download", description: "Downloading Clean SF5 (Section)..." });
-                                }
-                              }}>
-                                Export SF5
+                              <Button
+                                variant="outline"
+                                disabled={recordingForms}
+                                className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => void recordSf5ForScope()}
+                              >
+                                {recordingForms ? "Recording..." : "Record Official SF5"}
                               </Button>
-                              <Button variant="outline" className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground" onClick={() => sileo.success({ title: "Download", description: "Downloading SF6 (Grade Level Summary)..." })}>
-                                Export SF6
+                              <Button
+                                variant="outline"
+                                disabled={recordingForms}
+                                className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => void recordSf6()}
+                              >
+                                {recordingForms ? "Recording..." : "Record Official SF6"}
                               </Button>
                             </div>
                           ) : Object.keys(rowSelection).length > 0 ? (
@@ -1660,15 +1686,11 @@ export default function EosyUpdating() {
                           containerHeight="100%"
                           rowSelection={rowSelection}
                           onRowSelectionChange={setRowSelection}
-                          getRowClassName={(row: any) => row.isCategoryHeader ? "" : isScopeFinalized || row.section?.isEosyFinalized ? "pointer-events-none hover:bg-transparent" : ""}
-                          isHeaderRow={(row: any) => !!row.isCategoryHeader}
-                          renderHeaderRow={(row: any, columnsCount: number) => (
-                            <TableRow key={row.id} className="bg-muted border-y-2 border-border/60 hover:bg-muted">
-                              <TableCell colSpan={columnsCount} className="p-3">
-                                <span className="font-extrabold text-sm text-primary tracking-widest uppercase ml-2">{row.categoryName}</span>
-                              </TableCell>
-                            </TableRow>
-                          )}
+                          getRowClassName={(row: EnrollmentRecord) =>
+                            isScopeFinalized || row.section?.isEosyFinalized
+                              ? "pointer-events-none hover:bg-transparent"
+                              : ""
+                          }
                         />
                       </div>
                     </div>
@@ -1924,69 +1946,6 @@ export default function EosyUpdating() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={transitionModalOpen} onOpenChange={setTransitionModalOpen}>
-        <DialogContent
-          className={cn("w-full max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <DialogHeader className="space-y-2 text-center items-center">
-            <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
-              <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
-            </div>
-            <DialogTitle className="text-center text-xl font-extrabold">Transition to New School Year</DialogTitle>
-            <DialogDescription className="text-center pt-2 font-bold text-md font-extrabold">
-              You are initiating the highest level of system transition. Please review the following:
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground space-y-2 my-2 border border-[hsl(var(--primary)/0.2)] text-left font-bold">
-            <p>• Grade 10 learners will be permanently archived as JHS Completers.</p>
-            <p>• Promoted Grade 7 to 9 learners will be updated for the next grade level.</p>
-            <p>• All previous Section assignments will be cleared for the incoming school year.</p>
-          </div>
-
-
-          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setTransitionModalOpen(false);
-              }}
-              disabled={transitionLoading}
-              className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "border border-gray-200 bg-muted text-foreground",
-                "hover:bg-gray-50 active:bg-gray-100",
-                "transition-all duration-150 active:scale-[0.97]"
-              )}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleTransitionSubmit}
-              disabled={transitionLoading}
-              className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
-                "hover:bg-[hsl(var(--primary)/0.9)]",
-                "shadow-md",
-                "transition-all duration-150 active:scale-[0.97]"
-              )}
-            >
-              {transitionLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Processing...
-                </span>
-              ) : (
-                "Transition to New School Year"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

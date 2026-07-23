@@ -98,26 +98,29 @@ System administrators set the phase through `PATCH /api/settings/phase`. Enterin
 
 ### Grade and Status Reconciliation
 
-1. EnrollPro may pull section grades from SMART through `POST /api/integration/smart/sections/:id/sync-grades`.
-2. SMART records are matched to EnrollPro by LRN.
-3. Registrars or advisers review final averages and set one EOSY result per learner:
+1. EnrollPro pulls final published section outcomes from SMART through `POST /api/integration/smart/sections/:id/sync-grades`.
+2. SMART must provide a 12-digit LRN, final general average, final outcome, learning-area results, publication time, and revision.
+3. EnrollPro rejects incomplete SMART payloads and never fabricates grades or academic deficiencies.
+4. SMART records are matched to EnrollPro by LRN and stored as normalized final academic outcomes.
+5. Final outcomes use:
    - `PROMOTED`
    - `CONDITIONALLY_PROMOTED`
    - `RETAINED`
    - `DROPPED_OUT`
    - `TRANSFERRED_OUT`
-4. Conditionally promoted records may include an academic deficiency note and remedial requirement.
-5. A section cannot be considered rollover-ready while learners lack EOSY results.
+6. Conditionally promoted records derive their deficiency note from failed or incomplete SMART learning areas.
+7. A section cannot be rollover-ready while an active learner lacks a finalized SMART outcome.
 
 ### Locking and Reports
 
 1. Advisers may submit their advisory class through `/api/teacher-eosy`.
 2. Registrars may update individual, batch, section, or grade-level EOSY records.
 3. Sections and grade levels are finalized and locked.
-4. SF5 is exported per section and SF6 is exported school-wide.
-5. School-level finalization requires every section to be finalized.
-6. Finalization activates the EOSY export lock and writes `EnrollmentHistory` snapshots.
-7. Emergency reopening and historical correction require authorized administrative actions and audit records.
+4. Staff preview or download SF5 and SF6, then explicitly record official artifacts through the SF5 and SF6 recording endpoints.
+5. Each artifact stores the payload, version, source checksum, recording user, and timestamp.
+6. A later grade correction changes the source checksum and makes the affected SF5 and school-wide SF6 stale.
+7. Enrollment history and school-year archival are not written at this stage. They are written inside atomic rollover.
+8. Emergency reopening and correction require authorized administrative actions and audit records.
 
 Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals must not grant active learner access to JHS completers.
 
@@ -125,20 +128,27 @@ Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals mu
 
 ### Readiness Gate
 
-`GET /api/system/rollover-readiness` and the rollover service require:
+`GET /api/system/rollover-readiness?calendarPolicyId=:id` and the rollover service require:
 
-- school-level EOSY finalization
-- every section locked
-- no enrollment record with a missing EOSY status
+- the selected source year is active and the system is in `EOSY_CLOSING`
+- every section is finalized
+- every active learner has a final SMART outcome matching the local EOSY result
+- dropped and transferred learners have their local final result
+- every section has a current SF5 artifact
+- the school year has a current SF6 artifact
+- the target calendar policy is approved and matches the next year
+- an existing target-year shell contains no operational records
 
 If the gate fails, rollover returns `422` with class-level blockers.
 
 ### Atomic Rollover Work
 
-`POST /api/school-years/rollover` performs the complete transition in a Prisma transaction:
+`POST /api/school-years/rollover` accepts `sourceSchoolYearId`,
+`calendarPolicyId`, and the administrator PIN. It acquires a PostgreSQL
+advisory transaction lock and runs with serializable isolation:
 
-1. Resolve the finalized source school year and the target year label and schedule.
-2. Create or clean the target school-year shell.
+1. Recheck every readiness rule inside the transaction.
+2. Reject a target-year shell containing sections, applications, enrollment records, history, adviserships, or teaching schedules.
 3. Clone grade-level section structure, capacity, program, ordering, and section rank.
 4. Do not copy learners, enrollment records, or active advisers into target sections.
 5. Snapshot source enrollment records into `EnrollmentHistory`.
@@ -146,7 +156,8 @@ If the gate fails, rollover returns `422` with class-level blockers.
 7. Create target-year BOSY applications for eligible continuing learners.
 8. Revoke active source-year adviserships.
 9. Remove live source applications and enrollment records after history is written.
-10. Archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, write an audit log, and broadcast realtime invalidations.
+10. Apply the approved calendar, mark it applied, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
+11. Broadcast browser and integration invalidations only after the transaction commits.
 
 ### Rollover Outcome Matrix
 
@@ -172,14 +183,13 @@ Returning dropouts must use a manual Balik-Aral or returning learner intake path
 
 Remedial holds are excluded from active intake, class placement, and official population feeds until resolved.
 
-## Important Current Implementation Boundary
+## Authoritative Transaction Boundary
 
-The current code exposes two separate school-closing operations:
-
-- `POST /api/eosy/school-year/finalize` locks and archives EOSY, writes history, and creates or activates a next-school-year shell.
-- `POST /api/school-years/rollover` performs the complete learner carryover, source cleanup, section cloning, adviser revocation, and BOSY queue creation.
-
-A next-year shell is not proof that rollover is complete. Companion systems must wait until the full rollover endpoint succeeds and the new-year feeds contain the expected section and learner context. Do not synchronize solely because a new school year is marked active.
+There is no separate school-level EOSY transition endpoint. SF5 and SF6
+recording does not create or activate a new year. Calendar-policy drafts also
+do not create school-year rows. The successful response from
+`POST /api/school-years/rollover` is the only publication boundary for the new
+active year.
 
 ## Companion-System Synchronization Sequence
 
@@ -216,3 +226,7 @@ When `schoolYearId` points to an archived year, learner, SMART, AIMS, section ro
 - Keep integration keys outside source control and rotate them after exposure.
 - Record synchronization time, source endpoint, school-year scope, row count, and failures.
 - Do not write grades, schedules, interventions, or maintenance records back into EnrollPro unless a mounted, documented endpoint explicitly owns that operation.
+
+EnrolPro has no early-registration workflow. It also has no hardware or
+Internet of Things dependency. All rollover validation and state changes are
+software-only operations.

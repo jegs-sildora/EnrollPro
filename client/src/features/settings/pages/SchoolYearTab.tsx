@@ -65,6 +65,7 @@ import {
   type RolloverReadinessPayload,
 } from "../api/system.api";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+import { AtomicRolloverDialog } from "../components/AtomicRolloverDialog";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
@@ -1052,9 +1053,9 @@ export default function SchoolYearTab() {
               Active School Year Required
             </h3>
             <p className="text-foreground font-extrabold max-w-lg mb-8 leading-relaxed">
-              Before the system can process official enrollments, accept Early
-              Registration data, or generate School Form 1 (SF1) masterlists, a
-              primary academic year must be established.
+              Before the system can process official enrollment or generate
+              School Form 1 masterlists, a primary school year must be
+              established.
             </p>
             <Button
               size="lg"
@@ -1092,6 +1093,13 @@ export default function SchoolYearTab() {
                     </CardTitle>
                   </div>
                 </div>
+                {activeYear && (
+                  <AtomicRolloverDialog
+                    sourceSchoolYearId={activeYear.id}
+                    sourceYearLabel={activeYear.yearLabel}
+                    disabled={isArchived || systemPhase !== "EOSY_CLOSING"}
+                  />
+                )}
 
               </div>
 

@@ -234,6 +234,28 @@ async function carryOverEligibleLearners(
   export async function createSchoolYear(req: Request, res: Response): Promise<void> {
     const { yearLabel, classOpeningDate, classEndDate, cloneFromId, termFormat } = req.body;
 
+    const [schoolYearCount, setting] = await Promise.all([
+      prisma.schoolYear.count(),
+      prisma.schoolSetting.findFirst({
+        select: { activeSchoolYearId: true },
+      }),
+    ]);
+    if (schoolYearCount > 0 || setting?.activeSchoolYearId) {
+      res.status(409).json({
+        code: "ROLLOVER_REQUIRED",
+        message:
+          "School year activation is only available during first-time setup. Use the approved rollover process for the next school year.",
+      });
+      return;
+    }
+    if (cloneFromId) {
+      res.status(400).json({
+        message:
+          "First-time setup cannot clone a previous school year.",
+      });
+      return;
+    }
+
     const parsedOpeningDate = parseDateInput(classOpeningDate);
     if (!parsedOpeningDate) {
       res.status(400).json({ message: "A valid classOpeningDate is required" });
@@ -371,11 +393,9 @@ async function carryOverEligibleLearners(
     req: Request,
     res: Response): Promise<void> {
     const {
-      yearLabel,
-      classOpeningDate,
-      classEndDate,
+      sourceSchoolYearId,
+      calendarPolicyId,
       pin,
-      termFormat,
     } = req.body;
 
     const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
@@ -384,118 +404,10 @@ async function carryOverEligibleLearners(
       return;
     }
 
-    const parsedOpeningDate = parseDateInput(classOpeningDate);
-    if (!parsedOpeningDate) {
-      res.status(400).json({ message: "A valid classOpeningDate is required" });
-      return;
-    }
-
-    const normalizedOpeningDate =
-      normalizeDateToUtcNoon(parsedOpeningDate);
-    const openingYear = normalizedOpeningDate.getUTCFullYear();
-    const currentManilaYear = getCurrentManilaYear();
-
-    if (
-      openingYear < currentManilaYear ||
-      openingYear > currentManilaYear + 1
-    ) {
-      res.status(400).json({
-        message: `Class opening year must be within ${currentManilaYear} and ${currentManilaYear + 1}`,
-      });
-      return;
-    }
-
-    const parsedClassEndDate = classEndDate
-      ? parseDateInput(classEndDate)
-      : null;
-    if (classEndDate && !parsedClassEndDate) {
-      res.status(400).json({ message: "classEndDate must be a valid date" });
-      return;
-    }
-
-    const schedule = deriveSchoolYearScheduleFromOpeningDate(
-      normalizedOpeningDate,
-      parsedClassEndDate
-        ? normalizeDateToUtcNoon(parsedClassEndDate)
-        : undefined);
-
-    const resolvedYearLabel = resolveRequestedYearLabel(
-      yearLabel,
-      schedule.yearLabel);
-
-
-
-
-    const schoolSetting = await prisma.schoolSetting.findFirst({
-      select: {
-        activeSchoolYearId: true,
-      },
-    });
-
-    const draftTarget = await prisma.schoolYear.findUnique({
-      where: { yearLabel: resolvedYearLabel },
-      select: { clonedFromId: true }
-    });
-
-    let sourceSchoolYearId: number | null = null;
-    if (draftTarget?.clonedFromId) {
-      sourceSchoolYearId = draftTarget.clonedFromId;
-    } else if (schoolSetting?.activeSchoolYearId) {
-      sourceSchoolYearId = schoolSetting.activeSchoolYearId;
-    } else {
-      const lastArchived = await prisma.schoolYear.findFirst({
-        where: { status: "ARCHIVED" },
-        orderBy: { createdAt: "desc" },
-      });
-      if (lastArchived) sourceSchoolYearId = lastArchived.id;
-    }
-
-    if (!sourceSchoolYearId) {
-      res.status(422).json({
-        message:
-          "No active or recently archived school year found. Use School Year initialization instead.",
-      });
-      return;
-    }
-
-    const activeYear = await prisma.schoolYear.findUnique({
-      where: { id: sourceSchoolYearId }
-    });
-
-    if (!activeYear) {
-      res.status(422).json({
-        message:
-          "Source school year not found.",
-      });
-      return;
-    }
-
-    const shiftYear = (d: Date | null | undefined) => {
-      if (!d) return null;
-      const newDate = new Date(d);
-      newDate.setUTCFullYear(newDate.getUTCFullYear() + 1);
-      return newDate;
-    };
-
     try {
       const result = await executeSchoolYearRollover({
-        sourceSchoolYearId: activeYear.id,
-        targetYearLabel: resolvedYearLabel,
-        schedule: {
-          classOpeningDate: schedule.classOpeningDate,
-          classEndDate: schedule.classEndDate,
-          enrollOpenDate: shiftYear(activeYear.enrollOpenDate) ?? schedule.enrollOpenDate,
-          enrollCloseDate: shiftYear(activeYear.enrollCloseDate) ?? schedule.enrollCloseDate,
-          term1Start: shiftYear(activeYear.term1Start) ?? schedule.term1Start,
-          term1End: shiftYear(activeYear.term1End) ?? schedule.term1End,
-          term2Start: shiftYear(activeYear.term2Start) ?? schedule.term2Start,
-          term2End: shiftYear(activeYear.term2End) ?? schedule.term2End,
-          term3Start: shiftYear(activeYear.term3Start) ?? schedule.term3Start,
-          term3End: shiftYear(activeYear.term3End) ?? schedule.term3End,
-          term4Start: shiftYear(activeYear.term4Start),
-          term4End: shiftYear(activeYear.term4End),
-        },
-        termFormat: termFormat ?? "TRIMESTER",
+        sourceSchoolYearId,
+        calendarPolicyId,
         actingUserId: req.user!.userId,
         ipAddress: req.ip || "unknown",
         userAgent: req.headers["user-agent"] ?? null,

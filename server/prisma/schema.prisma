@@ -37,6 +37,8 @@ model User {
   recordedHealthRecords                HealthRecord[]          @relation("HealthRecordRecordedBy")
   learnerProfile                       Learner?                @relation("UserLearnerProfile")
   lockedSchoolYears                    SchoolYear[]            @relation("SchoolYearLockedBy")
+  approvedCalendarPolicies             SchoolYearCalendarPolicy[] @relation("CalendarPolicyApprovedBy")
+  recordedSchoolFormArtifacts          SchoolFormArtifact[]    @relation("SchoolFormArtifactRecordedBy")
   updatedTeacherDesignations           TeacherDesignation[]    @relation("TeacherDesignationUpdatedBy")
   teacherProfile                       Teacher?                @relation("UserTeacherProfile")
   createdBy                            User?                   @relation("UserCreatedBy", fields: [createdById], references: [id])
@@ -162,6 +164,7 @@ model SchoolYear {
   term3Start             DateTime?               @map("term3_start") @db.Date
   term4End               DateTime?               @map("term4_end") @db.Date
   term4Start             DateTime?               @map("term4_start") @db.Date
+  calendarPolicyId       Int?                    @unique(map: "uq_school_years_calendar_policy_id") @map("calendar_policy_id")
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
@@ -174,8 +177,45 @@ model SchoolYear {
   teacherDesignations    TeacherDesignation[]
   teacherSchedulePeriods TeacherSchedulePeriod[]
   enrollmentHistories    EnrollmentHistory[]
+  calendarPolicy         SchoolYearCalendarPolicy? @relation("AppliedCalendarPolicy", fields: [calendarPolicyId], references: [id])
+  schoolFormArtifacts    SchoolFormArtifact[]
 
   @@map("school_years")
+}
+
+/// Versioned school calendar copied from the applicable DepEd issuance.
+model SchoolYearCalendarPolicy {
+  id                Int                  @id @default(autoincrement())
+  yearLabel         String               @map("year_label")
+  version           Int                  @default(1)
+  status            CalendarPolicyStatus @default(DRAFT)
+  depedIssuance     String               @map("deped_issuance")
+  sourceUrl         String?              @map("source_url")
+  classOpeningDate  DateTime             @map("class_opening_date") @db.Date
+  classEndDate      DateTime             @map("class_end_date") @db.Date
+  enrollOpenDate    DateTime?            @map("enroll_open_date") @db.Date
+  enrollCloseDate   DateTime?            @map("enroll_close_date") @db.Date
+  termFormat        TermFormat           @default(TRIMESTER) @map("term_format")
+  term1Start        DateTime             @map("term1_start") @db.Date
+  term1End          DateTime             @map("term1_end") @db.Date
+  term2Start        DateTime             @map("term2_start") @db.Date
+  term2End          DateTime             @map("term2_end") @db.Date
+  term3Start        DateTime             @map("term3_start") @db.Date
+  term3End          DateTime             @map("term3_end") @db.Date
+  term4Start        DateTime?            @map("term4_start") @db.Date
+  term4End          DateTime?            @map("term4_end") @db.Date
+  approvedAt        DateTime?            @map("approved_at") @db.Timestamptz(6)
+  approvedById      Int?                 @map("approved_by_id")
+  appliedAt         DateTime?            @map("applied_at") @db.Timestamptz(6)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  approvedBy        User?                @relation("CalendarPolicyApprovedBy", fields: [approvedById], references: [id])
+  appliedSchoolYear SchoolYear?          @relation("AppliedCalendarPolicy")
+
+  @@unique([yearLabel, version], name: "uq_calendar_policy_year_version")
+  @@index([yearLabel, status], map: "idx_calendar_policy_year_status")
+  @@map("school_year_calendar_policies")
 }
 
 /// JHS grade levels (e.g. Grade 7, Grade 10) - Permanent global records
@@ -213,6 +253,7 @@ model Section {
   schoolYear          SchoolYear           @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
   enrollmentHistories EnrollmentHistory[]
+  schoolFormArtifacts SchoolFormArtifact[]
 
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
@@ -437,11 +478,44 @@ model EnrollmentRecord {
   learner                 Learner               @relation(fields: [learnerId], references: [id])
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
   section                 Section               @relation("HomeroomSection", fields: [sectionId], references: [id])
+  smartAcademicOutcome    SmartAcademicOutcome?
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
   sf10Status              SF10Status            @default(PENDING) @map("sf10_status")
   @@map("enrollment_records")
+}
+
+/// Final academic result published by SMART for one enrolled learner.
+model SmartAcademicOutcome {
+  id                  Int            @id @default(autoincrement())
+  enrollmentRecordId  Int            @unique(map: "uq_smart_outcomes_enrollment_record_id") @map("enrollment_record_id")
+  finalGeneralAverage Float          @map("final_general_average")
+  finalOutcome        AcademicStatus @map("final_outcome")
+  smartRevision       String         @map("smart_revision")
+  publishedAt         DateTime       @map("published_at") @db.Timestamptz(6)
+  syncedAt            DateTime       @default(now()) @map("synced_at") @db.Timestamptz(6)
+  payloadHash         String         @map("payload_hash") @db.VarChar(64)
+
+  enrollmentRecord    EnrollmentRecord          @relation(fields: [enrollmentRecordId], references: [id], onDelete: Cascade)
+  learningAreaResults SmartLearningAreaResult[]
+
+  @@map("smart_academic_outcomes")
+}
+
+model SmartLearningAreaResult {
+  id                Int                      @id @default(autoincrement())
+  academicOutcomeId Int                      @map("academic_outcome_id")
+  learningAreaCode  String                   @map("learning_area_code")
+  learningAreaName  String                   @map("learning_area_name")
+  finalGrade        Float                    @map("final_grade")
+  result            LearningAreaResultStatus
+
+  academicOutcome   SmartAcademicOutcome     @relation(fields: [academicOutcomeId], references: [id], onDelete: Cascade)
+
+  @@unique([academicOutcomeId, learningAreaCode], name: "uq_smart_learning_area_outcome_code")
+  @@index([academicOutcomeId], map: "idx_smart_learning_area_outcome_id")
+  @@map("smart_learning_area_results")
 }
 
 /// Academic department linked to faculty
@@ -664,6 +738,29 @@ enum SchoolYearStatus {
   @@map("school_year_status")
 }
 
+enum CalendarPolicyStatus {
+  DRAFT
+  APPROVED
+  APPLIED
+
+  @@map("calendar_policy_status")
+}
+
+enum SchoolFormType {
+  SF5
+  SF6
+
+  @@map("school_form_type")
+}
+
+enum LearningAreaResultStatus {
+  PASSED
+  FAILED
+  INCOMPLETE
+
+  @@map("learning_area_result_status")
+}
+
 enum ApplicantType {
   REGULAR
   SCIENCE_TECHNOLOGY_AND_ENGINEERING
@@ -853,6 +950,8 @@ model EnrollmentHistory {
   eosyStatus     EosyStatus? @map("eosy_status")
   academicDeficiencyNote String? @map("academic_deficiency_note")
   learnerProfileSnapshot Json? @map("learner_profile_snapshot")
+  learnerIdentifier String      @map("learner_identifier")
+  academicOutcomeSnapshot Json? @map("academic_outcome_snapshot")
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
   learner        Learner     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
@@ -861,8 +960,32 @@ model EnrollmentHistory {
   section        Section?    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   adviser        Teacher?    @relation(fields: [adviserId], references: [id], onDelete: Cascade)
 
+  @@unique([learnerIdentifier, schoolYearId], name: "uq_enrollment_history_identifier_sy")
   @@index([learnerId, schoolYearId], map: "idx_enrollment_history_learner_sy")
   @@map("enrollment_history")
+}
+
+/// Append-only record of an official school-form payload at a source revision.
+model SchoolFormArtifact {
+  id           Int            @id @default(autoincrement())
+  schoolYearId Int            @map("school_year_id")
+  sectionId    Int?           @map("section_id")
+  formType     SchoolFormType @map("form_type")
+  scopeKey     String         @map("scope_key")
+  version      Int
+  sourceHash   String         @map("source_hash") @db.VarChar(64)
+  payload      Json
+  payloadHash  String         @map("payload_hash") @db.VarChar(64)
+  recordedById Int            @map("recorded_by_id")
+  recordedAt   DateTime       @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  schoolYear   SchoolYear     @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  section      Section?       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  recordedBy   User           @relation("SchoolFormArtifactRecordedBy", fields: [recordedById], references: [id])
+
+  @@unique([schoolYearId, scopeKey, version], name: "uq_school_form_artifact_scope_version")
+  @@index([schoolYearId, formType, scopeKey], map: "idx_school_form_artifact_scope")
+  @@map("school_form_artifacts")
 }
 
 

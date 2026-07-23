@@ -49,6 +49,28 @@ EnrollPro is part of a distributed microservices system integrated via **Tailsca
 - **Auth:** Services use shared secrets or JWTs as defined in the integration references. The MRF identity feed requires `X-Integration-Key`; existing ATLAS, SMART, and AIMS v1 pull feeds remain read-only and public for compatibility.
 - **Discovery:** Use Tailnet private DNS (`.ts.net`) or static Tailscale IPs.
 
+## Authoritative School Year Boundary
+
+EnrolPro publishes a new active school year only after
+`POST /api/school-years/rollover` commits successfully. That serializable
+transaction archives the prior enrollment records, applies the approved
+DepEd calendar, clones empty class sections, creates continuing-learner
+confirmation records, and changes the active school-year context.
+
+- SMART must publish final academic outcomes before rollover. EnrollPro does
+  not invent grades or promotion results.
+- ATLAS must not create next-year schedules until the new active school-year
+  context is visible after commit.
+- AIMS must retain the prior school-year identifier for completed
+  interventions and refresh enrollment context only after commit.
+- MRF may refresh identity context after commit but remains the owner of
+  maintenance operations.
+- No companion system should treat a calendar draft or EOSY form preview as
+  proof that rollover has completed.
+
+EnrolPro has no early-registration workflow and no hardware or Internet of
+Things dependency. The rollover is a software-only database and API process.
+
 ## Context for Agents
 When working on the EnrollPro ecosystem:
 1. **Never Assume Local Data:** If student section, personnel identity, or school-year context is needed, fetch it from EnrollPro. If a teacher schedule or teaching load is needed, fetch it from ATLAS.

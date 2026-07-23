@@ -1,3 +1,77 @@
+# SYSTEM DIRECTIVE Spreadsheet Export Data Remediation v213.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must remediate the spreadsheet export utility to eradicate placeholder error text populate missing institutional metadata and execute resilient schedule synchronization Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must strip all hardcoded fallback error strings from the generated spreadsheet You must ensure unpopulated educational qualifications and schedules render as clean blank cells while populating complete institutional header metadata and building a resilient local database fallback for ATLAS schedule aggregation
+
+Execute the remediation across the following three structural rules
+
+## 1 Placeholder Text Eradication
+Remove all hardcoded error strings including NOT ENCODED and NO ATLAS TEACHING LOAD ENCODED from the spreadsheet export utility
+Configure the generation script to evaluate database properties cleanly
+Ensure that if a faculty profile lacks a secondary minor specialization or an active teaching load the corresponding Excel cell remains completely blank instead of printing internal system warning text
+
+## 2 Institutional Metadata Population
+Inject complete institutional identification values into the top metadata grid
+Populate the designated data cells in row three and row five with the active campus identification number regional office number school division name and district name
+Ensure these metadata values load dynamically from the school configuration profile without blank omissions
+
+## 3 Resilient Schedule Fallback Engine
+Upgrade the ATLAS microservice integration client to handle Tailscale network synchronization failures gracefully
+Implement a local database lookup that checks the internal teacher designation and advisory ledgers whenever the remote ATLAS endpoint is unreachable over Tailscale
+Calculate weekly instructional minutes from this local fallback cache so column Q populates with mathematical durations rather than defaulting to zero
+
+
+# SYSTEM DIRECTIVE Section Level Roster Ingestion Architecture v214.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must implement a section level spreadsheet ingestion pipeline that imports student rosters directly into active classroom master lists while automating curriculum program tagging Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must build an automated School Form 1 import and export engine located inside the individual class section workspace The system must parse official Department of Education gender stacked spreadsheets enforce twelve digit Learner Reference Number uniqueness and automatically inherit classroom metadata during batch onboarding
+
+Execute the ingestion architecture across the following four structural rules
+
+## 1 Dropdown Control Integration
+Replace the single export button inside the section view with a grouped action dropdown labeled SF1 ROSTER positioned adjacent to a manual creation button
+Group file uploading template downloading and official export generation inside this single menu container to maintain interface consistency with the personnel directory
+Ensure the controls sit cleanly above the learner table without obstructing the male and female seated headcount counters
+
+## 2 Automatic Metadata Inheritance
+Configure the ingestion engine to inherit active workspace parameters during batch file processing
+Apply the current grade level classroom section name and specialized curriculum program code automatically to every imported learner profile
+This guarantees that students uploaded into specialized sections such as Special Program in the Arts or Science Technology and Engineering map instantly to the global learner registry without manual categorization
+
+## 3 Stacked Gender Grid Parsing
+Build a coordinate mapping parser capable of processing raw Learner Information System spreadsheets
+Configure the parser to identify gender section anchors and extract student records from the stacked male and female grids separately
+Strip administrative headers institutional logos subtotal summary rows and empty dividing cells automatically so raw government files ingest cleanly without manual spreadsheet editing
+
+## 4 Preflight Sandbox and Deduplication
+Route parsed records into an intermediate staging modal before executing database write operations
+Evaluate every twelve digit Learner Reference Number against the existing school repository to identify continuing learners and update their grade level placement without duplicating demographic profiles
+Flag cross section enrollment conflicts immediately if an imported identification number is already assigned to another active classroom for the current school year
+
+
+# SYSTEM DIRECTIVE Bacolod City Address Selection Architecture v216.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must configure the cascading address selection dropdowns to handle Bacolod City intuitively for local parents while preserving official Philippine Standard Geographic Code compliance strictly in the backend database Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must implement a dual selection capability for Bacolod City on the public enrollment form The user interface must allow parents to locate Bacolod City either through its traditional geographic placement under Negros Occidental or as a standalone highly urbanized administrative entity in the province selection array
+
+Execute the address selection architecture across the following three structural rules
+
+## 1 Geographic Parent Override
+Configure the municipality dropdown array to include Bacolod City whenever the user chooses Negros Occidental in the province field
+Ensure that parents who naturally identify their home province as Negros Occidental can immediately find Bacolod City listed alongside component cities and municipalities without experiencing filtering errors
+
+## 2 Standalone Province Entry
+Inject Bacolod City as an independent entry in the province selection dropdown alongside Negros Occidental Negros Oriental and Siquijor when Negros Island Region is selected
+Ensure that if a user chooses Bacolod City directly in the province field the municipality selector automatically locks to Bacolod City and immediately unlocks the sixty one urban and rural barangays
+
+## 3 Backend Code Normalization
+Map both frontend selection pathways to the exact same official Philippine Standard Geographic Code in the database transaction layer
+Ensure that regardless of whether the parent selected Bacolod City via Negros Occidental or via the standalone entry the saved student profile strictly records the official independent government location code required for national Learner Information System reporting
+
+
 # SYSTEM DIRECTIVE Master Dashboard Redesign Architecture v217.0
 
 **Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must redesign the master dashboard into a high density operational command center tailored for Junior High School administration Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
@@ -107,3 +181,71 @@ This provides school registrars with immediate visual proof of data hygiene with
 Maintain full accessibility to secondary workspace action buttons even during zero value states
 Keep buttons such as Assign Class Sections and Process Early Registrants visible so administrators can navigate directly to underlying management tables to review rosters or verify historical records
 Style these triggers as secondary outlined controls during zero states to reflect that the primary intake queue is currently clear
+
+
+# SYSTEM DIRECTIVE Dashboard Phase Mapping and Ingestion Hub Architecture v221.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must configure legacy phase mapping and global spreadsheet ingestion routing for the master dashboard Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must select Option 1 for both prompt dialogs You must map legacy pre registration and beginning of school year enrollment statuses directly into the unified enrollment workspace You must configure the global spreadsheet ingestion button to launch an import chooser modal that directs school registrars to either student roster ingestion or personnel roster ingestion
+
+Execute the configuration across the following two architectural rules
+
+## 1 Legacy Onboarding Phase Mapping
+Map legacy pre registration and beginning of school year enrollment database states directly into the official enrollment workspace container
+Ensure that when the active academic year exhibits either status the master dashboard mounts the intake analytical queue classroom seating deficit warning and early registration processing tools automatically
+Preserve date and phase gate middleware validation so public online enrollment forms open and close strictly according to official Department of Education intake calendars
+
+## 2 Global Ingestion Chooser Modal
+Configure the dashboard batch spreadsheet ingestion toolbar trigger to open a compact selection modal
+Present school registrars with two clear onboarding pathways inside the modal including Learner Roster Ingestion for School Form One and Faculty Roster Ingestion for School Form Seven
+Route the user directly to the designated section staging sandbox or personnel directory uploader upon selection to streamline administrative file processing
+
+
+# SYSTEM DIRECTIVE Institutional Palette Remediation v222.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must remediate the visual color palette across the master dashboard and global sidebar navigation strictly enforcing institutional branding Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must strip out all default royal blue navigation highlights and blue header accents from the user interface You must enforce deep maroon as the primary active brand color across sidebar indicators icon accents and interactive call to action triggers
+
+Execute the visual remediation across the following three styling rules
+
+## 1 Global Sidebar Active State Styling
+Remove the bright royal blue background tint and blue text color from the active sidebar navigation item
+Apply a solid deep maroon background fill with clean white contrast text to the active Master Dashboard navigation link
+Ensure this deep maroon active state persists across all academic modules to establish unified visual branding
+
+## 2 Dashboard Header and Icon Accents
+Purge blue text tints and royal blue icon styling from the summary ribbon cards and quick operation toolbars
+Replace informative icon highlights and active numerical counters with deep maroon or slate gray tones that complement the primary institutional theme
+
+## 3 Functional Button Brand Alignment
+Inspect all primary interactive triggers across the master dashboard including the quick school operations toolbar buttons
+Ensure primary calls to action utilize deep maroon borders or maroon background fills rather than generic default browser tints
+This guarantees a professional visual standard appropriate for official Department of Education software
+
+
+# SYSTEM DIRECTIVE Rollover Remediation and Integration Architecture v228.0
+
+**Context Persona** Act as a Senior Enterprise Architect and DepEd EdTech Domain Expert Your standard is high data density high security offline first public school software You must remediate all vulnerabilities identified in the rollover audit by enforcing strict database atomicity compliance gates and automated testing Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+
+**Core Mandate** You must consolidate the end of school year transition into a single database transaction enforce strict readiness gates prevent historical duplication implement dynamic policy driven calendars and construct comprehensive integration test suites
+
+Execute the remediation across the following four structural rules
+
+## 1 Atomic Transaction and Lifecycle Gating
+Wrap the entire finalization archival section cloning learner carryover and calendar activation sequence strictly inside a single Prisma transaction block
+Reject the rollover request completely if the target school year already contains active operational records
+Remove or strictly gate all alternative lifecycle endpoints to prevent administrators from bypassing the unified transition pipeline
+
+## 2 Database Constraints and Archival Prerequisites
+Add a unique composite constraint to the enrollment history schema utilizing the learner identification string and the active school year to prevent duplicate historical snapshots
+Require strict backend verification that official School Form Five and School Form Six documents were successfully recorded before allowing the system to archive the active school year
+
+## 3 Authoritative Outcomes and Dynamic Calendars
+Eradicate hardcoded academic deficiency assumptions and pull final learning area results strictly from the integrated SMART grading database
+Store a versioned Department of Education calendar configuration for each academic year to replace hardcoded legacy fallback dates
+
+## 4 Automated Integration Testing
+Construct comprehensive automated tests to validate rollover atomicity and database rollback mechanisms
+Build test suites to verify the new dynamic calendar logic and ensure the promotion integration accurately parses authoritative SMART outcomes

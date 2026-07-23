@@ -67,12 +67,12 @@ Output:
 - zod constraints and state-transition checks
 - guardrail handling for invalid states
 
-## 2.6 Testing
+## 2.6 Verification
 
 Output:
 
-- unit tests for services
-- integration tests for workflow endpoints
+- successful client and server builds
+- direct API smoke checks for affected endpoints
 - key UI smoke checks for primary paths
 
 ## 3. Tooling recommendations
@@ -82,7 +82,7 @@ Current stack compatible tools:
 1. Prisma for schema and migration control.
 2. Zod for contract-first validation.
 3. OpenAPI-ready contract docs (planned next layer).
-4. tsx-based backend test scripts (already used in server/src/tests).
+4. Direct API smoke checks against routes mounted in server/src/app.ts.
 
 ## 4. Done criteria template
 

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext"
 import {
   ActiveTallyPanel,
   ComplianceWarningIcon,
@@ -15,7 +14,6 @@ import type { DashboardStats } from "../types"
 
 export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
   const navigate = useNavigate()
-  const { ayLabel } = useSchoolYearContext()
   const lateIntakeCount = stats.v85Stats.lateIntakeCount
   const unassignedTotal = stats.kpiHeader.unassignedTotal
   const overdueDocuments = stats.v85Stats.overdueDocumentsCount
@@ -25,15 +23,6 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
-        <p className="font-extrabold">
-          Classes Ongoing for S.Y. {ayLabel}
-        </p>
-        <p className="text-sm font-semibold">
-          Regular online enrollment is closed. Authorized registrars may still encode late walk-in learners at the campus office.
-        </p>
-      </div>
-
       {(stats.v85Stats.hasSectionLoadDisparity || overloadedSections > 0) && (
         <Alert className="border-amber-300 bg-amber-50 text-amber-950">
           <AlertTriangle className="size-5 text-amber-700" />

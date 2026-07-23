@@ -28,14 +28,12 @@
 - Seed sample students: `pnpm --filter server run db:seed-students`
 - Wipe/reset seeded data: `pnpm --filter server run db:wipe`
 
-### Testing status
+### Verification status
 
-- There is no unified `pnpm test` script at root or package level.
-- Currently runnable script-style test entrypoints include:
-  - `pnpm --filter server exec tsx src/tests/schoolYear.test.ts`
-  - `pnpm --filter server exec tsx src/tests/academicYear.test.ts`
-  - `pnpm --filter server exec tsx src/tests/sims.test.ts`
-- `server/src/tests/curriculum.test.ts` is framework-style (Vitest/Supertest shape) and is not wired into an existing package test script.
+- There is no automated integration test suite.
+- Verify frontend work with the client build and focused manual workflow checks.
+- Verify backend work with the server build and direct smoke checks against routes mounted in `server/src/app.ts`.
+- Cross-system checks must follow the ownership boundaries in `ARCHITECTURE_MICROSERVICES.md`.
 
 ## Environment and runtime behavior
 
@@ -53,21 +51,12 @@
 
 ## High-level architecture
 
-- Route mounting is centralized in `server/src/app.ts`.
-- Mounted API groups:
-  - `/api/auth`
-  - `/api/settings`
-  - `/api/dashboard`
-  - `/api/school-years`
-  - `/api/curriculum`
-  - `/api/sections`
-  - `/api/students`
-  - `/api/applications`
-  - `/api/admin`
-  - `/api/audit-logs`
-  - `/api/teachers`
-  - `/api/learner`
-  - `/api/early-registrations`
+- Route mounting is centralized in `server/src/app.ts`; do not rely on a duplicated route list in contributor documentation.
+- EnrollPro is the identity, enrollment, section placement, personnel, and school-year SSOT.
+- SMART owns grades, attendance, and academic records.
+- AIMS owns learning content, interventions, submissions, and mastery analytics.
+- ATLAS owns schedules, rooms, and teaching loads.
+- MRF owns maintenance and materials recovery operations while consuming DPA-minimized EnrollPro identities.
 - Uploads are served statically from `/uploads`.
 - Prisma schema is in `server/prisma/schema.prisma`; generated client is in `server/src/generated/prisma`.
 
@@ -84,9 +73,7 @@
 
 - `@enrollpro/shared` is the contract layer (schemas, constants, inferred types).
 - `SchoolSetting.activeSchoolYearId` is the key pivot for active school-year behavior.
-- Admission lifecycle uses two active API surfaces:
-  - `/api/applications` (legacy/unified intake + enrollment operations)
-  - `/api/early-registrations` (DO 017 early registration lane)
+- Enrollment lifecycle behavior must be verified from mounted routes and current shared contracts rather than older target-state documentation.
 - ATLAS sync retry worker starts at server boot (`startAtlasSyncRetryWorker`).
 
 ## Source-of-truth files for engineering decisions
@@ -180,9 +167,8 @@
 - Student write/health/pin-reset endpoints in `students.controller.ts` currently return unavailable responses (legacy stack removed guard).
 - School-year utility logic exists in both `school-year.service.ts` and `academic-year.service.ts`.
   - Prefer `school-year.service.ts` for new work to reduce duplication drift.
-- Two parallel intake surfaces are active (`/api/applications` and `/api/early-registrations`).
-  - Preserve contract boundaries and avoid mixing payload assumptions between these flows.
-- Test strategy is mixed (script-style and framework-style), with no unified automated test pipeline yet.
+- Treat mounted routes in `server/src/app.ts` as the only source of truth for active intake APIs.
+- There is no automated integration test pipeline; use builds and focused manual or direct API verification.
 
 ## Practical guardrails for AI-assisted changes
 

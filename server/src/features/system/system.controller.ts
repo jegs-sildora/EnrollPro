@@ -46,7 +46,7 @@ export async function getPublicConfig(
 }
 
 export async function getRolloverReadiness(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -60,21 +60,17 @@ export async function getRolloverReadiness(
     }
 
     const isEosyPhase = schoolSetting.systemPhase === "EOSY_CLOSING"
-    if (!isEosyPhase) {
-      res.json({
-        isEosyPhase: false,
-        ready: false,
-        schoolYearFinalized: false,
-        blockers: [],
-      })
-      return
-    }
+    const calendarPolicyId =
+      typeof req.query.calendarPolicyId === "string"
+        ? Number.parseInt(req.query.calendarPolicyId, 10)
+        : undefined
 
     const readiness = await getSchoolYearRolloverReadiness(
       schoolSetting.activeSchoolYearId,
+      Number.isInteger(calendarPolicyId) ? calendarPolicyId : undefined,
     )
     res.json({
-      isEosyPhase: true,
+      isEosyPhase,
       ...readiness,
     })
   } catch (error: unknown) {

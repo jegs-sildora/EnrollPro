@@ -7,6 +7,7 @@ import {
   broadcastDomainInvalidation,
   broadcastEosyInvalidation,
 } from "../../lib/realtime-events.js";
+import { syncFinalSmartSectionOutcomes } from "./smart-eosy.service.js";
 
 /**
  * POST /api/integration/smart/sections/:id/sync-grades
@@ -20,146 +21,37 @@ export async function syncSmartSectionGrades(
 ): Promise<void> {
   try {
     const sectionId = Number.parseInt(String(req.params.id), 10);
-    if (!Number.isFinite(sectionId) || sectionId <= 0) {
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
       res.status(400).json({ message: "Invalid section id." });
       return;
     }
 
-    const baseUrl = process.env.SMART_API_BASE_URL || "http://laptop-pfvh73qk.buru-degree.ts.net:5003";
-    const fallbackEnabled = process.env.SMART_SYNC_FALLBACK_ENABLED === "true";
-
-    // Fetch section with its current enrollment records (LRNs only)
-    const section = await prisma.section.findUnique({
-      where: { id: sectionId },
-      include: {
-        gradeLevel: { select: { id: true, name: true } },
-        schoolYear: { select: { id: true, yearLabel: true } },
-        enrollmentRecords: {
-          include: {
-            enrollmentApplication: {
-              include: {
-                learner: { select: { id: true, lrn: true } },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!section) {
-      res.status(404).json({ message: "Section not found." });
-      return;
-    }
-
-    if (section.enrollmentRecords.length === 0) {
-      res.json({
-        success: true,
-        syncedCount: 0,
-        message: "Section has no enrolled learners.",
-      });
-      return;
-    }
-
-    let smartData: Array<{ lrn: string; generalAverage: number }> = [];
-    let isFallbackEngaged = false;
-
-    try {
-      // Direct API call without auth headers as requested
-      const response = await axios.get(
-        `${baseUrl}/api/grades/section/${sectionId}`,
-        {
-          params: { quarter: "Q1" },
-          timeout: 5000,
-        },
-      );
-      
-      smartData = response.data.data.students.map((s: any) => ({
-        lrn: s.lrn,
-        generalAverage: s.initialGrade || 0,
-      }));
-    } catch (fetchError) {
-      console.warn(
-        "S.M.A.R.T. section sync — live node unreachable:",
-        (fetchError as Error).message,
-      );
-
-      if (fallbackEnabled) {
-        isFallbackEngaged = true;
-        smartData = section.enrollmentRecords.map((r) => ({
-          lrn: r.enrollmentApplication.learner.lrn ?? "",
-          generalAverage: 85.0,
-        }));
-      } else {
-        throw new AppError(
-          503,
-          "S.M.A.R.T. sync failed — external server is unreachable.",
-        );
-      }
-    }
-
-    type RecordRef = {
-      enrollmentApplicationId: number;
-      recordId: number;
-      lrn: string | null;
-    };
-    const localMap = new Map<string, RecordRef>();
-    for (const r of section.enrollmentRecords) {
-      const lrn = r.enrollmentApplication.learner.lrn;
-      if (lrn) {
-        localMap.set(lrn, {
-          enrollmentApplicationId: r.enrollmentApplicationId,
-          recordId: r.id,
-          lrn,
-        });
-      }
-    }
-
-    const matchedUpdates: Array<{ lrn: string; finalAverage: number }> = [];
-    const missingLrns: string[] = [];
-
-    for (const entry of smartData) {
-      if (!entry.lrn) continue;
-      if (localMap.has(entry.lrn)) {
-        matchedUpdates.push({ lrn: entry.lrn, finalAverage: entry.generalAverage });
-      } else {
-        missingLrns.push(entry.lrn);
-      }
-    }
-
-    if (matchedUpdates.length > 0) {
-      await prisma.$transaction(
-        matchedUpdates.map((u) => {
-          const ref = localMap.get(u.lrn)!;
-          return prisma.enrollmentRecord.update({
-            where: { id: ref.recordId },
-            data: { finalAverage: u.finalAverage },
-          });
-        }),
-      );
-    }
+    const result = await syncFinalSmartSectionOutcomes(sectionId);
 
     await auditLog({
       userId: req.user!.userId,
       actionType: "SMART_SECTION_SYNC",
-      description: `SMART section sync: section #${sectionId} — ${matchedUpdates.length} updated, ${missingLrns.length} unmatched.`,
+      description:
+        `SMART final-result sync: section #${sectionId} - `
+        + `${result.syncedCount} updated, `
+        + `${result.unmatchedSmartLrns.length} unmatched, `
+        + `${result.missingSmartLrns.length} missing from SMART.`,
       subjectType: "Section",
       recordId: sectionId,
       req,
     });
 
     broadcastEosyInvalidation(
-      section.schoolYearId,
-      [section.id],
-      section.enrollmentRecords.map((record) => record.enrollmentApplication.learner.id),
+      result.schoolYearId,
+      [result.sectionId],
+      result.learnerIds,
     );
     broadcastDomainInvalidation({ topics: ["integration:hub"] });
 
     res.json({
       success: true,
-      sectionId,
-      sectionName: section.name,
-      syncedCount: matchedUpdates.length,
-      message: `Synced ${matchedUpdates.length} grade(s) from S.M.A.R.T.`,
+      ...result,
+      message: `Synchronized ${result.syncedCount} finalized learner outcome(s) from SMART.`,
     });
   } catch (error) {
     next(error);
@@ -204,11 +96,16 @@ export async function syncAtlasFaculty(
         synced: true,
         message: response.data.message || `ATLAS synchronization triggered successfully.`,
       });
-    } catch (fetchError: any) {
-       console.error("ATLAS sync trigger failed:", fetchError.message);
+    } catch (fetchError: unknown) {
+       const message = axios.isAxiosError(fetchError)
+         ? fetchError.message
+         : fetchError instanceof Error
+           ? fetchError.message
+           : "Unknown ATLAS connection error";
+       console.error("ATLAS sync trigger failed:", message);
        throw new AppError(
         503,
-        `ATLAS handshake failed — server is offline or unreachable via Tailscale: ${fetchError.message}`,
+        `ATLAS handshake failed — server is offline or unreachable via Tailscale: ${message}`,
       );
     }
   } catch (error) {
@@ -232,8 +129,13 @@ export async function broadcastPhase1(
     let atlasStatus = "SUCCESS";
     try {
       await axios.post(`${atlasUrl}/api/v1/faculty/sync`, { mode: "reconcile" }, { timeout: 10000 });
-    } catch (e: any) {
-      atlasStatus = `FAILED: ${e.message}`;
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "Unknown ATLAS connection error";
+      atlasStatus = `FAILED: ${message}`;
     }
 
     // 2. Fetch Applicants

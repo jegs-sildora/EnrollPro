@@ -108,7 +108,7 @@ Base path: `/api/system`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/public-config` | Public | Learner-login branding and public system context |
-| GET | `/rollover-readiness` | `SYSTEM_ADMIN` | Class-level rollover blockers and school EOSY readiness |
+| GET | `/rollover-readiness?calendarPolicyId=:id` | `SYSTEM_ADMIN` | SMART, SF5, SF6, calendar, section, and target-year rollover blockers |
 
 ## Settings
 
@@ -146,11 +146,15 @@ Base paths: `/api/school-years` and backward-compatible `/api/school-year`
 | GET | `/next-defaults` | `SYSTEM_ADMIN` | Suggested next-year dates and label |
 | GET | `/grade-levels` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN`, `TEACHER` | List configured grade levels |
 | GET | `/:id` | `SYSTEM_ADMIN` | Read one school-year configuration |
-| POST | `/activate` | `SYSTEM_ADMIN` | Create or activate a school year, optionally cloning structure |
-| POST | `/rollover-draft` | `SYSTEM_ADMIN` | Save the next-year shell and proposed dates |
-| POST | `/rollover` | `SYSTEM_ADMIN` | Execute complete EOSY-to-BOSY rollover after readiness validation |
+| GET | `/calendar-policies` | `SYSTEM_ADMIN` | List versioned DepEd school-calendar policies |
+| POST | `/calendar-policies` | `SYSTEM_ADMIN` | Save a calendar-policy draft without creating a school year |
+| PUT | `/calendar-policies/:id` | `SYSTEM_ADMIN` | Replace an editable calendar-policy draft |
+| POST | `/calendar-policies/:id/approve` | `SYSTEM_ADMIN` | Approve a calendar policy for rollover |
+| POST | `/activate` | `SYSTEM_ADMIN` | Create the first operational school year only |
+| POST | `/rollover-draft` | `SYSTEM_ADMIN` | Backward-compatible alias for saving a calendar-policy draft |
+| POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, apply the approved calendar, clone empty sections, carry learners forward, and activate the new year |
 | PUT | `/:id` | `SYSTEM_ADMIN` | Update editable school-year settings |
-| PATCH | `/:id/status` | `SYSTEM_ADMIN` | Change active or archived lifecycle status |
+| PATCH | `/:id/status` | `SYSTEM_ADMIN` | First-time status control only; cannot bypass rollover while an operational year exists |
 | PATCH | `/:id/dates` | `SYSTEM_ADMIN` | Update class and enrollment dates |
 | DELETE | `/:id` | `SYSTEM_ADMIN` | Delete an allowed school-year record |
 
@@ -302,13 +306,16 @@ Base path: `/api/eosy`
 | POST | `/sections/:id/reopen` | `SYSTEM_ADMIN` | Reopen section before school-level lock |
 | GET | `/school-year/:schoolYearId/export-lock` | Registrar, admin | School EOSY lock and finalization readiness |
 | GET | `/school-year/:schoolYearId/final-lis-export` | Registrar, admin | Download locked final LIS export |
-| POST | `/school-year/finalize` | `SYSTEM_ADMIN` | Archive and lock school EOSY, write history, and create next-year shell |
 | POST | `/school-year/unlock` | `SYSTEM_ADMIN` | Emergency school EOSY unlock |
 | POST | `/sections/:id/unlock` | Registrar, admin | Unlock section EOSY |
+| POST | `/sections/:id/forms/sf5/record` | Registrar, admin | Record an immutable, checksummed SF5 payload for a finalized section |
+| POST | `/school-years/:schoolYearId/forms/sf6/record` | Registrar, admin | Record an immutable, checksummed school-wide SF6 payload |
 | GET | `/sections/:id/exports/sf5` | Registrar, admin | Section SF5 JSON export |
 | GET | `/exports/sf6` | Registrar, admin | School-wide SF6 JSON export |
 
-EOSY finalization creates the next-year shell. Full learner carryover remains the separate `/api/school-years/rollover` operation described in the lifecycle guide.
+SF5 and SF6 GET routes are previews or downloads. Only the POST recording
+routes create official immutable artifacts. School closing and new-year
+activation occur only through `/api/school-years/rollover`.
 
 ## Teacher EOSY
 
@@ -384,7 +391,7 @@ Base path: `/api/integration`
 
 | Method | Path | Auth and roles | Direction | Purpose |
 | --- | --- | --- | --- | --- |
-| POST | `/smart/sections/:id/sync-grades` | `SYSTEM_ADMIN` | SMART to EnrollPro | Pull section grades and update final averages by LRN |
+| POST | `/smart/sections/:id/sync-grades` | `SYSTEM_ADMIN` | SMART to EnrollPro | Pull strict final published outcomes, learning-area results, revision, and publication time by LRN |
 | POST | `/atlas/sync-faculty` | `SYSTEM_ADMIN` | EnrollPro to ATLAS trigger | Ask ATLAS to reconcile EnrollPro faculty |
 | GET | `/atlas/faculty/:id/teaching-load` | Staff JWT | ATLAS to EnrollPro proxy | Read a teacher's ATLAS assignments |
 | POST | `/broadcast/phase1` | `SYSTEM_ADMIN` | Orchestration | Trigger phase-one integration actions |

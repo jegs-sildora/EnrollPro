@@ -3,13 +3,22 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
-import type { Prisma } from "../../generated/prisma/index.js";
+import type {
+  ApplicantType,
+  Prisma,
+} from "../../generated/prisma/index.js";
 import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
 import { getHistoricalProfileSnapshot } from "../school-year/services/school-year-rollover.service.js";
 import {
   broadcastEosyInvalidation,
   broadcastSchoolYearInvalidation,
 } from "../../lib/realtime-events.js";
+import {
+  buildSf5Payload,
+  buildSf6Payload,
+  getSchoolFormArtifactStatus,
+  recordSchoolFormArtifact,
+} from "./services/school-form-artifact.service.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -25,6 +34,14 @@ function toDateOnly(value: Date | string | null | undefined): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toISOString().slice(0, 10);
+}
+
+function asJsonObject(
+  value: Prisma.JsonValue | null,
+): Prisma.JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value
+    : {};
 }
 
 /**
@@ -65,21 +82,16 @@ function normalizeAcademicDeficiencyNote(
 }
 
 async function getSchoolYearExportLockState(schoolYearId: number) {
-  const [schoolYear, totalSections, finalizedSections] = await Promise.all([
+  const [schoolYear, sections] = await Promise.all([
     prisma.schoolYear.findUnique({
       where: { id: schoolYearId },
       select: { id: true, yearLabel: true, isEosyFinalized: true },
     }),
-    prisma.section.count({
+    prisma.section.findMany({
       where: {
         schoolYearId,
       },
-    }),
-    prisma.section.count({
-      where: {
-        schoolYearId,
-        isEosyFinalized: true,
-      },
+      select: { id: true, isEosyFinalized: true },
     }),
   ]);
 
@@ -87,10 +99,33 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
     throw new AppError(404, "School year not found.");
   }
 
+  const totalSections = sections.length;
+  const finalizedSections = sections.filter(
+    (section) => section.isEosyFinalized,
+  ).length;
+  const sf5Statuses = await Promise.all(
+    sections.map((section) =>
+      getSchoolFormArtifactStatus(
+        "SF5",
+        schoolYearId,
+        section.id,
+      ),
+    ),
+  );
+  const sf6Status = await getSchoolFormArtifactStatus(
+    "SF6",
+    schoolYearId,
+    null,
+  );
+  const currentSf5Count = sf5Statuses.filter(
+    (status) => status.current,
+  ).length;
   const schoolYearFinalized = schoolYear.isEosyFinalized;
   const canFinalizeSchoolYear =
     totalSections > 0 &&
     finalizedSections === totalSections &&
+    currentSf5Count === totalSections &&
+    sf6Status.current &&
     !schoolYearFinalized;
 
   let lockReason: string | null = null;
@@ -100,7 +135,16 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
     lockReason =
       "No sections found for this school year. Add sections before school-level finalization.";
   } else if (!canFinalizeSchoolYear) {
-    lockReason = `${totalSections - finalizedSections} class(es) still need EOSY finalization before school-level lock.`;
+    const blockers = [
+      totalSections - finalizedSections > 0
+        ? `${totalSections - finalizedSections} class(es) still need EOSY finalization`
+        : null,
+      totalSections - currentSf5Count > 0
+        ? `${totalSections - currentSf5Count} class(es) need a current SF5 record`
+        : null,
+      !sf6Status.current ? "the school needs a current SF6 record" : null,
+    ].filter((blocker): blocker is string => Boolean(blocker));
+    lockReason = blockers.join(", ");
   }
 
   return {
@@ -109,6 +153,10 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
     schoolYearFinalized,
     totalSections,
     finalizedSections,
+    currentSf5Count,
+    sf6Recorded: sf6Status.recorded,
+    sf6Current: sf6Status.current,
+    sf5Statuses,
     canFinalizeSchoolYear,
     lockReason,
   };
@@ -576,7 +624,7 @@ export async function updateEosyRecord(
     const isScp = record.section?.programType && record.section.programType !== "REGULAR";
 
     let targetStatus = eosyStatus;
-    let nextYearCurriculum: any = undefined;
+    let nextYearCurriculum: ApplicantType | undefined;
 
     if (ave === 0 || ave === null || isNaN(ave)) {
       if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
@@ -905,6 +953,13 @@ export async function finalizeSchoolYear(
   res: Response,
   next: NextFunction,
 ) {
+  res.status(409).json({
+    code: "ROLLOVER_REQUIRED",
+    message:
+      "School-year finalization is completed only through the atomic rollover operation.",
+  });
+  return;
+  /* istanbul ignore next -- retained temporarily for migration reference */
   try {
     const { schoolYearId } = req.body;
     const syId = parseInt(String(schoolYearId));
@@ -920,7 +975,7 @@ export async function finalizeSchoolYear(
     if (!schoolYear) {
       throw new AppError(404, "School year not found.");
     }
-    if (schoolYear.isEosyFinalized) {
+    if (schoolYear!.isEosyFinalized) {
       throw new AppError(
         422,
         "School year EOSY is already finalized. Export lock is already active.",
@@ -1013,6 +1068,9 @@ export async function finalizeSchoolYear(
       await prisma.enrollmentHistory.createMany({
         data: sourceRecords.map((record) => ({
           learnerId: record.learnerId,
+          learnerIdentifier: record.learner.lrn?.trim()
+            ? `LRN:${record.learner.lrn.trim()}`
+            : `LEARNER:${record.learnerId}`,
           schoolYearId: record.schoolYearId,
           gradeLevelId: record.section.gradeLevelId,
           sectionId: record.sectionId,
@@ -1071,13 +1129,13 @@ export async function finalizeSchoolYear(
         });
         
         const { cloneSchoolYearStructure } = await import("./../school-year/services/school-year-controller-shared.service.js");
-        await cloneSchoolYearStructure(updated.id, nextSy.id);
+        await cloneSchoolYearStructure(updated.id, nextSy!.id);
       }
       
       // Update global active school year and phase in settings
       await prisma.schoolSetting.updateMany({
         data: { 
-          activeSchoolYearId: nextSy.id,
+          activeSchoolYearId: nextSy!.id,
           systemPhase: "OFFICIAL_ENROLLMENT"
         },
       });
@@ -1315,6 +1373,108 @@ export async function downloadFinalLisExport(
 }
 
 /**
+ * POST /api/eosy/sections/:id/forms/sf5/record
+ * Records an immutable SF5 payload for rollover readiness.
+ */
+export async function recordSF5(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sectionId = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
+      throw new AppError(400, "A valid section id is required.");
+    }
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      select: {
+        schoolYearId: true,
+        isEosyFinalized: true,
+      },
+    });
+    if (!section) {
+      throw new AppError(404, "Section not found.");
+    }
+    if (!section.isEosyFinalized) {
+      throw new AppError(
+        422,
+        "Finalize this class before recording its official SF5.",
+      );
+    }
+
+    const artifact = await recordSchoolFormArtifact({
+      formType: "SF5",
+      schoolYearId: section.schoolYearId,
+      sectionId,
+      recordedById: req.user!.userId,
+    });
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SF5_RECORDED",
+      description: `Recorded official SF5 version ${artifact.version} for section ${sectionId}.`,
+      subjectType: "Section",
+      recordId: sectionId,
+      req,
+    });
+    broadcastEosyInvalidation(section.schoolYearId, [sectionId]);
+    res.status(201).json(artifact);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/eosy/school-years/:schoolYearId/forms/sf6/record
+ * Records an immutable school-wide SF6 payload for rollover readiness.
+ */
+export async function recordSF6(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const schoolYearId = Number.parseInt(
+      String(req.params.schoolYearId),
+      10,
+    );
+    if (!Number.isInteger(schoolYearId) || schoolYearId <= 0) {
+      throw new AppError(400, "A valid school year id is required.");
+    }
+    const unfinishedSections = await prisma.section.count({
+      where: {
+        schoolYearId,
+        isEosyFinalized: false,
+      },
+    });
+    if (unfinishedSections > 0) {
+      throw new AppError(
+        422,
+        `Finalize the remaining ${unfinishedSections} class(es) before recording SF6.`,
+      );
+    }
+
+    const artifact = await recordSchoolFormArtifact({
+      formType: "SF6",
+      schoolYearId,
+      recordedById: req.user!.userId,
+    });
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SF6_RECORDED",
+      description: `Recorded official SF6 version ${artifact.version} for school year ${schoolYearId}.`,
+      subjectType: "SchoolYear",
+      recordId: schoolYearId,
+      req,
+    });
+    broadcastEosyInvalidation(schoolYearId);
+    res.status(201).json(artifact);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * GET /api/eosy/sections/:id/exports/sf5
  * School Form 5 — Section-scoped learner promotion and proficiency report (JSON).
  * Includes section metadata and per-learner EOSY outcome data.
@@ -1331,6 +1491,10 @@ export async function exportSF5(
       res.status(400).json({ message: "Invalid section id." });
       return;
     }
+
+    const payload = await buildSf5Payload(sectionId);
+    res.json(payload);
+    return;
 
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
@@ -1378,19 +1542,19 @@ export async function exportSF5(
       },
     });
 
-    const adviser = section.advisers[0]?.teacher ?? null;
+    const adviser = section!.advisers[0]?.teacher ?? null;
 
     res.json({
       generatedAt: new Date().toISOString(),
       section: {
-        id: section.id,
-        name: section.name,
-        gradeLevel: section.gradeLevel,
-        schoolYear: section.schoolYear,
+        id: section!.id,
+        name: section!.name,
+        gradeLevel: section!.gradeLevel,
+        schoolYear: section!.schoolYear,
         adviser: adviser
           ? { firstName: adviser.firstName, lastName: adviser.lastName }
           : null,
-        isEosyFinalized: section.isEosyFinalized,
+        isEosyFinalized: section!.isEosyFinalized,
       },
       totalLearners: records.length,
       learners: records.map((r, idx) => ({
@@ -1438,6 +1602,10 @@ export async function exportSF6(
       res.status(400).json({ message: "schoolYearId query param is required." });
       return;
     }
+
+    const payload = await buildSf6Payload(schoolYearId);
+    res.json(payload);
+    return;
 
     const schoolYear = await prisma.schoolYear.findUnique({
       where: { id: schoolYearId },
@@ -1559,7 +1727,10 @@ export async function exportSF6(
 
     res.json({
       generatedAt: new Date().toISOString(),
-      schoolYear: { id: schoolYear.id, yearLabel: schoolYear.yearLabel },
+      schoolYear: {
+        id: schoolYear!.id,
+        yearLabel: schoolYear!.yearLabel,
+      },
       rows,
       grandTotal,
     });
@@ -1588,9 +1759,8 @@ export async function getGradeRecords(
       where: { id: syId },
     });
 
-    let records: any[] = [];
-
-    if (schoolYear?.status === "ARCHIVED") {
+    const records = schoolYear?.status === "ARCHIVED"
+      ? await (async () => {
       const historyRecords = await prisma.enrollmentHistory.findMany({
         where: {
           schoolYearId: syId,
@@ -1609,16 +1779,17 @@ export async function getGradeRecords(
         ],
       });
 
-      records = historyRecords.map(h => ({
+      return historyRecords.map(h => ({
         ...h,
         finalAverage: h.genAve,
+        nextYearCurriculum: null,
         enrollmentApplication: {
           learner: h.learner,
           gradeLevel: h.gradeLevel,
         }
       }));
-    } else {
-      records = await prisma.enrollmentRecord.findMany({
+    })()
+      : await prisma.enrollmentRecord.findMany({
         where: {
           schoolYearId: syId,
           section: {
@@ -1650,35 +1821,21 @@ export async function getGradeRecords(
           },
         ],
       });
-    }
 
     const mappedRecords = records.map((record) => {
       const isScp = record.section?.programType && record.section.programType !== "REGULAR";
       const isScpDemoted = record.nextYearCurriculum === "REGULAR" && isScp;
 
-      const finalAve = record.finalAverage !== null && record.finalAverage !== undefined
-        ? parseFloat(String(record.finalAverage))
-        : null;
-
-      let scpViolation = null;
-      if (isScp && finalAve !== null && finalAve < 85) {
-        // MOCK LOGIC: We deterministically generate a violation based on finalAverage 
-        // to fulfill the UI requirement for granular DepEd tracking.
-        if (finalAve < 80) {
-           scpViolation = { subject: "MAPEH", term: "Quarter 2", actualGrade: Math.floor(finalAve), requiredGrade: 80, violationType: "Quarterly Minimum" };
-        } else if (finalAve < 83) {
-           scpViolation = { subject: "Araling Panlipunan", term: "Final Grade", actualGrade: finalAve, requiredGrade: 83, violationType: "Subject Final Minimum" };
-        } else {
-           scpViolation = { subject: "Science", term: "Final Grade", actualGrade: finalAve, requiredGrade: 85, violationType: "Core Subject Minimum" };
-        }
-      }
-
       return {
         ...record,
         nextYearCurriculum: record.nextYearCurriculum,
         isScpDemoted,
-        scpViolation,
-        finalAverage: finalAve,
+        scpViolation: null,
+        finalAverage:
+          record.finalAverage !== null &&
+          record.finalAverage !== undefined
+            ? Number(record.finalAverage)
+            : null,
       };
     });
 
@@ -2165,7 +2322,9 @@ export async function overrideEosyRecord(
 
     // 2. Update address coordinates inside reportedGrades JSON
     if (latitude !== undefined || longitude !== undefined) {
-      const currentGrades = (record.enrollmentApplication.reportedGrades as Record<string, any>) || {};
+      const currentGrades = asJsonObject(
+        record.enrollmentApplication.reportedGrades,
+      );
       await prisma.enrollmentApplication.update({
         where: { id: record.enrollmentApplicationId },
         data: {
@@ -2266,7 +2425,7 @@ export async function overrideEosyRecord(
               }
             }
 
-            const activeAppGrades = (activeApp.reportedGrades as Record<string, any>) || {};
+            const activeAppGrades = asJsonObject(activeApp.reportedGrades);
             await prisma.enrollmentApplication.update({
               where: { id: activeApp.id },
               data: {

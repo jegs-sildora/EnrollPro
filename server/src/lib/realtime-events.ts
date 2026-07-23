@@ -112,6 +112,9 @@ export function broadcastSchoolYearInvalidation(
       "sectioning:pool",
       "students:list",
       "teachers:list",
+      "eosy:sections",
+      "eosy:records",
+      "integration:hub",
     ],
     schoolYearId,
   });

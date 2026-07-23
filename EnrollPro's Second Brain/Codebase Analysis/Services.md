@@ -44,10 +44,9 @@ Service candidates:
 
 - Introduce small domain services around status transitions.
 - Keep Prisma transaction boundaries explicit in services.
-- Add integration tests around service-level workflows.
+- Validate service-level workflows through focused API smoke checks and build verification.
 
 ## Related Notes
 
 - [[Technical Debt]]
 - [[Refactoring Recommendations]]
-

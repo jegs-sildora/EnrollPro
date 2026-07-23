@@ -47,9 +47,9 @@ export function PhaseBanner() {
       >
         <Alert className="bg-amber-50 border-amber-200 text-amber-900 relative">
           <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="font-extrabold">Late Enrollment Phase Active</AlertTitle>
+          <AlertTitle className="font-extrabold">Classes Ongoing — Late Enrollment Phase</AlertTitle>
           <AlertDescription className="text-base font-bold mt-1">
-            Classes are currently ongoing. Any new enrollments processed will be automatically flagged as Late Enrollee.
+            Regular online enrollment is closed. Authorized registrars may still encode late walk-in learners at the campus office. Any new enrollments processed will be automatically flagged as Late Enrollee.
           </AlertDescription>
           <Button
             variant="ghost"

@@ -111,13 +111,6 @@ router.get(
 );
 
 router.post(
-  "/school-year/finalize",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  ctrl.finalizeSchoolYear,
-);
-
-router.post(
   "/school-year/unlock",
   authenticate,
   authorize("SYSTEM_ADMIN"),
@@ -138,11 +131,25 @@ router.get(
   ctrl.exportSF5,
 );
 
+router.post(
+  "/sections/:id/forms/sf5/record",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.recordSF5,
+);
+
 router.get(
   "/exports/sf6",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.exportSF6,
+);
+
+router.post(
+  "/school-years/:schoolYearId/forms/sf6/record",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.recordSF6,
 );
 
 export default router;

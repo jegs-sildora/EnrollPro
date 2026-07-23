@@ -70,7 +70,14 @@ import type {
   updateRolloverDraftSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
+  calendarPolicyStatusSchema,
+  schoolYearCalendarPolicySchema,
 } from "../schemas/school-year.schema.js";
+import type {
+  smartEosyLearnerOutcomeSchema,
+  smartEosySectionResponseSchema,
+  smartLearningAreaResultSchema,
+} from "../schemas/smart-eosy.schema.js";
 import type {
   healthRecordSchema,
   updateStudentSchema,
@@ -189,6 +196,19 @@ export type TransitionSchoolYearInput = z.infer<
   typeof transitionSchoolYearSchema
 >;
 export type ToggleOverrideInput = z.infer<typeof toggleOverrideSchema>;
+export type CalendarPolicyStatus = z.infer<typeof calendarPolicyStatusSchema>;
+export type SchoolYearCalendarPolicyInput = z.infer<
+  typeof schoolYearCalendarPolicySchema
+>;
+export type SmartLearningAreaResult = z.infer<
+  typeof smartLearningAreaResultSchema
+>;
+export type SmartEosyLearnerOutcome = z.infer<
+  typeof smartEosyLearnerOutcomeSchema
+>;
+export type SmartEosySectionResponse = z.infer<
+  typeof smartEosySectionResponseSchema
+>;
 
 // ─── Student Types ─────────────────────────────────────
 export type HealthRecordInput = z.infer<typeof healthRecordSchema>;
