@@ -948,7 +948,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <fieldset disabled={isArchived} className="space-y-6 relative pb-24 group min-w-0">
+    <fieldset disabled={isArchived} className="space-y-6 relative pb-6 group min-w-0">
       <AnimatePresence>
         {isRolloverLoaderOpen && (
           <motion.div
