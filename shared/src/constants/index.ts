@@ -15,32 +15,19 @@ export const SexEnum = z.enum(["MALE", "FEMALE"]);
 export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const APPLICATION_STATUS_VALUES = [
-  "PRE_REGISTERED",
   "PENDING_VERIFICATION",
   "READY_FOR_SECTIONING",
   "OFFICIALLY_ENROLLED",
-  "SUBMITTED_BEERF",
-  "PENDING_BEEF",
-  "AWAITING_VERIFICATION",
-  "SUBMITTED_BEEF",
-  "VERIFIED",
-  "UNDER_REVIEW",
   "FOR_REVISION",
-  "ELIGIBLE",
-  "EXAM_SCHEDULED",
-  "ASSESSMENT_TAKEN",
-  "PASSED",
-  "INTERVIEW_SCHEDULED",
-  "READY_FOR_ENROLLMENT",
   "PENDING_CONFIRMATION",
-  "TEMPORARILY_ENROLLED",
-  "FAILED_ASSESSMENT",
-  "ENROLLED",
   "REJECTED",
   "WITHDRAWN",
   "TRANSFERRING_OUT",
   "TRANSFERRED_OUT",
   "DROPPED",
+  "ARCHIVED_NO_SHOW",
+  "REMEDIAL_HOLD",
+  "REMEDIAL_RESOLVED",
 ] as const;
 
 export const ApplicationStatusEnum = z.enum(APPLICATION_STATUS_VALUES);
@@ -48,12 +35,9 @@ export const ApplicationStatusEnum = z.enum(APPLICATION_STATUS_VALUES);
 export const TrackingProgramTypeEnum = z.enum(["REGULAR", "SCP"]);
 
 export const TrackingStatusEnum = z.enum([
-  "SUBMITTED",
   "IN_REVIEW",
-  "ASSESSMENT_IN_PROGRESS",
   "QUALIFIED_FOR_ENROLLMENT",
   "ENROLLED",
-  "NOT_QUALIFIED",
   "REJECTED",
   "WITHDRAWN",
   "TRANSFERRED",
@@ -61,9 +45,7 @@ export const TrackingStatusEnum = z.enum([
 ]);
 
 export const TrackingCurrentStepEnum = z.enum([
-  "APPLICATION_SUBMITTED",
   "REGISTRAR_REVIEW",
-  "ASSESSMENT_PHASE",
   "ENROLLMENT_QUALIFICATION",
   "ENROLLED",
 ]);
@@ -110,143 +92,42 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof TrackingStatusEnum>
 > = {
-  PRE_REGISTERED: "SUBMITTED",
   PENDING_VERIFICATION: "IN_REVIEW",
   READY_FOR_SECTIONING: "QUALIFIED_FOR_ENROLLMENT",
   OFFICIALLY_ENROLLED: "ENROLLED",
-  SUBMITTED_BEERF: "SUBMITTED",
-  PENDING_BEEF: "IN_REVIEW",
-  AWAITING_VERIFICATION: "IN_REVIEW",
-  SUBMITTED_BEEF: "SUBMITTED",
-  VERIFIED: "IN_REVIEW",
-  UNDER_REVIEW: "IN_REVIEW",
   FOR_REVISION: "IN_REVIEW",
-  ELIGIBLE: "IN_REVIEW",
-  EXAM_SCHEDULED: "ASSESSMENT_IN_PROGRESS",
-  ASSESSMENT_TAKEN: "ASSESSMENT_IN_PROGRESS",
-  PASSED: "QUALIFIED_FOR_ENROLLMENT",
-  INTERVIEW_SCHEDULED: "ASSESSMENT_IN_PROGRESS",
-  READY_FOR_ENROLLMENT: "QUALIFIED_FOR_ENROLLMENT",
   PENDING_CONFIRMATION: "QUALIFIED_FOR_ENROLLMENT",
-  TEMPORARILY_ENROLLED: "QUALIFIED_FOR_ENROLLMENT",
-  FAILED_ASSESSMENT: "NOT_QUALIFIED",
-  ENROLLED: "ENROLLED",
   REJECTED: "REJECTED",
   WITHDRAWN: "WITHDRAWN",
   TRANSFERRING_OUT: "TRANSFERRED",
   TRANSFERRED_OUT: "TRANSFERRED",
   DROPPED: "DROPPED",
+  ARCHIVED_NO_SHOW: "WITHDRAWN",
+  REMEDIAL_HOLD: "IN_REVIEW",
+  REMEDIAL_RESOLVED: "QUALIFIED_FOR_ENROLLMENT",
 };
 
 export const APPLICATION_VALID_TRANSITIONS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof ApplicationStatusEnum>[]
 > = {
-  PRE_REGISTERED: ["PENDING_VERIFICATION", "WITHDRAWN"],
   PENDING_VERIFICATION: ["READY_FOR_SECTIONING", "REJECTED", "WITHDRAWN"],
-  READY_FOR_SECTIONING: ["OFFICIALLY_ENROLLED", "PENDING_BEEF", "WITHDRAWN"],
+  READY_FOR_SECTIONING: ["OFFICIALLY_ENROLLED", "FOR_REVISION", "WITHDRAWN"],
   OFFICIALLY_ENROLLED: ["TRANSFERRING_OUT", "DROPPED", "WITHDRAWN"],
-  SUBMITTED_BEERF: [
-    "PENDING_BEEF",
-    "VERIFIED",
-    "SUBMITTED_BEEF",
-    "UNDER_REVIEW",
-    "EXAM_SCHEDULED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  PENDING_BEEF: ["AWAITING_VERIFICATION", "REJECTED", "WITHDRAWN"],
-  AWAITING_VERIFICATION: [
-    "VERIFIED",
-    "READY_FOR_ENROLLMENT",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  SUBMITTED_BEEF: [
-    "VERIFIED",
-    "SUBMITTED_BEERF",
-    "UNDER_REVIEW",
-    "EXAM_SCHEDULED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  VERIFIED: [
-    "UNDER_REVIEW",
-    "ELIGIBLE",
-    "EXAM_SCHEDULED",
-    "READY_FOR_ENROLLMENT",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  UNDER_REVIEW: [
-    "VERIFIED",
-    "FOR_REVISION",
-    "ELIGIBLE",
-    "EXAM_SCHEDULED",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["EXAM_SCHEDULED", "READY_FOR_ENROLLMENT", "WITHDRAWN"],
-  EXAM_SCHEDULED: [
-    "ASSESSMENT_TAKEN",
-    "EXAM_SCHEDULED",
-    "INTERVIEW_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  ASSESSMENT_TAKEN: [
-    "PASSED",
-    "SUBMITTED_BEERF",
-    "SUBMITTED_BEEF",
-    "FAILED_ASSESSMENT",
-    "ASSESSMENT_TAKEN",
-    "EXAM_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  PASSED: [
-    "PENDING_BEEF",
-    "READY_FOR_ENROLLMENT",
-    "INTERVIEW_SCHEDULED",
-    "EXAM_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  INTERVIEW_SCHEDULED: [
-    "PASSED",
-    "PENDING_BEEF",
-    "READY_FOR_ENROLLMENT",
-    "SUBMITTED_BEERF",
-    "SUBMITTED_BEEF",
-    "WITHDRAWN",
-  ],
-  READY_FOR_ENROLLMENT: [
-    "SUBMITTED_BEEF",
-    "READY_FOR_SECTIONING",
-    "PENDING_BEEF",
-    "ENROLLED",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
+  FOR_REVISION: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "WITHDRAWN"],
   PENDING_CONFIRMATION: [
     "READY_FOR_SECTIONING",
     "TRANSFERRING_OUT",
     "WITHDRAWN",
   ],
-  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
-  FAILED_ASSESSMENT: [
-    "SUBMITTED_BEEF",
-    "UNDER_REVIEW",
-    "WITHDRAWN",
-    "REJECTED",
-  ],
-  ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "DROPPED"],
-  REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
+  REJECTED: ["PENDING_VERIFICATION", "WITHDRAWN"],
   WITHDRAWN: [],
   TRANSFERRING_OUT: ["TRANSFERRED_OUT", "WITHDRAWN"],
   TRANSFERRED_OUT: [],
   DROPPED: [],
+  ARCHIVED_NO_SHOW: [],
+  REMEDIAL_HOLD: ["REMEDIAL_RESOLVED", "PENDING_CONFIRMATION"],
+  REMEDIAL_RESOLVED: ["PENDING_CONFIRMATION"],
 };
 
 export const TermFormatEnum = z.enum(["TRIMESTER", "QUARTERS"]);
@@ -362,46 +243,9 @@ export function getAllowedSectionProgramsForPlacement(
     new Set<ApplicantType>(["REGULAR", effectiveProgram]),
   );
 }
-export const DocumentStatusEnum = z.enum([
-  "SUBMITTED",
-  "VERIFIED",
-  "REJECTED",
-  "MISSING",
-]);
-export const DocumentTypeEnum = z.enum([
-  "PSA_BIRTH_CERTIFICATE",
-  "SECONDARY_BIRTH_PROOF",
-  "SF9_REPORT_CARD",
-  "SF10_PERMANENT_RECORD",
-  "GOOD_MORAL_CERTIFICATE",
-  "MEDICAL_CERTIFICATE",
-  "MEDICAL_EVALUATION",
-  "PSA_MARRIAGE_CERTIFICATE",
-  "PEPT_AE_CERTIFICATE",
-  "PWD_ID",
-  "UNDERTAKING",
-  "AFFIDAVIT_OF_UNDERTAKING",
-  "CONFIRMATION_SLIP",
-  "WRITING_PORTFOLIO",
-  "OTHERS",
-]);
 export const AssessmentPeriodEnum = z.enum(["BOSY", "EOSY"]);
 export const AddressTypeEnum = z.enum(["CURRENT", "PERMANENT"]);
 export const FamilyRelationshipEnum = z.enum(["MOTHER", "FATHER", "GUARDIAN"]);
-export const AssessmentKindEnum = z.enum([
-  "INTERVIEW",
-  "QUALIFYING_EXAMINATION",
-  "PRELIMINARY_EXAMINATION",
-  "FINAL_EXAMINATION",
-  "GENERAL_ADMISSION_TEST",
-  "TALENT_AUDITION",
-  "PHYSICAL_FITNESS_TEST",
-  "SPORTS_SKILLS_TRYOUT",
-  "SKILLS_ASSESSMENT",
-  "STANDARDIZED_ADMISSION_TOOL",
-  "APTITUDE_TEST",
-  "INTEREST_INVENTORY",
-]);
 export const ScpOptionTypeEnum = z.enum(["ART_FIELD", "LANGUAGE", "SPORT"]);
 export const LastSchoolTypeEnum = z.enum([
   "PUBLIC",
@@ -1008,7 +852,6 @@ export const DEFAULT_MAX_CAPACITY_REGULAR = 45;
 export const DEFAULT_MAX_CAPACITY_SCP = 35;
 
 // â"€â"€â"€ Types derived from enums â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-export type AssessmentKind = z.infer<typeof AssessmentKindEnum>;
 export type ScpType = z.infer<typeof ScpTypeEnum>;
 export type ApplicationStatus = z.infer<typeof ApplicationStatusEnum>;
 export type DisabilityType = z.infer<typeof DisabilityTypeEnum>;
@@ -1017,171 +860,4 @@ export type TrackingProgramType = z.infer<typeof TrackingProgramTypeEnum>;
 export type TrackingStatus = z.infer<typeof TrackingStatusEnum>;
 export type TrackingCurrentStep = z.infer<typeof TrackingCurrentStepEnum>;
 
-// ─── Assessment Kind Labels ─────────────────────────────
-export const ASSESSMENT_KIND_LABELS: Record<AssessmentKind, string> = {
-  INTERVIEW: "Interview",
-  QUALIFYING_EXAMINATION: "Qualifying Examination",
-  PRELIMINARY_EXAMINATION: "Preliminary Examination",
-  FINAL_EXAMINATION: "Final Examination",
-  GENERAL_ADMISSION_TEST: "General Admission Test",
-  TALENT_AUDITION: "Talent Audition / Performance",
-  PHYSICAL_FITNESS_TEST: "Physical Fitness Test (PFT)",
-  SPORTS_SKILLS_TRYOUT: "Sports Skills Demonstration",
-  SKILLS_ASSESSMENT: "Skills Assessment",
-  STANDARDIZED_ADMISSION_TOOL: "Standardized Admission Tool",
-  APTITUDE_TEST: "Aptitude Test",
-  INTEREST_INVENTORY: "Interest Inventory / Interview",
-};
-
-// ─── Default DepEd SCP Assessment Pipelines ─────────────
-export interface ScpProgramStepDef {
-  stepOrder: number;
-  kind: AssessmentKind;
-  label: string;
-  description: string;
-  isRequired: boolean;
-}
-
-// ─── STE Pipeline Variants ──────────────────────────────
-export const STE_ONE_PHASE_PIPELINE: ScpProgramStepDef[] = [
-  {
-    stepOrder: 1,
-    kind: "QUALIFYING_EXAMINATION",
-    label: "Qualifying Examination",
-    description:
-      "Single comprehensive written exam: English, Science, Mathematics, critical thinking, and problem-solving",
-    isRequired: true,
-  },
-  {
-    stepOrder: 2,
-    kind: "INTERVIEW",
-    label: "Interview",
-    description:
-      "Face-to-face or virtual interview: interest, mental alertness, readiness for rigorous curriculum",
-    isRequired: true,
-  },
-];
-
-export const STE_TWO_PHASE_PIPELINE: ScpProgramStepDef[] = [
-  {
-    stepOrder: 1,
-    kind: "PRELIMINARY_EXAMINATION",
-    label: "Preliminary Examination (ESM)",
-    description:
-      "Written screening test: English, Science, Mathematics — determines eligibility for final exam",
-    isRequired: true,
-  },
-  {
-    stepOrder: 2,
-    kind: "FINAL_EXAMINATION",
-    label: "Final Examination",
-    description:
-      "Comprehensive written exam: 21st-century skills, critical thinking, and advanced problem-solving",
-    isRequired: true,
-  },
-  {
-    stepOrder: 3,
-    kind: "INTERVIEW",
-    label: "Interview",
-    description:
-      "Face-to-face or virtual interview: interest, mental alertness, readiness for rigorous curriculum",
-    isRequired: true,
-  },
-];
-
-/** Return the correct STE pipeline based on the two-phase toggle. */
-export function getSteSteps(isTwoPhase: boolean): ScpProgramStepDef[] {
-  return isTwoPhase ? STE_TWO_PHASE_PIPELINE : STE_ONE_PHASE_PIPELINE;
-}
-
-export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: STE_ONE_PHASE_PIPELINE,
-  SPECIAL_PROGRAM_IN_THE_ARTS: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description: "Written exam covering general knowledge and aptitude",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Assess passion for the arts and commitment to the 4-year program",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_SPORTS: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description: "Written exam covering general knowledge and aptitude",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description: "Assess discipline, sportsmanship, and parental support",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_JOURNALISM: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written exam: English and Filipino proficiency, grammar, basic news writing",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Screening committee: communication skills and ethical awareness",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written test assessing linguistic aptitude and readiness for foreign language acquisition",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Validate documents and gauge commitment to the extra hours required",
-      isRequired: true,
-    },
-  ],
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: [
-    {
-      stepOrder: 1,
-      kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Examination",
-      description:
-        "Written exam: inclination towards IT, Agriculture, Home Economics, or Industrial Arts",
-      isRequired: true,
-    },
-    {
-      stepOrder: 2,
-      kind: "INTERVIEW",
-      label: "Interview",
-      description:
-        "Align student interests with specific shop offerings (specializations)",
-      isRequired: true,
-    },
-  ],
-};
 

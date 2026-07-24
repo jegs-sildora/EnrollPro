@@ -21,6 +21,7 @@ Generated output and local artifacts such as `dist/`, `node_modules/`, `server/u
 - `pnpm --filter client build`: type-check and build the frontend.
 - `pnpm --filter server build`: compile the backend TypeScript.
 - `pnpm --filter client lint`: run ESLint on frontend TypeScript and React files.
+- `pnpm docs:check`: validate canonical product documentation and local Markdown links.
 - `pnpm --filter server db:migrate`: apply Prisma migrations in development.
 - `pnpm --filter server db:generate`: regenerate Prisma client.
 - `pnpm --filter server db:seed`: seed the configured database.
@@ -35,7 +36,7 @@ Use this order when behavior and documentation disagree:
 4. Frontend routes and state behavior in `client/src/router/index.tsx` and `client/src/store/`.
 5. Current documentation index in `docs/README.md`.
 
-Older docs may describe target-state behavior that is not implemented yet. Prefer the implementation pack linked from `docs/README.md` for current engineering decisions.
+Only the canonical product documents listed in `docs/README.md` are maintained. Do not document target-state behavior as implemented.
 
 ## Coding Style & Naming Conventions
 

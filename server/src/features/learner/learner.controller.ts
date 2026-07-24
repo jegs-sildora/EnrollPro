@@ -82,13 +82,13 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
 
     const officialRecord = applications.find(app =>
       app.enrollmentRecord?.section?.name &&
-      ["ENROLLED", "ENROLLED"].includes(app.status)
+      app.status === "OFFICIALLY_ENROLLED"
     );
 
     let gradeLevelToEnroll = "N/A";
     if (latestApp) {
       if (
-        ["ENROLLED", "ENROLLED"].includes(latestApp.status)
+        latestApp.status === "OFFICIALLY_ENROLLED"
       ) {
         const numMatch = latestApp.gradeLevel.name.match(/\d+/);
         if (numMatch) {
@@ -321,61 +321,6 @@ export async function learnerSetupPassword(req: Request, res: Response): Promise
 }
 
 /**
- * Get the authenticated learner's current profile / enrollment data.
- * GET /api/learner/me
- */
-export async function getLearnerMe(req: Request, res: Response): Promise<void> {
-  const learnerPayload = req.learner as LearnerAuthPayload | undefined;
-  if (!learnerPayload) {
-    res.status(401).json({ code: "UNAUTHORIZED", message: "Unauthorized." });
-    return;
-  }
-
-  const learner = await prisma.learner.findUnique({
-    where: { id: learnerPayload.learnerId },
-    select: {
-      id: true,
-      lrn: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      extensionName: true,
-      birthdate: true,
-      sex: true,
-      placeOfBirth: true,
-      religion: true,
-      motherTongue: true,
-      isIpCommunity: true,
-      ipGroupName: true,
-      isLearnerWithDisability: true,
-      disabilityTypes: true,
-      is4PsBeneficiary: true,
-      householdId4Ps: true,
-      hasPwdId: true,
-      isBalikAral: true,
-      lastGradeLevel: true,
-      lastYearEnrolled: true,
-      psaBirthCertNumber: true,
-      hasPsaBirthCertificate: true,
-      status: true,
-    },
-  });
-
-  if (!learner) {
-    res.status(404).json({ code: "NOT_FOUND", message: "Learner not found." });
-    return;
-  }
-  const enrollment = await getLearnerEnrollmentData(learner.id);
-  const schoolSetting = await prisma.schoolSetting.findFirst({
-    select: { schoolName: true },
-  });
-  const schoolName = schoolSetting?.schoolName || "EnrollPro";
-  const schoolAcronym = computeSchoolAcronym(schoolName);
-
-  res.json({ learner, enrollment, schoolName, schoolAcronym });
-}
-
-/**
  * Get unified dashboard data for the authenticated learner.
  * GET /api/learner/dashboard-unified
  */
@@ -387,7 +332,15 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   }
 
   const schoolSetting = await prisma.schoolSetting.findFirst({
-    select: { activeSchoolYearId: true, systemPhase: true, schoolName: true, logoUrl: true },
+    select: {
+      activeSchoolYearId: true,
+      systemPhase: true,
+      schoolName: true,
+      logoUrl: true,
+      activeSchoolYear: {
+        select: { yearLabel: true },
+      },
+    },
   });
 
   if (!schoolSetting?.activeSchoolYearId) {
@@ -504,7 +457,11 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   };
 
   const academicHistory = allApps.map(app => {
-    const hasGrades = app.reportedGrades && Object.keys(app.reportedGrades as any).length > 0;
+    const hasGrades =
+      app.reportedGrades !== null &&
+      typeof app.reportedGrades === "object" &&
+      !Array.isArray(app.reportedGrades) &&
+      Object.keys(app.reportedGrades).length > 0;
     return {
       grade_level: app.gradeLevel?.name || "Unknown",
       school_year: app.schoolYear.yearLabel,
@@ -519,7 +476,8 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
     enrollment,
     sf1,
     academicHistory,
-    isEnrollmentActive: schoolSetting.systemPhase === "BOSY_ENROLLMENT" || schoolSetting.systemPhase === "OFFICIAL_ENROLLMENT",
+    isEnrollmentActive: schoolSetting.systemPhase === "OFFICIAL_ENROLLMENT",
+    activeSchoolYear: schoolSetting.activeSchoolYear?.yearLabel ?? "",
     schoolName: schoolSetting.schoolName || "EnrollPro",
     schoolAcronym: computeSchoolAcronym(schoolSetting.schoolName || "EnrollPro"),
     schoolLogoUrl: schoolSetting.logoUrl || null,
@@ -611,9 +569,12 @@ export async function checkDuplicateLearner(req: Request, res: Response) {
           : null,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Duplicate check error:", error);
-    res.status(500).json({ message: error.message || "Failed to check duplicate" });
+    res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Failed to check duplicate",
+    });
   }
 }
 

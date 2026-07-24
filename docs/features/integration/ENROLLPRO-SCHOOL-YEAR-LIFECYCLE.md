@@ -1,5 +1,7 @@
 # EnrollPro School Year Lifecycle for SMART, AIMS, ATLAS, and MRF
 
+Last reviewed: 2026-07-24
+
 ## Purpose
 
 This guide explains how EnrollPro handles learner intake, class placement, End of School Year processing, archival, and transition to the next school year. It is intended for developers integrating SMART, AIMS, ATLAS, and MRF.
@@ -31,8 +33,6 @@ Companion systems must use EnrollPro identifiers and school-year scope. They mus
 
 | Phase | EnrollPro behavior | Integration guidance |
 | --- | --- | --- |
-| `PRE_REGISTRATION` | Preparatory intake configuration | Do not treat applications as official enrollment |
-| `BOSY_ENROLLMENT` | Beginning-of-year intake may be opened | Pull only records that have reached official section placement |
 | `OFFICIAL_ENROLLMENT` | Regular enrollment, continuing confirmation, verification, and sectioning | Refresh sections and identity context frequently |
 | `CLASSES_ONGOING` | Regular public intake is closed; authorized staff may encode late enrollees | Late additions become visible after section assignment |
 | `EOSY_CLOSING` | Enrollment mutations are restricted and EOSY records are processed | SMART grade reconciliation must finish before final lock |
@@ -57,7 +57,7 @@ Confirmation does not create an `EnrollmentRecord`. It only makes the learner el
 ### Incoming Grade 7, Transferees, and Walk-in Learners
 
 1. Public applications enter through `POST /api/applications` or existing-learner updates through `POST /api/applications/update-existing`.
-2. Authorized staff may use `POST /api/applications/special-enrollment` or `POST /api/enrollment/walk-in` for assisted intake.
+2. Authorized staff use `POST /api/enrollment/walk-in` for assisted intake.
 3. Documentary review uses the enrollment verification and intake endpoints.
 4. Cleared learners move to `READY_FOR_SECTIONING`.
 5. Missing-document cases may be marked temporarily enrolled or deficient without delaying class placement.
@@ -74,7 +74,7 @@ Class placement may use bulk assignment, reviewed draft commit, inline slotting,
 - the learner does not already have an enrollment record
 - section capacity is respected unless an authorized reviewed-draft override is used
 
-Successful placement creates `EnrollmentRecord`, records the sectioning method, and changes the application to `OFFICIALLY_ENROLLED`. Legacy records may use `ENROLLED` or `SECTIONED`; integration feeds treat all three as officially sectioned.
+Successful placement creates `EnrollmentRecord`, records the sectioning method, and changes the application to `OFFICIALLY_ENROLLED`.
 
 After placement, SMART and AIMS may ingest the learner, ATLAS may use the updated section structure, and MRF may reconcile the learner identity.
 
@@ -227,6 +227,6 @@ When `schoolYearId` points to an archived year, learner, SMART, AIMS, section ro
 - Record synchronization time, source endpoint, school-year scope, row count, and failures.
 - Do not write grades, schedules, interventions, or maintenance records back into EnrollPro unless a mounted, documented endpoint explicitly owns that operation.
 
-EnrolPro has no early-registration workflow. It also has no hardware or
-Internet of Things dependency. All rollover validation and state changes are
+EnrollPro has no Early Registration workflow. It has no hardware or Internet of
+Things dependency. All rollover validation and state changes are
 software-only operations.

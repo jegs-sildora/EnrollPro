@@ -54,29 +54,6 @@ const defaultClientOrigins = [
   "http://127.0.0.1:5173",
   "http://127.0.0.1:5174",
   "http://127.0.0.1:5175",
-  "http://100.120.169.123:5173",
-  "http://100.120.169.123:5174",
-  "http://100.120.169.123:5175",
-  "http://dev-jegs.buru-degree.ts.net:5173",
-  "http://dev-jegs.buru-degree.ts.net:5174",
-  "http://dev-jegs.buru-degree.ts.net:5175",
-  "http://buru-degree.ts.net:5173",
-  "http://buru-degree.ts.net:5174",
-  "http://buru-degree.ts.net:5175",
-  "https://dev-jegs.buru-degree.ts.net",
-  "https://buru-degree.ts.net",
-  // ATLAS (Scheduling)
-  "https://njgrm.buru-degree.ts.net",
-  "http://njgrm.buru-degree.ts.net:5001",
-  // AIMS (LMS)
-  "https://tfrog.buru-degree.ts.net",
-  "http://tfrog.buru-degree.ts.net:5000",
-  // SMART (Grading)
-  "https://laptop-pfvh73qk.buru-degree.ts.net",
-  "http://laptop-pfvh73qk.buru-degree.ts.net:5003",
-  // atheng device
-  "https://atheng.buru-degree.ts.net",
-  "http://atheng.buru-degree.ts.net",
 ];
 const configuredClientOrigins = [
   process.env.CLIENT_URL,
@@ -153,24 +130,9 @@ apiRouter.use((req, res, next) => {
   next();
 });
 
-// Debug endpoint
-apiRouter.get("/debug-server", (req, res) => {
-  res.json({
-    ok: true,
-    time: new Date().toISOString(),
-    method: req.method,
-    path: req.path,
-    headers: req.headers,
-    allowedOrigins: allowedClientOrigins,
-  });
-});
-
 // Routes
 apiRouter.get("/health", (_req, res) => {
   res.json({ ok: true });
-});
-apiRouter.get("/ping", (_req, res) => {
-  res.send("pong");
 });
 apiRouter.get("/events/stream", authenticate, streamEvents);
 apiRouter.use("/auth", authRoutes);
@@ -178,8 +140,6 @@ apiRouter.use("/system", systemRoutes);
 apiRouter.use("/settings", settingsRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
 apiRouter.use("/school-years", schoolYearRoutes);
-// Backward-compatible singular alias used by legacy clients.
-apiRouter.use("/school-year", schoolYearRoutes);
 apiRouter.use("/sections", sectionsRoutes);
 apiRouter.use("/sectioning", sectioningRoutes);
 apiRouter.use("/students", studentsRoutes);

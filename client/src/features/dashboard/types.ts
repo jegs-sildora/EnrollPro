@@ -22,23 +22,6 @@ export interface DailyIntakePoint {
   f2f: number
 }
 
-export interface MovementTrendPoint {
-  month: string
-  transferredIn: number
-  transferredOut: number
-  droppedOut: number
-}
-
-export interface DropoutDistributionPoint {
-  reason: string
-  count: number
-}
-
-export interface ComplianceSegment {
-  name: string
-  value: number
-}
-
 export interface RetentionSegment {
   name: string
   value: number
@@ -128,23 +111,12 @@ export interface DashboardStats {
     sf5Ready: boolean
     sf6Ready: boolean
   }
-  v85Stats: {
+  classesOngoing: {
     lateIntakeCount: number
-    pendingSF10Count: number
     overdueDocumentsCount: number
     activeSchoolTallyBOSY: number
     activeSchoolTallyLate: number
     hasSectionLoadDisparity: boolean
-    isTemporaryAdmissionExpired: boolean
-    expiredTemporaryAdmissionsCount: number
-    movementTrend: Array<MovementTrendPoint>
-    dropoutDistribution: Array<DropoutDistributionPoint>
-    documentCompliance: Array<ComplianceSegment>
-    sf4Vitals: {
-      transferredIn: number
-      transferredOut: number
-      droppedOut: number
-    }
   }
   eosyStats: {
     eosyFinalizedSections: number

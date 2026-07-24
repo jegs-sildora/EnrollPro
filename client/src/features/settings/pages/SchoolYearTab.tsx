@@ -89,8 +89,6 @@ type AcademicPhase = Exclude<SettingsState["systemPhase"], null>;
 
 function isAcademicPhase(value: string): value is AcademicPhase {
   return [
-    "PRE_REGISTRATION",
-    "BOSY_ENROLLMENT",
     "OFFICIAL_ENROLLMENT",
     "CLASSES_ONGOING",
     "EOSY_CLOSING",
@@ -135,23 +133,6 @@ function subUtcDays(date: Date, days: number) {
   return addUtcDays(date, -days);
 }
 
-function lastSaturdayOfJanuary(year: number) {
-  let currentDate = utcNoonDate(year, 0, 31);
-  while (currentDate.getUTCDay() !== 6) {
-    currentDate = subUtcDays(currentDate, 1);
-  }
-  return currentDate;
-}
-
-function lastFridayOfFebruary(year: number) {
-  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  let currentDate = utcNoonDate(year, 1, isLeapYear ? 29 : 28);
-  while (currentDate.getUTCDay() !== 5) {
-    currentDate = subUtcDays(currentDate, 1);
-  }
-  return currentDate;
-}
-
 function buildSchoolYearSchedule(
   classOpeningDate: Date,
   classEndTemplate?: Date,
@@ -171,8 +152,6 @@ function buildSchoolYearSchedule(
       endTemplate.getUTCMonth(),
       endTemplate.getUTCDate(),
     ),
-    earlyRegOpenDate: lastSaturdayOfJanuary(startYear),
-    earlyRegCloseDate: lastFridayOfFebruary(startYear),
     enrollOpenDate: subUtcDays(openingDate, 7),
     enrollCloseDate: subUtcDays(openingDate, 1),
     term1Start: utcNoonDate(startYear, 5, 8).toISOString(),
@@ -280,8 +259,6 @@ interface Defaults {
   yearLabel: string;
   classOpeningDate: string;
   classEndDate: string;
-  earlyRegOpenDate: string;
-  earlyRegCloseDate: string;
   enrollOpenDate: string;
   enrollCloseDate: string;
 }
@@ -347,7 +324,6 @@ export default function SchoolYearTab() {
   // Create state
   const [creating, setCreating] = useState(false);
   const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
-  const [updatingDraft, setUpdatingDraft] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
   const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
   const [rolloverLoaderStep, setRolloverLoaderStep] = useState(0);
@@ -688,15 +664,14 @@ export default function SchoolYearTab() {
   }, [confirmOrRun, discardRolloverDraftChanges, isRolloverLoaderOpen]);
 
   useUnsavedChanges({
-    id: "settings-school-year-rollover-draft",
+    id: "settings-school-year-calendar-setup",
     label: "School year setup form",
     isDirty:
       showNextForm &&
       isRolloverDraftChanged &&
       !creating &&
-      !updatingDraft &&
       !isRolloverLoaderOpen,
-    isSubmitting: creating || updatingDraft || isRolloverLoaderOpen,
+    isSubmitting: creating || isRolloverLoaderOpen,
     onDiscard: discardRolloverDraftChanges,
   });
 
@@ -731,66 +706,6 @@ export default function SchoolYearTab() {
   };
 
 
-  const handleUpdateRolloverDraft = () => {
-    if (!editClassOpening || !editClassEnd) {
-      sileo.error({
-        title: "Missing dates",
-        description:
-          "Select both Start of Classes (BOSY) and End of School Year (EOSY).",
-      });
-      return;
-    }
-
-    if (!isRolloverDraftChanged) {
-      sileo.info({
-        title: "No draft changes",
-        description: "Update any field before saving.",
-      });
-      return;
-    }
-
-    const submit = async () => {
-      setUpdatingDraft(true);
-      try {
-        const response = await api.post("/school-years/rollover-draft", {
-          yearLabel: editYearLabel.trim(),
-          classOpeningDate: editClassOpening.toISOString(),
-          classEndDate: editClassEnd.toISOString(),
-        });
-
-        const rolloverDraft = response.data.rolloverDraft as SYItem;
-
-        const normalizedOpeningDate = normalizeDateToManila(
-          new Date(rolloverDraft.classOpeningDate!),
-        );
-        const normalizedClassEndDate = normalizeDateToManila(
-          new Date(rolloverDraft.classEndDate!),
-        );
-
-        setYearLabel(rolloverDraft.yearLabel);
-        setClassOpening(normalizedOpeningDate);
-        setClassEnd(normalizedClassEndDate);
-        setRolloverDraftBaseline({
-          yearLabel: rolloverDraft.yearLabel,
-          classOpeningDate: normalizedOpeningDate.toISOString(),
-          classEndDate: normalizedClassEndDate.toISOString(),
-        });
-
-        sileo.success({
-          title: "Draft saved",
-          description: "School year draft and BOSY/EOSY dates were saved.",
-        });
-        fetchData();
-      } catch (err) {
-        toastApiError(err as never);
-      } finally {
-        setUpdatingDraft(false);
-      }
-    };
-
-    void submit();
-  };
-
   const handleActivateNext = async () => {
     if (activeYear) {
       return;
@@ -817,8 +732,6 @@ export default function SchoolYearTab() {
         yearLabel: resolvedYearLabel,
         classOpeningDate: derivedSchedule.classOpeningDate.toISOString(),
         classEndDate: derivedSchedule.classEndDate.toISOString(),
-        earlyRegOpenDate: derivedSchedule.earlyRegOpenDate.toISOString(),
-        earlyRegCloseDate: derivedSchedule.earlyRegCloseDate.toISOString(),
         enrollOpenDate: derivedSchedule.enrollOpenDate.toISOString(),
         enrollCloseDate: derivedSchedule.enrollCloseDate.toISOString(),
       };
@@ -1573,7 +1486,6 @@ export default function SchoolYearTab() {
                 )}
                 disabled={
                   creating ||
-                  updatingDraft ||
                   !editYearLabel.trim() ||
                   !editClassOpening ||
                   !editClassEnd ||

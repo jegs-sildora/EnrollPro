@@ -3,7 +3,6 @@ import {
   lookupLearnerByLrn,
   learnerLogin,
   learnerSetupPassword,
-  getLearnerMe,
   getLearnerDashboardUnified,
   checkDuplicateLearner,
 } from "./learner.controller.js";
@@ -37,13 +36,6 @@ router.post(
   learnerSetupPassword,
 );
 
-// Authenticated learner — get own profile data (legacy)
-router.get(
-  "/me",
-  authenticateLearner,
-  getLearnerMe,
-);
-
 // Authenticated learner — get unified dashboard data
 router.get(
   "/dashboard-unified",
@@ -51,18 +43,18 @@ router.get(
   getLearnerDashboardUnified,
 );
 
-// Registrar lookup endpoint for Confirmation Slip workflow - SECURED for staff only
+// Registrar lookup used by staff-assisted learner enrollment.
 router.get(
   "/lookup",
   authenticate,
-  authorize("HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   lookupLearnerByLrn,
 );
 
 router.post(
   "/check-duplicate",
   authenticate,
-  authorize("HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   checkDuplicateLearner,
 );
 

@@ -5,8 +5,6 @@ import {
   syncSmartSectionGrades,
   syncAtlasFaculty,
   getAtlasTeachingLoad,
-  broadcastPhase1,
-  broadcastPhase2,
 } from "./integration-trigger.controller.js";
 
 const router: Router = Router();
@@ -30,20 +28,6 @@ router.get(
   "/atlas/faculty/:id/teaching-load",
   authenticate,
   getAtlasTeachingLoad,
-);
-
-router.post(
-  "/broadcast/phase1",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  broadcastPhase1,
-);
-
-router.post(
-  "/broadcast/phase2",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  broadcastPhase2,
 );
 
 export default router;

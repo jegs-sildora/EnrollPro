@@ -1,8 +1,6 @@
 import type { Request, Response } from "express";
 import {
-  REALTIME_INVALIDATION_TOPICS,
   type RealtimeInvalidationEvent,
-  type RealtimeInvalidationTopic,
 } from "@enrollpro/shared";
 
 interface SseClient {
@@ -19,14 +17,6 @@ function writeSseEvent(
 ): void {
   client.res.write(`event: ${eventName}\n`);
   client.res.write(`data: ${JSON.stringify(payload)}\n\n`);
-}
-
-function isRealtimeInvalidationTopic(
-  value: string,
-): value is RealtimeInvalidationTopic {
-  return REALTIME_INVALIDATION_TOPICS.includes(
-    value as RealtimeInvalidationTopic,
-  );
 }
 
 /**
@@ -78,13 +68,4 @@ export function broadcastRealtimeInvalidation(
       activeClients.delete(client);
     }
   }
-}
-
-/**
- * Broadcasts an invalidation event to all active clients
- * @param keys The React Query keys that should be invalidated
- */
-export function broadcastInvalidation(keys: string[]) {
-  const topics = keys.filter(isRealtimeInvalidationTopic);
-  broadcastRealtimeInvalidation({ topics });
 }

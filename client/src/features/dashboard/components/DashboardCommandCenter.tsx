@@ -111,7 +111,7 @@ export function DashboardActionToolbar({
   const navigate = useNavigate()
   const roles = useAuthStore((state) => state.user?.roles ?? [])
   const canManageEnrollment = roles.some((role) =>
-    ["REGISTRAR", "HEAD_REGISTRAR", "SYSTEM_ADMIN"].includes(role),
+    ["HEAD_REGISTRAR", "SYSTEM_ADMIN"].includes(role),
   )
   const canManageSectioning = roles.some((role) =>
     ["HEAD_REGISTRAR", "SYSTEM_ADMIN"].includes(role),

@@ -1,5 +1,7 @@
 # EnrollPro API Reference
 
+Last reviewed: 2026-07-24
+
 ## Purpose and Source of Truth
 
 This is the code-verified catalog of routes mounted by `server/src/app.ts`. EnrollPro is the single source of truth for learner and personnel identity, enrollment, grade and section placement, and school-year context.
@@ -9,11 +11,11 @@ For the operational sequence from BOSY through EOSY and rollover, see [ENROLLPRO
 ## Runtime Bases
 
 - Local API: `http://localhost:5002/api`
-- Tailnet API: `https://dev-jegs.buru-degree.ts.net/api`
-- Partner API: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
-- Uploaded assets: `https://dev-jegs.buru-degree.ts.net/uploads/*`
+- Configured API: `<ENROLLPRO_BASE_URL>/api`
+- Partner API: `<ENROLLPRO_BASE_URL>/api/integration/v1`
+- Uploaded assets: `<ENROLLPRO_BASE_URL>/uploads/*`
 
-Companion systems call the HTTP API. They must never connect directly to the EnrollPro PostgreSQL database.
+The configured host may be local, private-network, or deployed. Companion systems call the HTTP API and must never connect directly to the EnrollPro PostgreSQL database.
 
 ## Authentication and School-Year Scope
 
@@ -26,7 +28,7 @@ Companion systems call the HTTP API. They must never connect directly to the Enr
 
 Protected API calls may send `x-school-year-context-id: <positive integer>`. If absent, EnrollPro resolves `SchoolSetting.activeSchoolYearId`, then the latest active school year. Partner v1 feeds use `schoolYearId`; feeds documented as optional fall back to the active year.
 
-Role names used below are `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `REGISTRAR` compatibility role, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, and `MRF`.
+Role names used below are `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, and `MRF`.
 
 ## Response, Pagination, and Error Conventions
 
@@ -80,8 +82,6 @@ Common errors are:
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | GET | `/api/health` | Public | Basic EnrollPro liveness response |
-| GET | `/api/ping` | Public | Plain-text `pong` probe |
-| GET | `/api/debug-server` | Public diagnostic | Returns request and CORS diagnostics; do not expose in hardened production deployments |
 | GET | `/api/events/stream` | Staff JWT | Browser SSE invalidation stream with 25-second heartbeat |
 | GET | `/uploads/*` | Public asset | School logo and uploaded document assets |
 
@@ -134,11 +134,10 @@ Base path: `/api/dashboard`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/stats` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN`, `TEACHER` | School-year-scoped enrollment, section, and operational metrics |
-| POST | `/stats/lock` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Lock the active dashboard phase and export SF1 data |
 
 ## School Years
 
-Base paths: `/api/school-years` and backward-compatible `/api/school-year`
+Base path: `/api/school-years`
 
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
@@ -151,7 +150,6 @@ Base paths: `/api/school-years` and backward-compatible `/api/school-year`
 | PUT | `/calendar-policies/:id` | `SYSTEM_ADMIN` | Replace an editable calendar-policy draft |
 | POST | `/calendar-policies/:id/approve` | `SYSTEM_ADMIN` | Approve a calendar policy for rollover |
 | POST | `/activate` | `SYSTEM_ADMIN` | Create the first operational school year only |
-| POST | `/rollover-draft` | `SYSTEM_ADMIN` | Backward-compatible alias for saving a calendar-policy draft |
 | POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, apply the approved calendar, clone empty sections, carry learners forward, and activate the new year |
 | PUT | `/:id` | `SYSTEM_ADMIN` | Update editable school-year settings |
 | PATCH | `/:id/status` | `SYSTEM_ADMIN` | First-time status control only; cannot bypass rollover while an operational year exists |
@@ -165,10 +163,6 @@ Base path: `/api/sections`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/teachers` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Eligible class advisers |
-| GET | `/batch-sectioning/prerequisites/:gradeLevelId` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Validate grade-level batch prerequisites |
-| POST | `/batch-sectioning/run` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Generate batch sectioning results |
-| POST | `/batch-sectioning/commit` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Commit generated batch results |
-| POST | `/auto-distribute` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Legacy immediate automatic distribution |
 | GET | `/` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | List sections in resolved school-year context |
 | GET | `/:ayId` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | List sections for explicit school year |
 | POST | `/` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Create a section |
@@ -176,7 +170,10 @@ Base path: `/api/sections`
 | PUT | `/:id` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Update section and adviser details |
 | DELETE | `/:id` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Delete an eligible section |
 | GET | `/:id/masterlist` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Read section SF1 masterlist |
-| GET | `/:id/masterlist/sf1` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Export section SF1 data |
+| GET | `/:id/masterlist/sf1` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Export the official section SF1 workbook |
+| GET | `/:id/masterlist/sf1/template` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Download a blank SF1 workbook for the selected section |
+| POST | `/:id/masterlist/sf1/import/preview` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Parse one `.xlsx` SF1 file and return valid, duplicate, and conflicting rows without writing |
+| POST | `/:id/masterlist/sf1/import/commit` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Commit approved valid SF1 rows directly into the selected section |
 | GET | `/unsectioned-pool/:gradeLevelId` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Learners ready but not assigned to a section |
 | POST | `/:id/inline-slot` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Insert one eligible learner into a section |
 | POST | `/transfer-learner` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Transfer an enrolled learner between sections |
@@ -208,7 +205,7 @@ Base path: `/api/students`; all routes require staff authentication.
 | GET | `/:id/health-records` | Registrar, admin, teacher | BOSY and EOSY health measurements |
 | POST | `/:id/health-records` | Registrar, admin | Add health measurement |
 | PUT | `/:id/health-records/:recId` | Registrar, admin | Correct health measurement |
-| POST | `/:id/reset-portal-pin` | Registrar, admin | Reset legacy learner portal PIN |
+| POST | `/:id/reset-portal-pin` | Registrar, admin | Reset learner portal PIN |
 | PATCH | `/:id/portal-access` | Registrar, admin | Enable or disable portal access |
 | POST | `/:id/reset-password` | Registrar, admin | Reset learner portal password |
 | POST | `/:id/clear-deficiency` | Registrar, admin | Clear documentary deficiency state |
@@ -226,10 +223,9 @@ Base path: `/api/learner`
 | POST | `/auth` | Public | Authenticate learner and issue learner JWT |
 | POST | `/setup-password` | Learner JWT | Replace temporary learner password |
 | POST | `/change-password` | Learner JWT | Alias for learner password change |
-| GET | `/me` | Learner JWT | Legacy learner self-profile |
 | GET | `/dashboard-unified` | Learner JWT | Unified learner portal dashboard |
-| GET | `/lookup` | `HEAD_REGISTRAR`, `REGISTRAR`, `SYSTEM_ADMIN` | DPA-protected LRN lookup |
-| POST | `/check-duplicate` | `HEAD_REGISTRAR`, `REGISTRAR`, `SYSTEM_ADMIN` | Duplicate learner sentinel |
+| GET | `/lookup` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | DPA-protected LRN lookup |
+| POST | `/check-duplicate` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN` | Duplicate learner sentinel |
 
 ## Public Applications and Assisted Enrollment
 
@@ -239,10 +235,9 @@ Base path: `/api/applications`
 | --- | --- | --- | --- |
 | POST | `/` | Public | Submit online enrollment application |
 | POST | `/update-existing` | Public | Update an existing learner application |
-| GET | `/lookup-lrn/:lrn` | Registrar or admin | Assisted intake lookup by LRN |
-| POST | `/special-enrollment` | Registrar or admin | Authorized special enrollment for an existing learner |
+| GET | `/track/:trackingNumber` | Public | Check the current application status using its tracking number |
 
-The currently mounted application router does not expose generic application listing, tracking-number lookup, verify, enroll, or SF1 export paths. Consumers must not rely on older documentation that listed those routes.
+The currently mounted application router does not expose generic application listing, staff verification, official enrollment, or SF1 export paths. Those operations are available only through their dedicated protected modules.
 
 ## Enrollment Intake
 
@@ -250,8 +245,6 @@ Base path: `/api/enrollment`
 
 | Method | Path | Roles | Purpose |
 | --- | --- | --- | --- |
-| POST | `/confirm-slip` | Registrar, admin | Confirm one intake slip |
-| POST | `/batch-confirm` | Registrar, admin | Confirm multiple intake slips |
 | POST | `/finalize-intake` | Registrar, admin | Move a cleared application to sectioning readiness |
 | GET | `/pending-verifications` | Registrar, admin | Document verification queue |
 | PATCH | `/:applicationId/flag-deficient` | Registrar, admin | Record missing documentary requirements |
@@ -266,7 +259,6 @@ Base path: `/api/bosy`
 | GET | `/readiness` | Registrar, admin | Pending, confirmed, temporary, and rollover readiness metrics |
 | GET | `/queue` | Registrar, admin | Filtered continuing learner queue |
 | GET | `/previous-sections` | Registrar, admin | Prior-year section filter values |
-| GET | `/phase2-queue` | Registrar or admin | Phase 2 documentary and enrollment queue |
 | POST | `/sync` | Registrar, admin | Idempotently repair missing rollover applications |
 | POST | `/confirm-return/:applicationId` | Registrar, admin, teacher | Confirm continuing enrollment and classify documents |
 | POST | `/transfer-request/:applicationId` | Registrar or admin | Tag pending learner as not returning |
@@ -333,6 +325,8 @@ Base path: `/api/teachers`; all routes require `HEAD_REGISTRAR` or `SYSTEM_ADMIN
 | --- | --- | --- |
 | GET | `/` | Personnel directory |
 | GET | `/:id/designation` | School-year designation details |
+| GET | `/:id/schedule-periods?schoolYearId=:id` | Read the stored SF7 teaching-period snapshot and computed weekly minutes |
+| PUT | `/:id/schedule-periods` | Replace the teacher's validated school-year SF7 teaching periods |
 | POST | `/:id/designation/validate` | Validate proposed designation |
 | PUT | `/:id/designation` | Create or update designation |
 | GET | `/:id` | Personnel profile |
@@ -344,15 +338,25 @@ Base path: `/api/teachers`; all routes require `HEAD_REGISTRAR` or `SYSTEM_ADMIN
 | PATCH | `/:id/reactivate` | Reactivate personnel |
 | PATCH | `/:id/service-status` | Update leave, transfer, retirement, or other service status |
 
+## SF7 Import And Synchronization
+
+Base path: `/api/sf7`; all routes require `HEAD_REGISTRAR` or `SYSTEM_ADMIN`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/template` | Download a blank copy of the official SF7 workbook template |
+| POST | `/import/preview` | Parse one `.xlsx` or `.csv` SF7 roster up to 10 MB and return proposed matched-personnel updates without writing |
+| POST | `/import/commit` | Commit approved preview rows to matched personnel SF7 profile fields |
+| POST | `/sync-atlas` | Synchronize published ATLAS schedule assignments into `TeacherSchedulePeriod` for the selected school year |
+
+Preview uploads use multipart field `file`. Import never creates a login account automatically. ATLAS matching uses EnrollPro `employeeId` as the external employee code.
+
 ## Administration and Audit
 
 Base path: `/api/admin`
 
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
-| GET | `/system/status` | Any authenticated staff | Current system and BOSY lock status |
-| POST | `/system/lock-bosy` | `SYSTEM_ADMIN` | Lock BOSY and SF1 operations |
-| POST | `/system/unlock-bosy` | `SYSTEM_ADMIN` | Emergency BOSY unlock |
 | GET | `/users/metrics` | `SYSTEM_ADMIN` | Account metrics |
 | GET | `/users/roles` | `SYSTEM_ADMIN` | Available role metadata |
 | GET | `/users` | `SYSTEM_ADMIN` | Account list |
@@ -383,6 +387,7 @@ Base path: `/api/export`; routes require `HEAD_REGISTRAR` or `SYSTEM_ADMIN`.
 | --- | --- | --- |
 | GET | `/sf1/:sectionId` | Export section SF1 |
 | GET | `/lis-master` | Export LIS masterlist |
+| GET | `/sf7?schoolYearId=:id` | Synchronize available ATLAS schedules and export the official template-based SF7 compliance workbook |
 
 ## Integration Triggers
 
@@ -393,8 +398,6 @@ Base path: `/api/integration`
 | POST | `/smart/sections/:id/sync-grades` | `SYSTEM_ADMIN` | SMART to EnrollPro | Pull strict final published outcomes, learning-area results, revision, and publication time by LRN |
 | POST | `/atlas/sync-faculty` | `SYSTEM_ADMIN` | EnrollPro to ATLAS trigger | Ask ATLAS to reconcile EnrollPro faculty |
 | GET | `/atlas/faculty/:id/teaching-load` | Staff JWT | ATLAS to EnrollPro proxy | Read a teacher's ATLAS assignments |
-| POST | `/broadcast/phase1` | `SYSTEM_ADMIN` | Orchestration | Trigger phase-one integration actions |
-| POST | `/broadcast/phase2` | `SYSTEM_ADMIN` | Orchestration | Record phase-two roster distribution actions |
 
 ## Partner Integration v1
 
@@ -423,7 +426,7 @@ Existing ATLAS, SMART, and AIMS endpoints remain public and read-only for compat
 Configure the EnrollPro server with `MRF_INTEGRATION_API_KEY` and send the value in `X-Integration-Key`. Missing, unconfigured, or incorrect keys return `401 INVALID_INTEGRATION_KEY`.
 
 ```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/mrf/identities?schoolYearId=12" \
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/default/mrf/identities?schoolYearId=12" \
   -H "X-Integration-Key: <service-key>"
 ```
 
@@ -431,7 +434,7 @@ The response groups `learners`, `teachers`, and `staff`. It includes stable iden
 
 ### Current and Archived Rosters
 
-Current feeds include applications in `OFFICIALLY_ENROLLED`, `ENROLLED`, or `SECTIONED` status that have an `EnrollmentRecord`. For an archived school year, learner, SMART, AIMS, section roster, and MRF feeds read `EnrollmentHistory` and identify the historical source in metadata.
+Current feeds include applications in `OFFICIALLY_ENROLLED` status that have an `EnrollmentRecord`. For an archived school year, learner, SMART, AIMS, section roster, and MRF feeds read `EnrollmentHistory` and identify the historical source in metadata.
 
 ## Public Address Reference
 
@@ -453,22 +456,8 @@ Compatibility base path: `/api/geography`
 | GET | `/municipalities` | Cities and municipalities filtered by query parameters |
 | GET | `/barangays` | Barangays filtered by query parameters |
 
-## Unsupported Legacy Paths
+## Product Exclusions
 
-The following route families appear in older documents but are not mounted by the current server and must not be used:
+Use only the mounted routes documented above. Routes copied from deleted planning files are unsupported and must not be called.
 
-- `/api/curriculum/*`
-- `/api/early-registrations/*`
-- `/api/auth/learner-login`
-- `/api/auth/logout-learner`
-- `/api/applications/track/:trackingNumber`
-- generic `/api/applications/:id/verify` and `/api/applications/:id/enroll`
-- `/api/enrollment-listings/*`
-- `/api/reading-assessment/*`
-- `/api/bosy/tle-programs`
-- `/api/bosy/expected-queue`
-- `/api/learner/confirm-return`
-- `/api/learner/request-transfer`
-- `/api/sections/:id/roster`
-
-Use only the mounted alternatives documented above.
+EnrollPro does not implement Early Registration, reading assessment, enrollment listings, removed TLE laboratory assignment, hardware, or Internet of Things workflows.

@@ -47,7 +47,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
 import { getImageUrl, formatEosyStatus, cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
-import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
+import type { ApplicantDetail } from "@/features/enrollment/types/application-detail";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { useSettingsStore } from "@/store/settings.slice";
 import {
@@ -1185,7 +1185,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  <AnimatedError error={(errors as any).firstName?.message as string || errors.firstName as unknown as string} />
+                  <AnimatedError error={errors.firstName} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1209,7 +1209,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  <AnimatedError error={(errors as any).lastName?.message as string || errors.lastName as unknown as string} />
+                  <AnimatedError error={errors.lastName} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1275,7 +1275,7 @@ export function StudentDetailPanel({
                     }
                     className={`font-extrabold text-base leading-tight bg-background ${errors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
-                  <AnimatedError error={(errors as any).birthDate?.message as string || errors.birthDate as unknown as string} />
+                  <AnimatedError error={errors.birthDate} />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -1297,7 +1297,7 @@ export function StudentDetailPanel({
                       <SelectItem value="FEMALE">FEMALE</SelectItem>
                     </SelectContent>
                   </Select>
-                  <AnimatedError error={(errors as any).sex?.message as string || errors.sex as unknown as string} />
+                  <AnimatedError error={errors.sex} />
                 </div>
               </div>
 
@@ -1468,7 +1468,7 @@ export function StudentDetailPanel({
                     );
                   })}
                 </div>
-                <AnimatedError error={(errors as any).contactNumber?.message as string || errors.contactNumber as unknown as string} />
+                <AnimatedError error={errors.contactNumber} />
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">

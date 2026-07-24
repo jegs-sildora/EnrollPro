@@ -11,6 +11,28 @@ const pool = new pg.Pool({
 const adapter = new PrismaPg(pool);
 const basePrisma = new PrismaClient({ adapter });
 
+interface DynamicModelClient {
+  findUnique(args: { where: unknown }): Promise<unknown>;
+}
+
+const getDynamicModelClient = (model: string): DynamicModelClient =>
+  (
+    basePrisma as unknown as Record<string, DynamicModelClient>
+  )[model];
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+
+const toJsonValue = (value: unknown): Prisma.InputJsonValue => {
+  if (value === undefined) {
+    return JSON.parse("null") as Prisma.InputJsonValue;
+  }
+
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+};
+
 export const prisma = basePrisma.$extends({
   query: {
     $allModels: {
@@ -20,18 +42,18 @@ export const prisma = basePrisma.$extends({
         const ctx = getAuditContext();
         if (!ctx) return query(args);
 
-        // @ts-ignore
-        const oldRecord = await basePrisma[model].findUnique({ where: args.where });
+        const oldRecord = await getDynamicModelClient(model).findUnique({
+          where: args.where,
+        });
 
         const newRecord = await query(args);
+        const oldRecObj = asRecord(oldRecord);
+        const newRecObj = asRecord(newRecord);
 
-        if (oldRecord && newRecord) {
-            const oldData: Record<string, any> = {};
-            const newData: Record<string, any> = {};
+        if (oldRecObj && newRecObj) {
+            const oldData: Record<string, Prisma.InputJsonValue> = {};
+            const newData: Record<string, Prisma.InputJsonValue> = {};
             let hasChanges = false;
-
-            const oldRecObj = oldRecord as Record<string, any>;
-            const newRecObj = newRecord as Record<string, any>;
 
             for (const key of Object.keys(newRecObj)) {
               const oldVal = oldRecObj[key];
@@ -42,8 +64,8 @@ export const prisma = basePrisma.$extends({
 
               if (oldStr !== newStr) {
                  const humanKey = formatAuditField(key);
-                 oldData[humanKey] = oldVal;
-                 newData[humanKey] = newVal;
+                 oldData[humanKey] = toJsonValue(oldVal);
+                 newData[humanKey] = toJsonValue(newVal);
                  hasChanges = true;
               }
             }
@@ -53,8 +75,7 @@ export const prisma = basePrisma.$extends({
                 const descFields = changedFields.length > 3 
                     ? `${changedFields.slice(0, 3).join(", ")} and ${changedFields.length - 3} other fields` 
                     : changedFields.join(", ");
-                // @ts-ignore
-                const recordId = newRecord.id ? Number(newRecord.id) : null;
+                const recordId = newRecObj.id ? Number(newRecObj.id) : null;
                 await basePrisma.auditLog.create({
                     data: {
                         actionType: `UPDATED_${model.toUpperCase()}`,
@@ -80,18 +101,18 @@ export const prisma = basePrisma.$extends({
         const ctx = getAuditContext();
         if (!ctx) return query(args);
 
-        // @ts-ignore
-        const oldRecord = await basePrisma[model].findUnique({ where: args.where });
+        const oldRecord = await getDynamicModelClient(model).findUnique({
+          where: args.where,
+        });
 
         const result = await query(args);
+        const oldRecObj = asRecord(oldRecord);
 
-        if (oldRecord) {
-            // @ts-ignore
-            const recordId = oldRecord.id ? Number(oldRecord.id) : null;
-            const oldData: Record<string, any> = {};
-            const oldRecObj = oldRecord as Record<string, any>;
+        if (oldRecObj) {
+            const recordId = oldRecObj.id ? Number(oldRecObj.id) : null;
+            const oldData: Record<string, Prisma.InputJsonValue> = {};
             for (const key of Object.keys(oldRecObj)) {
-                oldData[formatAuditField(key)] = oldRecObj[key];
+                oldData[formatAuditField(key)] = toJsonValue(oldRecObj[key]);
             }
 
             await basePrisma.auditLog.create({

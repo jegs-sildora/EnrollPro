@@ -22,39 +22,6 @@ function toManilaDateToken(date: Date): number {
   return year * 10000 + month * 100 + day;
 }
 
-export function isEnrollmentOpen(year: SchoolYear, systemPhase?: string): boolean {
-  if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
-
-  const todayToken = toManilaDateToken(new Date());
-
-  const inPhase2 =
-    year.enrollOpenDate &&
-    year.enrollCloseDate &&
-    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
-    todayToken <= toManilaDateToken(year.enrollCloseDate);
-
-  return Boolean(inPhase2);
-}
-
-/**
- * Returns true when the Official BOSY Enrollment (Phase 2) window is currently
- * active, evaluated independently of phase-priority ordering.
- *
- * Unlike `getEnrollmentPhase`, this check evaluates the configured BOSY
- * enrollment window directly when multiple school-year dates overlap.
- */
-export function isRegularEnrollmentWindowOpen(year: SchoolYear, systemPhase?: string): boolean {
-  if (systemPhase === "OFFICIAL_ENROLLMENT") return true;
-
-  const todayToken = toManilaDateToken(new Date());
-  return Boolean(
-    year.enrollOpenDate &&
-    year.enrollCloseDate &&
-    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
-    todayToken <= toManilaDateToken(year.enrollCloseDate),
-  );
-}
-
 /**
  * Public online enrollment is intentionally narrower than staff intake.
  * Registrars may process late walk-ins during classes, but families may only

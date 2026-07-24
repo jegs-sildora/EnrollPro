@@ -404,12 +404,10 @@ const NavItem = memo(function NavItem({
   subtext?: string;
   pathname: string;
 }) {
-  const { selectedAccentHsl, colorScheme } = useSettingsStore();
+  const { selectedAccentHsl } = useSettingsStore();
   const navigate = useNavigate();
   const { confirmOrRun } = useUnsavedChangesPrompt();
-  const accentHsl =
-    selectedAccentHsl ??
-    (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+  const accentHsl = selectedAccentHsl;
 
   const handleNavigationClick = useCallback(
     (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -503,8 +501,7 @@ function AppSidebar() {
   const isHeadRegistrar = useAuthStore(
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
   );
-  const isRegistrar =
-    useAuthStore((s) => s.user?.roles?.includes("REGISTRAR")) || isHeadRegistrar;
+  const isRegistrar = isHeadRegistrar;
   const isTeacher = useAuthStore(
     (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
@@ -586,7 +583,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    {(systemPhase === "PRE_REGISTRATION" || systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "BOSY_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
+                    {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                       <>
                         <NavItem
                           to="/continuing-learners"
@@ -748,19 +745,19 @@ const ROUTE_PHASES: Record<string, {
   redirectLabel: string;
 }> = {
   "/continuing-learners": {
-    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Learner Enrollment",
     redirectTo: "/monitoring/enrollment",
     redirectLabel: "Take me to Class Sectioning"
   },
   "/monitoring/enrollment": {
-    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Class Sectioning and SF1",
     redirectTo: "/sections",
     redirectLabel: "Take me to Class Sections"
   },
   "/monitoring/enrollment/walk-in": {
-    allowedPhases: ["PRE_REGISTRATION", "BOSY_ENROLLMENT", "OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
+    allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Learner Enrollment",
     redirectTo: "/continuing-learners",
     redirectLabel: "Take me to Learner Enrollment"
@@ -776,9 +773,7 @@ const ROUTE_PHASES: Record<string, {
 function formatPhaseName(phase: string | null): string {
   if (!phase) return "Unknown Phase";
   const map: Record<string, string> = {
-    PRE_REGISTRATION: "Pre-Registration",
-    OFFICIAL_ENROLLMENT: "BOSY Enrollment Active",
-    BOSY_ENROLLMENT: "BOSY Enrollment Active",
+    OFFICIAL_ENROLLMENT: "Official Enrollment",
     CLASSES_ONGOING: "Classes Ongoing",
     EOSY_CLOSING: "EOSY Closing"
   };
@@ -792,7 +787,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   const outlet = useOutlet();
   const {
     selectedAccentHsl,
-    colorScheme,
     accentForeground,
     activeSchoolYearId,
     viewingSchoolYearId,
@@ -801,9 +795,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     switchingToSchoolYearLabel,
   } = useSettingsStore();
   const { width } = useWindowSize();
-  const accentHsl =
-    selectedAccentHsl ??
-    (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+  const accentHsl = selectedAccentHsl;
   const location = useLocation();
   const routeTransitionKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;
   const defaultTitle = resolvePageTitle(location.pathname, location.search);

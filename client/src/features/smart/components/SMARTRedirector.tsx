@@ -10,7 +10,7 @@ export function SMARTRedirector() {
   let smartRole = "TEACHER";
   if (user.roles.includes("SYSTEM_ADMIN")) {
     smartRole = "ADMIN";
-  } else if (user.roles.includes("HEAD_REGISTRAR") || user.roles.includes("REGISTRAR")) {
+  } else if (user.roles.includes("HEAD_REGISTRAR")) {
     smartRole = "REGISTRAR";
   } else if (user.roles.includes("TEACHER") || user.roles.includes("CLASS_ADVISER")) {
     smartRole = "TEACHER";

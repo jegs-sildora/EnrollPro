@@ -1,6 +1,6 @@
 import React from "react";
 import { format, differenceInYears } from "date-fns";
-import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
+import type { ApplicantDetail } from "@/features/enrollment/types/application-detail";
 
 import {
   User,

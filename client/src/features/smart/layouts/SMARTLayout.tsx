@@ -22,7 +22,7 @@ export default function SMARTLayout() {
   let smartRole = "TEACHER";
   if (enrollProUser.roles.includes("SYSTEM_ADMIN")) {
     smartRole = "ADMIN";
-  } else if (enrollProUser.roles.includes("HEAD_REGISTRAR") || enrollProUser.roles.includes("REGISTRAR")) {
+  } else if (enrollProUser.roles.includes("HEAD_REGISTRAR")) {
     smartRole = "REGISTRAR";
   } else if (enrollProUser.roles.includes("TEACHER") || enrollProUser.roles.includes("CLASS_ADVISER")) {
     smartRole = "TEACHER";

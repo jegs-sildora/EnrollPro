@@ -12,7 +12,6 @@ import {
   markConfirmedTransferOutHandler,
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
-  getPhase2QueueHandler,
   getPreviousSectionsHandler,
 } from "./bosy.controller.js";
 
@@ -39,13 +38,6 @@ router.get(
   getPreviousSectionsHandler,
 );
 
-router.get(
-  "/phase2-queue",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"),
-  getPhase2QueueHandler,
-);
-
 router.post(
   "/sync",
   authenticate,
@@ -57,7 +49,7 @@ router.post(
 router.post(
   "/confirm-return/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   staffIntakePhaseGuard,
   confirmReturnHandler,
 );
@@ -65,7 +57,7 @@ router.post(
 router.post(
   "/transfer-request/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   staffIntakePhaseGuard,
   markTransferRequestHandler,
 );
@@ -73,7 +65,7 @@ router.post(
 router.post(
   "/revoke-confirmation/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   staffIntakePhaseGuard,
   revokeConfirmedReturnHandler,
 );
@@ -81,7 +73,7 @@ router.post(
 router.post(
   "/confirmed-transfer-out/:applicationId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   staffIntakePhaseGuard,
   markConfirmedTransferOutHandler,
 );

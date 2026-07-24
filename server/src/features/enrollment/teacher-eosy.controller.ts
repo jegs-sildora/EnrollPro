@@ -2,7 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { EosyStatus } from "../../generated/prisma/index.js";
+import {
+  ApplicantType,
+  EosyStatus,
+} from "../../generated/prisma/index.js";
 import { broadcastEosyUpdate } from "./eosy-events.service.js";
 import { broadcastEosyInvalidation } from "../../lib/realtime-events.js";
 
@@ -189,7 +192,7 @@ export async function submitTeacherAdvisory(
         const finalAverage = update.finalAverage !== undefined ? update.finalAverage : record.finalAverage !== null ? parseFloat(String(record.finalAverage)) : null;
 
         let eosyStatus = update.eosyStatus as EosyStatus;
-        let nextYearCurriculum: any = null;
+        let nextYearCurriculum: ApplicantType | null = null;
         
         const isScp = record.section?.programType && record.section.programType !== "REGULAR";
 

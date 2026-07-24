@@ -21,8 +21,9 @@ async function seedPSGC() {
   try {
     const response = await axios.get<PSGCNode[]>(PSGC_URL);
     data = response.data;
-  } catch (error: any) {
-    console.error(`❌ Failed to fetch dataset. Error: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Failed to fetch dataset. Error: ${message}`);
     process.exit(1);
   }
 
@@ -159,7 +160,7 @@ async function seedPSGC() {
     for (let i = 0; i < barangayEntries.length; i += CHUNK_SIZE) {
       const chunk = barangayEntries.slice(i, i + CHUNK_SIZE);
       const values: string[] = [];
-      const flatParams: any[] = [];
+      const flatParams: string[] = [];
       let paramIndex = 1;
 
       for (const [code, { name, cityMunicipalityCode }] of chunk) {

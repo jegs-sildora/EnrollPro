@@ -2,8 +2,6 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import {
-  confirmConfirmationSlip,
-  batchConfirmConfirmationSlips,
   finalizeIntake,
   getPendingVerifications,
   flagDeficient,
@@ -11,20 +9,6 @@ import {
 } from "./enrollment.controller.js";
 
 const router: Router = Router();
-
-router.post(
-  "/confirm-slip",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  confirmConfirmationSlip,
-);
-
-router.post(
-  "/batch-confirm",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  batchConfirmConfirmationSlips,
-);
 
 router.post(
   "/finalize-intake",
@@ -50,7 +34,7 @@ router.patch(
 router.post(
   "/walk-in",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   directEncodeWalkIn,
 );
 

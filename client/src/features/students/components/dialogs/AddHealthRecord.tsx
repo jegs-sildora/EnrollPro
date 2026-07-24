@@ -30,7 +30,7 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { useSettingsStore } from '@/store/settings.slice';
 import { sileo } from 'sileo';
-import type { HealthRecord } from '@/features/enrollment/hooks/useApplicationDetail';
+import type { HealthRecord } from '@/features/students/types';
 
 interface AddHealthRecordProps {
 	isOpen: boolean;

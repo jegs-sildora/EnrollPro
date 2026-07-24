@@ -1,34 +1,31 @@
 import { Request, Response } from "express";
 import { prisma } from "../../../lib/prisma.js";
-import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
-import { findStudents, getStudentsSummary } from "../students.service.js";
 import { broadcastStudentInvalidation } from "../../../lib/realtime-events.js";
 
 const getRequestUserId = (req: Request): number | null => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
   return typeof userId === "number" ? userId : null;
 };
 
 
   export const getHealthRecords = async (req: Request, res: Response) => {
     try {
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      // Resolve learnerId from enrollment application
-      const app = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
-        select: { learnerId: true },
+      const learner = await prisma.learner.findUnique({
+        where: { id: learnerId },
+        select: { id: true },
       });
-      if (!app) {
+      if (!learner) {
         return res.status(404).json({ message: "Student not found" });
       }
 
       const records = await prisma.healthRecord.findMany({
-        where: { learnerId: app.learnerId },
+        where: { learnerId },
         include: {
           schoolYear: {
             select: { yearLabel: true },
@@ -63,27 +60,26 @@ const getRequestUserId = (req: Request): number | null => {
         notes,
       } = req.body;
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
       const parsedSchoolYearId = Number.parseInt(schoolYearId as string, 10);
 
-      if (Number.isNaN(parsedId) || Number.isNaN(parsedSchoolYearId)) {
+      if (Number.isNaN(learnerId) || Number.isNaN(parsedSchoolYearId)) {
         return res
           .status(400)
           .json({ message: "Invalid student or school year id" });
       }
 
-      // Resolve learnerId from enrollment application
-      const app = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
-        select: { learnerId: true },
+      const learner = await prisma.learner.findUnique({
+        where: { id: learnerId },
+        select: { id: true },
       });
-      if (!app) {
+      if (!learner) {
         return res.status(404).json({ message: "Student not found" });
       }
 
       const existingRecord = await prisma.healthRecord.findFirst({
         where: {
-          learnerId: app.learnerId,
+          learnerId,
           schoolYearId: parsedSchoolYearId,
           assessmentPeriod,
         },
@@ -102,7 +98,7 @@ const getRequestUserId = (req: Request): number | null => {
 
       const record = await prisma.healthRecord.create({
         data: {
-          learnerId: app.learnerId,
+          learnerId,
           schoolYearId: parsedSchoolYearId,
           assessmentPeriod,
           assessmentDate: normalizeDateToUtcNoon(new Date(assessmentDate)),
@@ -159,15 +155,26 @@ const getRequestUserId = (req: Request): number | null => {
         String(req.params.recId ?? ""),
         10,
       );
-      if (Number.isNaN(parsedRecordId)) {
-        return res.status(400).json({ message: "Invalid health record id" });
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(parsedRecordId) || Number.isNaN(learnerId)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid student or health record id" });
       }
 
       const { assessmentPeriod, assessmentDate, weightKg, heightCm, notes } =
         req.body;
 
+      const existingRecord = await prisma.healthRecord.findFirst({
+        where: { id: parsedRecordId, learnerId },
+        select: { id: true },
+      });
+      if (!existingRecord) {
+        return res.status(404).json({ message: "Health record not found" });
+      }
+
       const record = await prisma.healthRecord.update({
-        where: { id: parsedRecordId },
+        where: { id: existingRecord.id },
         data: {
           assessmentPeriod,
           assessmentDate: assessmentDate

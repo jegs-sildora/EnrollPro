@@ -10,19 +10,13 @@ export interface BOSYReadiness {
   enrolledCount: number;
   jhsCompleterCount: number;
   transferRequestCount: number;
-  // Phase 2 BEEF intake counts
-  scpPriorityCount: number;
-  onlineBeefCount: number;
-  walkInBeefCount: number;
-  pendingBeefCount: number;
 }
 
 export type BOSYQueueState =
   | "PENDING"
   | "CONFIRMED"
   | "TEMPORARY"
-  | "TRANSFER_REQUEST"
-  | "ENROLLED";
+  | "TRANSFER_REQUEST";
 
 export interface BOSYQueueItem {
   applicationId: number;
@@ -47,17 +41,6 @@ export interface BOSYQueueItem {
   priorYearDeficiencyNote: string | null;
 }
 
-export interface JHSCompleter {
-  learnerId: number;
-  lrn: string | null;
-  firstName: string;
-  lastName: string;
-  middleName: string | null;
-  lastGradeLevel: string | null;
-  lastYearEnrolled: string | null;
-  lastSectionName: string | null;
-}
-
 export interface BOSYQueuePage {
   items: BOSYQueueItem[];
   total: number;
@@ -79,40 +62,3 @@ export interface ConfirmReturnResult {
   missingDocuments: string[];
 }
 
-export interface JHSCompleterPage {
-  items: JHSCompleter[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface TLEProgram {
-  id: number;
-  name: string;
-  category: string;
-  isActive: boolean;
-  displayOrder: number;
-}
-
-export interface Phase2QueueItem {
-  applicationId: number;
-  trackingNumber: string | null;
-  status: string;
-  admissionChannel: string;
-  applicantType: string;
-  learnerType: string;
-  learnerId: number;
-  lrn: string | null;
-  firstName: string;
-  lastName: string;
-  middleName: string | null;
-  gradeLevelId: number;
-  gradeLevelName: string;
-}
-
-export interface Phase2QueuePage {
-  items: Phase2QueueItem[];
-  total: number;
-  page: number;
-  limit: number;
-}

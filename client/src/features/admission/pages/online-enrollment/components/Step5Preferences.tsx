@@ -404,7 +404,7 @@ export default function Step5Enrollment() {
                 setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: true });
               } else {
                 setValue("isScpApplication", true, { shouldValidate: true, shouldDirty: true });
-                setValue("scpType", val as any, { shouldValidate: true, shouldDirty: true });
+                setValue("scpType", val as ScpTypeValue, { shouldValidate: true, shouldDirty: true });
               }
             }}
           >

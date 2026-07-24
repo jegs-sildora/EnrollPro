@@ -65,8 +65,6 @@ export const rolloverSchoolYearSchema = z.object({
   pin: z.string().regex(/^\d{6}$/, "A valid 6-digit administrator PIN is required"),
 });
 
-export const updateRolloverDraftSchema = schoolYearCalendarPolicySchema;
-
 export const transitionSchoolYearSchema = z.object({
   status: SchoolYearStatusEnum,
 });

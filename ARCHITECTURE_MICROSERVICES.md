@@ -1,78 +1,89 @@
-# EnrollPro Ecosystem Microservices Architecture
+# EnrollPro Microservice Architecture
 
-## Overview
-EnrollPro is part of a distributed microservices system integrated via **Tailscale Tailnet**. Services communicate directly using Tailscale IP addresses and private DNS (Tailscale Funnel). EnrollPro acts as the **Single Source of Truth (SSOT)** for identity and enrollment.
+Last reviewed: 2026-07-24
 
-## System Components
+## Purpose
 
-### 1. EnrollPro (Enrollment & Identity — SSOT)
-- **Role:** Source of truth for student/teacher accounts and enrollment data.
-- **Tailscale Host:** `dev-jegs.buru-degree.ts.net` (Local: `100.120.169.123`)
-- **Data Responsibility:**
-  - **Student Accounts:** LRN, name, sex, birthdate.
-  - **Teacher Accounts:** Employee ID, name, email, role.
-  - **Enrollment:** Grade level and Section assignment (e.g., "Grade 7 - Rizal").
-- **Integration:** External systems (AIMS, ATLAS, SMART) call EnrollPro for identity and context.
+EnrollPro is one system in a school operations ecosystem. Each system keeps its own database and remains authoritative only for its assigned domain. Integration feeds share context; they do not transfer ownership.
 
-### 2. AIMS (Automated Intervention & Mastery System)
-- **Role:** LMS, Quiz Generation, Grading, Remediation.
-- **Tailscale Host:** `100.92.245.14`
-- **Data Responsibility:** Course content, quizzes, student submissions, and mastery analytics.
-- **Integration:** Calls EnrollPro to verify student sections and ATLAS for teaching load assignments.
+## Ownership Matrix
 
-### 3. ATLAS (Scheduling & Teaching Load)
-- **Role:** Master Scheduler and Faculty Loading.
-- **Tailscale Host:** `100.88.55.125`
-- **Data Responsibility:**
-  - **Teaching Load:** Which teacher handles which section (e.g., "Teacher 1 -> Grade 7-A, English").
-  - **Class Schedule:** Time and Day mapping (e.g., "8-9am, Mon/Wed/Fri").
-  - **Campus Map:** Buildings and rooms.
-- **Integration:** Consumed by AIMS for course assignment and SMART for class context.
+| System | Source of truth | Consumes from EnrollPro | Returns to EnrollPro |
+| --- | --- | --- | --- |
+| EnrollPro | learner and personnel identity, enrollment, section placement, school-year context, school-form workflow | finalized SMART outcomes, published ATLAS schedules | identity, roster, section, personnel, and school-year context |
+| SMART | grades, learning-area results, promotion outcomes, and attendance | learners, sections, advisers, and active school year | final published EOSY outcomes |
+| ATLAS | schedules and teaching loads | active faculty, sections, advisers, and school year | published faculty assignments for SF7 |
+| AIMS | learning intervention and LMS activity | learner, grade, section, program, and remedial context | intervention data remains in AIMS unless a future reviewed contract is added |
+| MRF | maintenance, facilities, and waste-management operations | minimized learner, personnel, staff-role, and school-year identity | maintenance transactions remain in MRF |
 
-### 4. SMART (Grading & Academic Records)
-- **Role:** Grading system and Academic performance tracker.
-- **Tailscale Host:** `100.93.66.120` (Port 5003)
-- **Data Responsibility:**
-  - **Grades:** Quarterly grades, initial grades, remarks.
-  - **Attendance:** Section and student-level attendance tracking.
-  - **Class Records:** Full historical class records.
-- **Integration:** EnrollPro pulls final averages from SMART to finalize EOSY records.
+## EnrollPro Boundary
 
-### 5. MRF (Maintenance and Materials Recovery Operations)
-- **Role:** Campus maintenance, waste collection, issue reporting, dispatch, and resolution tracking.
-- **Data Responsibility:** Maintenance requests, collection records, assigned MRF personnel, work status, and operational analytics.
-- **Identity Integration:** MRF consumes DPA-minimized learner and personnel identities from EnrollPro through `GET /api/integration/v1/default/mrf/identities` using an `X-Integration-Key` service credential.
-- **Ownership Boundary:** MRF must not become a second source of truth for learner enrollment, section placement, faculty employment, or school-year status. Those records remain owned by EnrollPro.
+EnrollPro owns:
 
-## Inter-Service Communication Pattern
-- **Directional Access:** Subsystems call EnrollPro directly via Tailscale IPs/DNS.
-- **Auth:** Services use shared secrets or JWTs as defined in the integration references. The MRF identity feed requires `X-Integration-Key`; existing ATLAS, SMART, and AIMS v1 pull feeds remain read-only and public for compatibility.
-- **Discovery:** Use Tailnet private DNS (`.ts.net`) or static Tailscale IPs.
+- stable learner and personnel identifiers
+- current application and enrollment state
+- official class placement and SF1 roster
+- school-year and academic-phase context
+- section structure, capacity, and class adviser
+- current personnel service status
+- immutable enrollment history and recorded SF5 or SF6 artifacts
 
-## Authoritative School Year Boundary
+EnrollPro does not own:
 
-EnrolPro publishes a new active school year only after
-`POST /api/school-years/rollover` commits successfully. That serializable
-transaction archives the prior enrollment records, applies the approved
-DepEd calendar, clones empty class sections, creates continuing-learner
-confirmation records, and changes the active school-year context.
+- SMART grades or attendance
+- ATLAS schedule authoring
+- AIMS intervention records
+- MRF maintenance or waste records
+- No Early Registration, reading assessment, enrollment listing, hardware, or Internet of Things workflows
 
-- SMART must publish final academic outcomes before rollover. EnrollPro does
-  not invent grades or promotion results.
-- ATLAS must not create next-year schedules until the new active school-year
-  context is visible after commit.
-- AIMS must retain the prior school-year identifier for completed
-  interventions and refresh enrollment context only after commit.
-- MRF may refresh identity context after commit but remains the owner of
-  maintenance operations.
-- No companion system should treat a calendar draft or EOSY form preview as
-  proof that rollover has completed.
+## Connectivity
 
-EnrolPro has no early-registration workflow and no hardware or Internet of
-Things dependency. The rollover is a software-only database and API process.
+Companion systems receive the EnrollPro base URL through environment configuration. Do not hard-code local IP addresses, Tailscale hostnames, or production domains in source.
 
-## Context for Agents
-When working on the EnrollPro ecosystem:
-1. **Never Assume Local Data:** If student section, personnel identity, or school-year context is needed, fetch it from EnrollPro. If a teacher schedule or teaching load is needed, fetch it from ATLAS.
-2. **Consult API Docs:** Refer to specific system API references before implementing inter-service calls.
-3. **Multi-Tenant Safety:** Ensure `schoolId` context is passed when calling other services to maintain isolation across the tailnet.
+Recommended variables:
+
+```text
+ENROLLPRO_BASE_URL=https://configured-enrollpro-host
+ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
+```
+
+Private network transport may use Tailscale or another school-approved network. Transport choice does not change the API or ownership contract.
+
+## Authentication
+
+- Staff and teacher routes use an authenticated EnrollPro session or bearer token.
+- Learner routes use a learner-scoped JWT.
+- The MRF identity feed uses `X-Integration-Key`.
+- Existing public integration feeds remain compatibility endpoints and must contain only approved fields.
+
+Integration keys and user credentials must never appear in logs, responses, or committed documentation.
+
+## School-Year Synchronization
+
+Companion systems may read current context during normal operations. The active school year changes only after EnrollPro completes its atomic rollover transaction.
+
+Downstream refresh order:
+
+1. EnrollPro commits history, learner outcomes, cloned empty sections, calendar policy, and active-year state.
+2. EnrollPro broadcasts school-year and integration invalidations.
+3. SMART refreshes active learners and sections.
+4. ATLAS refreshes faculty, sections, and adviser context.
+5. AIMS refreshes learner and class context.
+6. MRF refreshes minimized identities.
+
+No downstream system should switch years when a target-year draft or calendar policy is merely created.
+
+## Failure Handling
+
+- Consumers retry read-only feeds with bounded exponential backoff.
+- A failed companion call must not create fabricated data in EnrollPro.
+- SMART final outcomes must be complete and published before EOSY readiness passes.
+- If ATLAS is unavailable, EnrollPro may use its last synchronized SF7 schedule snapshot but does not become the live scheduling owner.
+- Consumers should treat explicit school-year IDs as immutable historical scope.
+
+## References
+
+- [EnrollPro API](docs/features/integration/ENROLLPRO-API.md)
+- [Integration API v1](docs/features/integration/INTEGRATION_API_V1.md)
+- [School Year Lifecycle](docs/features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
+- [Subsystem Quick Start](docs/features/integration/SUBSYSTEM_API_QUICK_START.md)

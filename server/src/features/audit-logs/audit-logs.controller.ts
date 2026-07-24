@@ -53,7 +53,9 @@ const parseManilaDateEnd = (value: unknown): Date | undefined => {
 /**
  * Forensic Helper: Resolves numeric recordIds into human-readable strings
  */
-async function resolveSubjectNames(logs: any[]) {
+async function resolveSubjectNames<
+  T extends { subjectType: string | null; recordId: number | null },
+>(logs: T[]): Promise<Array<T & { resolvedSubject: string | null }>> {
   const subjectGroups: Record<string, Set<number>> = {};
   logs.forEach((log) => {
     if (log.subjectType && log.recordId) {
@@ -104,7 +106,10 @@ async function resolveSubjectNames(logs: any[]) {
           where: { id: { in: ids } },
           select: { id: true, learner: { select: { firstName: true, lastName: true } } },
         });
-        records.forEach((r: any) => (nameMap[type][r.id] = `${r.learner.lastName}, ${r.learner.firstName}`));
+        records.forEach((record) => {
+          nameMap[type][record.id] =
+            `${record.learner.lastName}, ${record.learner.firstName}`;
+        });
       }
     } catch (e) {
       console.error(`Failed to resolve subject names for ${type}`, e);

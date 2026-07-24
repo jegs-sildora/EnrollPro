@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
-import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 import { isStaffIntakeAllowed } from "../settings/enrollment-gate.service.js";
@@ -20,191 +19,6 @@ async function assertStaffIntakeAllowed(): Promise<void> {
 }
 
 
-/**
- * POST /api/enrollment/confirm-slip
- * Rapid confirmation for returning Grade 8-10 learners.
- */
-export async function confirmConfirmationSlip(req: Request, res: Response) {
-  const {
-    learnerId,
-    schoolYearId,
-    gradeLevelId,
-    isMissingSf9,
-    hasSf9CertificationLetter,
-    hasUnsettledPrivateAccount,
-    originatingSchoolName,
-  } = req.body;
-  const userId = req.user!.userId;
-
-  try {
-    await assertStaffIntakeAllowed();
-    // 1. Validate learner exists and is returning
-    const learner = await prisma.learner.findUnique({
-      where: { id: learnerId },
-    });
-
-    if (!learner) {
-      throw new AppError(404, "Learner not found.");
-    }
-
-    const isTemporary =
-      (isMissingSf9 && !hasSf9CertificationLetter) ||
-      hasUnsettledPrivateAccount;
-
-    // 2. Create the EnrollmentApplication directly
-    const application = await prisma.enrollmentApplication.create({
-      data: {
-        learnerId,
-        schoolYearId,
-        gradeLevelId,
-        status: isTemporary ? "VERIFIED" : "VERIFIED",
-        intakeMethod: "CONFIRMATION_SLIP",
-        admissionChannel: "F2F", // Registrar workflow is F2F
-        encodedById: userId,
-        isTemporarilyEnrolled: isTemporary || false,
-        isMissingSf9: isMissingSf9 || false,
-        hasSf9CertificationLetter: hasSf9CertificationLetter || false,
-        hasUnsettledPrivateAccount: hasUnsettledPrivateAccount || false,
-        originatingSchoolName: originatingSchoolName || null,
-        academicStatus: "PROMOTED",
-      },
-      include: {
-        learner: true,
-        gradeLevel: true,
-      },
-    });
-
-    // Auto-create User account for the learner
-    await prisma.$transaction(async (tx) => {
-      await ensureLearnerUserAccount(tx, application.learner);
-    });
-
-    // Process 1.1: Event-Driven Delta Sync (Automated)
-    // Officially enrolling a single late-enrollee/returning student triggers immediate sync
-    if (application.status === "VERIFIED") {
-    }
-
-    broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
-
-    return res.json({
-      success: true,
-      message: `Enrollment confirmed for ${learner.firstName} ${learner.lastName}.`,
-      application,
-    });
-  } catch (error) {
-    console.error("Confirmation Slip processing failed:", error);
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, "Failed to process confirmation slip.");
-  }
-}
-
-/**
- * POST /api/enrollment/batch-confirm
- * Rapid batch processing for Grade 8-10 confirmation slips.
- */
-export async function batchConfirmConfirmationSlips(
-  req: Request,
-  res: Response,
-) {
-  const { batch } = req.body as {
-    batch: {
-      learnerId: number;
-      schoolYearId: number;
-      gradeLevelId: number;
-      guardianName: string;
-      contactNumber: string;
-      isEnrolling: boolean;
-      intakeMethod?: string;
-    }[];
-  };
-  const userId = req.user!.userId;
-
-  if (!batch || !Array.isArray(batch)) {
-    return res.status(400).json({ message: "Batch array is required." });
-  }
-
-  try {
-    await assertStaffIntakeAllowed();
-    const results = await prisma.$transaction(async (tx) => {
-      const updates = [];
-
-      for (const entry of batch) {
-        const {
-          learnerId,
-          schoolYearId,
-          gradeLevelId,
-          guardianName,
-          contactNumber,
-          isEnrolling,
-          intakeMethod = "BATCH_CONFIRMATION",
-        } = entry;
-
-        // Create or update EnrollmentApplication
-        const app = await tx.enrollmentApplication.upsert({
-          where: {
-            id:
-              (
-                await tx.enrollmentApplication.findFirst({
-                  where: { learnerId, schoolYearId },
-                  select: { id: true },
-                })
-              )?.id || -1,
-          },
-          create: {
-            learnerId,
-            schoolYearId,
-            gradeLevelId,
-            status: isEnrolling ? "VERIFIED" : "VERIFIED",
-            intakeMethod: "CONFIRMATION_SLIP",
-            admissionChannel: "F2F",
-            encodedById: userId,
-            guardianName,
-            contactNumber,
-            confirmationConsent: isEnrolling,
-            batchIntakeMethod: intakeMethod,
-            academicStatus: "PROMOTED",
-          },
-          update: {
-            gradeLevelId,
-            status: isEnrolling ? "VERIFIED" : "VERIFIED",
-            guardianName,
-            contactNumber,
-            confirmationConsent: isEnrolling,
-            batchIntakeMethod: intakeMethod,
-          },
-          include: {
-            learner: true,
-          },
-        });
-
-        if (isEnrolling) {
-          await ensureLearnerUserAccount(tx, app.learner);
-        }
-
-        updates.push(app);
-      }
-      return updates;
-    });
-
-    const firstResult = results[0];
-    broadcastEnrollmentInvalidation(
-      firstResult?.schoolYearId ?? req.schoolYearId,
-      results.map((application) => application.learnerId),
-    );
-
-    return res.json({
-      success: true,
-      message: `Successfully processed ${results.length} confirmation slips.`,
-      processedCount: results.length,
-    });
-  } catch (error) {
-    console.error("Batch confirmation failed:", error);
-    return res
-      .status(500)
-      .json({ message: "Error processing batch confirmation." });
-  }
-}
-
 // ─── Intake Finalization ─────────────────────────────────────────────────────
 
 /**
@@ -213,7 +27,7 @@ export async function batchConfirmConfirmationSlips(
  * Intake Desk Tab 3 — Finalizes a learner's physical document confirmation:
  *  - Saves height (cm) and weight (kg)
  *  - Verifies the physical document checklist
- *  - Advances status from PENDING_VERIFICATION → VERIFIED
+ *  - Advances status from PENDING_VERIFICATION to READY_FOR_SECTIONING
  *  - Fires Notification Event A (Intake Receipt Confirmation)
  */
 export async function finalizeIntake(req: Request, res: Response) {
@@ -279,7 +93,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     await tx.enrollmentApplication.update({
       where: { id: applicationId },
       data: {
-        status: "VERIFIED",
+        status: "READY_FOR_SECTIONING",
         intakeHeightCm: heightCm ?? undefined,
         intakeWeightKg: weightKg ?? undefined,
         confirmationConsent: checklistVerified,
@@ -318,7 +132,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     success: true,
     message: "Intake finalized. Learner is now queued for batch sectioning.",
     applicationId,
-    newStatus: "VERIFIED",
+    newStatus: "READY_FOR_SECTIONING",
   });
 }
 
@@ -339,7 +153,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
     where: {
       schoolYearId,
       status: {
-        in: ["PENDING_VERIFICATION", "VERIFIED", "FOR_REVISION"],
+        in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION"],
       },
     },
     include: {

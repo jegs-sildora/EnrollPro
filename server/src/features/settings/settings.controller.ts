@@ -27,6 +27,43 @@ function broadcastSettingsInvalidation(): void {
   });
 }
 
+interface SettingsSnapshot {
+  steEnabled?: boolean
+  spaEnabled?: boolean
+  spsEnabled?: boolean
+  enableHomogeneousSections?: boolean
+  homogeneousSectionCount?: number
+  heterogeneousRoundRobin?: boolean
+}
+
+function parseSettingsSnapshot(value: unknown): SettingsSnapshot | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null
+  }
+
+  const source = value as Record<string, unknown>
+  return {
+    steEnabled:
+      typeof source.steEnabled === "boolean" ? source.steEnabled : undefined,
+    spaEnabled:
+      typeof source.spaEnabled === "boolean" ? source.spaEnabled : undefined,
+    spsEnabled:
+      typeof source.spsEnabled === "boolean" ? source.spsEnabled : undefined,
+    enableHomogeneousSections:
+      typeof source.enableHomogeneousSections === "boolean"
+        ? source.enableHomogeneousSections
+        : undefined,
+    homogeneousSectionCount:
+      typeof source.homogeneousSectionCount === "number"
+        ? source.homogeneousSectionCount
+        : undefined,
+    heterogeneousRoundRobin:
+      typeof source.heterogeneousRoundRobin === "boolean"
+        ? source.heterogeneousRoundRobin
+        : undefined,
+  }
+}
+
 async function getOrCreateSettings() {
   let settings = await prisma.schoolSetting.findFirst({
     include: { activeSchoolYear: true },
@@ -84,7 +121,7 @@ export async function getPublicSettings(
 
     const isContextArchived = effectiveSystemStatus === "ARCHIVED" || contextSy?.status === "ARCHIVED";
     const snapshotSettings = isContextArchived && contextSy?.settingsSnapshot
-      ? (contextSy.settingsSnapshot as any)
+      ? parseSettingsSnapshot(contextSy.settingsSnapshot)
       : null;
 
 
@@ -100,8 +137,6 @@ export async function getPublicSettings(
       viewingSchoolYearLabel: contextSy?.yearLabel ?? activeSy?.yearLabel ?? null,
       activeSchoolYearStatus: activeSy?.status ?? null,
       systemStatus: effectiveSystemStatus,
-      earlyRegOpenDate: null,
-      earlyRegCloseDate: null,
       classOpeningDate: contextSy?.classOpeningDate ?? null,
       classEndDate: contextSy?.classEndDate ?? null,
       enrollOpenDate: contextSy?.enrollOpenDate ?? null,
@@ -309,9 +344,6 @@ export async function selectAccentColor(
     ...colorSchemeData,
     accent_foreground: foreground,
   };
-  // Remove legacy accent_hsl from JSON (selectedAccentHsl column is canonical)
-  delete (updatedColorScheme as Record<string, unknown>).accent_hsl;
-
   const updated = await prisma.schoolSetting.update({
     where: { id: settings.id },
     data: {

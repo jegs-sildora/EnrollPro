@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm, FormProvider, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/shared/lib/zodResolver";
 import { EnrollmentFormSchema, type EnrollmentFormData } from "./types";
 
 import Step1Personal from "./components/Step1Personal";
@@ -51,6 +51,43 @@ type ValidationIssue = {
   fieldPath: string;
   fieldLabel: string;
   message: string;
+};
+
+const extractFirstValidationError = (
+  value: unknown,
+): { path: string; message: string } | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const errorNode = value as Record<string, unknown>;
+  const rootErrors = errorNode._errors;
+  if (
+    Array.isArray(rootErrors) &&
+    rootErrors.length > 0 &&
+    typeof rootErrors[0] === "string"
+  ) {
+    return { path: "_root", message: rootErrors[0] };
+  }
+
+  for (const [key, nestedValue] of Object.entries(errorNode)) {
+    if (key === "_errors") {
+      continue;
+    }
+
+    const nestedError = extractFirstValidationError(nestedValue);
+    if (nestedError) {
+      return {
+        path:
+          nestedError.path === "_root"
+            ? key
+            : `${key}.${nestedError.path}`,
+        message: nestedError.message,
+      };
+    }
+  }
+
+  return null;
 };
 
 const FIELD_LABEL_OVERRIDES: Record<string, string> = {
@@ -140,7 +177,6 @@ type EnrollmentSubmitSuccessPayload = Pick<
   | "programType"
   | "status"
   | "currentStep"
-  | "assessmentData"
 > & { learnerName?: string };
 
 export default function EnrollmentForm({
@@ -356,7 +392,6 @@ export default function EnrollmentForm({
           programType: responseData.programType,
           status: responseData.status,
           currentStep: responseData.currentStep,
-          assessmentData: responseData.assessmentData,
           learnerName: `${data.firstName} ${data.lastName}`,
         });
       }
@@ -374,16 +409,19 @@ export default function EnrollmentForm({
       const responseData = (
         error as {
           response?: {
+            status?: number;
             data?: {
               message?: string;
-              errors?: Record<string, string[]>;
+              errors?: unknown;
               duplicate_detected?: boolean;
             };
           };
         }
       )?.response?.data;
 
-      const responseStatus = (error as any)?.response?.status;
+      const responseStatus = (
+        error as { response?: { status?: number } }
+      ).response?.status;
 
       let message =
         responseData?.message ||
@@ -400,30 +438,11 @@ export default function EnrollmentForm({
         responseData?.message === "Validation failed" &&
         responseData.errors
       ) {
-        // Zod format: { _errors: [], field: { _errors: ["msg"] } }
-        const extractFirstError = (errorsObj: any): { path: string, msg: string } | null => {
-          if (!errorsObj || typeof errorsObj !== 'object') return null;
-          if (Array.isArray(errorsObj._errors) && errorsObj._errors.length > 0) {
-            return { path: "_root", msg: errorsObj._errors[0] };
-          }
-          for (const [key, value] of Object.entries(errorsObj)) {
-            if (key === "_errors") continue;
-            if (value && typeof value === 'object') {
-              if (Array.isArray((value as any)._errors) && (value as any)._errors.length > 0) {
-                return { path: key, msg: (value as any)._errors[0] };
-              }
-              const nested = extractFirstError(value);
-              if (nested) return { path: `${key}.${nested.path}`, msg: nested.msg };
-            }
-          }
-          return null;
-        };
-
-        const firstError = extractFirstError(responseData.errors);
+        const firstError = extractFirstValidationError(responseData.errors);
         if (firstError) {
           const readableField =
             firstError.path === "_root" || firstError.path.endsWith("._root") ? "Request" : getFieldLabel(firstError.path.split('.')[0]);
-          message = `${readableField}: ${firstError.msg}`;
+          message = `${readableField}: ${firstError.message}`;
         }
       }
 
@@ -477,7 +496,7 @@ export default function EnrollmentForm({
                     setDuplicateAction("new");
                     setDuplicateModalOpen(false);
                     const data = methods.getValues();
-                    void onSubmit({ ...data, bypassDuplicate: true } as any);
+                    void onSubmit({ ...data, bypassDuplicate: true });
                   }}
                   className="w-full justify-start"
                   variant="default"
@@ -544,15 +563,26 @@ export default function EnrollmentForm({
                           programType: response.data.programType,
                           status: response.data.status,
                           currentStep: response.data.currentStep,
-                          assessmentData: response.data.assessmentData,
                           learnerName: `${data.firstName} ${data.lastName}`,
                         });
                       }
                       reset({ ...DEFAULT_VALUES });
                       localStorage.removeItem(DRAFT_KEY);
                       setHasActiveDraft(false);
-                    } catch (error: any) {
-                      setSubmitError(error.response?.data?.message || "Failed to update application.");
+                    } catch (error: unknown) {
+                      const responseMessage =
+                        typeof error === "object" &&
+                        error !== null &&
+                        "response" in error
+                          ? (
+                              error as {
+                                response?: { data?: { message?: string } };
+                              }
+                            ).response?.data?.message
+                          : undefined;
+                      setSubmitError(
+                        responseMessage || "Failed to update application.",
+                      );
                       scrollToTopInstant();
                     } finally {
                       setIsSubmitting(false);

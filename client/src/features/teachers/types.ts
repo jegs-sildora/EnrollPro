@@ -20,46 +20,6 @@ export interface TeacherDesignation {
   updatedAt: string | null;
 }
 
-export interface AdvisorySectionOption {
-  id: number;
-  label: string;
-  gradeLevelName: string;
-  sectionName: string;
-  maxCapacity: number;
-  enrolledCount: number;
-  programType: string;
-  isHomogeneous: boolean;
-  currentAdviserId: number | null;
-  currentAdviserName: string | null;
-}
-
-export interface SectionsApiResponse {
-  gradeLevels?: Array<{
-    gradeLevelName: string;
-    sections?: Array<{
-      id: number;
-      name: string;
-      maxCapacity: number;
-      enrolledCount: number;
-      programType: string;
-      isHomogeneous: boolean;
-      advisingTeacher?: {
-        id?: number | null;
-        name?: string | null;
-      } | null;
-    }>;
-  }>;
-}
-
-export interface DesignationCollision {
-  sectionId: number;
-  sectionName: string;
-  gradeLevelId: number;
-  gradeLevelName: string | null;
-  currentAdviserId: number;
-  currentAdviserName: string;
-}
-
 export interface Teacher {
   id: number;
   employeeId: string | null;
@@ -138,31 +98,6 @@ export interface TeacherSchedulePeriod {
   updatedAt: string;
 }
 
-export interface TeacherFormState {
-  firstName: string;
-  lastName: string;
-  middleName: string;
-  suffix: string;
-  employeeId: string;
-  contactNumber: string;
-  sex: "MALE" | "FEMALE";
-  specialization: string;
-  department: string;
-  plantillaPosition: string;
-}
-
-export interface DesignationFormState {
-  isClassAdviser: boolean;
-  advisorySectionId: string;
-  ancillaryRoles: string[];
-  designationNotes: string;
-  effectiveFrom: string;
-  effectiveTo: string;
-  isCustomPeriod: boolean;
-  reason: string;
-}
-
-export type DesignationDrawerTab = "designation" | "schedule-notes" | "review";
 export type TeacherStatusFilter = "all" | "active" | "inactive";
 export type TeacherDesignationFilter = string;
 
@@ -173,8 +108,3 @@ export type TeacherServiceStatus =
   | "RETIRED_RESIGNED"
   | "DROPPED_FROM_ROLLS";
 
-export interface UpdateServiceStatusInput {
-  status: TeacherServiceStatus;
-  effectiveDate: string;
-  remarks?: string | null;
-}

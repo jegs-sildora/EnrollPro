@@ -95,11 +95,7 @@ export default function DashboardIndex() {
 
   if (isArchived) {
     content = <PhaseOfficial stats={stats} />;
-  } else if (
-    phase === "PRE_REGISTRATION"
-    || phase === "BOSY_ENROLLMENT"
-    || phase === "OFFICIAL_ENROLLMENT"
-  ) {
+  } else if (phase === "OFFICIAL_ENROLLMENT") {
     content = <PhaseOfficial stats={stats} />;
   } else if (phase === "EOSY_CLOSING") {
     content = <PhaseEOSY stats={stats} />;

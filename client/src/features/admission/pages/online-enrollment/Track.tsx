@@ -1,240 +1,130 @@
-import { AnimatedError } from "@/shared/components/AnimatedError";
-import { motion, AnimatePresence } from "motion/react";
+import { zodResolver } from "@/shared/lib/zodResolver";
+import type { ApplicationTrackResponse } from "@enrollpro/shared";
+import { format } from "date-fns";
+import {
+  AlertCircle,
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  FileText,
+  LogOut,
+  Search,
+  User,
+} from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
+import { AnimatedError } from "@/shared/components/AnimatedError";
+import api from "@/shared/api/axiosInstance";
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
-import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
-
-import {
-  Search,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  FileText,
-  LogOut,
-  ArrowLeft,
-  Calendar,
-  User,
-  BookOpen,
-} from "lucide-react";
-import api from "@/shared/api/axiosInstance";
-import {
-  cn,
-} from "@/shared/lib/utils";
-import { format } from "date-fns";
-
-
+import { cn } from "@/shared/lib/utils";
 import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
 import { normalizeTrackingStatus } from "@/features/admission/components/trackingState";
-import type { ApplicationTrackResponse } from "@enrollpro/shared";
-
 
 const trackSchema = z.object({
   trackingNumber: z
     .string()
-    .min(1, "Tracking number is required")
-    .regex(
-      /^[A-Z]{3,5}-\d{4}-\d{5}$/,
-      "Invalid tracking number format (e.g. REG-2026-00001)",
-    ),
+    .trim()
+    .min(8, "Enter the tracking number provided after enrollment.")
+    .max(24, "The tracking number is too long.")
+    .regex(/^[A-Za-z0-9-]+$/, "Use only the letters, numbers, and dashes shown in the tracking number."),
 });
 
 type TrackFormData = z.infer<typeof trackSchema>;
 
 interface ApplicationStatus extends ApplicationTrackResponse {
   firstName: string;
-  middleName?: string;
+  middleName: string | null;
   lastName: string;
-  applicantName?: string;
-  program?: string;
-  rank?: number;
-  isPassed?: boolean;
-  compositeScore?: number;
-  trackingStatus?: string;
-  learningProgram?: string;
   createdAt: string;
   gradeLevel: { name: string };
-  enrollment?: { section: { name: string }; enrolledAt: string };
-  assessments?: {
-    type: string;
-    scheduledDate?: string;
-    scheduledTime?: string;
-    venue?: string;
-    notes?: string;
-  }[];
-  rejectionReason?: string;
-  scpDetail?: { scpType: string };
-
+  enrollment: {
+    section: { name: string };
+    enrolledAt: string;
+  } | null;
 }
 
-const statusConfig: Record<
-  string,
-  {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-    desc: string;
-  }
-> = {
-  SUBMITTED_BEERF: {
-    label: "Enrollment Submitted",
-    icon: Clock,
-    color: "text-slate-600 bg-slate-50 border-slate-200",
-    desc: "Your online enrollment form has been received and is waiting for review by the Registrar's Office.",
-  },
-  SUBMITTED_BEEF: {
-    label: "Submitted BEEF",
-    icon: Clock,
-    color: "text-slate-600 bg-slate-50 border-slate-200",
-    desc: "Your Basic Education Enrollment Form has been received and is queued for registrar review.",
-  },
-  SUBMITTED: {
-    label: "Submitted",
-    icon: Clock,
-    color: "text-slate-600 bg-slate-50 border-slate-200",
-    desc: "We’ve received your application! It's currently in the queue for its initial review.",
-  },
+interface StatusPresentation {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  description: string;
+}
+
+const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
   IN_REVIEW: {
-    label: "In Review",
+    label: "For Registrar Review",
     icon: Search,
-    color: "text-blue-600 bg-blue-50 border-blue-200",
-    desc: "The Registrar is currently looking over your documents. We'll keep you posted!",
-  },
-  VERIFIED: {
-    label: "Verified",
-    icon: CheckCircle2,
-    color: "text-cyan-600 bg-cyan-50 border-cyan-200",
-    desc: "Your submitted records have been verified by the Registrar.",
-  },
-  UNDER_REVIEW: {
-    label: "Under Review",
-    icon: Search,
-    color: "text-blue-600 bg-blue-50 border-blue-200",
-    desc: "The Registrar is currently looking over your documents. We'll keep you posted!",
-  },
-  FOR_REVISION: {
-    label: "For Revision",
-    icon: AlertCircle,
-    color: "text-orange-600 bg-orange-50 border-orange-200",
-    desc: "We found a small detail that needs a quick fix. Please check your email for instructions on how to update your application.",
-  },
-  ELIGIBLE: {
-    label: "Eligible",
-    icon: CheckCircle2,
-    color: "text-cyan-600 bg-cyan-50 border-cyan-200",
-    desc: "Great news! You’ve passed the basic screening and are all set for the next step.",
-  },
-  ASSESSMENT_IN_PROGRESS: {
-    label: "Assessment In Progress",
-    icon: Calendar,
-    color: "text-amber-600 bg-amber-50 border-amber-200",
-    desc: "Assessment activities are ongoing. Please monitor your schedule details below.",
-  },
-  EXAM_SCHEDULED: {
-    label: "Assessment Scheduled",
-    icon: Calendar,
-    color: "text-amber-600 bg-amber-50 border-amber-200",
-    desc: "It’s game time! Your assessment has been scheduled—you can find all the details right below.",
-  },
-  ASSESSMENT_TAKEN: {
-    label: "Assessment Taken",
-    icon: CheckCircle2,
-    color: "text-purple-600 bg-purple-50 border-purple-200",
-    desc: "Nice work on completing your assessment! We’re now busy processing your results.",
-  },
-  PASSED: {
-    label: "Passed",
-    icon: CheckCircle2,
-    color: "text-green-600 bg-green-50 border-green-200",
-    desc: "Congratulations! You’ve passed the assessment. Your interview and enrollment are just around the corner!",
-  },
-  INTERVIEW_SCHEDULED: {
-    label: "Interview Scheduled",
-    icon: Calendar,
-    color: "text-violet-600 bg-violet-50 border-violet-200",
-    desc: "We’d love to chat! Your interview is now scheduled—check the details below to prepare.",
+    color: "border-slate-200 bg-slate-50 text-slate-700",
+    description:
+      "The Registrar's Office is checking the learner record and available school requirements.",
   },
   QUALIFIED_FOR_ENROLLMENT: {
-    label: "Qualified for Enrollment",
+    label: "Ready for Class Sectioning",
     icon: CheckCircle2,
-    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-    desc: "Your application is qualified. Proceed with registrar enrollment completion requirements.",
-  },
-  READY_FOR_ENROLLMENT: {
-    label: "Ready for Enrollment",
-    icon: CheckCircle2,
-    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-    desc: "You are now ready for enrollment. Coordinate with the registrar to complete your official enrollment.",
-  },
-  TEMPORARILY_ENROLLED: {
-    label: "Temporarily Enrolled",
-    icon: Clock,
-    color: "text-blue-600 bg-blue-50 border-blue-200",
-    desc: "You’re all set to start attending classes while we help you finalize your remaining documents!",
+    color: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    description:
+      "The learner is enrolled and waiting for assignment to a class section.",
   },
   ENROLLED: {
-    label: "Enrolled",
+    label: "Officially Enrolled",
     icon: CheckCircle2,
-    color: "text-green-700 bg-green-100 border-green-300",
-    desc: "Welcome to the family! You are now officially enrolled for this school year.",
-  },
-  FAILED_ASSESSMENT: {
-    label: "Not Qualified",
-    icon: AlertCircle,
-    color: "text-amber-600 bg-amber-50 border-amber-200",
-    desc: "While you didn't meet the criteria for this specific program, the Registrar may be able to offer you a spot in a regular section.",
-  },
-  NOT_QUALIFIED: {
-    label: "Not Qualified",
-    icon: AlertCircle,
-    color: "text-amber-600 bg-amber-50 border-amber-200",
-    desc: "While you didn't meet the criteria for this specific program, the Registrar may be able to offer you a spot in a regular section.",
+    color: "border-green-300 bg-green-100 text-green-800",
+    description:
+      "The learner has an official class section for the active school year.",
   },
   REJECTED: {
-    label: "Rejected",
+    label: "Not Accepted",
     icon: AlertCircle,
-    color: "text-red-600 bg-red-50 border-red-200",
-    desc: "Thank you for your interest. Unfortunately, we aren't able to move forward with your application at this time.",
+    color: "border-red-200 bg-red-50 text-red-700",
+    description:
+      "The application was not accepted. Contact the Registrar's Office for the recorded reason.",
   },
   WITHDRAWN: {
     label: "Withdrawn",
     icon: AlertCircle,
-    color: "text-zinc-400 bg-zinc-50 border-zinc-200",
-    desc: "This application has been withdrawn. We're here if you decide to join us in the future!",
+    color: "border-slate-200 bg-slate-50 text-slate-700",
+    description: "The enrollment application was withdrawn.",
   },
   TRANSFERRED: {
     label: "Transferred Out",
     icon: LogOut,
-    color: "text-slate-600 bg-slate-100 border-slate-300",
-    desc: "The learner has been officially transferred to another school.",
+    color: "border-slate-200 bg-slate-50 text-slate-700",
+    description: "The learner transferred to another school.",
   },
   DROPPED: {
     label: "Dropped",
     icon: LogOut,
-    color: "text-slate-600 bg-slate-100 border-slate-300",
-    desc: "The learner has been dropped from the system.",
+    color: "border-slate-200 bg-slate-50 text-slate-700",
+    description:
+      "The learner is no longer in the active class list for this school year.",
   },
 };
 
 const LEARNING_PROGRAM_LABELS: Record<string, string> = {
-  REGULAR: "Regular Program",
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering",
+  REGULAR: "Basic Education Curriculum",
+  LATE_ENROLLEE: "Basic Education Curriculum",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING:
+    "Science, Technology and Engineering",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
   SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism",
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE:
+    "Special Program in Foreign Language",
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
-    "Special Program in Tech-Voc Education",
+    "Special Program in Technical-Vocational Education",
 };
 
 interface TrackApplicationProps {
@@ -244,10 +134,9 @@ interface TrackApplicationProps {
 export default function TrackApplication({
   onResultsFetched,
 }: TrackApplicationProps) {
-  const [status, setStatus] = useState<ApplicationStatus | null>(null);
+  const [application, setApplication] = useState<ApplicationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
 
   const {
     register,
@@ -259,253 +148,234 @@ export default function TrackApplication({
   });
 
   const handleBackToSearch = () => {
-    setStatus(null);
+    setApplication(null);
     setError("");
     onResultsFetched?.(false);
     reset({ trackingNumber: "" });
   };
 
-
-
   const onTrack = async (data: TrackFormData) => {
     setIsLoading(true);
     setError("");
-    setStatus(null);
+    setApplication(null);
     onResultsFetched?.(false);
 
     try {
-      // Small delay for professional feel
-      await new Promise((resolve) => setTimeout(resolve, 500));
       const response = await api.get<ApplicationStatus>(
-        `/applications/track/${data.trackingNumber}`,
+        `/applications/track/${data.trackingNumber.trim().toUpperCase()}`,
       );
-      setStatus(response.data);
+      setApplication(response.data);
       onResultsFetched?.(true);
-    } catch (err: unknown) {
+    } catch (requestError: unknown) {
       const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ||
-        "Could not find an application with that tracking number.";
-      setError(message);
+        typeof requestError === "object" &&
+        requestError !== null &&
+        "response" in requestError
+          ? (
+              requestError as {
+                response?: { data?: { message?: string } };
+              }
+            ).response?.data?.message
+          : undefined;
+      setError(
+        message ??
+          "No enrollment application matches that tracking number.",
+      );
       onResultsFetched?.(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const normalizedStatus = status
-    ? normalizeTrackingStatus(
-      status.status || status.trackingStatus || status.rawStatus,
-    )
-    : null;
-  const rawStatusKey = String(
-    status?.rawStatus || status?.status || status?.trackingStatus || "",
-  )
-    .trim()
-    .toUpperCase();
-  const displayStatusKey =
-    (rawStatusKey && statusConfig[rawStatusKey] ? rawStatusKey : null) ||
-    normalizedStatus ||
-    "SUBMITTED";
-  const config = displayStatusKey
-    ? statusConfig[displayStatusKey] || statusConfig.SUBMITTED
-    : null;
-  const Icon = config?.icon;
-
-  const learningProgramType =
-    status?.learningProgram ??
-    status?.scpDetail?.scpType ??
-    status?.applicantType ??
-    "REGULAR";
-  const learningProgramLabel =
-    LEARNING_PROGRAM_LABELS[learningProgramType] ||
-    learningProgramType.replace(/_/g, " ");
-
-
-  const nextStepsStatus =
-    status?.rawStatus ||
-    status?.status ||
-    status?.trackingStatus ||
-    normalizedStatus ||
-    undefined;
-
+  const normalizedStatus = application
+    ? normalizeTrackingStatus(application.status)
+    : "IN_REVIEW";
+  const presentation =
+    STATUS_PRESENTATION[normalizedStatus] ?? STATUS_PRESENTATION.IN_REVIEW;
+  const StatusIcon = presentation.icon;
+  const programLabel = application
+    ? LEARNING_PROGRAM_LABELS[application.applicantType] ??
+      application.applicantType.replaceAll("_", " ")
+    : "";
 
   return (
-<div
-      className={cn(
-        "max-w-4xl mx-auto p-4 md:p-8 transition-all duration-500",
-      )}>
-      <Card
-        className={cn(
-          "shadow-xl border-2 border-primary/5 rounded-lg overflow-hidden transition-all duration-500 w-full",
-        )}>
-        <CardHeader className="bg-primary text-primary-foreground p-8 text-center">
-          <CardTitle className="text-2xl font-extrabold uppercase ">
-            Application Monitor
+    <div className="mx-auto max-w-4xl p-4 md:p-8">
+      <Card className="w-full overflow-hidden rounded-lg border-2 border-primary/5 shadow-xl">
+        <CardHeader className="bg-primary p-8 text-center text-primary-foreground">
+          <CardTitle className="text-2xl font-extrabold uppercase">
+            Enrollment Application Status
           </CardTitle>
-          <CardDescription className="text-primary-foreground/90 font-extrabold">
-            Enter your tracking number to check your status
+          <CardDescription className="font-extrabold text-primary-foreground/90">
+            Enter the tracking number issued after submitting the enrollment
+            form
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8">
-          <form
-            onSubmit={handleSubmit(onTrack)}
-            className="space-y-6">
+          <form onSubmit={handleSubmit(onTrack)} className="space-y-6">
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-base font-extrabold uppercase  text-foreground">
+                className="text-base font-extrabold uppercase"
+              >
                 Tracking Number
               </Label>
               <div className="relative">
                 <Input
                   id="trackingNumber"
                   {...register("trackingNumber")}
-                  placeholder="REG-2026-00001"
-                  className={cn(
-                    "h-14 pl-12 text-lg font-extrabold border-2 transition-all",
-                    errors.trackingNumber
-                      ? "border-primary focus-visible:ring-primary"
-                      : "border-primary/10 focus-visible:border-primary focus-visible:ring-primary/5",
-                  )}
+                  placeholder="EN-26-ABC123"
+                  className="h-14 border-2 pl-12 text-lg font-extrabold uppercase"
                   autoComplete="off"
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               </div>
-              <AnimatedError error={errors.trackingNumber?.message as string || errors.trackingNumber as unknown as string} />
+              <AnimatedError error={errors.trackingNumber?.message} />
             </div>
-
             <Button
               type="submit"
-              className="w-full h-14 text-lg font-extrabold uppercase  bg-primary hover:bg-primary/90 transition-all text-primary-foreground"
-              disabled={isLoading}>
-              {isLoading ? "Searching..." : "Check Status"}
+              className="h-14 w-full text-lg font-extrabold uppercase"
+              disabled={isLoading}
+            >
+              {isLoading ? "Checking..." : "Check Status"}
             </Button>
           </form>
 
-
-
           <AnimatePresence mode="wait">
-            {error && (
+            {error ? (
               <motion.div
+                key="tracking-error"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-8 p-6 bg-primary/5 border-2 border-primary/20 rounded-2xl flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+                exit={{ opacity: 0, y: -8 }}
+                className="mt-8 flex items-start gap-4 rounded-lg border-2 border-primary/20 bg-primary/5 p-6"
+              >
+                <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
                 <div>
-                  <h4 className="font-extrabold text-primary uppercase ">
+                  <h4 className="font-extrabold uppercase text-primary">
                     Application Not Found
                   </h4>
-                  <p className="text-base leading-tight font-extrabold text-primary/80 mt-1">
+                  <p className="mt-1 text-base font-extrabold text-primary/80">
                     {error}
                   </p>
                 </div>
               </motion.div>
-            )}
+            ) : null}
 
-            {status && config && (
+            {application ? (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-10 space-y-8">
+                key={application.trackingNumber}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mt-10 space-y-8"
+              >
                 <div
                   className={cn(
-                    "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
-                    config.color,
-                  )}>
-                  <div className="p-4 rounded-full bg-muted shadow-sm border border-current/20">
-                    {Icon && <Icon className="w-10 h-10" />}
-                  </div>
+                    "flex flex-col items-center gap-4 rounded-lg border-2 p-8 text-center",
+                    presentation.color,
+                  )}
+                >
+                  <StatusIcon className="h-10 w-10" />
                   <div>
-                    <h3 className="text-base font-extrabold uppercase  opacity-70">
+                    <p className="text-sm font-extrabold uppercase">
                       Current Status
-                    </h3>
-                    <p className="text-3xl font-extrabold uppercase  mt-1">
-                      {config.label}
                     </p>
+                    <h3 className="mt-1 text-2xl font-extrabold uppercase">
+                      {presentation.label}
+                    </h3>
                   </div>
-                  <p className="text-base font-extrabold leading-relaxed max-w-sm opacity-90">
-                    {config.desc}
+                  <p className="max-w-lg text-base font-semibold">
+                    {presentation.description}
                   </p>
                 </div>
 
-                <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
-                  <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-sm font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
-                      <User className="w-3 h-3" /> Learner's Name
-                    </p>
-                    <p className="font-extrabold text-primary uppercase">
-                      {status.lastName}, {status.firstName}{" "}
-                      {status.middleName || ""}
-                    </p>
-                  </div>
-                  <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-sm font-extrabold uppercase text-foreground  flex items-center justify-center gap-1.5">
-                      <FileText className="w-3 h-3" /> Grade Level
-                    </p>
-                    <p className="font-extrabold text-primary uppercase">
-                      {status.gradeLevel.name}
-                    </p>
-                  </div>
-
-                  <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-sm font-extrabold uppercase text-primary/60  flex items-center justify-center gap-1.5">
-                      <BookOpen className="w-3 h-3" /> Learning Program
-                    </p>
-                    <p className="font-extrabold text-primary uppercase">
-                      {learningProgramLabel}
-                    </p>
-                  </div>
-
-
-
-
-
-                  <div className="p-5 bg-muted border border-border rounded-2xl space-y-1 text-center md:col-span-3">
-                    <p className="text-sm font-extrabold uppercase text-foreground ">
-                      Date Submitted
-                    </p>
-                    <p className="text-base font-extrabold text-foreground">
-                      {format(new Date(status.createdAt), "MMMM dd, yyyy")}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
+                  <InfoBlock
+                    icon={User}
+                    label="Learner Name"
+                    value={`${application.lastName}, ${application.firstName} ${application.middleName ?? ""}`}
+                  />
+                  <InfoBlock
+                    icon={FileText}
+                    label="Incoming Grade"
+                    value={application.gradeLevel.name}
+                  />
+                  <InfoBlock
+                    icon={BookOpen}
+                    label="Curriculum Program"
+                    value={programLabel}
+                  />
+                  {application.enrollment?.section ? (
+                    <InfoBlock
+                      icon={CheckCircle2}
+                      label="Class Section"
+                      value={application.enrollment.section.name}
+                      className="md:col-span-3"
+                    />
+                  ) : null}
+                  <InfoBlock
+                    icon={Clock}
+                    label="Date Submitted"
+                    value={format(
+                      new Date(application.createdAt),
+                      "MMMM dd, yyyy",
+                    )}
+                    className="md:col-span-3"
+                  />
                 </div>
 
-                <div className="p-6 bg-muted border border-border rounded-2xl space-y-4">
-                  <h4 className="text-base leading-tight font-extrabold uppercase  text-foreground">
-                    Dynamic Next Steps
+                <div className="space-y-4 rounded-lg border bg-muted p-6">
+                  <h4 className="text-base font-extrabold uppercase">
+                    Enrollment Progress
                   </h4>
                   <TrackingNextSteps
-                    applicantType={status.applicantType}
-                    programType={status.programType}
-                    status={nextStepsStatus}
-                    currentStep={status.currentStep}
+                    applicantType={application.applicantType}
+                    programType={application.programType}
+                    status={application.status}
+                    currentStep={application.currentStep}
                   />
-
-                  <div className="flex items-center justify-center mt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11 px-5 font-extrabold w-full sm:w-auto"
-                      onClick={handleBackToSearch}>
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to Search
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="pt-4 text-center">
-                  <p className="text-sm font-extrabold text-foreground/60 uppercase ">
-                    Last updated: {format(new Date(), "hh:mm a")}
-                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full font-extrabold sm:w-auto"
+                    onClick={handleBackToSearch}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Check Another Tracking Number
+                  </Button>
                 </div>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
-
-
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function InfoBlock({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "space-y-1 rounded-lg border border-primary/10 bg-primary/5 p-5",
+        className,
+      )}
+    >
+      <p className="flex items-center justify-center gap-1.5 text-sm font-extrabold uppercase">
+        <Icon className="h-4 w-4" />
+        {label}
+      </p>
+      <p className="font-extrabold uppercase text-primary">{value.trim()}</p>
     </div>
   );
 }

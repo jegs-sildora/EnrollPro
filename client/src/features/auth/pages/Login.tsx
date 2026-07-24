@@ -34,6 +34,7 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore, type SettingsState } from "@/store/settings.slice";
+import type { Role } from "@enrollpro/shared";
 
 type AuthResponseUser = {
   id: number;
@@ -42,7 +43,7 @@ type AuthResponseUser = {
   email: string | null;
   employeeId: string | null;
   accountName: string | null;
-  roles: string[];
+  roles: Role[];
   mustChangePassword?: boolean;
 };
 
@@ -64,14 +65,6 @@ function getAcronym(value: string | undefined | null): string {
   if (!value) return "EnrollPro";
   const clean = value.trim();
   if (!clean) return "EnrollPro";
-
-  if (clean === "Hinigaran National High School") {
-    return "HNHS";
-  }
-
-  if (clean === "Enriqueta Montilla de Esteban Memorial High School") {
-    return "EMEMHS";
-  }
 
   const stopWords = new Set(["de", "del", "dela", "of", "the", "and", "ng", "mga", "at"]);
   const parts = clean
@@ -141,7 +134,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
           <div>
             <span className="text-xl font-extrabold tracking-widest text-primary-foreground uppercase">{schoolName}</span>
             <p className="text-white/70 text-base mt-1">
-              Integrated Administrative, Academic & Support Systems
+              Integrated School Information Management Systems
             </p>
           </div>
 
@@ -160,28 +153,28 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
           {[
             {
               icon: UserCheck,
-              title: "EnrollPro: Learner Registry & Intake",
-              desc: "Single Source of Truth for identity, SF1 staging, and class sectioning.",
+              title: "EnrollPro: Enrollment and Sectioning",
+              desc: "Manage learner enrollment and School Form 1 class placement.",
             },
             {
               icon: BookOpen,
-              title: "AIMS: Lessons & Remediation",
-              desc: "LMS module for daily course content, online quizzes, and mastery analytics.",
+              title: "AIMS: Learning and Remediation",
+              desc: "Access daily lesson materials, student assessments, and academic intervention programs.",
             },
             {
               icon: Calendar,
-              title: "ATLAS: Master Scheduling & Loading",
-              desc: "Timetable manager for faculty teaching loads, room assignments, and campus mapping.",
+              title: "ATLAS: Class Programs and Teaching Loads",
+              desc: "Manage faculty subject assignments, advisory classes, and classroom schedules.",
             },
             {
               icon: ClipboardList,
-              title: "SMART: Academic Grading & Records",
-              desc: "Performance repository for quarterly grades, daily attendance, and historical class records.",
+              title: "SMART: Grading and Class Records",
+              desc: "Encode quarterly grades, monitor daily attendance, and process School Form 5.",
             },
             {
               icon: Recycle,
-              title: "MRF: Campus Eco-Waste Management",
-              desc: "Sanitation ledger for solid waste collections, kilogram tracking, and litter reports.",
+              title: "MRF: Facilities and Waste Management",
+              desc: "Monitor daily school maintenance, solid waste collection, and recycling initiatives.",
             },
           ].map((feature) => (
             <div
@@ -507,8 +500,8 @@ export default function Login() {
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-base leading-tight">
-                Sign in to continue to{" "}
-                <span className="font-extrabold text-primary">EnrollPro</span>
+                Sign in to access{" "}
+                <span className="font-extrabold text-primary">Integrated School Systems</span>
               </CardDescription>
             </CardHeader>
 

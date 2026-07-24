@@ -4,8 +4,6 @@ import { prisma } from "../../lib/prisma.js";
 
 export const OFFICIAL_ENROLLMENT_STATUSES = [
   "OFFICIALLY_ENROLLED",
-  "ENROLLED",
-  "SECTIONED",
 ] satisfies ApplicationStatus[];
 
 type JsonRecord = Record<string, Prisma.JsonValue>;

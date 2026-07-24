@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useForm, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/shared/lib/zodResolver";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sileo } from "sileo";
@@ -89,7 +89,7 @@ export function WalkInEncodePanel() {
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
     queryFn: async () => {
-      const res = await api.get<ActiveSchoolYearGradeLevelsResponse>("/school-year/grade-levels");
+      const res = await api.get<ActiveSchoolYearGradeLevelsResponse>("/school-years/grade-levels");
       return res.data;
     },
   });

@@ -48,14 +48,11 @@ const PROGRAM_LABELS: Record<string, string> = {
 const ACTIVE_APPLICATION_STATUSES = [
   "READY_FOR_SECTIONING",
   "OFFICIALLY_ENROLLED",
-  "ENROLLED",
-  "SECTIONED",
 ] as const;
 
 const PENDING_ENROLLMENT_STATUSES = new Set<string>([
   "PENDING_VERIFICATION",
   "PENDING_CONFIRMATION",
-  "AWAITING_VERIFICATION",
 ]);
 
 function hasText(value: string | null | undefined): boolean {
@@ -135,7 +132,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     });
     const gradeTenId = gradeLevels.find((gradeLevel) => gradeLevel.displayOrder === 10)?.id;
 
-    const currentMonth = new Date().getMonth() + 1;
     const activeOfficialEnrollmentTotal = isArchived
       ? prisma.enrollmentHistory.count({ where: { schoolYearId } })
       : Promise.all([
@@ -161,12 +157,8 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const [
       enrolledTotal,
       unassignedTotal,
-      pendingSF10Count,
       activeSchoolTallyBOSY,
       activeSchoolTallyLate,
-      transferredIn,
-      transferredOut,
-      droppedOut,
       eosyFinalizedSections,
       eosyPendingSections,
       promotedTotal,
@@ -176,22 +168,10 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       activeOfficialEnrollmentTotal,
       isArchived ? Promise.resolve(0) : prisma.enrollmentApplication.count({ where: { status: "READY_FOR_SECTIONING", enrollmentRecord: { is: null }, schoolYearId } }),
       isArchived ? Promise.resolve(0) : prisma.enrollmentRecord.count({ 
-        where: { sf10Status: { in: ["PENDING", "REQUESTED"] }, schoolYearId } 
-      }),
-      isArchived ? Promise.resolve(0) : prisma.enrollmentRecord.count({ 
         where: { isLateEnrollee: false, schoolYearId } 
       }),
       isArchived ? Promise.resolve(0) : prisma.enrollmentRecord.count({ 
         where: { isLateEnrollee: true, schoolYearId } 
-      }),
-      prisma.sF4Log.count({ 
-        where: { movementType: "TRANSFER_IN", month: currentMonth } 
-      }),
-      prisma.sF4Log.count({ 
-        where: { movementType: "TRANSFER_OUT", month: currentMonth } 
-      }),
-      prisma.sF4Log.count({ 
-        where: { movementType: "DROPPED_OUT", month: currentMonth } 
       }),
       
       // EOSY Queries
@@ -728,112 +708,6 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       }
     }
 
-    const expiredTemporaryAdmissionsCount = await prisma.enrollmentApplication.count({
-      where: { schoolYearId, isTemporarilyEnrolled: true }
-    });
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const deadline = new Date(currentYear, 9, 31, 23, 59, 59);
-    const isTemporaryAdmissionExpired = now > deadline;
-
-    const logs = await prisma.sF4Log.findMany({
-      where: {
-        year: { gte: currentYear - 1 }
-      },
-      select: {
-        movementType: true,
-        month: true,
-        year: true,
-      }
-    });
-
-    const monthNamesShort = Array.of(
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    );
-    const schoolYearMonths = Array.of(6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4);
-
-    const movementTrend = schoolYearMonths.map(m => {
-      let trIn = 0;
-      let trOut = 0;
-      let drOut = 0;
-      logs.forEach(log => {
-        if (log.month === m) {
-          if (log.movementType === "TRANSFER_IN") trIn += 1;
-          else if (log.movementType === "TRANSFER_OUT") trOut += 1;
-          else if (log.movementType === "DROPPED_OUT") drOut += 1;
-        }
-      });
-      return {
-        month: monthNamesShort.at(m - 1) || "Unknown",
-        transferredIn: trIn,
-        transferredOut: trOut,
-        droppedOut: drOut,
-      };
-    });
-
-    const reasonsMap = new Map<string, number>();
-    const standardReasons = Array.of(
-      "Financial", "Illness", "Family Matters", "Relocation", "Bullying", "Child Labor", "Unknown"
-    );
-    standardReasons.forEach(r => reasonsMap.set(r, 0));
-
-    if (isArchived) {
-      const archivedDropoutCount = await prisma.enrollmentHistory.count({
-        where: { schoolYearId, eosyStatus: "DROPPED_OUT" },
-      });
-      reasonsMap.set("Unknown", archivedDropoutCount);
-    } else {
-      const dropOutRecords = await prisma.enrollmentRecord.findMany({
-        where: { schoolYearId, dropOutDate: { not: null } },
-        select: { dropOutReason: true },
-      });
-
-      dropOutRecords.forEach((record) => {
-        const reason = record.dropOutReason || "Unknown";
-        const currentValue = reasonsMap.get(reason) || 0;
-        reasonsMap.set(reason, currentValue + 1);
-      });
-    }
-
-    const dropoutDistribution = Array.from(reasonsMap.entries()).map(([reason, count]) => ({
-      reason,
-      count,
-    }));
-
-    const complianceApps = await prisma.enrollmentApplication.findMany({
-      where: { schoolYearId },
-      select: {
-        isMissingSf9: true,
-        learner: {
-          select: {
-            hasPsaBirthCertificate: true,
-          }
-        }
-      }
-    });
-
-    let completeCount = 0;
-    let missingPsaCount = 0;
-    let missingSf9Count = 0;
-
-    complianceApps.forEach(app => {
-      const hasPsa = app.learner?.hasPsaBirthCertificate ?? false;
-      const isMissingSf9 = app.isMissingSf9;
-      if (!hasPsa) {
-        missingPsaCount += 1;
-      } else if (isMissingSf9) {
-        missingSf9Count += 1;
-      } else {
-        completeCount += 1;
-      }
-    });
-
-    const documentCompliance = Array.of(
-      { name: "Complete Verified Records", value: completeCount },
-      { name: "Missing PSA Birth Certificate", value: missingPsaCount },
-      { name: "Missing SF9 Report Card", value: missingSf9Count }
-    );
-
     const activeEnrolledCount = isArchived
       ? await prisma.enrollmentHistory.count({
           where: { schoolYearId, eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT"] } }
@@ -943,23 +817,12 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       sf1Compliance,
       activeTally,
       eosyReadiness,
-      v85Stats: {
+      classesOngoing: {
         lateIntakeCount: isArchived ? 0 : lateLearnersToProcess,
-        pendingSF10Count,
         overdueDocumentsCount: isArchived ? 0 : documentFollowUpLearners.size,
         activeSchoolTallyBOSY,
         activeSchoolTallyLate,
         hasSectionLoadDisparity,
-        isTemporaryAdmissionExpired,
-        expiredTemporaryAdmissionsCount,
-        movementTrend,
-        dropoutDistribution,
-        documentCompliance,
-        sf4Vitals: {
-          transferredIn,
-          transferredOut,
-          droppedOut
-        }
       },
       eosyStats: {
         eosyFinalizedSections,
@@ -992,68 +855,5 @@ export async function getStats(req: Request, res: Response): Promise<void> {
   } catch (error) {
     console.error("Dashboard fetch error:", error);
     res.status(500).json({ message: "Failed to fetch dashboard stats" });
-  }
-}
-
-export async function lockPhaseAndExportSF1(req: Request, res: Response): Promise<void> {
-  try {
-    const schoolYearId = req.schoolYearId;
-    if (!schoolYearId) {
-      res.status(400).json({ message: "No active school year" });
-      return;
-    }
-
-    const userId = req.user?.userId;
-
-    await prisma.schoolYear.update({
-      where: { id: schoolYearId },
-      data: { 
-        status: "ACTIVE",
-        bosyLockedAt: new Date(),
-        bosyLockedById: userId || null
-      }
-    });
-
-    // Mock an excel file buffer for the SF1 Baseline
-    const dummyExcelContent = Buffer.from("DUMMY_EXCEL_FILE_CONTENT_FOR_SF1");
-    
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="SF1_BOSY_BASELINE.xlsx"');
-    res.send(dummyExcelContent);
-  } catch (error) {
-    console.error("Failed to lock phase:", error);
-    res.status(500).json({ message: "Failed to lock phase and export" });
-  }
-}
-
-export async function getAdminStats(req: Request, res: Response) {
-  res.json({
-    activeUsers: 42,
-    usersByRole: { REGISTRAR: 2, ADMIN: 1, PRINCIPAL: 1, TEACHER: 38 },
-    emailDeliveryRate: "99.9%",
-    systemStatus: "ACTIVE",
-  });
-}
-
-export async function getDemographics(req: Request, res: Response) {
-  res.json({
-    ageGroups: [{ name: "11-12", value: 30 }, { name: "13-14", value: 45 }, { name: "15-16", value: 25 }],
-    genderRatio: [{ name: "Male", value: 48 }, { name: "Female", value: 52 }],
-    municipalityDistribution: [{ name: "City Center", value: 60 }, { name: "Suburbs", value: 40 }]
-  });
-}
-
-export async function getRecentActivity(req: Request, res: Response) {
-  try {
-    const logs = await prisma.auditLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: {
-        user: { select: { email: true, roles: true } }
-      }
-    });
-    res.json({ activity: logs });
-  } catch (err) {
-    res.status(500).json({ message: "Failed" });
   }
 }

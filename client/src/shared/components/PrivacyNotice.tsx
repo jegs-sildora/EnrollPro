@@ -14,12 +14,10 @@ import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
 interface PrivacyNoticeProps {
-  variant: "BEERF" | "BEEF";
   onAccept: () => void;
 }
 
 export default function PrivacyNotice({
-  variant,
   onAccept,
 }: PrivacyNoticeProps) {
   const [agreed, setAgreed] = useState(false);
@@ -34,8 +32,6 @@ export default function PrivacyNotice({
       setHasScrolledNotice(true);
     }
   };
-
-  const isBeerf = variant === "BEERF";
 
   return (
     <div className="mx-auto p-4 md:p-8">
@@ -62,27 +58,15 @@ export default function PrivacyNotice({
               {/* Header Section */}
               <section>
                 <h3 className="font-extrabold text-foreground mb-1 text-base uppercase">
-                  {schoolName} - DATA PRIVACY NOTICE ({variant})
+                  {schoolName} - DATA PRIVACY NOTICE (BEEF)
                 </h3>
                 <p className="text-foreground text-base mb-2">
-                  {isBeerf ? (
-                    <>
-                      The Department of Education (DepEd) and {schoolName}{" "}
-                      collect personal information only for the{" "}
-                      <strong>ONLINE ENROLLMENT</strong> process. This helps the
-                      school review the learner's information and prepare the
-                      official enrollment record for the incoming School Year.
-                    </>
-                  ) : (
-                    <>
-                      The Department of Education (DepEd) and {schoolName}{" "}
-                      collect personal and academic information for the purpose
-                      of <strong>OFFICIAL ENROLLMENT</strong>. This information
-                      is required to establish the learner's official record in
-                      the Learner Information System (LIS) and for the issuance
-                      of official school documents.
-                    </>
-                  )}
+                  The Department of Education (DepEd) and {schoolName}{" "}
+                  collect personal and academic information for the purpose of{" "}
+                  <strong>OFFICIAL ENROLLMENT</strong>. This information is
+                  required to establish the learner's official record in the
+                  Learner Information System (LIS) and for the issuance of
+                  official school documents.
                 </p>
               </section>
 
@@ -94,49 +78,25 @@ export default function PrivacyNotice({
                   Why we collect your information
                 </h4>
                 <ul className="list-disc pl-5 space-y-2 text-foreground text-base">
-                  {isBeerf ? (
-                    <>
-                      <li>
-                        To process and validate online enrollment applications.
-                      </li>
-                      <li>
-                        To estimate learner distribution per Grade Level and
-                        program.
-                      </li>
-                      <li>
-                        To pre-register or update profiles in the DepEd LIS.
-                      </li>
-                      <li>
-                        To communicate updates regarding registration status.
-                      </li>
-                      <li>
-                        To identify potential beneficiaries for equity programs.
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li>
-                        To facilitate official enrollment and sectioning for the
-                        current School Year.
-                      </li>
-                      <li>
-                        To maintain accurate permanent records (SF10) in the
-                        LIS.
-                      </li>
-                      <li>
-                        To track academic progress, attendance, and promotion
-                        status.
-                      </li>
-                      <li>
-                        To issue certifications, report cards (SF9), and other
-                        credentials.
-                      </li>
-                      <li>
-                        To ensure compliance with DepEd policies and educational
-                        standards.
-                      </li>
-                    </>
-                  )}
+                  <li>
+                    To facilitate official enrollment and sectioning for the
+                    current School Year.
+                  </li>
+                  <li>
+                    To maintain accurate permanent records (SF10) in the LIS.
+                  </li>
+                  <li>
+                    To track academic progress, attendance, and promotion
+                    status.
+                  </li>
+                  <li>
+                    To issue certifications, report cards (SF9), and other
+                    credentials.
+                  </li>
+                  <li>
+                    To ensure compliance with DepEd policies and educational
+                    standards.
+                  </li>
                 </ul>
               </section>
 
@@ -153,9 +113,8 @@ export default function PrivacyNotice({
                   </p>
                   <p>
                     <strong>Sensitive Information:</strong>{" "}
-                    {isBeerf
-                      ? "Disability status, IP affiliation, 4Ps ID, and school records."
-                      : "Academic grades, behavioral records, health information, and family background."}
+                    Academic grades, behavioral records, health information,
+                    and family background.
                   </p>
                 </div>
               </section>
@@ -228,7 +187,7 @@ export default function PrivacyNotice({
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}
-              {isBeerf ? "Online Enrollment" : "Official Enrollment"}.
+              Official Enrollment.
               <span className="text-destructive ml-1">*</span>
             </Label>
           </div>
@@ -236,7 +195,7 @@ export default function PrivacyNotice({
             onClick={onAccept}
             disabled={!agreed}
             className="w-full h-12 text-base font-extrabold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
-            Continue to {isBeerf ? "Registration" : "Enrollment"} Form
+            Continue to Enrollment Form
           </Button>
         </CardFooter>
       </Card>

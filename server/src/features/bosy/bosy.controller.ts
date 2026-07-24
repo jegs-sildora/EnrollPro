@@ -10,7 +10,6 @@ import {
   bulkConfirmReturn,
   getJHSCompleters,
   syncBOSYQueue,
-  getPhase2Queue,
   getPreviousSections,
   type BOSYQueueState,
 } from "./bosy.service.js";
@@ -26,7 +25,6 @@ const BOSY_QUEUE_STATES = new Set<BOSYQueueState>([
   "CONFIRMED",
   "TEMPORARY",
   "TRANSFER_REQUEST",
-  "ENROLLED",
 ]);
 
 function parseQueueState(value: unknown): BOSYQueueState | undefined {
@@ -371,50 +369,6 @@ export async function getJHSCompletersHandler(
     next(error);
   }
 }
-
-export async function getPhase2QueueHandler(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
-    if (!schoolYearId) {
-      res.status(400).json({ message: "schoolYearId query param is required." });
-      return;
-    }
-    const page = parsePositiveInt(req.query.page, 1);
-    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 200);
-    const search =
-      typeof req.query.search === "string" && req.query.search.length > 0
-        ? req.query.search
-        : undefined;
-
-    const rawStatus = req.query.status;
-    const status = Array.isArray(rawStatus)
-      ? (rawStatus as string[])
-      : typeof rawStatus === "string"
-        ? rawStatus.split(",").map((s) => s.trim()).filter(Boolean)
-        : [];
-    const rawChannel = req.query.admissionChannel;
-    const admissionChannel =
-      rawChannel === "ONLINE" || rawChannel === "F2F" ? rawChannel : undefined;
-
-    const result = await getPhase2Queue({
-      schoolYearId,
-      status: status.length > 0 ? status : ["VERIFIED"],
-      admissionChannel,
-      search,
-      page,
-      limit,
-    });
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-}
-
-
 
 export async function getPreviousSectionsHandler(
   req: Request,

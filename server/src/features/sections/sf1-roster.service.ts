@@ -593,7 +593,6 @@ export async function commitSf1RosterImport({
             learnerType: "NEW_ENROLLEE",
             admissionChannel: "F2F",
             status: "OFFICIALLY_ENROLLED",
-            intakeMethod: "BEEF_FULL",
             learningModalities: ["FACE_TO_FACE"],
             contactNumber: row.contactNumber,
             guardianName: row.guardianName,

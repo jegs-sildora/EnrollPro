@@ -1,151 +1,60 @@
-# SMART API Guide (Fetch from EnrollPro)
+# SMART API Guide
 
-This guide shows how SMART can fetch enrolled learner records from EnrollPro.
+Last reviewed: 2026-07-24
 
-It also shows how to use the generic learner route as a compatibility fallback.
+## Boundary
 
-## What SMART Should Fetch
+SMART owns grades, learning-area results, final promotion outcomes, and attendance. EnrollPro owns learner identity, enrollment, official section placement, personnel, and school-year context.
 
-SMART should fetch these feeds:
+SMART must not create EnrollPro enrollment records. EnrollPro must not fabricate SMART outcomes.
 
-1. Default feed (public main source):
+## Configuration
 
-- `GET /api/integration/v1/default/smart/students`
-
-2. Generic paginated feed:
-
-- `GET /api/integration/v1/students`
-
-## API-First Rule for SMART Startup
-
-SMART must wait for EnrollPro API readiness before fetching learners.
-
-Even if teammate starts SMART with:
-
-- `pnpm dev`
-- `npm run dev`
-- `npm run serve`
-
-SMART should do health checks first, then sync.
-
-See [Subsystem API Quick Start](./SUBSYSTEM_API_QUICK_START.md) for shared startup flow.
-
-## Connection Model (Host and Team)
-
-- Host machine only: Node connects to PostgreSQL at `localhost:5432`.
-- Team machines: fetch API from host at `https://dev-jegs.buru-degree.ts.net`.
-
-API endpoint bases for this system:
-
-- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
-- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
-
-## 1. Environment Values
-
-```env
-ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
-ENROLLPRO_API_BASE_URL="https://dev-jegs.buru-degree.ts.net/api"
-ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
+```text
+ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
 ```
 
-## 2. Health Checks Before Fetch
+EnrollPro connects to SMART using server-side integration configuration.
 
-### Public health
+## SMART Reads
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/health
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Verify EnrollPro integration availability |
+| GET | `/school-year` | Resolve active or explicit year |
+| GET | `/default/smart/students` | Current or archived SMART-ready learner roster |
+| GET | `/sections` | Section and adviser context |
+| GET | `/sections/:sectionId/learners` | Current or archived section masterlist |
+
+Pass `schoolYearId` for reconciliation. Current accepted enrollment statuses include officially enrolled, enrolled, and sectioned records.
+
+## Final Outcome Synchronization
+
+EnrollPro calls:
+
+```text
+POST /api/integration/smart/sections/:id/sync-grades
 ```
 
-### Integration health
+SMART must return, for every active learner:
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
-```
+- valid LRN
+- final general average
+- final outcome
+- learning-area results
+- publication time
+- revision
 
-## 3. Fetch SMART Default Feed
+The supported final outcomes are promoted, conditionally promoted, retained, dropped out, and transferred out. Missing, malformed, or unpublished outcomes are rejected.
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/smart/students
-```
+## EOSY And Rollover
 
-Optional school year override:
+SMART synchronization occurs before section finalization and before SF5 or SF6 artifacts are recorded. A corrected SMART result invalidates stale form checksums. EnrollPro activates the new year only after the atomic rollover commits.
 
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/smart/students?schoolYearId=12"
-```
+SMART refreshes the new active roster after receiving the post-commit integration invalidation or observing the new value from `/school-year`.
 
-If `schoolYearId` is not provided, EnrollPro uses active school year.
+## Attendance
 
-## 4. Fetch Generic Students Feed
+Attendance remains in SMART. EnrollPro provides identity, section, and school-year context only.
 
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/students?schoolYearId=12&page=1&limit=50"
-```
-
-Use this route when SMART needs generic learner filters or a compatibility fallback.
-
-## 5. Minimal Field Mapping for SMART
-
-Map these fields into SMART student records:
-
-- `enrollmentApplicationId` -> `sourceEnrollmentId`
-- `lrn` -> `lrn`
-- `fullName` -> `studentName`
-- `gradeLevel.id` -> `gradeLevelId`
-- `gradeLevel.name` -> `gradeLevelName`
-- `section.id` -> `sectionId`
-- `section.name` -> `sectionName`
-- `section.programType` -> `programType`
-- `schoolYear.id` -> `schoolYearId`
-- `schoolYear.yearLabel` -> `schoolYearLabel`
-- `enrolledAt` -> `enrolledAt`
-
-Meta fields to keep for logging:
-
-- `meta.sourceSystem`
-- `meta.generatedAt`
-- `meta.scopeSchoolYearId`
-- `meta.totalRows`
-
-## 6. Simple JS Fetch Example
-
-```js
-async function fetchSmartStudents() {
-  const integrationBase =
-    process.env.ENROLLPRO_INTEGRATION_BASE_URL ||
-    "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
-
-  const defaultRes = await fetch(`${integrationBase}/default/smart/students`);
-
-  if (defaultRes.ok) {
-    return defaultRes.json();
-  }
-
-  const genericRes = await fetch(`${integrationBase}/students`);
-  if (!genericRes.ok) {
-    throw new Error("Both default and generic SMART feeds failed");
-  }
-
-  return genericRes.json();
-}
-```
-
-## 7. Suggested Sync Flow in SMART
-
-1. Wait for API health checks.
-2. Pull default students feed.
-3. Validate learner and section fields.
-4. Upsert records in SMART.
-5. Save sync metadata (`generatedAt`, school year, total rows).
-6. Use the generic feed only when additional filters are required.
-
-## 8. Common Errors
-
-- `503`: Service degraded.
-
-## 9. Done Checklist
-
-- SMART can pass both health checks.
-- SMART can fetch default students feed.
-- SMART can fetch the generic students feed.
-- SMART waits for API readiness before first sync.
+See [School Year Lifecycle](ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) and [EnrollPro API](ENROLLPRO-API.md).

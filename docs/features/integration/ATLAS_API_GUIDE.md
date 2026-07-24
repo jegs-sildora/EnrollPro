@@ -1,153 +1,54 @@
-# ATLAS API Guide (Fetch from EnrollPro)
+# ATLAS API Guide
 
-This guide shows how ATLAS can fetch teacher and designation data from EnrollPro.
+Last reviewed: 2026-07-24
 
-It also shows how to use the generic faculty route as a compatibility fallback.
+## Boundary
 
-## What ATLAS Should Fetch
+ATLAS owns schedules and teaching loads. EnrollPro owns personnel identity, employee number, section structure, adviser assignment, enrollment, and school-year context.
 
-ATLAS should fetch these feeds:
+EnrollPro stores `TeacherSchedulePeriod` only as the synchronized SF7 reporting snapshot.
 
-1. Default feed:
+## Configuration
 
-- `GET /api/integration/v1/default/faculty`
+ATLAS reads EnrollPro through:
 
-2. Generic paginated feed:
-
-- `GET /api/integration/v1/faculty`
-
-## API-First Rule for ATLAS Startup
-
-Before ATLAS starts sync jobs, EnrollPro API must already be healthy.
-
-If your teammate runs:
-
-- `pnpm dev`
-- `npm run dev`
-- `npm run serve`
-
-ATLAS should still wait for EnrollPro health before first fetch.
-
-Use this order:
-
-1. EnrollPro host runs API first.
-2. ATLAS machine runs ATLAS app command.
-3. ATLAS checks health endpoints.
-4. ATLAS starts faculty sync.
-
-See [Subsystem API Quick Start](./SUBSYSTEM_API_QUICK_START.md) for shared setup.
-
-## Connection Model (Host and Team)
-
-- Host machine only: Node connects to PostgreSQL at `localhost:5432`.
-- Team machines: fetch API from host at `https://dev-jegs.buru-degree.ts.net`.
-
-API endpoint bases for this system:
-
-- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
-- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
-
-## 1. Environment Values
-
-```env
-ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
-ENROLLPRO_API_BASE_URL="https://dev-jegs.buru-degree.ts.net/api"
-ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
+```text
+ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
 ```
 
-## 2. Health Checks Before Fetch
+EnrollPro connects back to ATLAS with server-only values:
 
-### Public health
-
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/health
+```text
+ATLAS_API_BASE_URL=https://configured-atlas-host
+ATLAS_API_KEY=server-secret
+ATLAS_SCHOOL_ID=optional-external-school-id
 ```
 
-### Integration health
+## EnrollPro Feeds
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
-```
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Verify integration availability |
+| GET | `/school-year` | Resolve active or explicit school year |
+| GET | `/default/faculty` | Active faculty, employee numbers, roles, designations, and advisership |
+| GET | `/sections` | Grade, program, section, capacity, and adviser context |
 
-## 3. Fetch ATLAS Default Feed
+## EnrollPro Trigger And Snapshot Routes
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty
-```
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/integration/atlas/sync-faculty` | Ask ATLAS to reconcile EnrollPro faculty |
+| GET | `/api/integration/atlas/faculty/:id/teaching-load` | Read a teacher teaching load through EnrollPro |
+| POST | `/api/sf7/sync-atlas` | Replace EnrollPro SF7 schedule snapshots with published ATLAS assignments |
+| GET | `/api/teachers/:id/schedule-periods` | Read the stored school-year SF7 snapshot |
+| PUT | `/api/teachers/:id/schedule-periods` | Authorized manual replacement of the reporting snapshot |
 
-Optional school year override:
+## Matching
 
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty?schoolYearId=12"
-```
+`Teacher.employeeId` maps to the ATLAS employee code. School and school-year identifiers must be sent explicitly. Invalid, unpublished, or malformed assignments are skipped with a reason; they are not fabricated.
 
-If `schoolYearId` is not provided, EnrollPro uses active school year.
+## Rollover
 
-## 4. Fetch Generic Faculty Feed
+ATLAS refreshes school-year, section, faculty, and adviser context only after the EnrollPro atomic rollover commits. New sections contain no advisers and require new-year assignment.
 
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/faculty?schoolYearId=12&page=1&limit=50"
-```
-
-Use this paginated feed when ATLAS needs filtering or incremental ingestion.
-
-## 5. Minimal Field Mapping for ATLAS
-
-Map these fields into ATLAS teacher records:
-
-- `teacherId` -> `atlasTeacherId`
-- `employeeId` -> `employeeCode`
-- `fullName` -> `displayName`
-- `specialization` -> `subjectSpecialization`
-- `isClassAdviser` -> `isAdvisor`
-- `advisorySection.name` -> `advisorSectionName`
-
-Meta fields to keep for logging:
-
-- `meta.sourceSystem`
-- `meta.generatedAt`
-- `meta.scopeSchoolYearId`
-- `meta.totalRows`
-
-## 6. Simple JS Fetch Example
-
-```js
-async function fetchAtlasFaculty() {
-  const integrationBase =
-    process.env.ENROLLPRO_INTEGRATION_BASE_URL ||
-    "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
-
-  const defaultRes = await fetch(`${integrationBase}/default/faculty`);
-
-  if (defaultRes.ok) {
-    return defaultRes.json();
-  }
-
-  const genericRes = await fetch(`${integrationBase}/faculty`);
-  if (!genericRes.ok) {
-    throw new Error("Both default and generic ATLAS feeds failed");
-  }
-
-  return genericRes.json();
-}
-```
-
-## 7. Suggested Sync Flow in ATLAS
-
-1. Wait for EnrollPro health checks.
-2. Pull default feed.
-3. Validate required fields.
-4. Upsert teacher records in ATLAS.
-5. Save `generatedAt` and `scopeSchoolYearId` for trace logs.
-6. Use the generic faculty feed only when pagination or filtering is required.
-
-## 8. Common Errors
-
-- `503`: API degraded.
-
-## 9. Done Checklist
-
-- ATLAS can pass both health checks.
-- ATLAS can fetch default faculty feed.
-- ATLAS can fetch the generic faculty feed.
-- ATLAS waits for API readiness before sync starts.
+See [EnrollPro API](ENROLLPRO-API.md) and [Personnel and SF7](../personnel/PERSONNEL_AND_SF7.md).

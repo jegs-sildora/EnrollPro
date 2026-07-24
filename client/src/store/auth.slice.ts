@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Role } from "@enrollpro/shared";
 
-export type AuthRole = Role | "REGISTRAR" | (string & {});
+export type AuthRole = Role;
 
 interface User {
   id: number;

@@ -42,7 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { useSectioningStore } from "@/store/sectioning.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import {
   DropdownMenu,

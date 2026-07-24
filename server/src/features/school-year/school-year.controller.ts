@@ -7,7 +7,6 @@ export {
 export {
   createSchoolYear,
   rolloverSchoolYear,
-  updateRolloverDraft,
   updateDates,
   updateSchoolYear,
 } from "./controllers/school-year.admin.controller.js";

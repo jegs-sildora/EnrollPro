@@ -61,6 +61,29 @@ export const exportSF1 = async (req: Request, res: Response) => {
 
     if (!section) return res.status(404).json({ message: 'Section not found' });
 
+    const isPrivilegedStaff = req.user?.roles.some(
+      (role) => role === 'HEAD_REGISTRAR' || role === 'SYSTEM_ADMIN',
+    );
+
+    if (!isPrivilegedStaff) {
+      const ownsSection = await prisma.sectionAdviser.count({
+        where: {
+          sectionId: section.id,
+          schoolYearId: section.schoolYearId,
+          status: 'ACTIVE',
+          teacher: {
+            userId: req.user?.userId,
+          },
+        },
+      });
+
+      if (ownsSection === 0) {
+        return res.status(403).json({
+          message: 'Only the assigned class adviser may export this SF1.',
+        });
+      }
+    }
+
     const enrollmentRecords = await prisma.enrollmentRecord.findMany({
       where: { sectionId: section.id },
       include: {

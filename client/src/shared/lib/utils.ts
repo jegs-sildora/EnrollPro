@@ -162,39 +162,6 @@ export function toUpperCaseRecursive<T>(obj: T): T {
 }
 
 /**
- * Checks if all mandatory documents for a specific learner type are met based on the checklist.
- */
-export function isMandatoryDocumentsMet(
-  learnerType: string | null | undefined,
-  checklist: Record<string, unknown> | null | undefined,
-): boolean {
-  if (!checklist || !learnerType) return false;
-
-  const requirements = [
-    {
-      key: "isPsaBirthCertPresented",
-      isMandatory: learnerType !== "CONTINUING",
-    },
-    {
-      key: "isSf9Submitted",
-      isMandatory: learnerType !== "CONTINUING",
-    },
-    {
-      key: "isConfirmationSlipReceived",
-      isMandatory: learnerType === "CONTINUING",
-    },
-    {
-      key: "isUndertakingSigned",
-      isMandatory: learnerType === "TRANSFEREE",
-    },
-  ];
-
-  return requirements
-    .filter((r) => r.isMandatory)
-    .every((r) => !!checklist[r.key]);
-}
-
-/**
  * Maps learner type enum tokens to human-readable DepEd category labels.
  */
 export function getLearnerTypeLabel(type: string | null | undefined): string {
@@ -237,7 +204,6 @@ export function getRoleColorClasses(role: string | null | undefined): string {
     case "SYSTEM_ADMIN":
       return "bg-slate-800 text-white border-slate-900";
     case "HEAD_REGISTRAR":
-    case "REGISTRAR":
       return "bg-red-800 text-white border-red-900";
     case "CLASS_ADVISER":
       return "bg-emerald-600 text-white border-emerald-700";
@@ -326,99 +292,6 @@ export function getLearnerStatusColorClasses(
 }
 
 /**
- * Returns DepEd-aligned Tailwind CSS classes for Application & Admission Statuses.
- * Uses a Semantic Intensity Model (Muted for pipeline, Solid for terminal).
- */
-export function getApplicationStatusColorClasses(
-  status: string | null | undefined,
-): string {
-  if (!status) return "bg-slate-50 text-slate-500 border-slate-200";
-
-  const s = status.toUpperCase();
-
-  // 1. Pipeline / Transitional (Muted Blues/Indigos)
-  if (
-    s === "SUBMITTED" ||
-    s === "SUBMITTED_BEERF" ||
-    s === "SUBMITTED_BEEF" ||
-    s === "PRE_REGISTERED"
-  ) {
-    return "bg-blue-50 text-blue-700 border-blue-200";
-  }
-  if (
-    s === "UNDER_REVIEW" ||
-    s === "ELIGIBLE" ||
-    s === "IN_PROGRESS" ||
-    s === "PENDING_VERIFICATION" ||
-    s === "AWAITING_VERIFICATION" ||
-    s === "VERIFIED" ||
-    s === "PENDING_BEEF"
-  ) {
-    return "bg-indigo-50 text-indigo-700 border-indigo-200";
-  }
-
-  // 2. Progression (Soft Greens/Teals/Purples)
-  if (
-    s === "ASSESSMENT_TAKEN" ||
-    s === "PASSED" ||
-    s === "QUALIFIED" ||
-    s === "READY_FOR_SECTIONING" ||
-    s === "READY_FOR_ENROLLMENT"
-  ) {
-    return "bg-teal-50 text-teal-700 border-teal-200";
-  }
-  if (s === "EXAM_SCHEDULED" || s === "INTERVIEW_SCHEDULED") {
-    return "bg-purple-50 text-purple-700 border-purple-200";
-  }
-
-  // 3. Warning State (High-Visibility Amber)
-  if (s === "TEMPORARILY_ENROLLED" || s === "PENDING_VERIFICATION") {
-    return "bg-amber-100 text-amber-800 border-amber-400 font-extrabold";
-  }
-
-  // 4. The Finish Line (Solid DepEd Royal Blue)
-  if (s === "ENROLLED" || s === "OFFICIALLY_ENROLLED") {
-    return "bg-blue-600 text-white font-extrabold shadow-sm border-none";
-  }
-
-  // 5. Specialized / Edge Cases
-  if (s === "DRAFT") {
-    return "bg-gray-50 text-gray-500 border border-gray-200 border-dashed";
-  }
-  if (s === "FOR_REVISION") {
-    return "bg-orange-50 text-orange-700 border-orange-300";
-  }
-  if (
-    s === "REJECTED" ||
-    s === "WITHDRAWN" ||
-    s === "FAILED" ||
-    s === "FAILED_ASSESSMENT" ||
-    s === "NOT_QUALIFIED"
-  ) {
-    return "bg-rose-50 text-rose-700 border-rose-200";
-  }
-  if (s === "LINKED") {
-    return "bg-violet-50 text-violet-700 border-violet-200";
-  }
-  if (s === "DROPPED_OUT") {
-    return "bg-red-100 text-red-700 border-red-300 font-extrabold";
-  }
-  if (s === "NO_LONGER_PARTICIPATING") {
-    return "bg-amber-100 text-amber-800 border-amber-400 font-extrabold";
-  }
-  if (
-    s === "TRANSFERRING_OUT" ||
-    s === "TRANSFERRED_OUT" ||
-    s === "DROPPED" ||
-    s === "TRANSFERRED"
-  ) {
-    return "bg-slate-200 text-slate-700 border-slate-300 font-extrabold";
-  }
-
-  return "bg-slate-50 text-slate-500 border-slate-200";
-}
-
-/**
  * Returns DepEd-aligned Tailwind CSS classes for Ancillary Role (Special Assignment) badges.
  * Level 3: Lightweight Tags (Outlined or pastel to prevent UI clutter)
  */
@@ -496,22 +369,18 @@ export function formatApplicationStatus(
   if (!status) return "N/A";
   const s = status.toUpperCase();
 
-  if (s === "PRE_REGISTERED") return "Pre-registered";
-  if (s === "UNDER_REVIEW") return "Under Review";
+  if (s === "PENDING_VERIFICATION") return "Pending Verification";
+  if (s === "PENDING_CONFIRMATION") return "Pending Enrollment";
   if (s === "FOR_REVISION") return "For Revision";
-  if (s === "ASSESSMENT_TAKEN") return "Assessment Taken";
-  if (s === "TEMPORARILY_ENROLLED") return "Temporarily Enrolled";
   if (s === "OFFICIALLY_ENROLLED") return "Officially Enrolled";
-  if (s === "SUBMITTED_BEERF") return "Submitted (BEERF)";
-  if (s === "SUBMITTED_BEEF") return "Submitted (BEEF)";
-  if (s === "PENDING_BEEF") return "Pending BEEF";
   if (s === "WITHDRAWN") return "Withdrawn";
   if (s === "READY_FOR_SECTIONING") return "Ready for Sectioning";
-  if (s === "READY_FOR_ENROLLMENT") return "Ready for Enrollment";
   if (s === "TRANSFERRING_OUT") return "Transferring Out";
   if (s === "TRANSFERRED_OUT") return "Transferred Out";
-  if (s === "DROPPED_OUT") return "Dropped Out";
-  if (s === "NO_LONGER_PARTICIPATING") return "NLP";
+  if (s === "DROPPED") return "Dropped";
+  if (s === "ARCHIVED_NO_SHOW") return "No Show";
+  if (s === "REMEDIAL_HOLD") return "For Summer Grade Review";
+  if (s === "REMEDIAL_RESOLVED") return "Summer Grade Resolved";
 
   return s
     .replaceAll("_", " ")

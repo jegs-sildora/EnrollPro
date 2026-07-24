@@ -36,7 +36,6 @@ model User {
   enrollmentRecords                    EnrollmentRecord[]
   recordedHealthRecords                HealthRecord[]          @relation("HealthRecordRecordedBy")
   learnerProfile                       Learner?                @relation("UserLearnerProfile")
-  lockedSchoolYears                    SchoolYear[]            @relation("SchoolYearLockedBy")
   approvedCalendarPolicies             SchoolYearCalendarPolicy[] @relation("CalendarPolicyApprovedBy")
   recordedSchoolFormArtifacts          SchoolFormArtifact[]    @relation("SchoolFormArtifactRecordedBy")
   updatedTeacherDesignations           TeacherDesignation[]    @relation("TeacherDesignationUpdatedBy")
@@ -152,10 +151,7 @@ model SchoolYear {
   clonedFromId           Int?                    @map("cloned_from_id")
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   isEosyFinalized        Boolean                 @default(false) @map("is_eosy_finalized")
-  sectioningConfig       Json?                   @map("sectioning_config")
   settingsSnapshot       Json?                   @map("settings_snapshot")
-  bosyLockedAt           DateTime?               @map("bosy_locked_at") @db.Timestamptz(6)
-  bosyLockedById         Int?                    @map("bosy_locked_by_id")
   term1End               DateTime?               @map("term1_end") @db.Date
   term1Start             DateTime?               @map("term1_start") @db.Date
   term2End               DateTime?               @map("term2_end") @db.Date
@@ -169,7 +165,6 @@ model SchoolYear {
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
   schoolSettings         SchoolSetting[]
-  bosyLockedBy           User?                   @relation("SchoolYearLockedBy", fields: [bosyLockedById], references: [id])
   clonedFrom             SchoolYear?             @relation("SchoolYearClone", fields: [clonedFromId], references: [id])
   clones                 SchoolYear[]            @relation("SchoolYearClone")
   sectionAdvisers        SectionAdviser[]
@@ -331,7 +326,6 @@ model Learner {
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
   isConditionallyEnrolled Boolean                 @default(false) @map("is_conditionally_enrolled")
   missingRequirements     String[]                @map("missing_requirements")
-  sf4Logs                 SF4Log[]
   @@map("learners")
 }
 
@@ -363,13 +357,11 @@ model EnrollmentApplication {
   isProfileLocked            Boolean                   @default(false) @map("is_profile_locked")
   profileLockedAt            DateTime?                 @map("profile_locked_at") @db.Timestamptz(6)
   profileLockedById          Int?                      @map("profile_locked_by_id")
-  batchIntakeMethod          String?                   @map("batch_intake_method")
   confirmationConsent        Boolean?                  @map("confirmation_consent")
   contactNumber              String?                   @map("contact_number")
   guardianName               String?                   @map("guardian_name")
   hasSf9CertificationLetter  Boolean                   @default(false) @map("has_sf9_certification_letter")
   hasUnsettledPrivateAccount Boolean                   @default(false) @map("has_unsettled_private_account")
-  intakeMethod               IntakeMethod              @default(BEEF_FULL) @map("intake_method")
   isMissingSf9               Boolean                   @default(false) @map("is_missing_sf9")
   originatingSchoolName      String?                   @map("originating_school_name")
   temporaryStatusDeadline    DateTime?                 @map("temporary_status_deadline") @db.Date
@@ -402,7 +394,6 @@ model EnrollmentPreviousSchool {
   schoolName     String?               @map("school_name")
   schoolAddress  String?               @map("school_address")
   schoolType     String?               @map("school_type")
-  natScore       Float?                @map("nat_score")
   generalAverage Float?                @map("general_average")
   application    EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
@@ -465,7 +456,6 @@ model EnrollmentRecord {
   confirmationConsent     Boolean?              @map("confirmation_consent")
   contactNumber           String?               @map("contact_number")
   dateSectioned           DateTime?             @map("date_sectioned") @db.Timestamptz(6)
-  intakeMethod            String?               @map("enrollment_record_intake_method")
   guardianName            String?               @map("guardian_name")
   sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
   sf1Remarks              String?               @map("sf1_remarks")
@@ -482,7 +472,6 @@ model EnrollmentRecord {
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
-  sf10Status              SF10Status            @default(PENDING) @map("sf10_status")
   @@map("enrollment_records")
 }
 
@@ -689,41 +678,22 @@ enum Sex {
 }
 
 enum ApplicationStatus {
-  PRE_REGISTERED
   PENDING_VERIFICATION
   READY_FOR_SECTIONING
   OFFICIALLY_ENROLLED
-  SUBMITTED_BEERF
-  PENDING_BEEF
-  AWAITING_VERIFICATION
-  SUBMITTED_BEEF
-  VERIFIED
-  UNDER_REVIEW
   FOR_REVISION
-  ELIGIBLE
-  EXAM_SCHEDULED
-  ASSESSMENT_TAKEN
-  PASSED
-  INTERVIEW_SCHEDULED
-  READY_FOR_ENROLLMENT
   PENDING_CONFIRMATION
-  TEMPORARILY_ENROLLED
-  FAILED_ASSESSMENT
-  ENROLLED
   REJECTED
   WITHDRAWN
   TRANSFERRING_OUT
   TRANSFERRED_OUT
   DROPPED
-  SECTIONED
   ARCHIVED_NO_SHOW
   REMEDIAL_HOLD
   REMEDIAL_RESOLVED
 }
 
 enum SystemAcademicPhase {
-  PRE_REGISTRATION
-  BOSY_ENROLLMENT
   OFFICIAL_ENROLLMENT
   CLASSES_ONGOING
   EOSY_CLOSING
@@ -781,27 +751,6 @@ enum AdmissionChannel {
   @@map("admission_channel")
 }
 
-enum DocumentType {
-  PSA_BIRTH_CERTIFICATE
-  SECONDARY_BIRTH_PROOF
-  SF9_REPORT_CARD
-  SF10_PERMANENT_RECORD
-  GOOD_MORAL_CERTIFICATE
-  MEDICAL_CERTIFICATE
-  CERTIFICATE_OF_RECOGNITION
-  MEDICAL_EVALUATION
-  PEPT_AE_CERTIFICATE
-  PWD_ID
-  PSA_MARRIAGE_CERTIFICATE
-  UNDERTAKING
-  AFFIDAVIT_OF_UNDERTAKING
-  CONFIRMATION_SLIP
-  OTHERS
-  WRITING_PORTFOLIO
-
-  @@map("document_type")
-}
-
 enum LearnerType {
   NEW_ENROLLEE
   TRANSFEREE
@@ -851,30 +800,6 @@ enum FamilyRelationship {
   GUARDIAN
 
   @@map("family_relationship")
-}
-
-enum AssessmentKind {
-  INTERVIEW
-  QUALIFYING_EXAMINATION
-  PRELIMINARY_EXAMINATION
-  FINAL_EXAMINATION
-  GENERAL_ADMISSION_TEST
-  TALENT_AUDITION
-  PHYSICAL_FITNESS_TEST
-  SPORTS_SKILLS_TRYOUT
-  SKILLS_ASSESSMENT
-  STANDARDIZED_ADMISSION_TOOL
-  APTITUDE_TEST
-  INTEREST_INVENTORY
-
-  @@map("assessment_kind")
-}
-
-enum IntakeMethod {
-  BEEF_FULL
-  CONFIRMATION_SLIP
-
-  @@map("intake_method")
 }
 
 enum SectioningMethod {
@@ -989,21 +914,3 @@ model SchoolFormArtifact {
 }
 
 
-enum SF10Status {
-  PENDING
-  REQUESTED
-  RECEIVED
-}
-
-model SF4Log {
-  id            Int      @id @default(autoincrement())
-  learnerId     Int      @map("learner_id")
-  movementType  String   @map("movement_type") // TRANSFER_IN, TRANSFER_OUT, DROPPED_OUT
-  month         Int      // 1-12
-  year          Int
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  learner       Learner  @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-
-  @@map("sf4_logs")
-}

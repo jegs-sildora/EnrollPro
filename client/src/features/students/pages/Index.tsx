@@ -101,7 +101,6 @@ import { useUnsavedChangesPrompt } from "@/shared/hooks/useUnsavedChanges";
 interface Student {
   id: number;
   learningProgram: string;
-  tleSpecialization?: string | null;
   dateEnrolled: string;
   lrn: string;
   fullName: string;
@@ -682,7 +681,6 @@ export default function Students() {
       ...detail,
       learnerStatus: detail.learnerStatus,
       learningProgram: "REGULAR", // Default fallback, though ideally fetched
-      tleSpecialization: null,
       dateEnrolled: detail.enrollment?.enrolledAt || detail.createdAt,
       lifecycleOutcome: detail.enrollment?.eosyStatus || null,
       dropOutReason: detail.enrollment?.dropOutReason || null,

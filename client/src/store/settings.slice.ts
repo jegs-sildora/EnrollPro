@@ -9,7 +9,6 @@ export interface PaletteColor {
 }
 
 interface ColorScheme {
-  accent_hsl: string;
   accent_foreground?: string;
   palette?: PaletteColor[];
   extracted_at: string;
@@ -46,12 +45,11 @@ export interface SettingsState {
     | "REGULAR_ENROLLMENT"
     | "CLOSED"
     | "OVERRIDE";
-  systemPhase: "PRE_REGISTRATION" | "BOSY_ENROLLMENT" | "OFFICIAL_ENROLLMENT" | "CLASSES_ONGOING" | "EOSY_CLOSING" | null;
+  systemPhase: "OFFICIAL_ENROLLMENT" | "CLASSES_ONGOING" | "EOSY_CLOSING" | null;
   systemStatus:
     | "ACTIVE"
     | "ARCHIVED";
   globalDefaultPassword: string;
-  bosyLockedAt: string | null;
   /** Session-level override for browsing a different SY */
   viewingSchoolYearId: number | null;
   /** Status of the currently-viewed SY (e.g. 'ARCHIVED', 'ACTIVE') */
@@ -131,7 +129,6 @@ export const useSettingsStore = create<SettingsState>()(
       enrollmentPhase: "CLOSED",
       systemPhase: null,
       systemStatus: "ACTIVE",
-      bosyLockedAt: null,
       globalDefaultPassword: "DepEd2026!",
       viewingSchoolYearId: null,
       viewingSchoolYearStatus: null,

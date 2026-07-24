@@ -147,12 +147,12 @@ export async function saveCalendarPolicyDraft(
 
   if (!existingDraft) {
     broadcastSchoolYearInvalidation();
-    res.status(201).json({ calendarPolicy: policy, rolloverDraft: policy });
+    res.status(201).json({ calendarPolicy: policy });
     return;
   }
 
   broadcastSchoolYearInvalidation();
-  res.json({ calendarPolicy: policy, rolloverDraft: policy });
+  res.json({ calendarPolicy: policy });
 }
 
 export async function updateCalendarPolicyDraft(

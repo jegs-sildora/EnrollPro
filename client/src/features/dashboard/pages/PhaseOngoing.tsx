@@ -14,16 +14,16 @@ import type { DashboardStats } from "../types"
 
 export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
   const navigate = useNavigate()
-  const lateIntakeCount = stats.v85Stats.lateIntakeCount
+  const lateIntakeCount = stats.classesOngoing.lateIntakeCount
   const unassignedTotal = stats.kpiHeader.unassignedTotal
-  const overdueDocuments = stats.v85Stats.overdueDocumentsCount
+  const overdueDocuments = stats.classesOngoing.overdueDocumentsCount
   const overloadedSections = stats.sectionSaturation.filter(
     (section) => section.isOverCapacity,
   ).length
 
   return (
     <div className="space-y-4">
-      {(stats.v85Stats.hasSectionLoadDisparity || overloadedSections > 0) && (
+      {(stats.classesOngoing.hasSectionLoadDisparity || overloadedSections > 0) && (
         <Alert className="border-amber-300 bg-amber-50 text-amber-950">
           <AlertTriangle className="size-5 text-amber-700" />
           <AlertTitle className="font-extrabold">

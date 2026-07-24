@@ -1,150 +1,46 @@
-# AIMS API Guide (Fetch from EnrollPro)
+# AIMS API Guide
 
-This guide shows how AIMS can fetch learner context from EnrollPro.
+Last reviewed: 2026-07-24
 
-It also shows how to use the generic learner route as a compatibility fallback.
+## Boundary
 
-## What AIMS Should Fetch
+AIMS owns intervention, LMS, and learner-support activity. EnrollPro owns identity, enrollment, grade and section placement, personnel, and school-year context.
 
-AIMS should fetch these feeds:
+AIMS must not write EnrollPro learner placement or infer enrollment from its own course data.
 
-1. Default feed (public main source):
+## Configuration
 
-- `GET /api/integration/v1/default/aims/context`
-
-2. Generic paginated feed:
-
-- `GET /api/integration/v1/learners`
-
-## API-First Rule for AIMS Startup
-
-AIMS must not start learner sync until EnrollPro API is healthy.
-
-Even if teammate starts AIMS using:
-
-- `pnpm dev`
-- `npm run dev`
-- `npm run serve`
-
-AIMS should run health checks first, then fetch.
-
-See [Subsystem API Quick Start](./SUBSYSTEM_API_QUICK_START.md) for shared startup flow.
-
-## Connection Model (Host and Team)
-
-- Host machine only: Node connects to PostgreSQL at `localhost:5432`.
-- Team machines: fetch API from host at `https://dev-jegs.buru-degree.ts.net`.
-
-API endpoint bases for this system:
-
-- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
-- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
-
-## 1. Environment Values
-
-```env
-ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
-ENROLLPRO_API_BASE_URL="https://dev-jegs.buru-degree.ts.net/api"
-ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
+```text
+ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
 ```
 
-## 2. Health Checks Before Fetch
+## Recommended Reads
 
-### Public health
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Verify EnrollPro integration availability |
+| GET | `/school-year` | Resolve active or explicit school-year context |
+| GET | `/default/aims/context` | Read the AIMS-ready learner, grade, section, program, and remedial context |
+| GET | `/sections` | Read section metadata and advisers |
+| GET | `/default/faculty` | Read active personnel context where instructor identity is required |
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/health
-```
+Pass `schoolYearId` for deterministic reconciliation. Omit it only when the active year is intended.
 
-### Integration health
+## Current And Archived Data
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
-```
+Current feeds use live applications and enrollment records. Explicit archived-year requests use immutable enrollment history where the route supports historical reconciliation.
 
-## 3. Fetch AIMS Default Feed
+After atomic rollover, AIMS must wait for the new active year to be returned by `/school-year` before refreshing class context.
 
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/aims/context
-```
+## Privacy
 
-Optional school year override:
+Use only the fields required for interventions. Do not request or retain parent, health, password, or unrelated demographic data.
 
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/aims/context?schoolYearId=12"
-```
+## Errors
 
-If `schoolYearId` is not provided, EnrollPro uses active school year.
+- `400` invalid query
+- `404` school year or section not found
+- `500` unexpected EnrollPro failure
+- `503` dependency unavailable
 
-## 4. Fetch Generic Learner Feed
-
-```bash
-curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/learners?schoolYearId=12&page=1&limit=50"
-```
-
-Use this route when AIMS requires generic learner filters or a compatibility fallback.
-
-## 5. Minimal Field Mapping for AIMS
-
-Map these fields into AIMS learner context records:
-
-- `enrollmentApplicationId` -> `sourceEnrollmentId`
-- `learner.externalId` -> `learnerExternalId`
-- `learner.lrn` -> `learnerLrn`
-- `learner.fullName` -> `learnerName`
-- `applicantType` -> `intakeType`
-- `learnerType` -> `learnerType`
-- `learningModalities` -> `modalities`
-- `context.gradeLevel.name` -> `gradeName`
-- `context.section.name` -> `sectionName`
-- `context.schoolYear.yearLabel` -> `schoolYearLabel`
-
-Meta fields to keep for logging:
-
-- `meta.sourceSystem`
-- `meta.generatedAt`
-- `meta.scopeSchoolYearId`
-- `meta.totalRows`
-
-## 6. Simple JS Fetch Example
-
-```js
-async function fetchAimsContext() {
-  const integrationBase =
-    process.env.ENROLLPRO_INTEGRATION_BASE_URL ||
-    "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
-
-  const defaultRes = await fetch(`${integrationBase}/default/aims/context`);
-
-  if (defaultRes.ok) {
-    return defaultRes.json();
-  }
-
-  const genericRes = await fetch(`${integrationBase}/learners`);
-  if (!genericRes.ok) {
-    throw new Error("Both default and generic AIMS feeds failed");
-  }
-
-  return genericRes.json();
-}
-```
-
-## 7. Suggested Sync Flow in AIMS
-
-1. Wait for API health checks.
-2. Pull default context feed.
-3. Validate learner identity fields.
-4. Upsert context records into AIMS store.
-5. Save sync metadata (`generatedAt`, school year, total rows).
-6. Use the generic feed only when additional filters are required.
-
-## 8. Common Errors
-
-- `503`: Service degraded.
-
-## 9. Done Checklist
-
-- AIMS can pass both health checks.
-- AIMS can fetch default context feed.
-- AIMS can fetch the generic learner feed.
-- AIMS waits for API readiness before first sync.
+See [EnrollPro API](ENROLLPRO-API.md) for the authoritative route catalog and [School Year Lifecycle](ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) for refresh timing.

@@ -312,10 +312,7 @@ export default function Apply() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.3 }}>
-                      <PrivacyNotice
-                        variant="BEEF"
-                        onAccept={handleAccept}
-                      />
+                      <PrivacyNotice onAccept={handleAccept} />
                     </motion.div>
                   ) : !intakeChoice ? (
                     <motion.div

@@ -84,7 +84,6 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         enrollmentPhase: data.enrollmentPhase,
         systemPhase: data.systemPhase,
         systemStatus: data.systemStatus,
-        bosyLockedAt: data.bosyLockedAt,
         facebookPageUrl: data.facebookPageUrl,
         depedEmail: data.depedEmail,
         schoolWebsite: data.schoolWebsite,
@@ -119,10 +118,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   // Apply accent colors with WCAG contrast — use useLayoutEffect to prevent flash
   useLayoutEffect(() => {
     const root = document.documentElement;
-    const accent =
-      selectedAccentHsl ??
-      (colorScheme as { accent_hsl?: string } | null)?.accent_hsl ??
-      DEFAULT_ACCENT_HSL;
+    const accent = selectedAccentHsl ?? DEFAULT_ACCENT_HSL;
 
     const parts = accent.trim().split(/\s+/);
     const fg = contrastForeground(accent);

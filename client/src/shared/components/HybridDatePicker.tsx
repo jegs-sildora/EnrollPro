@@ -97,7 +97,9 @@ export function HybridDatePicker({
     if (parts[1]) parts[1] = parts[1].substring(0, 2);
     if (parts[2]) parts[2] = parts[2].substring(0, 4);
 
-    const isDeleting = (e.nativeEvent as any).inputType === "deleteContentBackward";
+    const isDeleting =
+      e.nativeEvent instanceof InputEvent &&
+      e.nativeEvent.inputType === "deleteContentBackward";
     if (!isDeleting) {
       if (parts.length === 1 && parts[0].length === 2) parts.push("");
       else if (parts.length === 2 && parts[1].length === 2) parts.push("");

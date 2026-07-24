@@ -13,12 +13,8 @@ import {
   downloadSectionSf1Template,
   getUnsectionedPool,
   inlineSlotLearner,
-  getBatchPrerequisites,
-  runBatchSectioning,
-  commitBatchSectioning,
   handoverAdviser,
   transferLearner,
-  autoDistributeUnassigned,
 } from "./sections.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -27,7 +23,6 @@ import { staffIntakePhaseGuard } from "../../middleware/staff-intake-phase.guard
 import {
   createSectionSchema,
   updateSectionSchema,
-  batchSectioningSchema,
   advisoryHandoverSchema,
   sf1ImportCommitSchema,
 } from "@enrollpro/shared";
@@ -59,38 +54,6 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   listEligibleAdvisers,
-);
-
-router.get(
-  "/batch-sectioning/prerequisites/:gradeLevelId",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  getBatchPrerequisites,
-);
-
-router.post(
-  "/batch-sectioning/run",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  validate(batchSectioningSchema),
-  runBatchSectioning,
-);
-
-router.post(
-  "/batch-sectioning/commit",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  validate(batchSectioningSchema),
-  staffIntakePhaseGuard,
-  commitBatchSectioning,
-);
-
-router.post(
-  "/auto-distribute",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  staffIntakePhaseGuard,
-  autoDistributeUnassigned,
 );
 
 router.get(

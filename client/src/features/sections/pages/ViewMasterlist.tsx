@@ -232,10 +232,23 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
       void queryClient.invalidateQueries({ queryKey: ["sectioning", "pool"] });
       void queryClient.invalidateQueries({ queryKey: ["sectioning", "sections-summary"] });
       void fetchMasterlistData();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof err.response === "object" &&
+        err.response !== null &&
+        "data" in err.response &&
+        typeof err.response.data === "object" &&
+        err.response.data !== null &&
+        "message" in err.response.data &&
+        typeof err.response.data.message === "string"
+          ? err.response.data.message
+          : "Could not unassign learner.";
       sileo.error({
         title: "Failed",
-        description: err.response?.data?.message || "Could not unassign learner.",
+        description: message,
       });
     } finally {
       setUnassignProcessingId(null);

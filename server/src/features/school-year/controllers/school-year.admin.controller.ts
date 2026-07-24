@@ -77,7 +77,7 @@ async function carryOverEligibleLearners(
           schoolYearId: sourceSchoolYearId,
           enrollmentApplication: {
             status: {
-              in: ["ENROLLED", "SECTIONED"],
+              in: ["OFFICIALLY_ENROLLED"],
             },
           },
         },
@@ -444,135 +444,6 @@ async function carryOverEligibleLearners(
       throw error;
     }
   }
-
-  export async function updateRolloverDraft(
-    req: Request,
-    res: Response): Promise<void> {
-    const { yearLabel, classOpeningDate, classEndDate } = req.body;
-
-    const parsedOpeningDate = parseDateInput(classOpeningDate);
-    if (!parsedOpeningDate) {
-      res.status(400).json({ message: "A valid classOpeningDate is required" });
-      return;
-    }
-
-    const normalizedOpeningDate =
-      normalizeDateToUtcNoon(parsedOpeningDate);
-    const openingYear = normalizedOpeningDate.getUTCFullYear();
-    const currentManilaYear = getCurrentManilaYear();
-
-    if (
-      openingYear < currentManilaYear ||
-      openingYear > currentManilaYear + 1
-    ) {
-      res.status(400).json({
-        message: `Class opening year must be within ${currentManilaYear} and ${currentManilaYear + 1}`,
-      });
-      return;
-    }
-
-    const parsedClassEndDate = classEndDate
-      ? parseDateInput(classEndDate)
-      : null;
-    if (classEndDate && !parsedClassEndDate) {
-      res.status(400).json({ message: "classEndDate must be a valid date" });
-      return;
-    }
-
-    const schedule = deriveSchoolYearScheduleFromOpeningDate(
-      normalizedOpeningDate,
-      parsedClassEndDate
-        ? normalizeDateToUtcNoon(parsedClassEndDate)
-        : undefined);
-
-    const resolvedYearLabel = resolveRequestedYearLabel(
-      yearLabel,
-      schedule.yearLabel);
-
-    let activeYear = null;
-    const schoolSetting = await prisma.schoolSetting.findFirst({
-      select: { activeSchoolYearId: true },
-    });
-
-    if (schoolSetting?.activeSchoolYearId) {
-      activeYear = await prisma.schoolYear.findUnique({
-        where: { id: schoolSetting.activeSchoolYearId },
-        select: { id: true, yearLabel: true },
-      });
-    }
-
-    if (!activeYear) {
-      activeYear = await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, yearLabel: true },
-      });
-    }
-
-    if (activeYear && resolvedYearLabel === activeYear.yearLabel) {
-      res.status(400).json({
-        message:
-          "Next school year label must be different from active school year.",
-      });
-      return;
-    }
-
-    const existingTargetYear = await prisma.schoolYear.findUnique({
-      where: { yearLabel: resolvedYearLabel },
-      select: { id: true, status: true },
-    });
-
-    if (
-      existingTargetYear &&
-      existingTargetYear.id !== activeYear?.id &&
-      existingTargetYear.status !== "ARCHIVED"
-    ) {
-      res
-        .status(400)
-        .json({ message: "A school year with this label already exists" });
-      return;
-    }
-
-    const draft = await prisma.schoolYear.upsert({
-      where: { yearLabel: resolvedYearLabel },
-      update: {
-        classOpeningDate: schedule.classOpeningDate,
-        classEndDate: schedule.classEndDate,
-        enrollOpenDate: schedule.enrollOpenDate,
-        enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        status: "ACTIVE",
-      },
-      create: {
-        yearLabel: resolvedYearLabel,
-        status: "ACTIVE",
-        classOpeningDate: schedule.classOpeningDate,
-        classEndDate: schedule.classEndDate,
-        enrollOpenDate: schedule.enrollOpenDate,
-        enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        clonedFromId: activeYear?.id ?? null,
-      },
-    });
-
-    broadcastSchoolYearInvalidation(draft.id);
-
-    res.json({
-      rolloverDraft: draft,
-    });
-  }
-
-
 
   export async function updateDates(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);

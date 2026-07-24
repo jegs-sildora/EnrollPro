@@ -1,298 +1,93 @@
-# Subsystem API Quick Start (ATLAS, AIMS, SMART)
+# Subsystem API Quick Start
 
-This guide is for teammate systems that need to fetch data from EnrollPro.
+Last reviewed: 2026-07-24
 
-It gives one shared setup flow for ATLAS, AIMS, and SMART.
+This guide gives SMART, ATLAS, AIMS, and MRF teams the minimum EnrollPro setup. The complete catalog is in [EnrollPro API](ENROLLPRO-API.md).
 
-## One Important Rule
+## Shared Configuration
 
-EnrollPro API must be ready first before your subsystem fetch starts.
-
-If your teammate runs one of these commands on their own machine:
-
-- `pnpm dev`
-- `npm run dev`
-- `npm run serve`
-
-their app should wait for EnrollPro API health before any fetch job runs.
-
-## 1. Required Values
-
-Set these values in your subsystem environment file.
-
-```env
-ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
-ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
+```text
+ENROLLPRO_BASE_URL=https://configured-enrollpro-host
+ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
 ```
 
-Notes:
+Do not commit a real host or key. A Tailscale address may be supplied through these variables for a private deployment.
 
-- Use Tailnet DNS if your team prefers hostname.
-
-## 1.1 Connection Map (Host as Gatekeeper)
-
-With standard ports (PostgreSQL 5432 and Node 5002), only the host machine needs database access.
-Teammate devices should call API endpoints only.
-
-| Device       | Action                    | Address/Port                |
-| ------------ | ------------------------- | --------------------------- |
-| Host Machine | Node connects to local DB | localhost:5432              |
-| Host Machine | Node listens for team     | 0.0.0.0:5002                |
-| Team Machine | React/frontend fetches    | https://dev-jegs.buru-degree.ts.net |
-
-API endpoint bases for this system:
-
-- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
-- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
-
-## 2. Start Order (Must Follow)
-
-### Step A: Start EnrollPro API first (host machine)
-
-From EnrollPro root:
+## Health And School Year
 
 ```bash
-pnpm run dev
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/health"
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/school-year"
 ```
 
-or API only:
+Persist the returned EnrollPro school-year ID with synchronized records.
+
+## Consumer Feeds
+
+### SMART
 
 ```bash
-pnpm run dev:server
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/default/smart/students?schoolYearId=12"
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/sections?schoolYearId=12"
 ```
 
-### Step A.1: Host Implementation and Firewall Checklist
+SMART returns finalized academic outcomes through the contract described in [SMART API Guide](SMART_API_GUIDE.md).
 
-In your Node/Express code (index.js), connect to PostgreSQL locally, then expose API on all host interfaces:
-
-```js
-// Database config (internal to host)
-const pool = new Pool({
-  host: "localhost",
-  port: 5432,
-  // ...other credentials
-});
-
-// Express config (external to teammates)
-const PORT = 5002;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Team can now connect at https://dev-jegs.buru-degree.ts.net");
-});
-```
-
-Open host firewall for port 5002:
-
-- Windows: Firewall and Network Protection -> Advanced Settings -> Inbound Rules -> New Rule -> Allow TCP 5002.
-- Linux (ufw): `sudo ufw allow 5002/tcp`
-
-### Step B: Start your subsystem app (your machine)
-
-Use your project command:
+### ATLAS
 
 ```bash
-pnpm dev
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/default/faculty?schoolYearId=12"
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/sections?schoolYearId=12"
 ```
 
-or
+ATLAS owns published schedules. See [ATLAS API Guide](ATLAS_API_GUIDE.md).
+
+### AIMS
 
 ```bash
-npm run dev
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/default/aims/context?schoolYearId=12"
 ```
 
-or
+AIMS owns intervention data. See [AIMS API Guide](AIMS_API_GUIDE.md).
+
+### MRF
 
 ```bash
-npm run serve
+curl "$ENROLLPRO_INTEGRATION_BASE_URL/default/mrf/identities?schoolYearId=12" \
+  -H "X-Integration-Key: $MRF_INTEGRATION_API_KEY"
 ```
 
-### Step B.1: Enforce API-first inside your scripts (recommended)
+MRF owns maintenance and waste-management records. See [MRF API Guide](MRF_API_GUIDE.md).
 
-If you want automatic protection, add a pre-check script.
+## Client Example
 
-Example `package.json` script pattern:
-
-```json
-{
-  "scripts": {
-    "predev": "node scripts/wait-for-enrollpro-api.mjs",
-    "dev": "your-dev-command",
-    "preserve": "node scripts/wait-for-enrollpro-api.mjs",
-    "serve": "your-serve-command"
-  }
-}
-```
-
-Example `scripts/wait-for-enrollpro-api.mjs`:
-
-```js
-const base = process.env.ENROLLPRO_BASE_URL || "https://dev-jegs.buru-degree.ts.net";
-
-async function wait(url, headers = {}) {
-  for (let i = 0; i < 30; i++) {
-    try {
-      const res = await fetch(url, { headers });
-      if (res.ok) return;
-    } catch {}
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  throw new Error(`API check failed: ${url}`);
+```ts
+interface SchoolYearContext {
+  id: number
+  name: string
 }
 
-await wait(`${base}/api/health`);
-await wait(`${base}/api/integration/v1/health`);
+const baseUrl = process.env.ENROLLPRO_INTEGRATION_BASE_URL
 
-console.log("EnrollPro API is ready.");
-```
-
-### Step C: Run health checks before first fetch
-
-Run these checks from your machine.
-
-#### Public health check
-
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/health
-```
-
-Expected:
-
-```json
-{ "ok": true }
-```
-
-#### Integration health check (public)
-
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
-```
-
-Expected `data.status` is `ok`.
-
-#### Faculty endpoint check
-
-```bash
-curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/faculty
-```
-
-Expected HTTP 200.
-
-## 3. Add API-First Guard in Your Startup
-
-Use a simple wait loop in your subsystem app boot code.
-
-```js
-async function waitForEnrollPro(url, headers = {}) {
-  const tries = 30;
-
-  for (let i = 0; i < tries; i++) {
-    try {
-      const res = await fetch(url, { headers });
-      if (res.ok) return true;
-    } catch {}
-
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-
-  throw new Error("EnrollPro API is not ready");
+if (!baseUrl) {
+  throw new Error("ENROLLPRO_INTEGRATION_BASE_URL is required")
 }
 
-async function boot() {
-  const base = process.env.ENROLLPRO_BASE_URL;
+const response = await fetch(`${baseUrl}/school-year`)
 
-  await waitForEnrollPro(`${base}/api/health`);
-  await waitForEnrollPro(`${base}/api/integration/v1/health`);
-
-  // Start your app fetch jobs only after checks pass.
-  startSubsystemSync();
+if (!response.ok) {
+  throw new Error(`EnrollPro request failed with ${response.status}`)
 }
 
-boot();
+const payload: unknown = await response.json()
 ```
 
-## 4. Shared Endpoint Map
+Narrow `unknown` through a runtime schema or type guard before use.
 
-Public default feeds:
+## Operational Rules
 
-- ATLAS: `GET /api/integration/v1/default/faculty`
-- AIMS: `GET /api/integration/v1/default/aims/context`
-- SMART: `GET /api/integration/v1/default/smart/students`
-- MRF: `GET /api/integration/v1/default/mrf/identities` with `X-Integration-Key`
-
-Shared support feed (public):
-
-- Staff list: `GET /api/integration/v1/staff`
-
-Generic compatibility feeds:
-
-- `GET /api/integration/v1/faculty`
-- `GET /api/integration/v1/staff`
-- `GET /api/integration/v1/learners?schoolYearId=<id>`
-
-## 4.1 How Teammates Fetch (React Example)
-
-Teammate apps should use the host Tailnet API endpoint base, not `localhost`.
-
-```js
-// Use this system's Tailnet API endpoint base
-const API_BASE_URL = "https://dev-jegs.buru-degree.ts.net/api";
-const INTEGRATION_BASE_URL = "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
-
-// Example: main API route
-const usersUrl = `${API_BASE_URL}/users`;
-
-// Example: integration route
-const staffFeedUrl = `${INTEGRATION_BASE_URL}/staff`;
-
-async function fetchData(url) {
-  const response = await fetch(url);
-  const data = await response.json();
-  console.log(data);
-}
-
-fetchData(usersUrl);
-fetchData(staffFeedUrl);
-```
-
-## 5. Common Error Meanings
-
-- `400`: Bad query value (for example wrong `schoolYearId`).
-- `404`: Scoped data not found.
-- `401`: Missing or invalid MRF integration key.
-- `503`: API or an external dependency is degraded.
-
-## 6. Troubleshooting
-
-1. API health fails:
-
-- Confirm EnrollPro server is running.
-- Confirm port `5002` is open.
-
-2. Integration health fails:
-
-- Confirm EnrollPro API process is running.
-
-3. MRF identity feed returns 401:
-
-- Confirm MRF sends the same `X-Integration-Key` value configured as `MRF_INTEGRATION_API_KEY` on EnrollPro.
-
-4. Works in browser but fails in app:
-
-- Add startup wait logic before your first fetch.
-- Do not start sync jobs at import time.
-
-5. Ping works but API still fails:
-
-- Usually CORS policy in Express or host firewall blocking port 5002.
-
-6. Team needs host details quickly:
-
-- Host Tailscale IPv4 from `tailscale ip -4`
-- API Port: `5002`
-- Team members must be in the same Tailnet (or have shared access)
-
-## 7. Next Guides
-
-- [ATLAS API Guide](./ATLAS_API_GUIDE.md)
-- [AIMS API Guide](./AIMS_API_GUIDE.md)
-- [SMART API Guide](./SMART_API_GUIDE.md)
-- [Integration API v1 Spec](./INTEGRATION_API_V1.md)
+- Use explicit school-year scope for reconciliation.
+- Retry read-only failures with bounded backoff.
+- Do not fabricate missing EnrollPro or companion data.
+- Refresh only after atomic rollover exposes the new active year.
+- Request only fields owned and needed by the consumer.

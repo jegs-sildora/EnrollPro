@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { sileo } from "sileo";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/shared/lib/zodResolver";
 import { z } from "zod";
 import {
   Upload,
@@ -125,10 +125,7 @@ export default function SchoolProfileTab() {
 
   const palette: PaletteColor[] =
     (colorScheme as { palette?: PaletteColor[] } | null)?.palette ?? [];
-  const currentAccent =
-    selectedAccentHsl ??
-    (colorScheme as { accent_hsl?: string } | null)?.accent_hsl ??
-    "221 83% 53%";
+  const currentAccent = selectedAccentHsl ?? "221 83% 53%";
 
   const onSubmit = useCallback(async (values: FormValues) => {
     try {

@@ -123,7 +123,9 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
-  const [activeTab, setActiveTab] = useState<"PENDING" | "VERIFIED" | "INCOMPLETE">("PENDING");
+  type VerificationTab = "PENDING" | "READY" | "INCOMPLETE";
+  const [activeTab, setActiveTab] =
+    useState<VerificationTab>("PENDING");
 
   const {
     data: pendingVerifications = [],
@@ -164,8 +166,10 @@ export function VerificationWorkspace() {
 
     if (activeTab === "PENDING") {
       result = result.filter((app) => app.status === "PENDING_VERIFICATION");
-    } else if (activeTab === "VERIFIED") {
-      result = result.filter((app) => app.status === "VERIFIED" || app.status === "READY_FOR_SECTIONING" || app.status === "OFFICIALLY_ENROLLED");
+    } else if (activeTab === "READY") {
+      result = result.filter(
+        (app) => app.status === "READY_FOR_SECTIONING",
+      );
     } else if (activeTab === "INCOMPLETE") {
       result = result.filter((app) => app.status === "FOR_REVISION");
     }
@@ -409,9 +413,11 @@ export function VerificationWorkspace() {
                     value: pendingVerifications.filter(a => a.status === "PENDING_VERIFICATION").length
                   },
                   {
-                    key: "VERIFIED",
-                    title: "Verified",
-                    value: pendingVerifications.filter(a => a.status === "VERIFIED" || a.status === "READY_FOR_SECTIONING" || a.status === "OFFICIALLY_ENROLLED").length
+                    key: "READY",
+                    title: "Ready",
+                    value: pendingVerifications.filter(
+                      (app) => app.status === "READY_FOR_SECTIONING",
+                    ).length,
                   },
                   {
                     key: "INCOMPLETE",
@@ -427,7 +433,7 @@ export function VerificationWorkspace() {
                       return (
                         <button
                           key={m.key}
-                          onClick={() => setActiveTab(m.key as any)}
+                          onClick={() => setActiveTab(m.key)}
                           className={cn(
                             "relative flex items-center justify-between px-3 h-full transition-colors uppercase font-extrabold z-10",
                             isActive

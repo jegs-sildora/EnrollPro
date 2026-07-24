@@ -342,7 +342,10 @@ export function DataTable<TData, TValue>({
                       return (
                         <React.Fragment key={rows[virtualRow.index].id}>
                           {React.isValidElement(renderedHeader) 
-                            ? React.cloneElement(renderedHeader as React.ReactElement<any>, { 
+                            ? React.cloneElement(renderedHeader as React.ReactElement<{
+                                ref?: typeof rowVirtualizer.measureElement;
+                                "data-index"?: number;
+                              }>, {
                                 ref: rowVirtualizer.measureElement,
                                 "data-index": virtualRow.index 
                               })

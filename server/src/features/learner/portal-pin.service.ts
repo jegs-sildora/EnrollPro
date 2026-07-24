@@ -10,19 +10,3 @@ export const generatePortalPin = (): { raw: string; hash: string } => {
 	return { raw, hash };
 };
 
-/**
- * Hashes a PIN for storage in the database (if needed separately).
- */
-export const hashPin = async (pin: string): Promise<string> => {
-	return bcryptjs.hash(pin, 10);
-};
-
-/**
- * Verifies a PIN against a hashed PIN.
- */
-export const verifyPin = async (
-	pin: string,
-	hash: string,
-): Promise<boolean> => {
-	return bcryptjs.compare(pin, hash);
-};

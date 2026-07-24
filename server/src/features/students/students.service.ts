@@ -1,8 +1,10 @@
 import { prisma } from "../../lib/prisma.js";
-import type {
+import {
+  LearnerStatus,
+  type
   ApplicantType,
-  Prisma,
-  ApplicationStatus,
+  type Prisma,
+  type ApplicationStatus,
 } from "../../generated/prisma/index.js";
 
 type StudentSortOrder = "asc" | "desc";
@@ -18,22 +20,36 @@ const PROGRAM_TYPES: ApplicantType[] = [
 ];
 
 const ACTIVE_STATUS_DEFAULTS: ApplicationStatus[] = [
-  "SECTIONED",
-  "ENROLLED",
   "OFFICIALLY_ENROLLED",
-  "TEMPORARILY_ENROLLED"
+  "READY_FOR_SECTIONING",
 ];
 const INACTIVE_OUTCOMES = ["TRANSFERRED_OUT", "DROPPED_OUT"] as const;
 const INACTIVE_OUTCOME_SET = new Set<string>(INACTIVE_OUTCOMES);
 const APPLICATION_STATUS_VALUES: ApplicationStatus[] = [
   "PENDING_VERIFICATION",
-  "VERIFIED",
-  "ENROLLED",
-  "SECTIONED",
+  "READY_FOR_SECTIONING",
   "OFFICIALLY_ENROLLED",
-  "TEMPORARILY_ENROLLED"
 ];
 const APPLICATION_STATUS_SET = new Set<string>(APPLICATION_STATUS_VALUES);
+const LEARNER_STATUS_SET = new Set<string>(Object.values(LearnerStatus));
+
+interface StudentSummaryRow {
+  learnerType: string;
+  learner: {
+    sex: string;
+    is4PsBeneficiary: boolean;
+    isBalikAral: boolean;
+  };
+  gradeLevel: {
+    name: string;
+  };
+  enrollmentRecord: {
+    eosyStatus: string | null;
+    section: {
+      programType: ApplicantType;
+    } | null;
+  } | null;
+}
 
 const parsePositiveInt = (value: unknown): number | undefined => {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -197,8 +213,17 @@ export async function findStudents(query: {
   const learnerWhere: Prisma.LearnerWhereInput = {};
   
   if (learnerStatus) {
-    const statuses = learnerStatus.split(",").map(s => s.trim().toUpperCase());
-    learnerWhere.status = statuses.length === 1 ? (statuses[0] as any) : { in: statuses as any[] };
+    const statuses = learnerStatus
+      .split(",")
+      .map((status) => status.trim().toUpperCase())
+      .filter((status): status is LearnerStatus =>
+        LEARNER_STATUS_SET.has(status),
+      );
+
+    if (statuses.length > 0) {
+      learnerWhere.status =
+        statuses.length === 1 ? statuses[0] : { in: statuses };
+    }
   }
 
   if (search) {
@@ -364,6 +389,7 @@ export async function findStudents(query: {
           },
         },
         gradeLevel: true,
+        schoolYear: true,
         section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
       },
       orderBy: sortBy === "lastName" ? { learner: { lastName: resolvedSortOrder } } : { createdAt: "desc" },
@@ -372,21 +398,31 @@ export async function findStudents(query: {
     });
 
     const mappedApplications = histories.map((h) => {
-      const app = h.learner.enrollmentApplications?.[0] || {};
+      const app = h.learner.enrollmentApplications[0];
       return {
-        ...app,
+        id: app?.id ?? h.id,
+        learnerId: h.learnerId,
+        schoolYearId: h.schoolYearId,
+        gradeLevelId: h.gradeLevelId,
+        trackingNumber: app?.trackingNumber ?? `HISTORY-${h.id}`,
+        applicantType: app?.applicantType ?? h.section?.programType ?? "REGULAR",
+        learnerType: app?.learnerType ?? "CONTINUING",
+        createdAt: app?.createdAt ?? h.createdAt,
+        updatedAt: app?.updatedAt ?? h.createdAt,
         learner: h.learner,
-        status: h.eosyStatus === "DROPPED_OUT" ? "DROPPED" : h.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "ENROLLED",
+        status: h.eosyStatus === "DROPPED_OUT" ? "DROPPED" : h.eosyStatus === "TRANSFERRED_OUT" ? "TRANSFERRED_OUT" : "OFFICIALLY_ENROLLED",
         gradeLevel: h.gradeLevel,
+        schoolYear: h.schoolYear,
         enrollmentRecord: {
+          id: h.id,
           section: h.section,
           sectionId: h.sectionId,
           enrolledAt: h.createdAt,
           eosyStatus: h.eosyStatus,
         },
-        familyMembers: (app as any).familyMembers || [],
-        addresses: (app as any).addresses || [],
-      } as any;
+        familyMembers: app?.familyMembers ?? [],
+        addresses: app?.addresses ?? [],
+      };
     });
 
     return {
@@ -523,7 +559,7 @@ export async function getStudentsSummary(query: {
   });
   const isArchived = sy?.status === "ARCHIVED";
 
-  let applications: any[] = [];
+  let applications: StudentSummaryRow[] = [];
 
   if (isArchived) {
     const histories = await prisma.enrollmentHistory.findMany({

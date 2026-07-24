@@ -6,11 +6,8 @@ import { useLocation, Outlet } from 'react-router';
 import { PageTransition } from '@/shared/components/PageTransition';
 
 export default function AuthLayout({ children }: { children?: ReactNode }) {
-	const { selectedAccentHsl, colorScheme, accentForeground } =
-		useSettingsStore();
-	const accentHsl =
-		selectedAccentHsl ??
-		(colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+	const { selectedAccentHsl, accentForeground } = useSettingsStore();
+	const accentHsl = selectedAccentHsl;
 	const toastTheme = accentForeground === '0 0% 100%' ? 'light' : 'dark';
 	const location = useLocation();
 	const routeKey = `${location.pathname}${location.search}${location.hash}:${location.key}`;

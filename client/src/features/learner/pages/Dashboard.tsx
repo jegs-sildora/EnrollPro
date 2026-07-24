@@ -3,7 +3,6 @@ import { Navigate, useNavigate } from "react-router";
 import {
   LogOut,
   AlertTriangle,
-  Loader2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -14,6 +13,36 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
+
+interface LearnerAddress {
+  houseNoStreet: string | null;
+  barangay: string | null;
+  cityMunicipality: string | null;
+  province: string | null;
+}
+
+interface LearnerFamilyMember {
+  firstName: string;
+  lastName: string;
+  contactNumber: string | null;
+  relationship: string;
+}
+
+interface SubjectGrades {
+  Q1?: number | null;
+  Q2?: number | null;
+  Q3?: number | null;
+  Q4?: number | null;
+  Final?: number | null;
+}
+
+interface AcademicHistory {
+  grade_level: string;
+  school_year: string;
+  status: string;
+  grades: Record<string, SubjectGrades> | null;
+  general_average: number | null;
+}
 
 interface LearnerDashboardResponse {
   identity: {
@@ -43,25 +72,21 @@ interface LearnerDashboardResponse {
     householdId4Ps: string | null;
     email: string | null;
     mobileNumber: string | null;
-    permanentAddress: any | null;
-    currentAddress: any | null;
-    mother: any | null;
-    father: any | null;
-    guardian: any | null;
+    permanentAddress: LearnerAddress | null;
+    currentAddress: LearnerAddress | null;
+    mother: LearnerFamilyMember | null;
+    father: LearnerFamilyMember | null;
+    guardian: LearnerFamilyMember | null;
   };
-  academicHistory: {
-    grade_level: string;
-    school_year: string;
-    status: string;
-    grades: Record<string, any> | null;
-    general_average: number | null;
-  }[];
+  academicHistory: AcademicHistory[];
   isEnrollmentActive: boolean;
+  activeSchoolYear: string;
   schoolName: string;
   schoolAcronym: string;
   schoolLogoUrl: string | null;
-  active_quarter: number;
-}function formatDate(dateStr: string) {
+}
+
+function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
     year: "numeric",
@@ -89,7 +114,13 @@ function SectionItem({ label, value, valueClassName }: { label: string; value: s
   );
 }
 
-function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, isDefaultOpen: boolean }) {
+function AcademicHistoryAccordion({
+  history,
+  isDefaultOpen,
+}: {
+  history: AcademicHistory;
+  isDefaultOpen: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(isDefaultOpen);
 
   return (
@@ -126,7 +157,7 @@ function AcademicHistoryAccordion({ history, isDefaultOpen }: { history: any, is
               </thead>
               <tbody>
                 {history.grades && Object.keys(history.grades).length > 0 ? (
-                  Object.entries(history.grades as Record<string, any>).map(([subject, grades]: [string, any]) => (
+                  Object.entries(history.grades).map(([subject, grades]) => (
                     <tr key={subject} className="hover:bg-muted/50 transition-colors">
                       <td className="border border-border px-4 py-3 text-center text-foreground ">{subject}</td>
                       <td className="border border-border px-4 py-3 text-center text-foreground">{grades?.Q1 ?? "—"}</td>
@@ -243,7 +274,7 @@ export default function LearnerDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="hidden sm:inline-flex bg-emerald-50 text-emerald-700 border-emerald-200 uppercase text-sm font-extrabold h-5">
-              2026-2027 [ACTIVE]
+              {data?.activeSchoolYear ?? "Current School Year"} [ACTIVE]
             </Badge>
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">

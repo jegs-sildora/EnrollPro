@@ -4,7 +4,7 @@ import { memo, useState, useEffect, useMemo, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/shared/lib/zodResolver";
 import {
   ShieldCheck,
   Loader2,

@@ -10,15 +10,21 @@ const NORMALIZED_STATUSES = new Set<TrackingStatus>([
   "QUALIFIED_FOR_ENROLLMENT",
   "ENROLLED",
   "REJECTED",
+  "WITHDRAWN",
+  "TRANSFERRED",
+  "DROPPED",
 ]);
 
 const RAW_TO_TRACKING_STATUS =
   APPLICATION_STATUS_TO_TRACKING_STATUS as Record<string, TrackingStatus>;
 
 export function deriveProgramTypeFromApplicantType(
-  _applicantType?: string | null,
+  applicantType?: string | null,
 ): TrackingProgramType {
-  return "REGULAR";
+  const normalized = String(applicantType ?? "REGULAR").toUpperCase();
+  return normalized === "REGULAR" || normalized === "LATE_ENROLLEE"
+    ? "REGULAR"
+    : "SCP";
 }
 
 export function normalizeTrackingStatus(
@@ -41,10 +47,14 @@ export function resolveCurrentStep(
 ): TrackingCurrentStep {
   switch (status) {
     case "IN_REVIEW":
-    case "QUALIFIED_FOR_ENROLLMENT":
     case "REJECTED":
       return "REGISTRAR_REVIEW";
+    case "QUALIFIED_FOR_ENROLLMENT":
+      return "ENROLLMENT_QUALIFICATION";
     case "ENROLLED":
+    case "WITHDRAWN":
+    case "TRANSFERRED":
+    case "DROPPED":
       return "ENROLLED";
     default:
       return "REGISTRAR_REVIEW";

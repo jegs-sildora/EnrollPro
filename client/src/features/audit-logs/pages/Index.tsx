@@ -56,7 +56,7 @@ interface AuditLogRow {
   userAgent: string | null;
   createdAt: string;
   user: AuditUser | null;
-  metadata?: any;
+  metadata?: unknown;
   newValue?: string | null;
   oldValue?: string | null;
 }
@@ -155,16 +155,34 @@ function actionLabel(actionType: string) {
     .replace(/Schoolsetting/ig, "School Profile Settings");
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parseRecord(value: string | null | undefined): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    return asRecord(JSON.parse(value)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
 function getDiffs(log: AuditLogRow) {
-  if (log.metadata?.previousData && log.metadata?.newData) {
-    return { old: log.metadata.previousData, new: log.metadata.newData };
+  const metadata = asRecord(log.metadata);
+  const previousData = asRecord(metadata?.previousData);
+  const newData = asRecord(metadata?.newData);
+
+  if (previousData && newData) {
+    return { old: previousData, new: newData };
   }
   if (log.oldValue || log.newValue) {
-    let oldData = {};
-    let newData = {};
-    try { oldData = JSON.parse(log.oldValue || '{}'); } catch (e) { }
-    try { newData = JSON.parse(log.newValue || '{}'); } catch (e) { }
-    return { old: oldData, new: newData };
+    return {
+      old: parseRecord(log.oldValue),
+      new: parseRecord(log.newValue),
+    };
   }
   return null;
 }
@@ -765,7 +783,7 @@ export default function AuditLogs() {
                                   if (JSON.stringify(oldVal) === JSON.stringify(newVal)) return null;
 
                                   const isIsoDate = (str: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(str);
-                                  const formatVal = (v: any) => {
+                                  const formatVal = (v: unknown) => {
                                     if (v === null || v === undefined) return "—";
                                     if (v === true || String(v) === "true") return <span className="text-green-600 font-extrabold">Active</span>;
                                     if (v === false || String(v) === "false") return <span className="text-destructive font-extrabold">Inactive</span>;

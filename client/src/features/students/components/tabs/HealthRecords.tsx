@@ -1,39 +1,54 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Scale, Ruler, Info, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import type {
-  ApplicantDetail,
-  HealthRecord,
-} from "@/features/enrollment/hooks/useApplicationDetail";
+import { useQuery } from "@tanstack/react-query";
+import type { HealthRecord } from "@/features/students/types";
 import { computeBmi, computeHfa } from "@/shared/constants/bmi";
+import api from "@/shared/api/axiosInstance";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { AddHealthRecord } from "../dialogs/AddHealthRecord";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
-import { useMemo } from "react";
 
 interface HealthRecordsProps {
-  applicant: ApplicantDetail;
-  onRefresh: () => void;
+  learnerId: number;
 }
 
-export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
+interface LearnerHealthSummary {
+  birthDate: string;
+  sex: string;
+}
+
+interface StudentDetailResponse {
+  student: LearnerHealthSummary;
+}
+
+interface HealthRecordsResponse {
+  records: HealthRecord[];
+}
+
+export function HealthRecords({ learnerId }: HealthRecordsProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<HealthRecord | null>(
     null,
   );
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.resolve(onRefresh());
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  const healthQuery = useQuery({
+    queryKey: ["students", "health-records", learnerId],
+    queryFn: async () => {
+      const [studentResponse, recordsResponse] = await Promise.all([
+        api.get<StudentDetailResponse>(`/students/${learnerId}`),
+        api.get<HealthRecordsResponse>(`/students/${learnerId}/health-records`),
+      ]);
+
+      return {
+        student: studentResponse.data.student,
+        records: recordsResponse.data.records,
+      };
+    },
+  });
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -49,10 +64,13 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
     return age;
   };
 
-  const age = calculateAge(applicant.birthDate);
-  const sex = applicant.sex as "Male" | "Female";
+  const age = calculateAge(healthQuery.data?.student.birthDate ?? "");
+  const sex =
+    healthQuery.data?.student.sex.toUpperCase() === "FEMALE"
+      ? "Female"
+      : "Male";
 
-  const sortedRecords = [...(applicant.healthRecords || [])].sort(
+  const sortedRecords = [...(healthQuery.data?.records ?? [])].sort(
     (a, b) =>
       new Date(b.assessmentDate).getTime() -
       new Date(a.assessmentDate).getTime(),
@@ -189,12 +207,10 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
           <Button
             variant="outline"
             onClick={() => {
-              void handleRefresh();
+              void healthQuery.refetch();
             }}
-            disabled={isRefreshing}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isRefreshing ? "" : ""}`}
-            />
+            disabled={healthQuery.isFetching}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
 
@@ -209,7 +225,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         </div>
       </div>
 
-      {latestRecord ? (
+      {healthQuery.isPending ? null : latestRecord ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="pb-2">
@@ -315,10 +331,12 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         </Card>
       )}
 
-      {sortedRecords.length > 0 && (
+      {(healthQuery.isPending || sortedRecords.length > 0) && (
         <DataTable
           columns={columns}
           data={sortedRecords}
+          loading={healthQuery.isPending}
+          loadingBehavior="delayed"
           noResultsMessage="No health records found."
         />
       )}
@@ -326,10 +344,10 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
       <AddHealthRecord
         isOpen={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        applicantId={applicant.id}
+        applicantId={learnerId}
         onSuccess={() => {
           setIsAddDialogOpen(false);
-          onRefresh();
+          void healthQuery.refetch();
         }}
         editRecord={selectedRecord}
       />

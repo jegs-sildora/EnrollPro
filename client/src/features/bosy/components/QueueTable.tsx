@@ -36,7 +36,7 @@ interface QueueTableProps {
   items: BOSYQueueItem[];
   loading: boolean;
   isSearching?: boolean;
-  queueState: "PENDING" | "CONFIRMED" | "TEMPORARY" | "TRANSFER_REQUEST" | "ENROLLED";
+  queueState: "PENDING" | "CONFIRMED" | "TEMPORARY" | "TRANSFER_REQUEST";
   allowActions: boolean;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
@@ -86,7 +86,7 @@ function statusBadge(item: BOSYQueueItem) {
         Ready for Section Assignment
       </Badge>
     );
-  if (item.status === "ENROLLED" || item.status === "OFFICIALLY_ENROLLED")
+  if (item.status === "OFFICIALLY_ENROLLED")
     return (
       <Badge
         className="rounded-md border-emerald-700 bg-emerald-600 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-white hover:bg-emerald-600">

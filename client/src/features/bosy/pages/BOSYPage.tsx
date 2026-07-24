@@ -10,16 +10,11 @@ import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 
 import {
   Search,
-  Loader2,
-  CheckCircle2,
-  RotateCcw,
-  Trash2,
 } from "lucide-react";
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useHeaderStore } from "@/store/header.slice";
-import { DataTableSkeleton } from "@/shared/components/PageLoadingSkeleton";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type { RowSelectionState } from "@tanstack/react-table";
 
 import {
   getBOSYReadiness,
@@ -29,8 +24,6 @@ import {
   revokeConfirmedReturn,
   markConfirmedTransferOut,
   bulkConfirm,
-  apiRevertToPendingBeef,
-  apiFlushNoShows,
   getPreviousSections,
   syncBOSYQueue,
 } from "../api/bosy.api";
@@ -57,17 +50,6 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
-import { DataTable } from "@/shared/ui/data-table";
-import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/shared/ui/dialog";
-import { Textarea } from "@/shared/ui/textarea";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import {
   createFadeShiftVariants,
@@ -94,62 +76,6 @@ const BOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "enrollment:applications",
   "students:list",
   "school-years:list",
-];
-
-function formatNoShowStatus(status: string): string {
-  const map: Record<string, string> = {
-    READY_FOR_ENROLLMENT: "Ready for Enrollment",
-    PENDING_BEEF: "Pending (Incomplete)",
-  };
-  return map[status] ?? status.replace(/_/g, " ");
-}
-
-const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
-  {
-    accessorKey: "lrn",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="LRN" />,
-    cell: ({ row }) => (
-      <span className="font-mono font-extrabold text-base text-foreground">
-        {row.original.lrn ?? <em className="opacity-50 not-italic">No LRN</em>}
-      </span>
-    ),
-    size: 140,
-  },
-  {
-    id: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Learner" />,
-    cell: ({ row }) => {
-      const { lastName, firstName } = row.original;
-      return (
-        <span className="font-extrabold text-base leading-tight">
-          {[lastName, firstName].filter(Boolean).join(", ")}
-        </span>
-      );
-    },
-  },
-  {
-    accessorKey: "gradeLevelName",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Grade" />,
-    cell: ({ row }) => (
-      <Badge variant="secondary" className="text-base font-extrabold">
-        {row.original.gradeLevelName}
-      </Badge>
-    ),
-    size: 100,
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className="text-base font-extrabold border-amber-300 text-amber-700 bg-amber-50"
-      >
-        {formatNoShowStatus(row.original.status)}
-      </Badge>
-    ),
-    size: 160,
-  },
 ];
 
 export default function BOSYPage() {
@@ -209,14 +135,6 @@ export default function BOSYPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
 
 
-  const [revertTargetId, setRevertTargetId] = useState<number | null>(null);
-  const [revertReason, setRevertReason] = useState("");
-  const [revertBusy, setRevertBusy] = useState(false);
-
-  const [flushDialogOpen, setFlushDialogOpen] = useState(false);
-  const [flushBusy, setFlushBusy] = useState(false);
-  const [noShowItems, setNoShowItems] = useState<BOSYQueueItem[]>([]);
-  const [noShowLoading, setNoShowLoading] = useState(false);
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
   const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
   const [transferTarget, setTransferTarget] = useState<BOSYQueueItem | null>(null);
@@ -493,66 +411,6 @@ export default function BOSYPage() {
       toastApiError(e as never);
     } finally {
       setBulkLoading(false);
-    }
-  };
-
-  const handleRevertToPending = async () => {
-    if (!revertTargetId || revertReason.trim().length < 5) return;
-    setRevertBusy(true);
-    try {
-      await apiRevertToPendingBeef(revertTargetId, revertReason.trim());
-      sileo.success({
-        title: "Flagged for Review",
-        description: "Learner has been moved back to the BEEF intake queue.",
-      });
-      setRevertTargetId(null);
-      setRevertReason("");
-      void fetchQueue();
-      void fetchReadiness();
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setRevertBusy(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!flushDialogOpen || !syId) {
-      if (!flushDialogOpen) setNoShowItems([]);
-      return;
-    }
-    setNoShowLoading(true);
-    Promise.all([
-      getBOSYQueue({ schoolYearId: syId, status: "READY_FOR_ENROLLMENT", page: 1, limit: 500 }),
-      getBOSYQueue({ schoolYearId: syId, status: "PENDING_BEEF", page: 1, limit: 500 }),
-    ])
-      .then(([rfe, pb]) => setNoShowItems([...rfe.items, ...pb.items]))
-      .catch((e) => toastApiError(e as never))
-      .finally(() => setNoShowLoading(false));
-  }, [flushDialogOpen, syId]);
-
-  const handleFlushNoShows = async () => {
-    if (!syId) return;
-    const ids = noShowItems.map((i) => i.applicationId);
-    if (ids.length === 0) {
-      sileo.success({ title: "No No-Shows", description: "No eligible records to flush." });
-      setFlushDialogOpen(false);
-      return;
-    }
-    setFlushBusy(true);
-    try {
-      const result = await apiFlushNoShows(ids, "Admin flush of no-show SCP applicants");
-      sileo.success({
-        title: "No-Shows Flushed",
-        description: `${result.flushed} record(s) withdrawn. ${result.skipped} skipped.`,
-      });
-      setNoShowItems([]);
-      setFlushDialogOpen(false);
-      void fetchReadiness();
-    } catch (e) {
-      toastApiError(e as never);
-    } finally {
-      setFlushBusy(false);
     }
   };
 
@@ -962,96 +820,6 @@ export default function BOSYPage() {
                     }
                   />
 
-                  {/* Restore to Pending Enrollment Dialog */}
-                  <ConfirmationModal
-                    open={revertTargetId !== null}
-                    onOpenChange={(open) => { if (!open) { setRevertTargetId(null); setRevertReason(""); } }}
-                    title="Flag for Review"
-                    variant="warning"
-                    loading={revertBusy}
-                    confirmDisabled={revertReason.trim().length < 5}
-                    confirmText="Restore to Pending Enrollment"
-                    onConfirm={() => {
-                      if (revertReason.trim().length >= 5) {
-                        void handleRevertToPending();
-                      }
-                    }}
-                    description={
-                      <>
-                        <p className="mb-4">
-                          This will move the learner back to the BEEF intake queue
-                          (PENDING_BEEF). Provide a mandatory reason of at least 5 characters.
-                        </p>
-                        <div className="space-y-2 py-2 text-left">
-                          <Textarea
-                            placeholder="Reason for reverting (min. 5 characters)…"
-                            value={revertReason}
-                            onChange={(e) => setRevertReason(e.target.value)}
-                            rows={3}
-                            className="resize-none font-extrabold text-base leading-tight"
-                          />
-                          {revertReason.length > 0 && revertReason.trim().length < 5 && (
-                            <p className="text-base text-destructive font-extrabold">
-                              Reason must be at least 5 characters.
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    }
-                  />
-
-                  {/* Flush No-Shows Dialog */}
-                  <ConfirmationModal
-                    open={flushDialogOpen}
-                    onOpenChange={(open) => {
-                      setFlushDialogOpen(open);
-                      if (!open) setNoShowItems([]);
-                    }}
-                    title="Flush No-Shows"
-                    variant="danger"
-                    loading={flushBusy}
-                    confirmDisabled={noShowLoading || noShowItems.length === 0}
-                    confirmText="Flush No-Shows"
-                    onConfirm={() => { void handleFlushNoShows(); }}
-                    description={
-                      <>
-                        <p className="mb-4">
-                          {noShowLoading
-                            ? "Loading no-show applicants…"
-                            : noShowItems.length > 0
-                              ? `${noShowItems.length} SCP applicant${noShowItems.length !== 1 ? "s" : ""
-                              } in Ready for Enrollment or Pending (Incomplete) status have not reported. Confirming will withdraw all of them. This cannot be undone.`
-                              : "No eligible no-show applicants found for this school year."
-                          }
-                        </p>
-                        <div className="py-4 space-y-3 text-left">
-                          {noShowLoading ? (
-                            <DataTableSkeleton rows={8} columns={4} className="rounded-lg" />
-                          ) : noShowItems.length > 0 ? (
-                            <>
-                              <DataTable
-                                columns={FLUSH_NO_SHOW_COLUMNS}
-                                data={noShowItems}
-                                dense
-                                getRowId={(row) => String(row.applicationId)}
-                                containerHeight="14rem"
-                                estimatedRowHeight={32}
-                              />
-                              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-base text-destructive font-extrabold">
-                                This is a destructive bulk operation. Only proceed if these
-                                learners have confirmed they will not be attending.
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-center h-16 text-base leading-tight text-foreground font-extrabold gap-2">
-                              <CheckCircle2 className="h-4 w-4 opacity-50" />
-                              No no-show applicants found.
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    }
-                  />
                 </div>
               </TabsContent>
             </motion.div>

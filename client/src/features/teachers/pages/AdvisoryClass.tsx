@@ -88,7 +88,7 @@ export default function AdvisoryClass() {
     if (!section) return;
     try {
       setExportingSf1(true);
-      const res = await api.get(`/reports/sf1/${section.id}`, {
+      const res = await api.get(`/export/sf1/${section.id}`, {
         responseType: "blob",
       });
       const blob = new Blob([res.data], {

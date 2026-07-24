@@ -2,7 +2,7 @@ import { AnimatedError } from "@/shared/components/AnimatedError";
 import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/shared/lib/zodResolver";
 import {
   Briefcase,
   GraduationCap,

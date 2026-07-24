@@ -82,7 +82,7 @@ const SelectContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
 >(({ className, children, position = "popper", ...props }, ref) => {
   const { colorScheme, selectedAccentHsl } = useSettingsStore();
-  const accentHsl = selectedAccentHsl ?? colorScheme?.accent_hsl;
+  const accentHsl = selectedAccentHsl;
   const currentHex = colorScheme?.palette?.find(
     (p) => p.hsl === accentHsl,
   )?.hex;

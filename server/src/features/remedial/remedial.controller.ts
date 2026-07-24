@@ -35,7 +35,7 @@ export async function getRemedialPending(
       academicStatus: "CONDITIONALLY_PROMOTED",
       isRemedialRequired: true,
       status: {
-        in: ["ENROLLED", "REMEDIAL_HOLD"],
+        in: ["OFFICIALLY_ENROLLED", "REMEDIAL_HOLD"],
       },
       ...(schoolYearId ? { schoolYearId } : {}),
     };
@@ -138,7 +138,7 @@ export async function resolveRemedial(
         where: {
           learnerId,
           schoolYearId,
-          status: { in: ["ENROLLED", "REMEDIAL_HOLD"] },
+          status: { in: ["OFFICIALLY_ENROLLED", "REMEDIAL_HOLD"] },
         },
         select: {
           id: true,

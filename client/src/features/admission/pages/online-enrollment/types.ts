@@ -196,7 +196,6 @@ export const EnrollmentFormSchema = z
     lastSchoolType: z.enum(["Public", "Private", "International", "ALS"], { message: "Please select a valid school type." }),
     generalAverage: optionalSf9GeneralAverage,
     hasSf9Deficiency: z.boolean().default(false),
-    natScore: z.number({ message: "Please enter a valid numeric NAT score." }).optional().nullable(),
 
     // Section 8: SCP Specifics
     artField: z.string().optional(),
@@ -207,6 +206,7 @@ export const EnrollmentFormSchema = z
     // Section 9.2: Learner Type
     learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"], { message: "Please select a valid learner type." }),
     learningModalities: z.array(z.string()).default([]),
+    bypassDuplicate: z.boolean().optional(),
 
     // Section 10: Certification
     isCertifiedTrue: z.boolean().refine((val) => val === true, {
@@ -469,13 +469,6 @@ export const DISABILITY_TYPES_A2 = [
   "Difficulty in Seeing",
 ];
 
-export const DISABILITY_TYPES = [
-  ...DISABILITY_TYPES_A1,
-  ...SPECIAL_HEALTH_SUB_OPTIONS,
-  ...VISUAL_IMPAIRMENT_SUB_OPTIONS,
-  ...DISABILITY_TYPES_A2,
-];
-
 export const SPA_ART_FIELDS = [
   "Visual Arts",
   "Music (Vocal)",
@@ -485,16 +478,6 @@ export const SPA_ART_FIELDS = [
   "Media Arts",
   "Creative Writing (English)",
   "Creative Writing (Filipino)",
-];
-
-export const LEARNING_MODALITIES = [
-  "Blended (Combination)",
-  "Educational Television",
-  "Homeschooling",
-  "Modular (Digital)",
-  "Modular (Print)",
-  "Online",
-  "Radio-Based Instruction",
 ];
 
 export const SPS_SPORTS = [
@@ -509,15 +492,6 @@ export const SPS_SPORTS = [
   "Athletics",
   "Chess",
   "Other",
-];
-
-export const SPFL_LANGUAGES = [
-  "Japanese (Nihongo)",
-  "Spanish",
-  "French",
-  "German",
-  "Chinese (Mandarin)",
-  "Korean",
 ];
 
 

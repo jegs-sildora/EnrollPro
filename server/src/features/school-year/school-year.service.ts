@@ -50,27 +50,6 @@ export function firstMondayOfJune(year: number): Date {
 	return d;
 }
 
-export function lastSaturdayOfJanuary(year: number): Date {
-	const jan31 = utcNoonDate(year, 0, 31);
-	if (jan31.getUTCDay() === 6) return jan31;
-	let d = jan31;
-	while (d.getUTCDay() !== 6) {
-		d = subDays(d, 1);
-	}
-	return d;
-}
-
-export function lastFridayOfFebruary(year: number): Date {
-	const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-	const febLast = utcNoonDate(year, 1, isLeapYear ? 29 : 28);
-	if (febLast.getUTCDay() === 5) return febLast;
-	let d = febLast;
-	while (d.getUTCDay() !== 5) {
-		d = subDays(d, 1);
-	}
-	return d;
-}
-
 export function deriveSchoolYearScheduleFromOpeningDate(
 	classOpeningDate: Date,
 	classEndTemplate?: Date,

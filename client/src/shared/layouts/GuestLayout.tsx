@@ -3,11 +3,8 @@ import type { ReactNode } from 'react';
 import { useSettingsStore } from '@/store/settings.slice';
 
 export default function GuestLayout({ children }: { children: ReactNode }) {
-	const { selectedAccentHsl, colorScheme, accentForeground } =
-		useSettingsStore();
-	const accentHsl =
-		selectedAccentHsl ??
-		(colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
+	const { selectedAccentHsl, accentForeground } = useSettingsStore();
+	const accentHsl = selectedAccentHsl;
 	const toastTheme = accentForeground === '0 0% 100%' ? 'light' : 'dark';
 
 	return (

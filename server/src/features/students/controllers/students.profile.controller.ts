@@ -3,20 +3,41 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../../lib/prisma.js";
 import { generatePortalPin } from "../../learner/portal-pin.service.js";
 import { normalizeDateToUtcNoon } from "../../school-year/school-year.service.js";
-import { findStudents, getStudentsSummary } from "../students.service.js";
 import { broadcastStudentInvalidation } from "../../../lib/realtime-events.js";
 
 const getRequestUserId = (req: Request): number | null => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
   return typeof userId === "number" ? userId : null;
 };
 
+const resolveApplicationId = async (
+  learnerId: number,
+  schoolYearId: number | undefined,
+): Promise<number | null> => {
+  const application = await prisma.enrollmentApplication.findFirst({
+    where: {
+      learnerId,
+      ...(schoolYearId ? { schoolYearId } : {}),
+    },
+    orderBy: { schoolYearId: "desc" },
+    select: { id: true },
+  });
+
+  return application?.id ?? null;
+};
 
   export const updateStudent = async (req: Request, res: Response) => {
     try {
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const {
@@ -45,7 +66,7 @@ const getRequestUserId = (req: Request): number | null => {
       } = req.body;
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true, schoolYear: true },
       });
 
@@ -75,7 +96,7 @@ const getRequestUserId = (req: Request): number | null => {
 
         // Update EnrollmentApplication fields
         await tx.enrollmentApplication.update({
-          where: { id: parsedId },
+          where: { id: applicationId },
           data: {
             contactNumber: finalContactNumber || undefined,
             guardianRelationship: primaryContact === "GUARDIAN" ? (guardianInfo?.relationship || undefined) : undefined,
@@ -86,13 +107,13 @@ const getRequestUserId = (req: Request): number | null => {
           await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
-                enrollmentId: parsedId,
+                enrollmentId: applicationId,
                 addressType: "CURRENT",
               },
             },
             update: currentAddress,
             create: {
-              enrollmentId: parsedId,
+              enrollmentId: applicationId,
               addressType: "CURRENT",
               ...currentAddress,
             },
@@ -103,13 +124,13 @@ const getRequestUserId = (req: Request): number | null => {
           await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
-                enrollmentId: parsedId,
+                enrollmentId: applicationId,
                 addressType: "PERMANENT",
               },
             },
             update: permanentAddress,
             create: {
-              enrollmentId: parsedId,
+              enrollmentId: applicationId,
               addressType: "PERMANENT",
               ...permanentAddress,
             },
@@ -120,13 +141,13 @@ const getRequestUserId = (req: Request): number | null => {
           await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                enrollmentId: parsedId,
+                enrollmentId: applicationId,
                 relationship: "MOTHER",
               },
             },
             update: motherName,
             create: {
-              enrollmentId: parsedId,
+              enrollmentId: applicationId,
               relationship: "MOTHER",
               ...motherName,
             },
@@ -137,13 +158,13 @@ const getRequestUserId = (req: Request): number | null => {
           await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                enrollmentId: parsedId,
+                enrollmentId: applicationId,
                 relationship: "FATHER",
               },
             },
             update: fatherName,
             create: {
-              enrollmentId: parsedId,
+              enrollmentId: applicationId,
               relationship: "FATHER",
               ...fatherName,
             },
@@ -154,13 +175,13 @@ const getRequestUserId = (req: Request): number | null => {
           await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                enrollmentId: parsedId,
+                enrollmentId: applicationId,
                 relationship: "GUARDIAN",
               },
             },
             update: guardianInfo,
             create: {
-              enrollmentId: parsedId,
+              enrollmentId: applicationId,
               relationship: "GUARDIAN",
               ...guardianInfo,
             },
@@ -191,7 +212,7 @@ const getRequestUserId = (req: Request): number | null => {
         });
 
         return tx.enrollmentApplication.findUnique({
-          where: { id: parsedId },
+          where: { id: applicationId },
           include: {
             learner: true,
             gradeLevel: true,
@@ -234,15 +255,22 @@ const getRequestUserId = (req: Request): number | null => {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const { raw: newPin } = generatePortalPin();
 
       const applicant = await prisma.enrollmentApplication.update({
-        where: { id: parsedId },
+        where: { id: applicationId },
         data: {
           portalPin: newPin,
           portalPinChangedAt: null, // Phase A: Reset PIN is unhashed/null changedAt
@@ -265,7 +293,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: "PORTAL_PIN_RESET",
           description: `${userName} reset portal PIN for LRN ${applicant.learner.lrn} - ${learnerName}`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -287,15 +315,22 @@ const getRequestUserId = (req: Request): number | null => {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const { deficiencyType } = req.body as { deficiencyType: "SF9" | "FINANCIAL" | "ALL" };
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true },
       });
 
@@ -303,7 +338,10 @@ const getRequestUserId = (req: Request): number | null => {
         return res.status(404).json({ message: "Student not found" });
       }
 
-      const updateData: any = {};
+      const updateData: {
+        isMissingSf9?: boolean;
+        hasUnsettledPrivateAccount?: boolean;
+      } = {};
       if (deficiencyType === "SF9") {
         updateData.isMissingSf9 = false;
       } else if (deficiencyType === "FINANCIAL") {
@@ -315,20 +353,29 @@ const getRequestUserId = (req: Request): number | null => {
 
       const updated = await prisma.$transaction(async (tx) => {
         const currentApp = await tx.enrollmentApplication.findUnique({
-          where: { id: parsedId },
+          where: { id: applicationId },
+          include: { enrollmentRecord: { select: { id: true } } },
         });
+        if (!currentApp) {
+          throw new Error("Enrollment application no longer exists.");
+        }
 
-        const newIsMissingSf9 = updateData.isMissingSf9 ?? currentApp!.isMissingSf9;
-        const newHasUnsettled = updateData.hasUnsettledPrivateAccount ?? currentApp!.hasUnsettledPrivateAccount;
+        const newIsMissingSf9 = updateData.isMissingSf9 ?? currentApp.isMissingSf9;
+        const newHasUnsettled =
+          updateData.hasUnsettledPrivateAccount ??
+          currentApp.hasUnsettledPrivateAccount;
         
         const isNowClear = !newIsMissingSf9 && !newHasUnsettled;
+        const status = currentApp.enrollmentRecord
+          ? "OFFICIALLY_ENROLLED"
+          : "READY_FOR_SECTIONING";
 
         return tx.enrollmentApplication.update({
-          where: { id: parsedId },
+          where: { id: applicationId },
           data: {
             ...updateData,
             isTemporarilyEnrolled: !isNowClear,
-            status: isNowClear ? "ENROLLED" : "VERIFIED",
+            status,
           },
           include: { learner: true },
         });
@@ -340,7 +387,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: "DEFICIENCY_CLEARED",
           description: `Cleared ${deficiencyType} deficiency for ${updated.learner.firstName} ${updated.learner.lastName}`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -362,9 +409,16 @@ const getRequestUserId = (req: Request): number | null => {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const { type } = req.body;
@@ -380,7 +434,7 @@ const getRequestUserId = (req: Request): number | null => {
 
       // 2. Find application
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true },
       });
 
@@ -430,7 +484,7 @@ const getRequestUserId = (req: Request): number | null => {
             ? `Verified PSA Birth Certificate for ${applicant.learner.firstName} ${applicant.learner.lastName} (Permanently Locked)` 
             : `Verified Secondary Birth Document for ${applicant.learner.firstName} ${applicant.learner.lastName} (Temporary Clearance)`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -455,8 +509,15 @@ const getRequestUserId = (req: Request): number | null => {
       const userId = getRequestUserId(req);
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) return res.status(400).json({ message: "Invalid student id" });
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) return res.status(400).json({ message: "Invalid student id" });
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
+      }
 
       const setting = await prisma.schoolSetting.findFirst();
       if (setting?.systemPhase === "EOSY_CLOSING") {
@@ -464,7 +525,7 @@ const getRequestUserId = (req: Request): number | null => {
       }
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true, schoolYear: true },
       });
 
@@ -507,8 +568,15 @@ const getRequestUserId = (req: Request): number | null => {
       const userId = getRequestUserId(req);
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) return res.status(400).json({ message: "Invalid student id" });
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) return res.status(400).json({ message: "Invalid student id" });
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
+      }
 
       const setting = await prisma.schoolSetting.findFirst();
       if (setting?.systemPhase === "EOSY_CLOSING") {
@@ -516,7 +584,7 @@ const getRequestUserId = (req: Request): number | null => {
       }
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { enrollmentRecord: true, learner: true, schoolYear: true },
       });
 
@@ -545,7 +613,7 @@ const getRequestUserId = (req: Request): number | null => {
           data: { status: "DROPPED" },
         });
         await tx.enrollmentApplication.update({
-          where: { id: parsedId },
+          where: { id: applicationId },
           data: { status: "DROPPED" },
         });
       });
@@ -556,7 +624,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: "STUDENT_DROPPED_OUT",
           description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} as DROPPED_OUT`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -576,8 +644,15 @@ const getRequestUserId = (req: Request): number | null => {
       const userId = getRequestUserId(req);
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) return res.status(400).json({ message: "Invalid student id" });
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) return res.status(400).json({ message: "Invalid student id" });
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
+      }
 
       const setting = await prisma.schoolSetting.findFirst();
       if (setting?.systemPhase === "EOSY_CLOSING") {
@@ -585,7 +660,7 @@ const getRequestUserId = (req: Request): number | null => {
       }
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { enrollmentRecord: true, learner: true, schoolYear: true },
       });
 
@@ -613,7 +688,7 @@ const getRequestUserId = (req: Request): number | null => {
           data: { status: "TRANSFERRED_OUT" },
         });
         await tx.enrollmentApplication.update({
-          where: { id: parsedId },
+          where: { id: applicationId },
           data: { status: "TRANSFERRED_OUT" },
         });
       });
@@ -624,7 +699,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: "STUDENT_TRANSFERRED_OUT",
           description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} as TRANSFERRED_OUT`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -641,13 +716,20 @@ const getRequestUserId = (req: Request): number | null => {
 
   export const resetPortalPassword = async (req: Request, res: Response) => {
     try {
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true },
       });
 
@@ -699,7 +781,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: "STUDENT_PASSWORD_RESET",
           description: `Admin reset portal password for student: ${applicant.learner.firstName} ${applicant.learner.lastName} (LRN: ${applicant.learner.lrn})`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },
@@ -716,9 +798,16 @@ const getRequestUserId = (req: Request): number | null => {
 
   export const togglePortalAccess = async (req: Request, res: Response) => {
     try {
-      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(parsedId)) {
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) {
         return res.status(400).json({ message: "Invalid student id" });
+      }
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
       }
 
       const { isActive } = req.body as { isActive: boolean };
@@ -727,7 +816,7 @@ const getRequestUserId = (req: Request): number | null => {
       }
 
       const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: parsedId },
+        where: { id: applicationId },
         include: { learner: true },
       });
 
@@ -771,7 +860,7 @@ const getRequestUserId = (req: Request): number | null => {
           actionType: isActive ? "STUDENT_PORTAL_ACTIVATED" : "STUDENT_PORTAL_DEACTIVATED",
           description: `Admin updated portal status to ${isActive ? "ACTIVE" : "LOCKED"} for student: ${applicant.learner.firstName} ${applicant.learner.lastName} (LRN: ${applicant.learner.lrn})`,
           subjectType: "EnrollmentApplication",
-          recordId: parsedId,
+          recordId: applicationId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },

@@ -10,26 +10,10 @@ import type {
   applicationTrackingStateSchema,
   applicationSubmitResponseSchema,
   applicationTrackResponseSchema,
-  assessmentTrackerStepSchema,
-  trackingAssessmentDataSchema,
-  approveSchema,
-  rejectSchema,
-  scheduleExamSchema,
-  recordResultSchema,
-  rescheduleExamSchema,
   addressSchema,
   optionalAddressSchema,
   familyMemberSchema,
   previousSchoolSchema,
-  updateChecklistSchema,
-  requestRevisionSchema,
-  scheduleInterviewSchema,
-  recordInterviewResultSchema,
-  scpGradeRequirementSchema,
-  scpRankingFormulaSchema,
-  scpProgramConfigUpdateSchema,
-  updateScpProgramConfigsSchema,
-  publishScpRankingsSchema,
 } from "../schemas/application.schema.js";
 import type {
   teacherSchema,
@@ -63,11 +47,9 @@ import type {
   createSectionSchema,
   updateSectionSchema,
 } from "../schemas/section.schema.js";
-export type { SectioningParams } from "../schemas/section.schema.js";
 import type {
   createSchoolYearSchema,
   updateSchoolYearSchema,
-  updateRolloverDraftSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
   calendarPolicyStatusSchema,
@@ -106,17 +88,6 @@ export type OptionalAddress = z.infer<typeof optionalAddressSchema>;
 export type FamilyMember = z.infer<typeof familyMemberSchema>;
 export type PreviousSchoolInput = z.infer<typeof previousSchoolSchema>;
 export type ApplicationSubmitInput = z.infer<typeof applicationSubmitSchema>;
-export type ApproveInput = z.infer<typeof approveSchema>;
-export type RejectInput = z.infer<typeof rejectSchema>;
-export type ScheduleExamInput = z.infer<typeof scheduleExamSchema>;
-export type RecordResultInput = z.infer<typeof recordResultSchema>;
-export type RescheduleExamInput = z.infer<typeof rescheduleExamSchema>;
-export type TrackingAssessmentStep = z.infer<
-  typeof assessmentTrackerStepSchema
->;
-export type TrackingAssessmentData = z.infer<
-  typeof trackingAssessmentDataSchema
->;
 export type ApplicationTrackingState = z.infer<
   typeof applicationTrackingStateSchema
 >;
@@ -126,24 +97,6 @@ export type ApplicationSubmitResponse = z.infer<
 export type ApplicationTrackResponse = z.infer<
   typeof applicationTrackResponseSchema
 >;
-export type UpdateChecklistInput = z.infer<typeof updateChecklistSchema>;
-export type RequestRevisionInput = z.infer<typeof requestRevisionSchema>;
-export type ScheduleInterviewInput = z.infer<typeof scheduleInterviewSchema>;
-export type RecordInterviewResultInput = z.infer<
-  typeof recordInterviewResultSchema
->;
-export type ScpGradeRequirementInput = z.infer<
-  typeof scpGradeRequirementSchema
->;
-export type ScpRankingFormulaInput = z.infer<typeof scpRankingFormulaSchema>;
-export type ScpProgramConfigUpdateInput = z.infer<
-  typeof scpProgramConfigUpdateSchema
->;
-export type UpdateScpProgramConfigsInput = z.infer<
-  typeof updateScpProgramConfigsSchema
->;
-export type PublishScpRankingsInput = z.infer<typeof publishScpRankingsSchema>;
-
 // ─── Teacher Types ─────────────────────────────────────
 export type TeacherInput = z.infer<typeof teacherSchema>;
 export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>;
@@ -189,9 +142,6 @@ export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
 // ─── School Year Types ─────────────────────────────────
 export type CreateSchoolYearInput = z.infer<typeof createSchoolYearSchema>;
 export type UpdateSchoolYearInput = z.infer<typeof updateSchoolYearSchema>;
-export type UpdateRolloverDraftInput = z.infer<
-  typeof updateRolloverDraftSchema
->;
 export type TransitionSchoolYearInput = z.infer<
   typeof transitionSchoolYearSchema
 >;

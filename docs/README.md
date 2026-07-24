@@ -1,43 +1,50 @@
-# EnrollPro Documentation Index (Code-First Baseline)
+# EnrollPro Documentation
 
-Last updated: 2026-04-14
+This index lists the maintained EnrollPro product documentation. The implementation remains authoritative when a document becomes stale.
 
-This documentation set is aligned to the current implementation in the EnrollPro monorepo.
+Last reviewed: 2026-07-24
 
-## Source of truth order
+## Repository And Core
 
-1. Prisma models and enums in [server/prisma/schema.prisma](../server/prisma/schema.prisma)
-2. Shared contracts in [shared/src/constants/index.ts](../shared/src/constants/index.ts) and [shared/src/schemas](../shared/src/schemas)
-3. Mounted backend routes in [server/src/app.ts](../server/src/app.ts)
-4. Frontend route and state behavior in [client/src/router/index.tsx](../client/src/router/index.tsx), [client/src/store/auth.slice.ts](../client/src/store/auth.slice.ts), and [client/src/store/settings.slice.ts](../client/src/store/settings.slice.ts)
+| Document | Owner | Purpose |
+| --- | --- | --- |
+| [Repository README](../README.md) | Engineering | Setup, commands, structure, and source-of-truth order |
+| [Microservice Architecture](../ARCHITECTURE_MICROSERVICES.md) | Architecture | Ownership boundaries between EnrollPro, SMART, ATLAS, AIMS, and MRF |
+| [System Architecture](core/SYSTEM_ARCHITECTURE.md) | Engineering | Current application structure, runtime, routes, and realtime behavior |
+| [Data Model and Status](core/DATA_MODEL_AND_STATUS.md) | Data and Engineering | Current Prisma entities, status meanings, and history rules |
+| [Security and Access](core/SECURITY_AND_ACCESS.md) | Security and Engineering | Authentication, authorization, secrets, privacy, and audit controls |
+| [Development Workflow](core/DEVELOPMENT_WORKFLOW.md) | Engineering | Implementation, migration, documentation, and verification workflow |
 
-## Implementation pack (new)
+## Operational Features
 
-- Architecture and debt audit: [core/CODEBASE_AUDIT_IMPLEMENTATION_BASELINE.md](core/CODEBASE_AUDIT_IMPLEMENTATION_BASELINE.md)
-- Module coverage map: [core/MODULE_COVERAGE_MATRIX.md](core/MODULE_COVERAGE_MATRIX.md)
-- Reality alignment notes (docs vs code): [core/REALITY_ALIGNMENT_NOTES.md](core/REALITY_ALIGNMENT_NOTES.md)
-- Legacy docs supersession map: [core/LEGACY_DOCS_SUPERSESSION_MAP.md](core/LEGACY_DOCS_SUPERSESSION_MAP.md)
-- Architecture refactor blueprint: [core/ARCHITECTURE_REFACTOR_BLUEPRINT.md](core/ARCHITECTURE_REFACTOR_BLUEPRINT.md)
-- Domain model refinement plan: [core/DOMAIN_MODEL_REFINEMENT_PLAN.md](core/DOMAIN_MODEL_REFINEMENT_PLAN.md)
-- REST API normalization spec: [core/API_NORMALIZATION_REST.md](core/API_NORMALIZATION_REST.md)
-- Security and audit baseline: [core/SECURITY_AUDIT_TRAIL_BASELINE.md](core/SECURITY_AUDIT_TRAIL_BASELINE.md)
-- Spec-driven delivery workflow: [core/SPEC_DRIVEN_WORKFLOW_IMPLEMENTATION.md](core/SPEC_DRIVEN_WORKFLOW_IMPLEMENTATION.md)
-- Copilot Chat prompt playbook: [core/COPILOT_CHAT_PROMPT_PLAYBOOK.md](core/COPILOT_CHAT_PROMPT_PLAYBOOK.md)
+| Document | Owner | Purpose |
+| --- | --- | --- |
+| [Master Dashboard](features/dashboard/MASTER_DASHBOARD.md) | Product and Registrar | Phase-aware operational summary and actions |
+| [Learner Enrollment and Sectioning](features/enrollment/LEARNER_ENROLLMENT_AND_SECTIONING.md) | Registrar | Intake, verification, temporary enrollment, sectioning, and SF1 |
+| [Learner Records](features/learners/LEARNER_RECORDS.md) | Registrar | Learner identity, contacts, health, portal, and lifecycle records |
+| [Personnel and SF7](features/personnel/PERSONNEL_AND_SF7.md) | School Head and Administrator | Personnel profiles, advisership, schedules, and SF7 |
+| [School Year Operations](features/school-year/SCHOOL_YEAR_OPERATIONS.md) | School Head and Registrar | Calendar policy, phases, EOSY forms, and rollover |
+| [System Administration](features/system/SYSTEM_ADMINISTRATION.md) | System Administrator | Configuration, accounts, activity logs, and health checks |
+| [Design System](ui-ux/DESIGN_SYSTEM.md) | UI and Accessibility | EnrollPro visual, motion, responsive, and wording standards |
 
-## Module implementation specs (Modules 1-5)
+## Integration
 
-- Module 1: Early Registration (Grade 7-10): [features/admission/MODULE_1_EARLY_REGISTRATION_IMPLEMENTATION_SPEC.md](features/admission/MODULE_1_EARLY_REGISTRATION_IMPLEMENTATION_SPEC.md)
-- Module 2: Enrollment Management: [features/enrollment/MODULE_2_ENROLLMENT_IMPLEMENTATION_SPEC.md](features/enrollment/MODULE_2_ENROLLMENT_IMPLEMENTATION_SPEC.md)
-- Module 3: SIMS: [features/sims/MODULE_3_SIMS_IMPLEMENTATION_SPEC.md](features/sims/MODULE_3_SIMS_IMPLEMENTATION_SPEC.md)
-- Module 4: Teacher Management: [features/teachers/MODULE_4_TEACHER_MANAGEMENT_IMPLEMENTATION_SPEC.md](features/teachers/MODULE_4_TEACHER_MANAGEMENT_IMPLEMENTATION_SPEC.md)
-- Module 5: Grade Level and Sectioning: [features/academic-year/MODULE_5_GRADE_SECTIONING_IMPLEMENTATION_SPEC.md](features/academic-year/MODULE_5_GRADE_SECTIONING_IMPLEMENTATION_SPEC.md)
+| Document | Owner | Purpose |
+| --- | --- | --- |
+| [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
+| [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
+| [Integration API v1](features/integration/INTEGRATION_API_V1.md) | Integration Engineering | Public and protected downstream feed contracts |
+| [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
+| [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
+| [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
+| [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
+| [MRF API Guide](features/integration/MRF_API_GUIDE.md) | MRF and EnrollPro Teams | Minimized personnel and learner identity feed |
 
-## Ecosystem integration
+## Maintenance Rules
 
-- Complete EnrollPro API reference: [features/integration/ENROLLPRO-API.md](features/integration/ENROLLPRO-API.md)
-- BOSY to EOSY school-year lifecycle: [features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
-- External integration v1 contract: [features/integration/INTEGRATION_API_V1.md](features/integration/INTEGRATION_API_V1.md)
-
-## Note on older docs
-
-Several existing documents under docs/core and docs/features describe target-state behavior that is not fully implemented yet. Keep using them for long-term direction, but use the implementation pack above for current engineering decisions and acceptance testing.
+- Update operational documents when user-visible workflow or terminology changes.
+- Update integration documents whenever a mounted route, request contract, or ownership boundary changes.
+- Update data documentation in the same change as a Prisma migration.
+- Run `pnpm docs:check` before completing documentation work.
+- Do not document target-state features as implemented.
+- EnrollPro does not provide Early Registration, reading assessment, enrollment listing, hardware, or Internet of Things workflows.

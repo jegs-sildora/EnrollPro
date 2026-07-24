@@ -153,7 +153,7 @@ export const router = createBrowserRouter([
       {
         element: (
           <ProtectedRoute
-            allowedRoles={["HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"]}
+            allowedRoles={["HEAD_REGISTRAR", "SYSTEM_ADMIN"]}
           />
         ),
         children: [
@@ -165,26 +165,8 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(Dashboard),
               },
               {
-                path: "/applications",
-                element: (
-                  <Navigate
-                    to="/monitoring/enrollment"
-                    replace
-                  />
-                ),
-              },
-              {
                 path: "/monitoring/enrollment",
                 element: renderLazyPage(Enrollment),
-              },
-              {
-                path: "/monitoring/enrollment/walk-in",
-                element: (
-                  <Navigate
-                    to="/continuing-learners?tab=incoming"
-                    replace
-                  />
-                ),
               },
               {
                 path: "/eosy",
@@ -215,35 +197,8 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(ViewMasterlist),
               },
               {
-                path: "/monitoring/enrollment/requirements",
-                element: (
-                  <Navigate
-                    to="/settings"
-                    replace
-                  />
-                ),
-              },
-              {
-                path: "/enrollment/requirements",
-                element: (
-                  <Navigate
-                    to="/settings"
-                    replace
-                  />
-                ),
-              },
-              {
                 path: "/settings",
                 element: renderLazyPage(Settings),
-              },
-              {
-                path: "/intake",
-                element: (
-                  <Navigate
-                    to="/continuing-learners?tab=incoming"
-                    replace
-                  />
-                ),
               },
               // Protected routes for System Admin Only
               {

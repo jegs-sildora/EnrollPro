@@ -19,7 +19,6 @@ async function main() {
       "application_addresses",
       "application_family_members",
       "enrollment_applications",
-      "enrollment_listings",
       "health_records",
       "learners"
     ];

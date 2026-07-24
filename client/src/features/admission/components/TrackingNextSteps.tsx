@@ -33,40 +33,31 @@ const STEP_METADATA: Record<
   TrackingCurrentStep,
   { title: string; description: string }
 > = {
-  APPLICATION_SUBMITTED: {
-    title: "Application Submitted",
-    description: "Your form has been received. Keep your tracking number for all follow-ups.",
-  },
   REGISTRAR_REVIEW: {
     title: "Registrar Review",
-    description: "The registrar validates your records and confirms requirements before enrollment qualification.",
-  },
-  ASSESSMENT_PHASE: {
-    title: "Assessment Phase",
-    description: "Your application requires an exam, audition, or screening. Please check with the school for your schedule.",
+    description:
+      "The Registrar's Office is checking the learner record and submitted school requirements.",
   },
   ENROLLMENT_QUALIFICATION: {
-    title: "Enrollment Qualification",
-    description: "Your application is qualified. Prepare to complete registrar enrollment requirements.",
+    title: "Ready for Class Sectioning",
+    description:
+      "The learner is enrolled and waiting for assignment to a class section.",
   },
   ENROLLED: {
     title: "Officially Enrolled",
-    description: "Enrollment is complete. Welcome to your enrolled school year.",
+    description:
+      "The learner has an official class section for the active school year.",
   },
 };
 
 const STEP_ORDER: TrackingCurrentStep[] = [
-  "APPLICATION_SUBMITTED",
   "REGISTRAR_REVIEW",
-  "ASSESSMENT_PHASE",
   "ENROLLMENT_QUALIFICATION",
   "ENROLLED",
 ];
 
 const CURRENT_STEP_VALUES = new Set<TrackingCurrentStep>([
-  "APPLICATION_SUBMITTED",
   "REGISTRAR_REVIEW",
-  "ASSESSMENT_PHASE",
   "ENROLLMENT_QUALIFICATION",
   "ENROLLED",
 ]);
@@ -89,22 +80,14 @@ function resolveCurrentStepFromRawStatus(
   const normalizedRaw = rawStatus.trim().toUpperCase();
 
   switch (normalizedRaw) {
-    case "SUBMITTED":
-    case "SUBMITTED_BEEF":
-      return "APPLICATION_SUBMITTED";
-    case "IN_REVIEW":
-    case "UNDER_REVIEW":
+    case "PENDING_VERIFICATION":
     case "FOR_REVISION":
       return "REGISTRAR_REVIEW";
-    case "VERIFIED":
-    case "ELIGIBLE":
-    case "QUALIFIED_FOR_ENROLLMENT":
-    case "PASSED":
-    case "READY_FOR_ENROLLMENT":
-    case "TEMPORARILY_ENROLLED":
+    case "READY_FOR_SECTIONING":
+    case "PENDING_CONFIRMATION":
+    case "REMEDIAL_RESOLVED":
       return "ENROLLMENT_QUALIFICATION";
-    case "ENROLLED":
-    case "TRANSFERRED":
+    case "OFFICIALLY_ENROLLED":
     case "DROPPED":
     case "TRANSFERRING_OUT":
     case "TRANSFERRED_OUT":
@@ -126,6 +109,24 @@ function getTerminalStatusNotice(
         tone: "border-red-200 bg-red-50 text-red-900",
         message:
           "Current result: The application has been rejected. Please contact the registrar for clarification.",
+      };
+    case "WITHDRAWN":
+      return {
+        tone: "border-slate-200 bg-slate-50 text-slate-900",
+        message:
+          "This enrollment application was withdrawn. Contact the Registrar's Office if the learner needs to apply again.",
+      };
+    case "TRANSFERRED":
+      return {
+        tone: "border-slate-200 bg-slate-50 text-slate-900",
+        message:
+          "The learner has transferred to another school and is no longer in the active class list.",
+      };
+    case "DROPPED":
+      return {
+        tone: "border-slate-200 bg-slate-50 text-slate-900",
+        message:
+          "The learner is recorded as dropped from the active school-year class list.",
       };
     default:
       return null;
