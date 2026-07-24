@@ -43,7 +43,7 @@ function HistoricalSummary({ stats }: { stats: DashboardStats }) {
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-black text-primary">{item.value}</p>
-            <p className="mt-3 text-sm font-bold text-muted-foreground">
+            <p className="mt-3 text-sm font-bold text-foreground">
               {item.detail}
             </p>
           </CardContent>
@@ -68,7 +68,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           <p className="text-sm font-extrabold text-foreground">
             Archived School Year Summary
           </p>
-          <p className="text-sm font-bold text-muted-foreground">
+          <p className="text-sm font-bold text-foreground">
             Final records for S.Y. {ayLabel}. Changes are not allowed for an archived school year.
           </p>
         </div>
@@ -161,11 +161,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           onReview={() => navigate("/students")}
         />
       </section>
-
-      <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
-        <ClipboardCheck className="size-4 text-primary" />
-        Counts refresh automatically when enrollment, learner, personnel, or section records change.
-      </div>
+      
     </div>
   )
 }

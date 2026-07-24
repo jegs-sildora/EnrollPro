@@ -187,10 +187,14 @@ export function getLearnerTypeLabel(type: string | null | undefined): string {
  */
 export function formatUserRole(role: string | null | undefined): string {
   if (!role) return "N/A";
+  if (role === "SYSTEM_ADMIN") return "System Administrator";
   if (role === "HEAD_REGISTRAR") return "Head Registrar";
   if (role === "CLASS_ADVISER") return "Class Adviser";
   if (role === "MRF") return "MRF Staff";
-  return role.replaceAll("_", " ");
+  return role
+    .replaceAll("_", " ")
+    .toLocaleLowerCase()
+    .replace(/\b\w/g, (character) => character.toLocaleUpperCase());
 }
 
 /**

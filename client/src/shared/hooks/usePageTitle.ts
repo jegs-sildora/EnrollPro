@@ -32,6 +32,8 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/sections": "Class Sections (SF1)",
     "/sections/homerooms": "Class Sections (SF1)",
     "/audit-logs": "System Activity Logs",
+    "/my-activity": "My Activity Log",
+    "/help": "Help & Documentation",
     "/settings": "Global System Configuration",
     "/teachers": "Personnel Directory",
     "/admin/system": "System Health",

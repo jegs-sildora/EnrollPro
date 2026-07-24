@@ -371,10 +371,14 @@ Base path: `/api/admin`
 | GET | `/system/health` | `SYSTEM_ADMIN` | Server, database, and runtime health |
 | GET | `/dashboard/stats` | `SYSTEM_ADMIN` | Administration dashboard metrics |
 
-Base path: `/api/audit-logs`; all routes require `SYSTEM_ADMIN`.
+Base path: `/api/audit-logs`. Full audit routes require `SYSTEM_ADMIN`.
+Self-service routes require an authenticated staff account and always scope
+results to the signed-in user's ID.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | `/me` | Paginated activity performed by the signed-in user |
+| GET | `/me/filters` | Action filters from the signed-in user's activity |
 | GET | `/` | Paginated audit trail |
 | GET | `/filters` | Available actors, actions, and subjects |
 | GET | `/export` | CSV audit export |

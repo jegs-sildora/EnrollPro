@@ -12,7 +12,6 @@ import {
   ChevronsUpDown,
   Calendar,
   Presentation,
-  UserCog,
   ArrowUpRightSquare,
   List,
   UserPlus,
@@ -23,11 +22,15 @@ import {
   CheckCircle2,
   CalendarClock,
   Wrench,
+  CircleHelp,
+  KeyRound,
+  UserRound,
 } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -51,7 +54,6 @@ import { Separator } from "@/shared/ui/separator";
 import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Button } from "@/shared/ui/button";
 
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -60,13 +62,6 @@ import { resolvePageTitle } from "@/shared/hooks/usePageTitle";
 import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/shared/ui/dialog";
 
 const useWindowSize = () => {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -109,6 +104,9 @@ function UserNav() {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { confirmOrRun } = useUnsavedChangesPrompt();
+  const canOpenPersonnelProfile =
+    user?.roles?.includes("SYSTEM_ADMIN") ||
+    user?.roles?.includes("HEAD_REGISTRAR");
 
   const handleLogout = async () => {
     try {
@@ -123,55 +121,97 @@ function UserNav() {
   const initials = user?.firstName
     ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ""}`.toUpperCase()
     : "U";
+  const displayName = user
+    ? `${user.firstName} ${user.lastName}`.trim()
+    : "Signed-in User";
+  const roleLabel = formatUserRole(user?.roles?.[0]);
+  const employeeLabel = user?.employeeId
+    ? `ID ${user.employeeId}`
+    : "Employee ID not set";
+
+  const navigateWithGuard = (destination: string) => {
+    confirmOrRun(() => navigate(destination));
+  };
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <div className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 font-bold text-sm">
+          <SidebarMenuButton
+            size="lg"
+            tooltip="Account menu"
+            className="h-14 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
               {initials}
             </div>
-            <div className="hidden md:flex flex-col items-start leading-tight">
-              <span className="text-sm font-black text-gray-900">
-                {user?.firstName} {user?.lastName}
-              </span>
-              <span className="inline-flex mt-0.5 px-2 py-0.5 text-sm font-bold text-white uppercase tracking-wider whitespace-nowrap bg-gray-800 rounded-md">
-                {formatUserRole(user?.roles?.[0])}
+            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+              <span className="truncate font-black uppercase">{displayName}</span>
+              <span className="truncate text-sm font-semibold text-sidebar-foreground">
+                {roleLabel}
               </span>
             </div>
-          </div>
+            <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
+          </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-56"
+          className="w-[--radix-dropdown-menu-trigger-width] min-w-72 rounded-lg"
+          side="right"
           align="end"
+          sideOffset={8}
           forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="font-bold leading-none">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-sm leading-none text-foreground">
-                {user?.email}
-              </p>
+          <DropdownMenuLabel className="px-3 py-3 font-normal">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
+                {initials}
+              </div>
+              <div className="grid min-w-0 flex-1 gap-1 text-left">
+                <p className="truncate text-sm font-black uppercase leading-none">
+                  {displayName}
+                </p>
+                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                  {roleLabel}
+                </p>
+                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                  {employeeLabel}
+                </p>
+              </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {canOpenPersonnelProfile && user?.employeeId ? (
+            <DropdownMenuItem
+              className="cursor-pointer py-2 font-bold"
+              onSelect={() =>
+                navigateWithGuard(
+                  `/teachers?employeeId=${encodeURIComponent(user.employeeId ?? "")}`,
+                )
+              }>
+              <UserRound className="mr-2 h-4 w-4" />
+              My Profile
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm"
-            onClick={(event) => {
-              event.preventDefault();
-              confirmOrRun(() => navigate("/change-password"));
-            }}>
-            <span className="flex w-full items-center">
-              <Settings className="mr-2 h-4 w-4" />
-              Change Password
-            </span>
+            className="cursor-pointer py-2 font-bold"
+            onSelect={() => navigateWithGuard("/my-activity")}>
+            <History className="mr-2 h-4 w-4" />
+            My Activity Log
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer py-2 font-bold"
+            onSelect={() => navigateWithGuard("/help")}>
+            <CircleHelp className="mr-2 h-4 w-4" />
+            Help & Documentation
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-sm text-destructive focus:text-primary-foreground"
-            onClick={() => setShowLogoutConfirm(true)}>
+            className="cursor-pointer py-2 font-bold"
+            onSelect={() => navigateWithGuard("/change-password")}>
+            <KeyRound className="mr-2 h-4 w-4" />
+            Change Password
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer py-2 font-bold text-destructive focus:bg-destructive focus:text-destructive-foreground"
+            onSelect={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </DropdownMenuItem>
@@ -251,7 +291,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-sm font-black uppercase tracking-wider whitespace-nowrap rounded-md",
+          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-md",
           badge.className,
         )}>
         {badge.label}
@@ -261,11 +301,7 @@ function SYSwitcher() {
 
   const handleSelectYear = (y: SchoolYearItem) => {
     if (hasOverride) {
-      sileo.error({
-        title: "Historical Correction Active",
-        description: "Please lock the historical session before switching school years.",
-      });
-      return;
+      useSettingsStore.getState().setHistoricalCorrectionToken(null);
     }
     setOpen(false);
     const targetId = y.id === activeSchoolYearId ? null : y.id;
@@ -386,6 +422,7 @@ const NavDivider = memo(function NavDivider({ label, badge }: { label: string; b
         <span className="text-sm font-bold uppercase text-foreground whitespace-nowrap">
           {label}
         </span>
+        {badge}
       </div>
     </div>
   );
@@ -479,24 +516,8 @@ const NavItem = memo(function NavItem({
 
 function AppSidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { clearAuth } = useAuthStore();
   const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
   const isEosyArchivedState = systemStatus === "ARCHIVED";
-  const activeBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">ACTIVE</span>;
-  let officialEnrollmentBadge;
-  if (systemPhase === "OFFICIAL_ENROLLMENT") {
-    officialEnrollmentBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">BOSY Enrollment</span>;
-  } else if (systemPhase === "CLASSES_ONGOING") {
-    officialEnrollmentBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-amber-500 text-white uppercase tracking-wide whitespace-nowrap shrink-0">REGULAR OPERATIONS</span>;
-  }
-
-  let closingOperationsBadge;
-  if (systemPhase === "EOSY_CLOSING") {
-    closingOperationsBadge = <span className="text-sm font-black px-1.5 py-0.5 rounded bg-slate-600 text-white uppercase tracking-wide whitespace-nowrap shrink-0">EOSY ARCHIVING</span>;
-  }
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
   const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
   const isHeadRegistrar = useAuthStore(
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
@@ -507,19 +528,8 @@ function AppSidebar() {
   );
   const pathname = location.pathname;
 
-  const handleLogout = async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      // Ignore network/logout failures and clear local session regardless.
-    }
-    clearAuth();
-    navigate("/staff/login");
-  };
-
   return (
-    <>
-      <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon">
         {/* ΓöÇΓöÇ Header: School Identity ΓöÇΓöÇ */}
         <SidebarHeader className="h-20 justify-center transition-all duration-300 ease-in-out group-data-[state=expanded]:px-4 group-data-[state=collapsed]:px-1.5">
           <SidebarMenu>
@@ -569,11 +579,6 @@ function AppSidebar() {
                           : systemPhase === "EOSY_CLOSING"
                             ? "END OF SCHOOL YEAR PROCESSING"
                             : "ENROLLMENT AND SECTIONING"
-                      }
-                      badge={
-                        !isEosyArchivedState
-                          ? (systemPhase === "EOSY_CLOSING" ? closingOperationsBadge : officialEnrollmentBadge)
-                          : undefined
                       }
                     />
                     <NavItem
@@ -672,7 +677,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="System Administration" badge={isEosyArchivedState ? activeBadge : undefined} />
+                    <NavDivider label="System Administration" />
                     <NavItem
                       to="/audit-logs"
                       icon={History}
@@ -723,18 +728,15 @@ function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarSeparator />
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <UserNav />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
-
-      <ConfirmationModal
-        open={showLogoutConfirm}
-        onOpenChange={setShowLogoutConfirm}
-        title="Sign Out"
-        description="Are you sure you want to sign out of your account?"
-        confirmText="Sign Out"
-        onConfirm={handleLogout}
-        variant="primary"
-      />
-    </>
   );
 }
 
@@ -769,16 +771,6 @@ const ROUTE_PHASES: Record<string, {
     redirectLabel: "Take me to Dashboard"
   }
 };
-
-function formatPhaseName(phase: string | null): string {
-  if (!phase) return "Unknown Phase";
-  const map: Record<string, string> = {
-    OFFICIAL_ENROLLMENT: "Official Enrollment",
-    CLASSES_ONGOING: "Classes Ongoing",
-    EOSY_CLOSING: "EOSY Closing"
-  };
-  return map[phase] ?? phase;
-}
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
   useRealtimeInvalidations();
@@ -820,59 +812,13 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
 
-  const [lastSafePath, setLastSafePath] = useState("/dashboard");
-  const [showBlockedModal, setShowBlockedModal] = useState(false);
-  const [blockedInfo, setBlockedInfo] = useState<{
-    moduleName: string;
-    activePhase: string;
-    redirectTo: string;
-    redirectLabel: string;
-  } | null>(null);
-  const [redirectCountdown, setRedirectCountdown] = useState(3);
-
-
-
   useEffect(() => {
     const currentPhase = systemPhase || "OFFICIAL_ENROLLMENT";
     const rule = ROUTE_PHASES[location.pathname];
     if (rule && !rule.allowedPhases.includes(currentPhase)) {
-      setBlockedInfo({
-        moduleName: rule.moduleName,
-        activePhase: currentPhase,
-        redirectTo: rule.redirectTo,
-        redirectLabel: rule.redirectLabel
-      });
-      setShowBlockedModal(true);
-      // Immediately stop from loading: push back to last safe route
-      navigate(lastSafePath, { replace: true });
-    } else {
-      setLastSafePath(location.pathname);
+      navigate(rule.redirectTo, { replace: true });
     }
-  }, [location.pathname, systemPhase, navigate, lastSafePath]);
-
-  useEffect(() => {
-    if (!showBlockedModal) return;
-    setRedirectCountdown(3);
-
-    const interval = setInterval(() => {
-      setRedirectCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setShowBlockedModal(false);
-          navigate(blockedInfo?.redirectTo || "/dashboard");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [showBlockedModal, blockedInfo, navigate]);
-
-  const handleConfirmRedirect = () => {
-    setShowBlockedModal(false);
-    navigate(blockedInfo?.redirectTo || "/dashboard");
-  };
+  }, [location.pathname, navigate, systemPhase]);
 
   const selectedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const isSchoolYearBypassRoute =
@@ -1005,7 +951,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               <AccessibilityMenu />
             </div>
 
-            <UserNav />
           </div>
         </header>
 

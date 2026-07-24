@@ -5,6 +5,8 @@ import * as ctrl from "./audit-logs.controller.js";
 
 const router: Router = Router();
 
+router.get("/me", authenticate, ctrl.mine);
+router.get("/me/filters", authenticate, ctrl.getMyFilters);
 router.get("/", authenticate, authorize("SYSTEM_ADMIN"), ctrl.index);
 router.get("/filters", authenticate, authorize("SYSTEM_ADMIN"), ctrl.getFilters);
 router.get("/export", authenticate, authorize("SYSTEM_ADMIN"), ctrl.exportCsv);

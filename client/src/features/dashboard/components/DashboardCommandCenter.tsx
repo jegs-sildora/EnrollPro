@@ -262,7 +262,7 @@ export function OperationalQueueCard({
         <p
           className={cn(
             "text-4xl font-black",
-            isClear ? "text-foreground" : warning ? "text-amber-700" : "text-primary",
+            isClear ? "text-foreground" : warning ? "text-destructive" : "text-primary",
           )}
         >
           <AnimatedNumber value={value} />
@@ -392,7 +392,18 @@ export function SectionSaturationPanel({
   sections: DashboardStats["sectionSaturation"]
   onReview: () => void
 }) {
-  const visibleSections = sections.slice(0, 6)
+  const visibleSections = [...sections]
+    .sort((a, b) => b.enrolled - a.enrolled)
+    .filter(
+      (section, index, self) =>
+        self.findIndex((s) => s.gradeLevelName === section.gradeLevelName) === index,
+    )
+    .sort((a, b) => {
+      const getGradeNum = (name: string) => parseInt(name.replace(/\D/g, ""), 10) || 0
+      return getGradeNum(a.gradeLevelName) - getGradeNum(b.gradeLevelName)
+    })
+    .slice(0, 4)
+
   const overloadedCount = sections.filter((section) => section.isOverCapacity).length
 
   return (
@@ -403,19 +414,9 @@ export function SectionSaturationPanel({
             Class Section Capacity
           </CardTitle>
           <p className="mt-1 text-sm font-semibold text-foreground">
-            Sections with the highest number of occupied seats.
+            Highest seat occupancy per grade level
           </p>
         </div>
-        <span
-          className={cn(
-            "rounded-md px-2.5 py-1 text-sm font-extrabold",
-            overloadedCount > 0
-              ? "bg-red-50 text-red-700"
-              : "bg-emerald-50 text-emerald-700",
-          )}
-        >
-          {overloadedCount > 0 ? `${overloadedCount} Overloaded` : "Within Capacity"}
-        </span>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col justify-center space-y-3">
@@ -502,17 +503,17 @@ export function Sf1CompliancePanel({
         </span>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
-        <div className="flex flex-1 flex-col justify-center space-y-2">
+        <div className="flex flex-col space-y-2">
           {items.map(([label, value]) => (
             <div
               key={label}
-              className="flex items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-sm"
+              className="flex h-[66px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-sm"
             >
-              <span className="font-semibold text-foreground">{label}</span>
+              <span className="font-bold text-foreground">{label}</span>
               <span
                 className={cn(
-                  "font-black",
-                  value > 0 ? "text-amber-800" : "text-emerald-700",
+                  "font-black text-2xl",
+                  value > 0 ? "text-destructive" : "text-primary",
                 )}
               >
                 {value}
@@ -520,7 +521,7 @@ export function Sf1CompliancePanel({
             </div>
           ))}
         </div>
-        <div className="mt-4">
+        <div className="mt-auto pt-4">
           <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground" onClick={onReview}>
             Review Learner Registry
             <ArrowRight className="size-4" />
@@ -577,6 +578,6 @@ export function ActiveTallyPanel({
 
 export function ComplianceWarningIcon({ active }: { active: boolean }) {
   return active
-    ? <AlertTriangle className="size-5 text-amber-700" />
+    ? <AlertTriangle className="size-5 text-destructive" />
     : <Check className="size-5 text-emerald-700" />
 }

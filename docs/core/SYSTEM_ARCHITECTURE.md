@@ -49,9 +49,11 @@ Primary EnrollPro route groups include:
 | `/sections` | Class Sections | Registrar and system administrator |
 | `/sections/view-masterlist/:sectionId` | Section masterlist and SF1 actions | Registrar and system administrator |
 | `/settings` | System Configuration | Registrar and system administrator |
-| `/teachers` | Personnel Directory | System administrator in the current client route tree |
+| `/teachers` | Personnel Directory | Registrar or system administrator |
 | `/admin/system` | System health | System administrator |
 | `/audit-logs` | Activity logs | System administrator |
+| `/my-activity` | Signed-in user's own activity log | Authorized staff |
+| `/help` | Enrollment, SF1, SF7, and rollover guidance | Authorized staff |
 | `/teacher/eosy` | Teacher EOSY dashboard | Teacher, adviser, registrar, or system administrator |
 | `/teacher/advisory` | Teacher advisory class | Teacher, adviser, registrar, or system administrator |
 

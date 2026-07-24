@@ -1,6 +1,7 @@
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -15,14 +16,10 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
-import { Eye, BookOpen } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
 
 import {
-  UsersIcon,
-  UserCheckIcon,
-  UserMinusIcon,
-  BookOpenIcon,
   SearchIcon,
   FilterXIcon,
   UserPlusIcon,
@@ -60,7 +57,6 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import type {
   Teacher,
   TeacherDesignationFilter,
-  TeacherStatusFilter,
 } from "../types";
 
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
@@ -76,6 +72,14 @@ interface DesignationFilterOption {
 
 const SF7_TEMPLATE_FILENAME =
   "School Form 7 (SF7) School Personnel Assignment List and Basic Profile.xlsx";
+
+const SERVICE_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  ON_LEAVE: "On Leave",
+  TRANSFERRED: "Transferred",
+  RETIRED_RESIGNED: "Retired/Resigned",
+  DROPPED_FROM_ROLLS: "Dropped from Rolls",
+};
 
 function downloadBrowserFile(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob);
@@ -131,6 +135,8 @@ function buildTeacherSearchIndex(teacher: Teacher): string {
 export default function Teachers() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedEmployeeId = searchParams.get("employeeId");
 
   const queryClient = useQueryClient();
 
@@ -179,7 +185,10 @@ export default function Teachers() {
     enabled: Boolean(ayId),
   });
 
-  const teachers = teachersQuery.data?.teachers ?? [];
+  const teachers = useMemo(
+    () => teachersQuery.data?.teachers ?? [],
+    [teachersQuery.data?.teachers],
+  );
   const loading = teachersQuery.isPending || teachersQuery.isFetching;
 
   const availableDesignationFilters = useMemo<DesignationFilterOption[]>(() => {
@@ -381,6 +390,18 @@ export default function Teachers() {
     }
   }, [teachers, viewingTeacher]);
 
+  useEffect(() => {
+    if (!requestedEmployeeId || teachers.length === 0) return;
+
+    const requestedTeacher = teachers.find(
+      (teacher) => teacher.employeeId === requestedEmployeeId,
+    );
+    if (!requestedTeacher) return;
+
+    setViewingTeacher(requestedTeacher);
+    setIsPanelOpen(true);
+  }, [requestedEmployeeId, teachers]);
+
   const filteredTeachers = useMemo(() => {
     const normalizedSearch = normalizeSearchText(activeFilter);
 
@@ -541,36 +562,6 @@ export default function Teachers() {
     return `${f}${l}` || "?";
   };
 
-  const serviceStatusLabels: Record<string, string> = {
-    ACTIVE: "Active",
-    ON_LEAVE: "On Leave",
-    TRANSFERRED: "Transferred",
-    RETIRED_RESIGNED: "Retired/Resigned",
-    DROPPED_FROM_ROLLS: "Dropped from Rolls",
-  };
-
-  function getJobTitle(teacher: Teacher): string {
-    if (teacher.plantillaPosition) {
-      const romanNumerals = new Set(["I", "II", "III", "IV", "V", "VI"]);
-      return teacher.plantillaPosition
-        .toLocaleLowerCase()
-        .split(" ")
-        .filter(Boolean)
-        .map((word) => {
-          const upperWord = word.toLocaleUpperCase();
-          if (romanNumerals.has(upperWord)) return upperWord;
-          if (upperWord === "MRF") return upperWord;
-          return `${word.charAt(0).toLocaleUpperCase()}${word.slice(1)}`;
-        })
-        .join(" ");
-    }
-    const roles = teacher.userAccount?.roles || [];
-    if (roles.includes("SYSTEM_ADMIN")) return "School Head";
-    if (roles.includes("HEAD_REGISTRAR")) return "Registrar";
-    if (roles.includes("MRF")) return "MRF Staff";
-    return "Subject Teacher";
-  }
-
   const columns = useMemo<ColumnDef<Teacher>[]>(
     () => [
       {
@@ -699,7 +690,7 @@ export default function Teachers() {
         ),
         cell: ({ row }) => {
           const status = row.original.serviceStatus || "ACTIVE";
-          const label = serviceStatusLabels[status] || status;
+          const label = SERVICE_STATUS_LABELS[status] || status;
           const isEnrolled = status === "ACTIVE";
           const isLeave = status === "ON_LEAVE";
           return (
@@ -865,7 +856,14 @@ export default function Teachers() {
         teacher={viewingTeacher}
         onOpenChange={(open) => {
           setIsPanelOpen(open);
-          if (!open) setViewingTeacher(null);
+          if (!open) {
+            setViewingTeacher(null);
+            if (requestedEmployeeId) {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete("employeeId");
+              setSearchParams(nextParams, { replace: true });
+            }
+          }
         }}
         onSaveSuccess={() => {
           invalidateTeacherQueries();
@@ -873,7 +871,14 @@ export default function Teachers() {
         }}
       />
     ),
-    [isPanelOpen, viewingTeacher, invalidateTeacherQueries],
+    [
+      isPanelOpen,
+      viewingTeacher,
+      invalidateTeacherQueries,
+      requestedEmployeeId,
+      searchParams,
+      setSearchParams,
+    ],
   );
 
   const sf7RowsNeedingReview = useMemo(

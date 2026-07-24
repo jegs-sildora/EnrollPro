@@ -29,6 +29,10 @@ const ChangePassword = lazy(
   () => import("@/features/auth/components/ChangePasswordModal"),
 );
 const AuditLogs = lazy(() => import("@/features/audit-logs/pages/Index"));
+const MyActivity = lazy(
+  () => import("@/features/audit-logs/pages/MyActivity"),
+);
+const HelpDocumentation = lazy(() => import("@/features/help/pages/Index"));
 const Settings = lazy(() => import("@/features/settings/pages/Index"));
 const Homerooms = lazy(() => import("@/features/sections/pages/Homerooms"));
 const ViewMasterlist = lazy(
@@ -200,14 +204,22 @@ export const router = createBrowserRouter([
                 path: "/settings",
                 element: renderLazyPage(Settings),
               },
+              {
+                path: "/teachers",
+                element: renderLazyPage(Teachers),
+              },
+              {
+                path: "/my-activity",
+                element: renderLazyPage(MyActivity),
+              },
+              {
+                path: "/help",
+                element: renderLazyPage(HelpDocumentation),
+              },
               // Protected routes for System Admin Only
               {
                 element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
                 children: [
-                  {
-                    path: "/teachers",
-                    element: renderLazyPage(Teachers),
-                  },
                   {
                     path: "/admin/system",
                     element: renderLazyPage(SystemHealth),
@@ -246,6 +258,14 @@ export const router = createBrowserRouter([
               {
                 path: "/teacher/advisory",
                 element: renderLazyPage(AdvisoryClass),
+              },
+              {
+                path: "/my-activity",
+                element: renderLazyPage(MyActivity),
+              },
+              {
+                path: "/help",
+                element: renderLazyPage(HelpDocumentation),
               },
             ],
           },

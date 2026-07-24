@@ -122,14 +122,18 @@ async function resolveSubjectNames<
   }));
 }
 
-export async function index(req: Request, res: Response) {
+async function listAuditLogs(
+  req: Request,
+  res: Response,
+  forcedUserId?: number,
+) {
   try {
     const page = parsePositiveInt(req.query.page) ?? 1;
     const limit = Math.min(parsePositiveInt(req.query.limit) ?? 20, 1000000);
     const skip = (page - 1) * limit;
 
     const actionType = parseQueryString(req.query.actionType);
-    const userId = parsePositiveInt(req.query.userId);
+    const userId = forcedUserId ?? parsePositiveInt(req.query.userId);
     const dateFrom = parseManilaDateStart(req.query.dateFrom);
     const dateTo = parseManilaDateEnd(req.query.dateTo);
 
@@ -199,6 +203,19 @@ export async function index(req: Request, res: Response) {
   }
 }
 
+export async function index(req: Request, res: Response) {
+  return listAuditLogs(req, res);
+}
+
+export async function mine(req: Request, res: Response) {
+  const userId = req.user?.userId;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  return listAuditLogs(req, res, userId);
+}
+
 export async function getFilters(req: Request, res: Response) {
   try {
     const [actionTypes, actors] = await Promise.all([
@@ -223,6 +240,28 @@ export async function getFilters(req: Request, res: Response) {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch filter metadata" });
+  }
+}
+
+export async function getMyFilters(req: Request, res: Response) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const actionTypes = await prisma.auditLog.groupBy({
+      by: ["actionType"],
+      where: { userId },
+      orderBy: { actionType: "asc" },
+    });
+
+    res.json({
+      actionTypes: actionTypes.map((action) => action.actionType),
+      actors: [],
+    });
+  } catch {
+    res.status(500).json({ message: "Failed to fetch activity filters" });
   }
 }
 

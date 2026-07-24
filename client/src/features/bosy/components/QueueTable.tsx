@@ -133,7 +133,7 @@ function ActionMenuButton({
           size="icon"
           variant="outline"
           disabled={disabled}
-          className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted"
+          className="h-9 w-9 rounded-md border border-border bg-background hover:bg-primary hover:text-primary-foreground"
         >
           {busy ? (
             <Loader2 className="h-4 w-4 " />

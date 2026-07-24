@@ -18,7 +18,7 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
-import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
+import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Select,
@@ -220,9 +220,14 @@ function formatKeyName(key: string) {
 /**
  * Forensic UI Upgrade: Shift from "Pretty UI" to "Forensic Usability"
  */
-export default function AuditLogs() {
+interface AuditLogsProps {
+  selfOnly?: boolean;
+}
+
+export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
   const { user } = useAuthStore();
   const isSystemAdmin = user?.roles?.includes("SYSTEM_ADMIN");
+  const canViewAllActivity = Boolean(isSystemAdmin && !selfOnly);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
@@ -269,35 +274,34 @@ export default function AuditLogs() {
 
   const fetchFilterMeta = useCallback(async () => {
     try {
-      const res = await api.get("/audit-logs/filters");
+      const res = await api.get(
+        selfOnly ? "/audit-logs/me/filters" : "/audit-logs/filters",
+      );
       setFilterMeta(res.data);
     } catch (err) {
       console.error("Failed to fetch filter metadata", err);
     }
-  }, []);
+  }, [selfOnly]);
 
   const handlePresetDate = (daysBack: number | null) => {
     const today = new Date();
     const to = today.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
-    let from = "";
-    if (daysBack !== null) {
-      const fromDate = new Date(today.getTime() - daysBack * 24 * 60 * 60 * 1000);
-      from = fromDate.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
-    } else {
-      // This Month
-      const manilaYm = today.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 7);
-      from = `${manilaYm}-01`;
-    }
+    const from = daysBack !== null
+      ? new Date(today.getTime() - daysBack * 24 * 60 * 60 * 1000)
+        .toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })
+      : `${today
+        .toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })
+        .slice(0, 7)}-01`;
     setDateFrom(from);
     setDateTo(to);
     setPage(1);
   };
 
   useEffect(() => {
-    if (isSystemAdmin) {
+    if (canViewAllActivity || selfOnly) {
       fetchFilterMeta();
     }
-  }, [fetchFilterMeta, isSystemAdmin]);
+  }, [canViewAllActivity, fetchFilterMeta, selfOnly]);
 
   const columns = useMemo<ColumnDef<AuditLogRow>[]>(
     () => [
@@ -456,18 +460,18 @@ export default function AuditLogs() {
   const filterParams = useMemo(() => {
     const params: Record<string, string> = {};
     if (actionType !== "all") params.actionType = actionType;
-    if (isSystemAdmin && actorId !== "all") params.userId = actorId;
+    if (canViewAllActivity && actorId !== "all") params.userId = actorId;
     if (dateFrom) params.dateFrom = dateFrom;
     if (dateTo) params.dateTo = dateTo;
     return params;
-  }, [actionType, actorId, dateFrom, dateTo, isSystemAdmin]);
+  }, [actionType, actorId, canViewAllActivity, dateFrom, dateTo]);
 
   const fetchLogs = useCallback(
     async (targetPage: number) => {
       setLoading(true);
       setForbidden(false);
       try {
-        const res = await api.get("/audit-logs", {
+        const res = await api.get(selfOnly ? "/audit-logs/me" : "/audit-logs", {
           params: {
             ...filterParams,
             page: targetPage,
@@ -492,7 +496,7 @@ export default function AuditLogs() {
         setLoading(false);
       }
     },
-    [filterParams],
+    [filterParams, selfOnly],
   );
 
   useEffect(() => {
@@ -501,10 +505,10 @@ export default function AuditLogs() {
 
   const refreshAuditLogs = useCallback(() => {
     void fetchLogs(page);
-    if (isSystemAdmin) {
+    if (canViewAllActivity || selfOnly) {
       void fetchFilterMeta();
     }
-  }, [fetchFilterMeta, fetchLogs, isSystemAdmin, page]);
+  }, [canViewAllActivity, fetchFilterMeta, fetchLogs, page, selfOnly]);
 
   useRealtimeRefresh({
     topics: AUDIT_LOG_REALTIME_TOPICS,
@@ -550,9 +554,9 @@ export default function AuditLogs() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("System Activity Logs");
+    setTitle(selfOnly ? "My Activity Log" : "System Activity Logs");
     return () => setTitle(null);
-  }, [setTitle]);
+  }, [selfOnly, setTitle]);
 
   return (
     <div className="space-y-6">
@@ -589,7 +593,7 @@ export default function AuditLogs() {
                   />
                   Refresh
                 </Button>
-                {isSystemAdmin && (
+                {canViewAllActivity && (
                   <Button
                     className="font-extrabold text-base"
                     onClick={handleExport}
@@ -620,7 +624,7 @@ export default function AuditLogs() {
                     </SelectContent>
                   </Select>
                 </div>
-                {isSystemAdmin && (
+                {canViewAllActivity && (
                   <div className="space-y-2">
                     <Label className="text-base font-extrabold uppercase st text-foreground">
                       Actor Filter
