@@ -497,14 +497,12 @@ function detailedServiceRemark(value: string | null | undefined): string | null 
 }
 
 function buildSf7Remarks(teacher: {
-  administrativeRemarks: string | null;
   indigenousCommunity: string | null;
 }): string {
   return joinNonEmpty([
     teacher.indigenousCommunity
       ? `IP Community / Ethnic Group: ${teacher.indigenousCommunity}`
       : null,
-    detailedServiceRemark(teacher.administrativeRemarks),
   ], '\n');
 }
 

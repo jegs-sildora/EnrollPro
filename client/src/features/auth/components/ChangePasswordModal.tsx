@@ -219,7 +219,7 @@ export const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-extrabold uppercase  text-foreground/70 text-base">
+      <p className="font-extrabold uppercase  text-foreground text-base">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">

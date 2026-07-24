@@ -38,7 +38,6 @@ export interface Teacher {
   postgraduateDegree: string | null;
   majorSpecialization: string | null;
   minorSpecialization: string | null;
-  administrativeRemarks: string | null;
   indigenousCommunity: string | null;
   natureOfAppointment: TeacherNatureOfAppointment;
   fundingSource: TeacherFundingSource;

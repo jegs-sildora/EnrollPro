@@ -231,7 +231,6 @@ export async function index(req: Request, res: Response) {
         postgraduateDegree: teacher.postgraduateDegree,
         majorSpecialization: teacher.majorSpecialization,
         minorSpecialization: teacher.minorSpecialization,
-        administrativeRemarks: teacher.administrativeRemarks,
         indigenousCommunity: teacher.indigenousCommunity,
         natureOfAppointment: teacher.natureOfAppointment,
         fundingSource: teacher.fundingSource,
@@ -352,7 +351,6 @@ interface TeacherUpsertPayload {
   postgraduateDegree?: string | null;
   majorSpecialization?: string | null;
   minorSpecialization?: string | null;
-  administrativeRemarks?: string | null;
   indigenousCommunity?: string | null;
   natureOfAppointment?: string | null;
   fundingSource?: string | null;
@@ -379,7 +377,6 @@ export async function store(req: Request, res: Response) {
       postgraduateDegree,
       majorSpecialization,
       minorSpecialization,
-      administrativeRemarks,
       indigenousCommunity,
       natureOfAppointment,
       fundingSource,
@@ -476,7 +473,6 @@ export async function store(req: Request, res: Response) {
           postgraduateDegree: normalizeOptionalUpperText(postgraduateDegree),
           majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
           minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
-          administrativeRemarks: normalizeOptionalText(administrativeRemarks),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           natureOfAppointment: natureOfAppointment ?? "REGULAR_PERMANENT",
           fundingSource: fundingSource ?? "NATIONAL",
@@ -549,7 +545,6 @@ export async function update(req: Request, res: Response) {
       postgraduateDegree,
       majorSpecialization,
       minorSpecialization,
-      administrativeRemarks,
       indigenousCommunity,
       natureOfAppointment,
       fundingSource,
@@ -627,7 +622,6 @@ export async function update(req: Request, res: Response) {
           postgraduateDegree: normalizeOptionalUpperText(postgraduateDegree),
           majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
           minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
-          administrativeRemarks: normalizeOptionalText(administrativeRemarks),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),

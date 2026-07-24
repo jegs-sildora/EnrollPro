@@ -40,6 +40,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Textarea } from "@/shared/ui/textarea";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import {
   cn,
 } from "@/shared/lib/utils";
@@ -50,7 +51,7 @@ import type {
   TeacherScheduleDay,
   TeacherSchedulePeriod,
 } from "../types";
-import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
+import { formatAdvisorySectionSummary, formatTeacherName, toSentenceCase } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -61,6 +62,14 @@ import {
   TEACHER_NATURE_OF_APPOINTMENT_OPTIONS,
   TEACHER_SCHEDULE_DAY_OPTIONS,
   getDesignationPool,
+  DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS,
+  DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
+  TEACHER_UNDERGRADUATE_DEGREE_OPTIONS,
+  TEACHER_POSTGRADUATE_DEGREE_OPTIONS,
+  TEACHER_JHS_SPECIALIZATION_OPTIONS,
+  TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS,
+  IP_COMMUNITY_OPTIONS,
+  IP_COMMUNITY_VALUES,
 } from "@enrollpro/shared";
 import {
   useUnsavedChanges,
@@ -114,7 +123,7 @@ const formSchema = z
     lastName: z.string().min(1, "Enter the last name."),
     middleName: z.string().optional().nullable(),
     suffix: z.string().optional().nullable(),
-    sex: z.enum(["MALE", "FEMALE"]),
+    sex: z.enum(["MALE", "FEMALE"], { message: "Select the sex." }),
     birthdate: z.string().min(1, "Select the date of birth.").nullable(),
 
     personnelType: z.enum(["TEACHING", "NON_TEACHING"]).nullable(),
@@ -123,16 +132,15 @@ const formSchema = z
       .trim()
       .regex(/^\d{7}$/, "Enter the 7-digit DepEd Employee ID.")
       .nullable(),
-    plantillaPosition: z.string(),
+    plantillaPosition: z.string().min(1, "Select the DepEd position (plantilla)."),
     department: z.string().optional().nullable(),
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
-    undergraduateDegree: z.string().optional().nullable(),
+    undergraduateDegree: z.string().min(1, "Enter the undergraduate degree."),
     postgraduateDegree: z.string().optional().nullable(),
     majorSpecialization: z.string().optional().nullable(),
     minorSpecialization: z.string().optional().nullable(),
-    administrativeRemarks: z.string().optional().nullable(),
-    indigenousCommunity: z.string().optional().nullable(),
+    indigenousCommunity: z.enum(IP_COMMUNITY_VALUES).optional().nullable().default("NOT APPLICABLE"),
     natureOfAppointment: z.enum([
       "REGULAR_PERMANENT",
       "PROVISIONAL",
@@ -155,9 +163,7 @@ const formSchema = z
     contactNumber: z
       .string()
       .trim()
-      .regex(/^09\d{9}$/, "Enter an 11-digit mobile number starting with 09.")
-      .or(z.literal(""))
-      .nullable(),
+      .regex(/^09\d{2}-\d{3}-\d{4}$/, "Enter an 11-digit mobile number in the format 09XX-XXX-XXXX."),
 
     serviceStatus: z
       .enum([
@@ -326,7 +332,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       lastName: "",
       middleName: "",
       suffix: "",
-      sex: "FEMALE",
+      sex: undefined as any,
       birthdate: null,
       personnelType: null,
       employeeId: null,
@@ -338,8 +344,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       postgraduateDegree: "",
       majorSpecialization: "",
       minorSpecialization: "",
-      administrativeRemarks: "",
-      indigenousCommunity: "",
+      indigenousCommunity: "NOT APPLICABLE",
       natureOfAppointment: "REGULAR_PERMANENT",
       fundingSource: "NATIONAL",
       roles: [],
@@ -385,7 +390,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         lastName: teacher.lastName || "",
         middleName: teacher.middleName || "",
         suffix: teacher.suffix || "",
-        sex: teacher.sex === "MALE" ? "MALE" : "FEMALE",
+        sex: teacher.sex,
         birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : null,
         personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
@@ -397,8 +402,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         postgraduateDegree: teacher.postgraduateDegree || "",
         majorSpecialization: teacher.majorSpecialization || "",
         minorSpecialization: teacher.minorSpecialization || "",
-        administrativeRemarks: teacher.administrativeRemarks || "",
-        indigenousCommunity: teacher.indigenousCommunity || "",
+        indigenousCommunity: (teacher.indigenousCommunity as any) || "NOT APPLICABLE",
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
         fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
@@ -414,7 +418,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         lastName: "",
         middleName: "",
         suffix: "",
-        sex: "FEMALE",
+        sex: undefined as any,
         birthdate: null,
         personnelType: null,
         employeeId: null,
@@ -426,8 +430,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         postgraduateDegree: "",
         majorSpecialization: "",
         minorSpecialization: "",
-        administrativeRemarks: "",
-        indigenousCommunity: "",
+        indigenousCommunity: "NOT APPLICABLE",
         natureOfAppointment: "REGULAR_PERMANENT",
         fundingSource: "NATIONAL",
         roles: [],
@@ -559,10 +562,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     setIsSubmitting(true);
     try {
       const profilePayload = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        middleName: data.middleName,
-        suffix: data.suffix,
+        firstName: toSentenceCase(data.firstName),
+        lastName: toSentenceCase(data.lastName),
+        middleName: toSentenceCase(data.middleName),
+        suffix: toSentenceCase(data.suffix),
         sex: data.sex,
         birthdate: data.birthdate,
         personnelType: data.personnelType,
@@ -575,8 +578,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         postgraduateDegree: data.postgraduateDegree || "",
         majorSpecialization: data.majorSpecialization || "",
         minorSpecialization: data.minorSpecialization || "",
-        administrativeRemarks: data.administrativeRemarks || "",
-        indigenousCommunity: data.indigenousCommunity || "",
+        indigenousCommunity: data.indigenousCommunity,
         natureOfAppointment: data.natureOfAppointment,
         fundingSource: data.fundingSource,
         roles: data.roles,
@@ -651,14 +653,20 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         >
           <SheetHeader className="bg-primary px-6 py-6 space-y-1 relative shrink-0">
             <div className="flex items-center gap-4">
-              <div className="size-16 rounded-2xl bg-muted/10 flex items-center justify-center font-extrabold text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
-                {(formFirstName || teacher?.firstName || "N").charAt(0)}
-                {(formLastName || teacher?.lastName || "N").charAt(0)}
-              </div>
+                <div className="size-16 rounded-2xl bg-muted/10 flex items-center justify-center font-extrabold text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
+                  {!(formFirstName || teacher?.firstName) && !(formLastName || teacher?.lastName) ? (
+                    <UserIcon className="size-8" />
+                  ) : (
+                    <>
+                      {(formFirstName || teacher?.firstName || "N").charAt(0)}
+                      {(formLastName || teacher?.lastName || "N").charAt(0)}
+                    </>
+                  )}
+                </div>
               <div className="space-y-0.5">
                 <SheetTitle className="text-2xl font-extrabold text-white uppercase leading-none">
                   {isAdding
-                    ? "New Faculty/Staff Profile"
+                    ? "New Personnel Profile"
                     : formatTeacherName({
                       ...teacher!,
                       firstName: formFirstName || teacher!.firstName,
@@ -696,6 +704,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input disabled={!isEditing}
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            placeholder="e.g. JUAN"
                             className={cn(
                               "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10",
                               errors.firstName && "border-destructive focus-visible:ring-destructive"
@@ -714,6 +723,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input disabled={!isEditing}
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            placeholder="e.g. DELA CRUZ"
                             className={cn(
                               "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10",
                               errors.lastName && "border-destructive focus-visible:ring-destructive"
@@ -733,6 +743,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            placeholder="e.g. SANTOS"
                             className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
                           />
                         )}
@@ -839,7 +850,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
                             maxLength={7}
-                            placeholder="7 digits"
+                            placeholder="e.g., 1234567"
                             className={cn(
                               "font-extrabold text-base leading-tight h-10",
                               errors.employeeId && "border-destructive"
@@ -851,38 +862,38 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">DepEd Position (Plantilla)</Label>
+                      <Label className="text-base font-extrabold uppercase text-foreground">DepEd Position (Plantilla) *</Label>
                       <Controller
                         name="plantillaPosition"
                         control={control}
                         render={({ field }) => (
                           <>
-                            {formRoles.includes("MRF") || designationPool.length === 0 ? (
+                            {formRoles.includes("MRF") ? (
                               <Input disabled={!isEditing}
                                 value={field.value || ""}
                                 onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                placeholder="e.g. MASTER TEACHER II"
                                 className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
-                                readOnly={formRoles.includes("MRF")}
+                                readOnly={true}
                               />
                             ) : (
-                              <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                                <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
-                                  <SelectValue placeholder="Select position" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[300px]">
-                                  <SelectItem value="__NONE__">No position set yet</SelectItem>
-                                  {designationPool.map((opt) => (
-                                    <SelectItem key={opt} value={opt}>
-                                      {opt}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <SearchableCombobox
+                                items={[
+                                  ...(designationPool.length > 0
+                                    ? designationPool.map(opt => ({ value: opt, label: opt }))
+                                    : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
+                                ]}
+                                value={field.value || ""}
+                                onChange={(value) => field.onChange(value)}
+                                disabled={!isEditing}
+                                placeholder="Search position (e.g., Teacher I, Master Teacher II)"
+                                searchPlaceholder="Search positions..."
+                                className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                              />
                             )}
                           </>
                         )}
                       />
+                      <AnimatedError error={errors.plantillaPosition?.message as string} />
                     </div>
                   </div>
 
@@ -896,7 +907,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           render={({ field }) => (
                             <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
                               <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
-                                <SelectValue placeholder="Select subject area" />
+                                <SelectValue placeholder="Search department (e.g., Mathematics, Science, English)" />
                               </SelectTrigger>
                               <SelectContent className="max-h-[300px]">
                                 <SelectItem value="__NONE__">No subject area set yet</SelectItem>
@@ -921,12 +932,16 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="functionalAssignment"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
+                            <SearchableCombobox
+                              items={[
+                                { value: "", label: "No office assignment" },
+                                ...DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS
+                              ]}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="e.g. PROPERTY CUSTODIAN"
-                              className={cn("font-extrabold text-base leading-tight h-10", errors.functionalAssignment && "border-destructive")}
+                              onChange={(val) => field.onChange(val)}
+                              disabled={!isEditing}
+                              placeholder="Select office assignment"
+                              searchPlaceholder="Search assignment..."
                             />
                           )}
                         />
@@ -952,20 +967,26 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Undergraduate Degree</Label>
+                        <Label className="text-base font-extrabold uppercase text-foreground">Undergraduate Degree *</Label>
                         <Controller
                           name="undergraduateDegree"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
+                            <SearchableCombobox
+                              items={TEACHER_UNDERGRADUATE_DEGREE_OPTIONS}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="e.g. BSED"
-                              className="font-extrabold text-base leading-tight h-10"
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Select undergraduate degree"
+                              searchPlaceholder="Search degrees..."
+                              className={cn(
+                                "w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border",
+                                errors.undergraduateDegree && "border-destructive focus-visible:ring-destructive"
+                              )}
                             />
                           )}
                         />
+                        <AnimatedError error={errors.undergraduateDegree?.message as string} />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-base font-extrabold uppercase text-foreground">Postgraduate Degree</Label>
@@ -973,12 +994,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="postgraduateDegree"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
+                            <SearchableCombobox
+                              items={TEACHER_POSTGRADUATE_DEGREE_OPTIONS}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="e.g. MAED"
-                              className="font-extrabold text-base leading-tight h-10"
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Select postgraduate degree"
+                              searchPlaceholder="Search degrees..."
+                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
                             />
                           )}
                         />
@@ -989,12 +1012,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="majorSpecialization"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
+                            <SearchableCombobox
+                              items={TEACHER_JHS_SPECIALIZATION_OPTIONS}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="e.g. MATHEMATICS"
-                              className="font-extrabold text-base leading-tight h-10"
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Select major specialization"
+                              searchPlaceholder="Search specializations..."
+                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
                             />
                           )}
                         />
@@ -1005,18 +1030,20 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="minorSpecialization"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
+                            <SearchableCombobox
+                              items={TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="e.g. ENGLISH"
-                              className="font-extrabold text-base leading-tight h-10"
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Select minor specialization"
+                              searchPlaceholder="Search specializations..."
+                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
                             />
                           )}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Nature of Appointment</Label>
+                        <Label className="text-base font-extrabold uppercase text-foreground">Nature of Appointment *</Label>
                         <Controller
                           name="natureOfAppointment"
                           control={control}
@@ -1025,12 +1052,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
                               value={field.value}
                             >
-                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
-                                <SelectValue placeholder="Select appointment" />
+                              <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.natureOfAppointment && "border-destructive focus-visible:ring-destructive")}>
+                                <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
+                                  <SelectItem key={option.value} value={option.value} className="uppercase">
                                     {option.label}
                                   </SelectItem>
                                 ))}
@@ -1038,9 +1065,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             </Select>
                           )}
                         />
+                        <AnimatedError error={errors.natureOfAppointment?.message as string} />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Fund Source</Label>
+                        <Label className="text-base font-extrabold uppercase text-foreground">Fund Source *</Label>
                         <Controller
                           name="fundingSource"
                           control={control}
@@ -1049,12 +1077,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
                               value={field.value}
                             >
-                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
-                                <SelectValue placeholder="Select fund source" />
+                              <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.fundingSource && "border-destructive focus-visible:ring-destructive")}>
+                                <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
+                                  <SelectItem key={option.value} value={option.value} className="uppercase">
                                     {option.label}
                                   </SelectItem>
                                 ))}
@@ -1062,6 +1090,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             </Select>
                           )}
                         />
+                        <AnimatedError error={errors.fundingSource?.message as string} />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-base font-extrabold uppercase text-foreground">IP Community / Ethnic Group</Label>
@@ -1069,27 +1098,14 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           name="indigenousCommunity"
                           control={control}
                           render={({ field }) => (
-                            <Input disabled={!isEditing}
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              placeholder="Leave blank if not applicable"
-                              className="font-extrabold text-base leading-tight h-10"
-                            />
-                          )}
-                        />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Administrative Remarks</Label>
-                        <Controller
-                          name="administrativeRemarks"
-                          control={control}
-                          render={({ field }) => (
-                            <Textarea disabled={!isEditing}
-                              {...field}
-                              value={field.value || ""}
-                              placeholder="e.g. school ICT coordinator, guidance-designate, property custodian"
-                              className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
+                            <SearchableCombobox
+                              items={IP_COMMUNITY_OPTIONS}
+                              value={field.value || "NOT APPLICABLE"}
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Select ethnic group (e.g., Aeta, Mangyan)"
+                              searchPlaceholder="Search communities..."
+                              className="w-full h-10 font-extrabold text-base leading-tight uppercase"
                             />
                           )}
                         />
@@ -1185,6 +1201,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               <Input
                                 disabled={!isEditing}
                                 value={period.subjectLabel}
+                                placeholder="e.g. MATH 7"
                                 onChange={(event) => {
                                   const subjectLabel = event.target.value.toUpperCase();
                                   setSchedulePeriods((current) =>
@@ -1193,12 +1210,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     ),
                                   );
                                 }}
-                                placeholder="Subject"
                                 className="h-10 font-extrabold"
                               />
                               <Input
                                 disabled={!isEditing}
                                 value={period.sectionLabel}
+                                placeholder="e.g. RIZAL"
                                 onChange={(event) => {
                                   const sectionLabel = event.target.value.toUpperCase();
                                   setSchedulePeriods((current) =>
@@ -1207,7 +1224,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                                     ),
                                   );
                                 }}
-                                placeholder="Section"
                                 className="h-10 font-extrabold"
                               />
                               <Button
@@ -1253,10 +1269,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={field.onChange} value={field.value || "ACTIVE"}>
-                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
+                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10 uppercase">
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="uppercase">
                                 <SelectItem value="ACTIVE">Active Personnel</SelectItem>
                                 <SelectItem value="TRANSFERRED">Transferred to another school/office</SelectItem>
                                 <SelectItem value="RETIRED_RESIGNED">Retired / Resigned</SelectItem>
@@ -1318,7 +1334,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <div className="space-y-1.5">
                       <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1">
                         <Smartphone className="size-3" />
-                        Mobile Number
+                        Mobile Number *
                       </Label>
                       <Controller
                         name="contactNumber"
@@ -1327,9 +1343,19 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input disabled={!isEditing}
                             {...field}
                             value={field.value || ""}
-                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                            maxLength={11}
-                            placeholder="09XXXXXXXXX"
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+                              let formatted = raw;
+                              if (raw.length > 4) {
+                                formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
+                              }
+                              if (raw.length > 7) {
+                                formatted = `${raw.slice(0, 4)}-${raw.slice(4, 7)}-${raw.slice(7)}`;
+                              }
+                              field.onChange(formatted);
+                            }}
+                            maxLength={13}
+                            placeholder="e.g., 0917-123-4567"
                             className={cn("font-extrabold text-base leading-tight h-10", errors.contactNumber && "border-destructive")}
                           />
                         )}
@@ -1433,7 +1459,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                           <Input disabled={!isEditing}
                             value={defaultPasswordInput}
                             onChange={(e) => setDefaultPasswordInput(e.target.value)}
-                            placeholder="Enter default password"
+                            placeholder="e.g., DepEd@1234"
                             className="h-11 font-extrabold text-base bg-background"
                           />
                           <Button

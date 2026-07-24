@@ -53,6 +53,7 @@ import {
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 
 import type {
   Teacher,
@@ -782,26 +783,16 @@ export default function Teachers() {
             </Select>
           </div>
           <div className="w-full sm:w-48">
-            <Select
+            <SearchableCombobox
+              items={[
+                { value: "all", label: "All Plantilla / Designations" },
+                ...availableDesignationFilters
+              ]}
               value={designationFilter}
-              onValueChange={(value) =>
-                onDesignationFilterChange(value as TeacherDesignationFilter)
-              }>
-              <SelectTrigger className="h-10 bg-muted">
-                <SelectValue placeholder="Plantilla / Designation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="font-extrabold">All Plantilla / Designations</SelectItem>
-                {availableDesignationFilters.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="font-extrabold">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(val) => onDesignationFilterChange(val as TeacherDesignationFilter)}
+              placeholder="Plantilla / Designation"
+              searchPlaceholder="Search designation..."
+            />
           </div>
           <div className="w-full sm:w-48">
             <Select

@@ -21,6 +21,43 @@ import {
 } from "@/features/smart/components/ui/select";
 import { Label } from "@/features/smart/components/ui/label";
 import { adminApi } from "@/features/smart/lib/api";
+import api from "@/shared/api/axiosInstance";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/features/smart/components/ui/dialog";
+
+function isFieldMatch(subjectName: string, major: string, minor: string) {
+  if (!major && !minor) return false;
+  const target = subjectName.toLowerCase();
+  const m1 = (major || "").toLowerCase();
+  const m2 = (minor || "").toLowerCase();
+  
+  const mappings: Record<string, string[]> = {
+    "math": ["math", "mathematics"],
+    "sci": ["science", "biology", "chemistry", "physics"],
+    "eng": ["english", "linguistics", "literature"],
+    "fil": ["filipino", "wika"],
+    "ap": ["social studies", "history", "araling panlipunan"],
+    "esp": ["values education", "edukasyon sa pagpapakatao", "esp"],
+    "mapeh": ["mapeh", "music", "arts", "physical education", "health"],
+    "tle": ["tle", "home economics", "industrial arts", "agri-fishery", "ict", "cookery", "dressmaking", "automotive", "drafting", "computer systems"],
+  };
+
+  let keywords = [target];
+  for (const [key, aliases] of Object.entries(mappings)) {
+    if (target.includes(key)) {
+      keywords = aliases;
+      break;
+    }
+  }
+
+  return keywords.some(k => m1.includes(k) || m2.includes(k));
+}
 
 const SCHOOL_YEARS = ["2026-2027", "2025-2026"];
 
@@ -49,6 +86,20 @@ export default function ClassAssignments() {
   const [form, setForm] = useState({ teacherId: "", subjectId: "", sectionId: "" });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  const [selectedTeacherProfile, setSelectedTeacherProfile] = useState<any>(null);
+  const [isWarningOpen, setIsWarningOpen] = useState(false);
+  const [warningData, setWarningData] = useState<any>(null);
+
+  useEffect(() => {
+    if (form.teacherId) {
+      api.get(`/teachers/${form.teacherId}`)
+        .then(res => setSelectedTeacherProfile(res.data))
+        .catch(err => console.error("Failed to fetch teacher profile", err));
+    } else {
+      setSelectedTeacherProfile(null);
+    }
+  }, [form.teacherId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -77,12 +128,39 @@ export default function ClassAssignments() {
       setError("Please fill in all fields");
       return;
     }
+
+    const subject = options.subjects.find(s => s.id === form.subjectId);
+    const subjectName = subject?.name || subject?.code || "";
+    const major = selectedTeacherProfile?.educationalBackground?.majorSpecialization || "";
+    const minor = selectedTeacherProfile?.educationalBackground?.minorSpecialization || "";
+
+    if (subjectName && selectedTeacherProfile && !isFieldMatch(subjectName, major, minor)) {
+      setWarningData({
+        teacherId: form.teacherId,
+        subjectId: form.subjectId,
+        sectionId: form.sectionId,
+        subjectName,
+        teacherMajor: major,
+        teacherMinor: minor
+      });
+      setIsWarningOpen(true);
+      return;
+    }
+
+    await executeCreate();
+  };
+
+  const executeCreate = async (isOverride = false) => {
     setCreating(true);
     setError(null);
     try {
+      if (isOverride && warningData) {
+        await api.post("/audit-logs/atlas-override", warningData);
+      }
       await adminApi.createClassAssignment({ ...form, schoolYear });
       setForm({ teacherId: "", subjectId: "", sectionId: "" });
       setShowForm(false);
+      setIsWarningOpen(false);
       setSuccess("Assignment created successfully");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -343,6 +421,36 @@ export default function ClassAssignments() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              Out-of-Field Assignment Warning
+            </DialogTitle>
+            <DialogDescription>
+              The selected target subject (<strong>{warningData?.subjectName}</strong>) does not appear to match the recorded academic qualifications for this faculty member.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-sm">
+            <p><strong>Teacher Major:</strong> {warningData?.teacherMajor || "None"}</p>
+            <p><strong>Teacher Minor:</strong> {warningData?.teacherMinor || "None"}</p>
+            <p className="mt-4 text-muted-foreground">
+              Are you sure you want to proceed with this assignment? This override will be recorded in the system activity ledger.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWarningOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => executeCreate(true)} disabled={creating}>
+              {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Acknowledge & Proceed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -16,6 +16,8 @@ import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS } from "@enrollpro/shared";
 import {
   Card,
   CardContent,
@@ -39,6 +41,7 @@ import {
   UnsavedChangesBar,
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -74,6 +77,7 @@ export default function SchoolProfileTab() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectingAccent, setSelectingAccent] = useState(false);
   const [togglingProgram, setTogglingProgram] = useState(false);
+  const [showRemoveLogoConfirm, setShowRemoveLogoConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   type FormValues = z.infer<typeof updateIdentitySchema>;
@@ -86,7 +90,7 @@ export default function SchoolProfileTab() {
       region: region || "Region VI - Western Visayas",
       division: division || "Division of Negros Occidental",
       schoolHeadName: schoolHeadName || "",
-      schoolHeadTitle: schoolHeadTitle || "",
+      schoolHeadTitle: (schoolHeadTitle as FormValues["schoolHeadTitle"]) || "",
       facebookPageUrl: facebookPageUrl || "",
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
@@ -103,7 +107,7 @@ export default function SchoolProfileTab() {
       region: region || "Region VI - Western Visayas",
       division: division || "Division of Negros Occidental",
       schoolHeadName: schoolHeadName || "",
-      schoolHeadTitle: schoolHeadTitle || "",
+      schoolHeadTitle: (schoolHeadTitle as FormValues["schoolHeadTitle"]) || "",
       facebookPageUrl: facebookPageUrl || "",
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
@@ -222,6 +226,7 @@ export default function SchoolProfileTab() {
       toastApiError(err as never);
     } finally {
       setRemovingLogo(false);
+      setShowRemoveLogoConfirm(false);
     }
   };
 
@@ -367,7 +372,17 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>Designation</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Principal IV" {...field} value={field.value ?? ""} className="font-bold" />
+                          <SearchableCombobox
+                            items={[
+                              { value: "", label: "No designation" },
+                              ...DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS
+                            ]}
+                            value={field.value || ""}
+                            onChange={(val) => field.onChange(val)}
+                            disabled={isArchived}
+                            placeholder="Select designation"
+                            searchPlaceholder="Search designation..."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -536,7 +551,7 @@ export default function SchoolProfileTab() {
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={handleRemoveLogo}
+                              onClick={() => setShowRemoveLogoConfirm(true)}
                               disabled={isArchived || removingLogo}
                               className="text-destructive">
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -602,6 +617,16 @@ export default function SchoolProfileTab() {
           </fieldset>
         </form>
       </Form>
+      <ConfirmationModal
+        open={showRemoveLogoConfirm}
+        onOpenChange={setShowRemoveLogoConfirm}
+        title="Remove School Logo"
+        description="Are you sure you want to remove the official school logo? This will revert the system to the default blue theme."
+        confirmText="Remove Logo"
+        onConfirm={handleRemoveLogo}
+        variant="danger"
+        loading={removingLogo}
+      />
     </div>
   );
 }

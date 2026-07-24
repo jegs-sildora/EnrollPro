@@ -7,6 +7,11 @@ import {
   TEACHER_FUNDING_SOURCE_VALUES,
   TEACHER_NATURE_OF_APPOINTMENT_VALUES,
   TEACHER_SCHEDULE_DAY_VALUES,
+  TEACHER_UNDERGRADUATE_DEGREE_VALUES,
+  TEACHER_POSTGRADUATE_DEGREE_VALUES,
+  TEACHER_JHS_SPECIALIZATION_VALUES,
+  TEACHER_JHS_MINOR_SPECIALIZATION_VALUES,
+  IP_COMMUNITY_VALUES,
 } from "../constants/index.js";
 
 const optionalUpperText = z.preprocess((value) => {
@@ -61,6 +66,11 @@ const teacherNatureOfAppointmentSchema = z.enum(
 );
 const teacherFundingSourceSchema = z.enum(TEACHER_FUNDING_SOURCE_VALUES);
 const teacherScheduleDaySchema = z.enum(TEACHER_SCHEDULE_DAY_VALUES);
+const teacherUndergraduateDegreeSchema = z.enum(TEACHER_UNDERGRADUATE_DEGREE_VALUES);
+const teacherPostgraduateDegreeSchema = z.enum(TEACHER_POSTGRADUATE_DEGREE_VALUES);
+const teacherJhsSpecializationSchema = z.enum(TEACHER_JHS_SPECIALIZATION_VALUES);
+const teacherJhsMinorSpecializationSchema = z.enum(TEACHER_JHS_MINOR_SPECIALIZATION_VALUES);
+
 const timeOfDaySchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be in HH:MM format");
@@ -89,7 +99,7 @@ export const teacherSchemaBase = z
     employeeId: z
       .string()
       .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits"),
-    contactNumber: optionalContactNumber.optional(),
+    contactNumber: z.string().regex(/^09\d{2}-\d{3}-\d{4}$/, "Enter an 11-digit mobile number in the format 09XX-XXX-XXXX."),
     specialization: z
       .preprocess(
         (value) => {
@@ -106,12 +116,38 @@ export const teacherSchemaBase = z
         z.union([teacherSpecializationSchema, z.null()]),
       )
       .optional(),
-    undergraduateDegree: optionalUpperText.optional(),
-    postgraduateDegree: optionalUpperText.optional(),
-    majorSpecialization: optionalUpperText.optional(),
-    minorSpecialization: optionalUpperText.optional(),
-    administrativeRemarks: optionalUpperText.optional(),
-    indigenousCommunity: optionalUpperText.optional(),
+    undergraduateDegree: teacherUndergraduateDegreeSchema,
+    postgraduateDegree: z
+      .preprocess(
+        (value) => {
+          if (!value) return "";
+          if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
+          return value;
+        },
+        teacherPostgraduateDegreeSchema
+      )
+      .optional(),
+    majorSpecialization: z
+      .preprocess(
+        (value) => {
+          if (!value) return null;
+          if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
+          return value;
+        },
+        z.union([teacherJhsSpecializationSchema, z.null()])
+      )
+      .optional(),
+    minorSpecialization: z
+      .preprocess(
+        (value) => {
+          if (!value) return "";
+          if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
+          return value;
+        },
+        teacherJhsMinorSpecializationSchema
+      )
+      .optional(),
+    indigenousCommunity: z.enum(IP_COMMUNITY_VALUES).optional().nullable().default("NOT APPLICABLE"),
     natureOfAppointment: teacherNatureOfAppointmentSchema
       .optional()
       .default("REGULAR_PERMANENT"),
@@ -132,22 +168,7 @@ export const teacherSchemaBase = z
         z.union([teacherDepartmentSchema, z.null()]),
       )
       .optional(),
-    plantillaPosition: z
-      .preprocess(
-        (value) => {
-          if (value === undefined || value === null || value === "") {
-            return null;
-          }
-
-          if (typeof value === "string") {
-            return value.normalize("NFC").trim().toUpperCase();
-          }
-
-          return value;
-        },
-        z.union([teacherPlantillaPositionSchema, z.null()]),
-      )
-      .optional(),
+    plantillaPosition: requiredUpperText("Plantilla position is required"),
   })
   .strict();
 

@@ -29,7 +29,6 @@ export const sf7ImportPreviewRowSchema = z.object({
   majorSpecialization: z.string().nullable(),
   minorSpecialization: z.string().nullable(),
   assignmentText: z.string().nullable(),
-  administrativeRemarks: z.string().nullable(),
   indigenousCommunity: z.string().nullable(),
   schedulePeriods: z.array(sf7SchedulePeriodPreviewSchema),
   importedWeeklyMinutes: z.number().int().nonnegative().nullable(),

@@ -11,4 +11,6 @@ router.get("/", authenticate, authorize("SYSTEM_ADMIN"), ctrl.index);
 router.get("/filters", authenticate, authorize("SYSTEM_ADMIN"), ctrl.getFilters);
 router.get("/export", authenticate, authorize("SYSTEM_ADMIN"), ctrl.exportCsv);
 
+router.post("/atlas-override", authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"), ctrl.atlasOverride);
+
 export default router;

@@ -20,3 +20,8 @@ export function formatAdvisorySectionSummary(
 
   return `${section.gradeLevelName ?? "Grade"} — ${section.name}`;
 }
+
+export function toSentenceCase(str: string | null | undefined): string {
+  if (!str) return "";
+  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}

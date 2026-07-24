@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEPED_TEACHER_PLANTILLA_POSITION_VALUES } from "../constants/index.js";
 
 export const updateIdentitySchema = z.object({
   schoolName: z.string().min(1, "School name is required").max(200),
@@ -11,7 +12,11 @@ export const updateIdentitySchema = z.object({
   region: z.string().optional().nullable().or(z.literal("")),
   division: z.string().optional().nullable().or(z.literal("")),
   schoolHeadName: z.string().optional().nullable().or(z.literal("")),
-  schoolHeadTitle: z.string().optional().nullable().or(z.literal("")),
+  schoolHeadTitle: z
+    .enum(DEPED_TEACHER_PLANTILLA_POSITION_VALUES)
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   facebookPageUrl: z
     .string()
     .url("Must be a valid URL")

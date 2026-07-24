@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { type Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
+import { auditLog } from "./audit-logs.service.js";
 
 const parseQueryString = (value: unknown): string | undefined => {
   if (typeof value !== "string") {
@@ -336,3 +337,29 @@ export async function exportCsv(req: Request, res: Response) {
   }
 }
 
+
+export async function atlasOverride(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { teacherId, subjectId, sectionId, subjectName, teacherMajor, teacherMinor } = req.body;
+
+    await auditLog({
+      userId: user.id,
+      actionType: "ATLAS_ASSIGNMENT_OVERRIDE",
+      description: "Administrator ${user.firstName} ${user.lastName} overrode teaching load assignment for subject ${subjectName} to teacher #${teacherId}",
+      subjectType: "TEACHER",
+      recordId: Number(teacherId) || null,
+      metadata: { teacherId, subjectId, sectionId, subjectName, teacherMajor, teacherMinor },
+      req,
+    });
+
+    res.status(200).json({ message: "Override logged successfully" });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to log override";
+    res.status(500).json({ message });
+  }
+}

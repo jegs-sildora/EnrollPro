@@ -61,7 +61,6 @@ model Teacher {
   postgraduateDegree  String?              @map("postgraduate_degree")
   majorSpecialization String?              @map("major_specialization")
   minorSpecialization String?              @map("minor_specialization")
-  administrativeRemarks String?            @map("administrative_remarks")
   indigenousCommunity String?              @map("indigenous_community")
   natureOfAppointment TeacherNatureOfAppointment @default(REGULAR_PERMANENT) @map("nature_of_appointment")
   fundingSource       TeacherFundingSource @default(NATIONAL) @map("funding_source")
@@ -72,7 +71,7 @@ model Teacher {
   plantillaPosition   String?              @map("plantilla_position")
   designation         String?
   departmentId        Int?                 @map("department_id")
-  sex                 Sex                  @default(FEMALE)
+  sex                 Sex
   userId              Int?                 @unique(map: "uq_teachers_user_id") @map("user_id")
   serviceStatus       String               @default("ACTIVE") @map("service_status")
   birthdate           DateTime?            @db.Date
