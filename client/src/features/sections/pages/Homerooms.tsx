@@ -743,10 +743,11 @@ export default function Homerooms() {
       setGroups(res.data.gradeLevels);
       setTeachers(teachersRes.data.teachers);
 
-      // Auto-select first grade tab if none is active
+      // Auto-select first grade tab if none is active or current is invalid
       if (res.data.gradeLevels && res.data.gradeLevels.length > 0) {
         const currentId = useSettingsStore.getState().uiPreferences.homeroomsGradeId;
-        if (!currentId) {
+        const currentExists = res.data.gradeLevels.some((g: any) => String(g.gradeLevelId) === currentId);
+        if (!currentId || !currentExists) {
           setActiveGradeId(String(res.data.gradeLevels[0].gradeLevelId));
         }
       }

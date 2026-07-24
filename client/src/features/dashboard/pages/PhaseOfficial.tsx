@@ -43,7 +43,7 @@ function HistoricalSummary({ stats }: { stats: DashboardStats }) {
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-black text-primary">{item.value}</p>
-            <p className="mt-3 text-sm font-bold text-foreground">
+            <p className="mt-3 text-base font-bold text-foreground">
               {item.detail}
             </p>
           </CardContent>
@@ -65,10 +65,10 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
     return (
       <div className="space-y-4">
         <div className="rounded-md border border-slate-200 bg-card px-4 py-3">
-          <p className="text-sm font-extrabold text-foreground">
+          <p className="text-base font-extrabold text-foreground">
             Archived School Year Summary
           </p>
-          <p className="text-sm font-bold text-foreground">
+          <p className="text-base font-bold text-foreground">
             Final records for S.Y. {ayLabel}. Changes are not allowed for an archived school year.
           </p>
         </div>
@@ -91,10 +91,10 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
     <div className="space-y-4 ">
       <div className="bg-card">
         <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-sm font-extrabold text-primary">
+          <p className="text-base font-extrabold text-primary">
             Enrollment Operations for S.Y. {ayLabel}
           </p>
-          <p className="text-sm font-bold text-foreground">
+          <p className="text-base font-bold text-foreground">
             Process learner applications, verify school requirements, and complete class placement.
           </p>
         </div>

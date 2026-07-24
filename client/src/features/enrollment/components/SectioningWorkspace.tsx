@@ -1173,10 +1173,10 @@ export function SectioningWorkspace() {
                 <tbody className="divide-y divide-border text-base leading-tight bg-card text-center">
                   {filteredAndSortedPool.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={3}
-                        className="p-12 text-center text-foreground font-extrabold">
-                        No learners match your criteria.
+                      <td colSpan={3} className="h-[400px] text-center text-muted-foreground font-semibold">
+                        <div className="flex flex-col items-center justify-center h-full space-y-3">
+                          <p className="text-foreground font-extrabold">No learners match your criteria.</p>
+                        </div>
                       </td>
                     </tr>
                   ) : (

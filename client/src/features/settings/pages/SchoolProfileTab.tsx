@@ -583,7 +583,7 @@ export default function SchoolProfileTab() {
                                 onClick={() => handleSelectAccent(color)}
                                 disabled={isArchived || selectingAccent}
                                 className={`group relative h-16 w-16 rounded-2xl border-2 transition-all hover:scale-105 ${isSelected
-                                  ? "border-foreground ring-4 ring-foreground/20 ring-offset-2 shadow-sm"
+                                  ? "ring-4 ring-primary shadow-sm"
                                   : "border-border/50 hover:border-foreground/50 hover:shadow-md shadow-sm"
                                   }`}
                                 style={{ backgroundColor: color.hex }}

@@ -81,13 +81,13 @@ export function DashboardSummaryRibbon({
           <Card key={item.key} className="border-slate-200 bg-card shadow-sm">
             <CardContent className="flex min-h-32 items-center gap-4 p-5">
               <div className="min-w-0">
-                <p className="text-sm font-extrabold leading-tight text-foreground">
+                <p className="text-base font-extrabold leading-tight text-foreground">
                   {item.label}
                 </p>
                 <p className="mt-1 text-3xl font-black leading-none text-primary">
                   <AnimatedNumber value={summary[item.key]} />
                 </p>
-                <p className="mt-2 text-sm font-semibold text-foreground">
+                <p className="mt-2 text-base font-semibold text-foreground">
                   {item.helper}
                 </p>
               </div>
@@ -121,7 +121,7 @@ export function DashboardActionToolbar({
 
   if (isArchived) {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-slate-200 bg-card px-4 py-3 text-sm font-bold text-foreground shadow-sm">
+      <div className="flex items-center gap-3 rounded-md border border-slate-200 bg-card px-4 py-3 text-base font-bold text-foreground shadow-sm">
         <ShieldCheck className="size-4 text-primary" />
         Historical school year records are read-only.
       </div>
@@ -134,10 +134,10 @@ export function DashboardActionToolbar({
       className="flex flex-col gap-3 rounded-md border border-slate-200 bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between"
     >
       <div className="min-w-0 px-1">
-        <p className="text-sm font-extrabold text-foreground">
+        <p className="text-base font-extrabold text-foreground">
           Quick Actions
         </p>
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           {isEosy
             ? "Enrollment controls are locked while final grades are being completed."
             : "Open common Registrar's Office tasks for this school year."}
@@ -174,10 +174,9 @@ export function DashboardActionToolbar({
             <DropdownMenuLabel>Choose School Record</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => navigate("/sections")}>
-              <BookOpenCheck className="mr-2 size-4" />
               <div>
                 <p className="font-bold">Learner SF1 Roster</p>
-                <p className="text-sm text-foreground">
+                <p className="">
                   Select a class section, then upload its SF1 file.
                 </p>
               </div>
@@ -186,10 +185,9 @@ export function DashboardActionToolbar({
               disabled={!canManageSectioning}
               onSelect={() => navigate("/teachers")}
             >
-              <Presentation className="mr-2 size-4" />
               <div>
                 <p className="font-bold">Personnel SF7 Roster</p>
-                <p className="text-sm text-foreground">
+                <p className="hover:text-primary-foreground">
                   {canManageSectioning
                     ? "Open Personnel Directory and use SF7 Actions."
                     : "System Administrator access is required."}
@@ -252,7 +250,7 @@ export function OperationalQueueCard({
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
         <div>
           <CardTitle className="text-base font-extrabold">{title}</CardTitle>
-          <p className="mt-1 text-sm font-semibold text-foreground">
+          <p className="mt-1 text-base font-semibold text-foreground">
             {detail}
           </p>
         </div>
@@ -270,7 +268,7 @@ export function OperationalQueueCard({
         <div className="mt-5 flex flex-1 flex-col justify-end gap-3 border-t border-slate-100 pt-4">
           <p
             className={cn(
-              "flex min-h-5 items-center gap-2 text-sm font-bold",
+              "flex min-h-5 items-center gap-2 text-base font-bold",
               isClear ? "text-emerald-700" : "text-foreground",
             )}
           >
@@ -297,10 +295,10 @@ export function CurriculumDistributionPanel({
   const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore()
 
   const ALL_PROGRAMS = [
-    { programType: "REGULAR", label: "Basic Education Curriculum", isSpecialProgram: false },
-    ...(steEnabled ? [{ programType: "STE", label: "Science Technology and Engineering", isSpecialProgram: true }] : []),
-    ...(spaEnabled ? [{ programType: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
-    ...(spsEnabled ? [{ programType: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
+    { programType: "REGULAR", acronym: "BEC", label: "Basic Education Curriculum", isSpecialProgram: false },
+    ...(steEnabled ? [{ programType: "STE", acronym: "STE", label: "Science Technology and Engineering", isSpecialProgram: true }] : []),
+    ...(spaEnabled ? [{ programType: "SPA", acronym: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
+    ...(spsEnabled ? [{ programType: "SPS", acronym: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
   ]
   const visibleItems = [
     ...ALL_PROGRAMS.map(prog => {
@@ -316,19 +314,26 @@ export function CurriculumDistributionPanel({
         <CardTitle className="text-base font-extrabold">
           Learners by Curriculum Program
         </CardTitle>
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           Enrolled learners grouped by their current curriculum program.
         </p>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-center space-y-4">
+      <CardContent className="flex flex-1 flex-col justify-center space-y-6">
         {visibleItems.map((item) => {
           const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0
           return (
             <div key={item.programType} className="space-y-1.5">
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate font-bold">{item.label}</span>
-                <span className="shrink-0 font-extrabold">
-                  {item.count} <span className="text-foreground">{percentage}%</span>
+              <div className="flex items-center justify-between gap-3 text-base">
+                <span className="min-w-0 truncate font-bold">
+                  {/* @ts-ignore */}
+                  {item.acronym && <span className="font-extrabold">{item.acronym}</span>}
+                  {/* @ts-ignore */}
+                  {item.acronym && <span className="mx-1">|</span>}
+                  {item.label}
+                </span>
+                <span className="shrink-0">
+                  <span className="font-extrabold text-primary">{item.count}</span>
+                  {item.count > 0 && <span className="text-muted-foreground ml-1">({percentage}%)</span>}
                 </span>
               </div>
               <Progress value={percentage} className="h-2" />
@@ -351,14 +356,14 @@ export function IntakePipelinePanel({
         <CardTitle className="text-base font-extrabold">
           Enrollment Records by Grade
         </CardTitle>
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           Continuing learners, walk-in learners, and transferees for each grade level.
         </p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center overflow-x-auto">
-        <table className="w-full min-w-0 text-sm">
+        <table className="w-full min-w-0 text-base">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-sm uppercase text-foreground">
+            <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
               <th className="py-2 pr-3 font-extrabold">Grade</th>
               <th className="px-3 py-2 text-center font-extrabold">Continuing Learners</th>
               <th className="px-3 py-2 text-center font-extrabold">Walk-In Learners</th>
@@ -369,7 +374,7 @@ export function IntakePipelinePanel({
             {rows.map((row) => (
               <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0">
                 <td className="py-3 pr-3 font-extrabold">
-                  <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
+                  <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                     {row.gradeLevelName}
                   </span>
                 </td>
@@ -413,7 +418,7 @@ export function SectionSaturationPanel({
           <CardTitle className="text-base font-extrabold">
             Class Section Capacity
           </CardTitle>
-          <p className="mt-1 text-sm font-semibold text-foreground">
+          <p className="mt-1 text-base font-semibold text-foreground">
             Highest seat occupancy per grade level
           </p>
         </div>
@@ -421,7 +426,7 @@ export function SectionSaturationPanel({
       <CardContent className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col justify-center space-y-3">
           {visibleSections.length === 0 ? (
-            <div className="flex flex-1 min-h-[250px] flex-col items-center justify-center rounded-md border border-dashed border-slate-200 p-5 text-center text-sm font-bold text-foreground">
+            <div className="flex flex-1 min-h-[250px] flex-col items-center justify-center rounded-md border border-dashed border-slate-200 p-5 text-center text-base font-bold text-foreground">
               No class sections are configured for this school year.
             </div>
           ) : (
@@ -429,16 +434,16 @@ export function SectionSaturationPanel({
               <div key={section.id} className="rounded-md border border-slate-200 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-extrabold">
+                    <p className="truncate text-base font-extrabold">
                       {section.gradeLevelName} - {section.name}
                     </p>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-base font-semibold text-foreground">
                       {section.enrolled} of {section.capacity} learners
                     </p>
                   </div>
                   <span
                     className={cn(
-                      "shrink-0 text-sm font-black",
+                      "shrink-0 text-base font-black",
                       section.isOverCapacity ? "text-red-700" : "text-foreground",
                     )}
                   >
@@ -487,13 +492,13 @@ export function Sf1CompliancePanel({
           <CardTitle className="text-base font-extrabold">
             SF1 Learner Information Check
           </CardTitle>
-          <p className="mt-1 text-sm font-semibold text-foreground">
+          <p className="mt-1 text-base font-semibold text-foreground">
             Learner information required for School Form 1.
           </p>
         </div>
         <span
           className={cn(
-            "rounded-md px-2.5 py-1 text-sm font-extrabold",
+            "rounded-md px-2.5 py-1 text-base font-extrabold",
             isComplete
               ? "bg-emerald-50 text-emerald-700"
               : "bg-amber-50 text-amber-800",
@@ -507,7 +512,7 @@ export function Sf1CompliancePanel({
           {items.map(([label, value]) => (
             <div
               key={label}
-              className="flex h-[66px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-sm"
+              className="flex h-[66px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base"
             >
               <span className="font-bold text-foreground">{label}</span>
               <span
@@ -549,7 +554,7 @@ export function ActiveTallyPanel({
         <CardTitle className="text-base font-extrabold">
           Current Enrollment Count
         </CardTitle>
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           BOSY enrollment plus late enrollees, minus officially dropped learners.
         </p>
       </CardHeader>
@@ -558,11 +563,11 @@ export function ActiveTallyPanel({
           {formula.map(([label, value, operator], index) => (
             <div key={label} className="relative rounded-md border border-slate-200 p-4">
               {index > 0 && (
-                <span className="absolute -left-3 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-sm font-black sm:flex">
+                <span className="absolute -left-3 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-base font-black sm:flex">
                   {operator}
                 </span>
               )}
-              <p className="text-sm font-bold text-foreground">{label}</p>
+              <p className="text-base font-bold text-foreground">{label}</p>
               <p className="mt-2 text-3xl font-black text-foreground">{value}</p>
             </div>
           ))}
