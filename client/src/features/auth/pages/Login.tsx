@@ -299,7 +299,7 @@ export default function Login() {
         setSuccess("Account security update required...");
         redirectTimeoutRef.current = window.setTimeout(() => {
           navigate("/change-password?origin=staff", { replace: true });
-        }, 800);
+        }, 100);
         return;
       }
 
@@ -310,7 +310,7 @@ export default function Login() {
 
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate(destination, { replace: true });
-      }, 800);
+      }, 100);
     },
     [navigate, setAuth, rememberMe, isBosyEnrollmentOpen],
   );
@@ -322,7 +322,7 @@ export default function Login() {
     setSuccess(null);
 
     // Give 2 secs delay when the Sign In click and the Signing In... msg shows up
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     try {
       const response = await api.post<AuthResponsePayload>("/auth/login", {

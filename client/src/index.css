@@ -5,6 +5,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  th {
+    font-weight: 900 !important; /* Tailwind font-black */
+  }
+}
 div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus-visible, > button:focus, > button:focus-visible, > [role="combobox"]:focus, > [role="combobox"][aria-expanded="true"]) > .animated-error {
   opacity: 0 !important;
   pointer-events: none;

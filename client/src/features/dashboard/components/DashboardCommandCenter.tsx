@@ -26,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu"
 import { Progress } from "@/shared/ui/progress"
+import { Badge } from "@/shared/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils"
 import { useAuthStore } from "@/store/auth.slice"
 import { useSettingsStore } from "@/store/settings.slice"
@@ -296,9 +298,9 @@ export function CurriculumDistributionPanel({
 
   const ALL_PROGRAMS = [
     { programType: "REGULAR", acronym: "BEC", label: "Basic Education Curriculum", isSpecialProgram: false },
-    ...(steEnabled ? [{ programType: "STE", acronym: "STE", label: "Science Technology and Engineering", isSpecialProgram: true }] : []),
-    ...(spaEnabled ? [{ programType: "SPA", acronym: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
-    ...(spsEnabled ? [{ programType: "SPS", acronym: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
+    ...(steEnabled ? [{ programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", acronym: "STE", label: "Science Technology and Engineering", isSpecialProgram: true }] : []),
+    ...(spaEnabled ? [{ programType: "SPECIAL_PROGRAM_IN_THE_ARTS", acronym: "SPA", label: "Special Program in the Arts", isSpecialProgram: true }] : []),
+    ...(spsEnabled ? [{ programType: "SPECIAL_PROGRAM_IN_SPORTS", acronym: "SPS", label: "Special Program in Sports", isSpecialProgram: true }] : []),
   ]
   const visibleItems = [
     ...ALL_PROGRAMS.map(prog => {
@@ -332,8 +334,8 @@ export function CurriculumDistributionPanel({
                   {item.label}
                 </span>
                 <span className="shrink-0">
-                  <span className="font-extrabold text-primary">{item.count}</span>
-                  {item.count > 0 && <span className="text-muted-foreground ml-1">({percentage}%)</span>}
+                  <span className="font-extrabold text-primary">{item.count} Learners</span>
+                  {item.count > 0 && <span className="text-foreground ml-1">({percentage}%)</span>}
                 </span>
               </div>
               <Progress value={percentage} className="h-2" />
@@ -357,30 +359,36 @@ export function IntakePipelinePanel({
           Enrollment Records by Grade
         </CardTitle>
         <p className="text-base font-semibold text-foreground">
-          Continuing learners, walk-in learners, and transferees for each grade level.
+          Continuing or promoted learners, new entrants, and transferees for each grade level.
         </p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center overflow-x-auto">
         <table className="w-full min-w-0 text-base">
           <thead>
             <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
-              <th className="py-2 pr-3 font-extrabold">Grade</th>
-              <th className="px-3 py-2 text-center font-extrabold">Continuing Learners</th>
-              <th className="px-3 py-2 text-center font-extrabold">Walk-In Learners</th>
-              <th className="pl-3 py-2 text-center font-extrabold">Transferees</th>
+              <th className="py-2 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
+              <th className="px-1 py-2 text-center font-extrabold leading-tight">Continuing or Promoted</th>
+              <th className="px-1 py-2 text-center font-extrabold leading-tight">New Entrants</th>
+              <th className="px-1 py-2 text-center font-extrabold">Transferees</th>
+              <th className="px-1 py-2 text-center font-extrabold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
+              <th className="pl-1 py-2 text-center font-extrabold">Total</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0">
-                <td className="py-3 pr-3 font-extrabold">
+              <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                <td className="py-3 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
                   <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                     {row.gradeLevelName}
                   </span>
                 </td>
-                <td className="px-3 py-3 text-center font-bold">{row.continuingLearners}</td>
-                <td className="px-3 py-3 text-center font-bold">{row.walkIn}</td>
-                <td className="pl-3 py-3 text-center font-bold">{row.transferee}</td>
+                <td className="px-1 py-3 text-center font-bold">{row.continuingLearners}</td>
+                <td className="px-1 py-3 text-center font-bold">{row.newEntrants}</td>
+                <td className="px-1 py-3 text-center font-bold">{row.transferee}</td>
+                <td className="px-1 py-3 text-center font-bold">{row.returningLearners}</td>
+                <td className="pl-1 py-3 text-center font-black text-primary">
+                  {row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -397,6 +405,20 @@ export function SectionSaturationPanel({
   sections: DashboardStats["sectionSaturation"]
   onReview: () => void
 }) {
+  const navigate = useNavigate()
+
+  const SCP_SHORT_LABELS: Record<string, string> = {
+    SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+    SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+    SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+  }
+
+  const PROGRAM_FULL_LABELS: Record<string, string> = {
+    SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
+    SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
+    SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
+  }
+
   const visibleSections = [...sections]
     .sort((a, b) => b.enrolled - a.enrolled)
     .filter(
@@ -408,8 +430,6 @@ export function SectionSaturationPanel({
       return getGradeNum(a.gradeLevelName) - getGradeNum(b.gradeLevelName)
     })
     .slice(0, 4)
-
-  const overloadedCount = sections.filter((section) => section.isOverCapacity).length
 
   return (
     <Card className="flex h-full flex-col border-slate-200 bg-card shadow-sm">
@@ -430,32 +450,60 @@ export function SectionSaturationPanel({
               No class sections are configured for this school year.
             </div>
           ) : (
-            visibleSections.map((section) => (
-              <div key={section.id} className="rounded-md border border-slate-200 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-extrabold">
-                      {section.gradeLevelName} - {section.name}
-                    </p>
-                    <p className="text-base font-semibold text-foreground">
-                      {section.enrolled} of {section.capacity} learners
-                    </p>
+            <TooltipProvider>
+              {visibleSections.map((section) => (
+                <div
+                  key={section.id}
+                  onClick={() => navigate(`/sections/view-masterlist/${section.id}`)}
+                  className="rounded-md border border-slate-200 p-3 hover:bg-slate-50 hover:cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-base font-extrabold">
+                          {section.gradeLevelName} - {section.name}
+                        </p>
+                        {section.programType !== "REGULAR" && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="text-sm font-extrabold uppercase bg-background text-primary border-primary/30"
+                              >
+                                {SCP_SHORT_LABELS[section.programType] ?? section.programType}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="font-semibold text-sm">
+                                {PROGRAM_FULL_LABELS[section.programType] ?? section.programType}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                      <p className="text-base font-semibold text-foreground">
+                        {section.enrolled} of {section.capacity} learners
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 text-base font-black",
+                        section.isOverCapacity ? "text-red-700" : "text-foreground",
+                      )}
+                    >
+                      {section.utilizationPercent}%
+                    </span>
                   </div>
-                  <span
+                  <Progress
+                    value={section.utilizationPercent}
                     className={cn(
-                      "shrink-0 text-base font-black",
-                      section.isOverCapacity ? "text-red-700" : "text-foreground",
+                      "mt-2 h-2",
+                      section.isOverCapacity && "bg-red-200 [&>div]:bg-red-700",
                     )}
-                  >
-                    {section.utilizationPercent}%
-                  </span>
+                  />
                 </div>
-                <Progress
-                  value={Math.min(section.utilizationPercent, 100)}
-                  className={cn("mt-2 h-2", section.isOverCapacity && "[&>div]:bg-red-600")}
-                />
-              </div>
-            ))
+              ))}
+            </TooltipProvider>
           )}
         </div>
         <div className="mt-4">
@@ -512,7 +560,7 @@ export function Sf1CompliancePanel({
           {items.map(([label, value]) => (
             <div
               key={label}
-              className="flex h-[66px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base"
+              className="flex h-[76px] items-center justify-between gap-4 rounded-md border border-slate-100 px-3 py-2.5 text-base"
             >
               <span className="font-bold text-foreground">{label}</span>
               <span

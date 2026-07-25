@@ -497,20 +497,29 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       });
 
     const intakePipeline = gradeLevels.map((gradeLevel) => {
-      const gradeApplications = pipelineApplications.filter(
-        (application) => application.gradeLevelId === gradeLevel.id,
-      );
+      const gradeApplications = isArchived
+        ? []
+        : activeApplications.filter(
+            (application) => application.gradeLevelId === gradeLevel.id,
+          );
       let continuingLearners = 0;
-      let walkIn = 0;
+      let newEntrants = 0;
       let transferee = 0;
+      let returningLearners = 0;
 
       gradeApplications.forEach((application) => {
         if (application.learnerType === "TRANSFEREE") {
           transferee += 1;
         } else if (application.learnerType === "CONTINUING") {
           continuingLearners += 1;
-        } else if (application.admissionChannel === "F2F") {
-          walkIn += 1;
+        } else if (application.learnerType === "NEW_ENROLLEE") {
+          newEntrants += 1;
+        } else if (
+          application.learnerType === "RETURNING" ||
+          application.learnerType === "ALS" ||
+          application.learnerType === "OSCYA"
+        ) {
+          returningLearners += 1;
         }
       });
 
@@ -519,8 +528,9 @@ export async function getStats(req: Request, res: Response): Promise<void> {
         gradeLevelName: gradeLevel.name,
         displayOrder: gradeLevel.displayOrder,
         continuingLearners,
-        walkIn,
+        newEntrants,
         transferee,
+        returningLearners,
       };
     });
 

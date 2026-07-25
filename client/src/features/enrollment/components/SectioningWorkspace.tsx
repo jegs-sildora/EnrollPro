@@ -4,6 +4,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   Users,
   Search,
+  CheckCircle2,
   ChevronUp,
   ChevronDown,
   LayoutGrid,
@@ -168,11 +169,11 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
     <div className="mt-4 overflow-hidden rounded-md border bg-card cursor-default" onClick={(e) => e.stopPropagation()}>
       <table className="w-full text-left text-sm">
         <thead className="bg-muted text-foreground">
-          <tr className="font-extrabold uppercase">
-            <th className="p-3">Learner</th>
-            <th className="p-3 text-center">Sex</th>
-            <th className="p-3 text-center">Gen Ave</th>
-            <th className="p-3 text-right">Action</th>
+          <tr className="font-black uppercase">
+            <th className="p-3 font-black">Learner</th>
+            <th className="p-3 text-center font-black">Sex</th>
+            <th className="p-3 text-center font-black">Gen Ave</th>
+            <th className="p-3 text-right font-black">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -1175,7 +1176,17 @@ export function SectioningWorkspace() {
                     <tr>
                       <td colSpan={3} className="h-[400px] text-center text-muted-foreground font-semibold">
                         <div className="flex flex-col items-center justify-center h-full space-y-3">
-                          <p className="text-foreground font-extrabold">No learners match your criteria.</p>
+                          {activeSearchQuery || filterProgram !== "all" ? (
+                            <>
+                              <Search className="h-8 w-8" />
+                              <p className="text-foreground font-extrabold">No unsectioned learners match this search</p>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-8 w-8 text-green-500" />
+                              <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1510,11 +1521,11 @@ export function SectioningWorkspace() {
                           onClick={(event) => event.stopPropagation()}>
                           <table className="w-full text-left text-sm">
                             <thead className="bg-muted text-foreground">
-                              <tr className="font-extrabold uppercase">
-                                <th className="p-3">Learner</th>
-                                <th className="p-3 text-center">Sex</th>
-                                <th className="p-3 text-center">Gen Ave</th>
-                                <th className="p-3 text-right">Action</th>
+                              <tr className="uppercase">
+                                <th className="p-3 font-black">Learner</th>
+                                <th className="p-3 text-center font-black">Sex</th>
+                                <th className="p-3 text-center font-black">Gen Ave</th>
+                                <th className="p-3 text-right font-black">Action</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y">

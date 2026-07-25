@@ -403,7 +403,7 @@ export function VerificationWorkspace() {
 
         <div className="flex-1 flex min-h-0">
           {/* LEFT PANE */}
-          <div className="w-[400px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
+          <div className="w-[500px] flex flex-col border-r border-border min-h-0 bg-card text-card-foreground">
             <div className="border-b border-border bg-white shrink-0 flex flex-col w-full">
               {(() => {
                 const metrics = [
@@ -461,8 +461,8 @@ export function VerificationWorkspace() {
             </div>
             <div className="flex-1 overflow-auto p-2 space-y-2">
               {filteredVerifications.length === 0 ? (
-                <div className="h-full flex items-center justify-center flex-col gap-3 text-muted-foreground p-8 text-center">
-                  <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
+                <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-green-500" />
                   <span className="font-extrabold text-base leading-tight">No pending verifications found.</span>
                 </div>
               ) : (
@@ -709,7 +709,7 @@ export function VerificationWorkspace() {
                 </div>
               </>
             ) : (
-              <div className="h-full flex items-center justify-center flex-col gap-4 text-muted-foreground p-8 text-center">
+              <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">
                 <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-2">
                   <Search className="h-10 w-10 text-muted-foreground/40" />
                 </div>

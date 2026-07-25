@@ -75,8 +75,9 @@ export interface DashboardStats {
     gradeLevelName: string
     displayOrder: number
     continuingLearners: number
-    walkIn: number
+    newEntrants: number
     transferee: number
+    returningLearners: number
   }>
   sectionSaturation: Array<{
     id: number

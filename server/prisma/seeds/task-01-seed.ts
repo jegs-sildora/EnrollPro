@@ -325,6 +325,7 @@ export const seedDatabase = async () => {
               ipGroupName,
               hasPsaBirthCertificate: true,
               birthCertificateType: "PSA_BIRTH_CERTIFICATE",
+              previousGenAve: parseFloat(faker.number.float({ min: 75, max: 99, fractionDigits: 2 }).toFixed(2)),
             }
           });
 
@@ -378,13 +379,21 @@ export const seedDatabase = async () => {
           const permanentCity = faker.helpers.arrayElement(["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"]);
           const permanentZip = faker.helpers.arrayElement(["6100", "6116", "6115", "6101"]);
 
+          const isGrade7 = grade.name === "Grade 7";
+          const randomLearnerType = isGrade7 
+            ? faker.helpers.arrayElement(["NEW_ENROLLEE", "TRANSFEREE"]) 
+            : faker.helpers.arrayElement(["CONTINUING", "TRANSFEREE", "RETURNING"]);
+          const randomChannel = faker.helpers.arrayElement(["ONLINE", "F2F"]);
+
           const app = await prisma.enrollmentApplication.create({
             data: {
               learnerId: learner.id,
               schoolYearId: sy.id,
               gradeLevelId: grade.id,
               applicantType: prog.type,
-              status: "SECTIONED",
+              status: "OFFICIALLY_ENROLLED",
+              learnerType: randomLearnerType,
+              admissionChannel: randomChannel,
               contactNumber: primaryContact.contactNumber,
               guardianName: `${primaryContact.name.lastName}, ${primaryContact.name.firstName} ${primaryContact.name.middleName}`,
               guardianRelationship: primaryContact.relationship,
