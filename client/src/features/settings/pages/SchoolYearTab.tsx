@@ -1145,25 +1145,25 @@ export default function SchoolYearTab() {
                         <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
                           <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">Start Date</div>
+                            <div className="font-extrabold text-foreground uppercase mb-0.5">Start Date</div>
                             <HybridDatePicker
                               value={term.start || ""}
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
                               }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full uppercase"
                               placeholder="MM/DD/YYYY"
                             />
                           </div>
                           <span className="text-foreground font-extrabold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
                           <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="text-sm font-semibold text-foreground uppercase mb-0.5">End Date</div>
+                            <div className="font-extrabold text-foreground uppercase mb-0.5">End Date</div>
                             <HybridDatePicker
                               value={term.end || ""}
                               onChange={(val) => {
                                 setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
                               }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full"
+                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full uppercase"
                               placeholder="MM/DD/YYYY"
                             />
                           </div>

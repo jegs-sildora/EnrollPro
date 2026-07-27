@@ -39,6 +39,12 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --animate-scale-in: scale-in var(--motion-duration-fast) var(--motion-ease-smooth) forwards;
   --animate-float: float 4s ease-in-out infinite;
   --animate-gradient: gradient-shift 8s ease infinite;
+  --animate-focus-fade: focus-fade 1.5s ease-out forwards;
+
+  @keyframes focus-fade {
+    0%, 66% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)); }
+    100% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px transparent; }
+  }
 
   @keyframes modal-in {
     from {
