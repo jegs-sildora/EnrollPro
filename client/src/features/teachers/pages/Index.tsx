@@ -18,6 +18,7 @@ import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { Eye } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
+import { useAuthStore } from "@/store/auth.slice";
 
 import {
   SearchIcon,
@@ -53,7 +54,7 @@ import {
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+
 
 import type {
   Teacher,
@@ -140,6 +141,7 @@ export default function Teachers() {
   const requestedEmployeeId = searchParams.get("employeeId");
 
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -395,13 +397,34 @@ export default function Teachers() {
     if (!requestedEmployeeId || teachers.length === 0) return;
 
     const requestedTeacher = teachers.find(
-      (teacher) => teacher.employeeId === requestedEmployeeId,
+      (teacher) => String(teacher.employeeId).trim() === String(requestedEmployeeId).trim(),
     );
-    if (!requestedTeacher) return;
+    
+    if (requestedTeacher) {
+      setViewingTeacher(requestedTeacher);
+      setIsPanelOpen(true);
+      return;
+    }
 
-    setViewingTeacher(requestedTeacher);
-    setIsPanelOpen(true);
-  }, [requestedEmployeeId, teachers]);
+    if (user?.employeeId && String(user.employeeId).trim() === String(requestedEmployeeId).trim()) {
+      setViewingTeacher({
+        id: -1,
+        employeeId: user.employeeId,
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        middleName: "",
+        suffix: "",
+        sex: "MALE",
+        email: user.email ?? "",
+        contactNumber: "",
+        designationTitle: "",
+        isActive: true,
+        personnelType: "NON_TEACHING",
+        userAccount: user,
+      } as unknown as Teacher);
+      setIsPanelOpen(true);
+    }
+  }, [requestedEmployeeId, teachers, user]);
 
   const filteredTeachers = useMemo(() => {
     const normalizedSearch = normalizeSearchText(activeFilter);
@@ -768,6 +791,7 @@ export default function Teachers() {
         <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-extrabold shrink-0">
           <div className="w-full sm:w-48">
             <Select
+              isFilter
               value={personnelTypeFilter}
               onValueChange={(value) =>
                 onPersonnelTypeFilterChange(value as "all" | "TEACHING" | "NON_TEACHING")
@@ -783,19 +807,26 @@ export default function Teachers() {
             </Select>
           </div>
           <div className="w-full sm:w-48">
-            <SearchableCombobox
-              items={[
-                { value: "all", label: "All Plantilla / Designations" },
-                ...availableDesignationFilters
-              ]}
+            <Select
+              isFilter
               value={designationFilter}
-              onChange={(val) => onDesignationFilterChange(val as TeacherDesignationFilter)}
-              placeholder="Plantilla / Designation"
-              searchPlaceholder="Search designation..."
-            />
+              onValueChange={(val) => onDesignationFilterChange(val as TeacherDesignationFilter)}>
+              <SelectTrigger className="h-10 bg-muted">
+                <SelectValue placeholder="Plantilla / Designation" />
+              </SelectTrigger>
+              <SelectContent className="font-extrabold">
+                <SelectItem value="all">All Plantilla / Designations</SelectItem>
+                {availableDesignationFilters.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="w-full sm:w-48">
             <Select
+              isFilter
               value={departmentFilter}
               onValueChange={setDepartmentFilter}>
               <SelectTrigger className="h-10 bg-muted min-w-[160px]">

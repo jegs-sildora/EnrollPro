@@ -610,7 +610,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                   <Label className="text-base font-extrabold uppercase st text-foreground">
                     Action Category
                   </Label>
-                  <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
+                  <Select isFilter value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
                     <SelectTrigger className="font-extrabold text-base">
                       <SelectValue placeholder="All Actions" />
                     </SelectTrigger>
@@ -629,7 +629,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                     <Label className="text-base font-extrabold uppercase st text-foreground">
                       Actor Filter
                     </Label>
-                    <Select value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
+                    <Select isFilter value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
                       <SelectTrigger className="font-extrabold text-base">
                         <SelectValue placeholder="All Staff Members" />
                       </SelectTrigger>

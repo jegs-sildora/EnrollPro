@@ -14,6 +14,7 @@ import { sileo } from "sileo";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
+import { useSidebar } from "@/shared/ui/use-sidebar";
 
 export interface UnsavedChangeSource {
   id: string;
@@ -62,13 +63,22 @@ export function UnsavedChangesBar({
   message = "You have unsaved changes.",
   className,
 }: UnsavedChangesBarProps) {
+  let sidebarState = "expanded";
+  try {
+    const sidebar = useSidebar();
+    sidebarState = sidebar.state;
+  } catch {
+    // If not used within SidebarProvider, fallback to expanded or 0
+  }
+
   return (
     <div
+      style={{ "--unsaved-left": sidebarState === "expanded" ? "var(--sidebar-width, 0)" : "var(--sidebar-width-icon, 0)" } as React.CSSProperties}
       className={cn(
-        "fixed bottom-0 right-0 left-0 sm:left-64 z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8",
+        "fixed bottom-0 right-0 left-0 md:left-[var(--unsaved-left)] z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8 transition-[left] duration-300 ease-in-out",
         className,
       )}>
-      <span className="mr-auto hidden text-sm leading-tight text-foreground sm:inline-block sm:text-base">
+      <span className="mr-auto hidden text-sm leading-tight text-foreground sm:inline-block sm:text-base font-extrabold">
         {message}
       </span>
       <div className="flex w-full items-center justify-end gap-3 sm:w-auto">

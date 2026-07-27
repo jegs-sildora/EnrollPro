@@ -221,26 +221,24 @@ export default function Apply() {
                         </ul>
                       </div>
 
-                      {facebookPageUrl && (
-                        <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <p className="text-base font-extrabold text-slate-500 uppercase  text-center">
-                            For real-time updates and official memorandums,
-                            please follow our page:
-                          </p>
-                          <a
-                            href={facebookPageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
-                            <svg
-                              className="w-5 h-5 fill-current"
-                              viewBox="0 0 24 24">
-                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                            </svg>
-                            Visit Official Facebook Page
-                          </a>
-                        </div>
-                      )}
+                      <div className="pt-6 border-t border-slate-200 space-y-4 flex flex-col">
+                        <p className="text-base font-extrabold text-slate-500 uppercase  text-center">
+                          For real-time updates and official memorandums,
+                          please follow our page:
+                        </p>
+                        <a
+                          href={facebookPageUrl || "https://www.facebook.com"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                          <svg
+                            className="w-5 h-5 fill-current"
+                            viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                          </svg>
+                          Visit Official Facebook Page
+                        </a>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-lg mx-auto">
@@ -254,33 +252,30 @@ export default function Apply() {
                         accepting applications. Registration periods are
                         scheduled according to the DepEd school calendar.
                       </p>
-                      {facebookPageUrl ? (
-                        <div className="pt-6 border-t border-border/50 space-y-4">
-                          <p className="text-base font-extrabold text-slate-500 uppercase  text-center leading-relaxed">
-                            Please stay tuned to our official school social
-                            media pages for announcements regarding the next
-                            registration schedule.
-                          </p>
-                          <a
-                            href={facebookPageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
-                            <svg
-                              className="w-5 h-5 fill-current"
-                              viewBox="0 0 24 24">
-                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                            </svg>
-                            Visit Official HNHS Facebook Page
-                          </a>
-                        </div>
-                      ) : (
-                        <p className="text-base leading-tight text-black font-extrabold pt-4 border-t border-border/50">
-                          Please stay tuned to our official school social media
-                          pages or visit the school campus for announcements
-                          regarding the next registration schedule.
+                      <div className="pt-6 border-t border-border/50 space-y-4 flex flex-col">
+                        <p className={cn(
+                          "leading-relaxed text-center",
+                          facebookPageUrl 
+                            ? "text-base font-extrabold text-slate-500 uppercase"
+                            : "text-base leading-tight text-black font-extrabold"
+                        )}>
+                          {facebookPageUrl
+                            ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."
+                            : "Please stay tuned to our official school social media pages or visit the school campus for announcements regarding the next registration schedule."}
                         </p>
-                      )}
+                        <a
+                          href={facebookPageUrl || "https://www.facebook.com"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                          <svg
+                            className="w-5 h-5 fill-current"
+                            viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                          </svg>
+                          Visit Official Facebook Page
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>

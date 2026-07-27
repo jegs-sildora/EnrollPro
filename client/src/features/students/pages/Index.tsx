@@ -1123,6 +1123,7 @@ export default function Students() {
 
             <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
               <Select
+                isFilter
                 value={gradeLevelFilter}
                 onValueChange={(value) => {
                   startTransition(() => {
@@ -1152,6 +1153,7 @@ export default function Students() {
               </Select>
 
               <Select
+                isFilter
                 value={programFilter}
                 onValueChange={(value) => {
                   startTransition(() => {
@@ -1188,6 +1190,7 @@ export default function Students() {
               </Select>
 
               <Select
+                isFilter
                 value={sectionFilter}
                 onValueChange={(value) => {
                   startTransition(() => {
@@ -1235,6 +1238,7 @@ export default function Students() {
 
               {activeTab === "inactive" && (
                 <Select
+                  isFilter
                   value={statusFilter}
                   onValueChange={(value) => {
                     startTransition(() => {

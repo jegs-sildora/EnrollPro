@@ -133,9 +133,16 @@ export default function SchoolProfileTab() {
 
   const onSubmit = useCallback(async (values: FormValues) => {
     try {
-      await api.put("/settings/identity", values);
-      setSettings(values);
-      form.reset(values);
+      const payload = {
+        ...values,
+        schoolName: values.schoolName?.toUpperCase() || "",
+        region: values.region?.toUpperCase() || "",
+        division: values.division?.toUpperCase() || "",
+        schoolHeadName: values.schoolHeadName?.toUpperCase() || "",
+      };
+      await api.put("/settings/identity", payload);
+      setSettings(payload);
+      form.reset(payload);
       sileo.success({
         title: "Settings Saved",
         description: "School identity and channels updated successfully.",
@@ -302,7 +309,7 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>School Name</FormLabel>
                         <FormControl>
-                          <Input className="font-bold" {...field} />
+                          <Input className="font-bold uppercase" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -316,7 +323,7 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>School ID (6-digit format)</FormLabel>
                         <FormControl>
-                          <Input className="font-bold" placeholder="e.g. 123456" {...field} value={field.value ?? ""} maxLength={6} inputMode="numeric" />
+                          <Input className="font-bold uppercase" placeholder="e.g. 123456" {...field} value={field.value ?? ""} maxLength={6} inputMode="numeric" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,7 +337,7 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>Region</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold" />
+                          <Input placeholder="e.g. Region VI - Western Visayas" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold uppercase" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -344,7 +351,7 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>Division</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold" />
+                          <Input placeholder="e.g. Division of Negros Occidental" {...field} value={field.value ?? ""} readOnly className="text-foreground cursor-not-allowed border-transparent font-bold uppercase" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -358,7 +365,7 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>School Head Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Juan Dela Cruz" {...field} value={field.value ?? ""} className="font-bold" />
+                          <Input placeholder="e.g. Juan Dela Cruz" {...field} value={field.value ?? ""} className="font-bold uppercase" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -382,6 +389,7 @@ export default function SchoolProfileTab() {
                             disabled={isArchived}
                             placeholder="Select designation"
                             searchPlaceholder="Search designation..."
+                            className="font-bold"
                           />
                         </FormControl>
                         <FormMessage />
@@ -483,7 +491,27 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>Official DepEd Email</FormLabel>
                         <FormControl>
-                          <Input className="font-bold" placeholder="school.id@deped.edu.ph" {...field} value={field.value ?? ""} />
+                          <Input 
+                            className="font-bold" 
+                            placeholder="school.id@deped.edu.ph" 
+                            {...field} 
+                            value={field.value ?? ""} 
+                            onChange={(e) => {
+                              const input = e.target;
+                              const val = input.value;
+                              
+                              // If field was empty and user types one char (not '@')
+                              if (val.length === 1 && !field.value && val !== "@") {
+                                field.onChange(val + "@deped.edu.ph");
+                                // Wait a tick for React state to update the input value, then move cursor
+                                requestAnimationFrame(() => {
+                                  input.setSelectionRange(1, 1);
+                                });
+                              } else {
+                                field.onChange(e);
+                              }
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

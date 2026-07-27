@@ -363,6 +363,7 @@ export function VerificationWorkspace() {
           <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto shrink-0">
 
             <Select
+              isFilter
               value={intakeCategoryFilter}
               onValueChange={(val) => setIntakeCategoryFilter(val)}
             >
@@ -378,6 +379,7 @@ export function VerificationWorkspace() {
             </Select>
 
             <Select
+              isFilter
               value={programFilter}
               onValueChange={(val) => setProgramFilter(val)}
             >

@@ -588,6 +588,7 @@ export default function BOSYPage() {
                         ) : (
                           <>
                             <Select
+                              isFilter
                               value={targetGrade}
                               onValueChange={(val) => {
                                 setTargetGrade(val);
@@ -607,6 +608,7 @@ export default function BOSYPage() {
                             </Select>
 
                             <Select
+                              isFilter
                               value={curricularProgram}
                               onValueChange={(val) => {
                                 setCurricularProgram(val);
@@ -633,6 +635,7 @@ export default function BOSYPage() {
                             </Select>
 
                             <Select
+                              isFilter
                               value={previousSectionName}
                               onValueChange={(val) => {
                                 setPreviousSectionName(val);

@@ -1112,6 +1112,7 @@ export function SectioningWorkspace() {
                   />
                 </div>
                 <Select
+                  isFilter
                   value={filterProgram}
                   onValueChange={setFilterProgram}>
                   <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-extrabold transition-colors">
@@ -1279,7 +1280,10 @@ export function SectioningWorkspace() {
                                     </Badge>
                                     <Badge
                                       variant="outline"
-                                      className="text-sm uppercase font-extrabold">
+                                      className={cn(
+                                        "text-sm uppercase font-extrabold",
+                                        l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
+                                      )}>
                                       {SCP_SHORT_LABELS[l.programType] ??
                                         l.programType}
                                     </Badge>

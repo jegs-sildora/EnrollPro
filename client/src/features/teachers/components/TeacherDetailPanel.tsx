@@ -443,7 +443,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     }
   }, [teacher, reset, open]);
 
-  const isAdding = !teacher;
+  const isAdding = !teacher || teacher.id === -1;
   const [isEditing, setIsEditing] = useState(isAdding);
 
   useEffect(() => {

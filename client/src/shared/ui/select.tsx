@@ -16,7 +16,18 @@ function extractTextValue(node: React.ReactNode): string {
   return "";
 }
 
-const Select = SelectPrimitive.Root;
+const SelectContext = React.createContext<{ isFilter?: boolean }>({});
+
+const Select = ({
+  isFilter,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
+  isFilter?: boolean;
+}) => (
+  <SelectContext.Provider value={{ isFilter }}>
+    <SelectPrimitive.Root {...props} />
+  </SelectContext.Provider>
+);
 
 const SelectGroup = SelectPrimitive.Group;
 
@@ -25,21 +36,25 @@ const SelectValue = SelectPrimitive.Value;
 const SelectTrigger = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background placeholder:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed [&>span]:truncate [&>span]:text-left transition-colors duration-200",
-      motionClassNames.controlSurface,
-      className,
-    )}
-    {...props}>
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className={cn("h-4 w-4 opacity-50", motionClassNames.controlIndicator)} />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
+>(({ className, children, ...props }, ref) => {
+  const { isFilter } = React.useContext(SelectContext);
+  return (
+    <SelectPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background placeholder:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed [&>span]:truncate [&>span]:text-left transition-colors duration-200",
+        isFilter && "uppercase",
+        motionClassNames.controlSurface,
+        className,
+      )}
+      {...props}>
+      {children}
+      <SelectPrimitive.Icon asChild>
+        <ChevronDown className={cn("h-4 w-4 opacity-50", motionClassNames.controlIndicator)} />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+  );
+});
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectScrollUpButton = React.forwardRef<
@@ -93,12 +108,15 @@ const SelectContent = React.forwardRef<
   const isLightColor = accentForeground === "0 0% 0%";
   const applyOverride = isFefe01 || isLightColor;
 
+  const { isFilter } = React.useContext(SelectContext);
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         ref={ref}
         className={cn(
           "relative z-[110] max-h-96 min-w-32 overflow-hidden rounded-md border border-gray-200 bg-muted shadow-lg",
+          isFilter && "uppercase",
           motionClassNames.floatingContent,
           position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",

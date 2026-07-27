@@ -126,7 +126,7 @@ function UserNav() {
     : "Signed-in User";
   const roleLabel = formatUserRole(user?.roles?.[0]);
   const employeeLabel = user?.employeeId
-    ? `ID ${user.employeeId}`
+    ? `Employee ID: ${user.employeeId}`
     : "Employee ID not set";
 
   const navigateWithGuard = (destination: string) => {
@@ -141,12 +141,12 @@ function UserNav() {
             size="lg"
             tooltip="Account menu"
             className="h-14 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
               {initials}
             </div>
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-black uppercase">{displayName}</span>
-              <span className="truncate text-sm font-semibold text-sidebar-foreground">
+              <span className="truncate text-sm font-bold text-sidebar-foreground">
                 {roleLabel}
               </span>
             </div>
@@ -161,17 +161,17 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="px-3 py-3 font-normal">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
                 {initials}
               </div>
               <div className="grid min-w-0 flex-1 gap-1 text-left">
                 <p className="truncate text-sm font-black uppercase leading-none">
                   {displayName}
                 </p>
-                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                <p className="truncate text-sm font-bold leading-tight text-foreground">
                   {roleLabel}
                 </p>
-                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                <p className="truncate text-sm font-bold leading-tight text-foreground">
                   {employeeLabel}
                 </p>
               </div>
@@ -195,12 +195,6 @@ function UserNav() {
             onSelect={() => navigateWithGuard("/my-activity")}>
             <History className="mr-2 h-4 w-4" />
             My Activity Log
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer py-2 font-bold"
-            onSelect={() => navigateWithGuard("/help")}>
-            <CircleHelp className="mr-2 h-4 w-4" />
-            Help & Documentation
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

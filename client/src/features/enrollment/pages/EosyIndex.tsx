@@ -1542,6 +1542,7 @@ export default function EosyUpdating() {
 
                         <div className="flex flex-wrap items-center gap-3 shrink-0">
                           <Select
+                            isFilter
                             value={sectionFilter}
                             onValueChange={setSectionFilter}
                           >
