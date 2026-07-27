@@ -116,7 +116,16 @@ export const teacherSchemaBase = z
         z.union([teacherSpecializationSchema, z.null()]),
       )
       .optional(),
-    undergraduateDegree: teacherUndergraduateDegreeSchema,
+    undergraduateDegree: z
+      .preprocess(
+        (value) => {
+          if (!value) return null;
+          if (typeof value === "string") return value.normalize("NFC").trim().toUpperCase();
+          return value;
+        },
+        z.union([teacherUndergraduateDegreeSchema, z.null()])
+      )
+      .optional(),
     postgraduateDegree: z
       .preprocess(
         (value) => {

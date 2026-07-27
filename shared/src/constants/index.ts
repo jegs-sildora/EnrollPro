@@ -669,6 +669,12 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "PRINCIPAL IV",
   "TEACHER IN CHARGE",
   "OFFICER IN CHARGE",
+  "ADMINISTRATIVE AIDE I UTILITY WORKER I",
+  "ADMINISTRATIVE AIDE III UTILITY WORKER II",
+  "ADMINISTRATIVE OFFICER II",
+  "ADMINISTRATIVE ASSISTANT II PROPERTY CUSTODIAN",
+  "LGU CONTRACTUAL UTILITY WORKER",
+  "LOCAL SCHOOL BOARD CONTRACTUAL",
 ] as const;
 
 export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
@@ -699,6 +705,12 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
   { value: "PRINCIPAL IV", label: "Principal IV" },
   { value: "TEACHER IN CHARGE", label: "Teacher In Charge" },
   { value: "OFFICER IN CHARGE", label: "Officer In Charge" },
+  { value: "ADMINISTRATIVE AIDE I UTILITY WORKER I", label: "Administrative Aide I Utility Worker I" },
+  { value: "ADMINISTRATIVE AIDE III UTILITY WORKER II", label: "Administrative Aide III Utility Worker II" },
+  { value: "ADMINISTRATIVE OFFICER II", label: "Administrative Officer II" },
+  { value: "ADMINISTRATIVE ASSISTANT II PROPERTY CUSTODIAN", label: "Administrative Assistant II Property Custodian" },
+  { value: "LGU CONTRACTUAL UTILITY WORKER", label: "LGU Contractual Utility Worker" },
+  { value: "LOCAL SCHOOL BOARD CONTRACTUAL", label: "Local School Board Contractual" },
 ] as const;
 
 export const ADMIN_STAFF_POOL = [
@@ -743,7 +755,14 @@ export const EXECUTIVE_POOL = [
   "HEAD TEACHER VI",
   "OFFICER IN CHARGE",
 ] as const;
-export const MRF_POOL = ["MRF Coordinator"] as const;
+export const MRF_POOL = [
+  "ADMINISTRATIVE AIDE I UTILITY WORKER I",
+  "ADMINISTRATIVE AIDE III UTILITY WORKER II",
+  "ADMINISTRATIVE OFFICER II",
+  "ADMINISTRATIVE ASSISTANT II PROPERTY CUSTODIAN",
+  "LGU CONTRACTUAL UTILITY WORKER",
+  "LOCAL SCHOOL BOARD CONTRACTUAL"
+] as const;
 
 export function getDesignationPool(roles: string[]): string[] {
   const pool = new Set<string>();

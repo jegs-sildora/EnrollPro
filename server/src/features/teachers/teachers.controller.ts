@@ -380,6 +380,12 @@ export async function store(req: Request, res: Response) {
       indigenousCommunity,
       natureOfAppointment,
       fundingSource,
+      password,
+      portalActive,
+      roles,
+      serviceStatus,
+      serviceEffectiveDate,
+      serviceRemarks,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -408,7 +414,7 @@ export async function store(req: Request, res: Response) {
     const deptCode = normalizeOptionalUpperText(department);
 
     const teacher = await prisma.$transaction(async (tx) => {
-      const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
+      const defaultPasswordHash = await bcrypt.hash(password || "DepEd2026!", 10);
 
       // 1. Create/Upsert the User record for system login
       const existingUser = await tx.user.findUnique({
@@ -432,7 +438,7 @@ export async function store(req: Request, res: Response) {
           email: normalizedEmail,
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           designation: "SUBJECT TEACHER",
-          isActive: true, // Reactivate user if profile is recreated
+          isActive: portalActive !== undefined ? portalActive : true,
         },
         create: {
           firstName: normalizedFirstName,
@@ -442,9 +448,9 @@ export async function store(req: Request, res: Response) {
           employeeId: normalizedEmployeeId,
           accountName: normalizedEmployeeId,
           password: defaultPasswordHash,
-          roles: ["TEACHER"],
+          roles: roles && roles.length > 0 ? roles : ["TEACHER"],
           sex: sex === "MALE" ? "MALE" : "FEMALE",
-          isActive: true,
+          isActive: portalActive !== undefined ? portalActive : (serviceStatus === "ACTIVE"),
           designation: "SUBJECT TEACHER",
           mustChangePassword: true,
         },
@@ -474,8 +480,9 @@ export async function store(req: Request, res: Response) {
           majorSpecialization: normalizeOptionalUpperText(majorSpecialization),
           minorSpecialization: normalizeOptionalUpperText(minorSpecialization),
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
-          natureOfAppointment: natureOfAppointment ?? "REGULAR_PERMANENT",
-          fundingSource: fundingSource ?? "NATIONAL",
+          ...(natureOfAppointment ? { natureOfAppointment } : {}),
+          ...(fundingSource ? { fundingSource } : {}),
+          ...(serviceStatus ? { serviceStatus } : {}),
         },
       });
 
@@ -485,7 +492,7 @@ export async function store(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "TEACHER_CREATED",
-      description: `Created teacher profile: ${teacher.lastName}, ${teacher.firstName}`,
+      description: `Created personnel profile: ${teacher.lastName}, ${teacher.firstName} with roles: ${roles ? roles.join(', ') : 'TEACHER'}. Status: ${serviceStatus || 'ACTIVE'} (effective ${serviceEffectiveDate || 'now'})${serviceRemarks ? ` — ${serviceRemarks}` : ""}`,
       subjectType: "Teacher",
       recordId: teacher.id,
       req,
@@ -743,109 +750,7 @@ export async function listSchedulePeriods(req: Request, res: Response) {
   }
 }
 
-interface SchedulePeriodInput {
-  dayOfWeek: Weekday;
-  startTime: string;
-  endTime: string;
-  subjectLabel?: string | null;
-  sectionLabel?: string | null;
-}
 
-export async function replaceSchedulePeriods(req: Request, res: Response) {
-  const id = parseInt(String(req.params.id), 10);
-  if (Number.isNaN(id)) {
-    return res.status(400).json({ message: "Invalid teacher ID" });
-  }
-
-  const schoolYearId =
-    typeof req.body.schoolYearId === "number"
-      ? req.body.schoolYearId
-      : Number(req.schoolYearId ?? NaN);
-
-  if (!schoolYearId || Number.isNaN(schoolYearId)) {
-    return res.status(400).json({ message: "School year is required" });
-  }
-
-  const periods = Array.isArray(req.body.periods)
-    ? (req.body.periods as SchedulePeriodInput[])
-    : [];
-
-  try {
-    const teacher = await prisma.teacher.findUnique({
-      where: { id },
-      select: { id: true, firstName: true, lastName: true },
-    });
-
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found" });
-    }
-
-    for (const period of periods) {
-      if (calculateScheduleMinutes(period.startTime, period.endTime) <= 0) {
-        return res.status(400).json({
-          message: "Schedule end time must be later than start time",
-        });
-      }
-    }
-
-    const saved = await prisma.$transaction(async (tx) => {
-      await tx.teacherSchedulePeriod.deleteMany({
-        where: { teacherId: id, schoolYearId },
-      });
-
-      if (periods.length > 0) {
-        await tx.teacherSchedulePeriod.createMany({
-          data: periods.map((period) => ({
-            teacherId: id,
-            schoolYearId,
-            dayOfWeek: period.dayOfWeek,
-            startTime: period.startTime,
-            endTime: period.endTime,
-            subjectLabel: normalizeOptionalUpperText(period.subjectLabel),
-            sectionLabel: normalizeOptionalUpperText(period.sectionLabel),
-          })),
-        });
-      }
-
-      return tx.teacherSchedulePeriod.findMany({
-        where: { teacherId: id, schoolYearId },
-        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
-      });
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "TEACHER_SCHEDULE_UPDATED",
-      description: `Updated SF7 teaching schedule for ${teacher.lastName}, ${teacher.firstName}`,
-      subjectType: "Teacher",
-      recordId: id,
-      req,
-    });
-
-    broadcastTeacherInvalidation({
-      schoolYearId,
-      teacherIds: [id],
-    });
-
-    const sorted = saved.sort((a, b) => {
-      const dayDifference =
-        (WEEKDAY_ORDER[a.dayOfWeek] ?? 99) - (WEEKDAY_ORDER[b.dayOfWeek] ?? 99);
-      if (dayDifference !== 0) return dayDifference;
-      return a.startTime.localeCompare(b.startTime);
-    });
-
-    const formatted = sorted.map(formatSchedulePeriod);
-    const totalWeeklyMinutes = formatted.reduce(
-      (sum, period) => sum + period.totalMinutes,
-      0,
-    );
-
-    res.json({ periods: formatted, totalWeeklyMinutes });
-  } catch (error: unknown) {
-    const err = error as Error;
-    res.status(500).json({ message: err.message });
-  }
-}
 
 export async function deactivate(req: Request, res: Response) {
   const idStr = String(req.params.id);

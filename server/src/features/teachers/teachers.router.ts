@@ -9,7 +9,6 @@ import {
   teacherDesignationSchema,
   deactivateTeacherSchema,
   updateServiceStatusSchema,
-  teacherSchedulePeriodsReplaceSchema,
 } from "@enrollpro/shared";
 
 const router: Router = Router();
@@ -20,11 +19,7 @@ router.use(authenticate, authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"));
 router.get("/", teachersCtrl.index);
 router.get("/:id/designation", teachersCtrl.showDesignation);
 router.get("/:id/schedule-periods", teachersCtrl.listSchedulePeriods);
-router.put(
-  "/:id/schedule-periods",
-  validate(teacherSchedulePeriodsReplaceSchema),
-  teachersCtrl.replaceSchedulePeriods,
-);
+
 router.post(
   "/:id/designation/validate",
   validate(teacherDesignationSchema),

@@ -6,11 +6,10 @@ import { zodResolver } from "@/shared/lib/zodResolver";
 import {
   Briefcase,
   GraduationCap,
-  Fingerprint,
   RefreshCw,
   User as UserIcon,
+  UserRoundPen,
   Smartphone,
-  Mail,
   Mars,
   Venus,
   ShieldAlert,
@@ -41,6 +40,7 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Textarea } from "@/shared/ui/textarea";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   cn,
 } from "@/shared/lib/utils";
@@ -51,11 +51,12 @@ import type {
   TeacherScheduleDay,
   TeacherSchedulePeriod,
 } from "../types";
-import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
+import { formatAdvisorySectionSummary, formatTeacherName, toSentenceCase } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
   TEACHER_FUNDING_SOURCE_OPTIONS,
@@ -136,7 +137,7 @@ const formSchema = z
     department: z.string().optional().nullable(),
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
-    undergraduateDegree: z.string().min(1, "Enter the undergraduate degree."),
+    undergraduateDegree: z.string().optional().nullable(),
     postgraduateDegree: z.string().optional().nullable(),
     majorSpecialization: z.string().optional().nullable(),
     minorSpecialization: z.string().optional().nullable(),
@@ -149,7 +150,7 @@ const formSchema = z
       "VOLUNTEER",
       "LOCAL_SCHOOL_BOARD",
       "OTHER",
-    ]),
+    ]).optional().nullable(),
     fundingSource: z.enum([
       "NATIONAL",
       "SPECIAL_EDUCATION_FUND",
@@ -157,7 +158,7 @@ const formSchema = z
       "PTA",
       "NGO",
       "OTHER",
-    ]),
+    ]).optional().nullable(),
     roles: z.array(z.string()),
 
     contactNumber: z
@@ -178,13 +179,30 @@ const formSchema = z
     serviceRemarks: z.string().optional().nullable(),
     portalActive: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (data.personnelType === "NON_TEACHING") {
-      if (!data.functionalAssignment || data.functionalAssignment.trim().length === 0) {
+  .superRefine((data, ctx) => {    const isMRF = data.roles.includes("MRF");
+    const isTeacherRole = data.roles.includes("TEACHER") || data.roles.includes("CLASS_ADVISER");
+    const shouldRequireSF7 = !(isMRF && !isTeacherRole);
+
+    if (shouldRequireSF7) {
+      if (!data.undergraduateDegree || data.undergraduateDegree.trim().length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Enter the office assignment for non-teaching staff.",
-          path: ["functionalAssignment"],
+          message: "Enter the undergraduate degree.",
+          path: ["undergraduateDegree"],
+        });
+      }
+      if (!data.natureOfAppointment) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Select the nature of appointment.",
+          path: ["natureOfAppointment"],
+        });
+      }
+      if (!data.fundingSource) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Select the fund source.",
+          path: ["fundingSource"],
         });
       }
     }
@@ -268,6 +286,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   const [schedulePeriods, setSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
   const [initialSchedulePeriods, setInitialSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const { ayId } = useSchoolYearContext();
@@ -394,7 +413,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : null,
         personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
-        plantillaPosition: isMRF ? "MRF Coordinator" : (teacher.plantillaPosition || ""),
+        plantillaPosition: teacher.plantillaPosition === "MRF Coordinator" ? "" : (teacher.plantillaPosition || ""),
         department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
@@ -445,6 +464,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
   const isAdding = !teacher || teacher.id === -1;
   const [isEditing, setIsEditing] = useState(isAdding);
+
+  const currentRoles = formRoles || teacher?.userAccount?.roles || [];
+  const isFormMRF = currentRoles.includes("MRF");
+  const isFormTeacherOrAdviser = currentRoles.includes("TEACHER") || currentRoles.includes("CLASS_ADVISER");
+  const showSF7 = !(isFormMRF && !isFormTeacherOrAdviser);
 
   useEffect(() => {
     if (open) setIsEditing(isAdding);
@@ -585,7 +609,12 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       };
 
       if (isAdding) {
-        const res = await api.post<{ teacher: Teacher }>(`/teachers`, profilePayload);
+        const createPayload = {
+          ...profilePayload,
+          password: defaultPasswordInput || undefined,
+          portalActive: data.portalActive !== undefined ? data.portalActive : true,
+        };
+        const res = await api.post<{ teacher: Teacher }>(`/teachers`, createPayload);
         if (ayId && schedulePeriods.length > 0) {
           await api.put(`/teachers/${res.data.teacher.id}/schedule-periods`, {
             schoolYearId: ayId,
@@ -627,6 +656,52 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       setIsSubmitting(false);
     }
   };
+  // Helper maps for human-readable labels in view mode
+  const ROLE_LABEL_MAP: Record<string, string> = {
+    SYSTEM_ADMIN: "School Head",
+    HEAD_REGISTRAR: "Registrar",
+    TEACHER: "Teacher",
+    CLASS_ADVISER: "Class Adviser",
+    MRF: "MRF Coordinator",
+  };
+
+  const SERVICE_STATUS_LABEL_MAP: Record<string, string> = {
+    ACTIVE: "Active Personnel",
+    ON_LEAVE: "On Leave",
+    TRANSFERRED: "Transferred",
+    RETIRED_RESIGNED: "Retired / Resigned",
+    DROPPED_FROM_ROLLS: "Dropped from Rolls",
+  };
+
+  const NATURE_OF_APPOINTMENT_MAP: Record<string, string> = {
+    REGULAR_PERMANENT: "Regular / Permanent",
+    PROVISIONAL: "Provisional",
+    SUBSTITUTE: "Substitute",
+    CONTRACTUAL: "Contractual",
+    VOLUNTEER: "Volunteer",
+    LOCAL_SCHOOL_BOARD: "Local School Board",
+    OTHER: "Other",
+  };
+
+  const FUNDING_SOURCE_MAP: Record<string, string> = {
+    NATIONAL: "National",
+    SPECIAL_EDUCATION_FUND: "Special Education Fund",
+    LOCAL_SCHOOL_BOARD: "Local School Board",
+    PTA: "PTA",
+    NGO: "NGO",
+    OTHER: "Other",
+  };
+
+  // View Mode: grid row helper
+  const ViewRow = ({ label, value }: { label: string; value: string | null | undefined }) => (
+    <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+      <div className="p-3 text-foreground bg-muted/30 uppercase">{label}</div>
+      <div className="p-3 uppercase">{value || "—"}</div>
+    </div>
+  );
+
+  const portalIsActive = teacher?.userAccount?.isActive ?? teacher?.isActive ?? true;
+
   return (
     <>
       <Sheet open={open} onOpenChange={handleCloseAttempt}>
@@ -645,953 +720,1190 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
               confirmOrRun(closePanel);
             }
           }}
-          className="p-0 flex flex-col h-full border-l-0 overflow-hidden"
+          className="p-0 flex flex-col h-full border-l overflow-visible w-full sm:w-auto sm:max-w-none"
+          style={
+            isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
+          }
         >
-          <SheetHeader className="bg-primary px-6 py-6 space-y-1 relative shrink-0">
-            <div className="flex items-center gap-4">
-                <div className="size-16 rounded-2xl bg-muted/10 flex items-center justify-center font-extrabold text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
-                  {!(formFirstName || teacher?.firstName) && !(formLastName || teacher?.lastName) ? (
-                    <UserIcon className="size-8" />
-                  ) : (
-                    <>
-                      {(formFirstName || teacher?.firstName || "N").charAt(0)}
-                      {(formLastName || teacher?.lastName || "N").charAt(0)}
-                    </>
-                  )}
-                </div>
-              <div className="space-y-0.5">
-                <SheetTitle className="text-2xl font-extrabold text-white uppercase leading-none">
-                  {isAdding
-                    ? "New Personnel Profile"
-                    : formatTeacherName({
-                      ...teacher!,
-                      firstName: formFirstName || teacher!.firstName,
-                      lastName: formLastName || teacher!.lastName,
-                      suffix: formSuffix ?? teacher!.suffix,
-                    } as Teacher)}
-                </SheetTitle>
-                <SheetDescription className="text-white/80 font-extrabold uppercase text-base flex items-center gap-2">
-                  <Fingerprint className="size-3" />
-                  {isAdding ? "Create a new faculty or staff record" : `Employee ID: ${teacher?.employeeId || "not set"}`}
-                </SheetDescription>
-              </div>
+          {/* Resize Handle — hidden on mobile */}
+          <div
+            onMouseDown={startResizing}
+            className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+            <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+          </div>
+
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+            {/* ─── Header ─── */}
+          <SheetHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold text-left space-y-0 mt-0">
+            <div>
+              <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold uppercase flex items-center gap-2">
+                {isAdding ? "New Personnel Profile" : "Personnel Profile"}
+              </SheetTitle>
             </div>
           </SheetHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-6 bg-muted/10">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-extrabold">
 
-              {/* Card 1: Personal Information */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
-                  <span className="flex items-center gap-2">
-                    <UserIcon className="h-4 w-4 text-primary" />
-                    1. Personal Information
-                  </span>
-                </div>
-                <div className="px-5 pb-5 pt-4 space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">First Name *</Label>
-                      <Controller
-                        name="firstName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="e.g. JUAN"
-                            className={cn(
-                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
-                              errors.firstName && "border-destructive focus-visible:ring-destructive"
-                            )}
-                          />
+              {/* ════════════════════════════════════════════════════════════ */}
+              {/* SUMMARY BLOCK (Matches StudentDetailPanel)                 */}
+              {/* ════════════════════════════════════════════════════════════ */}
+              <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
+                <div className="flex flex-col items-center mb-6 pt-2">
+                  <UserPhoto
+                    photo={teacher?.photoPath}
+                    containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-primary border-dashed shadow-md shrink-0"
+                    className="w-full h-full object-cover rounded-full"
+                    fallbackIcon={
+                      <div className="w-full h-full rounded-full flex items-center justify-center text-white font-extrabold text-3xl sm:text-4xl uppercase bg-primary">
+                        {isAdding ? (
+                          <UserIcon className="size-12" />
+                        ) : (
+                          <>
+                            {(formFirstName || teacher?.firstName || "N").charAt(0)}
+                            {(formLastName || teacher?.lastName || "N").charAt(0)}
+                          </>
                         )}
-                      />
-                      <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
+                      </div>
+                    }
+                  />
+                  <div className="text-center mt-4">
+                    <h3 className="font-extrabold text-lg sm:text-xl uppercase break-words">
+                      {isAdding ? "New Personnel" : formatTeacherName({
+                        ...teacher!,
+                        firstName: formFirstName || teacher?.firstName || "",
+                        lastName: formLastName || teacher?.lastName || "",
+                        suffix: formSuffix ?? teacher?.suffix ?? null,
+                      } as Teacher)}
+                    </h3>
+                    <div className="flex items-center justify-center gap-2 mt-1 font-extrabold flex-wrap">
+                      {!isAdding && (
+                        (teacher?.userAccount?.roles || []).length > 0
+                          ? (teacher?.userAccount?.roles || []).map((role) => (
+                              <Badge key={role} variant="outline" className="gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-extrabold border-primary text-primary bg-primary/5">
+                                {ROLE_LABEL_MAP[role] || role}
+                              </Badge>
+                            ))
+                          : <Badge variant="outline" className="gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-extrabold text-muted-foreground">No roles</Badge>
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Last Name *</Label>
-                      <Controller
-                        name="lastName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="e.g. DELA CRUZ"
-                            className={cn(
-                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
-                              errors.lastName && "border-destructive focus-visible:ring-destructive"
-                            )}
-                          />
-                        )}
-                      />
-                      <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Middle Name <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
-                      <Controller
-                        name="middleName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="e.g. SANTOS"
-                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Suffix <span className="text-foreground font-extrabold ml-1">(e.g., JR., III)</span></Label>
-                      <Controller
-                        name="suffix"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="JR., III"
-                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Sex *</Label>
-                      <Controller
-                        name="sex"
-                        control={control}
-                        render={({ field }) => (
-                          <div className="flex gap-4">
-                            {(
-                              [
-                                { val: "MALE", icon: Mars },
-                                { val: "FEMALE", icon: Venus },
-                              ] as const
-                            ).map((s) => (
-                              <button
-                                key={s.val}
-                                type="button"
-                                onClick={() => field.onChange(s.val)}
-                                className={cn(
-                                  "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
-                                  field.value === s.val
-                                    ? "border-primary bg-primary/5 text-primary"
-                                    : "border-border hover:bg-muted/50 text-foreground",
-                                )}>
-                                <s.icon
-                                  className={cn(
-                                    "w-4 h-4",
-                                    field.value === s.val
-                                      ? "text-primary"
-                                      : "text-foreground",
-                                  )}
-                                />
-                                {s.val}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Date of Birth *</Label>
-                      <Controller
-                        name="birthdate"
-                        control={control}
-                        render={({ field }) => (
-                          <HybridDatePicker disabled={!isEditing}
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            className={cn(
-                              "h-10 font-extrabold text-base leading-tight",
-                              errors.birthdate && "border-destructive focus-visible:ring-destructive"
-                            )}
-                          />
-                        )}
-                      />
-                      <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
-                    </div>
+                    {!isAdding && (
+                      <p className=" mt-2 uppercase text-foreground font-extrabold">
+                        Employee ID: <span>{teacher?.employeeId || "—"}</span>
+                      </p>
+                    )}
+                    {!isEditing && !isAdding && (
+                      <div className="mt-4 flex justify-center w-full px-2">
+                        <Button
+                          variant="default"
+                          className="font-extrabold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsEditing(true);
+                          }}
+                        >
+                          <UserRoundPen className="mr-2 h-5 w-5 shrink-0" />
+                          Edit Profile
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+
               </div>
 
-              {/* Card 2: Employment Details */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
-                  <span className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-primary" />
-                    2. Employment Details
-                  </span>
-                </div>
-                <div className="px-5 pb-5 pt-4 space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">DepEd Employee ID *</Label>
-                      <Controller
-                        name="employeeId"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                            maxLength={7}
-                            placeholder="e.g., 1234567"
-                            className={cn(
-                              "font-extrabold text-base leading-tight h-10",
-                              errors.employeeId && "border-destructive"
-                            )}
-                          />
-                        )}
-                      />
-                      <AnimatedError error={errors.employeeId?.message as string || errors.employeeId as unknown as string} />
-                    </div>
+              {/* ════════════════════════════════════════════════════════════ */}
+              {/* VIEW MODE — read-only grid tables                          */}
+              {/* ════════════════════════════════════════════════════════════ */}
+              {!isEditing && !isAdding && teacher && (
+                <>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">DepEd Position (Plantilla) *</Label>
-                      <Controller
-                        name="plantillaPosition"
-                        control={control}
-                        render={({ field }) => (
-                            <SearchableCombobox
-                              items={[
-                                ...(designationPool.length > 0
-                                  ? designationPool.map(opt => ({ value: opt, label: opt }))
-                                  : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
-                              ]}
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Search position (e.g., Teacher I, Master Teacher II)"
-                              searchPlaceholder="Search positions..."
-                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
-                            />
-                        )}
-                      />
-                      <AnimatedError error={errors.plantillaPosition?.message as string} />
+                  {/* Personal Information */}
+                  <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                    <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <UserIcon className="h-4 w-4 text-primary" />
+                      Personal Information
+                    </div>
+                    <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                      <ViewRow label="First Name" value={teacher.firstName} />
+                      <ViewRow label="Middle Name" value={teacher.middleName} />
+                      <ViewRow label="Last Name" value={teacher.lastName} />
+                      <ViewRow label="Suffix" value={teacher.suffix} />
+                      <ViewRow label="Sex" value={teacher.sex} />
+                      <ViewRow label="Date of Birth" value={teacher.birthdate ? new Date(teacher.birthdate).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }) : null} />
+                      <ViewRow label="Mobile No." value={teacher.contactNumber} />
+                      <ViewRow label="IP Community" value={teacher.indigenousCommunity || "NOT APPLICABLE"} />
                     </div>
                   </div>
 
-                  {formPersonnelType === "TEACHING" && (
-                    <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t border-border">
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Subject Area / Major</Label>
-                        <Controller
-                          name="department"
-                          control={control}
-                          render={({ field }) => (
-                            <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
-                                <SelectValue placeholder="Search department (e.g., Mathematics, Science, English)" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-[300px]">
-                                <SelectItem value="__NONE__">No subject area set yet</SelectItem>
-                                {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
-                                  <SelectItem key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </div>
+                  {/* Employment Details */}
+                  <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                    <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-primary" />
+                      Employment Details
                     </div>
-                  )}
-
-                  {formPersonnelType === "NON_TEACHING" && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1">Office Assignment *</Label>
-                        <Controller
-                          name="functionalAssignment"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={[
-                                { value: "", label: "No office assignment" },
-                                ...DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS
-                              ]}
-                              value={field.value || ""}
-                              onChange={(val) => field.onChange(val)}
-                              disabled={!isEditing}
-                              placeholder="Select office assignment"
-                              searchPlaceholder="Search assignment..."
-                            />
-                          )}
-                        />
-                        <AnimatedError error={errors.functionalAssignment?.message as string || errors.functionalAssignment as unknown as string} />
-                      </div>
+                    <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                      <ViewRow label="Personnel Type" value={teacher.personnelType === "TEACHING" ? "Teaching" : teacher.personnelType === "NON_TEACHING" ? "Non-Teaching" : "—"} />
+                      <ViewRow label="Position" value={teacher.plantillaPosition} />
+                      {teacher.personnelType === "TEACHING" && (
+                        <ViewRow label="Subject Area" value={teacher.department} />
+                      )}
+                      {teacher.personnelType === "NON_TEACHING" && (
+                        <ViewRow label="Office" value={teacher.functionalAssignment} />
+                      )}
+                      {showSF7 && (
+                        <>
+                          <ViewRow label="Appointment" value={NATURE_OF_APPOINTMENT_MAP[teacher.natureOfAppointment] || teacher.natureOfAppointment} />
+                          <ViewRow label="Fund Source" value={FUNDING_SOURCE_MAP[teacher.fundingSource] || teacher.fundingSource} />
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  <div className="space-y-4 pt-4 border-t border-border mt-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-base font-extrabold uppercase text-foreground">
+                  {/* SF7 Profile */}
+                  {showSF7 && (
+                    <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-primary" />
                           SF7 Profile
-                        </p>
-                        <p className="text-sm font-extrabold leading-tight text-foreground">
-                          Used for School Form 7 personnel reporting.
-                        </p>
+                        </span>
+                        <Badge variant="outline" className="font-extrabold uppercase">School Form 7</Badge>
                       </div>
-                      <Badge variant="outline" className="font-extrabold uppercase">
-                        School Form 7
-                      </Badge>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Undergraduate Degree *</Label>
-                        <Controller
-                          name="undergraduateDegree"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={TEACHER_UNDERGRADUATE_DEGREE_OPTIONS}
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Select undergraduate degree"
-                              searchPlaceholder="Search degrees..."
-                              className={cn(
-                                "w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border",
-                                errors.undergraduateDegree && "border-destructive focus-visible:ring-destructive"
-                              )}
-                            />
-                          )}
-                        />
-                        <AnimatedError error={errors.undergraduateDegree?.message as string} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Postgraduate Degree</Label>
-                        <Controller
-                          name="postgraduateDegree"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={TEACHER_POSTGRADUATE_DEGREE_OPTIONS}
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Select postgraduate degree"
-                              searchPlaceholder="Search degrees..."
-                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
-                            />
-                          )}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Major / Specialization</Label>
-                        <Controller
-                          name="majorSpecialization"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={TEACHER_JHS_SPECIALIZATION_OPTIONS}
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Select major specialization"
-                              searchPlaceholder="Search specializations..."
-                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
-                            />
-                          )}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Minor</Label>
-                        <Controller
-                          name="minorSpecialization"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS}
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Select minor specialization"
-                              searchPlaceholder="Search specializations..."
-                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
-                            />
-                          )}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Nature of Appointment *</Label>
-                        <Controller
-                          name="natureOfAppointment"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
-                              value={field.value}
-                            >
-                              <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.natureOfAppointment && "border-destructive focus-visible:ring-destructive")}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value} className="uppercase">
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        <AnimatedError error={errors.natureOfAppointment?.message as string} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Fund Source *</Label>
-                        <Controller
-                          name="fundingSource"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
-                              value={field.value}
-                            >
-                              <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.fundingSource && "border-destructive focus-visible:ring-destructive")}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value} className="uppercase">
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        <AnimatedError error={errors.fundingSource?.message as string} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">IP Community / Ethnic Group</Label>
-                        <Controller
-                          name="indigenousCommunity"
-                          control={control}
-                          render={({ field }) => (
-                            <SearchableCombobox
-                              items={IP_COMMUNITY_OPTIONS}
-                              value={field.value || "NOT APPLICABLE"}
-                              onChange={(value) => field.onChange(value)}
-                              disabled={!isEditing}
-                              placeholder="Select ethnic group (e.g., Aeta, Mangyan)"
-                              searchPlaceholder="Search communities..."
-                              className="w-full h-10 font-extrabold text-base leading-tight uppercase"
-                            />
-                          )}
-                        />
+                      <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                        <ViewRow label="Undergrad" value={teacher.undergraduateDegree} />
+                        <ViewRow label="Postgrad" value={teacher.postgraduateDegree} />
+                        <ViewRow label="Major" value={teacher.majorSpecialization} />
+                        <ViewRow label="Minor" value={teacher.minorSpecialization} />
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  {formPersonnelType === "TEACHING" && (
-                    <div className="space-y-4 pt-4 border-t border-border mt-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-base font-extrabold uppercase text-foreground flex items-center gap-2">
-                            <Clock className="size-4 text-primary" />
-                            SF7 Teaching Schedule
-                          </p>
-                          <p className="text-sm font-extrabold leading-tight text-foreground">
-                            Official school-form snapshot. ATLAS remains the external schedule reference.
-                          </p>
-                        </div>
+                  {/* SF7 Teaching Schedule (view mode) */}
+                  {showSF7 && teacher.personnelType === "TEACHING" && (
+                    <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-primary" />
+                          SF7 Teaching Schedule
+                        </span>
                         <Badge className="font-extrabold uppercase">
-                          {totalScheduleMinutes} minutes/week
+                          {totalScheduleMinutes} min/week
                         </Badge>
                       </div>
-
-                      {scheduleError && (
-                        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-extrabold text-destructive">
-                          {scheduleError}
-                        </div>
-                      )}
-
-                      <div className="space-y-3">
+                      <div className="p-0">
                         {scheduleLoading ? (
-                          <div className="rounded-lg border border-dashed p-4 text-sm font-extrabold text-foreground">
+                          <div className="p-4 text-sm font-extrabold text-foreground">
                             Loading SF7 schedule...
                           </div>
                         ) : schedulePeriods.length === 0 ? (
-                          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm font-extrabold text-foreground">
+                          <div className="p-4 text-sm font-extrabold text-foreground italic">
                             No SF7 teaching periods encoded yet.
                           </div>
                         ) : (
-                          schedulePeriods.map((period, index) => (
-                            <div key={period.localId} className="grid gap-2 rounded-lg border bg-background p-3 sm:grid-cols-[1.1fr_0.8fr_0.8fr_1.2fr_1.2fr_auto]">
-                              <Select
-                                value={period.dayOfWeek}
-                                onValueChange={(value) => {
-                                  const nextDay = value as TeacherScheduleDay;
-                                  setSchedulePeriods((current) =>
-                                    current.map((item, rowIndex) =>
-                                      rowIndex === index ? { ...item, dayOfWeek: nextDay } : item,
-                                    ),
-                                  );
-                                }}
-                              >
-                                <SelectTrigger disabled={!isEditing} className="h-10 font-extrabold">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {TEACHER_SCHEDULE_DAY_OPTIONS.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                disabled={!isEditing}
-                                type="time"
-                                value={period.startTime}
-                                onChange={(event) => {
-                                  const startTime = event.target.value;
-                                  setSchedulePeriods((current) =>
-                                    current.map((item, rowIndex) =>
-                                      rowIndex === index ? { ...item, startTime } : item,
-                                    ),
-                                  );
-                                }}
-                                className="h-10 font-extrabold"
-                              />
-                              <Input
-                                disabled={!isEditing}
-                                type="time"
-                                value={period.endTime}
-                                onChange={(event) => {
-                                  const endTime = event.target.value;
-                                  setSchedulePeriods((current) =>
-                                    current.map((item, rowIndex) =>
-                                      rowIndex === index ? { ...item, endTime } : item,
-                                    ),
-                                  );
-                                }}
-                                className="h-10 font-extrabold"
-                              />
-                              <Input
-                                disabled={!isEditing}
-                                value={period.subjectLabel}
-                                placeholder="e.g. MATH 7"
-                                onChange={(event) => {
-                                  const subjectLabel = event.target.value.toUpperCase();
-                                  setSchedulePeriods((current) =>
-                                    current.map((item, rowIndex) =>
-                                      rowIndex === index ? { ...item, subjectLabel } : item,
-                                    ),
-                                  );
-                                }}
-                                className="h-10 font-extrabold"
-                              />
-                              <Input
-                                disabled={!isEditing}
-                                value={period.sectionLabel}
-                                placeholder="e.g. RIZAL"
-                                onChange={(event) => {
-                                  const sectionLabel = event.target.value.toUpperCase();
-                                  setSchedulePeriods((current) =>
-                                    current.map((item, rowIndex) =>
-                                      rowIndex === index ? { ...item, sectionLabel } : item,
-                                    ),
-                                  );
-                                }}
-                                className="h-10 font-extrabold"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disabled={!isEditing}
-                                onClick={() => {
-                                  setSchedulePeriods((current) =>
-                                    current.filter((_, rowIndex) => rowIndex !== index),
-                                  );
-                                }}
-                                aria-label="Remove teaching period"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          ))
+                          <table className="w-full text-base font-extrabold">
+                            <thead>
+                              <tr className="border-b bg-muted/30 uppercase text-foreground">
+                                <th className="p-2 text-left">Day</th>
+                                <th className="p-2 text-left">Time</th>
+                                <th className="p-2 text-left">Subject</th>
+                                <th className="p-2 text-left">Section</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {schedulePeriods.map((period) => (
+                                <tr key={period.localId}>
+                                  <td className="p-2 uppercase">{toSentenceCase(period.dayOfWeek)}</td>
+                                  <td className="p-2">{period.startTime} – {period.endTime}</td>
+                                  <td className="p-2 uppercase">{period.subjectLabel || "—"}</td>
+                                  <td className="p-2 uppercase">{period.sectionLabel || "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         )}
                       </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={!isEditing || scheduleLoading}
-                        onClick={() => {
-                          setSchedulePeriods((current) => [...current, createBlankSchedulePeriod()]);
-                        }}
-                        className="w-full font-extrabold uppercase"
-                      >
-                        <Plus className="mr-2 size-4" />
-                        Add Teaching Period
-                      </Button>
                     </div>
                   )}
 
-                  <div className="space-y-4 pt-4 border-t border-border mt-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Service Status</Label>
+                  {/* Service Status */}
+                  <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                    <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <ShieldAlert className="h-4 w-4 text-primary" />
+                      Service Status
+                    </div>
+                    <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                      <ViewRow label="Status" value={SERVICE_STATUS_LABEL_MAP[teacher.serviceStatus] || teacher.serviceStatus} />
+                      {teacher.serviceStatus !== "ACTIVE" && (
+                        <>
+                          <ViewRow label="Effective Date" value={(teacher as Teacher & { serviceEffectiveDate?: string | null }).serviceEffectiveDate ? new Date((teacher as Teacher & { serviceEffectiveDate?: string | null }).serviceEffectiveDate!).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }) : null} />
+                          <ViewRow label="Notes" value={(teacher as Teacher & { serviceRemarks?: string | null }).serviceRemarks} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Portal Access Status */}
+                  <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                    <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                      <Smartphone className="h-4 w-4 text-primary" />
+                      Portal Access and Security
+                    </div>
+                    <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                      <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                        <div className="p-3 text-foreground bg-muted/30 uppercase">Portal</div>
+                        <div className="p-3 uppercase flex items-center gap-2">
+                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalIsActive ? "bg-emerald-500" : "bg-amber-500")} />
+                          {portalIsActive ? "Active — Login Allowed" : "Disabled — Login Blocked"}
+                        </div>
+                      </div>
+                      <ViewRow label="Last Login" value={teacher.userAccount?.lastLoginAt ? new Date(teacher.userAccount.lastLoginAt).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Never"} />
+                    </div>
+                  </div>
+
+                  {/* Assignments for This School Year */}
+                  {isTeachingStaff && (
+                    <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
+                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4 text-primary" />
+                        Assignments for This School Year
+                      </div>
+                      <div className="divide-y">
+                        <div className="p-4">
+                          <div className="space-y-1">
+                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Advisory Class</p>
+                            {teacher.designation?.advisorySection ? (
+                              <p className="font-extrabold text-base leading-tight text-slate-700 pt-1">
+                                {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
+                              </p>
+                            ) : (
+                              <p className="text-base leading-tight font-extrabold text-slate-400 italic pt-1">No advisory class assigned</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
+                            {loadLoading ? (
+                              <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
+                                <RefreshCw className="h-3 w-3" />
+                                Checking ATLAS...
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-base font-extrabold border-dashed border-primary/30 text-primary/60 bg-primary/5">
+                                {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            {loadLoading ? (
+                              <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
+                            ) : teachingLoad.length > 0 ? (
+                              <div className="grid gap-2">
+                                {teachingLoad.map((load, idx) => (
+                                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
+                                    <div className="space-y-0.5">
+                                      <p className="text-base font-extrabold uppercase text-primary leading-none">{load.subjectName}</p>
+                                      <p className="text-base font-extrabold text-foreground uppercase">{load.subjectCode}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="font-extrabold text-base uppercase text-foreground leading-none">{load.sectionName}</p>
+                                      <p className="text-base font-extrabold text-foreground uppercase">{load.gradeLevel}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
+                                <p className="text-base font-extrabold uppercase text-foreground mb-1">
+                                  {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
+                                </p>
+                                <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
+                                  {loadError
+                                    ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
+                                    : "No teaching load found in ATLAS."}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-muted/10 text-center">
+                          <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
+                            Record created {teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }) : "date not available"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ════════════════════════════════════════════════════════════ */}
+              {/* EDIT / ADD MODE — full interactive form                     */}
+              {/* ════════════════════════════════════════════════════════════ */}
+              {(isEditing || isAdding) && (
+                <>
+                  {/* Card 1: Personal Information */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <span className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4 text-primary" />
+                        Personal Information
+                      </span>
+                    </div>
+                    <div className="px-5 pb-5 pt-4 space-y-4">
+                      <div className="space-y-2 mb-6">
+                        <Label className="text-base font-extrabold uppercase text-foreground">
+                          SYSTEM ROLES *
+                        </Label>
                         <Controller
-                          name="serviceStatus"
+                          name="roles"
                           control={control}
                           render={({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value || "ACTIVE"}>
-                              <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10 uppercase">
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent className="uppercase">
-                                <SelectItem value="ACTIVE">Active Personnel</SelectItem>
-                                <SelectItem value="TRANSFERRED">Transferred to another school/office</SelectItem>
-                                <SelectItem value="RETIRED_RESIGNED">Retired / Resigned</SelectItem>
-                                <SelectItem value="ON_LEAVE">On Leave</SelectItem>
-                                <SelectItem value="DROPPED_FROM_ROLLS">Dropped from Rolls</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                              {([
+                                { value: "SYSTEM_ADMIN", label: "School Head" },
+                                { value: "HEAD_REGISTRAR", label: "Registrar" },
+                                { value: "TEACHER", label: "Teacher" },
+                                { value: "CLASS_ADVISER", label: "Class Adviser" },
+                                { value: "MRF", label: "MRF Coordinator" },
+                              ] as const).map((roleOption) => (
+                                <div key={roleOption.value} className="flex items-center space-x-2 bg-background p-2 rounded border border-border">
+                                  <Checkbox
+                                    disabled={!isEditing}
+                                    id={`role-${roleOption.value}`}
+                                    checked={field.value.includes(roleOption.value)}
+                                    onCheckedChange={(checked) => {
+                                      const isChecked = checked === true;
+                                      const newRoles = isChecked
+                                        ? [...field.value, roleOption.value]
+                                        : field.value.filter((r) => r !== roleOption.value);
+                                      field.onChange(newRoles);
+                                    }}
+                                    className="cursor-pointer"
+                                  />
+                                  <Label htmlFor={`role-${roleOption.value}`} className="text-base font-extrabold uppercase cursor-pointer flex-1">
+                                    {roleOption.label}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         />
                       </div>
-                      {formServiceStatus !== "ACTIVE" && (
+
+                      <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                          <Label className="text-base font-extrabold uppercase text-foreground">Date Started</Label>
+                          <Label className="text-base font-extrabold uppercase text-foreground">First Name *</Label>
                           <Controller
-                            name="serviceEffectiveDate"
+                            name="firstName"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                placeholder="e.g. JUAN"
+                                className={cn(
+                                  "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
+                                  errors.firstName && "border-destructive focus-visible:ring-destructive"
+                                )}
+                              />
+                            )}
+                          />
+                          <AnimatedError error={errors.firstName?.message as string || errors.firstName as unknown as string} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Middle Name <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
+                          <Controller
+                            name="middleName"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                placeholder="e.g. SANTOS"
+                                className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
+                              />
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Last Name *</Label>
+                          <Controller
+                            name="lastName"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                placeholder="e.g. DELA CRUZ"
+                                className={cn(
+                                  "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
+                                  errors.lastName && "border-destructive focus-visible:ring-destructive"
+                                )}
+                              />
+                            )}
+                          />
+                          <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Suffix <span className="text-foreground font-extrabold ml-1">(e.g., JR., III)</span></Label>
+                          <Controller
+                            name="suffix"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                placeholder="JR., III"
+                                className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
+                              />
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Sex *</Label>
+                          <Controller
+                            name="sex"
+                            control={control}
+                            render={({ field }) => (
+                              <div className="flex gap-4">
+                                {(
+                                  [
+                                    { val: "MALE", icon: Mars },
+                                    { val: "FEMALE", icon: Venus },
+                                  ] as const
+                                ).map((s) => (
+                                  <button
+                                    key={s.val}
+                                    type="button"
+                                    onClick={() => field.onChange(s.val)}
+                                    className={cn(
+                                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                      field.value === s.val
+                                        ? "border-primary bg-primary/5 text-primary"
+                                        : "border-border hover:bg-muted/50 text-foreground",
+                                    )}>
+                                    <s.icon
+                                      className={cn(
+                                        "w-4 h-4",
+                                        field.value === s.val
+                                          ? "text-primary"
+                                          : "text-foreground",
+                                      )}
+                                    />
+                                    {s.val}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Date of Birth *</Label>
+                          <Controller
+                            name="birthdate"
                             control={control}
                             render={({ field }) => (
                               <HybridDatePicker disabled={!isEditing}
                                 value={field.value || ""}
                                 onChange={field.onChange}
-                                className="h-10 font-extrabold text-base leading-tight"
+                                className={cn(
+                                  "h-10 font-extrabold text-base leading-tight",
+                                  errors.birthdate && "border-destructive focus-visible:ring-destructive"
+                                )}
+                              />
+                            )}
+                          />
+                          <AnimatedError error={errors.birthdate?.message as string || errors.birthdate as unknown as string} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1 h-6">
+                            <Smartphone className="size-3" />
+                            Mobile Number *
+                          </Label>
+                          <Controller
+                            name="contactNumber"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+                                  let formatted = raw;
+                                  if (raw.length > 4) {
+                                    formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
+                                  }
+                                  if (raw.length > 7) {
+                                    formatted = `${raw.slice(0, 4)}-${raw.slice(4, 7)}-${raw.slice(7)}`;
+                                  }
+                                  field.onChange(formatted);
+                                }}
+                                maxLength={13}
+                                placeholder="e.g., 0917-123-4567"
+                                className={cn("font-extrabold text-base leading-tight", errors.contactNumber && "border-destructive")}
+                              />
+                            )}
+                          />
+                          <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground flex items-center h-6">IP Community / Ethnic Group</Label>
+                          <Controller
+                            name="indigenousCommunity"
+                            control={control}
+                            render={({ field }) => (
+                              <SearchableCombobox
+                                items={IP_COMMUNITY_OPTIONS}
+                                value={field.value || "NOT APPLICABLE"}
+                                onChange={(value) => field.onChange(value)}
+                                disabled={!isEditing}
+                                placeholder="Select ethnic group (e.g., Aeta, Mangyan)"
+                                searchPlaceholder="Search communities..."
+                                className="w-full font-extrabold text-base leading-tight uppercase"
                               />
                             )}
                           />
                         </div>
-                      )}
-                    </div>
-                    {formServiceStatus !== "ACTIVE" && (
-                      <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Notes for this status <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
-                        <Controller
-                          name="serviceRemarks"
-                          control={control}
-                          render={({ field }) => (
-                            <Textarea disabled={!isEditing}
-                              placeholder="e.g., maternity leave, transferred to another school, retired"
-                              className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
-                              {...field}
-                              value={field.value ?? ""}
-                            />
-                          )}
-                        />
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Contact Details & Portal Security */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
-                  <span className="flex items-center gap-2">
-                    <Smartphone className="h-4 w-4 text-primary" />
-                    3. Contact Details & Portal Security
-                  </span>
-                </div>
-                <div className="px-5 pb-5 pt-4 space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground flex items-center gap-1">
-                        <Smartphone className="size-3" />
-                        Mobile Number *
-                      </Label>
-                      <Controller
-                        name="contactNumber"
-                        control={control}
-                        render={({ field }) => (
-                          <Input disabled={!isEditing}
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
-                              let formatted = raw;
-                              if (raw.length > 4) {
-                                formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
-                              }
-                              if (raw.length > 7) {
-                                formatted = `${raw.slice(0, 4)}-${raw.slice(4, 7)}-${raw.slice(7)}`;
-                              }
-                              field.onChange(formatted);
-                            }}
-                            maxLength={13}
-                            placeholder="e.g., 0917-123-4567"
-                            className={cn("font-extrabold text-base leading-tight h-10", errors.contactNumber && "border-destructive")}
-                          />
-                        )}
-                      />
-                      <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                     </div>
                   </div>
 
-                  <div className="space-y-2 mt-4 pt-4 border-t border-border">
-                    <Label className="text-base font-extrabold uppercase text-foreground">
-                      SYSTEM ROLES *
-                    </Label>
-                    <Controller
-                      name="roles"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                          {([
-                            { value: "SYSTEM_ADMIN", label: "School Head" },
-                            { value: "HEAD_REGISTRAR", label: "Registrar" },
-                            { value: "TEACHER", label: "Teacher" },
-                            { value: "CLASS_ADVISER", label: "Class Adviser" },
-                            { value: "MRF", label: "MRF Coordinator" },
-                          ] as const).map((roleOption) => (
-                            <div key={roleOption.value} className="flex items-center space-x-2 bg-background p-2 rounded border border-border">
-                              <Checkbox disabled={!isEditing}
-                                id={`role-${roleOption.value}`}
-                                checked={field.value.includes(roleOption.value)}
-                                onCheckedChange={(checked) => {
-                                  const newRoles = checked
-                                    ? [...field.value, roleOption.value]
-                                    : field.value.filter((r) => r !== roleOption.value);
-                                  field.onChange(newRoles);
-                                }}
+                  {/* Card 2: Employment Details */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <span className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                        Employment Details
+                      </span>
+                    </div>
+                    <div className="px-5 pb-5 pt-4 space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">DepEd Employee ID *</Label>
+                          <Controller
+                            name="employeeId"
+                            control={control}
+                            render={({ field }) => (
+                              <Input autoComplete="off" disabled={!isEditing}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                                maxLength={7}
+                                placeholder="e.g., 1234567"
+                                className={cn(
+                                  "font-extrabold text-base leading-tight h-10",
+                                  errors.employeeId && "border-destructive"
+                                )}
                               />
-                              <Label htmlFor={`role-${roleOption.value}`} className="text-base font-extrabold uppercase cursor-pointer flex-1">
-                                {roleOption.label}
-                              </Label>
-                            </div>
-                          ))}
+                            )}
+                          />
+                          <AnimatedError error={errors.employeeId?.message as string || errors.employeeId as unknown as string} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">DepEd Position (Plantilla) *</Label>
+                          <Controller
+                            name="plantillaPosition"
+                            control={control}
+                            render={({ field }) => (
+                                <SearchableCombobox
+                                  items={[
+                                    ...(designationPool.length > 0
+                                      ? designationPool.map(opt => ({ value: opt, label: opt }))
+                                      : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
+                                  ]}
+                                  value={field.value || ""}
+                                  onChange={(value) => field.onChange(value)}
+                                  disabled={!isEditing}
+                                  placeholder="Search position (e.g., Teacher I, Master Teacher II)"
+                                  searchPlaceholder="Search positions..."
+                                  className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                                />
+                            )}
+                          />
+                          <AnimatedError error={errors.plantillaPosition?.message as string} />
+                        </div>
+                      </div>
+
+                      {formPersonnelType === "TEACHING" && (
+                        <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t border-border">
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Subject Area / Major</Label>
+                            <Controller
+                              name="department"
+                              control={control}
+                              render={({ field }) => (
+                                <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
+                                  <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10">
+                                    <SelectValue placeholder="Search department (e.g., Mathematics, Science, English)" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[300px]">
+                                    <SelectItem value="__NONE__">No subject area set yet</SelectItem>
+                                    {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
+                                      <SelectItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
                         </div>
                       )}
-                    />
-                  </div>
 
-                  {!isAdding && (
-                    <div className="space-y-4 pt-4 border-t border-border">
-                      <div className="space-y-2">
-                        <Label className="text-base font-extrabold uppercase text-foreground">
-                          Portal Access Status
-                        </Label>
-                        <p className="text-sm font-extrabold leading-tight text-foreground">
-                          Toggle whether this user can sign in to the portal.
-                        </p>
-                        <Controller
-                          name="portalActive"
-                          control={control}
-                          render={({ field }) => (
-                            <div className="flex gap-4">
-                              <button
-                                type="button"
-                                disabled={!isEditing || isPortalActionSubmitting}
-                                onClick={() => field.onChange(true)}
-                                className={cn(
-                                  "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
-                                  field.value
-                                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                                    : "border-border hover:bg-muted/50 text-foreground"
-                                )}
-                              >
-                                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value ? "bg-emerald-500" : "bg-muted-foreground")} />
-                                Allow Login (Active)
-                              </button>
-                              <button
-                                type="button"
-                                disabled={!isEditing || isPortalActionSubmitting}
-                                onClick={() => field.onChange(false)}
-                                className={cn(
-                                  "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
-                                  field.value === false
-                                    ? "border-amber-500 bg-amber-50 text-amber-700"
-                                    : "border-border hover:bg-muted/50 text-foreground"
-                                )}
-                              >
-                                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value === false ? "bg-amber-500" : "bg-muted-foreground")} />
-                                Block Login (Disabled)
-                              </button>
+
+                      {showSF7 && (
+                        <div className="space-y-4 pt-4 border-t border-border mt-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-base font-extrabold uppercase text-foreground">
+                                SF7 Profile
+                              </p>
+                            <p className="text-sm font-extrabold leading-tight text-foreground">
+                              Used for School Form 7 personnel reporting.
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="font-extrabold uppercase">
+                            School Form 7
+                          </Badge>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Undergraduate Degree *</Label>
+                            <Controller
+                              name="undergraduateDegree"
+                              control={control}
+                              render={({ field }) => (
+                                <SearchableCombobox
+                                  items={TEACHER_UNDERGRADUATE_DEGREE_OPTIONS}
+                                  value={field.value || ""}
+                                  onChange={(value) => field.onChange(value)}
+                                  disabled={!isEditing}
+                                  placeholder="Select undergraduate degree"
+                                  searchPlaceholder="Search degrees..."
+                                  className={cn(
+                                    "w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border",
+                                    errors.undergraduateDegree && "border-destructive focus-visible:ring-destructive"
+                                  )}
+                                />
+                              )}
+                            />
+                            <AnimatedError error={errors.undergraduateDegree?.message as string} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Postgraduate Degree</Label>
+                            <Controller
+                              name="postgraduateDegree"
+                              control={control}
+                              render={({ field }) => (
+                                <SearchableCombobox
+                                  items={TEACHER_POSTGRADUATE_DEGREE_OPTIONS}
+                                  value={field.value || ""}
+                                  onChange={(value) => field.onChange(value)}
+                                  disabled={!isEditing}
+                                  placeholder="Select postgraduate degree"
+                                  searchPlaceholder="Search degrees..."
+                                  className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                                />
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Major / Specialization</Label>
+                            <Controller
+                              name="majorSpecialization"
+                              control={control}
+                              render={({ field }) => (
+                                <SearchableCombobox
+                                  items={TEACHER_JHS_SPECIALIZATION_OPTIONS}
+                                  value={field.value || ""}
+                                  onChange={(value) => field.onChange(value)}
+                                  disabled={!isEditing}
+                                  placeholder="Select major specialization"
+                                  searchPlaceholder="Search specializations..."
+                                  className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                                />
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Minor</Label>
+                            <Controller
+                              name="minorSpecialization"
+                              control={control}
+                              render={({ field }) => (
+                                <SearchableCombobox
+                                  items={TEACHER_JHS_MINOR_SPECIALIZATION_OPTIONS}
+                                  value={field.value || ""}
+                                  onChange={(value) => field.onChange(value)}
+                                  disabled={!isEditing}
+                                  placeholder="Select minor specialization"
+                                  searchPlaceholder="Search specializations..."
+                                  className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                                />
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Nature of Appointment *</Label>
+                            <Controller
+                              name="natureOfAppointment"
+                              control={control}
+                              render={({ field }) => (
+                                <Select
+                                  onValueChange={(value) => field.onChange(value as TeacherNatureOfAppointment)}
+                                  value={field.value ?? undefined}
+                                >
+                                  <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.natureOfAppointment && "border-destructive focus-visible:ring-destructive")}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TEACHER_NATURE_OF_APPOINTMENT_OPTIONS.map((option) => (
+                                      <SelectItem key={option.value} value={option.value} className="uppercase">
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            <AnimatedError error={errors.natureOfAppointment?.message as string} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Fund Source *</Label>
+                            <Controller
+                              name="fundingSource"
+                              control={control}
+                              render={({ field }) => (
+                                <Select
+                                  onValueChange={(value) => field.onChange(value as TeacherFundingSource)}
+                                  value={field.value ?? undefined}
+                                >
+                                  <SelectTrigger disabled={!isEditing} className={cn("font-extrabold text-base leading-tight h-10 uppercase", errors.fundingSource && "border-destructive focus-visible:ring-destructive")}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TEACHER_FUNDING_SOURCE_OPTIONS.map((option) => (
+                                      <SelectItem key={option.value} value={option.value} className="uppercase">
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            <AnimatedError error={errors.fundingSource?.message as string} />
+                          </div>
+
+                        </div>
+                      </div>
+                      )}
+
+                      {showSF7 && formPersonnelType === "TEACHING" && (
+                        <div className="space-y-4 pt-4 border-t border-border mt-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="text-base font-extrabold uppercase text-foreground flex items-center gap-2">
+                                <Clock className="size-4 text-primary" />
+                                SF7 Teaching Schedule
+                              </p>
+                              <p className="text-sm font-extrabold leading-tight text-foreground">
+                                Official school-form snapshot. ATLAS remains the external schedule reference.
+                              </p>
+                            </div>
+                            <Badge className="font-extrabold uppercase">
+                              {totalScheduleMinutes} minutes/week
+                            </Badge>
+                          </div>
+
+                          {scheduleError && (
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-extrabold text-destructive">
+                              {scheduleError}
                             </div>
                           )}
-                        />
-                      </div>
 
-                      <div className="space-y-2 pt-2">
-                        <Label className="text-base font-extrabold uppercase text-foreground">
-                          Password Control
-                        </Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input disabled={!isEditing}
-                            value={defaultPasswordInput}
-                            onChange={(e) => setDefaultPasswordInput(e.target.value)}
-                            placeholder="e.g., DepEd@1234"
-                            className="h-11 font-extrabold text-base bg-background"
-                          />
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            disabled={!isEditing || isPortalActionSubmitting || !defaultPasswordInput.trim()}
-                            onClick={handleResetPassword}
-                            className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
-                          >
-                            Reset to Default Password
-                          </Button>
-                        </div>
-                        <p className="text-sm font-extrabold leading-tight text-foreground">
-                          This will reset the user's portal password to the value above and force a password change on next login.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Card 4: Assignments for This School Year */}
-              {!isAdding && isTeachingStaff && (
-                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
-                    <span className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-primary" />
-                      4. Assignments for This School Year
-                    </span>
-                  </div>
-                  <div className="divide-y">
-                    <div className="p-4">
-                      <div className="space-y-1">
-                        <p className="text-base font-extrabold uppercase text-foreground leading-none">Advisory Class</p>
-                        {teacher?.designation?.advisorySection ? (
-                          <div className="space-y-0.5 pt-1">
-                            <p className="font-extrabold text-base leading-tight text-slate-700">
-                              {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-base leading-tight font-extrabold text-slate-400 italic pt-1">No advisory class assigned</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
-                        {loadLoading ? (
-                          <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
-                            <RefreshCw className="h-3 w-3 " />
-                            Checking ATLAS...
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-base font-extrabold border-dashed border-primary/30 text-primary/60 bg-primary/5">
-                            {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        {loadLoading ? (
-                          <div className="space-y-2">
-                            <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
-                          </div>
-                        ) : teachingLoad.length > 0 ? (
-                          <div className="grid gap-2">
-                            {teachingLoad.map((load, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
-                                <div className="space-y-0.5">
-                                  <p className="text-base font-extrabold uppercase text-primary leading-none">{load.subjectName}</p>
-                                  <p className="text-base font-extrabold text-foreground uppercase">{load.subjectCode}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-extrabold text-base uppercase text-foreground leading-none">{load.sectionName}</p>
-                                  <p className="text-base font-extrabold text-foreground uppercase">{load.gradeLevel}</p>
-                                </div>
+                          <div className="space-y-3">
+                            {scheduleLoading ? (
+                              <div className="rounded-lg border border-dashed p-4 text-sm font-extrabold text-foreground">
+                                Loading SF7 schedule...
                               </div>
-                            ))}
+                            ) : schedulePeriods.length === 0 ? (
+                              <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm font-extrabold text-foreground">
+                                No SF7 teaching periods encoded yet.
+                              </div>
+                            ) : (
+                              schedulePeriods.map((period, index) => (
+                                <div key={period.localId} className="grid gap-2 rounded-lg border bg-background p-3 sm:grid-cols-[1.1fr_0.8fr_0.8fr_1.2fr_1.2fr]">
+                                  <Select
+                                    value={period.dayOfWeek}
+                                    onValueChange={(value) => {
+                                      const nextDay = value as TeacherScheduleDay;
+                                      setSchedulePeriods((current) =>
+                                        current.map((item, rowIndex) =>
+                                          rowIndex === index ? { ...item, dayOfWeek: nextDay } : item,
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    <SelectTrigger disabled={true} className="h-10 font-extrabold">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {TEACHER_SCHEDULE_DAY_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Input autoComplete="off"
+                                    disabled={true}
+                                    type="time"
+                                    value={period.startTime}
+                                    onChange={(event) => {
+                                      const startTime = event.target.value;
+                                      setSchedulePeriods((current) =>
+                                        current.map((item, rowIndex) =>
+                                          rowIndex === index ? { ...item, startTime } : item,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-10 font-extrabold"
+                                  />
+                                  <Input autoComplete="off"
+                                    disabled={true}
+                                    type="time"
+                                    value={period.endTime}
+                                    onChange={(event) => {
+                                      const endTime = event.target.value;
+                                      setSchedulePeriods((current) =>
+                                        current.map((item, rowIndex) =>
+                                          rowIndex === index ? { ...item, endTime } : item,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-10 font-extrabold"
+                                  />
+                                  <Input autoComplete="off"
+                                    disabled={true}
+                                    value={period.subjectLabel}
+                                    placeholder="e.g. MATH 7"
+                                    onChange={(event) => {
+                                      const subjectLabel = event.target.value.toUpperCase();
+                                      setSchedulePeriods((current) =>
+                                        current.map((item, rowIndex) =>
+                                          rowIndex === index ? { ...item, subjectLabel } : item,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-10 font-extrabold"
+                                  />
+                                  <Input autoComplete="off"
+                                    disabled={true}
+                                    value={period.sectionLabel}
+                                    placeholder="e.g. RIZAL"
+                                    onChange={(event) => {
+                                      const sectionLabel = event.target.value.toUpperCase();
+                                      setSchedulePeriods((current) =>
+                                        current.map((item, rowIndex) =>
+                                          rowIndex === index ? { ...item, sectionLabel } : item,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-10 font-extrabold"
+                                  />
+                                </div>
+                              ))
+                            )}
                           </div>
-                        ) : (
-                          <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
-                            <p className="text-base font-extrabold uppercase text-foreground mb-1">
-                              {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
-                            </p>
-                            <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
-                              {loadError
-                                ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
-                                : "No teaching load found in ATLAS."}
-                            </p>
+                        </div>
+                      )}
+
+                      <div className="space-y-4 pt-4 border-t border-border mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Service Status</Label>
+                            <Controller
+                              name="serviceStatus"
+                              control={control}
+                              render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value || "ACTIVE"}>
+                                  <SelectTrigger disabled={!isEditing} className="font-extrabold text-base leading-tight h-10 uppercase">
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent className="uppercase">
+                                    <SelectItem value="ACTIVE">Active Personnel</SelectItem>
+                                    <SelectItem value="TRANSFERRED">Transferred to another school/office</SelectItem>
+                                    <SelectItem value="RETIRED_RESIGNED">Retired / Resigned</SelectItem>
+                                    <SelectItem value="ON_LEAVE">On Leave</SelectItem>
+                                    <SelectItem value="DROPPED_FROM_ROLLS">Dropped from Rolls</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                          {formServiceStatus !== "ACTIVE" && (
+                            <div className="space-y-1.5">
+                              <Label className="text-base font-extrabold uppercase text-foreground">Date Started</Label>
+                              <Controller
+                                name="serviceEffectiveDate"
+                                control={control}
+                                render={({ field }) => (
+                                  <HybridDatePicker disabled={!isEditing}
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    className="h-10 font-extrabold text-base leading-tight"
+                                  />
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {formServiceStatus !== "ACTIVE" && (
+                          <div className="space-y-1.5">
+                            <Label className="text-base font-extrabold uppercase text-foreground">Notes for this status <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
+                            <Controller
+                              name="serviceRemarks"
+                              control={control}
+                              render={({ field }) => (
+                                <Textarea disabled={!isEditing}
+                                  placeholder="e.g., maternity leave, transferred to another school, retired"
+                                  className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                />
+                              )}
+                            />
                           </div>
                         )}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="p-3 bg-muted/10 text-center">
-                      <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
-                        Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
-                      </p>
+                  {/* Card 3: PORTAL ACCESS AND SECURITY */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                      <span className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-primary" />
+                        PORTAL ACCESS AND SECURITY
+                      </span>
+                    </div>
+                    <div className="px-5 pb-5 pt-4 space-y-4">
+                        <div className="space-y-4 pt-4 border-t border-border">
+                          <div className="space-y-2">
+                            <Label className="text-base font-extrabold uppercase text-foreground">
+                              Portal Access Status
+                            </Label>
+                            <p className="text-sm font-extrabold leading-tight text-foreground">
+                              Toggle whether this user can sign in to the portal.
+                            </p>
+                            <Controller
+                              name="portalActive"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="flex gap-4">
+                                  <button
+                                    type="button"
+                                    disabled={!isEditing || isPortalActionSubmitting}
+                                    onClick={() => field.onChange(true)}
+                                    className={cn(
+                                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                      field.value
+                                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                        : "border-border hover:bg-muted/50 text-foreground"
+                                    )}
+                                  >
+                                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value ? "bg-emerald-500" : "bg-muted-foreground")} />
+                                    Allow Login (Active)
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={!isEditing || isPortalActionSubmitting}
+                                    onClick={() => field.onChange(false)}
+                                    className={cn(
+                                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                      field.value === false
+                                        ? "border-amber-500 bg-amber-50 text-amber-700"
+                                        : "border-border hover:bg-muted/50 text-foreground"
+                                    )}
+                                  >
+                                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", field.value === false ? "bg-amber-500" : "bg-muted-foreground")} />
+                                    Block Login (Disabled)
+                                  </button>
+                                </div>
+                              )}
+                            />
+                          </div>
+
+                            <div className="space-y-2 pt-2">
+                              <Label className="text-base font-extrabold uppercase text-foreground">
+                                {isAdding ? "Initial Password" : "Password Control"}
+                              </Label>
+                              <div className={cn("grid gap-2", isAdding ? "grid-cols-1" : "grid-cols-2")}>
+                                <Input autoComplete="off" disabled={!isEditing}
+                                  value={defaultPasswordInput}
+                                  onChange={(e) => setDefaultPasswordInput(e.target.value)}
+                                  placeholder="e.g., DepEd@1234"
+                                  className="h-11 font-extrabold text-base bg-background"
+                                />
+                                {!isAdding && (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    disabled={!isEditing || isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                                    onClick={handleResetPassword}
+                                    className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                                  >
+                                    Reset to Default Password
+                                  </Button>
+                                )}
+                              </div>
+                              <p className="text-sm font-extrabold leading-tight text-foreground">
+                                {isAdding 
+                                  ? "The initial portal password for this user. They will be forced to change it on their first login."
+                                  : "This will reset the user's portal password to the value above and force a password change on next login."
+                                }
+                              </p>
+                            </div>
+                        </div>
                     </div>
                   </div>
-                </div>
-              )}
 
-            </div>
+                  {/* Card 4: Assignments for This School Year (edit mode, read-only section) */}
+                  {!isAdding && isTeachingStaff && (
+                    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                        <span className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-primary" />
+                          4. Assignments for This School Year
+                        </span>
+                      </div>
+                      <div className="divide-y">
+                        <div className="p-4">
+                          <div className="space-y-1">
+                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Advisory Class</p>
+                            {teacher?.designation?.advisorySection ? (
+                              <div className="space-y-0.5 pt-1">
+                                <p className="font-extrabold text-base leading-tight text-slate-700">
+                                  {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-base leading-tight font-extrabold text-slate-400 italic pt-1">No advisory class assigned</p>
+                            )}
+                          </div>
+                        </div>
 
-            <div className="p-4 bg-background border-t flex gap-3 shrink-0">
-              {!isEditing ? (
-                <Button
-                  type="button"
-                  variant="default"
-                  className="flex-1 font-extrabold uppercase transition-all duration-200"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsEditing(true);
-                  }}
-                >
-                  Edit Profile
-                </Button>
-              ) : (
-                <>
-                  {!isAdding && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="font-extrabold uppercase"
-                      onClick={() => {
-                        discardProfileChanges();
-                        setIsEditing(false);
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
+                            {loadLoading ? (
+                              <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
+                                <RefreshCw className="h-3 w-3 " />
+                                Checking ATLAS...
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-base font-extrabold border-dashed border-primary/30 text-primary/60 bg-primary/5">
+                                {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            {loadLoading ? (
+                              <div className="space-y-2">
+                                <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
+                              </div>
+                            ) : teachingLoad.length > 0 ? (
+                              <div className="grid gap-2">
+                                {teachingLoad.map((load, idx) => (
+                                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
+                                    <div className="space-y-0.5">
+                                      <p className="text-base font-extrabold uppercase text-primary leading-none">{load.subjectName}</p>
+                                      <p className="text-base font-extrabold text-foreground uppercase">{load.subjectCode}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="font-extrabold text-base uppercase text-foreground leading-none">{load.sectionName}</p>
+                                      <p className="text-base font-extrabold text-foreground uppercase">{load.gradeLevel}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
+                                <p className="text-base font-extrabold uppercase text-foreground mb-1">
+                                  {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
+                                </p>
+                                <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
+                                  {loadError
+                                    ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
+                                    : "No teaching load found in ATLAS."}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-muted/10 text-center">
+                          <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
+                            Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  <Button
-                    type="submit"
-                    className={cn(
-                      "flex-1 font-extrabold uppercase transition-all duration-200",
-                      !(isDirty || scheduleDirty) ? "opacity-50 bg-gray-400 cursor-not-allowed text-white hover:bg-gray-400" : ""
-                    )}
-                    disabled={!(isDirty || scheduleDirty) || isSubmitting}
-                  >
-                    {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
-                  </Button>
                 </>
               )}
+
             </div>
+
+            {/* ─── Footer ─── */}
+            {(isEditing || isAdding) && (
+              <div className="p-4 bg-background border-t flex gap-3 shrink-0">
+                {!isAdding && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="font-extrabold uppercase"
+                    onClick={() => {
+                      discardProfileChanges();
+                      setIsEditing(false);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  className={cn(
+                    "flex-1 font-extrabold uppercase transition-all duration-200",
+                    !(isDirty || scheduleDirty) ? "opacity-50 bg-gray-400 cursor-not-allowed text-primary-foreground hover:bg-gray-400" : ""
+                  )}
+                  disabled={!(isDirty || scheduleDirty) || isSubmitting}
+                >
+                  {isSubmitting ? (isAdding ? "Saving..." : "Updating...") : (isAdding ? "Save Faculty/Staff Record" : "Save Profile Changes")}
+                </Button>
+              </div>
+            )}
           </form>
+          </div>
         </SheetContent>
       </Sheet>
 

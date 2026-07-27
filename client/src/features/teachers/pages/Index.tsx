@@ -511,7 +511,6 @@ export default function Teachers() {
       const roles = t.userAccount?.roles || [];
       if (roles.includes("SYSTEM_ADMIN")) return "School Head";
       if (roles.includes("HEAD_REGISTRAR")) return "Registrar";
-      if (roles.includes("MRF")) return "MRF Coordinator";
       return "Subject Teacher";
     }
 

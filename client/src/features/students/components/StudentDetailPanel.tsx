@@ -1870,6 +1870,85 @@ export function StudentDetailPanel({
                 </div>
               </div>
             </div>
+            {/* V: Portal Access and Security */}
+            {!isJhsCompleter && (
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                  <span className="flex items-center gap-2">
+                    <FileBadge2 className="h-4 w-4 text-primary" />
+                    PORTAL ACCESS & SECURITY
+                  </span>
+                </div>
+                <div className="px-5 pb-5 pt-4 space-y-4">
+                  <div className="space-y-4 border-border">
+                    <div className="space-y-2">
+                      <Label className="text-base font-extrabold uppercase text-foreground">
+                        Student Portal Access
+                      </Label>
+                      <p className="text-sm font-extrabold leading-tight text-foreground">
+                        Toggle whether this user can sign in to the portal.
+                      </p>
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          disabled={isPortalActionSubmitting}
+                          onClick={() => handleTogglePortalAccess(true)}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                            portalActive
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                              : "border-border hover:bg-muted/50 text-foreground"
+                          )}
+                        >
+                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
+                          Allow Login (Active)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isPortalActionSubmitting}
+                          onClick={() => handleTogglePortalAccess(false)}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                            !portalActive
+                              ? "border-amber-500 bg-amber-50 text-amber-700"
+                              : "border-border hover:bg-muted/50 text-foreground"
+                          )}
+                        >
+                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
+                          Block Login (Disabled)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-4">
+                      <Label className="text-base font-extrabold uppercase text-foreground">
+                        Password Control
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={defaultPasswordInput}
+                          onChange={(e) => setDefaultPasswordInput(e.target.value)}
+                          placeholder="Enter default password"
+                          className="h-11 font-extrabold text-base bg-background"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
+                          onClick={handleResetPassword}
+                          className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                        >
+                          Reset to Default Password
+                        </Button>
+                      </div>
+                      <p className="text-sm font-extrabold leading-tight text-foreground/60">
+                        This will reset the learner's portal password to the value above and force a password change on next login.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </form>
         ) : (
           <div className="space-y-2">
@@ -1880,72 +1959,19 @@ export function StudentDetailPanel({
             <Classifications applicant={typedStudentShim} />
 
             {!isJhsCompleter && (
-              <div className="bg-muted border border-slate-200/80 rounded-md overflow-hidden shadow-sm p-5 space-y-4">
-                <div className="font-extrabold uppercase text-base leading-tight tracking-wide text-foreground flex items-center gap-2 border-b border-border/40 pb-3">
+              <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden mb-4">
+                <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
                   <FileBadge2 className="h-4 w-4 text-primary" />
                   PORTAL ACCESS & SECURITY
                 </div>
-
-                <div className="space-y-2 ">
-                  <Label className="text-base font-extrabold uppercase text-foreground">
-                    Student Portal Access
-                  </Label>
-                  <div className="flex gap-4">
-                    <button
-                      type="button"
-                      disabled={isPortalActionSubmitting}
-                      onClick={() => handleTogglePortalAccess(true)}
-                      className={cn(
-                        "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
-                        portalActive
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                          : "border-border hover:bg-muted/50 text-foreground"
-                      )}
-                    >
-                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-muted-foreground")} />
-                      Allow Login (Active)
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPortalActionSubmitting}
-                      onClick={() => handleTogglePortalAccess(false)}
-                      className={cn(
-                        "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
-                        !portalActive
-                          ? "border-amber-500 bg-amber-50 text-amber-700"
-                          : "border-border hover:bg-muted/50 text-foreground"
-                      )}
-                    >
-                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !portalActive ? "bg-amber-500" : "bg-muted-foreground")} />
-                      Block Login (Disabled)
-                    </button>
+                <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                  <div className="grid grid-cols-[160px_1fr] md:grid-cols-[200px_1fr] divide-x divide-border">
+                    <div className="p-3 text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted)/30)] uppercase flex items-center">Portal</div>
+                    <div className="p-3 uppercase flex items-center gap-2 text-foreground">
+                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-amber-500")} />
+                      {portalActive ? "Active — Login Allowed" : "Disabled — Login Blocked"}
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <Label className="text-base font-extrabold uppercase text-foreground">
-                    Password Control
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      value={defaultPasswordInput}
-                      onChange={(e) => setDefaultPasswordInput(e.target.value)}
-                      placeholder="Enter default password"
-                      className="h-11 font-extrabold text-base bg-background"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
-                      onClick={handleResetPassword}
-                      className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
-                    >
-                      Reset to Default Password
-                    </Button>
-                  </div>
-                  <p className="text-sm font-extrabold leading-tight text-foreground/60">
-                    This will reset the learner's portal password to the value above and force a password change on next login.
-                  </p>
                 </div>
               </div>
             )}

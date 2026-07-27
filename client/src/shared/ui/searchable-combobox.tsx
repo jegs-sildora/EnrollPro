@@ -71,14 +71,13 @@ export function SearchableCombobox({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between h-10 font-extrabold text-left text-base transition-colors duration-200",
+            "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed font-extrabold transition-colors duration-200",
             !value && "text-foreground",
             error && "border-destructive focus-visible:ring-destructive",
             className
@@ -88,7 +87,7 @@ export function SearchableCombobox({
             {selectedItem ? selectedItem.label : value || placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent
         className="p-0 w-[var(--radix-popover-trigger-width)]"
