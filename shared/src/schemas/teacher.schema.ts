@@ -177,13 +177,10 @@ export const teacherSchemaBase = z
         z.union([teacherDepartmentSchema, z.null()]),
       )
       .optional(),
-    plantillaPosition: requiredUpperText("Plantilla position is required"),
+    plantillaPosition: optionalUpperText.optional(),
   })
   .strict();
 
-export const teacherSchema = teacherSchemaBase;
-
-// PUT semantics: full profile replacement contract.
 export const updateTeacherSchema = teacherSchemaBase.extend({
   serviceStatus: z.enum([
     "ACTIVE",
@@ -203,6 +200,11 @@ export const updateTeacherSchema = teacherSchemaBase.extend({
     .optional()
     .nullable(),
   roles: z.array(z.string()).optional(),
+});
+
+export const teacherSchema = updateTeacherSchema.extend({
+  password: z.string().optional(),
+  portalActive: z.boolean().optional(),
 });
 
 export const teacherSchedulePeriodSchema = z

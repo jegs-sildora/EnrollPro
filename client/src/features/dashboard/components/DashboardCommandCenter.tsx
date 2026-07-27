@@ -46,7 +46,7 @@ const SUMMARY_ITEMS = [
   {
     key: "totalEnrollment" as const,
     label: "Total Enrolled Learners",
-    helper: "Officially enrolled or ready for class sectioning",
+    helper: "Officially enrolled learners assigned to a valid class section",
     icon: GraduationCap,
   },
   {

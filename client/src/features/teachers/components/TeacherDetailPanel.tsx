@@ -1682,7 +1682,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               name="serviceRemarks"
                               control={control}
                               render={({ field }) => (
-                                <Textarea disabled={!isEditing}
+                                <Textarea autoComplete="off" disabled={!isEditing}
                                   placeholder="e.g., maternity leave, transferred to another school, retired"
                                   className="min-h-[80px] resize-none font-extrabold text-base leading-tight"
                                   {...field}

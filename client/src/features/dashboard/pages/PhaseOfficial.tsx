@@ -120,7 +120,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           zeroLabel="No Pending Enrollment Records"
           actionLabel="Process Enrollment Records"
           onAction={() => navigate("/continuing-learners?tab=incoming")}
-          icon={<UserCheck className="size-5 text-primary" />}
         />
         <OperationalQueueCard
           title="Unsectioned Learners"
@@ -129,7 +128,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Enrolled Learners Have Sections"
           actionLabel="Assign Class Sections"
           onAction={() => navigate("/monitoring/enrollment")}
-          icon={<School className="size-5 text-primary" />}
         />
         <OperationalQueueCard
           title="Missing School Requirements"
@@ -138,7 +136,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Required Documents Recorded"
           actionLabel="Review Missing Requirements"
           onAction={() => navigate("/continuing-learners?tab=incoming")}
-          icon={<ComplianceWarningIcon active={deficientTotal > 0} />}
           warning
         />
       </section>

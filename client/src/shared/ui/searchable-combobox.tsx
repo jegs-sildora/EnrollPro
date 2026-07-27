@@ -99,6 +99,7 @@ export function SearchableCombobox({
         <div className="flex items-center gap-2 px-3 py-2 border-b">
           <Search className="h-3.5 w-3.5 text-foreground shrink-0" />
           <Input
+            autoComplete="off"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
