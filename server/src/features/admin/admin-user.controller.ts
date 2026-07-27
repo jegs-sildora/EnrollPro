@@ -29,17 +29,18 @@ function getUniqueConstraintFields(error: unknown): string[] {
 export async function getRoles(req: Request, res: Response) {
   try {
     const roles = Object.values(Role).filter((r) => r !== "LEARNER");
-    const roleLabels: Record<string, string> = {
+    const ROLE_LABELS: Record<string, string> = {
       SYSTEM_ADMIN: "System Admin",
-      HEAD_REGISTRAR: "Registrar",
-      TEACHER: "Teacher",
+      HEAD_REGISTRAR: "Head Registrar",
       CLASS_ADVISER: "Class Adviser",
-      MRF: "MRF Staff",
+      TEACHER: "Teacher",
+      LEARNER: "Learner",
+      MRF: "MRF Coordinator",
     };
     
     const formattedRoles = roles.map(role => ({
       value: role,
-      label: roleLabels[role] || role
+      label: ROLE_LABELS[role] || role
     }));
 
     return res.json({ roles: formattedRoles });

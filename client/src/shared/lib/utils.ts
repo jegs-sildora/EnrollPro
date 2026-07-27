@@ -190,7 +190,7 @@ export function formatUserRole(role: string | null | undefined): string {
   if (role === "SYSTEM_ADMIN") return "System Administrator";
   if (role === "HEAD_REGISTRAR") return "Head Registrar";
   if (role === "CLASS_ADVISER") return "Class Adviser";
-  if (role === "MRF") return "MRF Staff";
+  if (role === "MRF") return "MRF Coordinator";
   return role
     .replaceAll("_", " ")
     .toLocaleLowerCase()

@@ -51,7 +51,7 @@ import type {
   TeacherScheduleDay,
   TeacherSchedulePeriod,
 } from "../types";
-import { formatAdvisorySectionSummary, formatTeacherName, toSentenceCase } from "../utils";
+import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -386,15 +386,15 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       };
 
       reset({
-        firstName: teacher.firstName || "",
-        lastName: teacher.lastName || "",
-        middleName: teacher.middleName || "",
-        suffix: teacher.suffix || "",
+        firstName: (teacher.firstName || "").toUpperCase(),
+        lastName: (teacher.lastName || "").toUpperCase(),
+        middleName: (teacher.middleName || "").toUpperCase(),
+        suffix: (teacher.suffix || "").toUpperCase(),
         sex: teacher.sex,
         birthdate: teacher.birthdate ? new Date(teacher.birthdate).toISOString().slice(0, 10) : null,
         personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
-        plantillaPosition: isMRF ? "MRF STAFF" : (teacher.plantillaPosition || ""),
+        plantillaPosition: isMRF ? "MRF Coordinator" : (teacher.plantillaPosition || ""),
         department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
@@ -458,13 +458,9 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     if (
       formPlantillaPosition &&
       designationPool.length > 0 &&
-      !designationPool.includes(formPlantillaPosition) &&
-      !formRoles.includes("MRF")
+      !designationPool.includes(formPlantillaPosition)
     ) {
       setValue("plantillaPosition", "", { shouldDirty: true });
-    }
-    if (formRoles.includes("MRF")) {
-      setValue("plantillaPosition", "MRF STAFF", { shouldDirty: true });
     }
   }, [formRoles, formPlantillaPosition, designationPool, setValue]);
 
@@ -562,15 +558,15 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
     setIsSubmitting(true);
     try {
       const profilePayload = {
-        firstName: toSentenceCase(data.firstName),
-        lastName: toSentenceCase(data.lastName),
-        middleName: toSentenceCase(data.middleName),
-        suffix: toSentenceCase(data.suffix),
+        firstName: data.firstName.toUpperCase(),
+        lastName: data.lastName.toUpperCase(),
+        middleName: data.middleName ? data.middleName.toUpperCase() : "",
+        suffix: data.suffix ? data.suffix.toUpperCase() : "",
         sex: data.sex,
         birthdate: data.birthdate,
         personnelType: data.personnelType,
         employeeId: data.employeeId,
-        plantillaPosition: (data.plantillaPosition === "__NONE__" || data.plantillaPosition === "MRF STAFF") ? "" : data.plantillaPosition,
+        plantillaPosition: (data.plantillaPosition === "__NONE__" || data.plantillaPosition === "MRF Coordinator") ? "" : data.plantillaPosition,
         department: data.department === "__NONE__" ? "" : data.department,
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
@@ -706,7 +702,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             placeholder="e.g. JUAN"
                             className={cn(
-                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10",
+                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
                               errors.firstName && "border-destructive focus-visible:ring-destructive"
                             )}
                           />
@@ -725,7 +721,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             placeholder="e.g. DELA CRUZ"
                             className={cn(
-                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10",
+                              "font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase",
                               errors.lastName && "border-destructive focus-visible:ring-destructive"
                             )}
                           />
@@ -734,7 +730,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                       <AnimatedError error={errors.lastName?.message as string || errors.lastName as unknown as string} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Middle Name <span className="text-foreground/50 font-extrabold ml-1">(optional)</span></Label>
+                      <Label className="text-base font-extrabold uppercase text-foreground">Middle Name <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
                       <Controller
                         name="middleName"
                         control={control}
@@ -744,13 +740,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             placeholder="e.g. SANTOS"
-                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
                           />
                         )}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-base font-extrabold uppercase text-foreground">Suffix <span className="text-foreground/50 font-extrabold ml-1">(e.g., JR., III)</span></Label>
+                      <Label className="text-base font-extrabold uppercase text-foreground">Suffix <span className="text-foreground font-extrabold ml-1">(e.g., JR., III)</span></Label>
                       <Controller
                         name="suffix"
                         control={control}
@@ -760,7 +756,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             value={field.value || ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             placeholder="JR., III"
-                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
+                            className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10 uppercase"
                           />
                         )}
                       />
@@ -867,30 +863,19 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         name="plantillaPosition"
                         control={control}
                         render={({ field }) => (
-                          <>
-                            {formRoles.includes("MRF") ? (
-                              <Input disabled={!isEditing}
-                                value={field.value || ""}
-                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                className="font-extrabold text-base leading-tight bg-background text-foreground border-border h-10"
-                                readOnly={true}
-                              />
-                            ) : (
-                              <SearchableCombobox
-                                items={[
-                                  ...(designationPool.length > 0
-                                    ? designationPool.map(opt => ({ value: opt, label: opt }))
-                                    : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
-                                ]}
-                                value={field.value || ""}
-                                onChange={(value) => field.onChange(value)}
-                                disabled={!isEditing}
-                                placeholder="Search position (e.g., Teacher I, Master Teacher II)"
-                                searchPlaceholder="Search positions..."
-                                className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
-                              />
-                            )}
-                          </>
+                            <SearchableCombobox
+                              items={[
+                                ...(designationPool.length > 0
+                                  ? designationPool.map(opt => ({ value: opt, label: opt }))
+                                  : DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS)
+                              ]}
+                              value={field.value || ""}
+                              onChange={(value) => field.onChange(value)}
+                              disabled={!isEditing}
+                              placeholder="Search position (e.g., Teacher I, Master Teacher II)"
+                              searchPlaceholder="Search positions..."
+                              className="w-full h-10 font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                            />
                         )}
                       />
                       <AnimatedError error={errors.plantillaPosition?.message as string} />
@@ -956,7 +941,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <p className="text-base font-extrabold uppercase text-foreground">
                           SF7 Profile
                         </p>
-                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
+                        <p className="text-sm font-extrabold leading-tight text-foreground">
                           Used for School Form 7 personnel reporting.
                         </p>
                       </div>
@@ -1121,7 +1106,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <Clock className="size-4 text-primary" />
                             SF7 Teaching Schedule
                           </p>
-                          <p className="text-sm font-extrabold leading-tight text-foreground/60">
+                          <p className="text-sm font-extrabold leading-tight text-foreground">
                             Official school-form snapshot. ATLAS remains the external schedule reference.
                           </p>
                         </div>
@@ -1138,11 +1123,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                       <div className="space-y-3">
                         {scheduleLoading ? (
-                          <div className="rounded-lg border border-dashed p-4 text-sm font-extrabold text-foreground/60">
+                          <div className="rounded-lg border border-dashed p-4 text-sm font-extrabold text-foreground">
                             Loading SF7 schedule...
                           </div>
                         ) : schedulePeriods.length === 0 ? (
-                          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm font-extrabold text-foreground/60">
+                          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm font-extrabold text-foreground">
                             No SF7 teaching periods encoded yet.
                           </div>
                         ) : (
@@ -1302,7 +1287,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
                     {formServiceStatus !== "ACTIVE" && (
                       <div className="space-y-1.5">
-                        <Label className="text-base font-extrabold uppercase text-foreground">Notes for this status <span className="text-foreground/50 font-extrabold ml-1">(optional)</span></Label>
+                        <Label className="text-base font-extrabold uppercase text-foreground">Notes for this status <span className="text-foreground font-extrabold ml-1">(optional)</span></Label>
                         <Controller
                           name="serviceRemarks"
                           control={control}
@@ -1368,9 +1353,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     <Label className="text-base font-extrabold uppercase text-foreground">
                       SYSTEM ROLES *
                     </Label>
-                    <p className="text-sm font-extrabold leading-tight text-foreground/60">
-                      Controls what this person can open in EnrollPro.
-                    </p>
                     <Controller
                       name="roles"
                       control={control}
@@ -1381,7 +1363,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             { value: "HEAD_REGISTRAR", label: "Registrar" },
                             { value: "TEACHER", label: "Teacher" },
                             { value: "CLASS_ADVISER", label: "Class Adviser" },
-                            { value: "MRF", label: "MRF Staff" },
+                            { value: "MRF", label: "MRF Coordinator" },
                           ] as const).map((roleOption) => (
                             <div key={roleOption.value} className="flex items-center space-x-2 bg-background p-2 rounded border border-border">
                               <Checkbox disabled={!isEditing}
@@ -1410,8 +1392,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <Label className="text-base font-extrabold uppercase text-foreground">
                           Portal Access Status
                         </Label>
-                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
-                          Toggle whether this teacher can sign in to the portal.
+                        <p className="text-sm font-extrabold leading-tight text-foreground">
+                          Toggle whether this user can sign in to the portal.
                         </p>
                         <Controller
                           name="portalActive"
@@ -1472,8 +1454,8 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             Reset to Default Password
                           </Button>
                         </div>
-                        <p className="text-sm font-extrabold leading-tight text-foreground/60">
-                          This will reset the teacher's portal password to the value above and force a password change on next login.
+                        <p className="text-sm font-extrabold leading-tight text-foreground">
+                          This will reset the user's portal password to the value above and force a password change on next login.
                         </p>
                       </div>
                     </div>
@@ -1546,7 +1528,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <p className="text-base font-extrabold uppercase text-foreground mb-1">
                               {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
                             </p>
-                            <p className="text-base font-extrabold text-foreground/60 leading-tight max-w-[240px]">
+                            <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
                               {loadError
                                 ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
                                 : "No teaching load found in ATLAS."}
@@ -1557,7 +1539,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
 
                     <div className="p-3 bg-muted/10 text-center">
-                      <p className="text-sm font-extrabold text-foreground/50 uppercase tracking-widest">
+                      <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
                         Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
                       </p>
                     </div>

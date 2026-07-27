@@ -211,12 +211,12 @@ export default function Teachers() {
       }
     }
 
-    const roleLabels: Record<string, string> = {
-      SYSTEM_ADMIN: "School Head",
-      HEAD_REGISTRAR: "Registrar",
-      TEACHER: "Teacher",
+    const ROLE_LABELS: Record<string, string> = {
+      SYSTEM_ADMIN: "System Admin",
+      HEAD_REGISTRAR: "Head Registrar",
       CLASS_ADVISER: "Class Adviser",
-      MRF: "MRF Staff",
+      TEACHER: "Teacher",
+      MRF: "MRF Coordinator",
     };
 
     const options: DesignationFilterOption[] = [];
@@ -224,7 +224,7 @@ export default function Teachers() {
     for (const role of Array.from(roles).sort((a, b) => a.localeCompare(b))) {
       options.push({
         value: role,
-        label: roleLabels[role] || role,
+        label: ROLE_LABELS[role] || role,
       });
     }
 
@@ -511,7 +511,7 @@ export default function Teachers() {
       const roles = t.userAccount?.roles || [];
       if (roles.includes("SYSTEM_ADMIN")) return "School Head";
       if (roles.includes("HEAD_REGISTRAR")) return "Registrar";
-      if (roles.includes("MRF")) return "MRF Staff";
+      if (roles.includes("MRF")) return "MRF Coordinator";
       return "Subject Teacher";
     }
 

@@ -743,7 +743,7 @@ export const EXECUTIVE_POOL = [
   "HEAD TEACHER VI",
   "OFFICER IN CHARGE",
 ] as const;
-export const MRF_POOL = ["MRF STAFF"] as const;
+export const MRF_POOL = ["MRF Coordinator"] as const;
 
 export function getDesignationPool(roles: string[]): string[] {
   const pool = new Set<string>();

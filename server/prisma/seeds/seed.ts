@@ -76,6 +76,24 @@ async function main() {
       sex: "MALE" as Sex,
       mobileNumber: "09171234501",
     },
+    {
+      firstName: "Apolinario",
+      lastName: "Mabini",
+      employeeId: "1234502", // 7-digit
+      roles: ["HEAD_REGISTRAR" as Role],
+      designation: "Head Registrar",
+      sex: "MALE" as Sex,
+      mobileNumber: "09171234502",
+    },
+    {
+      firstName: "Melchora",
+      lastName: "Aquino",
+      employeeId: "1234503", // 7-digit
+      roles: ["MRF" as Role],
+      designation: "Maintenance Staff",
+      sex: "FEMALE" as Sex,
+      mobileNumber: "09171234503",
+    }
   ];
 
   const defaultPassword = "DepEd2026!";
