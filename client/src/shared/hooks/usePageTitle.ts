@@ -78,6 +78,6 @@ export function usePageTitle(customTitle?: string) {
       title = schoolName ? `${schoolName} | ${APP_NAME}` : APP_NAME;
     }
 
-    document.title = title;
+    document.title = title.toUpperCase();
   }, [pathname, search, schoolName, customTitle]);
 }

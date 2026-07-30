@@ -408,12 +408,14 @@ export function SectionSaturationPanel({
   const navigate = useNavigate()
 
   const SCP_SHORT_LABELS: Record<string, string> = {
+    REGULAR: "BEC",
     SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
     SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
     SPECIAL_PROGRAM_IN_SPORTS: "SPS",
   }
 
   const PROGRAM_FULL_LABELS: Record<string, string> = {
+    REGULAR: "Basic Education Curriculum",
     SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
     SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
     SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
@@ -463,23 +465,21 @@ export function SectionSaturationPanel({
                         <p className="truncate text-base font-extrabold">
                           {section.gradeLevelName} - {section.name}
                         </p>
-                        {section.programType !== "REGULAR" && (
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Badge
-                                variant="outline"
-                                className="text-sm font-extrabold uppercase bg-background text-primary border-primary/30"
-                              >
-                                {SCP_SHORT_LABELS[section.programType] ?? section.programType}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="font-semibold text-sm">
-                                {PROGRAM_FULL_LABELS[section.programType] ?? section.programType}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge
+                              variant="outline"
+                              className="text-sm font-extrabold uppercase bg-background text-primary border-primary/30"
+                            >
+                              {SCP_SHORT_LABELS[section.programType] ?? section.programType}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-semibold text-sm">
+                              {PROGRAM_FULL_LABELS[section.programType] ?? section.programType}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <p className="text-base font-semibold text-foreground">
                         {section.enrolled} of {section.capacity} learners
