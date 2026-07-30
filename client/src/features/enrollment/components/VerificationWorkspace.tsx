@@ -416,7 +416,7 @@ export function VerificationWorkspace() {
                   },
                   {
                     key: "READY",
-                    title: "Ready",
+                    title: "Complete",
                     value: pendingVerifications.filter(
                       (app) => app.status === "READY_FOR_SECTIONING",
                     ).length,
@@ -716,7 +716,7 @@ export function VerificationWorkspace() {
                   <Search className="h-10 w-10 text-muted-foreground/40" />
                 </div>
                 <h3 className="font-extrabold text-xl text-foreground">No Learner Selected</h3>
-                <p className="font-extrabold text-base leading-tight max-w-[300px]">Scan a tracking number or select a learner from the left pane to begin verification.</p>
+                <p className="font-extrabold text-base leading-tight max-w-[300px]">Select a learner from the left pane to begin verification.</p>
               </div>
             )}
           </div>

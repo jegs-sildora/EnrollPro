@@ -1145,14 +1145,28 @@ export function SectioningWorkspace() {
                           selectedAppIds.length === filteredPool.length &&
                           filteredPool.length > 0
                         }
-                        disabled={isDraftActive}
+                        disabled={
+                          isDraftActive ||
+                          (selectedProgramTypes.size === 0 &&
+                            new Set(filteredPool.map((l) => l.programType)).size > 1)
+                        }
                         onCheckedChange={(checked) => {
                           if (isDraftActive) return;
-                          if (checked)
+                          if (checked) {
+                            const targetProgram =
+                              selectedProgramTypes.size > 0
+                                ? Array.from(selectedProgramTypes)[0]
+                                : null;
                             setSelectedAppIds(
-                              filteredPool.map((l) => l.applicationId),
+                              filteredPool
+                                .filter(
+                                  (l) =>
+                                    !targetProgram ||
+                                    l.programType === targetProgram
+                                )
+                                .map((l) => l.applicationId)
                             );
-                          else setSelectedAppIds([]);
+                          } else setSelectedAppIds([]);
                         }}
                       />
                     </th>
@@ -1219,11 +1233,16 @@ export function SectioningWorkspace() {
                           const isSelected = selectedAppIds.includes(
                             l.applicationId,
                           );
+                          const isDisabled =
+                            isDraftActive ||
+                            (selectedProgramTypes.size > 0 &&
+                              !selectedProgramTypes.has(l.programType));
+
                           return (
                             <tr
                               key={l.applicationId}
                               onClick={() => {
-                                if (isDraftActive) return;
+                                if (isDisabled) return;
                                 setSelectedAppIds((prev) =>
                                   prev.includes(l.applicationId)
                                     ? prev.filter((id) => id !== l.applicationId)
@@ -1231,7 +1250,10 @@ export function SectioningWorkspace() {
                                 );
                               }}
                               className={cn(
-                                "group cursor-pointer transition-colors",
+                                "group transition-colors",
+                                isDisabled
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : "cursor-pointer",
                                 isSelected && "bg-primary/5 hover:bg-primary/10",
                               )}>
                               <td
@@ -1239,9 +1261,9 @@ export function SectioningWorkspace() {
                                 onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
                                   checked={isSelected}
-                                  disabled={isDraftActive}
+                                  disabled={isDisabled}
                                   onCheckedChange={(checked) => {
-                                    if (isDraftActive) return;
+                                    if (isDisabled) return;
                                     setSelectedAppIds((prev) =>
                                       checked
                                         ? [...prev, l.applicationId]
@@ -1371,6 +1393,12 @@ export function SectioningWorkspace() {
                     title: "Special Curricular Programs (SCP)",
                     rosters: displayedRosters
                       .filter((r) => r.section.programType !== "REGULAR")
+                      .filter(
+                        (r) =>
+                          draftPlacement ||
+                          selectedProgramTypes.size === 0 ||
+                          selectedProgramTypes.has(r.section.programType)
+                      )
                       .sort(
                         (a, b) =>
                           a.section.programType.localeCompare(
@@ -1382,6 +1410,12 @@ export function SectioningWorkspace() {
                     title: "Basic Education Curriculum (BEC)",
                     rosters: displayedRosters
                       .filter((r) => r.section.programType === "REGULAR")
+                      .filter(
+                        (r) =>
+                          draftPlacement ||
+                          selectedProgramTypes.size === 0 ||
+                          selectedProgramTypes.has(r.section.programType)
+                      )
                       .sort((a, b) =>
                         a.section.name.localeCompare(b.section.name),
                       ),

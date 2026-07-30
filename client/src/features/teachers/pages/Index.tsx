@@ -814,7 +814,7 @@ export default function Teachers() {
                 <SelectValue placeholder="Plantilla / Designation" />
               </SelectTrigger>
               <SelectContent className="font-extrabold">
-                <SelectItem value="all">All Plantilla / Designations</SelectItem>
+                <SelectItem value="all">All Designations</SelectItem>
                 {availableDesignationFilters.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}

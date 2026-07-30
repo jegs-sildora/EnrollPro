@@ -77,7 +77,7 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      if (allowedClientOrigins.indexOf(origin) !== -1) {
+      if (allowedClientOrigins.indexOf(origin) !== -1 || origin.endsWith(".ts.net")) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));

@@ -427,7 +427,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="p-0">
                   {emptyStateContent ?? (
-                    <div className="h-24 flex items-center justify-center text-center font-extrabold">
+                    <div className="min-h-120 flex items-center justify-center text-center font-extrabold">
                       {noResultsMessage}
                     </div>
                   )}
