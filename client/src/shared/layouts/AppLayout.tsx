@@ -524,213 +524,213 @@ function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-        {/* ΓöÇΓöÇ Header: School Identity ΓöÇΓöÇ */}
-        <SidebarHeader className="h-20 justify-center transition-all duration-300 ease-in-out group-data-[state=expanded]:px-4 group-data-[state=collapsed]:px-1.5">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div className="flex items-center transition-all duration-300 ease-in-out group-data-[state=expanded]:gap-3 group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:justify-center">
-                {logoUrl ? (
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-muted p-1">
-                    <img
-                      src={`${API_BASE}${logoUrl}`}
-                      alt="Logo"
-                      className="size-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                    <School className="size-5 text-primary" />
-                  </div>
-                )}
-                <div className="grid flex-1 text-left leading-tight overflow-hidden transition-all duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:m-0">
-                  {schoolName ? (
-                    <span className="font-black leading-[1.1] uppercase text-primary block text-wrap">
-                      {schoolName}
-                    </span>
-                  ) : (
-                    <Skeleton className="h-4 w-28 my-0.5" />
-                  )}
+      {/* ΓöÇΓöÇ Header: School Identity ΓöÇΓöÇ */}
+      <SidebarHeader className="h-20 justify-center transition-all duration-300 ease-in-out group-data-[state=expanded]:px-4 group-data-[state=collapsed]:px-1.5">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="flex items-center transition-all duration-300 ease-in-out group-data-[state=expanded]:gap-3 group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:justify-center">
+              {logoUrl ? (
+                <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-muted p-1">
+                  <img
+                    src={`${API_BASE}${logoUrl}`}
+                    alt="Logo"
+                    className="size-full object-contain"
+                  />
                 </div>
+              ) : (
+                <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                  <School className="size-5 text-primary" />
+                </div>
+              )}
+              <div className="grid flex-1 text-left leading-tight overflow-hidden transition-all duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:m-0">
+                {schoolName ? (
+                  <span className="font-black leading-[1.1] uppercase text-primary block text-wrap">
+                    {schoolName}
+                  </span>
+                ) : (
+                  <Skeleton className="h-4 w-28 my-0.5" />
+                )}
               </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
+            </div>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-        <SidebarSeparator />
+      <SidebarSeparator />
 
-        {/* ΓöÇΓöÇ Navigation ΓöÇΓöÇ */}
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {/* Items 1ΓÇô7: shared between registrar role and SYSTEM_ADMIN */}
-                {(isRegistrar || isAdmin) && (
-                  <>
-                    <NavDivider
-                      label={
-                        systemPhase === "CLASSES_ONGOING"
-                          ? "ACTIVE SCHOOL OPERATIONS"
-                          : systemPhase === "EOSY_CLOSING"
-                            ? "END OF SCHOOL YEAR PROCESSING"
-                            : "ENROLLMENT AND SECTIONING"
-                      }
-                    />
-                    <NavItem
-                      to="/dashboard"
-                      icon={LayoutDashboard}
-                      label="Master Dashboard"
-                      pathname={pathname}
-                    />
+      {/* ΓöÇΓöÇ Navigation ΓöÇΓöÇ */}
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {/* Items 1ΓÇô7: shared between registrar role and SYSTEM_ADMIN */}
+              {(isRegistrar || isAdmin) && (
+                <>
+                  <NavDivider
+                    label={
+                      systemPhase === "CLASSES_ONGOING"
+                        ? "ACTIVE SCHOOL OPERATIONS"
+                        : systemPhase === "EOSY_CLOSING"
+                          ? "END OF SCHOOL YEAR PROCESSING"
+                          : "ENROLLMENT AND SECTIONING"
+                    }
+                  />
+                  <NavItem
+                    to="/dashboard"
+                    icon={LayoutDashboard}
+                    label="Master Dashboard"
+                    pathname={pathname}
+                  />
 
-                    {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
-                      <>
-                        <NavItem
-                          to="/continuing-learners"
-                          icon={UserPlus}
-                          label="Learner Enrollment"
-                          pathname={pathname}
-                        />
-                        <NavItem
-                          to="/monitoring/enrollment"
-                          icon={Calendar}
-                          label="Class Sectioning and SF1"
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    {systemPhase === "EOSY_CLOSING" && (
-                      <>
-
-                        <NavItem
-                          to="/eosy"
-                          icon={ArrowUpRightSquare}
-                          label={
-                            <div className="flex items-center justify-between w-full">
-                              <span>EOSY Updating</span>
-                            </div>
-                          }
-                          pathname={pathname}
-                        />
-                      </>
-                    )}
-
-                    <NavDivider label="School Records" />
-                    <NavItem
-                      to="/students"
-                      icon={Users}
-                      label="Learner Registry"
-                      pathname={pathname}
-                    />
-                    {isAdmin && (
+                  {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
+                    <>
                       <NavItem
-                        to="/teachers"
-                        icon={Presentation}
-                        label="Personnel Directory"
+                        to="/continuing-learners"
+                        icon={UserPlus}
+                        label="Learner Enrollment"
                         pathname={pathname}
                       />
-                    )}
-                    <NavItem
-                      to="/sections"
-                      icon={List}
-                      label="Class Sections (SF1)"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
+                      <NavItem
+                        to="/monitoring/enrollment"
+                        icon={Calendar}
+                        label="Class Sectioning"
+                        pathname={pathname}
+                      />
+                    </>
+                  )}
 
-                {isAdmin && (
-                  <>
-                    <NavDivider label="Integrated Systems" />
-                    <NavItem
-                      to="/admin/integration?tab=aims"
-                      icon={Database}
-                      label="AIMS"
-                      subtext="Academic Info"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=smart"
-                      icon={CheckCircle2}
-                      label="SMART"
-                      subtext="Simplified Master Records and Tracking"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=atlas"
-                      icon={CalendarClock}
-                      label="ATLAS"
-                      subtext="Automated Teaching and Learning Assessment System"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/integration?tab=mrf"
-                      icon={Wrench}
-                      label="MRF"
-                      subtext="Maintenance Requests"
-                      pathname={pathname}
-                    />
+                  {systemPhase === "EOSY_CLOSING" && (
+                    <>
 
-                    <NavDivider label="System Administration" />
-                    <NavItem
-                      to="/audit-logs"
-                      icon={History}
-                      label="Activity Logs"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/settings"
-                      icon={Settings}
-                      label="System Configuration"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
+                      <NavItem
+                        to="/eosy"
+                        icon={ArrowUpRightSquare}
+                        label={
+                          <div className="flex items-center justify-between w-full">
+                            <span>EOSY Updating</span>
+                          </div>
+                        }
+                        pathname={pathname}
+                      />
+                    </>
+                  )}
 
-                {isTeacher && (
-                  <>
-                    <NavDivider label="Operations" />
+                  <NavDivider label="School Records" />
+                  <NavItem
+                    to="/students"
+                    icon={Users}
+                    label="Learner Registry"
+                    pathname={pathname}
+                  />
+                  {isAdmin && (
                     <NavItem
-                      to="/dashboard"
-                      icon={LayoutDashboard}
-                      label="Dashboard"
+                      to="/teachers"
+                      icon={Presentation}
+                      label="Personnel Directory"
                       pathname={pathname}
                     />
-                    <NavItem
-                      to="/teacher/eosy"
-                      icon={ArrowUpRightSquare}
-                      label="EOSY Updating"
-                      pathname={pathname}
-                    />
+                  )}
+                  <NavItem
+                    to="/sections"
+                    icon={List}
+                    label="Class Sections (SF1)"
+                    pathname={pathname}
+                  />
+                </>
+              )}
 
-                    <NavDivider label="Management" />
-                    <NavItem
-                      to="/teacher/advisory"
-                      icon={Users}
-                      label="My Advisory Class"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/students"
-                      icon={BookOpen}
-                      label="Learner Directory"
-                      pathname={pathname}
-                    />
-                  </>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarSeparator />
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <UserNav />
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
+              {isAdmin && (
+                <>
+                  <NavDivider label="Integrated Systems" />
+                  <NavItem
+                    to="/admin/integration?tab=aims"
+                    icon={Database}
+                    label="AIMS"
+                    subtext="Academic Info"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/admin/integration?tab=smart"
+                    icon={CheckCircle2}
+                    label="SMART"
+                    subtext="Simplified Master Records and Tracking"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/admin/integration?tab=atlas"
+                    icon={CalendarClock}
+                    label="ATLAS"
+                    subtext="Automated Teaching and Learning Assessment System"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/admin/integration?tab=mrf"
+                    icon={Wrench}
+                    label="MRF"
+                    subtext="Maintenance Requests"
+                    pathname={pathname}
+                  />
+
+                  <NavDivider label="System Administration" />
+                  <NavItem
+                    to="/audit-logs"
+                    icon={History}
+                    label="Activity Logs"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/settings"
+                    icon={Settings}
+                    label="System Configuration"
+                    pathname={pathname}
+                  />
+                </>
+              )}
+
+              {isTeacher && (
+                <>
+                  <NavDivider label="Operations" />
+                  <NavItem
+                    to="/dashboard"
+                    icon={LayoutDashboard}
+                    label="Dashboard"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/teacher/eosy"
+                    icon={ArrowUpRightSquare}
+                    label="EOSY Updating"
+                    pathname={pathname}
+                  />
+
+                  <NavDivider label="Management" />
+                  <NavItem
+                    to="/teacher/advisory"
+                    icon={Users}
+                    label="My Advisory Class"
+                    pathname={pathname}
+                  />
+                  <NavItem
+                    to="/students"
+                    icon={BookOpen}
+                    label="Learner Directory"
+                    pathname={pathname}
+                  />
+                </>
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarSeparator />
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <UserNav />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
 
@@ -748,7 +748,7 @@ const ROUTE_PHASES: Record<string, {
   },
   "/monitoring/enrollment": {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
-    moduleName: "Class Sectioning and SF1",
+    moduleName: "Class Sectioning",
     redirectTo: "/sections",
     redirectLabel: "Take me to Class Sections"
   },

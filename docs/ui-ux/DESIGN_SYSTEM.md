@@ -41,7 +41,7 @@ Use semantic controls, visible keyboard focus, sufficient contrast, meaningful l
 Use plain English and familiar DepEd terms:
 
 - Learner Enrollment
-- Class Sectioning and SF1
+- Class Sectioning
 - Personnel Directory
 - Class Adviser
 - Subject Area

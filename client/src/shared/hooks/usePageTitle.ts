@@ -25,7 +25,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/enrollment": "Basic Education Enrollment Form",
     "/applications/enrollment": "Enrollment",
     "/continuing-learners": "Learner Enrollment",
-    "/monitoring/enrollment": "Class Sectioning and SF1",
+    "/monitoring/enrollment": "Class Sectioning",
     "/monitoring/enrollment/walk-in": "Learner Enrollment",
     "/eosy": "EOSY Updating",
     "/students": "Learner Registry",

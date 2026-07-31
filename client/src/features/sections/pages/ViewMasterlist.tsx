@@ -235,15 +235,15 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
     } catch (err: unknown) {
       const message =
         typeof err === "object" &&
-        err !== null &&
-        "response" in err &&
-        typeof err.response === "object" &&
-        err.response !== null &&
-        "data" in err.response &&
-        typeof err.response.data === "object" &&
-        err.response.data !== null &&
-        "message" in err.response.data &&
-        typeof err.response.data.message === "string"
+          err !== null &&
+          "response" in err &&
+          typeof err.response === "object" &&
+          err.response !== null &&
+          "data" in err.response &&
+          typeof err.response.data === "object" &&
+          err.response.data !== null &&
+          "message" in err.response.data &&
+          typeof err.response.data.message === "string"
           ? err.response.data.message
           : "Could not unassign learner.";
       sileo.error({
@@ -508,7 +508,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
     }
     return () => {
       if (mode === "sectioning") {
-        setTitle("Class Sectioning and SF1");
+        setTitle("Class Sectioning");
       } else {
         setTitle(null);
       }
@@ -761,9 +761,8 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                           <TableRow key={`${group}-header`} className="bg-background hover:bg-background">
                             <TableCell
                               colSpan={6}
-                              className={`font-extrabold uppercase tracking-widest ${
-                                group === "MALE" ? "text-blue-700" : "text-pink-700"
-                              }`}
+                              className={`font-extrabold uppercase tracking-widest ${group === "MALE" ? "text-blue-700" : "text-pink-700"
+                                }`}
                             >
                               {group === "MALE" ? "Male Learners" : "Female Learners"}
                             </TableCell>
@@ -787,13 +786,12 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                               <TableCell>
                                 <Badge
                                   variant="outline"
-                                  className={`font-extrabold ${
-                                    row.sex === "MALE"
+                                  className={`font-extrabold ${row.sex === "MALE"
                                       ? "border-blue-600 text-blue-700"
                                       : row.sex === "FEMALE"
                                         ? "border-pink-600 text-pink-700"
                                         : "border-muted-foreground text-muted-foreground"
-                                  }`}
+                                    }`}
                                 >
                                   {row.sex || "Check"}
                                 </Badge>

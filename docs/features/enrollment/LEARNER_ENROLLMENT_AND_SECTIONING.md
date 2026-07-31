@@ -35,7 +35,7 @@ Staff enroll a returning learner after check-in. Confirmation adds the learner t
 
 ## Class Sectioning
 
-The Class Sectioning and SF1 workspace separates intake from placement.
+The Class Sectioning workspace separates intake from placement.
 
 Automatic placement creates a temporary draft using grade, program, final general average, sex balance, and capacity. Special Curricular Program eligibility is respected during automatic placement. Staff can review, move, or swap learners before finalizing.
 

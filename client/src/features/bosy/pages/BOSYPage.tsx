@@ -713,7 +713,7 @@ export default function BOSYPage() {
                         <p className="mb-4 text-base font-bold">
                           Confirm learner enrollment for this school year. Learners with
                           incomplete school requirements will be marked as temporarily
-                          enrolled but may still proceed to Class Sectioning and SF1 assignment.
+                          enrolled but may still proceed to Class Sectioning.
                         </p>
                         {confirmSingleTarget && (
                           <div className="rounded-md border bg-muted px-4 py-3 space-y-1.5 text-left border-primary border-2">

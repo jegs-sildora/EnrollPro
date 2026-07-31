@@ -108,7 +108,7 @@ export default function HelpDocumentation() {
           steps={[
             "Check the learner identity and required school documents before enrollment.",
             "Enroll the learner only after the information is verified.",
-            "Send enrolled learners to Class Sectioning and SF1 for class placement.",
+            "Send enrolled learners to Class Sectioning for class placement.",
           ]}
           actionLabel="Open Learner Enrollment"
           actionTo="/continuing-learners"
