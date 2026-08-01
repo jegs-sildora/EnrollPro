@@ -338,7 +338,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       schoolName: true,
       logoUrl: true,
       activeSchoolYear: {
-        select: { yearLabel: true },
+        select: { yearLabel: true, termFormat: true },
       },
     },
   });
@@ -388,7 +388,16 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       familyMembers: true,
       addresses: true,
       enrollmentRecord: {
-        include: { section: true }
+        include: {
+          section: {
+            include: {
+              advisers: {
+                where: { status: "ACTIVE" },
+                include: { teacher: true },
+              },
+            },
+          },
+        },
       }
     }
   });
@@ -403,11 +412,19 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
     extensionName: learner.extensionName,
   };
 
+  const activeAdviser = activeApp?.enrollmentRecord?.section?.advisers?.[0]?.teacher ?? null;
+  const adviserName = activeAdviser
+    ? `${activeAdviser.firstName}${activeAdviser.middleName ? ` ${activeAdviser.middleName.charAt(0)}. ${activeAdviser.lastName}` : ` ${activeAdviser.lastName}`}`
+    : null;
+  const curriculumProgram = activeApp?.assignedProgram ?? activeApp?.applicantType ?? "REGULAR";
+
   const enrollment = {
     status: activeApp?.status || "NOT_ENROLLED",
     gradeLevel: activeApp?.gradeLevel?.name || null,
     section: activeApp?.enrollmentRecord?.section?.name || null,
     academicStatus: activeApp?.academicStatus || null,
+    curriculumProgram,
+    advisingTeacher: adviserName,
   };
 
   const sanitizeStr = (str: string | null | undefined) => {
@@ -466,6 +483,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       grade_level: app.gradeLevel?.name || "Unknown",
       school_year: app.schoolYear.yearLabel,
       status: app.schoolYearId === schoolSetting.activeSchoolYearId ? "Active" : "Completed",
+      term_format: app.schoolYear.termFormat ?? "TRIMESTER",
       grades: app.reportedGrades || null,
       general_average: hasGrades ? (app.enrollmentRecord?.finalAverage || null) : null,
     };
@@ -478,6 +496,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
     academicHistory,
     isEnrollmentActive: schoolSetting.systemPhase === "OFFICIAL_ENROLLMENT",
     activeSchoolYear: schoolSetting.activeSchoolYear?.yearLabel ?? "",
+    activeTermFormat: schoolSetting.activeSchoolYear?.termFormat ?? "TRIMESTER",
     schoolName: schoolSetting.schoolName || "EnrollPro",
     schoolAcronym: computeSchoolAcronym(schoolSetting.schoolName || "EnrollPro"),
     schoolLogoUrl: schoolSetting.logoUrl || null,

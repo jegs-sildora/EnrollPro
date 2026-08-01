@@ -1006,7 +1006,7 @@ export function SectioningWorkspace() {
             setActiveGradeLevelId(val);
           }
         }}
-        className="flex-shrink-0 mb-6">
+        >
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger

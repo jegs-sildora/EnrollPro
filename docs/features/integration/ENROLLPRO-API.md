@@ -382,6 +382,7 @@ results to the signed-in user's ID.
 | GET | `/` | Paginated audit trail |
 | GET | `/filters` | Available actors, actions, and subjects |
 | GET | `/export` | CSV audit export |
+| POST | `/atlas-override` | Record manual ATLAS schedule override |
 
 ## Exports
 
