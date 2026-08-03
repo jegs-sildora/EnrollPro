@@ -4,7 +4,7 @@ Last reviewed: 2026-07-24
 
 ## Learner Identity
 
-The Learner Registry stores the stable learner profile. The 12-digit Learner Reference Number is the primary school identity when available. Duplicate LRNs are rejected.
+The Learner Directory stores the stable learner profile. The 12-digit Learner Reference Number is the primary school identity when available. Duplicate LRNs are rejected.
 
 Core profile data includes legal name, sex, birthdate, mother tongue, citizenship, Indigenous Peoples information when declared, current and permanent addresses, and current learner status.
 

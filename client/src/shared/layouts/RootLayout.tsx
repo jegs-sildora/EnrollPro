@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import api from "@/shared/api/axiosInstance";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { UnsavedChangesProvider } from "@/shared/hooks/useUnsavedChanges";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { useActiveTheme } from "@/store/theme.slice";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -45,7 +46,30 @@ function contrastForeground(hsl: string): string {
   return contrastWhite >= contrastBlack ? "0 0% 100%" : "0 0% 0%";
 }
 
+function adjustAccentForDarkMode(hsl: string, isDark: boolean): string {
+  if (!isDark) return hsl;
+  const parts = hsl.trim().split(/\s+/);
+  if (parts.length < 3) return hsl;
+  const h = parseInt(parts[0]) || 0;
+  const s = parseInt(parts[1].replace("%", "")) || 0;
+  let l = parseInt(parts[2].replace("%", "")) || 0;
+
+  // Desaturate primary brand color slightly in dark mode to prevent visual vibration
+  const newS = Math.max(20, Math.floor(s * 0.78));
+
+  // Maintain contrast compliance against deep elevated gray dark surfaces
+  if (l < 45) {
+    l = Math.max(45, Math.min(65, l + 18));
+  }
+
+  return `${h} ${newS}% ${l}%`;
+}
+
 export default function RootLayout({ children }: { children?: ReactNode }) {
+  const location = useLocation();
+  const activeTheme = useActiveTheme();
+  // Restrict dark mode exclusively to the HNHS Learner Information System page (/learner/portal)
+  const isDark = location.pathname.replace(/\/+$/, "") === "/learner/portal" && activeTheme === "dark";
   const { colorScheme, selectedAccentHsl, logoUrl, setSettings, initialized, isHydrated, viewingSchoolYearId, activeSchoolYearId } =
     useSettingsStore();
 
@@ -118,12 +142,23 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   // Apply accent colors with WCAG contrast — use useLayoutEffect to prevent flash
   useLayoutEffect(() => {
     const root = document.documentElement;
-    const accent = selectedAccentHsl ?? DEFAULT_ACCENT_HSL;
+    if (isDark) {
+      root.classList.add("dark");
+      root.style.removeProperty("--background");
+      root.style.removeProperty("--card");
+    } else {
+      root.classList.remove("dark");
+      root.style.setProperty("--background", "0 0% 96%");
+      root.style.setProperty("--card", "0 0% 100%");
+    }
+
+    const rawAccent = selectedAccentHsl ?? DEFAULT_ACCENT_HSL;
+    const accent = adjustAccentForDarkMode(rawAccent, isDark);
 
     const parts = accent.trim().split(/\s+/);
     const fg = contrastForeground(accent);
     const mutedAccent =
-      parts.length >= 2 ? `${parts[0]} ${parts[1]} 94%` : accent;
+      parts.length >= 2 ? `${parts[0]} ${parts[1]} ${isDark ? "20%" : "94%"}` : accent;
     const mutedFg = contrastForeground(mutedAccent);
 
     // Special logic for #fefe01 (yellow) accent
@@ -135,7 +170,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
     // Robust check: matches exact hex from palette OR HSL range
     const currentHex = (
       colorScheme?.palette as PaletteColor[] | undefined
-    )?.find((p) => p.hsl === accent)?.hex;
+    )?.find((p) => p.hsl === rawAccent)?.hex;
     const isFefe01 =
       currentHex?.toLowerCase() === "#fefe01" ||
       (h === 60 && s >= 98 && s <= 100 && l >= 48 && l <= 52);
@@ -172,11 +207,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
       accentForeground: fg,
       accentMutedForeground: mutedFg,
     });
-
-    // Background stays white always
-    root.style.setProperty("--background", "0 0% 96%");
-    root.style.setProperty("--card", "0 0% 100%");
-  }, [colorScheme, selectedAccentHsl, setSettings]);
+  }, [colorScheme, selectedAccentHsl, setSettings, isDark]);
 
   if (!isHydrated || !initialized) {
     return (

@@ -42,7 +42,6 @@ export default function Apply() {
     schoolName,
     logoUrl,
     activeSchoolYearLabel,
-    systemStatus,
     systemPhase,
     facebookPageUrl,
     isBosyEnrollmentOpen,
@@ -191,40 +190,38 @@ export default function Apply() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-black">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-foreground">
                       {schoolName}
                     </h2>
 
                   </div>
 
                   {isClassesOngoing ? (
-                    <div className="space-y-4 max-w-lg mx-auto">
+                    <div className="space-y-4 max-w-xl mx-auto">
                       <div className="space-y-2">
-                        <h3 className="text-2xl font-extrabold text-gray-900 mt-6">
+                        <h3 className="text-2xl font-extrabold text-foreground mt-6">
                           Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
-                        <p className="text-base text-gray-600 mt-3 leading-relaxed max-w-lg mx-auto text-center">
+                        <p className="text-base text-foreground mt-3 leading-relaxed max-w-lg mx-auto text-center font-bold">
                           Classes are already ongoing. New online applications are no longer accepted for this school year.
                         </p>
                       </div>
 
-                      <div className="mt-6 max-w-lg rounded-md border border-primary/20 bg-primary/5 p-5 text-left shadow-sm">
-                        <h3 className="mb-2 text-sm font-extrabold uppercase text-primary">Late Walk-In Enrollment</h3>
-                        <p className="mb-4 text-sm leading-relaxed text-foreground">
-                          Please visit the School Registrar's Office during office hours. The registrar will check available class sections and encode the learner as a late enrollee when admission is permitted.
+                      <div className="mt-6 max-w-lg mx-auto rounded-md border border-primary/20 bg-primary/5 p-5 text-left shadow-sm">
+                        <h3 className="mb-2 font-extrabold uppercase text-primary">Late Walk-In Enrollment</h3>
+                        <p className="mb-4 leading-relaxed text-foreground font-bold">
+                          Please visit the School Registrar during office hours to check if there are still open sections for late enrollees.
                         </p>
-                        <p className="mb-2 text-sm font-bold text-foreground">Bring the available school requirements:</p>
-                        <ul className="ml-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                        <p className="mb-2 font-bold text-foreground">Please bring the following documents:</p>
+                        <ul className="ml-1 list-inside list-disc space-y-1 text-foreground font-bold">
                           <li>Original Report Card (SF9)</li>
                           <li>PSA Birth Certificate</li>
-                          <li>Certificate of Good Moral Character</li>
                         </ul>
                       </div>
 
                       <div className="pt-6 border-t border-slate-200 space-y-4 flex flex-col">
-                        <p className="text-base font-extrabold text-slate-500 uppercase  text-center">
-                          For real-time updates and official memorandums,
-                          please follow our page:
+                        <p className="text-base font-extrabold text-foreground text-center">
+                          For school announcements, follow our official page:
                         </p>
                         <a
                           href={facebookPageUrl || "https://www.facebook.com"}
@@ -242,11 +239,11 @@ export default function Apply() {
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-lg mx-auto">
-                      <h3 className="text-xl sm:text-2xl font-extrabold text-black">
+                      <h3 className="text-xl sm:text-2xl font-extrabold text-foreground">
                         S.Y. {activeSchoolYearLabel || "Admissions"} Portal is
                         Currently Closed
                       </h3>
-                      <p className="text-base sm:text-base text-black leading-relaxed">
+                      <p className="text-base sm:text-base text-foreground leading-relaxed">
                         The online portal for{" "}
                         {activeSchoolYearLabel || "Admissions"} is not currently
                         accepting applications. Registration periods are
@@ -256,8 +253,8 @@ export default function Apply() {
                         <p className={cn(
                           "leading-relaxed text-center",
                           facebookPageUrl 
-                            ? "text-base font-extrabold text-slate-500 uppercase"
-                            : "text-base leading-tight text-black font-extrabold"
+                            ? "text-base font-extrabold text-foreground uppercase"
+                            : "text-base leading-tight text-foreground font-extrabold"
                         )}>
                           {facebookPageUrl
                             ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."

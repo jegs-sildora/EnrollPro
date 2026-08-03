@@ -21,7 +21,7 @@ Primary EnrollPro route groups include:
 - Public enrollment, application monitoring, and password change
 - Staff authentication
 - Dashboard, Learner Enrollment, Class Sectioning
-- Learner Registry, Personnel Directory, and Class Sections
+- Learner Directory, Personnel Directory, and Class Sections
 - EOSY Updating and registrar EOSY workspace
 - Settings, activity logs, and system health
 - Teacher advisory and EOSY workspaces
@@ -44,7 +44,7 @@ Primary EnrollPro route groups include:
 | `/monitoring/enrollment` | Class Sectioning | Registrar and system administrator |
 | `/eosy` | EOSY Updating | Registrar and system administrator |
 | `/eosy/workspace` | Registrar EOSY workspace | Registrar and system administrator |
-| `/students` | Learner Registry | Registrar and system administrator |
+| `/students` | Learner Directory | Registrar and system administrator |
 | `/students/:id` | Learner profile | Registrar and system administrator |
 | `/sections` | Class Sections | Registrar and system administrator |
 | `/sections/view-masterlist/:sectionId` | Section masterlist and SF1 actions | Registrar and system administrator |

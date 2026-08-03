@@ -37,7 +37,7 @@ const apiRouterSections = {
   "school-year/school-year.router.ts": "School Years",
   "sections/sections.router.ts": "Class Sections and Advisership",
   "sections/sectioning.router.ts": "Reviewed Sectioning Workspace",
-  "students/students.router.ts": "Learner Registry",
+  "students/students.router.ts": "Learner Directory",
   "admin/admin.router.ts": "Administration and Audit",
   "audit-logs/audit-logs.router.ts": "Administration and Audit",
   "teachers/teachers.router.ts": "Personnel Directory",

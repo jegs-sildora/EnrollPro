@@ -191,14 +191,14 @@ Base path: `/api/sectioning`; all routes require `HEAD_REGISTRAR` or `SYSTEM_ADM
 
 Draft commit accepts grouped assignments, an application override map, and `allowCapacityOverride`. It writes `BATCH_ALGORITHM` or `MANUAL_OVERRIDE` sectioning methods.
 
-## Learner Registry
+## Learner Directory
 
 Base path: `/api/students`; all routes require staff authentication.
 
 | Method | Path | Roles | Purpose |
 | --- | --- | --- | --- |
-| GET | `/` | Registrar, admin, teacher | Active and historical learner registry |
-| GET | `/summary` | Registrar, admin, teacher | Learner registry summary cards |
+| GET | `/` | Registrar, admin, teacher | Active and historical Learner Directory |
+| GET | `/summary` | Registrar, admin, teacher | Learner Directory summary cards |
 | GET | `/:id` | Registrar, admin, teacher | Complete learner profile |
 | GET | `/:id/record-history` | Registrar, admin | Historical enrollment ledger |
 | PUT | `/:id` | Registrar, admin | Update learner profile |

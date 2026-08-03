@@ -1515,7 +1515,7 @@ export default function Students() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Learner Registry");
+    setTitle("Learner Directory");
     return () => setTitle(null);
   }, [setTitle]);
 

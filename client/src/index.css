@@ -259,47 +259,47 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
 }
 
 .dark {
-  --background: 222 47% 11%;
+  --background: 222 20% 12%;
   --foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --border: 217.2 32.6% 17.5%;
-  --card: 222.2 84% 4.9%;
+  --muted: 222 16% 19%;
+  --muted-foreground: 215 20.2% 70%;
+  --border: 222 16% 22%;
+  --card: 222 18% 16%;
   --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
+  --popover: 222 18% 16%;
   --popover-foreground: 210 40% 98%;
-  --input: 217.2 32.6% 17.5%;
-  --destructive: 0 62.8% 30.6%;
+  --input: 222 16% 20%;
+  --destructive: 0 62.8% 40%;
   --destructive-foreground: 210 40% 98%;
-  --secondary: 217.2 32.6% 17.5%;
+  --secondary: 222 16% 22%;
   --secondary-foreground: 210 40% 98%;
-  --accent: 156 72% 54%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --accent-muted: 217.2 32.6% 17.5%;
-  --accent-ring: 156 72% 54%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 84% 4.9%;
+  --accent: 355 45% 48%;
+  --accent-foreground: 0 0% 100%;
+  --accent-muted: 222 16% 20%;
+  --accent-ring: 355 45% 48%;
+  --primary: 355 45% 48%;
+  --primary-foreground: 0 0% 100%;
   --ring: 212.7 26.8% 83.9%;
   
-  --sidebar-background: 222.2 84% 4.9%;
+  --sidebar-background: 222 19% 14%;
   --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 156 72% 54%;
-  --sidebar-primary-foreground: 222.2 84% 4.9%;
-  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-primary: 355 45% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 222 16% 20%;
   --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-border: 222 16% 22%;
   --sidebar-ring: 212.7 26.8% 83.9%;
 
   --text: #94a3b8;
   --text-h: #f1f5f9;
-  --bg: #0f172a;
-  --border-smart: #1e293b;
-  --code-bg: #1e293b;
-  --accent-smart: #34d399;
-  --accent-bg: rgba(52, 211, 153, 0.12);
-  --accent-border: rgba(52, 211, 153, 0.4);
-  --social-bg: rgba(30, 41, 59, 0.8);
-  --shadow-glow: 0 0 40px rgba(52, 211, 153, 0.15);
+  --bg: #191d25;
+  --border-smart: #2b303b;
+  --code-bg: #222730;
+  --accent-smart: #d46370;
+  --accent-bg: rgba(212, 99, 112, 0.15);
+  --accent-border: rgba(212, 99, 112, 0.4);
+  --social-bg: rgba(34, 39, 48, 0.8);
+  --shadow-glow: 0 0 40px rgba(212, 99, 112, 0.15);
 
   color-scheme: dark;
 }

@@ -28,7 +28,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/monitoring/enrollment": "Class Sectioning",
     "/monitoring/enrollment/walk-in": "Learner Enrollment",
     "/eosy": "EOSY Updating",
-    "/students": "Learner Registry",
+    "/students": "Learner Directory",
     "/sections": "Class Sections (SF1)",
     "/sections/homerooms": "Class Sections (SF1)",
     "/audit-logs": "System Activity Logs",

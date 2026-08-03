@@ -4,13 +4,15 @@ import {
   LogOut,
   AlertTriangle,
   ChevronDown,
-  ChevronUp,
   Menu,
   LayoutDashboard as DashboardIcon,
   BookOpen,
   User,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
+import { useThemeStore } from "@/store/theme.slice";
 import { getLearnerApi } from "@/shared/api/axiosInstance";
 
 import { motion, AnimatePresence } from "motion/react";
@@ -125,7 +127,7 @@ function SectionItem({ label, value, valueClassName }: { label: string; value: s
       <div className="bg-muted text-foreground font-bold text-base uppercase px-4 py-2 border-r border-border flex items-center">
         {label}
       </div>
-      <div className={`text-base leading-tight font-extrabold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
+      <div className={`bg-card text-base leading-tight font-extrabold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
         {(!value || value === "-" || value === "") ? (
           <span className="text-foreground italic font-normal">
             Not Specified
@@ -178,80 +180,97 @@ function AcademicHistoryAccordion({
     <div className="mb-2">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors dark:bg-card dark:border-border dark:hover:bg-muted/50"
+        className={`w-full bg-card border border-border px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-muted/50 transition-all duration-200 ${
+          isOpen ? "rounded-t-sm border-b-0" : "rounded-sm"
+        }`}
       >
         <div className="flex items-center gap-2">
-          <span className="text-base leading-tight font-extrabold text-gray-900 uppercase dark:text-foreground">
+          <span className="text-base leading-tight font-extrabold text-foreground uppercase">
             {history.grade_level} &bull; S.Y. {history.school_year}
           </span>
         </div>
-        {isOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ease-in-out ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        />
       </div>
 
-      {isOpen && (
-        <div className="border-x border-b border-gray-200 rounded-b-sm overflow-x-auto dark:border-border">
-          <div className="w-full overflow-x-auto whitespace-nowrap">
-            <table className="w-full border-collapse border border-border text-base leading-tight">
-              <thead className="bg-primary text-primary-foreground text-base font-bold uppercase tracking-wide">
-                <tr className="border-b border-primary-foreground/20">
-                  <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-primary-foreground/20">Learning Areas</th>
-                  <th colSpan={isTrimester ? 3 : 4} className="px-4 py-2 text-center font-bold border-r border-primary-foreground/20">
-                    {isTrimester ? "Term" : "Quarter"}
-                  </th>
-                  <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-primary-foreground/20">Final Rating</th>
-                  <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle">Remarks</th>
-                </tr>
-                <tr>
-                  <th className="px-4 py-1.5 text-center font-bold border-r border-primary-foreground/20">1</th>
-                  <th className="px-4 py-1.5 text-center font-bold border-r border-primary-foreground/20">2</th>
-                  <th className="px-4 py-1.5 text-center font-bold border-r border-primary-foreground/20">3</th>
-                  {!isTrimester && (
-                    <th className="px-4 py-1.5 text-center font-bold border-r border-primary-foreground/20">4</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {subjectsToRender.map((subject) => {
-                  const subjectGrades = getSubjectGrades(subject);
-                  const term1 = isTrimester ? (subjectGrades?.T1 ?? subjectGrades?.term1 ?? subjectGrades?.Q1 ?? "—") : (subjectGrades?.Q1 ?? subjectGrades?.T1 ?? "—");
-                  const term2 = isTrimester ? (subjectGrades?.T2 ?? subjectGrades?.term2 ?? subjectGrades?.Q2 ?? "—") : (subjectGrades?.Q2 ?? subjectGrades?.T2 ?? "—");
-                  const term3 = isTrimester ? (subjectGrades?.T3 ?? subjectGrades?.term3 ?? subjectGrades?.Q3 ?? "—") : (subjectGrades?.Q3 ?? subjectGrades?.T3 ?? "—");
-                  const term4 = !isTrimester ? (subjectGrades?.Q4 ?? "—") : null;
-
-                  return (
-                    <tr key={subject} className="hover:bg-muted/50 transition-colors">
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{subject}</td>
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term1}</td>
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term2}</td>
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term3}</td>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border border-border rounded-b-sm overflow-x-auto">
+              <div className="w-full overflow-x-auto whitespace-nowrap">
+                <table className="w-full border-collapse border border-border text-base leading-tight">
+                  <thead className="bg-muted text-foreground text-base font-bold uppercase tracking-wide">
+                    <tr className="border-b border-border">
+                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Learning Areas</th>
+                      <th colSpan={isTrimester ? 3 : 4} className="px-4 py-2 text-center font-bold border-r border-border">
+                        {isTrimester ? "Term" : "Quarter"}
+                      </th>
+                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Final Rating</th>
+                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle">Remarks</th>
+                    </tr>
+                    <tr>
+                      <th className="px-4 py-1.5 text-center font-bold border-r border-border">1</th>
+                      <th className="px-4 py-1.5 text-center font-bold border-r border-border">2</th>
+                      <th className="px-4 py-1.5 text-center font-bold border-r border-border">3</th>
                       {!isTrimester && (
-                        <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term4}</td>
+                        <th className="px-4 py-1.5 text-center font-bold border-r border-border">4</th>
                       )}
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
-                        {subjectGrades?.Final ?? "—"}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subjectsToRender.map((subject) => {
+                      const subjectGrades = getSubjectGrades(subject);
+                      const term1 = isTrimester ? (subjectGrades?.T1 ?? subjectGrades?.term1 ?? subjectGrades?.Q1 ?? "—") : (subjectGrades?.Q1 ?? subjectGrades?.T1 ?? "—");
+                      const term2 = isTrimester ? (subjectGrades?.T2 ?? subjectGrades?.term2 ?? subjectGrades?.Q2 ?? "—") : (subjectGrades?.Q2 ?? subjectGrades?.T2 ?? "—");
+                      const term3 = isTrimester ? (subjectGrades?.T3 ?? subjectGrades?.term3 ?? subjectGrades?.Q3 ?? "—") : (subjectGrades?.Q3 ?? subjectGrades?.T3 ?? "—");
+                      const term4 = !isTrimester ? (subjectGrades?.Q4 ?? "—") : null;
+
+                      return (
+                        <tr key={subject} className="bg-card hover:bg-muted/50 transition-colors">
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{subject}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term1}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term2}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term3}</td>
+                          {!isTrimester && (
+                            <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term4}</td>
+                          )}
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
+                            {subjectGrades?.Final ?? "—"}
+                          </td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
+                            {subjectGrades?.Final ? (Number(subjectGrades.Final) >= 75 ? "Passed" : "Failed") : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot className="border border-border text-lg">
+                    <tr>
+                      <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground">General Average:</td>
+                      <td className="text-center font-extrabold bg-card border border-border text-lg text-foreground">
+                        {history.general_average}
                       </td>
-                      <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
-                        {subjectGrades?.Final ? (Number(subjectGrades.Final) >= 75 ? "Passed" : "Failed") : "—"}
+                      <td className="bg-card border border-border text-center text-base text-primary font-extrabold">
+                        {Number(history.general_average) >= 90 ? "WITH HONORS" : ""}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot className="bg-accent/50 border border-border text-lg">
-                <tr>
-                  <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground">General Average:</td>
-                  <td className="text-center font-extrabold bg-muted border border-border text-lg text-foreground">
-                    {history.general_average}
-                  </td>
-                  <td className="bg-muted border border-border text-center text-base text-foreground text-primary font-extrabold">
-                    {Number(history.general_average) >= 90 ? "WITH HONORS" : ""}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -259,6 +278,8 @@ function AcademicHistoryAccordion({
 export default function LearnerDashboard() {
   const navigate = useNavigate();
   const { user, token, clearAuth } = useLearnerAuthStore();
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const [currentTimestamp] = useState(() => Date.now());
   const [data, setData] = useState<LearnerDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -327,7 +348,7 @@ export default function LearnerDashboard() {
         </defs>
         <rect width="100%" height="100%" fill="url(#learner-dashboard-pixel-grid)" />
       </svg>
-      <header className="sticky top-0 z-50 w-full bg-muted border-b border-gray-200 shadow-sm print:hidden">
+      <header className="sticky top-0 z-50 w-full bg-muted border-b border-border shadow-sm print:hidden">
         <div className="w-full flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -349,7 +370,7 @@ export default function LearnerDashboard() {
                         {data.schoolLogoUrl ? (
                           <img src={data.schoolLogoUrl} alt="School Seal" className="h-7 w-7 object-contain shrink-0" />
                         ) : (
-                          <div className="h-7 w-7 rounded-full bg-red-900 flex items-center justify-center shrink-0">
+                          <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center shrink-0">
                             <span className="text-sm font-extrabold text-primary-foreground">
                               {data.schoolAcronym?.slice(0, 2) || "EP"}
                             </span>
@@ -439,17 +460,27 @@ export default function LearnerDashboard() {
             {data?.schoolLogoUrl ? (
               <img src={data.schoolLogoUrl} alt="School Seal" className="h-8 w-8 object-contain" />
             ) : (
-              <div className="h-8 w-8 rounded-full bg-red-900 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-base font-extrabold text-primary-foreground">
                   {data?.schoolAcronym?.slice(0, 2) || "EP"}
                 </span>
               </div>
             )}
-            <span className="font-extrabold text-lg text-foreground tracking-tight">
-              {data ? data.schoolAcronym : "Learner"} Portal
+            <span className="font-extrabold text-xl text-foreground tracking-tight">
+              {data ? data.schoolAcronym : ""} Learner Information System
             </span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 text-foreground hover:bg-muted transition-colors relative"
+              aria-label="Toggle theme lighting state"
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-primary" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-slate-200" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -462,7 +493,7 @@ export default function LearnerDashboard() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] overflow-hidden bg-muted relative z-10 print:h-auto print:overflow-visible">
+      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] overflow-hidden bg-background relative z-10 print:h-auto print:overflow-visible">
         {error && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-center gap-3 shadow-md">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
@@ -625,38 +656,22 @@ export default function LearnerDashboard() {
                       {/* Sub-Section 1: Learner Demographics */}
                       <div className="mb-8">
                         <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Sex</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.sex === "MALE" ? "Male" : "Female"}</span>
+                        <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                            <SectionItem label="Sex" value={data.sf1.sex === "MALE" ? "Male" : "Female"} />
+                            <SectionItem label="Date of Birth" value={formatDate(data.sf1.birthdate)} />
                           </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Date of Birth</span>
-                            <span className="text-base leading-tight font-extrabold">{formatDate(data.sf1.birthdate)}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                            <SectionItem label="Place of Birth" value={data.sf1.placeOfBirth || null} />
+                            <SectionItem label="Age" value={`${Math.floor((currentTimestamp - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`} />
                           </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Place of Birth</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.placeOfBirth || <span className="text-foreground italic font-normal">Not Specified</span>}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                            <SectionItem label="Religion" value={data.sf1.religion || null} />
+                            <SectionItem label="Mother Tongue" value={data.sf1.motherTongue || null} />
                           </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Age</span>
-                            <span className="text-base leading-tight font-extrabold">{`${Math.floor((Date.now() - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`}</span>
-                          </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Religion</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.religion || <span className="text-foreground italic font-normal">Not Specified</span>}</span>
-                          </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">Mother Tongue</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.motherTongue || <span className="text-foreground italic font-normal">Not Specified</span>}</span>
-                          </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">IP Group Status</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"}</span>
-                          </div>
-                          <div className="flex justify-between items-end border-b border-border/60 pb-2 pt-4">
-                            <span className="text-base uppercase font-bold">4Ps Beneficiary</span>
-                            <span className="text-base leading-tight font-extrabold">{data.sf1.is4PsBeneficiary ? "Yes" : "No"}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                            <SectionItem label="IP Group Status" value={data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"} />
+                            <SectionItem label="4Ps Beneficiary" value={data.sf1.is4PsBeneficiary ? "Yes" : "No"} />
                           </div>
                         </div>
                       </div>
@@ -665,13 +680,13 @@ export default function LearnerDashboard() {
                       <div className="mb-8">
                         <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY & CONTACT</h3>
                         <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
                             <SectionItem label="Permanent Home Address" value={
                               data.sf1.permanentAddress ?
                                 `${data.sf1.permanentAddress.houseNoStreet || ''} ${data.sf1.permanentAddress.barangay || ''}, ${data.sf1.permanentAddress.cityMunicipality || ''}, ${data.sf1.permanentAddress.province || ''}`.replace(/\s+/g, ' ').trim() : null
                             } />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
                             <SectionItem label="Current Home Address" value={
                               (() => {
                                 if (!data.sf1.permanentAddress && !data.sf1.currentAddress) return null;
@@ -680,7 +695,7 @@ export default function LearnerDashboard() {
                               })()
                             } />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                             <SectionItem label="Personal Email" value={data.sf1.email} />
                             <SectionItem label="Contact Number" value={data.sf1.mobileNumber} />
                           </div>
@@ -691,19 +706,19 @@ export default function LearnerDashboard() {
                       <div className="mb-8">
                         <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">III. PARENT/GUARDIAN BACKGROUND</h3>
                         <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                             <SectionItem label="Mother's Full Maiden Name" value={data.sf1.mother ? `${data.sf1.mother.firstName} ${data.sf1.mother.lastName}` : null} />
                             <SectionItem label="Mother's Contact Number" value={data.sf1.mother?.contactNumber || null} />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                             <SectionItem label="Father's Full Name" value={data.sf1.father ? `${data.sf1.father.firstName} ${data.sf1.father.lastName}` : null} />
                             <SectionItem label="Father's Contact Number" value={data.sf1.father?.contactNumber || null} />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                             <SectionItem label="Guardian's Full Name" value={data.sf1.guardian ? `${data.sf1.guardian.firstName} ${data.sf1.guardian.lastName}` : null} />
                             <SectionItem label="Guardian's Contact Number" value={data.sf1.guardian?.contactNumber || null} />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0 even:bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                             <SectionItem
                               label="Guardian's Relationship"
                               value={data.sf1.guardian?.relationship || null}

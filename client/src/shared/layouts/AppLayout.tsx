@@ -619,7 +619,7 @@ function AppSidebar() {
                   <NavItem
                     to="/students"
                     icon={Users}
-                    label="Learner Registry"
+                    label="Learner Directory"
                     pathname={pathname}
                   />
                   {isAdmin && (

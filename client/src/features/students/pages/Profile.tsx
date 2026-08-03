@@ -80,7 +80,7 @@ export default function StudentProfile() {
         <div className="space-y-4 text-center">
           <p className="text-base font-extrabold">Invalid learner record.</p>
           <Button variant="outline" onClick={() => navigate("/students")}>
-            Return to Learner Registry
+            Return to Learner Directory
           </Button>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function StudentProfile() {
           onClick={() => navigate("/students")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Learner Registry
+          Back to Learner Directory
         </Button>
       </div>
 

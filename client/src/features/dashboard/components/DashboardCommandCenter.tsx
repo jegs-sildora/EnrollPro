@@ -576,7 +576,7 @@ export function Sf1CompliancePanel({
         </div>
         <div className="mt-auto pt-4">
           <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground" onClick={onReview}>
-            Review Learner Registry
+            Review Learner Directory
             <ArrowRight className="size-4" />
           </Button>
         </div>

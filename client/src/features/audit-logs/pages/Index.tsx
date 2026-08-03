@@ -194,14 +194,14 @@ function parseUserAgent(ua: string) {
   else if (ua.includes("Edg")) browser = "Edge";
   else if (ua.includes("Chrome")) browser = "Chrome";
   else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
-  
+
   let os = "Unknown OS";
   if (ua.includes("Win")) os = "Windows";
   else if (ua.includes("Mac")) os = "MacOS";
   else if (ua.includes("Linux")) os = "Linux";
   else if (ua.includes("Android")) os = "Android";
   else if (ua.includes("like Mac OS X")) os = "iOS";
-  
+
   return `${browser} on ${os}`;
 }
 
@@ -382,14 +382,14 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (type === "Schoolyear") displayType = "School Year";
           if (type === "Schoolsetting") displayType = "School Profile Settings";
           if (type === "Enrollment") displayType = "Enrollment";
-          if (type === "Student") displayType = "Learner Registry";
+          if (type === "Student") displayType = "Learner Directory";
           if (type === "User") displayType = "Staff Management";
           if (type === "Section") displayType = "Class Sectioning";
 
           let colorClass = "bg-slate-100 text-slate-800";
           if (displayType === "School Profile Settings") colorClass = "bg-blue-100 text-blue-800";
           if (displayType === "School Year") colorClass = "bg-indigo-100 text-indigo-800";
-          if (displayType === "Learner Registry") colorClass = "bg-slate-700 text-white";
+          if (displayType === "Learner Directory") colorClass = "bg-slate-700 text-white";
           if (displayType === "Enrollment") colorClass = "bg-emerald-100 text-emerald-800";
           if (displayType === "Staff Management") colorClass = "bg-violet-100 text-violet-800";
           if (displayType === "Class Sectioning") colorClass = "bg-amber-100 text-amber-800";

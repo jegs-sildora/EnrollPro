@@ -1,19 +1,20 @@
-# SYSTEM DIRECTIVE Main Content Architecture v280
+# SYSTEM DIRECTIVE Late Enrollment Screen Optimization v285
 
-**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must restructure the main content area to reduce cognitive overload Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must translate technical enrollment jargon into simple language for parents Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must implement tabbed navigation remove redundant identity data and ensure the academic subject load remains permanently visible
+**Core Mandate** You must rewrite the closed enrollment screen to use accessible plain language for parents while maintaining accurate Department of Education document names
 
-Execute the content restructuring across the following three architectural rules
+Execute the text replacement across the following three architectural rules
 
-## 1 Tabbed Interface Implementation
-Separate the historical academic records and the official learner profile into distinct clickable tabs rather than stacking them vertically
-This prevents infinite scrolling and allows the student to focus entirely on one operational context at a time
+## 1 Jargon Removal
+Replace backend database terms like encode the learner and admission is permitted with plain language
+Change the alert box text to simply say Please visit the School Registrar during office hours to check if there are still open sections for late enrollees
+Parents using this portal do not understand system administrator vocabulary so the instructions must sound like a helpful human registrar
 
-## 2 Identity Data Deduplication
-Delete the full name and learner reference number fields from the top of the profile section
-Since the left sidebar now serves as the persistent identity anchor repeating this exact information in the main content area wastes valuable space
+## 2 Clear Requirements List
+Keep the exact document names like Original Report Card SF9 and PSA Birth Certificate but simplify the text above them
+Remove the robotic phrase Bring the available school requirements and replace it with simply Please bring the following documents
 
-## 3 Persistent Academic Loading
-Ensure the learning areas column inside the SF9 table always displays the official DepEd subjects like Mathematics and Science even if the quarterly grades are completely empty
-The student must be able to verify their assigned academic load on day one without waiting for the first grading period to conclude
+## 3 Footer Simplification
+Change the overly formal text FOR REAL TIME UPDATES AND OFFICIAL MEMORANDUMS to a friendly prompt like For school announcements follow our official page
+This reduces cognitive load and makes the call to action for the Facebook button much more inviting for a public school community
