@@ -62,7 +62,7 @@ const formatStatusLabel = (status: string | null, isGrade10: boolean = false) =>
   const normalized = status ?? "PROMOTED";
   switch (normalized) {
     case "PROMOTED":
-      return isGrade10 ? "JHS COMPLETER" : "PROMOTED";
+      return isGrade10 ? "COMPLETER" : "PROMOTED";
     case "RETAINED":
       return "RETAINED";
     case "CONDITIONALLY_PROMOTED":

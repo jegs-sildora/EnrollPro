@@ -403,14 +403,7 @@ async function carryOverEligibleLearners(
     const {
       sourceSchoolYearId,
       calendarPolicyId,
-      pin,
     } = req.body;
-
-    const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
-    if (!pin || pin !== adminPin) {
-      res.status(403).json({ message: "Invalid Security PIN. Rollover aborted." });
-      return;
-    }
 
     try {
       const result = await executeSchoolYearRollover({

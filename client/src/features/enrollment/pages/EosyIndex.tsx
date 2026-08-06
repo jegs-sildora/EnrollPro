@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { AtomicRolloverDialog } from "@/features/settings/components/AtomicRolloverDialog";
 import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
 import { Card } from "@/shared/ui/card";
 import {
@@ -148,7 +149,7 @@ const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolea
 
   switch (normalized as string) {
     case "PROMOTED":
-      return isGrade10 ? "JHS COMPLETER" : "PROMOTED";
+      return isGrade10 ? "COMPLETER" : "PROMOTED";
     case "RETAINED":
       return "RETAINED";
     case "CONDITIONALLY_PROMOTED":
@@ -299,6 +300,7 @@ export default function EosyUpdating() {
     systemStatus,
     systemPhase,
     setHistoricalCorrectionToken,
+    activeSchoolYearLabel,
   } = useSettingsStore();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const isEosyPhase = systemPhase === "EOSY_CLOSING";
@@ -1490,18 +1492,19 @@ export default function EosyUpdating() {
             </TabsList>
 
             {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
-              <Button
-                onClick={() => {
-                  useSettingsStore
-                    .getState()
-                    .updateUiPreference("settingsTab", "school-year");
-                  navigate("/settings");
-                }}
-                size="lg"
-                className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
-              >
-                Review Rollover Readiness
-              </Button>
+              <AtomicRolloverDialog
+                sourceSchoolYearId={activeSchoolYearId ?? 0}
+                sourceYearLabel={activeSchoolYearLabel ?? ""}
+                disabled={!isAllFinalized}
+                trigger={
+                  <Button
+                    size="lg"
+                    className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
+                  >
+                    Review Rollover Readiness
+                  </Button>
+                }
+              />
             )}
           </div>
 
@@ -1570,7 +1573,7 @@ export default function EosyUpdating() {
                                 className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
                                 onClick={() => void recordSf5ForScope()}
                               >
-                                {recordingForms ? "Recording..." : "Record Official SF5"}
+                                {recordingForms ? "Exporting..." : "Export Official SF5"}
                               </Button>
                               <Button
                                 variant="outline"
@@ -1578,7 +1581,7 @@ export default function EosyUpdating() {
                                 className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
                                 onClick={() => void recordSf6()}
                               >
-                                {recordingForms ? "Recording..." : "Record Official SF6"}
+                                {recordingForms ? "Exporting..." : "Export Official SF6"}
                               </Button>
                             </div>
                           ) : Object.keys(rowSelection).length > 0 ? (

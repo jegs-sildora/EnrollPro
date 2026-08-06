@@ -289,13 +289,7 @@ async function getReadiness(
         "Move the system to End of School Year Closing before rollover.",
     });
   }
-  if (!requestedPolicy) {
-    globalBlockers.push({
-      code: "CALENDAR_POLICY_REQUIRED",
-      message:
-        "Encode and approve the official DepEd calendar for the incoming school year.",
-    });
-  } else {
+  if (requestedPolicy) {
     if (requestedPolicy.status !== "APPROVED") {
       globalBlockers.push({
         code: "CALENDAR_POLICY_NOT_APPROVED",
@@ -670,14 +664,18 @@ export async function executeSchoolYearRollover({
             select: { id: true, displayOrder: true },
           }),
           tx.schoolSetting.findFirst(),
-          tx.schoolYearCalendarPolicy.findUniqueOrThrow({
-            where: { id: calendarPolicyId },
-          }),
+          calendarPolicyId
+            ? tx.schoolYearCalendarPolicy.findUnique({
+                where: { id: calendarPolicyId },
+              })
+            : Promise.resolve(null),
         ]);
+
+      const targetLabel = policy?.yearLabel || nextYearLabel(sourceYear.yearLabel) || "Unknown Target Year";
 
       const targetOperational = await getTargetOperationalCount(
         tx,
-        policy.yearLabel,
+        targetLabel,
       );
       if (targetOperational?.count) {
         throw new Error(
@@ -685,52 +683,45 @@ export async function executeSchoolYearRollover({
         );
       }
 
+      const yearData = policy ? {
+        status: "ACTIVE" as const,
+        clonedFromId: sourceSchoolYearId,
+        calendarPolicyId: policy.id,
+        classOpeningDate: policy.classOpeningDate,
+        classEndDate: policy.classEndDate,
+        enrollOpenDate: policy.enrollOpenDate,
+        enrollCloseDate: policy.enrollCloseDate,
+        termFormat: policy.termFormat,
+        term1Start: policy.term1Start,
+        term1End: policy.term1End,
+        term2Start: policy.term2Start,
+        term2End: policy.term2End,
+        term3Start: policy.term3Start,
+        term3End: policy.term3End,
+        term4Start: policy.term4Start,
+        term4End: policy.term4End,
+      } : {
+        status: "ACTIVE" as const,
+        clonedFromId: sourceSchoolYearId,
+      };
+
       const targetYear = targetOperational
         ? await tx.schoolYear.update({
             where: { id: targetOperational.id },
             data: {
-              status: "ACTIVE",
-              clonedFromId: sourceSchoolYearId,
-              calendarPolicyId: policy.id,
-              classOpeningDate: policy.classOpeningDate,
-              classEndDate: policy.classEndDate,
-              enrollOpenDate: policy.enrollOpenDate,
-              enrollCloseDate: policy.enrollCloseDate,
-              termFormat: policy.termFormat,
-              term1Start: policy.term1Start,
-              term1End: policy.term1End,
-              term2Start: policy.term2Start,
-              term2End: policy.term2End,
-              term3Start: policy.term3Start,
-              term3End: policy.term3End,
-              term4Start: policy.term4Start,
-              term4End: policy.term4End,
+              ...yearData,
               isEosyFinalized: false,
             },
             select: { id: true, yearLabel: true, status: true },
           })
         : await tx.schoolYear.create({
             data: {
-              yearLabel: policy.yearLabel,
-              status: "ACTIVE",
-              clonedFromId: sourceSchoolYearId,
-              calendarPolicyId: policy.id,
-              classOpeningDate: policy.classOpeningDate,
-              classEndDate: policy.classEndDate,
-              enrollOpenDate: policy.enrollOpenDate,
-              enrollCloseDate: policy.enrollCloseDate,
-              termFormat: policy.termFormat,
-              term1Start: policy.term1Start,
-              term1End: policy.term1End,
-              term2Start: policy.term2Start,
-              term2End: policy.term2End,
-              term3Start: policy.term3Start,
-              term3End: policy.term3End,
-              term4Start: policy.term4Start,
-              term4End: policy.term4End,
+              yearLabel: targetLabel,
+              ...yearData,
             },
             select: { id: true, yearLabel: true, status: true },
           });
+
 
       await cloneSectionStructure({
         client: tx,
@@ -914,13 +905,15 @@ export async function executeSchoolYearRollover({
             : undefined,
         },
       });
-      await tx.schoolYearCalendarPolicy.update({
-        where: { id: policy.id },
-        data: {
-          status: "APPLIED",
-          appliedAt: rolloverTime,
-        },
-      });
+      if (policy) {
+        await tx.schoolYearCalendarPolicy.update({
+          where: { id: policy.id },
+          data: {
+            status: "APPLIED",
+            appliedAt: rolloverTime,
+          },
+        });
+      }
       await tx.schoolSetting.updateMany({
         data: {
           activeSchoolYearId: targetYear.id,
@@ -940,8 +933,8 @@ export async function executeSchoolYearRollover({
           ipAddress,
           userAgent,
           metadata: {
-            calendarPolicyId: policy.id,
-            calendarPolicyVersion: policy.version,
+            calendarPolicyId: policy?.id,
+            calendarPolicyVersion: policy?.version,
             archivedRecords: sourceRecords.length,
             pendingConfirmations,
             remedialHolds,

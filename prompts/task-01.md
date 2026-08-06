@@ -1,20 +1,19 @@
-# SYSTEM DIRECTIVE Late Enrollment Screen Optimization v285
+# SYSTEM DIRECTIVE End of School Year Rollover Logic v290
 
-**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must translate technical enrollment jargon into simple language for parents Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must enforce strict Department of Education promotion logic and state management Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must rewrite the closed enrollment screen to use accessible plain language for parents while maintaining accurate Department of Education document names
+**Core Mandate** You must update the data grid to handle Grade 10 completers alter the button states for locked records and establish the database archiving trigger
 
-Execute the text replacement across the following three architectural rules
+Execute the rollover architecture across the following three rules
 
-## 1 Jargon Removal
-Replace backend database terms like encode the learner and admission is permitted with plain language
-Change the alert box text to simply say Please visit the School Registrar during office hours to check if there are still open sections for late enrollees
-Parents using this portal do not understand system administrator vocabulary so the instructions must sound like a helpful human registrar
+## 1 Grade 10 Completer Status
+Configure the data grid to recognize when the Grade 10 tab is active and automatically change the EOSY Status text from PROMOTED to COMPLETER
+Junior High School formally ends at Grade 10 so these specific learners are moving up to Senior High School and require the exact terminal status mandated by the national guidelines
 
-## 2 Clear Requirements List
-Keep the exact document names like Original Report Card SF9 and PSA Birth Certificate but simplify the text above them
-Remove the robotic phrase Bring the available school requirements and replace it with simply Please bring the following documents
+## 2 Locked State Button Adaptation
+Transform the Record Official SF5 and Record Official SF6 buttons into Export or Download buttons the moment the EOSY Finalized banner appears
+Since the official records are locked no further encoding is allowed so the interface must only offer read only document generation protecting the integrity of the archived data
 
-## 3 Footer Simplification
-Change the overly formal text FOR REAL TIME UPDATES AND OFFICIAL MEMORANDUMS to a friendly prompt like For school announcements follow our official page
-This reduces cognitive load and makes the call to action for the Facebook button much more inviting for a public school community
+## 3 Academic Year Archiving Trigger
+Link the Review Rollover Readiness button to the final database transition checklist
+This action must verify all sections are finalized before freezing the current academic year as historical data and securely instantiating the new blank school year
