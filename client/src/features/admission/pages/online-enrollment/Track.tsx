@@ -72,7 +72,7 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
       "The Registrar's Office is checking the learner record and available school requirements.",
   },
   QUALIFIED_FOR_ENROLLMENT: {
-    label: "Ready for Class Sectioning",
+    label: "Ready for Section Assignment",
     icon: CheckCircle2,
     color: "border-emerald-200 bg-emerald-50 text-emerald-700",
     description:
@@ -169,17 +169,17 @@ export default function TrackApplication({
     } catch (requestError: unknown) {
       const message =
         typeof requestError === "object" &&
-        requestError !== null &&
-        "response" in requestError
+          requestError !== null &&
+          "response" in requestError
           ? (
-              requestError as {
-                response?: { data?: { message?: string } };
-              }
-            ).response?.data?.message
+            requestError as {
+              response?: { data?: { message?: string } };
+            }
+          ).response?.data?.message
           : undefined;
       setError(
         message ??
-          "No enrollment application matches that tracking number.",
+        "No enrollment application matches that tracking number.",
       );
       onResultsFetched?.(false);
     } finally {
@@ -195,7 +195,7 @@ export default function TrackApplication({
   const StatusIcon = presentation.icon;
   const programLabel = application
     ? LEARNING_PROGRAM_LABELS[application.applicantType] ??
-      application.applicantType.replaceAll("_", " ")
+    application.applicantType.replaceAll("_", " ")
     : "";
 
   return (

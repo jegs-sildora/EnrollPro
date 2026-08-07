@@ -61,8 +61,6 @@ export const updateSchoolYearSchema = createSchoolYearSchema.partial();
 
 export const rolloverSchoolYearSchema = z.object({
   sourceSchoolYearId: z.number().int().positive(),
-  calendarPolicyId: z.number().int().positive(),
-  pin: z.string().regex(/^\d{6}$/, "A valid 6-digit administrator PIN is required"),
 });
 
 export const transitionSchoolYearSchema = z.object({

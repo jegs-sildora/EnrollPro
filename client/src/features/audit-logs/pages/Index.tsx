@@ -384,7 +384,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (type === "Enrollment") displayType = "Enrollment";
           if (type === "Student") displayType = "Learner Directory";
           if (type === "User") displayType = "Staff Management";
-          if (type === "Section") displayType = "Class Sectioning";
+          if (type === "Section") displayType = "Section Assignment";
 
           let colorClass = "bg-slate-100 text-slate-800";
           if (displayType === "School Profile Settings") colorClass = "bg-blue-100 text-blue-800";
@@ -392,7 +392,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (displayType === "Learner Directory") colorClass = "bg-slate-700 text-white";
           if (displayType === "Enrollment") colorClass = "bg-emerald-100 text-emerald-800";
           if (displayType === "Staff Management") colorClass = "bg-violet-100 text-violet-800";
-          if (displayType === "Class Sectioning") colorClass = "bg-amber-100 text-amber-800";
+          if (displayType === "Section Assignment") colorClass = "bg-amber-100 text-amber-800";
 
           return (
             <div className="flex w-full justify-center py-3">

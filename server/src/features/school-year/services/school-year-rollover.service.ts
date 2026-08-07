@@ -77,7 +77,6 @@ export interface RolloverReadiness {
 
 export interface ExecuteRolloverInput {
   sourceSchoolYearId: number;
-  calendarPolicyId: number;
   actingUserId: number;
   ipAddress: string;
   userAgent: string | null;
@@ -183,7 +182,6 @@ async function getTargetOperationalCount(
 async function getReadiness(
   client: DatabaseClient,
   schoolYearId: number,
-  calendarPolicyId?: number,
 ): Promise<RolloverReadiness> {
   const sourceYear = await client.schoolYear.findUnique({
     where: { id: schoolYearId },
@@ -240,18 +238,7 @@ async function getReadiness(
     client.schoolSetting.findFirst({
       select: { activeSchoolYearId: true, systemPhase: true },
     }),
-    calendarPolicyId
-      ? client.schoolYearCalendarPolicy.findUnique({
-          where: { id: calendarPolicyId },
-          select: {
-            id: true,
-            yearLabel: true,
-            version: true,
-            status: true,
-            depedIssuance: true,
-          },
-        })
-      : expectedTargetLabel
+    expectedTargetLabel
         ? client.schoolYearCalendarPolicy.findFirst({
             where: {
               yearLabel: expectedTargetLabel,
@@ -313,12 +300,14 @@ async function getReadiness(
     const recordsWithoutResult = section.enrollmentRecords.filter(
       (record) => record.eosyStatus === null,
     ).length;
-    const missingSmartOutcomes = section.enrollmentRecords.filter(
+    const isSmartFallbackEnabled = process.env.SMART_SYNC_FALLBACK_ENABLED === "true";
+
+    const missingSmartOutcomes = isSmartFallbackEnabled ? 0 : section.enrollmentRecords.filter(
       (record) =>
         !isDeparture(record.eosyStatus)
         && record.smartAcademicOutcome === null,
     ).length;
-    const mismatchedSmartOutcomes = section.enrollmentRecords.filter(
+    const mismatchedSmartOutcomes = isSmartFallbackEnabled ? 0 : section.enrollmentRecords.filter(
       (record) =>
         record.smartAcademicOutcome
         && record.eosyStatus !== record.smartAcademicOutcome.finalOutcome,
@@ -421,9 +410,8 @@ async function getReadiness(
 
 export async function getSchoolYearRolloverReadiness(
   schoolYearId: number,
-  calendarPolicyId?: number,
 ): Promise<RolloverReadiness> {
-  return getReadiness(prisma, schoolYearId, calendarPolicyId);
+  return getReadiness(prisma, schoolYearId);
 }
 
 export function getHistoricalProfileSnapshot(record: {
@@ -532,7 +520,6 @@ async function cloneSectionStructure(input: {
 
 export async function executeSchoolYearRollover({
   sourceSchoolYearId,
-  calendarPolicyId,
   actingUserId,
   ipAddress,
   userAgent,
@@ -543,18 +530,19 @@ export async function executeSchoolYearRollover({
       const readiness = await getReadiness(
         tx,
         sourceSchoolYearId,
-        calendarPolicyId,
       );
       if (!readiness.ready) {
         throw new RolloverNotReadyError(readiness);
       }
 
-      const [sourceYear, sourceRecords, sourceSections, gradeLevels, setting, policy] =
+      const sourceYear = await tx.schoolYear.findUniqueOrThrow({
+        where: { id: sourceSchoolYearId },
+        select: { id: true, yearLabel: true },
+      });
+      const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
+
+      const [sourceRecords, sourceSections, gradeLevels, setting, policy] =
         await Promise.all([
-          tx.schoolYear.findUniqueOrThrow({
-            where: { id: sourceSchoolYearId },
-            select: { id: true, yearLabel: true },
-          }),
           tx.enrollmentRecord.findMany({
             where: { schoolYearId: sourceSchoolYearId },
             select: {
@@ -664,9 +652,13 @@ export async function executeSchoolYearRollover({
             select: { id: true, displayOrder: true },
           }),
           tx.schoolSetting.findFirst(),
-          calendarPolicyId
-            ? tx.schoolYearCalendarPolicy.findUnique({
-                where: { id: calendarPolicyId },
+          expectedTargetLabel
+            ? tx.schoolYearCalendarPolicy.findFirst({
+                where: {
+                  yearLabel: expectedTargetLabel,
+                  status: "APPROVED",
+                },
+                orderBy: { version: "desc" },
               })
             : Promise.resolve(null),
         ]);

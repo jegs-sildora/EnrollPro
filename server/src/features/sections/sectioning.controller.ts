@@ -79,7 +79,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
         currentCount: s.enrollmentRecords.length,
         boys,
         girls,
-        adviser: s.advisers[0]?.teacher 
+        adviser: s.advisers[0]?.teacher
           ? `${s.advisers[0].teacher.lastName}, ${s.advisers[0].teacher.firstName}`
           : "No Adviser",
       };
@@ -104,7 +104,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       : req.schoolYearId;
 
     if (!schoolYearId) {
-       return res.status(400).json({ message: "Active school year required." });
+      return res.status(400).json({ message: "Active school year required." });
     }
 
     const where: Prisma.EnrollmentApplicationWhereInput = {
@@ -195,7 +195,7 @@ export async function assignBulk(req: Request, res: Response) {
     const [section, setting] = await Promise.all([
       prisma.section.findUnique({
         where: { id: sectionId },
-        include: { 
+        include: {
           enrollmentRecords: { select: { id: true } },
           gradeLevel: { select: { displayOrder: true } }
         },
@@ -209,7 +209,7 @@ export async function assignBulk(req: Request, res: Response) {
     const currentCount = section.enrollmentRecords.length;
     const requestedCount = applicationIds.length;
     if (currentCount + requestedCount > section.maxCapacity) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         message: `Section ${section.name} has ${section.maxCapacity - currentCount} available seat(s), but ${requestedCount} learner(s) were selected.`,
       });
     }
@@ -217,7 +217,7 @@ export async function assignBulk(req: Request, res: Response) {
     // 3. Fetch Applications for Validation
     const apps = await prisma.enrollmentApplication.findMany({
       where: { id: { in: applicationIds } },
-      include: { 
+      include: {
         learner: {
           select: { firstName: true, lastName: true, isBalikAral: true },
         },
@@ -251,7 +251,7 @@ export async function assignBulk(req: Request, res: Response) {
 
       // Grade Level Check
       if (app.gradeLevelId !== section.gradeLevelId) {
-         return res.status(422).json({ message: "Grade Level Mismatch: Student grade level does not match section grade level." });
+        return res.status(422).json({ message: "Grade Level Mismatch: Student grade level does not match section grade level." });
       }
 
       const allowedPrograms = getAllowedSectionProgramsForPlacement({
@@ -313,10 +313,10 @@ export async function assignBulk(req: Request, res: Response) {
       learnerIds: apps.map((app) => app.learnerId),
     });
 
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       message: `Successfully assigned ${applicationIds.length} students to ${section.name}.`,
-      count: results.length 
+      count: results.length
     });
 
   } catch (error) {
@@ -535,7 +535,7 @@ export async function commitDraft(req: Request, res: Response) {
       if (application.status !== "READY_FOR_SECTIONING") {
         skippedApplications.push({
           applicationId: candidate.applicationId,
-          reason: `${learnerName} is no longer ready for class sectioning.`,
+          reason: `${learnerName} is no longer ready for Section Assignment.`,
         });
         continue;
       }

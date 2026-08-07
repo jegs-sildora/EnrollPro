@@ -60,14 +60,9 @@ export async function getRolloverReadiness(
     }
 
     const isEosyPhase = schoolSetting.systemPhase === "EOSY_CLOSING"
-    const calendarPolicyId =
-      typeof req.query.calendarPolicyId === "string"
-        ? Number.parseInt(req.query.calendarPolicyId, 10)
-        : undefined
 
     const readiness = await getSchoolYearRolloverReadiness(
       schoolSetting.activeSchoolYearId,
-      Number.isInteger(calendarPolicyId) ? calendarPolicyId : undefined,
     )
     res.json({
       isEosyPhase,

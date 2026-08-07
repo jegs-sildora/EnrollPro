@@ -39,7 +39,7 @@ const STEP_METADATA: Record<
       "The Registrar's Office is checking the learner record and submitted school requirements.",
   },
   ENROLLMENT_QUALIFICATION: {
-    title: "Ready for Class Sectioning",
+    title: "Ready for ",
     description:
       "The learner is enrolled and waiting for assignment to a class section.",
   },

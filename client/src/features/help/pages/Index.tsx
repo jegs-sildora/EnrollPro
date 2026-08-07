@@ -90,7 +90,7 @@ export default function HelpDocumentation() {
             Help & Documentation
           </h1>
           <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-muted-foreground">
-            Plain-language guidance for learner enrollment, class sectioning,
+            Plain-language guidance for learner enrollment, Section Assignment,
             school forms, and school-year rollover.
           </p>
         </div>
@@ -108,7 +108,7 @@ export default function HelpDocumentation() {
           steps={[
             "Check the learner identity and required school documents before enrollment.",
             "Enroll the learner only after the information is verified.",
-            "Send enrolled learners to Class Sectioning for class placement.",
+            "Send enrolled learners to Section Assignment for class placement.",
           ]}
           actionLabel="Open Learner Enrollment"
           actionTo="/continuing-learners"

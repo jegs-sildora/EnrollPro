@@ -288,7 +288,7 @@ export default function LearnerLogin() {
         }
       `}</style>
 
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-xl">
           <Card className="bg-card shadow-xl rounded-2xl w-full border">
             <CardContent className="px-6 py-8 space-y-6">
               <div className="text-center space-y-2">
@@ -419,7 +419,7 @@ export default function LearnerLogin() {
                       }
                       className="rounded-sm data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors font-extrabold text-base leading-tight">
+                    <span className="text-foreground font-extrabold text-base leading-tight">
                       Remember me
                     </span>
                   </label>
@@ -444,8 +444,8 @@ export default function LearnerLogin() {
                 </Button>
               </form>
 
-              <p className="text-center text-foreground/50 text-sm mt-6 leading-relaxed">
-                Forgot password? Contact your Class Adviser for a reset.
+              <p className="text-center text-foreground mt-6 leading-relaxed">
+                Forgot password? Contact your class adviser for a reset.
               </p>
             </CardContent>
           </Card>

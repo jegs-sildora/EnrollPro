@@ -1029,7 +1029,7 @@ export default function EosyUpdating() {
   const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
   const scopedIrregularBlockerCount = pendingIrregularCount;
   const hasIrregularBlockers = scopedIrregularBlockerCount > 0;
-  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0);
+  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0) + (pendingCount > 0 ? 1 : 0);
 
   const targetScopeName = sectionFilter === "ALL" ? `All ${activeGradeName}` : `Section: ${sectionFilter}`;
   const descriptionTarget = sectionFilter === "ALL"

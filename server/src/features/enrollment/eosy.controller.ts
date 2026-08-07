@@ -804,6 +804,32 @@ export async function finalizeSection(
       );
     }
 
+    const records = await prisma.enrollmentRecord.findMany({
+      where: { sectionId },
+      include: { learner: true },
+    });
+
+    const pendingLearners = records.filter(
+      (r) =>
+        (r.finalAverage === null || r.finalAverage === undefined) &&
+        r.eosyStatus !== "TRANSFERRED_OUT" &&
+        r.eosyStatus !== "DROPPED_OUT",
+    );
+    if (pendingLearners.length > 0) {
+      throw new AppError(
+        400,
+        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`,
+      );
+    }
+
+    const unfinalized = records.filter((r) => !r.eosyStatus);
+    if (unfinalized.length > 0) {
+      throw new AppError(
+        422,
+        `Cannot finalize. ${unfinalized.length} learners are missing an EOSY status.`,
+      );
+    }
+
     const updated = await prisma.section.update({
       where: { id: sectionId },
       data: { isEosyFinalized: true },

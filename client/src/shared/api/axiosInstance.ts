@@ -63,7 +63,7 @@ api.interceptors.request.use((config) => {
   const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
 
   if (contextSchoolYearId) {
-    config.headers["x-school-year-context-id"] = String(contextSchoolYearId);
+    config.headers.set("x-school-year-context-id", String(contextSchoolYearId));
   }
 
   const currentToken = useAuthStore.getState().user ? "staff-session" : null;

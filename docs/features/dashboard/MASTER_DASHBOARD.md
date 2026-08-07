@@ -20,7 +20,7 @@ Counts must avoid duplicate learners when one learner has more than one missing 
 The enrollment phases show:
 
 - pending learner enrollment
-- learners ready for class sectioning
+- learners ready for Section Assignment
 - lacking documentary requirements
 - curriculum distribution
 - incoming learner pipeline by grade

@@ -65,7 +65,7 @@ import {
   type RolloverReadinessPayload,
 } from "../api/system.api";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
-import { AtomicRolloverDialog } from "../components/AtomicRolloverDialog";
+
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
@@ -1006,13 +1006,7 @@ export default function SchoolYearTab() {
                     </CardTitle>
                   </div>
                 </div>
-                {activeYear && (
-                  <AtomicRolloverDialog
-                    sourceSchoolYearId={activeYear.id}
-                    sourceYearLabel={activeYear.yearLabel}
-                    disabled={isArchived || systemPhase !== "EOSY_CLOSING"}
-                  />
-                )}
+
 
               </div>
 

@@ -402,13 +402,11 @@ async function carryOverEligibleLearners(
     res: Response): Promise<void> {
     const {
       sourceSchoolYearId,
-      calendarPolicyId,
     } = req.body;
 
     try {
       const result = await executeSchoolYearRollover({
         sourceSchoolYearId,
-        calendarPolicyId,
         actingUserId: req.user!.userId,
         ipAddress: req.ip || "unknown",
         userAgent: req.headers["user-agent"] ?? null,

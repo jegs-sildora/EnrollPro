@@ -272,7 +272,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <User className="h-4 w-4 text-primary" />
-                      1. Learner Profile
+                      Learner Profile
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
@@ -462,7 +462,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
-                      2. Previous School Data
+                      Previous School Data
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
@@ -513,7 +513,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground bg-muted/5 border-b border-border">
                     <span className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-primary" />
-                      3. Emergency Contact
+                      Emergency Contact
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
@@ -559,7 +559,7 @@ export function WalkInEncodePanel() {
                   <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-amber-900 bg-amber-100/50 border-b border-amber-200/50">
                     <span className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
-                      4. Document Checklist
+                      Document Checklist
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">

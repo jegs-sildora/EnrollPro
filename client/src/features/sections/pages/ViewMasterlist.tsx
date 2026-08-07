@@ -508,7 +508,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
     }
     return () => {
       if (mode === "sectioning") {
-        setTitle("Class Sectioning");
+        setTitle("Section Assignment");
       } else {
         setTitle(null);
       }
@@ -787,10 +787,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                                 <Badge
                                   variant="outline"
                                   className={`font-extrabold ${row.sex === "MALE"
-                                      ? "border-blue-600 text-blue-700"
-                                      : row.sex === "FEMALE"
-                                        ? "border-pink-600 text-pink-700"
-                                        : "border-muted-foreground text-muted-foreground"
+                                    ? "border-blue-600 text-blue-700"
+                                    : row.sex === "FEMALE"
+                                      ? "border-pink-600 text-pink-700"
+                                      : "border-muted-foreground text-muted-foreground"
                                     }`}
                                 >
                                   {row.sex || "Check"}

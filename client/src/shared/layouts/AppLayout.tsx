@@ -499,8 +499,8 @@ const NavItem = memo(function NavItem({
         <Link to={to} onClick={handleNavigationClick}>
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
-            <span className={cn("truncate w-full text-left leading-tight", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-sm font-normal truncate w-full text-left leading-tight">{subtext}</span>}
+            <span className={cn("truncate w-full text-left leading-tight font-bold", isActive && "font-bold")}>{label}</span>
+            {subtext && <span className="text-sm font-semibold truncate w-full text-left leading-tight">{subtext}</span>}
           </div>
         </Link>
       </SidebarMenuButton>
@@ -593,7 +593,7 @@ function AppSidebar() {
                       <NavItem
                         to="/monitoring/enrollment"
                         icon={Calendar}
-                        label="Class Sectioning"
+                        label="Section Assignment"
                         pathname={pathname}
                       />
                     </>
@@ -633,7 +633,7 @@ function AppSidebar() {
                   <NavItem
                     to="/sections"
                     icon={List}
-                    label="Class Sections (SF1)"
+                    label="Class Sections"
                     pathname={pathname}
                   />
                 </>
@@ -744,11 +744,11 @@ const ROUTE_PHASES: Record<string, {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Learner Enrollment",
     redirectTo: "/monitoring/enrollment",
-    redirectLabel: "Take me to Class Sectioning"
+    redirectLabel: "Take me to Section Assignment"
   },
   "/monitoring/enrollment": {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
-    moduleName: "Class Sectioning",
+    moduleName: "Section Assignment",
     redirectTo: "/sections",
     redirectLabel: "Take me to Class Sections"
   },

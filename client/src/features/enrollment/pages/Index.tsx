@@ -6,7 +6,7 @@ export default function EnrollmentManagement() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Class Sectioning");
+    setTitle("Section Assignment");
     return () => setTitle(null);
   }, [setTitle]);
 

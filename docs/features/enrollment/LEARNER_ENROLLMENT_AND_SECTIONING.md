@@ -33,9 +33,9 @@ Promoted Grade 10 learners become JHS completers. Grade 10 conditional cases ent
 
 Staff enroll a returning learner after check-in. Confirmation adds the learner to the official school total and the unassigned sectioning pool, but the class masterlist is created only after section assignment.
 
-## Class Sectioning
+## Section Assignment
 
-The Class Sectioning workspace separates intake from placement.
+The Section Assignment workspace separates intake from placement.
 
 Automatic placement creates a temporary draft using grade, program, final general average, sex balance, and capacity. Special Curricular Program eligibility is respected during automatic placement. Staff can review, move, or swap learners before finalizing.
 
