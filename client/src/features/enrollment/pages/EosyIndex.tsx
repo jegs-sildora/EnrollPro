@@ -1282,7 +1282,7 @@ export default function EosyUpdating() {
             <div
               className={cn(
                 "inline-flex items-center justify-center w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold text-center whitespace-nowrap rounded-md border transition-colors",
-                isScpDemoted && resolvedStatus === "PROMOTED"
+                (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
                   ? "text-amber-700 bg-amber-50 border-amber-200"
                   : resolvedStatus === "ACTION_REQUIRED"
                     ? "text-red-700 bg-red-50 border-red-200"
@@ -1290,7 +1290,7 @@ export default function EosyUpdating() {
                       ? "text-green-700 bg-green-50 border-green-200"
                       : "text-amber-700 bg-amber-50 border-amber-200"
               )}>
-              <span>{isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
+              <span>{(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
             </div>
           );
 
@@ -1361,7 +1361,7 @@ export default function EosyUpdating() {
           if (isSectionFinalized || isScopeFinalized) {
             return (
               <div className="flex flex-col items-center justify-center gap-1 w-full">
-                {isScpDemoted && resolvedStatus === "PROMOTED" ? renderTooltip(renderStatusContent()) : renderStatusContent()}
+                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? renderTooltip(renderStatusContent()) : renderStatusContent()}
                 {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
                   <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
                     Deficiency: {currentDeficiencyNote}
@@ -1374,7 +1374,7 @@ export default function EosyUpdating() {
           return (
             <div className="flex flex-col items-center justify-center gap-2 w-full">
               <Select
-                value={isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
+                value={(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
                   if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
                   else handleStatusChange(
@@ -1387,7 +1387,7 @@ export default function EosyUpdating() {
                   );
                 }}
                 disabled={isSectionFinalized || isScpDemotedGrades}>
-                {isScpDemoted && resolvedStatus === "PROMOTED" ? (
+                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
                   renderTooltip(
                     <SelectTrigger
                       className={cn(
@@ -1411,8 +1411,12 @@ export default function EosyUpdating() {
                   </SelectTrigger>
                 )}
                 <SelectContent className="font-extrabold">
-                  {!hasZeroOrBlankGrade && !isFailing && !isScpDemotedGrades && (
-                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                  {!hasZeroOrBlankGrade && !isFailing && (
+                    (isScpDemoted || isScpDemotedGrades) ? (
+                      <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
+                    ) : (
+                      <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                    )
                   )}
 
                   {!hasZeroOrBlankGrade && (

@@ -3,7 +3,6 @@ import { PrismaClient, ApplicantType, Sex, SchoolYearStatus, TermFormat, SystemA
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
-import { faker } from "@faker-js/faker";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -112,12 +111,14 @@ function getFilipinoParentName(sex: Sex, index: number): FilipinoName {
   return getFilipinoName(sex, index + 7);
 }
 
+let lrnCounter = 100000000000;
 function generateLRN(): string {
-  return faker.string.numeric(12);
+  return (lrnCounter++).toString();
 }
 
+let empCounter = 1000000;
 function generateEmployeeId(): string {
-  return faker.string.numeric(7);
+  return (empCounter++).toString();
 }
 
 export const seedDatabase = async () => {
@@ -183,13 +184,15 @@ export const seedDatabase = async () => {
 
     // 5. Create 20 Teachers & their Users
     for (let i = 1; i <= 20; i++) {
-      const sex = faker.helpers.arrayElement(['Male', 'Female']);
-      const prismaSex = sex === 'Male' ? Sex.MALE : Sex.FEMALE;
-      const firstName = faker.person.firstName(sex === 'Male' ? 'male' : 'female').toUpperCase();
-      const lastName = faker.person.lastName().toUpperCase();
-      const middleName = faker.person.middleName().toUpperCase();
+      const isMale = i % 2 !== 0;
+      const prismaSex = isMale ? Sex.MALE : Sex.FEMALE;
+      const nameData = getFilipinoName(prismaSex, i);
+      const firstName = nameData.firstName;
+      const lastName = nameData.lastName;
+      const middleName = nameData.middleName;
       const employeeId = generateEmployeeId();
-      const contactNumber = '09' + faker.string.numeric(9);
+      const contactNumber = '0910' + i.toString().padStart(7, '0');
+      const plantillaPosition = POSITIONS[i % POSITIONS.length];
       
       const user = await prisma.user.create({
         data: {
@@ -215,7 +218,7 @@ export const seedDatabase = async () => {
           contactNumber,
           sex: prismaSex,
           userId: user.id,
-          plantillaPosition: faker.helpers.arrayElement(POSITIONS),
+          plantillaPosition,
           designation: "CLASS ADVISER",
           departmentId: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code]
         }
@@ -281,19 +284,22 @@ export const seedDatabase = async () => {
             prismaLSex === Sex.MALE
               ? maleLearnerIndex++
               : femaleLearnerIndex++;
-          
           const baseAge = 12 + (grade.displayOrder - 7);
-          const birthdate = faker.date.birthdate({ min: baseAge, max: baseAge + 1, mode: 'age' });
+          const birthdate = new Date(2026 - baseAge, l % 12, (l % 28) + 1);
 
           const learnerName = getFilipinoName(
             prismaLSex,
-            learnerNameIndex,
+            learnerNameIndex
           );
 
-          const isIp = faker.helpers.arrayElement([true, false, false, false]);
-          const ipGroupName = isIp ? faker.helpers.arrayElement(["ATI", "AETA", "BADJAO", "MAMANWA"]) : null;
-          const religion = faker.helpers.arrayElement(["ROMAN CATHOLIC", "ISLAM", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "BIBLE BAPTIST"]);
-          const motherTongue = faker.helpers.arrayElement(["TAGALOG", "CEBUANO", "HILIGAYNON", "ILOCANO", "WARAY"]);
+          const isIps = [true, false, false, false];
+          const isIp = isIps[l % isIps.length];
+          const ipGroupNames = ["ATI", "AETA", "BADJAO", "MAMANWA"];
+          const ipGroupName = isIp ? ipGroupNames[l % ipGroupNames.length] : null;
+          const religions = ["ROMAN CATHOLIC", "ISLAM", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "BIBLE BAPTIST"];
+          const religion = religions[l % religions.length];
+          const motherTongues = ["TAGALOG", "CEBUANO", "HILIGAYNON", "ILOCANO", "WARAY"];
+          const motherTongue = motherTongues[l % motherTongues.length];
           
           const lrn = generateLRN();
           const learnerUser = await prisma.user.create({
@@ -325,7 +331,7 @@ export const seedDatabase = async () => {
               ipGroupName,
               hasPsaBirthCertificate: true,
               birthCertificateType: "PSA_BIRTH_CERTIFICATE",
-              previousGenAve: parseFloat(faker.number.float({ min: 75, max: 99, fractionDigits: 2 }).toFixed(2)),
+              previousGenAve: 75 + ((learnerNameIndex * 3) % 25) + ((learnerNameIndex % 10) / 10),
             }
           });
 
@@ -347,9 +353,10 @@ export const seedDatabase = async () => {
             guardianSex,
             learnerNameIndex * 3 + 2,
           );
-          const fatherContactNumber = '09' + faker.string.numeric(9);
-          const motherContactNumber = '09' + faker.string.numeric(9);
-          const guardianContactNumber = '09' + faker.string.numeric(9);
+          const baseContact = 100000000 + learnerNameIndex;
+          const fatherContactNumber = '091' + baseContact.toString().substring(1);
+          const motherContactNumber = '092' + baseContact.toString().substring(1);
+          const guardianContactNumber = '093' + baseContact.toString().substring(1);
           const familyContacts = [
             {
               relationship: FamilyRelationship.FATHER,
@@ -369,21 +376,29 @@ export const seedDatabase = async () => {
           ] as const;
           const primaryContact = familyContacts[l % familyContacts.length];
 
-          const currentPurok = "PUROK " + faker.person.lastName().toUpperCase() + " " + faker.string.numeric(2);
-          const currentBarangay = faker.helpers.arrayElement(["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"]);
-          const currentCity = faker.helpers.arrayElement(["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"]);
-          const currentZip = faker.helpers.arrayElement(["6100", "6116", "6115", "6101"]);
+          const barangays = ["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"];
+          const cities = ["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"];
+          const zips = ["6100", "6116", "6115", "6101"];
+          
+          const currentPurok = "PUROK " + ((learnerNameIndex % 10) + 1).toString();
+          const currentBarangay = barangays[learnerNameIndex % barangays.length];
+          const currentCity = cities[learnerNameIndex % cities.length];
+          const currentZip = zips[learnerNameIndex % zips.length];
 
-          const permanentPurok = "PUROK " + faker.person.lastName().toUpperCase() + " " + faker.string.numeric(2);
-          const permanentBarangay = faker.helpers.arrayElement(["BARANGAY 1", "BARANGAY 2", "BARANGAY BATA", "BARANGAY SINGCANG", "BARANGAY MANDALAGAN", "BARANGAY TANGUB"]);
-          const permanentCity = faker.helpers.arrayElement(["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"]);
-          const permanentZip = faker.helpers.arrayElement(["6100", "6116", "6115", "6101"]);
+          const permanentPurok = "PUROK " + (((learnerNameIndex + 1) % 10) + 1).toString();
+          const permanentBarangay = barangays[(learnerNameIndex + 1) % barangays.length];
+          const permanentCity = cities[(learnerNameIndex + 1) % cities.length];
+          const permanentZip = zips[(learnerNameIndex + 1) % zips.length];
 
           const isGrade7 = grade.name === "Grade 7";
+          const g7Types = ["NEW_ENROLLEE", "TRANSFEREE"] as const;
+          const otherTypes = ["CONTINUING", "TRANSFEREE", "RETURNING"] as const;
           const randomLearnerType = isGrade7 
-            ? faker.helpers.arrayElement(["NEW_ENROLLEE", "TRANSFEREE"]) 
-            : faker.helpers.arrayElement(["CONTINUING", "TRANSFEREE", "RETURNING"]);
-          const randomChannel = faker.helpers.arrayElement(["ONLINE", "F2F"]);
+            ? g7Types[learnerNameIndex % g7Types.length]
+            : otherTypes[learnerNameIndex % otherTypes.length];
+            
+          const channels = ["ONLINE", "F2F"] as const;
+          const randomChannel = channels[learnerNameIndex % channels.length];
 
           const app = await prisma.enrollmentApplication.create({
             data: {
