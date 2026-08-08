@@ -33,7 +33,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/audit-logs": "System Activity Logs",
     "/my-activity": "My Activity Log",
     "/help": "Help & Documentation",
-    "/settings": "Global System Configuration",
+    "/settings": "System Configuration",
     "/teachers": "Personnel Directory",
     "/admin/system": "System Health",
     "/smart": "SMART",

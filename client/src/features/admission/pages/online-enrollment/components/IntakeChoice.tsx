@@ -81,7 +81,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
               <Button
                 variant="outline"
                 className="w-full h-12 group-hover:bg-primary group-hover:text-primary-foreground transition-all font-extrabold border-primary/20 text-primary hover:text-primary-foreground hover:bg-primary">
-                Fill out Enrollment Form (BEEF){" "}
+                Fill out Enrollment Form{" "}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>

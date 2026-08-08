@@ -10,6 +10,7 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/shared/ui/sheet";
@@ -32,7 +33,10 @@ import {
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
 
-import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Loader2, Plus, Search, User, FileText, Phone, CheckCircle2, AlertCircle, X, Mars, Venus } from "lucide-react";
+import { cn } from "@/shared/lib/utils";
+import { useSettingsStore } from "@/store/settings.slice";
+import { useResizablePanel } from "@/shared/hooks/useResizablePanel";
 import api from "@/shared/api/axiosInstance";
 import { directEncodeWalkInSchema, type DirectEncodeWalkInPayload } from "@enrollpro/shared";
 
@@ -85,6 +89,15 @@ export function WalkInEncodePanel() {
   const [noLrn, setNoLrn] = useState(false);
   const queryClient = useQueryClient();
   const { confirmOrRun } = useUnsavedChangesPrompt();
+  const { steEnabled, spaEnabled, spsEnabled } = useSettingsStore();
+  const { panelPercentage, isDesktopViewport, startResizing } = useResizablePanel();
+
+  const programOptions = [
+    { val: "REGULAR", label: "BEC" },
+    ...(steEnabled ? [{ val: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" }] : []),
+    ...(spaEnabled ? [{ val: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" }] : []),
+    ...(spsEnabled ? [{ val: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" }] : []),
+  ];
 
   const { data: activeSchoolYear } = useQuery({
     queryKey: ["schoolYear", "grade-levels"],
@@ -102,9 +115,9 @@ export function WalkInEncodePanel() {
       lastName: "",
       middleName: "",
       birthdate: "",
-      sex: "MALE",
+      sex: "" as any,
       gradeLevelId: 0,
-      assignedProgram: "REGULAR",
+      assignedProgram: "" as any,
       previousSchoolName: "",
       previousGenAve: undefined,
       guardianName: "",
@@ -217,7 +230,9 @@ export function WalkInEncodePanel() {
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       setOpen(true);
+      return;
     }
+    requestClosePanel();
   };
 
   const hasSf9 = form.watch("hasSf9");
@@ -233,34 +248,31 @@ export function WalkInEncodePanel() {
         </Button>
       </SheetTrigger>
       <SheetContent
-        showClose={false}
+        side="right"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        className="p-0 flex flex-col h-full overflow-hidden"
+        className="p-0 flex flex-col h-full border-l overflow-visible w-full sm:w-auto sm:max-w-none"
+        style={
+          isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
+        }
       >
-        <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
-          <div className="flex items-center min-h-14">
-            <div className="space-y-0.5">
-              <SheetTitle className="text-xl font-extrabold text-primary-foreground uppercase leading-none">
+        {/* Resize Handle — hidden on mobile */}
+        <div
+          onMouseDown={startResizing}
+          className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+          <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
+        </div>
+
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+          {/* ─── Header ─── */}
+          <SheetHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold text-left space-y-0 mt-0">
+            <div>
+              <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold uppercase flex items-center gap-2">
                 Walk-In Learner Enrollment
               </SheetTitle>
-              <SheetDescription className="text-sm font-extrabold text-primary-foreground uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
-                Directly encode learner profile for class assignment
-              </SheetDescription>
             </div>
-          </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={requestClosePanel}
-            className="size-10 shrink-0 rounded-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            aria-label="Close late enrollee panel"
-          >
-            <X className="size-5" />
-          </Button>
-        </div>
+          </SheetHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0" autoComplete="off">
@@ -283,15 +295,16 @@ export function WalkInEncodePanel() {
                         name="lrn"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="flex justify-between">
+                            <FormLabel className="flex justify-between font-extrabold">
                               <span>Learner Reference Number (LRN)</span>
                               {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input
-                                  placeholder="12-digit LRN"
+                                  placeholder="12-digit Learner Reference Number (LRN)"
                                   disabled={noLrn}
+                                  className="uppercase font-extrabold"
                                   value={field.value ?? ""}
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, '').slice(0, 12);
@@ -308,7 +321,7 @@ export function WalkInEncodePanel() {
                                     }
                                   }}
                                 />
-                                <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-primary" />
                               </div>
                             </FormControl>
                             <FormMessage />
@@ -328,20 +341,30 @@ export function WalkInEncodePanel() {
                             }
                           }}
                         />
-                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground font-bold">
+                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground font-extrabold">
                           Learner has no LRN yet
                         </label>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 font-extrabold">
+                      <div className="grid grid-cols-3 gap-4 font-extrabold">
                         <FormField
                           control={form.control}
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name</FormLabel>
-                              <FormControl><Input placeholder="e.g. JUAN" className="uppercase" {...field} value={field.value || ""} /></FormControl>
+                              <FormLabel className="font-extrabold">First Name</FormLabel>
+                              <FormControl><Input placeholder="e.g. JUAN" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="middleName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-extrabold">Middle Name</FormLabel>
+                              <FormControl><Input placeholder="e.g. PEREZ" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                             </FormItem>
                           )}
                         />
@@ -350,31 +373,21 @@ export function WalkInEncodePanel() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name</FormLabel>
-                              <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase" {...field} value={field.value || ""} /></FormControl>
+                              <FormLabel className="font-extrabold">Last Name</FormLabel>
+                              <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="middleName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Middle Name</FormLabel>
-                              <FormControl><Input placeholder="e.g. PEREZ" className="uppercase" {...field} value={field.value || ""} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="birthdate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Birthdate</FormLabel>
+                              <FormLabel className="font-extrabold">Birthdate</FormLabel>
                               <FormControl>
                                 <HybridDatePicker value={field.value} onChange={field.onChange} />
                               </FormControl>
@@ -387,72 +400,91 @@ export function WalkInEncodePanel() {
                           name="sex"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Sex</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="MALE">Male</SelectItem>
-                                  <SelectItem value="FEMALE">Female</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormLabel className="font-extrabold">Sex</FormLabel>
+                              <div className="flex gap-4">
+                                {(
+                                  [
+                                    { val: "MALE", icon: Mars, label: "Male" },
+                                    { val: "FEMALE", icon: Venus, label: "Female" },
+                                  ] as const
+                                ).map((s) => (
+                                  <button
+                                    key={s.val}
+                                    type="button"
+                                    onClick={() => field.onChange(s.val)}
+                                    className={cn(
+                                      "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                      field.value === s.val
+                                        ? "border-primary bg-primary/5 text-primary"
+                                        : "border-border hover:bg-muted/50 text-foreground"
+                                    )}>
+                                    <s.icon
+                                      className={cn(
+                                        "w-4 h-4",
+                                        field.value === s.val ? "text-primary" : "text-muted-foreground"
+                                      )}
+                                    />
+                                    {s.label}
+                                  </button>
+                                ))}
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="gradeLevelId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Incoming Grade Level</FormLabel>
-                              <Select
-                                onValueChange={(value) => field.onChange(Number(value))}
-                                value={field.value > 0 ? field.value.toString() : undefined}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select Grade" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {activeSchoolYear?.gradeLevels?.map((gl) => (
-                                    <SelectItem key={gl.id} value={gl.id.toString()}>{gl.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="assignedProgram"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Assigned Program</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value || ""}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select Program" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="REGULAR">Regular</SelectItem>
-                                  <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING">STE</SelectItem>
-                                  <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS">SPA</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="gradeLevelId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-extrabold">Incoming Grade Level</FormLabel>
+                            <div className="grid grid-cols-4 gap-4">
+                              {activeSchoolYear?.gradeLevels?.map((gl) => (
+                                <button
+                                  key={gl.id}
+                                  type="button"
+                                  onClick={() => field.onChange(gl.id)}
+                                  className={cn(
+                                    "flex items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                    field.value === gl.id
+                                      ? "border-primary bg-primary/5 text-primary"
+                                      : "border-border hover:bg-muted/50 text-foreground"
+                                  )}>
+                                  {gl.name}
+                                </button>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="assignedProgram"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-extrabold">Curriculum Type</FormLabel>
+                            <div className="flex gap-4">
+                              {programOptions.map((prog) => (
+                                <button
+                                  key={prog.val}
+                                  type="button"
+                                  onClick={() => field.onChange(prog.val)}
+                                  className={cn(
+                                    "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                    field.value === prog.val
+                                      ? "border-primary bg-primary/5 text-primary"
+                                      : "border-border hover:bg-muted/50 text-foreground"
+                                  )}>
+                                  {prog.label}
+                                </button>
+                              ))}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
                 </div>
@@ -466,14 +498,14 @@ export function WalkInEncodePanel() {
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <FormField
                         control={form.control}
                         name="previousSchoolName"
                         render={({ field }) => (
-                          <FormItem className="col-span-2">
-                            <FormLabel>School Name</FormLabel>
-                            <FormControl><Input placeholder="e.g. RIZAL ELEM. SCHOOL" className="uppercase" {...field} value={field.value || ""} /></FormControl>
+                          <FormItem className="col-span-3">
+                            <FormLabel className="font-extrabold">School Name</FormLabel>
+                            <FormControl><Input placeholder="e.g. RIZAL ELEM. SCHOOL" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                           </FormItem>
                         )}
                       />
@@ -481,10 +513,11 @@ export function WalkInEncodePanel() {
                         control={form.control}
                         name="previousGenAve"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Final General Average</FormLabel>
+                          <FormItem className="col-span-1">
+                            <FormLabel className="font-extrabold">Final Gen Ave</FormLabel>
                             <FormControl>
                               <Input
+                                className="font-extrabold"
                                 type="number"
                                 step="0.01"
                                 placeholder="e.g. 85.50"
@@ -523,8 +556,8 @@ export function WalkInEncodePanel() {
                         name="guardianName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Parent/Guardian Name</FormLabel>
-                            <FormControl><Input placeholder="e.g. MARIA DELA CRUZ" className="uppercase" {...field} value={field.value || ""} /></FormControl>
+                            <FormLabel className="font-extrabold">Parent/Guardian Name</FormLabel>
+                            <FormControl><Input placeholder="e.g. MARIA DELA CRUZ" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -534,9 +567,10 @@ export function WalkInEncodePanel() {
                         name="guardianContact"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Number</FormLabel>
+                            <FormLabel className="font-extrabold">Contact Number</FormLabel>
                             <FormControl>
                               <Input
+                                className="font-extrabold"
                                 placeholder="e.g. 09123456789"
                                 {...field}
                                 value={field.value || ""}
@@ -563,7 +597,7 @@ export function WalkInEncodePanel() {
                     </span>
                   </div>
                   <div className="px-5 pb-5 pt-4">
-                    <p className="text-base text-amber-700 mb-4 mt-2">Leave unchecked if missing. Learner will be temporarily enrolled.</p>
+                    <p className="text-base font-bold  text-amber-700 mb-4 mt-2">Leave unchecked if missing. Learner will be temporarily enrolled.</p>
                     <div className="space-y-2">
 
                       <FormField
@@ -574,7 +608,7 @@ export function WalkInEncodePanel() {
                             <FormControl>
                               <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                            <Label className="font-semibold cursor-pointer">SF9 (Report Card) Submitted</Label>
+                            <Label className="font-extrabold cursor-pointer">SF9 (Report Card) Submitted</Label>
                           </FormItem>
                         )}
                       />
@@ -586,7 +620,7 @@ export function WalkInEncodePanel() {
                             <FormControl>
                               <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                            <Label className="font-semibold cursor-pointer">PSA Birth Certificate Submitted</Label>
+                            <Label className="font-extrabold cursor-pointer">PSA Birth Certificate Submitted</Label>
                           </FormItem>
                         )}
                       />
@@ -621,6 +655,7 @@ export function WalkInEncodePanel() {
             </div>
           </form>
         </Form>
+        </div>
       </SheetContent>
     </Sheet>
   );

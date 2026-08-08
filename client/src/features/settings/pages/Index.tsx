@@ -48,12 +48,12 @@ export default function Settings() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Global System Configuration");
+    setTitle("System Configuration");
     return () => setTitle(null);
   }, [setTitle]);
 
   return (
-<div className="flex flex-1 h-full w-full min-h-0 flex-col">
+    <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs
         value={activeTab}
         onValueChange={guardedTabChange}

@@ -55,6 +55,7 @@ import {
   type LoadingState as MultiStepLoadingState,
 } from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
+import { DualPaneDateRangePicker } from "@/shared/components/DualPaneDateRangePicker";
 import { AdminPinInput } from "@/shared/components/AdminPinInput";
 import {
   useUnsavedChanges,
@@ -1028,9 +1029,9 @@ export default function SchoolYearTab() {
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       {[
-                        { value: "OFFICIAL_ENROLLMENT", title: "Official Enrollment", desc: "Opens the enrollment form for regular learner acceptance" },
-                        { value: "CLASSES_ONGOING", title: "Classes Ongoing (Late)", desc: "Closes the enrollment form but allows registrars to manually encode late walk in learners" },
-                        { value: "EOSY_CLOSING", title: "EOSY Closing", desc: "Closes the enrollment form and prepares for final grade calculations" }
+                        { value: "OFFICIAL_ENROLLMENT", title: "OFFICIAL ENROLLMENT BOSY", desc: "Opens the system for regular learner intake and Beginning of School Year operations" },
+                        { value: "CLASSES_ONGOING", title: "CLASSES ONGOING", desc: "Closes public enrollment but permits registrars to manually encode late enrollees" },
+                        { value: "EOSY_CLOSING", title: "EOSY CLOSING", desc: "Locks all enrollment actions and prepares official School Forms for the End of School Year rollover" }
                       ].map(opt => {
                         const isChecked = (isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")) === opt.value;
                         return (
@@ -1130,38 +1131,58 @@ export default function SchoolYearTab() {
                     </div>
 
                     {[
-                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "1st Quarter" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
-                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "2nd Quarter" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
-                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "3rd Quarter" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
-                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "4th Quarter", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
+                      { num: 1, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 1" : "Term 1", startField: "term1Start", endField: "term1End", start: localCalendarState.term1Start, end: localCalendarState.term1End },
+                      { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
+                      { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
+                      ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => (
                       <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
                         <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-                          <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="font-extrabold text-foreground uppercase mb-0.5">Start Date</div>
-                            <HybridDatePicker
-                              value={term.start || ""}
-                              onChange={(val) => {
-                                setLocalCalendarState(prev => ({ ...prev, [term.startField]: val || "" }));
-                              }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full uppercase"
-                              placeholder="MM/DD/YYYY"
-                            />
-                          </div>
-                          <span className="text-foreground font-extrabold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
-                          <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative">
-                            <div className="font-extrabold text-foreground uppercase mb-0.5">End Date</div>
-                            <HybridDatePicker
-                              value={term.end || ""}
-                              onChange={(val) => {
-                                setLocalCalendarState(prev => ({ ...prev, [term.endField]: val || "" }));
-                              }}
-                              className="border-none shadow-none p-0 h-auto font-extrabold text-base bg-transparent w-full uppercase"
-                              placeholder="MM/DD/YYYY"
-                            />
-                          </div>
-                        </div>
+                        <DualPaneDateRangePicker
+                          startValue={term.start || ""}
+                          endValue={term.end || ""}
+                          popoverAlign="center"
+                          onApply={(start, end) => {
+                            setLocalCalendarState(prev => ({
+                              ...prev,
+                              [term.startField]: start,
+                              [term.endField]: end,
+                            }));
+                          }}
+                          customTrigger={
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                              <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
+                                <div className="font-extrabold text-foreground uppercase mb-0.5">Start Date</div>
+                                <div className="relative w-full flex items-center">
+                                  <input
+                                    readOnly
+                                    value={term.start ? new Date(term.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
+                                    placeholder="MM/DD/YYYY"
+                                    className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                  />
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
+                                    <CalendarIcon className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="text-foreground font-extrabold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
+                              <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
+                                <div className="font-extrabold text-foreground uppercase mb-0.5">End Date</div>
+                                <div className="relative w-full flex items-center">
+                                  <input
+                                    readOnly
+                                    value={term.end ? new Date(term.end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
+                                    placeholder="MM/DD/YYYY"
+                                    className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                  />
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
+                                    <CalendarIcon className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        />
                       </div>
                     ))}
                   </div>
@@ -1199,6 +1220,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set start date"
+                            className="text-primary"
                           />
                         </div>
                         <div className="space-y-2 relative">
@@ -1212,6 +1234,7 @@ export default function SchoolYearTab() {
                             }}
                             minDate={new Date()}
                             placeholder="Set end date"
+                            className="text-primary"
                           />
                         </div>
                       </div>
