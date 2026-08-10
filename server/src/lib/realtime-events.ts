@@ -1,5 +1,6 @@
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 import { broadcastRealtimeInvalidation } from "./sse.js";
+import { triggerSmartWebhook } from "../features/integration/smart-webhook.service.js";
 
 interface DomainInvalidationOptions {
   topics: RealtimeInvalidationTopic[];
@@ -16,13 +17,20 @@ export function broadcastDomainInvalidation({
   sectionIds,
   learnerIds,
 }: DomainInvalidationOptions): void {
+  const uniqueTopics = Array.from(new Set(topics));
+  
   broadcastRealtimeInvalidation({
-    topics: Array.from(new Set(topics)),
+    topics: uniqueTopics,
     schoolYearId,
     teacherIds,
     sectionIds,
     learnerIds,
   });
+
+  // Trigger SMART webhook asynchronously in the background
+  Promise.resolve()
+    .then(() => triggerSmartWebhook(uniqueTopics))
+    .catch((err) => console.error("Error dispatching SMART webhook background task", err));
 }
 
 export function broadcastEnrollmentInvalidation(

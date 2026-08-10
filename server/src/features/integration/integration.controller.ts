@@ -44,10 +44,10 @@ export async function integrationHealth(
   _req: Request,
   res: Response,
 ): Promise<void> {
-  const probeExternal = async (url: string, name: string) => {
+  const probeExternal = async (url: string, name: string, healthPath = "/api/health") => {
     try {
       const start = Date.now();
-      await axios.get(`${url}/api/health`, { timeout: 3000 });
+      await axios.get(`${url}${healthPath}`, { timeout: 3000 });
       return { name, status: "ok", latency: `${Date.now() - start}ms` };
     } catch (error: unknown) {
       return {
@@ -57,6 +57,15 @@ export async function integrationHealth(
       };
     }
   };
+
+  const activeSchoolYear = await prisma.schoolYear.findFirst({
+    where: { status: "ACTIVE" },
+    select: { id: true },
+  });
+
+  const atlasHealthPath = activeSchoolYear
+    ? `/api/v1/health?schoolYearId=${activeSchoolYear.id}`
+    : "/api/v1/health";
 
   const [dbStatus, atlasHealth, aimsHealth, smartHealth] = await Promise.all([
     (async () => {
@@ -69,8 +78,9 @@ export async function integrationHealth(
       }
     })(),
     probeExternal(
-      process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001",
+      process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net",
       "ATLAS",
+      atlasHealthPath
     ),
     probeExternal(
       process.env.AIMS_API_BASE_URL || "http://tfrog.buru-degree.ts.net:5000",

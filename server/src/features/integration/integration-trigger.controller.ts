@@ -68,7 +68,7 @@ export async function syncAtlasFaculty(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const baseUrl = process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001";
+    const baseUrl = process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net";
 
     try {
       // Direct trigger without API key headers
@@ -113,6 +113,8 @@ export async function syncAtlasFaculty(
   }
 }
 
+
+
 /**
  * POST /api/integration/broadcast/phase1
  */
@@ -126,23 +128,59 @@ export async function getAtlasTeachingLoad(
 ): Promise<void> {
   try {
     const teacherId = req.params.id;
-    const schoolYearId = req.query.schoolYearId;
-    const baseUrl = process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001";
+    let schoolYearId = req.query.schoolYearId;
+    
+    if (!schoolYearId) {
+      const activeSy = await prisma.schoolYear.findFirst({
+        where: { status: "ACTIVE" },
+        select: { id: true },
+      });
+      if (activeSy) {
+        schoolYearId = activeSy.id.toString();
+      }
+    }
+
+    const baseUrl = process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net";
 
     try {
       const response = await axios.get(
-        `${baseUrl}/api/v1/faculty-assignments/${teacherId}`,
-        {
-          params: { schoolYearId },
-          timeout: 5000,
-        },
+        `${baseUrl}/api/v1/schools/1/schedules/published/${schoolYearId}/faculty/by-external-id/${teacherId}`,
+        { timeout: 5000 }
       );
+
+      const entries: any[] = response.data.entries || [];
+      const uniqueLoads = new Map<string, any>();
+
+      for (const entry of entries) {
+        if (!entry.subject || !entry.section) continue;
+        const key = `${entry.subject.code}-${entry.section.id}`;
+        if (!uniqueLoads.has(key)) {
+          let mappedGradeLevel = entry.section.gradeLevelName?.replace(" ", "_").toUpperCase() || "GRADE_7";
+          if (!mappedGradeLevel.startsWith("GRADE_")) {
+             mappedGradeLevel = "GRADE_7"; // fallback
+          }
+
+          uniqueLoads.set(key, {
+            subjectCode: entry.subject.code,
+            subjectName: entry.subject.name,
+            sectionName: entry.section.name,
+            gradeLevel: mappedGradeLevel,
+          });
+        }
+      }
 
       res.json({
         success: true,
-        data: response.data.assignments || [],
+        data: Array.from(uniqueLoads.values()),
       });
     } catch (fetchError) {
+      if (axios.isAxiosError(fetchError) && fetchError.response?.status === 404) {
+        // ATLAS has not generated/published a timetable for this school year yet,
+        // or the teacher has no assigned load in the published schedule.
+        res.json({ success: true, data: [] });
+        return;
+      }
+
       if (process.env.NODE_ENV === "development") {
          res.json({
            success: true,

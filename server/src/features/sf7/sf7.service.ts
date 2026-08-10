@@ -694,7 +694,7 @@ export async function syncSf7FromAtlas(
     select: { id: true, depedSchoolId: true },
   });
   const schoolId = process.env.ATLAS_SCHOOL_ID?.trim() || settings?.depedSchoolId || String(settings?.id ?? 1);
-  const baseUrl = process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001";
+  const baseUrl = process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net";
   const headers = atlasHeaders();
 
   const [teachers, facultyResponse] = await Promise.all([
