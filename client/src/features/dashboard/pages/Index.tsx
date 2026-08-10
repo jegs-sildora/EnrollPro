@@ -19,11 +19,64 @@ import {
 } from "../components/DashboardCommandCenter";
 
 interface DashboardStatsResponse {
-  stats: DashboardStats
+  stats: DashboardStats;
+}
+
+function DashboardPhaseBanner({
+  phase,
+  isArchived,
+  ayLabel,
+}: {
+  phase: string;
+  isArchived: boolean;
+  ayLabel: string | null;
+}) {
+  if (isArchived) {
+    return (
+      <div className="rounded-md border border-slate-200 bg-card px-4 py-3 shadow-sm">
+        <p className="text-base font-extrabold text-foreground">
+          Archived School Year Summary
+        </p>
+        <p className="text-base font-bold text-foreground">
+          Final records for S.Y. {ayLabel}. Changes are not allowed for an archived school year.
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === "ENROLLMENT_OPERATIONS") {
+    return (
+      <div className="bg-card">
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 shadow-sm">
+          <p className="text-base font-extrabold text-primary">
+            Enrollment Operations for S.Y. {ayLabel}
+          </p>
+          <p className="text-base font-bold text-foreground">
+            Process learner applications, verify school requirements, and complete section assignment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "EOSY_CLOSING") {
+    return (
+      <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3 shadow-sm">
+        <p className="text-base font-extrabold text-foreground">
+          EOSY Closing for S.Y. {ayLabel}
+        </p>
+        <p className="text-base font-semibold text-foreground">
+          Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default function DashboardIndex() {
-  const { ayId, viewingStatus } = useSchoolYearContext();
+  const { ayId, viewingStatus, ayLabel } = useSchoolYearContext();
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
@@ -112,6 +165,11 @@ export default function DashboardIndex() {
         transition={{ duration: 0.2 }}
         className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 pb-6"
       >
+        <DashboardPhaseBanner
+          phase={dashboardPhase}
+          isArchived={isArchived}
+          ayLabel={ayLabel}
+        />
         <DashboardActionToolbar
           phase={dashboardPhase}
           isArchived={isArchived}

@@ -12,21 +12,11 @@ import type { DashboardStats } from "../types"
 
 export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
   const navigate = useNavigate()
-  const { ayLabel } = useSchoolYearContext()
   const readiness = stats.eosyReadiness
   const academicReview = readiness.conditionallyPromoted + readiness.retained
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-extrabold text-slate-900">
-          EOSY Closing for S.Y. {ayLabel}
-        </p>
-        <p className="text-sm font-semibold text-slate-700">
-          Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
-        </p>
-      </div>
-
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <OperationalQueueCard
           title="Sections Awaiting Final Review"

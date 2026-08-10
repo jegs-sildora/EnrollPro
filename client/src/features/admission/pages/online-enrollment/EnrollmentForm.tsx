@@ -357,6 +357,18 @@ export default function EnrollmentForm({
         : String(data.lrn ?? "").trim() || null;
 
 
+      const mapAddress = (addr: any) => {
+        if (!addr) return null;
+        return {
+          houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,
+          sitio: undefined,
+          barangay: addr.barangay,
+          cityMunicipality: addr.cityMunicipality,
+          province: addr.province,
+          region: addr.region,
+        };
+      };
+
       const payload = {
         ...payloadBase,
         lrn: normalizedLrn,
@@ -368,9 +380,10 @@ export default function EnrollmentForm({
           data.birthdate instanceof Date
             ? data.birthdate.toISOString()
             : data.birthdate,
+        currentAddress: mapAddress(uppercaseData.currentAddress),
         permanentAddress: uppercaseData.isPermanentSameAsCurrent
-          ? uppercaseData.currentAddress
-          : uppercaseData.permanentAddress,
+          ? mapAddress(uppercaseData.currentAddress)
+          : mapAddress(uppercaseData.permanentAddress),
       };
 
       const response = await api.post<ApplicationSubmitResponse>(
@@ -540,6 +553,18 @@ export default function EnrollmentForm({
 
                       const hasGuardianData = guardian !== null && [guardian.firstName, guardian.lastName, guardian.middleName, guardian.contactNumber, guardian.relationship].some((value) => String(value ?? "").trim().length > 0);
 
+                      const mapAddress = (addr: any) => {
+                        if (!addr) return null;
+                        return {
+                          houseNoStreet: [addr.houseNo, addr.street].filter(Boolean).join(" ") || undefined,
+                          sitio: undefined,
+                          barangay: addr.barangay,
+                          cityMunicipality: addr.cityMunicipality,
+                          province: addr.province,
+                          region: addr.region,
+                        };
+                      };
+
                       const payload = {
                         ...uppercaseData,
                         lrn: data.hasNoLrn ? null : String(data.lrn ?? "").trim() || null,
@@ -547,7 +572,8 @@ export default function EnrollmentForm({
                         father,
                         guardian: hasGuardianData ? guardian : null,
                         birthdate: data.birthdate instanceof Date ? data.birthdate.toISOString() : data.birthdate,
-                        permanentAddress: uppercaseData.isPermanentSameAsCurrent ? uppercaseData.currentAddress : uppercaseData.permanentAddress,
+                        currentAddress: mapAddress(uppercaseData.currentAddress),
+                        permanentAddress: uppercaseData.isPermanentSameAsCurrent ? mapAddress(uppercaseData.currentAddress) : mapAddress(uppercaseData.permanentAddress),
                         originalTrackingNumber: trackingNumberInput,
                       };
 
@@ -731,8 +757,6 @@ export default function EnrollmentForm({
                       const isValid = await trigger();
                       if (isValid) {
                         setIsConfirmDialogOpen(true);
-                      } else {
-                        scrollToTopInstant();
                       }
                     }}>
                     Submit Registration

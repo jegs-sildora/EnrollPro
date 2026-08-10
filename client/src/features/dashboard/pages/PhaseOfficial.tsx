@@ -64,14 +64,6 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
   if (isArchived) {
     return (
       <div className="space-y-4">
-        <div className="rounded-md border border-slate-200 bg-card px-4 py-3">
-          <p className="text-base font-extrabold text-foreground">
-            Archived School Year Summary
-          </p>
-          <p className="text-base font-bold text-foreground">
-            Final records for S.Y. {ayLabel}. Changes are not allowed for an archived school year.
-          </p>
-        </div>
         <HistoricalSummary stats={stats} />
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <CurriculumDistributionPanel
@@ -88,18 +80,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
   }
 
   return (
-    <div className="space-y-4 ">
-      <div className="bg-card">
-        <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-base font-extrabold text-primary">
-            Enrollment Operations for S.Y. {ayLabel}
-          </p>
-          <p className="text-base font-bold text-foreground">
-            Process learner applications, verify school requirements, and complete class placement.
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {stats.classroomDeficitDetected && (
         <Alert className="border-red-200 bg-red-50 text-red-900">
           <AlertTriangle className="size-5 text-red-700" />

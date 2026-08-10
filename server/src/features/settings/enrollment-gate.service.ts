@@ -51,7 +51,7 @@ export function getEnrollmentPhase(
 ):
   | "REGULAR_ENROLLMENT"
   | "CLOSED" {
-  if (systemPhase === "OFFICIAL_ENROLLMENT") return "REGULAR_ENROLLMENT";
+  if (systemPhase !== "OFFICIAL_ENROLLMENT") return "CLOSED";
 
   const todayToken = toManilaDateToken(new Date());
 

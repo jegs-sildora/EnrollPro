@@ -30,8 +30,6 @@ export async function triggerSmartWebhook(topics: RealtimeInvalidationTopic[]): 
       }
     );
   } catch (error) {
-    // We log the error but do not throw, as this is a background notification
-    const message = axios.isAxiosError(error) ? error.message : error instanceof Error ? error.message : "Unknown error";
-    console.warn(`Failed to trigger SMART webhook for topics [${topics.join(", ")}]: ${message}`);
+    // We do not throw or log the error, as this is a background notification and SMART may be offline
   }
 }

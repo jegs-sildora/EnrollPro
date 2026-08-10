@@ -272,7 +272,7 @@ export default function Step1Personal() {
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
           <Label className="text-base leading-tight font-extrabold self-start md:self-center">
-            Student Photo
+            Learner's Photo
           </Label>
           <div className="relative group">
             <UserPhoto
@@ -287,7 +287,7 @@ export default function Step1Personal() {
                 <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[0.625rem] uppercase font-extrabold ">
-                    Upload 2x2
+                    Upload
                   </span>
                 </div>
               }>

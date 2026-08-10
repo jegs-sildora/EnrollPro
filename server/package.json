@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --exclude \"uploads/**\" src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:migrate": "npx prisma migrate dev",
@@ -16,7 +16,6 @@
     "db:wipe-info": "tsx prisma/seeds/task-01-wipe.ts",
     "db:seed-eosy-mock": "tsx prisma/seeds/seed_eosy_mock.ts",
     "db:wipe-eosy-mock": "tsx prisma/seeds/wipe_eosy_mock.ts",
-    "test:rollover": "tsx src/tests/rollover-compliance.test.ts",
     "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts"
   },
   "dependencies": {

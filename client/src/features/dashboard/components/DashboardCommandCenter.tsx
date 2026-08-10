@@ -3,12 +3,13 @@ import { useNavigate } from "react-router"
 import {
   AlertTriangle,
   ArrowRight,
-  BookOpenCheck,
   Check,
+  CheckSquare,
   ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
   Presentation,
+  RefreshCw,
   School,
   ShieldCheck,
   UserPlus,
@@ -133,85 +134,59 @@ export function DashboardActionToolbar({
   return (
     <section
       aria-label="Dashboard quick actions"
-      className="flex flex-col gap-3 rounded-md border border-slate-200 bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+      className="flex flex-col gap-2 rounded-md border border-slate-200 bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
     >
-      <div className="min-w-0 px-1">
+      <div className="flex-1 min-w-0 lg:pr-2">
         <p className="text-base font-extrabold text-foreground">
           Quick Actions
         </p>
-        <p className="text-base font-semibold text-foreground">
+        <p className="mt-1 text-base font-semibold text-foreground">
           {isEosy
-            ? "Enrollment controls are locked while final grades are being completed."
+            ? "End of School Year processing is active. Please ensure all final grades and promotion outcomes are synced before initiating the database rollover."
             : "Open common Registrar's Office tasks for this school year."}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:justify-end">
-        <Button
-          variant="outline"
-          disabled={intakeLocked || !canManageEnrollment}
-          onClick={() =>
-            navigate("/continuing-learners?tab=incoming&action=walk-in")
-          }
-          className="justify-start lg:justify-center hover:bg-primary hover:text-primary-foreground"
-        >
-          <UserPlus className="size-4" />
-          {phase === "CLASSES_ONGOING"
-            ? "Encode Late Walk-In"
-            : "Walk-In Enrollment"}
-        </Button>
+      <div
+        className={cn(
+          "mt-4 grid w-full shrink-0 gap-2 lg:mt-0",
+          isEosy ? "grid-cols-1 lg:w-auto" : "grid-cols-2 lg:w-[450px]"
+        )}
+      >
+        {!isEosy && (
+          <Button
+            variant="outline"
+            disabled={intakeLocked || !canManageEnrollment}
+            onClick={() =>
+              navigate("/continuing-learners?tab=incoming&action=walk-in")
+            }
+            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
+          >
+            <UserPlus className="mr-2 size-4" />
+            {phase === "CLASSES_ONGOING"
+              ? "Encode Late Walk-In"
+              : "Walk-In Enrollment"}
+          </Button>
+        )}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              disabled={intakeLocked || !canManageSectioning}
-              className="justify-start lg:justify-center hover:bg-primary hover:text-primary-foreground"
-            >
-              <FileSpreadsheet className="size-4" />
-              Upload School Forms
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuLabel>Choose School Record</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => navigate("/sections")}>
-              <div>
-                <p className="font-bold">Learner SF1 Roster</p>
-                <p className="">
-                  Select a class section, then upload its SF1 file.
-                </p>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!canManageSectioning}
-              onSelect={() => navigate("/teachers")}
-            >
-              <div>
-                <p className="font-bold">Personnel SF7 Roster</p>
-                <p className="hover:text-primary-foreground">
-                  {canManageSectioning
-                    ? "Open Personnel Directory and use SF7 Actions."
-                    : "System Administrator access is required."}
-                </p>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button
-          variant="outline"
-          disabled={intakeLocked || !canManageSectioning}
-          onClick={() => navigate("/monitoring/enrollment")}
-          className="justify-start lg:justify-center hover:bg-primary hover:text-primary-foreground"
-        >
-          <Users className="size-4" />
-          Auto Assign Sections
-        </Button>
+        {!isEosy && (
+          <Button
+            variant="outline"
+            disabled={intakeLocked || !canManageSectioning}
+            onClick={() => navigate("/monitoring/enrollment")}
+            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
+          >
+            <Users className="mr-2 size-4" />
+            Auto Assign Sections
+          </Button>
+        )}
 
         {isEosy && (
-          <Button onClick={() => navigate("/eosy")} className="hover:bg-primary hover:text-primary-foreground">
-            <ClipboardCheck className="size-4" />
+          <Button
+            onClick={() => navigate("/eosy")}
+            className="w-full justify-center hover:bg-primary/90"
+          >
+            <ClipboardCheck className="mr-2 size-4" />
             Monitor Final Grades
           </Button>
         )}
@@ -327,9 +302,9 @@ export function CurriculumDistributionPanel({
             <div key={item.programType} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-base">
                 <span className="min-w-0 truncate font-bold">
-                  {/* @ts-ignore */}
+                  {/* @ts-expect-error - Expected acronym might not be present */}
                   {item.acronym && <span className="font-extrabold">{item.acronym}</span>}
-                  {/* @ts-ignore */}
+                  {/* @ts-expect-error - Expected acronym might not be present */}
                   {item.acronym && <span className="mx-1">|</span>}
                   {item.label}
                 </span>
@@ -362,37 +337,39 @@ export function IntakePipelinePanel({
           Continuing or promoted learners, new entrants, and transferees for each grade level.
         </p>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-center overflow-x-auto">
-        <table className="w-full min-w-0 text-base">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
-              <th className="py-2 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
-              <th className="px-1 py-2 text-center font-extrabold leading-tight">Continuing or Promoted</th>
-              <th className="px-1 py-2 text-center font-extrabold leading-tight">New Entrants</th>
-              <th className="px-1 py-2 text-center font-extrabold">Transferees</th>
-              <th className="px-1 py-2 text-center font-extrabold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
-              <th className="pl-1 py-2 text-center font-extrabold">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                <td className="py-3 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
-                  <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
-                    {row.gradeLevelName}
-                  </span>
-                </td>
-                <td className="px-1 py-3 text-center font-bold">{row.continuingLearners}</td>
-                <td className="px-1 py-3 text-center font-bold">{row.newEntrants}</td>
-                <td className="px-1 py-3 text-center font-bold">{row.transferee}</td>
-                <td className="px-1 py-3 text-center font-bold">{row.returningLearners}</td>
-                <td className="pl-1 py-3 text-center font-black text-primary">
-                  {row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners}
-                </td>
+      <CardContent className="flex flex-1 flex-col justify-center p-6 pt-0 overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-0 text-base">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
+                <th className="py-2 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
+                <th className="px-1 py-2 text-center font-extrabold leading-tight">Continuing or Promoted</th>
+                <th className="px-1 py-2 text-center font-extrabold leading-tight">New Entrants</th>
+                <th className="px-1 py-2 text-center font-extrabold">Transferees</th>
+                <th className="px-1 py-2 text-center font-extrabold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
+                <th className="pl-1 py-2 text-center font-extrabold">Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                  <td className="py-3 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
+                    <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
+                      {row.gradeLevelName}
+                    </span>
+                  </td>
+                  <td className="px-1 py-3 text-center font-bold">{row.continuingLearners}</td>
+                  <td className="px-1 py-3 text-center font-bold">{row.newEntrants}</td>
+                  <td className="px-1 py-3 text-center font-bold">{row.transferee}</td>
+                  <td className="px-1 py-3 text-center font-bold">{row.returningLearners}</td>
+                  <td className="pl-1 py-3 text-center font-black text-primary">
+                    {row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   )

@@ -16,7 +16,7 @@ export function AnimatedError({ error, className }: AnimatedErrorProps) {
           animate={{ opacity: 1, height: "auto", marginTop: 4 }}
           exit={{ opacity: 0, height: 0, marginTop: 0 }}
           transition={{ duration: 0.2, ease: "easeInOut" }}
-          className="overflow-hidden animated-error transition-[opacity,height,margin] duration-200 ease-in-out"
+          className="overflow-hidden animated-error"
         >
           <p
             className={cn(
