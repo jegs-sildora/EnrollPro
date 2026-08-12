@@ -80,7 +80,7 @@ const optionalGeneralAverageSchema = z.preprocess(
 
 export const previousSchoolSchema = z.object({
   lastSchoolName: z.string().min(1, "Last school name is required"),
-  lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").optional().nullable(),
+  lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").or(z.literal("")).optional().nullable(),
   lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
   schoolYearLastAttended: z
     .string()
@@ -148,7 +148,7 @@ export const applicationSubmitSchema = z
 
     // Previous school (now maps to PreviousSchool model)
     lastSchoolName: z.string().min(1, "Last school name is required"),
-    lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").optional().nullable(),
+    lastSchoolId: z.string().regex(/^\d{6}$/, "School ID must be exactly 6 numeric digits").or(z.literal("")).optional().nullable(),
     lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
     schoolYearLastAttended: z
       .string()

@@ -27,6 +27,7 @@ import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 
@@ -77,7 +78,7 @@ const getGradeColorClasses = (gradeName: string) => {
 };
 
 const SCP_LABELS: Record<string, string> = {
-  REGULAR: "Regular Basic Education",
+  REGULAR: "Regular Basic Education Curriculum (BEC)",
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering (STE)",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts (SPA)",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports (SPS)",
@@ -114,6 +115,7 @@ export function VerificationWorkspace() {
   const [sf9Verified, setSf9Verified] = useState(false);
   const [psaVerified, setPsaVerified] = useState(false);
   const [assignedProgram, setAssignedProgram] = useState<string>("REGULAR");
+  const [confirmModalState, setConfirmModalState] = useState<"TEMPORARY" | "OFFICIAL" | null>(null);
 
   const {
     inputValue: searchQuery,
@@ -291,6 +293,7 @@ export function VerificationWorkspace() {
       setSelectedAppId(null);
       setSf9Verified(false);
       setPsaVerified(false);
+      setConfirmModalState(null);
       void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
     } catch (error: unknown) {
@@ -303,6 +306,7 @@ export function VerificationWorkspace() {
       });
     } finally {
       setProcessing(false);
+      setConfirmModalState(null);
     }
   };
 
@@ -326,6 +330,7 @@ export function VerificationWorkspace() {
       setSelectedAppId(null);
       setSf9Verified(false);
       setPsaVerified(false);
+      setConfirmModalState(null);
       void queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
     } catch (error: unknown) {
@@ -338,6 +343,7 @@ export function VerificationWorkspace() {
       });
     } finally {
       setProcessing(false);
+      setConfirmModalState(null);
     }
   };
 
@@ -346,15 +352,15 @@ export function VerificationWorkspace() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-[calc(100vh-9rem)] min-h-0">
       <Card className="flex-1 flex flex-col shadow-sm border-none bg-card overflow-hidden">
         {/* Filter Toolbar */}
-        <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg-muted/20 border-border border-b p-3 sm:px-6 shrink-0">
+        <div className="flex flex-col xl:flex-row items-center gap-3 w-full bg/20 border-border border-b p-3 sm:px-6 shrink-0">
           <div className="relative w-full flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-              className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
+              className="w-full h-10 pl-9 bg border-gray-300 font-extrabold uppercase"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -461,7 +467,7 @@ export function VerificationWorkspace() {
                 );
               })()}
             </div>
-            <div className="flex-1 overflow-auto p-2 space-y-2">
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -476,7 +482,7 @@ export function VerificationWorkspace() {
                       "cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden",
                       selectedAppId === app.id
                         ? getGradeCardClasses(app.gradeLevel.name)
-                        : "bg-background hover:bg-muted/50 border-border"
+                        : "bg-background hover:bg/50 border-border"
                     )}
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -488,7 +494,7 @@ export function VerificationWorkspace() {
                       <Badge variant="outline" className={cn("text-sm uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
                         {app.gradeLevel.name}
                       </Badge>
-                      <div className="flex items-center text-sm text-muted-foreground font-extrabold">
+                      <div className="flex items-center text-sm text-foreground font-extrabold">
                         <Clock className="w-3 h-3 mr-1" />
                         {format(new Date(app.createdAt), "MMM d, h:mm a")}
                       </div>
@@ -503,27 +509,28 @@ export function VerificationWorkspace() {
           <div className="flex-1 flex flex-col overflow-hidden bg-card text-card-foreground">
             {selectedApp ? (
               <>
-                <div className="flex-1 overflow-auto p-8 relative">
-                  <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between", getGradeCardClasses(selectedApp.gradeLevel.name))}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 className="text-3xl font-extrabold uppercase tracking-tight text-foreground">
+                <div className="flex-1 overflow-y-auto p-6 md:p-12 relative w-full overflow-x-hidden">
+                  <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col gap-4", getGradeCardClasses(selectedApp.gradeLevel.name))}>
+                    <div className="flex flex-wrap items-center gap-3 w-full">
+                      <h2 className="text-2xl font-extrabold uppercase tracking-tight text-foreground whitespace-normal break-words">
                         {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                       </h2>
                       {selectedApp.learner.sex === "MALE" ? (
-                        <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-extrabold text-base">MALE</Badge>
+                        <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-extrabold text-base shrink-0">MALE</Badge>
                       ) : (
-                        <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-extrabold text-base">FEMALE</Badge>
+                        <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-extrabold text-base shrink-0">FEMALE</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-base leading-tight font-extrabold text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <FileText className="w-4 h-4" /> TRK: <span className="text-foreground">{selectedApp.trackingNumber || "N/A"}</span>
+                    
+                    {/* TRACKING AND ENROLLMENT DATA */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full bg/20 border border-border/50 rounded-lg p-4">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-extrabold uppercase text-foreground flex items-center gap-1">LRN</span>
+                        <span className="text-base leading-tight font-extrabold text-foreground truncate">{selectedApp.learner.lrn || "NO LRN"}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <UserIcon className="w-4 h-4" /> LRN: <span className="text-foreground">{selectedApp.learner.lrn || "NO LRN"}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <School className="w-4 h-4" /> Incoming <Badge variant="outline" className={cn("font-extrabold uppercase ml-1 text-base", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
+                      <div className="flex flex-col min-w-0 items-start">
+                        <span className="text-sm font-extrabold uppercase text-foreground flex items-center gap-1">Incoming Grade</span>
+                        <Badge variant="outline" className={cn("font-extrabold uppercase text-base shrink-0 mt-1", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
                       </div>
                     </div>
 
@@ -538,28 +545,28 @@ export function VerificationWorkspace() {
 
                       if (primaryContact) {
                         return (
-                          <div className="mt-4 flex items-center justify-between bg-muted/20 border border-border/50 rounded-lg p-3">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Primary Contact</span>
-                              <span className="text-base leading-tight font-extrabold text-foreground">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full bg/20 border border-border/50 rounded-lg p-4">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-extrabold uppercase text-foreground">Primary Contact</span>
+                              <span className="text-base leading-tight font-extrabold text-foreground truncate">
                                 {primaryContact.lastName}, {primaryContact.firstName}
                               </span>
                             </div>
-                            <div className="flex gap-4">
-                              <div className="flex flex-col text-right">
-                                <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Relationship</span>
-                                <Badge variant="secondary" className="text-sm font-extrabold uppercase">{primaryContact.relationship}</Badge>
-                              </div>
-                              <div className="flex flex-col text-right">
-                                <span className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest">Contact Number</span>
-                                <span className="text-base leading-tight font-extrabold text-foreground">{primaryContact.contactNumber || "N/A"}</span>
-                              </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-extrabold uppercase text-foreground">Relationship</span>
+                              <span className="text-base leading-tight font-extrabold text-foreground truncate">{primaryContact.relationship}</span>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-extrabold uppercase text-foreground">Contact Number</span>
+                              <span className="text-base leading-tight font-extrabold text-foreground truncate">{primaryContact.contactNumber || "N/A"}</span>
                             </div>
                           </div>
                         );
                       }
                       return null;
                     })()}
+
+                    
                   </div>
 
                   {duplicateInfo && (
@@ -578,16 +585,16 @@ export function VerificationWorkspace() {
 
                   {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
                     <div className="space-y-4 mb-8">
-                      <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                        <School className="w-4 h-4" /> Academic History
+                      <h3 className="text-base font-extrabold text-primary uppercase flex items-center gap-2">
+                        Academic History
                       </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest mb-1">School Name</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg/30 p-4 rounded-xl border border-border/50">
+                          <p className="text-sm font-extrabold uppercase text-foreground mb-1">School Name</p>
                           <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
                         </div>
-                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-sm font-extrabold uppercase text-muted-foreground tracking-widest mb-1">General Average</p>
+                        <div className="bg/30 p-4 rounded-xl border border-border/50">
+                          <p className="text-sm font-extrabold uppercase text-foreground mb-1">Final General Average</p>
                           <p className="text-base leading-tight font-extrabold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
                         </div>
                       </div>
@@ -595,19 +602,19 @@ export function VerificationWorkspace() {
                   )}
 
                   <div className="space-y-4 mb-8">
-                    <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                      <School className="w-4 h-4" /> Curriculum Assignment
+                    <h3 className="text-base font-extrabold text-primary uppercase flex items-center gap-2">
+                      Curriculum Assignment
                     </h3>
-                    <div className="bg-muted/10 border border-border/50 rounded-xl p-6 space-y-4">
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-sm font-extrabold uppercase tracking-widest text-muted-foreground">Requested Program (From Online Form)</label>
-                          <div className="h-10 px-3 py-2 bg-muted/50 rounded-md border border-border flex items-center text-base leading-tight text-muted-foreground font-semibold">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
+                          <label className="text-sm font-extrabold uppercase text-foreground">Requested Program (From Online Form)</label>
+                          <div className="h-10 px-3 py-2 bg/50 rounded-md border border-border flex items-center text-base leading-tight text-foreground font-extrabold">
                             {selectedApp.applicantType.replace(/_/g, " ")}
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-extrabold uppercase tracking-widest text-primary">Official Program Assignment</label>
+                        <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
+                          <label className="text-sm font-extrabold uppercase text-primary">Official Program Assignment</label>
                           <Select value={assignedProgram} onValueChange={setAssignedProgram}>
                             <SelectTrigger className="w-full font-extrabold">
                               <SelectValue placeholder="Select Program" />
@@ -632,7 +639,7 @@ export function VerificationWorkspace() {
                         </div>
                       </div>
                       {assignedProgram !== "REGULAR" && (
-                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200/50 mt-2">
+                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-200/50">
                           <AlertTriangle className="w-4 h-4 shrink-0" />
                           <span className="text-base font-extrabold">Requires manual verification against the official SCP passers list.</span>
                         </div>
@@ -641,8 +648,8 @@ export function VerificationWorkspace() {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-base font-extrabold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                      <FileText className="w-4 h-4" /> Required Documents
+                    <h3 className="text-base font-extrabold text-primary uppercase flex items-center gap-2">
+                      Required Documents
                     </h3>
                     <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-6">
                       <label className="flex items-start gap-4 cursor-pointer group">
@@ -653,7 +660,7 @@ export function VerificationWorkspace() {
                         />
                         <div className="space-y-1">
                           <p className="text-base font-extrabold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
-                          <p className="text-base font-semibold text-muted-foreground">Original report card signed by previous school principal.</p>
+                          <p className="text-base font-semibold text-foreground">Original report card signed by previous school principal.</p>
                         </div>
                       </label>
 
@@ -665,7 +672,7 @@ export function VerificationWorkspace() {
                         />
                         <div className="space-y-1">
                           <p className="text-base font-extrabold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
-                          <p className="text-base font-semibold text-muted-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
+                          <p className="text-base font-semibold text-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
                         </div>
                       </label>
                     </div>
@@ -673,47 +680,46 @@ export function VerificationWorkspace() {
                 </div>
 
                 {/* Action Footer */}
-                <div className="p-4 sm:p-6 border-t border-border bg-muted/10 flex items-center gap-4">
-                  {!(sf9Verified && psaVerified) && (
+                <div className="p-4 sm:p-6 border-t border-border bg/10 grid grid-cols-1 gap-4 w-full">
+                  {!(sf9Verified && psaVerified) ? (
                     <Button
-                      onClick={enrollTemporary}
+                      onClick={() => setConfirmModalState("TEMPORARY")}
                       disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
                       variant="outline"
-                      className="h-14 px-8 text-base leading-tight font-extrabold uppercase tracking-widest text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30"
+                      className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-extrabold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
                     >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Enroll as Temporary (Missing Docs)
+                      <span className="truncate">Enroll as Temporary (Missing Docs)</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => setConfirmModalState("OFFICIAL")}
+                      disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                      className={cn(
+                        "w-full h-14 text-sm sm:text-base leading-tight font-extrabold uppercase transition-all shadow-none overflow-hidden",
+                        !duplicateInfo
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : "bg text-foreground hover:bg opacity-50"
+                      )}
+                    >
+                      {processing ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Approving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 mr-2" />
+                          Officially Enroll
+                        </>
+                      )}
                     </Button>
                   )}
-
-                  <Button
-                    onClick={approveLearner}
-                    disabled={!sf9Verified || !psaVerified || processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                    className={cn(
-                      "flex-1 h-14 text-base leading-tight font-extrabold uppercase tracking-widest transition-all shadow-none",
-                      sf9Verified && psaVerified && !duplicateInfo
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        : "bg-muted text-muted-foreground hover:bg-muted opacity-50"
-                    )}
-                  >
-                    {processing ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 " />
-                        Approving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-5 h-5 mr-2" />
-                        Officially Enroll
-                      </>
-                    )}
-                  </Button>
                 </div>
               </>
             ) : (
               <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">
-                <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-2">
-                  <Search className="h-10 w-10 text-muted-foreground/40" />
+                <div className="w-20 h-20 bg/50 rounded-full flex items-center justify-center mb-2">
+                  <Search className="h-10 w-10 text-foreground/40" />
                 </div>
                 <h3 className="font-extrabold text-xl text-foreground">No Learner Selected</h3>
                 <p className="font-extrabold text-base leading-tight max-w-[300px]">Select a learner from the left pane to begin verification.</p>
@@ -743,33 +749,33 @@ export function VerificationWorkspace() {
             {duplicateInfo && (
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex justify-between text-base font-extrabold">
-                  <span className="text-muted-foreground">Name:</span>
+                  <span className="text-foreground">Name:</span>
                   <span className="text-foreground uppercase">
                     {duplicateInfo.lastName}, {duplicateInfo.firstName}
                   </span>
                 </div>
                 {duplicateInfo.lrn && (
                   <div className="flex justify-between text-base font-extrabold">
-                    <span className="text-muted-foreground">LRN:</span>
+                    <span className="text-foreground">LRN:</span>
                     <span className="text-foreground font-mono">{duplicateInfo.lrn}</span>
                   </div>
                 )}
                 {duplicateInfo.activeEnrollment && (
                   <>
                     <div className="flex justify-between text-base font-extrabold">
-                      <span className="text-muted-foreground">Tracking Number:</span>
+                      <span className="text-foreground">Tracking Number:</span>
                       <span className="text-foreground font-mono">
                         {duplicateInfo.activeEnrollment.trackingNumber || "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between text-base font-extrabold">
-                      <span className="text-muted-foreground">Active Section:</span>
+                      <span className="text-foreground">Active Section:</span>
                       <span className="text-foreground uppercase">
                         {duplicateInfo.activeEnrollment.sectionName || "Unassigned"}
                       </span>
                     </div>
                     <div className="flex justify-between text-base font-extrabold">
-                      <span className="text-muted-foreground">Status:</span>
+                      <span className="text-foreground">Status:</span>
                       <Badge variant="outline" className="font-extrabold bg-rose-50 border-rose-200 text-rose-800 text-sm uppercase">
                         {duplicateInfo.activeEnrollment.status.replace(/_/g, " ")}
                       </Badge>
@@ -779,7 +785,7 @@ export function VerificationWorkspace() {
               </div>
             )}
           </div>
-          <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end">
+          <DialogFooter className="px-6 py-4 bg/30 border-t border-border flex items-center justify-end">
             <Button
               className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold uppercase text-base px-6 shadow-none border-none"
               onClick={() => setShowDuplicateModal(false)}
@@ -789,6 +795,32 @@ export function VerificationWorkspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmationModal
+        open={confirmModalState !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmModalState(null);
+        }}
+        title={
+          confirmModalState === "TEMPORARY"
+            ? "Confirm Temporary Enrollment"
+            : "Confirm Official Enrollment"
+        }
+        description={
+          confirmModalState === "TEMPORARY"
+            ? "This learner has missing requirements and will be temporarily enrolled. They may still proceed to Section Assignment."
+            : "All requirements are verified. This learner will be officially enrolled."
+        }
+        variant={confirmModalState === "TEMPORARY" ? "warning" : "success"}
+        confirmText="Enroll"
+        loading={processing}
+        onConfirm={() => {
+          if (confirmModalState === "TEMPORARY") {
+            void enrollTemporary();
+          } else {
+            void approveLearner();
+          }
+        }}
+      />
     </div>
   );
 }

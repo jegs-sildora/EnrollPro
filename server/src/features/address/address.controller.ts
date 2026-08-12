@@ -3,6 +3,14 @@ import { prisma } from "../../lib/prisma.js";
 
 export async function listRegions(_req: Request, res: Response): Promise<void> {
   const data = await prisma.region.findMany({ orderBy: { name: "asc" } });
+  
+  // Prioritize NEGROS ISLAND REGION (NIR)
+  const nirIndex = data.findIndex(r => r.name.toUpperCase().includes("NEGROS ISLAND REGION"));
+  if (nirIndex > -1) {
+    const [nir] = data.splice(nirIndex, 1);
+    data.unshift(nir);
+  }
+
   res.json({ data });
 }
 

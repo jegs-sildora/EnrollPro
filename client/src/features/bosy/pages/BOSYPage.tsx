@@ -436,10 +436,10 @@ export default function BOSYPage() {
   return (
     <div className="flex flex-1 h-full w-full min-h-0 flex-col">
       <Tabs value={activeTab} onValueChange={guardedSetActiveTab} className="flex min-h-0 flex-1 flex-col w-full h-full">
-        <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
+        <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
             value="continuing"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
+            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "continuing" && (
               <motion.div
@@ -448,13 +448,13 @@ export default function BOSYPage() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-base uppercase", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
+            <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "continuing" ? "text-primary-foreground" : "text-foreground")}>
               Continuing Learners
             </span>
           </TabsTrigger>
           <TabsTrigger
             value="incoming"
-            className="flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
+            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "incoming" && (
               <motion.div
@@ -463,7 +463,7 @@ export default function BOSYPage() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-base uppercase", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
+            <span className={cn("relative z-20 text-base uppercase truncate", activeTab === "incoming" ? "text-primary-foreground" : "text-foreground")}>
               Incoming Grade 7 and Transferees
             </span>
           </TabsTrigger>

@@ -8,6 +8,14 @@ export const getRegions = async (req: Request, res: Response) => {
     const regions = await prisma.region.findMany({
       orderBy: { name: "asc" },
     });
+    
+    // Prioritize NEGROS ISLAND REGION (NIR)
+    const nirIndex = regions.findIndex(r => r.name.toUpperCase().includes("NEGROS ISLAND REGION"));
+    if (nirIndex > -1) {
+      const [nir] = regions.splice(nirIndex, 1);
+      regions.unshift(nir);
+    }
+
     res.json(regions);
   } catch (error) {
     console.error("Error fetching regions:", error);

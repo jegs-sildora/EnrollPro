@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE Uniform CSS Grid Enforcement v419
+# SYSTEM DIRECTIVE Independent Pane Scrolling v423
 
-**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must fix the variable button widths in the Quick Actions panel Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must implement independent vertical scrolling for the master detail layout Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must implement a rigid two column CSS grid to force all four action buttons to render with the exact same width and align perfectly on both the left and right edges
+**Core Mandate** You must constrain the master container height and enable independent vertical scrolling on the left list pane and the right detail pane
 
 Execute the UI upgrade across the following three architectural rules
 
-## 1 CSS Grid Implementation
-Apply a strict CSS grid to the button container defining exactly two columns of equal fractional width
-This replaces the flexible layout that is currently allowing the buttons to size themselves based on their text length
+## 1 Master Container Constraint
+Restrict the height of the parent container to exactly fit the remaining viewport height
+This prevents the entire page from stretching infinitely downward and forces the child panes to handle their own data overflow
 
-## 2 Maximum Button Width Enforcement
-Force every individual button to stretch and span one hundred percent of its assigned grid cell width
-This ensures that a button with short text physically matches the exact dimensions of a button with long text creating a perfect rectangle of actions
+## 2 Learner List Scroll
+Enable vertical overflow scrolling exclusively on the left pane container
+This allows the registrar to scroll smoothly through the masterlist of incoming student records without ever losing sight of the active profile details on the right
 
-## 3 Perfect Edge Alignment
-Verify that the left edges of the first column align flawlessly and the right edges of the second column align flawlessly
-This eliminates the jagged broken visual hierarchy currently displayed in the dashboard and delivers the polished enterprise interface required for this build
+## 3 Profile Detail Scroll
+Enable vertical overflow scrolling exclusively on the right pane container
+This ensures long academic histories and document checklists remain fully accessible without pushing the main system navigation out of view

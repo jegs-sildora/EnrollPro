@@ -21,19 +21,6 @@ export default function Step3Background() {
 
   return (
     <div className="space-y-12">
-      <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20  rounded-xl">
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shadow-sm border border-border">
-          <Lock className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <p className="text-base leading-tight font-extrabold text-primary">
-            Sensitive Information
-          </p>
-          <p className="text-sm text-primary font-extrabold uppercase ">
-            All details are kept strictly confidential.
-          </p>
-        </div>
-      </div>
 
       <div className="space-y-10">
         {/* IP Community */}
@@ -48,7 +35,7 @@ export default function Step3Background() {
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div id="isIpCommunity" className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setValue("isIpCommunity", false, { shouldValidate: true })}
@@ -115,7 +102,7 @@ export default function Step3Background() {
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div id="is4PsBeneficiary" className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setValue("is4PsBeneficiary", false, { shouldValidate: true })}
@@ -184,12 +171,12 @@ export default function Step3Background() {
             Is this learner returning to school after a gap of 1 year or more?
             (Balik-Aral) *
           </Label>
-          <div className="grid grid-cols-2 gap-3">
+          <div id="isBalikAral" className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => {
                 setValue("isBalikAral", false, { shouldValidate: true });
-                resetField("learnerType");
+                setValue("learnerType", "NEW_ENROLLEE", { shouldValidate: true });
               }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
@@ -232,14 +219,14 @@ export default function Step3Background() {
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div id="isLearnerWithDisability" className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => {
                 setValue("isLearnerWithDisability", false, { shouldValidate: true });
-                setValue("specialNeedsCategory", undefined);
-                setValue("disabilityTypes", []);
-                setValue("hasPwdId", false);
+                setValue("specialNeedsCategory", undefined, { shouldValidate: true, shouldDirty: true });
+                setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
+                setValue("hasPwdId", false, { shouldValidate: true, shouldDirty: true });
               }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
@@ -288,8 +275,9 @@ export default function Step3Background() {
                           setValue(
                             "specialNeedsCategory",
                             checked ? "a1" : undefined,
+                            { shouldValidate: true, shouldDirty: true }
                           );
-                          setValue("disabilityTypes", []);
+                          setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
                         }}
                         className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
                       />
@@ -399,8 +387,9 @@ export default function Step3Background() {
                           setValue(
                             "specialNeedsCategory",
                             checked ? "a2" : undefined,
+                            { shouldValidate: true, shouldDirty: true }
                           );
-                          setValue("disabilityTypes", []);
+                          setValue("disabilityTypes", [], { shouldValidate: true, shouldDirty: true });
                         }}
                         className="w-5 h-5 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
                       />

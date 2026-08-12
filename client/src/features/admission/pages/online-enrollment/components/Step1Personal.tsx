@@ -34,6 +34,30 @@ import {
 } from "@/shared/ui/select";
 import { useState, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/shared/components/UserPhoto";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+
+const MOTHER_TONGUE_OPTIONS = [
+  { value: "Tagalog", label: "Tagalog" },
+  { value: "Cebuano", label: "Cebuano" },
+  { value: "Hiligaynon (Ilonggo)", label: "Hiligaynon (Ilonggo)" },
+  { value: "Ilocano (Iloko)", label: "Ilocano (Iloko)" },
+  { value: "Bicolano (Central Bikol)", label: "Bicolano (Central Bikol)" },
+  { value: "Kapampangan", label: "Kapampangan" },
+  { value: "Pangasinan (Pangasinense)", label: "Pangasinan (Pangasinense)" },
+  { value: "Waray", label: "Waray" },
+  { value: "Tausug", label: "Tausug" },
+  { value: "Maguindanaoan", label: "Maguindanaoan" },
+  { value: "Maranao", label: "Maranao" },
+  { value: "Chavacano (Chabacano)", label: "Chavacano (Chabacano)" },
+  { value: "Ybanag (Ibanag)", label: "Ybanag (Ibanag)" },
+  { value: "Ivatan", label: "Ivatan" },
+  { value: "Sambal", label: "Sambal" },
+  { value: "Aklanon", label: "Aklanon" },
+  { value: "Kinaray-a", label: "Kinaray-a" },
+  { value: "Yakan", label: "Yakan" },
+  { value: "Surigaonon", label: "Surigaonon" },
+  { value: "Others", label: "Others" },
+];
 
 export default function Step1Personal() {
   const {
@@ -42,8 +66,15 @@ export default function Step1Personal() {
     control,
     setValue,
     clearErrors,
+    getValues,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
+  
+  const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(() => {
+    const val = getValues("motherTongue");
+    return !!val && !MOTHER_TONGUE_OPTIONS.some((o) => o.value === val && o.value !== "Others");
+  });
+
   const birthdate = watch("birthdate");
   const studentPhoto = watch("studentPhoto");
   const lrn = watch("lrn");
@@ -374,7 +405,7 @@ export default function Step1Personal() {
                   const isChecked = checked === true;
                   setHasNoMiddleName(isChecked);
                   if (isChecked) {
-                    setValue("middleName", "");
+                    setValue("middleName", "", { shouldValidate: true, shouldDirty: true });
                   }
                 }}
               />
@@ -391,7 +422,7 @@ export default function Step1Personal() {
               Suffix (Extension)
             </Label>
             <Select
-              onValueChange={(val) => setValue("extensionName", val === "NONE" ? "" : val)}
+              onValueChange={(val) => setValue("extensionName", val === "NONE" ? "" : val, { shouldValidate: true, shouldDirty: true })}
               value={watch("extensionName") || "NONE"}>
               <SelectTrigger className="h-11 font-extrabold">
                 <SelectValue placeholder="Select Suffix" />
@@ -423,6 +454,7 @@ export default function Step1Personal() {
             render={({ field }) => (
               <div className="relative">
                 <Input
+                  id="birthdate"
                   placeholder="MM/DD/YYYY"
                   maxLength={10}
                   inputMode="numeric"
@@ -510,7 +542,7 @@ export default function Step1Personal() {
           <Label className="text-base leading-tight font-extrabold">
             Sex <span className="text-destructive">*</span>
           </Label>
-          <div className="flex gap-4 pt-1">
+          <div id="sex" className="flex gap-4 pt-1">
             {(
               [
                 { value: "Male", label: "MALE", icon: Mars },
@@ -542,7 +574,11 @@ export default function Step1Personal() {
                       : "text-foreground",
                   )}
                 />
-                <span className="font-extrabold">{sexOption.label}</span>
+                <span className={cn("font-extrabold", 
+                watch("sex") === sexOption.value
+                      ? "text-primary"
+                      : "text-foreground",)} 
+                >{sexOption.label}</span>
               </button>
             ))}
           </div>
@@ -576,13 +612,45 @@ export default function Step1Personal() {
             className="text-base leading-tight font-extrabold">
             Mother Tongue
           </Label>
-          <Input
-            id="motherTongue"
-            {...register("motherTongue")}
-            autoComplete="off"
-            placeholder="e.g. Hiligaynon, Cebuano, Tagalog"
-            className="h-11 font-extrabold uppercase"
-          />
+          <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
+            <Controller
+              control={control}
+              name="motherTongue"
+              render={({ field }) => (
+                <SearchableCombobox
+                  items={MOTHER_TONGUE_OPTIONS}
+                  value={
+                    isOtherMotherTongue
+                      ? "Others"
+                      : MOTHER_TONGUE_OPTIONS.some((o) => o.value === field.value)
+                        ? (field.value ?? "")
+                        : ""
+                  }
+                  onChange={(val) => {
+                    if (val === "Others") {
+                      setIsOtherMotherTongue(true);
+                      field.onChange("");
+                    } else {
+                      setIsOtherMotherTongue(false);
+                      field.onChange(val);
+                    }
+                  }}
+                  placeholder="Select Mother Tongue"
+                  className="uppercase h-11"
+                />
+              )}
+            />
+            {isOtherMotherTongue && (
+              <Input
+                id="motherTongue"
+                {...register("motherTongue")}
+                autoComplete="off"
+                placeholder="Please specify mother tongue"
+                className="h-11 font-extrabold uppercase"
+                autoFocus
+              />
+            )}
+          </div>
         </div>
       </div>
 

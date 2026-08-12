@@ -108,13 +108,6 @@ export default function Step2Family() {
 
   return (
     <div className="space-y-12">
-      <Alert className="bg-primary/5 border-primary/20 items-center">
-        <Info className="h-4 w-4 stroke-primary" />
-        <AlertDescription className="font-extrabold text-primary/80">
-          Please make sure contact details are active and correct for school
-          updates and enrollment notices.
-        </AlertDescription>
-      </Alert>
 
       <div className="space-y-8">
         <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">

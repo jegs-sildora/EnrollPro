@@ -279,7 +279,11 @@ export default function EnrollmentForm({
       return;
     }
 
-    const target = document.getElementsByName(issue.fieldPath).item(0);
+    let target = document.getElementsByName(issue.fieldPath).item(0);
+    
+    if (!target) {
+      target = document.getElementById(issue.fieldPath) as HTMLElement;
+    }
 
     if (target instanceof HTMLElement) {
       target.scrollIntoView({ behavior: "smooth", block: "center" });

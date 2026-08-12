@@ -173,7 +173,7 @@ export function ConfirmationModal({
 
         {loadingOnly ? (
           <div className="mt-7 flex justify-center">
-            <div className="flex w-full max-w-md items-center justify-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-5 py-4 text-sm font-extrabold text-primary">
+            <div className="flex w-full max-w-md items-center justify-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-5 py-4  font-extrabold text-primary">
               <LoaderCircle className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />
               <span>{loadingText}</span>
             </div>
@@ -187,7 +187,7 @@ export function ConfirmationModal({
               onClick={() => onOpenChange(false)}
               disabled={loading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-sm",
+                "flex-1 h-12 rounded-lg font-extrabold ",
                 "border border-gray-200 bg-muted text-gray-700",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]",
@@ -204,7 +204,7 @@ export function ConfirmationModal({
               }}
               disabled={loading || confirmDisabled}
               className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-sm",
+                "flex-1 h-12 rounded-lg font-extrabold",
                 "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
                 "hover:bg-[hsl(var(--primary)/0.9)]",
                 "shadow-md",

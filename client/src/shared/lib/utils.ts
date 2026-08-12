@@ -28,10 +28,6 @@ export const SCP_LABELS: Record<string, string> = {
   SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
-  SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism",
-  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
-  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
-    "Special Program in Tech-Voc Education",
   REGULAR: "Basic Education Curriculum",
   LATE_ENROLLEE: "Late Enrollee",
 };

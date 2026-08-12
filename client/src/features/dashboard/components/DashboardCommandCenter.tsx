@@ -140,10 +140,10 @@ export function DashboardActionToolbar({
         <p className="text-base font-extrabold text-foreground">
           Quick Actions
         </p>
-        <p className="mt-1 text-base font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           {isEosy
             ? "End of School Year processing is active. Please ensure all final grades and promotion outcomes are synced before initiating the database rollover."
-            : "Open common Registrar's Office tasks for this school year."}
+            : "Open common school year \ tasks for this school year."}
         </p>
       </div>
 

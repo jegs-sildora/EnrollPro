@@ -1019,12 +1019,9 @@ export default function SchoolYearTab() {
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
-                            System Academic Phase
+                            Enrollment Operations Status
                           </h4>
                         </div>
-                        <p className="text-base font-bold text-foreground rounded-md inline-block break-words whitespace-normal">
-                          Control school year status and new learner intake
-                        </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1085,7 +1082,7 @@ export default function SchoolYearTab() {
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
-                        DepEd Term Configuration
+                        DepEd Grading Period Configuration
                       </h4>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

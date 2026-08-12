@@ -82,13 +82,13 @@ export default function Step4PreviousSchool() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label
-              htmlFor="prev-school"
+              htmlFor="lastSchoolName"
               className="text-base leading-tight font-extrabold text-foreground">
               Last School Name <span className="text-destructive">*</span>
             </Label>
             <Input
               autoComplete="off"
-              id="prev-school"
+              id="lastSchoolName"
               {...register("lastSchoolName")}
               placeholder="e.g. Apolinario Mabini Elementary School"
               className={cn(
@@ -106,17 +106,23 @@ export default function Step4PreviousSchool() {
 
           <div className="space-y-2">
             <Label
-              htmlFor="prev-school-id"
+              htmlFor="lastSchoolId"
               className="text-base leading-tight font-extrabold text-foreground">
               School ID (Optional)
             </Label>
             <Input
               autoComplete="off"
-              id="prev-school-id"
+              id="lastSchoolId"
               {...register("lastSchoolId")}
               placeholder="6-digit DepEd ID"
               className="h-11 font-extrabold uppercase"
               maxLength={6}
+              inputMode="numeric"
+              onInput={(e) => {
+                (e.target as HTMLInputElement).value = (
+                  e.target as HTMLInputElement
+                ).value.replace(/\D/g, "");
+              }}
             />
           </div>
         </div>
@@ -124,7 +130,7 @@ export default function Step4PreviousSchool() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label
-              htmlFor="prev-grade"
+              htmlFor="lastGradeCompleted"
               className="text-base leading-tight font-extrabold text-foreground">
               {isAls ? "ALS Qualification" : "Last Grade Completed"}{" "}
               <span className="text-destructive">*</span>
@@ -133,7 +139,7 @@ export default function Step4PreviousSchool() {
             {/* ALS: read-only badge */}
             {isAls && (
               <Input
-                id="prev-grade"
+                id="lastGradeCompleted"
                 readOnly
                 value="A&E Test Passer"
                 className="h-11 font-extrabold bg-muted text-foreground cursor-not-allowed"
@@ -144,7 +150,7 @@ export default function Step4PreviousSchool() {
             {!isAls && !isReturning && (
               <Select value={derivedGrade}>
                 <SelectTrigger
-                  id="prev-grade"
+                  id="lastGradeCompleted"
                   className={cn(
                     "h-11 font-extrabold text-foreground pointer-events-none uppercase",
                     errors.lastGradeCompleted &&
@@ -172,10 +178,11 @@ export default function Step4PreviousSchool() {
                 onValueChange={(val) =>
                   setValue("lastGradeCompleted", val, {
                     shouldValidate: true,
+                    shouldDirty: true,
                   })
                 }>
                 <SelectTrigger
-                  id="prev-grade"
+                  id="lastGradeCompleted"
                   className={cn(
                     "h-11 font-extrabold",
                     errors.lastGradeCompleted &&
@@ -201,16 +208,16 @@ export default function Step4PreviousSchool() {
 
           <div className="space-y-2">
             <Label
-              htmlFor="prev-sy"
+              htmlFor="schoolYearLastAttended"
               className="text-base leading-tight font-extrabold text-foreground">
               School Year Last Attended{" "}
               <span className="text-destructive">*</span>
             </Label>
             <Select
-              onValueChange={(val) => setValue("schoolYearLastAttended", val)}
+              onValueChange={(val) => setValue("schoolYearLastAttended", val, { shouldValidate: true, shouldDirty: true })}
               defaultValue={watch("schoolYearLastAttended")}>
               <SelectTrigger
-                id="prev-sy"
+                id="schoolYearLastAttended"
                 className={cn(
                   "h-11 font-extrabold",
                   errors.schoolYearLastAttended &&
@@ -241,7 +248,7 @@ export default function Step4PreviousSchool() {
               <button
                 key={lt.value}
                 type="button"
-                onClick={() => setValue("lastSchoolType", lt.value)}
+                onClick={() => setValue("lastSchoolType", lt.value, { shouldValidate: true, shouldDirty: true })}
                 className={cn(
                   "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-11",
                   selectedLastSchoolType === lt.value
@@ -258,13 +265,13 @@ export default function Step4PreviousSchool() {
 
         <div className="space-y-2 pt-2">
           <Label
-            htmlFor="prev-addr"
+            htmlFor="lastSchoolAddress"
             className="text-base leading-tight font-extrabold text-foreground">
             School Address / Division (Optional)
           </Label>
           <Input
             autoComplete="off"
-            id="prev-addr"
+            id="lastSchoolAddress"
             {...register("lastSchoolAddress")}
             placeholder="City/Municipality, Province"
             className="h-11 font-extrabold uppercase"

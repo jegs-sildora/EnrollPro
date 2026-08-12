@@ -236,7 +236,7 @@ export default function Step5Enrollment() {
         <Label className="text-base leading-tight font-extrabold uppercase  text-primary">
           Learner Category <span className="text-destructive">*</span>
         </Label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div id="learnerType" className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {LEARNER_TYPES.map((typeOption) => (
             <button
               key={typeOption.value}
@@ -277,6 +277,7 @@ export default function Step5Enrollment() {
           Grade Level to Apply for <span className="text-destructive">*</span>
         </Label>
         <div
+          id="gradeLevel"
           className={cn(
             "grid gap-3",
             learnerType === "NEW_ENROLLEE"
@@ -332,7 +333,7 @@ export default function Step5Enrollment() {
             }}
           />
           <Label htmlFor="sf9-deficiency" className="text-base font-extrabold leading-tight cursor-pointer text-blue-900">
-            I do not have my SF9 / Report Card yet. I am applying for Temporary Enrollment per DepEd Order 017.
+            I do not have my SF9 / Report Card yet. I am applying for Temporary Enrollment.
           </Label>
         </div>
 
@@ -408,14 +409,14 @@ export default function Step5Enrollment() {
               }
             }}
           >
-            <SelectTrigger className="w-full bg-muted font-extrabold h-12">
+            <SelectTrigger id="scpType" className="w-full bg-muted font-extrabold h-12">
               <SelectValue placeholder="Select Preferred Curriculum Program" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="REGULAR">Regular Basic Education</SelectItem>
+              <SelectItem value="REGULAR">Regular Basic Education Curriculum (BEC)</SelectItem>
               {availableScpPrograms.map((program) => (
                 <SelectItem key={program.id} value={program.id}>
-                  {SCP_ACRONYMS[program.id]} ({program.label})
+                  {program.label} ({SCP_ACRONYMS[program.id]})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -475,7 +476,7 @@ export default function Step5Enrollment() {
                         })
                       }
                       value={watch("artField")}>
-                      <SelectTrigger className="h-10 bg-muted border-2 font-extrabold">
+                      <SelectTrigger id="artField" className="h-10 bg-muted border-2 font-extrabold">
                         <SelectValue placeholder="Select Art Field" />
                       </SelectTrigger>
                       <SelectContent>
@@ -496,7 +497,7 @@ export default function Step5Enrollment() {
                     <Label className="text-base font-extrabold uppercase text-primary">
                       Primary Sport <span className="text-destructive">*</span>
                     </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div id="sportsList" className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {SPS_SPORTS.map((sport) => (
                         <div
                           key={sport}
