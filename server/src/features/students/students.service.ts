@@ -488,7 +488,19 @@ export async function findStudents(query: {
   }
 
   if (Object.keys(enrollmentRecordFilters).length > 0) {
-    where.enrollmentRecord = enrollmentRecordFilters;
+    const hasSectionFilter = resolvedSectionId || (resolvedSectionIds && resolvedSectionIds.length > 0) || resolvedSectionFilter;
+    if (hasSectionFilter || learnerStatus) {
+      where.enrollmentRecord = enrollmentRecordFilters;
+    } else {
+      where.AND = [
+        {
+          OR: [
+            { enrollmentRecord: null },
+            { enrollmentRecord: enrollmentRecordFilters }
+          ]
+        }
+      ];
+    }
   }
 
   // Add search to the application level as well if needed (tracking number)
@@ -502,11 +514,17 @@ export async function findStudents(query: {
         { learner: { lastName: { contains: s, mode: "insensitive" as const } } },
       ]
     };
+    
     // Combine with the learner status filter
-    where.AND = [
-      { learner: learnerWhere },
-      appSearch
-    ];
+    if (where.AND) {
+       (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({ learner: learnerWhere });
+       (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push(appSearch);
+    } else {
+       where.AND = [
+         { learner: learnerWhere },
+         appSearch
+       ];
+    }
     delete where.learner; // Use AND instead
   }
 

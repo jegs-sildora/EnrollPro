@@ -62,6 +62,9 @@ interface PendingVerification {
     lastName: string;
     contactNumber: string | null;
   }>;
+  checklistVerified: boolean;
+  isMissingSf9: boolean;
+  isMissingPsa: boolean;
 }
 
 interface ApiErrorResponse {
@@ -186,6 +189,18 @@ export function VerificationWorkspace() {
   useEffect(() => {
     if (selectedApp) {
       setAssignedProgram(selectedApp.applicantType);
+      if (selectedApp.status === "READY_FOR_SECTIONING" || selectedApp.status === "FOR_REVISION") {
+        if (selectedApp.checklistVerified) {
+          setSf9Verified(true);
+          setPsaVerified(true);
+        } else {
+          setSf9Verified(!selectedApp.isMissingSf9);
+          setPsaVerified(!selectedApp.isMissingPsa);
+        }
+      } else {
+        setSf9Verified(false);
+        setPsaVerified(false);
+      }
     }
   }, [selectedApp]);
 
@@ -271,8 +286,6 @@ export function VerificationWorkspace() {
 
   const handleSelect = (appId: number) => {
     setSelectedAppId(appId);
-    setSf9Verified(false);
-    setPsaVerified(false);
   };
 
   const approveLearner = async () => {
@@ -422,14 +435,14 @@ export function VerificationWorkspace() {
                   },
                   {
                     key: "READY",
-                    title: "Complete",
+                    title: "Enrolled",
                     value: pendingVerifications.filter(
                       (app) => app.status === "READY_FOR_SECTIONING",
                     ).length,
                   },
                   {
                     key: "INCOMPLETE",
-                    title: "INCOMPLETE",
+                    title: "Deficient",
                     value: pendingVerifications.filter(a => a.status === "FOR_REVISION").length
                   }
                 ] as const;
@@ -441,7 +454,10 @@ export function VerificationWorkspace() {
                       return (
                         <button
                           key={m.key}
-                          onClick={() => setActiveTab(m.key)}
+                          onClick={() => {
+                            setActiveTab(m.key);
+                            setSelectedAppId(null);
+                          }}
                           className={cn(
                             "relative flex items-center justify-between px-3 h-full transition-colors uppercase font-extrabold z-10",
                             isActive
@@ -467,7 +483,7 @@ export function VerificationWorkspace() {
                 );
               })()}
             </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-2">
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -479,7 +495,7 @@ export function VerificationWorkspace() {
                     key={app.id}
                     onClick={() => handleSelect(app.id)}
                     className={cn(
-                      "cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden",
+                      "cursor-pointer border-2 p-3 transition-all relative overflow-hidden",
                       selectedAppId === app.id
                         ? getGradeCardClasses(app.gradeLevel.name)
                         : "bg-background hover:bg/50 border-border"
@@ -657,6 +673,7 @@ export function VerificationWorkspace() {
                           className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           checked={sf9Verified}
                           onCheckedChange={(c) => setSf9Verified(!!c)}
+                          disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
                         />
                         <div className="space-y-1">
                           <p className="text-base font-extrabold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
@@ -669,6 +686,7 @@ export function VerificationWorkspace() {
                           className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           checked={psaVerified}
                           onCheckedChange={(c) => setPsaVerified(!!c)}
+                          disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
                         />
                         <div className="space-y-1">
                           <p className="text-base font-extrabold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
@@ -680,41 +698,43 @@ export function VerificationWorkspace() {
                 </div>
 
                 {/* Action Footer */}
-                <div className="p-4 sm:p-6 border-t border-border bg/10 grid grid-cols-1 gap-4 w-full">
-                  {!(sf9Verified && psaVerified) ? (
-                    <Button
-                      onClick={() => setConfirmModalState("TEMPORARY")}
-                      disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                      variant="outline"
-                      className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-extrabold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
-                    >
-                      <span className="truncate">Enroll as Temporary (Missing Docs)</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => setConfirmModalState("OFFICIAL")}
-                      disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                      className={cn(
-                        "w-full h-14 text-sm sm:text-base leading-tight font-extrabold uppercase transition-all shadow-none overflow-hidden",
-                        !duplicateInfo
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                          : "bg text-foreground hover:bg opacity-50"
-                      )}
-                    >
-                      {processing ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Approving...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-5 h-5 mr-2" />
-                          Officially Enroll
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                {selectedApp.status !== "READY_FOR_SECTIONING" && (
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 grid grid-cols-1 gap-4 w-full">
+                    {!(sf9Verified && psaVerified) ? (
+                      <Button
+                        onClick={() => setConfirmModalState("TEMPORARY")}
+                        disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                        variant="outline"
+                        className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-extrabold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
+                      >
+                        <span className="truncate">Enroll as Temporary (Missing Docs)</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => setConfirmModalState("OFFICIAL")}
+                        disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                        className={cn(
+                          "w-full h-14 text-sm sm:text-base leading-tight font-extrabold uppercase transition-all shadow-none overflow-hidden",
+                          !duplicateInfo
+                            ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                            : "bg text-foreground hover:bg opacity-50"
+                        )}
+                      >
+                        {processing ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-5 h-5 mr-2" />
+                            Officially Enroll
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">
@@ -821,6 +841,6 @@ export function VerificationWorkspace() {
           }
         }}
       />
-    </div>
+</div>
   );
 }

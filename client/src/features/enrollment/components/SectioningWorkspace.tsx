@@ -1345,7 +1345,7 @@ export function SectioningWorkspace() {
           </div>
 
           {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <div className="flex-1 flex flex-col h-full overflow-y-auto bg-card text-card-foreground">
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground">
             <CardHeader className="border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1358,7 +1358,7 @@ export function SectioningWorkspace() {
                   <CardDescription className="text-foreground text-sm font-extrabold">
                     {draftPlacement
                       ? "Please review the temporary assignments before creating the official lists"
-                      : `Select destination to move ${selectedAppIds.length || "0"} learners.`}
+                      : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
                   </CardDescription>
                 </div>
               </div>
@@ -1379,7 +1379,7 @@ export function SectioningWorkspace() {
                 </Button>
               )}
             </CardHeader>
-            <div className="p-4 space-y-3 relative flex-1">
+            <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
               {displayedRosters.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                   <Info className="h-8 w-8" />
@@ -1416,9 +1416,13 @@ export function SectioningWorkspace() {
                           selectedProgramTypes.size === 0 ||
                           selectedProgramTypes.has(r.section.programType)
                       )
-                      .sort((a, b) =>
-                        a.section.name.localeCompare(b.section.name),
-                      ),
+                      .sort((a, b) => {
+                        if (selectedProgramTypes.has("REGULAR") || selectedProgramTypes.size === 0) {
+                          if (a.section.isHomogeneous && !b.section.isHomogeneous) return -1;
+                          if (!a.section.isHomogeneous && b.section.isHomogeneous) return 1;
+                        }
+                        return a.section.name.localeCompare(b.section.name);
+                      }),
                   },
                 ]
                   .filter((group) => group.rosters.length > 0)
@@ -1499,10 +1503,14 @@ export function SectioningWorkspace() {
                             className={cn(
                               "text-sm font-extrabold uppercase bg-background",
                               s.programType === "REGULAR"
-                                ? "text-foreground border-border"
+                                ? s.isHomogeneous
+                                  ? "text-amber-600 border-amber-600/30"
+                                  : "text-foreground border-border"
                                 : "text-primary border-primary/30",
                             )}>
-                            {SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                            {s.programType === "REGULAR" && s.isHomogeneous
+                              ? "TOP BEC"
+                              : SCP_SHORT_LABELS[s.programType] ?? s.programType}
                           </Badge>
                         </div>
                       </div>
@@ -1662,9 +1670,6 @@ export function SectioningWorkspace() {
             </div>
           )))}
             </div>
-          </div>
-          </div>
-
           <AnimatePresence>
             {(draftPlacement || selectedAppIds.length > 0) && (
               <motion.div
@@ -1714,13 +1719,15 @@ export function SectioningWorkspace() {
                         Assigning...
                       </>
                     ) : (
-                      `Assign to Section (${selectedAppIds.length})`
+                      `Assign to Section ${targetSectionId ? (sections.find(s => s.id === targetSectionId)?.name ?? '') : ''} (${selectedAppIds.length})`
                     )}
                   </Button>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
+          </div>
         </Card>
       </PageTransition>
 
