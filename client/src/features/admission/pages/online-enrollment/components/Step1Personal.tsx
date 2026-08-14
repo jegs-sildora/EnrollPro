@@ -8,7 +8,9 @@ import { Calendar } from "@/shared/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Button } from "@/shared/ui/button";
 import {
-  AlertCircle,
+  AlertTriangle,
+  Loader2,
+  CheckCircle,
   Camera,
   X,
   Search,
@@ -16,6 +18,7 @@ import {
   Venus,
   Calendar as CalendarIcon,
 } from "lucide-react";
+import api from "@/shared/api/axiosInstance";
 import {
   differenceInYears,
   format,
@@ -75,6 +78,9 @@ export default function Step1Personal() {
     return !!val && !MOTHER_TONGUE_OPTIONS.some((o) => o.value === val && o.value !== "Others");
   });
 
+  const [isValidatingLrn, setIsValidatingLrn] = useState(false);
+  const [duplicateDetected, setDuplicateDetected] = useState(false);
+
   const birthdate = watch("birthdate");
   const studentPhoto = watch("studentPhoto");
   const lrn = watch("lrn");
@@ -95,6 +101,36 @@ export default function Step1Personal() {
 
     calculatedBmi = `${bmiValue.toFixed(2)} (${category})`;
   }
+
+  useEffect(() => {
+    let active = true;
+
+    if (!lrn || lrn.length !== 12 || hasNoLrn) {
+      setIsValidatingLrn(false);
+      setDuplicateDetected(false);
+      return;
+    }
+
+    setIsValidatingLrn(true);
+    setDuplicateDetected(false);
+
+    api.get(`/applications/validate-lrn/${lrn}`)
+      .then((res) => {
+        if (active) {
+          setDuplicateDetected(res.data.isDuplicate);
+        }
+      })
+      .catch((err) => {
+        console.error("LRN validation error:", err);
+      })
+      .finally(() => {
+        if (active) setIsValidatingLrn(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [lrn, hasNoLrn]);
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -222,9 +258,6 @@ export default function Step1Personal() {
       {/* ─── LRN Section ─── */}
       <div className="p-6 border rounded-2xl space-y-4 bg-muted/20 border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-muted text-foreground">
-            <Search className="w-5 h-5" />
-          </div>
           <div>
             <h3 className="text-base leading-tight font-extrabold uppercase text-foreground">
               Learner Reference Number (LRN)
@@ -236,17 +269,30 @@ export default function Step1Personal() {
         </div>
 
         <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            {isValidatingLrn ? (
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            ) : lrn?.length === 12 && !hasNoLrn ? (
+              duplicateDetected ? (
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )
+            ) : (
+              <Search className="w-5 h-5 text-muted-foreground" />
+            )}
+          </div>
           <Input
             id="lrn"
             {...register("lrn")}
             autoComplete="off"
             placeholder="ENTER 12-DIGIT LRN"
             maxLength={12}
-            disabled={hasNoLrn}
+            disabled={hasNoLrn || isValidatingLrn}
             className={cn(
-              "h-14 text-lg  font-extrabold text-center border-2 tracking-widest",
+              "h-14 text-lg pl-12 font-extrabold text-center border-2 tracking-widest",
               hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",
-              errors.lrn
+              errors.lrn || duplicateDetected
                 ? "border-destructive"
                 : "border-primary/30 focus:border-primary",
             )}
@@ -258,6 +304,12 @@ export default function Step1Personal() {
             }}
           />
         </div>
+
+        {duplicateDetected && (
+          <div className="bg-destructive/10 text-destructive text-sm font-extrabold p-3 rounded-lg flex items-center gap-2 justify-center">
+            This LRN already exists in our database. Enrollment application is a duplicate.
+          </div>
+        )}
 
         <p className="text-base font-extrabold text-foreground">
           {hasNoLrn
@@ -528,7 +580,7 @@ export default function Step1Personal() {
           <Label
             htmlFor="age"
             className="text-base leading-tight font-extrabold">
-            Age
+            Age <span className="text-destructive">*</span>
           </Label>
           <Input
             id="age"
@@ -612,7 +664,7 @@ export default function Step1Personal() {
           <Label
             htmlFor="motherTongue"
             className="text-base leading-tight font-extrabold">
-            Mother Tongue
+            Mother Tongue <span className="text-destructive">*</span>
           </Label>
           <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
             <Controller
@@ -653,6 +705,7 @@ export default function Step1Personal() {
               />
             )}
           </div>
+          <AnimatedError error={errors.motherTongue?.message as string} />
         </div>
       </div>
 
@@ -662,15 +715,19 @@ export default function Step1Personal() {
             <Label
               htmlFor="religion"
               className="text-base leading-tight font-extrabold">
-              Religion
+              Religion <span className="text-destructive">*</span>
             </Label>
             <Input
               id="religion"
               {...register("religion")}
               autoComplete="off"
               placeholder="e.g. Roman Catholic, Iglesia ni Cristo, Islam"
-              className="h-11 font-extrabold uppercase"
+              className={cn(
+                "h-11 font-extrabold uppercase",
+                errors.religion && "border-destructive focus-visible:ring-destructive",
+              )}
             />
+            <AnimatedError error={errors.religion?.message as string || errors.religion as unknown as string} />
           </div>
 
           <div className="space-y-2">

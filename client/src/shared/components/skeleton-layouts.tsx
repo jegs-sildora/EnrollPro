@@ -13,7 +13,8 @@ export type SkeletonPageVariant =
   | "detail"
   | "modal"
   | "form"
-  | "generic";
+  | "generic"
+  | "enrollmentForm";
 
 interface SkeletonLayoutProps {
   className?: string;
@@ -282,6 +283,10 @@ function renderVariant(variant: SkeletonPageVariant) {
       );
     case "detail":
       return <DetailPanelSkeleton />;
+    case "form":
+      return <FormSkeleton />;
+    case "enrollmentForm":
+      return <EnrollmentFormSkeleton />;
     case "modal":
       return <ModalBodySkeleton />;
     case "generic":
@@ -316,6 +321,71 @@ export function PageLoadingSkeleton({
   return (
     <SkeletonShell className={className}>
       {renderVariant(variant)}
+    </SkeletonShell>
+  );
+}
+
+export function EnrollmentFormSkeleton() {
+  return (
+    <SkeletonShell className="max-w-6xl mx-auto p-4 md:p-0">
+      <div className="mb-6 h-10 w-48 rounded-md bg-muted/50" />
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6 lg:p-10 space-y-12">
+        
+        {/* Header */}
+        <div className="space-y-2 border-b border-border pb-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+
+        {/* Section I */}
+        <div className="space-y-6">
+          <Skeleton className="h-6 w-48" />
+          
+          <div className="p-6 border rounded-2xl space-y-4 bg-muted/20 border-border">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-64" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
+            <div className="space-y-2 flex flex-col items-center">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="w-32 h-32 rounded-xl" />
+            </div>
+            <div className="md:col-span-3 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-12 w-full" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-12 w-full" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-12 w-full" /></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-12 w-full" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-12 w-full" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-12 w-full" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section II */}
+        <div className="space-y-6 pt-6 border-t border-border">
+          <Skeleton className="h-6 w-56" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-12 w-full" /></div>
+          </div>
+        </div>
+
+      </div>
     </SkeletonShell>
   );
 }

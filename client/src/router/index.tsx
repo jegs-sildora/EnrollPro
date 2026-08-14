@@ -60,6 +60,9 @@ function getFallbackVariant(pathname: string): SkeletonPageVariant {
   ) {
     return "registry";
   }
+  if (pathname === "/enrollment") {
+    return "enrollmentForm";
+  }
   if (
     pathname === "/continuing-learners" ||
     pathname === "/monitoring/enrollment" ||

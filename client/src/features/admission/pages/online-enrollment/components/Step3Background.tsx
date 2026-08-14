@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useFormContext } from "react-hook-form";
+import { AnimatedError } from "@/shared/components/AnimatedError";
 import type { EnrollmentFormData } from "../types";
 import { DISABILITY_TYPES_A1, DISABILITY_TYPES_A2, SPECIAL_HEALTH_SUB_OPTIONS, VISUAL_IMPAIRMENT_SUB_OPTIONS } from "../types";
 import { Input } from "@/shared/ui/input";
@@ -11,7 +12,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Lock } from "lucide-react";
 
 export default function Step3Background() {
-  const { register, watch, setValue, resetField } = useFormContext<EnrollmentFormData>();
+  const { register, watch, setValue, resetField, formState: { errors } } = useFormContext<EnrollmentFormData>();
 
   const isIpCommunity = watch("isIpCommunity");
   const is4PsBeneficiary = watch("is4PsBeneficiary");
@@ -63,6 +64,7 @@ export default function Step3Background() {
               </span>
             </button>
           </div>
+          <AnimatedError error={errors.isIpCommunity?.message as string || errors.isIpCommunity as unknown as string} />
           <AnimatePresence>
             {isIpCommunity && (
               <motion.div
@@ -81,8 +83,12 @@ export default function Step3Background() {
                     id="ip-group"
                     {...register("ipGroupName")}
                     placeholder="e.g. Ati, Mangyan"
-                    className="h-11 font-extrabold uppercase"
+                    className={cn(
+                      "h-11 font-extrabold uppercase",
+                      errors.ipGroupName && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  <AnimatedError error={errors.ipGroupName?.message as string || errors.ipGroupName as unknown as string} />
                 </div>
               </motion.div>
             )}
@@ -130,6 +136,7 @@ export default function Step3Background() {
               </span>
             </button>
           </div>
+          <AnimatedError error={errors.is4PsBeneficiary?.message as string || errors.is4PsBeneficiary as unknown as string} />
           <AnimatePresence>
             {is4PsBeneficiary && (
               <motion.div
@@ -148,7 +155,10 @@ export default function Step3Background() {
                     id="household-id"
                     {...register("householdId4Ps")}
                     placeholder="Household ID"
-                    className="h-11 font-extrabold uppercase"
+                    className={cn(
+                      "h-11 font-extrabold uppercase",
+                      errors.householdId4Ps && "border-destructive focus-visible:ring-destructive"
+                    )}
                     inputMode="numeric"
                     onKeyDown={(e) => {
                       if (
@@ -159,6 +169,7 @@ export default function Step3Background() {
                         e.preventDefault();
                     }}
                   />
+                  <AnimatedError error={errors.householdId4Ps?.message as string || errors.householdId4Ps as unknown as string} />
                 </div>
               </motion.div>
             )}
@@ -167,10 +178,17 @@ export default function Step3Background() {
 
         {/* Balik Aral */}
         <div className="space-y-4">
-          <Label className="text-base leading-tight font-extrabold">
-            Is this learner returning to school after a gap of 1 year or more?
+          <div className="flex items-center justify-between">
+            <Label className="text-base leading-tight font-extrabold">
+              Is this learner returning to school after a gap of 1 year or more?
             (Balik-Aral) *
-          </Label>
+            </Label>
+            <Badge
+              variant="outline"
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              <Lock className="w-2.5 h-2.5" /> Confidential
+            </Badge>
+          </div>
           <div id="isBalikAral" className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -205,6 +223,7 @@ export default function Step3Background() {
               </span>
             </button>
           </div>
+          <AnimatedError error={errors.isBalikAral?.message as string || errors.isBalikAral as unknown as string} />
         </div>
 
         {/* SNED / Disability */}
@@ -252,6 +271,7 @@ export default function Step3Background() {
               </span>
             </button>
           </div>
+          <AnimatedError error={errors.isLearnerWithDisability?.message as string || errors.isLearnerWithDisability as unknown as string} />
 
           <AnimatePresence>
             {isLearnerWithDisability && (
@@ -264,6 +284,7 @@ export default function Step3Background() {
                   <p className="text-base font-extrabold uppercase text-foreground ">
                     If Yes, check only 1, either from a1 or a2
                   </p>
+                  <AnimatedError error={errors.specialNeedsCategory?.message as string || errors.specialNeedsCategory as unknown as string} />
 
                   {/* a1 */}
                   <div className="space-y-3">
@@ -372,6 +393,7 @@ export default function Step3Background() {
                               );
                             })}
                           </div>
+                          <AnimatedError error={errors.disabilityTypes?.message as string || errors.disabilityTypes as unknown as string} />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -436,6 +458,7 @@ export default function Step3Background() {
                               </div>
                             ))}
                           </div>
+                          <AnimatedError error={errors.disabilityTypes?.message as string || errors.disabilityTypes as unknown as string} />
                         </motion.div>
                       )}
                     </AnimatePresence>

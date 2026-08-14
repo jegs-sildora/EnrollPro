@@ -114,6 +114,7 @@ export const applicationSubmitSchema = z
     sex: SexEnum,
     placeOfBirth: z.string().min(1, "Place of birth is required"),
     religion: z.string().optional().nullable(),
+    motherTongue: z.string().min(1, "Mother tongue is required"),
 
     isIpCommunity: z.boolean().default(false),
     ipGroupName: z.string().optional().nullable(),

@@ -59,7 +59,7 @@ const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
   isLearnerWithDisability: undefined,
   specialNeedsCategory: undefined,
   disabilityTypes: [],
-  hasPwdId: false,
+  hasPwdId: undefined,
   snedPlacement: undefined,
   currentAddress: { houseNo: "", street: "", region: "", province: "", cityMunicipality: "", barangay: "", country: "Philippines", zipCode: "" },
   isPermanentSameAsCurrent: true,
@@ -238,12 +238,6 @@ export default function EnrollmentForm({
       try {
         const parsed = JSON.parse(draft);
         if (parsed.birthdate) parsed.birthdate = new Date(parsed.birthdate);
-        
-        // Clear background booleans if they are false (old default) to force re-selection
-        if (parsed.isIpCommunity === false) delete parsed.isIpCommunity;
-        if (parsed.is4PsBeneficiary === false) delete parsed.is4PsBeneficiary;
-        if (parsed.isBalikAral === false) delete parsed.isBalikAral;
-        if (parsed.isLearnerWithDisability === false) delete parsed.isLearnerWithDisability;
 
         return {
           ...DEFAULT_VALUES,
@@ -315,6 +309,7 @@ export default function EnrollmentForm({
   }, [watch]);
 
   const discardEnrollmentDraft = useCallback(() => {
+    hasSubmittedRef.current = true; // Prevent watch from repopulating draft
     reset({
       ...DEFAULT_VALUES,
     });
@@ -326,7 +321,7 @@ export default function EnrollmentForm({
   useUnsavedChanges({
     id: "public-online-enrollment",
     label: "Online enrollment form",
-    isDirty: isDirty,
+    isDirty: isDirty || initialDraft !== null,
     isSubmitting,
     onDiscard: discardEnrollmentDraft,
   });
@@ -534,7 +529,12 @@ export default function EnrollmentForm({
 <div className="max-w-6xl mx-auto p-4 md:p-0">
       {onBack && (
         <Button
-          onClick={() => confirmOrRun(onBack)}
+          onClick={() => {
+            confirmOrRun(() => {
+              discardEnrollmentDraft();
+              onBack();
+            });
+          }}
           className="mb-6 group font-extrabold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Selection
@@ -686,7 +686,7 @@ export default function EnrollmentForm({
 
       <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
         <CardContent className="p-6 md:p-10">
-          <div className="mb-8 pb-6 border-b border-border/50">
+          <div className="mb-8 pb-6 border-b border-border/50 flex flex-row justify-between items-start">
             <div>
               <h2 className="text-xl font-extrabold  text-foreground leading-tight">
                 Learner Enrollment Form
@@ -695,6 +695,15 @@ export default function EnrollmentForm({
                 Please complete all required fields below.
               </p>
             </div>
+            {isDirty && (
+              <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Draft Auto Saved
+              </div>
+            )}
           </div>
 
           {submitError && (

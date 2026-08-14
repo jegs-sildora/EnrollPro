@@ -147,6 +147,26 @@ export async function trackApplication(req: Request, res: Response) {
   }
 }
 
+export async function validateLrn(req: Request, res: Response) {
+  try {
+    const lrn = String(req.params.lrn ?? "").trim();
+    if (!/^\d{12}$/.test(lrn)) {
+      res.status(400).json({ message: "Invalid LRN format. Must be exactly 12 digits." });
+      return;
+    }
+
+    const learner = await prisma.learner.findUnique({
+      where: { lrn },
+      select: { id: true }
+    });
+
+    res.json({ isDuplicate: !!learner });
+  } catch (error) {
+    console.error("Failed to validate LRN:", error);
+    res.status(500).json({ message: "Could not validate LRN." });
+  }
+}
+
 export async function submitApplication(req: Request, res: Response) {
   try {
     const parsed = applicationSubmitSchema.safeParse(req.body);
@@ -195,6 +215,7 @@ export async function submitApplication(req: Request, res: Response) {
       birthdate: birthdateDate,
       sex: data.sex,
       placeOfBirth: data.placeOfBirth,
+      motherTongue: data.motherTongue,
       religion: data.religion || null,
       isIpCommunity: data.isIpCommunity,
       ipGroupName: data.ipGroupName || null,

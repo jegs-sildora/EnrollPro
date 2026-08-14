@@ -94,8 +94,8 @@ export const EnrollmentFormSchema = z
     placeOfBirth: z
       .string()
       .min(1, "Place of birth as indicated in birth certificate is required."),
-    motherTongue: z.string().optional(),
-    religion: z.string().optional(),
+    motherTongue: z.string().min(1, "Mother tongue is required."),
+    religion: z.string().min(1, "Religion is required."),
     intakeHeightCm: z
       .number({ message: "Please enter a valid numeric height." })
       .min(30, "Height must be at least 30 cm")
@@ -106,17 +106,17 @@ export const EnrollmentFormSchema = z
       .max(200, "Weight must not exceed 200 kg"),
 
     // Section 4: Special Classifications
-    isIpCommunity: z.boolean({ message: "Please select an option for IP Community." }),
+    isIpCommunity: z.boolean({ message: "Please specify if the learner is a member of an IP cultural community." }),
     ipGroupName: z.string().optional(),
-    is4PsBeneficiary: z.boolean({ message: "Please select an option for 4Ps." }),
+    is4PsBeneficiary: z.boolean({ message: "Please specify if the learner's household is a 4Ps beneficiary." }),
     householdId4Ps: z.string().optional(),
-    isBalikAral: z.boolean({ message: "Please select an option for Balik-Aral." }),
+    isBalikAral: z.boolean({ message: "Please specify if the learner is a Balik-Aral." }),
     lastYearEnrolled: z.string().optional(),
     lastGradeLevel: z.string().optional(),
-    isLearnerWithDisability: z.boolean({ message: "Please select an option for Special Needs." }),
+    isLearnerWithDisability: z.boolean({ message: "Please specify if the learner has a disability." }),
     specialNeedsCategory: z.enum(["a1", "a2"]).optional(),
     disabilityTypes: z.array(z.string()).default([]),
-    hasPwdId: z.boolean().default(false),
+    hasPwdId: z.boolean().optional(),
 
     snedPlacement: z
       .enum(["Inclusive Education", "Special Education Center"])
@@ -256,7 +256,7 @@ export const EnrollmentFormSchema = z
     if (!data.hasNoLrn && !lrnValue) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "A valid LRN is required unless a No-LRN declaration is made.",
+        message: "Learner Reference Number is required.",
         path: ["lrn"],
       });
     }
@@ -434,6 +434,47 @@ export const EnrollmentFormSchema = z
           }
         }
       }
+    }
+
+    if (data.isIpCommunity && !data.ipGroupName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the IP Group Name.",
+        path: ["ipGroupName"],
+      });
+    }
+
+    if (data.is4PsBeneficiary && !data.householdId4Ps?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please provide the 4Ps Household ID Number.",
+        path: ["householdId4Ps"],
+      });
+    }
+
+    if (data.isBalikAral) {
+      if (!data.lastYearEnrolled?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify the last school year attended.",
+          path: ["lastYearEnrolled"],
+        });
+      }
+      if (!data.lastGradeLevel?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please specify the last grade level completed.",
+          path: ["lastGradeLevel"],
+        });
+      }
+    }
+
+    if (data.isLearnerWithDisability && data.hasPwdId === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify if the learner has a PWD ID.",
+        path: ["hasPwdId"],
+      });
     }
 
   });

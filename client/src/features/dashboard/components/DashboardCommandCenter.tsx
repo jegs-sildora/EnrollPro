@@ -49,30 +49,36 @@ const SUMMARY_ITEMS = [
     label: "Total Enrolled Learners",
     helper: "Officially enrolled learners assigned to a valid class section",
     icon: GraduationCap,
+    route: "/students",
   },
   {
     key: "activeFaculty" as const,
     label: "Active Faculty and Staff",
     helper: "Personnel currently in active service",
     icon: Presentation,
+    route: "/teachers",
   },
   {
     key: "enrolledSections" as const,
     label: "Sections with Learners",
     helper: "Sections with active learners",
     icon: School,
+    route: "/sections",
   },
   {
     key: "pendingSystemValidations" as const,
     label: "Learner Records for Review",
     helper: "Learners counted once even with several concerns",
     icon: ShieldCheck,
+    route: "/continuing-learners",
   },
 ]
 
 export function DashboardSummaryRibbon({
   summary,
 }: DashboardSummaryRibbonProps) {
+  const navigate = useNavigate()
+
   return (
     <section
       aria-label="School operations summary"
@@ -81,7 +87,11 @@ export function DashboardSummaryRibbon({
       {SUMMARY_ITEMS.map((item) => {
         const Icon = item.icon
         return (
-          <Card key={item.key} className="border-slate-200 bg-card shadow-sm">
+          <Card 
+            key={item.key} 
+            className="border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
+            onClick={() => navigate(item.route)}
+          >
             <CardContent className="flex min-h-32 items-center gap-4 p-5">
               <div className="min-w-0">
                 <p className="text-base font-extrabold leading-tight text-foreground">
