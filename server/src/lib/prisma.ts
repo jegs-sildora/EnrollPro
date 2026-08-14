@@ -73,13 +73,14 @@ export const prisma = basePrisma.$extends({
             if (hasChanges) {
                 const changedFields = Object.keys(newData);
                 const descFields = changedFields.length > 3 
-                    ? `${changedFields.slice(0, 3).join(", ")} and ${changedFields.length - 3} other fields` 
+                    ? `${changedFields.slice(0, 3).join(", ")} and ${changedFields.length - 3} other(s)` 
                     : changedFields.join(", ");
+                const fieldWord = changedFields.length === 1 ? "field" : "fields";
                 const recordId = newRecObj.id ? Number(newRecObj.id) : null;
                 await basePrisma.auditLog.create({
                     data: {
                         actionType: `UPDATED_${model.toUpperCase()}`,
-                        description: `Updated ${descFields}`,
+                        description: `Modified ${changedFields.length} ${fieldWord}: ${descFields}`,
                         subjectType: model,
                         recordId,
                         userId: ctx.userId ?? null,

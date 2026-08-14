@@ -120,7 +120,7 @@ export async function finalizeIntake(req: Request, res: Response) {
   await auditLog({
     userId: userId ?? null,
     actionType: "INTAKE_FINALIZED",
-    description: `Intake finalized for application ${applicationId} — status set to READY_FOR_SECTIONING`,
+    description: `Intake finalized for ${application.learner.firstName} ${application.learner.lastName} — queued for batch sectioning`,
     subjectType: "EnrollmentApplication",
     recordId: applicationId,
     req,

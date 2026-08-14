@@ -631,7 +631,7 @@ export function SectioningWorkspace() {
       )?.name;
       sileo.success({
         title: "Assignment Successful",
-        description: `Moved ${selectedAppIds.length} learners to ${sectionName}.`,
+        description: `Assigned ${selectedAppIds.length} learners to ${sectionName}.`,
       });
       setSelectedAppIds([]);
       setTargetSectionId(null);

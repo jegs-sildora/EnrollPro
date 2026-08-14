@@ -137,6 +137,7 @@ function actionLabel(actionType: string) {
     SECTION: "Class Section",
     SCHOOLYEAR: "School Year",
     SCHOOLSETTING: "School Profile Settings",
+    ENROLLMENTAPPLICATION: "Enrollment Application",
   };
 
   if (parts.length === 2 && verbMap[parts[1]]) {
@@ -152,7 +153,8 @@ function actionLabel(actionType: string) {
   const label = actionType.replaceAll("_", " ");
   return toTitleCase(label)
     .replace(/Schoolyear/ig, "School Year")
-    .replace(/Schoolsetting/ig, "School Profile Settings");
+    .replace(/Schoolsetting/ig, "School Profile Settings")
+    .replace(/Enrollmentapplication/ig, "Enrollment Application");
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -209,6 +211,7 @@ const FIELD_MAP: Record<string, string> = {
   spsEnabled: "Special Program in Sports (SPS) Status",
   spaEnabled: "Special Program in the Arts (SPA) Status",
   steEnabled: "Science, Technology, and Engineering (STE) Status",
+  hasPsaBirthCertificate: "PSA Birth Certificate",
 };
 
 function formatKeyName(key: string) {
@@ -382,6 +385,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (type === "Schoolyear") displayType = "School Year";
           if (type === "Schoolsetting") displayType = "School Profile Settings";
           if (type === "Enrollment") displayType = "Enrollment";
+          if (type === "Enrollmentapplication") displayType = "Enrollment Application";
           if (type === "Student") displayType = "Learner Directory";
           if (type === "User") displayType = "Staff Management";
           if (type === "Section") displayType = "Section Assignment";
@@ -390,7 +394,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (displayType === "School Profile Settings") colorClass = "bg-blue-100 text-blue-800";
           if (displayType === "School Year") colorClass = "bg-indigo-100 text-indigo-800";
           if (displayType === "Learner Directory") colorClass = "bg-slate-700 text-white";
-          if (displayType === "Enrollment") colorClass = "bg-emerald-100 text-emerald-800";
+          if (displayType === "Enrollment" || displayType === "Enrollment Application") colorClass = "bg-emerald-100 text-emerald-800";
           if (displayType === "Staff Management") colorClass = "bg-violet-100 text-violet-800";
           if (displayType === "Section Assignment") colorClass = "bg-amber-100 text-amber-800";
 
@@ -422,7 +426,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
               <span className="font-extrabold text-foreground block mb-0.5 uppercase">
                 {actionLabel(action)}
               </span>
-              <span className="text-base text-foreground/80 max-w-[400px] break-words block">
+              <span className="text-base text-foreground max-w-[400px] break-words block">
                 {row.original.description}
               </span>
             </div>
@@ -766,14 +770,14 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="p-6 border-l-4 border-l-primary/50 mx-4 my-2 rounded-r-lg bg-card shadow-sm border border-border/50">
+                        <div className="p-6 border-l-4 border-l-primary mx-4 my-2 rounded-r-lg bg-card shadow-sm border border-border/50">
                           <h4 className="text-base font-extrabold uppercase tracking-wide text-foreground mb-4 flex items-center gap-2">
                             <Activity className="h-4 w-4 text-primary" />
                             Detailed Changes
                           </h4>
                           <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
                             <table className="w-full text-base leading-tight text-left">
-                              <thead className="bg-muted/50 border-b">
+                              <thead className="bg-muted border-b">
                                 <tr>
                                   <th className="px-4 py-3 font-extrabold text-foreground">Modified Field</th>
                                   <th className="px-4 py-3 font-extrabold text-foreground">Changed From</th>
@@ -792,24 +796,31 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                                     if (v === true || String(v) === "true") return <span className="text-green-600 font-extrabold">Active</span>;
                                     if (v === false || String(v) === "false") return <span className="text-destructive font-extrabold">Inactive</span>;
                                     if (typeof v === "object") return JSON.stringify(v);
-                                    const str = String(v);
+                                    let str = String(v);
                                     if (isIsoDate(str)) {
-                                      return new Date(str).toLocaleDateString("en-US", {
+                                      return new Date(str).toLocaleString("en-US", {
                                         year: "numeric",
-                                        month: "long",
+                                        month: "short",
                                         day: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        second: "2-digit",
                                       });
+                                    }
+                                    if (/^[A-Z_]+$/.test(str) && str.includes("_")) {
+                                      str = toTitleCase(str.replaceAll("_", " "));
                                     }
                                     return str;
                                   };
 
                                   return (
                                     <tr key={key} className="hover:bg-muted/30 transition-colors">
-                                      <td className="px-4 py-3 font-extrabold text-foreground/80">{formatKeyName(key)}</td>
-                                      <td className="px-4 py-3  text-destructive bg-destructive/5">
+                                      <td className="px-4 py-3 font-extrabold text-foreground">{formatKeyName(key)}</td>
+                                      <td className="px-4 py-3 font-bold text-destructive bg-destructive/5">
                                         <span className="line-through decoration-destructive/40 opacity-80">{formatVal(oldVal)}</span>
                                       </td>
-                                      <td className="px-4 py-3  text-green-700 bg-green-50">
+                                      <td className="px-4 py-3 font-bold
+                                       text-green-700 bg-green-50">
                                         {formatVal(newVal)}
                                       </td>
                                     </tr>
@@ -819,10 +830,10 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                             </table>
                           </div>
                           <div className="mt-4 rounded-lg border bg-background shadow-sm overflow-hidden p-4">
-                            <p className="text-sm font-extrabold uppercase text-foreground/60 mb-1">Network Security Footprint</p>
+                            <p className="text-sm font-extrabold uppercase text-foreground mb-1">Network Security Footprint</p>
                             <div className="flex items-center gap-2">
                               <span className="font-extrabold text-foreground">{row.ipAddress || "Unknown IP"}</span>
-                              <span className="text-foreground/70 text-sm border-l pl-2 border-border">
+                              <span className="text-foreground text-sm border-l pl-2 border-border">
                                 {parseUserAgent(row.userAgent || "")}
                               </span>
                             </div>

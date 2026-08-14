@@ -55,6 +55,13 @@ export const DEPED_FIELD_MAP: Record<string, string> = {
   promotionStatus: "Promotion Status",
   eosyStatus: "End of School Year Status",
   isIrregular: "Is Irregular",
+  
+  // Requirements
+  hasPsaBirthCertificate: "PSA Birth Certificate",
+  isMissingSf9: "Missing SF9",
+  isMissingPsa: "Missing PSA",
+  intakeHeightCm: "Height (cm)",
+  intakeWeightKg: "Weight (kg)",
 };
 
 /**

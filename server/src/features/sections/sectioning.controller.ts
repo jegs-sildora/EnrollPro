@@ -93,7 +93,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
 }
 
 /**
- * TLE Sectioning Workspace: Returns students READY_FOR_TLE_SECTIONING who have no section assignment.
+ * TLE Sectioning Workspace: Returns learners READY_FOR_TLE_SECTIONING who have no section assignment.
  * GET /api/sectioning/pool
  */
 export async function getSectioningPool(req: Request, res: Response) {
@@ -110,7 +110,7 @@ export async function getSectioningPool(req: Request, res: Response) {
     const where: Prisma.EnrollmentApplicationWhereInput = {
       schoolYearId,
       status: "READY_FOR_SECTIONING",
-      enrollmentRecord: null, // Critical: Only students not yet assigned
+      enrollmentRecord: null, // Critical: Only learners not yet assigned
     };
 
     if (gradeLevelId) where.gradeLevelId = Number(gradeLevelId);
@@ -205,7 +205,7 @@ export async function assignBulk(req: Request, res: Response) {
 
     if (!section) return res.status(404).json({ message: "Section not found." });
 
-    // 2. Capacity Guard (Rule: Hard cap 50 students)
+    // 2. Capacity Guard (Rule: Hard cap 50 learners)
     const currentCount = section.enrollmentRecords.length;
     const requestedCount = applicationIds.length;
     if (currentCount + requestedCount > section.maxCapacity) {
@@ -300,8 +300,10 @@ export async function assignBulk(req: Request, res: Response) {
     // 6. Audit Logging
     await auditLog({
       userId,
-      actionType: "BULK_SECTION_ASSIGNMENT",
-      description: `Bulk sectioned ${applicationIds.length} students into Section: ${section.name}`,
+      actionType: applicationIds.length === 1 ? "SECTION_ASSIGNMENT" : "BULK_SECTION_ASSIGNMENT",
+      description: applicationIds.length === 1 
+        ? `Sectioned 1 student into Section: ${section.name}`
+        : `Bulk sectioned ${applicationIds.length} learners into Section: ${section.name}`,
       subjectType: "Section",
       recordId: sectionId,
       req,
@@ -315,7 +317,7 @@ export async function assignBulk(req: Request, res: Response) {
 
     return res.json({
       success: true,
-      message: `Successfully assigned ${applicationIds.length} students to ${section.name}.`,
+      message: `Successfully assigned ${applicationIds.length} learners to ${section.name}.`,
       count: results.length
     });
 

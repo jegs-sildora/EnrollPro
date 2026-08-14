@@ -723,7 +723,7 @@ export default function Teachers() {
                 className={cn(
                   "font-extrabold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
                   isEnrolled
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-800 border-2"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-800"
                     : isLeave
                       ? "bg-amber-50 text-amber-700 border-amber-800 border-2"
                       : "bg-slate-50 text-slate-600 border-slate-800 border-2"
