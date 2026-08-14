@@ -41,7 +41,7 @@ export default function Step3Background() {
               onClick={() => setValue("isIpCommunity", false, { shouldValidate: true })}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                !isIpCommunity
+                isIpCommunity === false
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -54,7 +54,7 @@ export default function Step3Background() {
               onClick={() => setValue("isIpCommunity", true, { shouldValidate: true })}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                isIpCommunity
+                isIpCommunity === true
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -108,7 +108,7 @@ export default function Step3Background() {
               onClick={() => setValue("is4PsBeneficiary", false, { shouldValidate: true })}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                !is4PsBeneficiary
+                is4PsBeneficiary === false
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -121,7 +121,7 @@ export default function Step3Background() {
               onClick={() => setValue("is4PsBeneficiary", true, { shouldValidate: true })}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                is4PsBeneficiary
+                is4PsBeneficiary === true
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -180,7 +180,7 @@ export default function Step3Background() {
               }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                !watch("isBalikAral")
+                watch("isBalikAral") === false
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -196,7 +196,7 @@ export default function Step3Background() {
               }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                watch("isBalikAral")
+                watch("isBalikAral") === true
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -230,7 +230,7 @@ export default function Step3Background() {
               }}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                !isLearnerWithDisability
+                isLearnerWithDisability === false
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
@@ -243,7 +243,7 @@ export default function Step3Background() {
               onClick={() => setValue("isLearnerWithDisability", true, { shouldValidate: true })}
               className={cn(
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
-                isLearnerWithDisability
+                isLearnerWithDisability === true
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>

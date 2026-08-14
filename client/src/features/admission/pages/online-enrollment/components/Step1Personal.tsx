@@ -230,7 +230,7 @@ export default function Step1Personal() {
               Learner Reference Number (LRN)
             </h3>
             <p className="text-base text-foreground font-extrabold">
-              Enter your 12-digit LRN to continue enrollment.
+              Enter learner's 12-digit LRN to continue enrollment.
             </p>
           </div>
         </div>
@@ -244,8 +244,8 @@ export default function Step1Personal() {
             maxLength={12}
             disabled={hasNoLrn}
             className={cn(
-              "h-14 text-lg  font-extrabold text-center border-2",
-              hasNoLrn && "bg-muted cursor-not-allowed  text-base leading-tight",
+              "h-14 text-lg  font-extrabold text-center border-2 tracking-widest",
+              hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",
               errors.lrn
                 ? "border-destructive"
                 : "border-primary/30 focus:border-primary",
@@ -318,7 +318,7 @@ export default function Step1Personal() {
                 <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[0.625rem] uppercase font-extrabold ">
-                    Upload
+                    Upload Photo
                   </span>
                 </div>
               }>
@@ -336,7 +336,7 @@ export default function Step1Personal() {
               className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
               accept="image/jpeg,image/png,image/jpg"
               onChange={handlePhotoChange}
-              title="Upload student photo"
+              title="Upload learner's photo"
             />
           </div>
         </div>
@@ -455,6 +455,7 @@ export default function Step1Personal() {
               <div className="relative">
                 <Input
                   id="birthdate"
+                  autoComplete="off"
                   placeholder="MM/DD/YYYY"
                   maxLength={10}
                   inputMode="numeric"
@@ -531,10 +532,11 @@ export default function Step1Personal() {
           </Label>
           <Input
             id="age"
-            {...register("age", { valueAsNumber: true })}
+            {...register("age", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
             autoComplete="off"
             disabled
             className="h-11 font-extrabold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+            placeholder="Auto-calculated"
           />
         </div>
 
@@ -707,8 +709,17 @@ export default function Step1Personal() {
             </Label>
             <Input
               id="intakeHeightCm"
-              type="number"
-              {...register("intakeHeightCm", { valueAsNumber: true })}
+              type="text"
+              inputMode="decimal"
+              onInput={(e) => {
+                let val = e.currentTarget.value.replace(/[^0-9.]/g, '');
+                const parts = val.split('.');
+                if (parts.length > 2) {
+                  val = parts[0] + '.' + parts.slice(1).join('');
+                }
+                e.currentTarget.value = val;
+              }}
+                {...register("intakeHeightCm", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
               autoComplete="off"
               placeholder="e.g. 150"
               className={cn(
@@ -727,8 +738,17 @@ export default function Step1Personal() {
             </Label>
             <Input
               id="intakeWeightKg"
-              type="number"
-              {...register("intakeWeightKg", { valueAsNumber: true })}
+              type="text"
+              inputMode="decimal"
+              onInput={(e) => {
+                let val = e.currentTarget.value.replace(/[^0-9.]/g, '');
+                const parts = val.split('.');
+                if (parts.length > 2) {
+                  val = parts[0] + '.' + parts.slice(1).join('');
+                }
+                e.currentTarget.value = val;
+              }}
+                {...register("intakeWeightKg", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
               autoComplete="off"
               placeholder="e.g. 45"
               className={cn(
@@ -745,6 +765,7 @@ export default function Step1Personal() {
             </Label>
             <Input
               value={calculatedBmi}
+              autoComplete="off"
               readOnly
               disabled
               placeholder="Auto-calculated"

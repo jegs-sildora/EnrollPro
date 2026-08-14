@@ -106,14 +106,14 @@ export const EnrollmentFormSchema = z
       .max(200, "Weight must not exceed 200 kg"),
 
     // Section 4: Special Classifications
-    isIpCommunity: z.boolean().default(false),
+    isIpCommunity: z.boolean({ message: "Please select an option for IP Community." }),
     ipGroupName: z.string().optional(),
-    is4PsBeneficiary: z.boolean().default(false),
+    is4PsBeneficiary: z.boolean({ message: "Please select an option for 4Ps." }),
     householdId4Ps: z.string().optional(),
-    isBalikAral: z.boolean().default(false),
+    isBalikAral: z.boolean({ message: "Please select an option for Balik-Aral." }),
     lastYearEnrolled: z.string().optional(),
     lastGradeLevel: z.string().optional(),
-    isLearnerWithDisability: z.boolean().default(false),
+    isLearnerWithDisability: z.boolean({ message: "Please select an option for Special Needs." }),
     specialNeedsCategory: z.enum(["a1", "a2"]).optional(),
     disabilityTypes: z.array(z.string()).default([]),
     hasPwdId: z.boolean().default(false),

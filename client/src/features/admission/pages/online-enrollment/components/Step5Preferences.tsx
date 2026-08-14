@@ -130,15 +130,15 @@ export default function Step5Enrollment() {
 
   useEffect(() => {
     if (learnerType === "NEW_ENROLLEE" && gradeLevel !== "7") {
-      setValue("gradeLevel", "7", { shouldValidate: true });
+      setValue("gradeLevel", "7", { shouldValidate: true, shouldDirty: false });
     }
   }, [learnerType, gradeLevel, setValue]);
 
   useEffect(() => {
     if (!shouldShowScpCard && (isScpApplication || scpType)) {
-      setValue("isScpApplication", false, { shouldValidate: true });
-      setValue("scpType", undefined, { shouldValidate: true });
-      setValue("hasScpFallbackConsent", false, { shouldValidate: true });
+      setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: false });
+      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: false });
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: false });
       clearErrors(["scpType", "hasScpFallbackConsent"]);
     }
   }, [shouldShowScpCard, isScpApplication, scpType, setValue, clearErrors]);
@@ -148,8 +148,8 @@ export default function Step5Enrollment() {
       return;
     }
 
-    setValue("isScpApplication", false, { shouldValidate: true });
-    setValue("scpType", undefined, { shouldValidate: true });
+    setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: false });
+    setValue("scpType", undefined, { shouldValidate: true, shouldDirty: false });
     clearErrors("scpType");
   }, [
     isScpApplication,
@@ -166,9 +166,9 @@ export default function Step5Enrollment() {
     );
 
     if (!isStillAvailable) {
-      setValue("isScpApplication", false, { shouldValidate: true });
-      setValue("scpType", undefined, { shouldValidate: true });
-      setValue("hasScpFallbackConsent", false, { shouldValidate: true });
+      setValue("isScpApplication", false, { shouldValidate: true, shouldDirty: false });
+      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: false });
+      setValue("hasScpFallbackConsent", false, { shouldValidate: true, shouldDirty: false });
       clearErrors(["scpType", "hasScpFallbackConsent"]);
     }
   }, [
@@ -183,10 +183,10 @@ export default function Step5Enrollment() {
       !isScpApplication &&
       (scpType || artField || selectedSportsCount > 0 || foreignLanguage)
     ) {
-      setValue("scpType", undefined, { shouldValidate: true });
-      setValue("artField", undefined, { shouldValidate: true });
-      setValue("sportsList", [], { shouldValidate: true });
-      setValue("foreignLanguage", undefined, { shouldValidate: true });
+      setValue("scpType", undefined, { shouldValidate: true, shouldDirty: false });
+      setValue("artField", undefined, { shouldValidate: true, shouldDirty: false });
+      setValue("sportsList", [], { shouldValidate: true, shouldDirty: false });
+      setValue("foreignLanguage", undefined, { shouldValidate: true, shouldDirty: false });
       clearErrors(["scpType", "artField", "sportsList", "foreignLanguage"]);
     }
   }, [
@@ -201,17 +201,17 @@ export default function Step5Enrollment() {
 
   useEffect(() => {
     if (scpType !== "SPECIAL_PROGRAM_IN_THE_ARTS" && artField) {
-      setValue("artField", undefined, { shouldValidate: true });
+      setValue("artField", undefined, { shouldValidate: true, shouldDirty: false });
       clearErrors("artField");
     }
 
     if (scpType !== "SPECIAL_PROGRAM_IN_SPORTS" && selectedSportsCount > 0) {
-      setValue("sportsList", [], { shouldValidate: true });
+      setValue("sportsList", [], { shouldValidate: true, shouldDirty: false });
       clearErrors("sportsList");
     }
 
     if (scpType !== "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" && foreignLanguage) {
-      setValue("foreignLanguage", undefined, { shouldValidate: true });
+      setValue("foreignLanguage", undefined, { shouldValidate: true, shouldDirty: false });
       clearErrors("foreignLanguage");
     }
   }, [
@@ -341,6 +341,7 @@ export default function Step5Enrollment() {
           <div className="space-y-2">
             <Input
               id="generalAverage"
+              autoComplete="off"
               type="text"
               inputMode="decimal"
               placeholder="e.g. 88.50"

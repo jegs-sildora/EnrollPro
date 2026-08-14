@@ -79,6 +79,7 @@ function formatTimestamp(iso: string) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    second: "2-digit",
   });
 }
 
@@ -110,6 +111,8 @@ const ACTION_MAP: Record<string, string> = {
   LOGIN: "Logged In",
   LOGOUT: "Logged Out",
   FAILED_LOGIN: "Failed Login Attempt",
+  SECTION_ASSIGNMENT: "Section Assign",
+  BULK_SECTION_ASSIGNMENT: "Bulk Section Assign",
 };
 
 function toTitleCase(str: string) {
@@ -154,7 +157,8 @@ function actionLabel(actionType: string) {
   return toTitleCase(label)
     .replace(/Schoolyear/ig, "School Year")
     .replace(/Schoolsetting/ig, "School Profile Settings")
-    .replace(/Enrollmentapplication/ig, "Enrollment Application");
+    .replace(/Enrollmentapplication/ig, "Enrollment Application")
+    .replace(/Enrollment Application/ig, "Enrollment Application");
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -389,6 +393,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
           if (type === "Student") displayType = "Learner Directory";
           if (type === "User") displayType = "Staff Management";
           if (type === "Section") displayType = "Section Assignment";
+          if (type === "Enrollmentapplication") displayType = "Enrollment Application";
 
           let colorClass = "bg-slate-100 text-slate-800";
           if (displayType === "School Profile Settings") colorClass = "bg-blue-100 text-blue-800";
@@ -758,7 +763,8 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                 if (!diff || (Object.keys(diff.old).length === 0 && Object.keys(diff.new).length === 0)) {
                   return null;
                 }
-                const allKeys = Array.from(new Set([...Object.keys(diff.old), ...Object.keys(diff.new)]));
+                const excludeKeys = new Set(["id", "createdAt", "updatedAt"]);
+                const allKeys = Array.from(new Set([...Object.keys(diff.old), ...Object.keys(diff.new)])).filter(k => !excludeKeys.has(k));
 
                 return (
                   <tr className="bg-muted/5 border-b">
@@ -807,7 +813,7 @@ export default function AuditLogs({ selfOnly = false }: AuditLogsProps) {
                                         second: "2-digit",
                                       });
                                     }
-                                    if (/^[A-Z_]+$/.test(str) && str.includes("_")) {
+                                    if (/^[A-Z_]+$/.test(str)) {
                                       str = toTitleCase(str.replaceAll("_", " "));
                                     }
                                     return str;

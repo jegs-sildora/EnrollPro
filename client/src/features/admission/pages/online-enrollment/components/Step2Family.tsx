@@ -1,6 +1,6 @@
 import { AnimatedError } from "@/shared/components/AnimatedError";
-import { useEffect } from "react";
-import { useFormContext } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useFormContext, Controller } from "react-hook-form";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Info, Mars, User, Venus } from "lucide-react";
 
@@ -11,6 +11,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Separator } from "@/shared/ui/separator";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { cn } from "@/shared/lib/utils";
+import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
 import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 
 type ContactKey = "MOTHER" | "FATHER" | "GUARDIAN";
@@ -30,14 +31,34 @@ const formatContactNumber = (raw: string) => {
   return value;
 };
 
+const GUARDIAN_RELATIONSHIP_OPTIONS = [
+  { label: "Grandparent", value: "GRANDPARENT" },
+  { label: "Aunt", value: "AUNT" },
+  { label: "Uncle", value: "UNCLE" },
+  { label: "Sibling", value: "SIBLING" },
+  { label: "Cousin", value: "COUSIN" },
+  { label: "Step-parent", value: "STEP-PARENT" },
+  { label: "Relative", value: "RELATIVE" },
+];
+
 export default function Step2Family() {
   const {
     register,
     watch,
     setValue,
     clearErrors,
+    control,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
+
+  const [isOtherRelationship, setIsOtherRelationship] = useState(() => {
+    const current = watch("guardianRelationship");
+    return (
+      !!current &&
+      current !== "" &&
+      !GUARDIAN_RELATIONSHIP_OPTIONS.some((o) => o.value === current)
+    );
+  });
 
   const data = watch();
   const hasNoMother = data.hasNoMother;
@@ -68,14 +89,17 @@ export default function Step2Family() {
     if (data.primaryContact === "MOTHER") {
       setValue("mother.contactNumber", data.contactNumber, {
         shouldValidate: false,
+        shouldDirty: false,
       });
     } else if (data.primaryContact === "FATHER") {
       setValue("father.contactNumber", data.contactNumber, {
         shouldValidate: false,
+        shouldDirty: false,
       });
     } else if (data.primaryContact === "GUARDIAN") {
       setValue("guardian.contactNumber", data.contactNumber, {
         shouldValidate: false,
+        shouldDirty: false,
       });
     }
   }, [data.primaryContact, data.contactNumber, setValue]);
@@ -94,6 +118,7 @@ export default function Step2Family() {
     if (!availableContacts.includes(data.primaryContact)) {
       setValue("primaryContact", availableContacts[0], {
         shouldValidate: true,
+        shouldDirty: false,
       });
       clearErrors("primaryContact");
     }
@@ -640,21 +665,54 @@ export default function Step2Family() {
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            <Input
-              autoComplete="off"
-              id="guardianRelationship"
-              {...register("guardianRelationship")}
-              className={cn(
-                "h-11 font-extrabold uppercase",
-                errors.guardianRelationship &&
-                "border-destructive focus-visible:ring-destructive",
+            <Controller
+              control={control}
+              name="guardianRelationship"
+              render={({ field }) => (
+                <div className="space-y-2">
+                  <SearchableCombobox
+                    items={[
+                      ...GUARDIAN_RELATIONSHIP_OPTIONS,
+                      { label: "Others", value: "OTHERS" },
+                    ]}
+                    value={
+                      isOtherRelationship
+                        ? "OTHERS"
+                        : GUARDIAN_RELATIONSHIP_OPTIONS.some(
+                            (o) => o.value === field.value,
+                          )
+                          ? (field.value ?? "")
+                          : ""
+                    }
+                    onChange={(val) => {
+                      if (val === "OTHERS") {
+                        setIsOtherRelationship(true);
+                        field.onChange("");
+                      } else {
+                        setIsOtherRelationship(false);
+                        field.onChange(val);
+                      }
+                    }}
+                    placeholder="Select Relationship"
+                    className={cn("uppercase h-11", errors.guardianRelationship && !isOtherRelationship && "border-destructive")}
+                  />
+                  {isOtherRelationship && (
+                    <Input
+                      id="guardianRelationship"
+                      autoComplete="off"
+                      placeholder="Please specify relationship"
+                      className={cn(
+                        "h-11 font-extrabold uppercase",
+                        errors.guardianRelationship &&
+                          "border-destructive focus-visible:ring-destructive",
+                      )}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      autoFocus
+                    />
+                  )}
+                </div>
               )}
-              placeholder="e.g. GRANDPARENT"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
             />
             <AnimatedError error={errors.guardianRelationship?.message as string || errors.guardianRelationship as unknown as string} />
           </div>
@@ -696,7 +754,7 @@ export default function Step2Family() {
               },
               {
                 value: "GUARDIAN",
-                label: "Guardian",
+                label: data.guardianRelationship || "Guardian",
                 icon: User,
                 hide: !guardianInfoFilled,
               },
@@ -801,7 +859,7 @@ export default function Step2Family() {
                       ? "Mother's"
                       : data.primaryContact === "FATHER"
                         ? "Father's"
-                        : "Guardian's"}{" "}
+                        : `${data.guardianRelationship || "Guardian"}'s`}{" "}
                     Contact Information
                   </Label>
                 </div>
@@ -815,6 +873,7 @@ export default function Step2Family() {
                     </Label>
                     <Input
                       id="contactNumber"
+                      autoComplete="off"
                       {...register("contactNumber")}
                       placeholder="09XX-XXX-XXXX"
                       className={cn(
@@ -853,7 +912,7 @@ export default function Step2Family() {
                 },
                 {
                   id: "guardian",
-                  label: "Guardian",
+                  label: data.guardianRelationship || "Guardian",
                   icon: User,
                   active:
                     guardianInfoFilled && data.primaryContact !== "GUARDIAN",
@@ -891,6 +950,7 @@ export default function Step2Family() {
                         </Label>
                         <Input
                           id={contactField}
+                          autoComplete="off"
                           {...register(contactField)}
                           placeholder="09XX-XXX-XXXX"
                           className="h-11 font-extrabold bg-muted"

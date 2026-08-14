@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useForm, FormProvider, Controller } from "react-hook-form";
 import { zodResolver } from "@/shared/lib/zodResolver";
 import { EnrollmentFormSchema, type EnrollmentFormData } from "./types";
@@ -27,25 +27,71 @@ import {
 
 const DRAFT_KEY = "enrollpro_enrollment_draft";
 
-const DEFAULT_VALUES = {
-  schoolYear: "2026-2027",
+const DEFAULT_VALUES: Partial<EnrollmentFormData> = {
   isPrivacyConsentGiven: true,
-  studentPhoto: undefined,
-  gradeLevel: "7",
+  schoolYear: "2026-2027",
+  lrn: "",
   hasNoLrn: false,
-  isIpCommunity: false,
-  is4PsBeneficiary: false,
-  isBalikAral: false,
-  isLearnerWithDisability: false,
-  isPermanentSameAsCurrent: true,
+  psaBirthCertNumber: "",
+  gradeLevel: "7",
   isScpApplication: false,
-  learnerType: "NEW_ENROLLEE",
+  scpType: undefined,
+  studentPhoto: undefined,
+  lastName: "",
+  firstName: "",
+  middleName: "",
+  extensionName: "",
+  birthdate: undefined,
+  age: undefined,
+  sex: undefined,
+  placeOfBirth: "",
+  motherTongue: "",
+  religion: "",
+  intakeHeightCm: undefined,
+  intakeWeightKg: undefined,
+  isIpCommunity: undefined,
+  ipGroupName: "",
+  is4PsBeneficiary: undefined,
+  householdId4Ps: "",
+  isBalikAral: undefined,
+  lastYearEnrolled: "",
+  lastGradeLevel: "",
+  isLearnerWithDisability: undefined,
+  specialNeedsCategory: undefined,
+  disabilityTypes: [],
+  hasPwdId: false,
+  snedPlacement: undefined,
+  currentAddress: { houseNo: "", street: "", region: "", province: "", cityMunicipality: "", barangay: "", country: "Philippines", zipCode: "" },
+  isPermanentSameAsCurrent: true,
+  permanentAddress: { houseNo: "", street: "", region: "", province: "", cityMunicipality: "", barangay: "", country: "Philippines", zipCode: "" },
   hasNoMother: false,
   hasNoFather: false,
-  isCertifiedTrue: false,
-  hasScpFallbackConsent: false,
+  mother: { lastName: "", firstName: "", middleName: "", contactNumber: "", maidenName: "" },
+  father: { lastName: "", firstName: "", middleName: "", contactNumber: "" },
+  guardian: { lastName: "", firstName: "", middleName: "", contactNumber: "", relationship: "" },
+  guardianRelationship: "",
+  primaryContact: undefined, // Enforces explicit selection
+  contactNumber: "",
+  lastSchoolName: "",
+  lastSchoolId: "",
+  lastGradeCompleted: "Grade 6",
+  schoolYearLastAttended: "",
+  lastSchoolAddress: "",
+  lastSchoolType: "Public",
+  generalAverage: undefined,
   hasSf9Deficiency: false,
-} as const;
+
+  artField: "",
+  sportsList: [],
+  foreignLanguage: "",
+  hasScpFallbackConsent: false,
+
+  learnerType: "NEW_ENROLLEE",
+  learningModalities: [],
+  bypassDuplicate: false,
+
+  isCertifiedTrue: false,
+};
 
 type ValidationIssue = {
   fieldPath: string;
@@ -192,7 +238,17 @@ export default function EnrollmentForm({
       try {
         const parsed = JSON.parse(draft);
         if (parsed.birthdate) parsed.birthdate = new Date(parsed.birthdate);
-        return parsed;
+        
+        // Clear background booleans if they are false (old default) to force re-selection
+        if (parsed.isIpCommunity === false) delete parsed.isIpCommunity;
+        if (parsed.is4PsBeneficiary === false) delete parsed.is4PsBeneficiary;
+        if (parsed.isBalikAral === false) delete parsed.isBalikAral;
+        if (parsed.isLearnerWithDisability === false) delete parsed.isLearnerWithDisability;
+
+        return {
+          ...DEFAULT_VALUES,
+          ...parsed,
+        };
       } catch {
         return null;
       }
@@ -203,7 +259,7 @@ export default function EnrollmentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [hasActiveDraft, setHasActiveDraft] = useState(Boolean(initialDraft));
+  const hasSubmittedRef = useRef(false);
   const { confirmOrRun } = useUnsavedChangesPrompt();
 
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
@@ -221,7 +277,7 @@ export default function EnrollmentForm({
     reValidateMode: "onChange",
   });
 
-  const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty } } = methods;
+  const { handleSubmit, trigger, reset, watch, control, formState: { errors, isDirty, dirtyFields } } = methods;
 
   const validationIssues: ValidationIssue[] = Array.from(
     new Map(
@@ -243,13 +299,16 @@ export default function EnrollmentForm({
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
 
+
+
   // Auto-save draft on every change
   useEffect(() => {
-    const subscription = watch((value, { name }) => {
+    const subscription = watch((value, { name, type }) => {
       // Only save if a specific field was changed by the user
-      if (name) {
+      // Prevent saving if the form has already been successfully submitted
+      if (name && !hasSubmittedRef.current) {
+        console.log("Draft triggered by field:", name, "with type:", type);
         localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
-        setHasActiveDraft(true);
       }
     });
     return () => subscription.unsubscribe();
@@ -261,14 +320,13 @@ export default function EnrollmentForm({
     });
     localStorage.removeItem(DRAFT_KEY);
     localStorage.removeItem("enrollpro_apply_consent");
-    setHasActiveDraft(false);
     setSubmitError("");
   }, [reset]);
 
   useUnsavedChanges({
     id: "public-online-enrollment",
     label: "Online enrollment form",
-    isDirty: hasActiveDraft || isDirty,
+    isDirty: isDirty,
     isSubmitting,
     onDiscard: discardEnrollmentDraft,
   });
@@ -413,6 +471,8 @@ export default function EnrollmentForm({
         });
       }
 
+      hasSubmittedRef.current = true;
+
       // Reset form
       reset({
         ...DEFAULT_VALUES,
@@ -421,7 +481,6 @@ export default function EnrollmentForm({
       // Clear session storage
       localStorage.removeItem(DRAFT_KEY);
       localStorage.removeItem("enrollpro_apply_consent");
-      setHasActiveDraft(false);
     } catch (error: unknown) {
       const responseData = (
         error as {
@@ -598,7 +657,7 @@ export default function EnrollmentForm({
                       }
                       reset({ ...DEFAULT_VALUES });
                       localStorage.removeItem(DRAFT_KEY);
-                      setHasActiveDraft(false);
+                      localStorage.removeItem("enrollpro_apply_consent");
                     } catch (error: unknown) {
                       const responseMessage =
                         typeof error === "object" &&

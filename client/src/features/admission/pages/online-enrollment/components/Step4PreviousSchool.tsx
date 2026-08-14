@@ -39,6 +39,7 @@ export default function Step4PreviousSchool() {
 
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
+  const lastGradeCompleted = watch("lastGradeCompleted");
 
   // Grade progression map: target grade → expected previous grade completed
   const GRADE_PROGRESSION: Record<string, string> = {
@@ -55,20 +56,24 @@ export default function Step4PreviousSchool() {
   // Auto-fill lastGradeCompleted based on context
   useEffect(() => {
     if (isAls) {
-      setValue("lastGradeCompleted", "A&E Test Passer", {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+      if (lastGradeCompleted !== "A&E Test Passer") {
+        setValue("lastGradeCompleted", "A&E Test Passer", {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
+      }
     } else if (!isReturning && derivedGrade) {
-      setValue("lastGradeCompleted", derivedGrade, {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+      if (lastGradeCompleted !== derivedGrade) {
+        setValue("lastGradeCompleted", derivedGrade, {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
+      }
     }
-  }, [isAls, isReturning, derivedGrade, setValue]);
+  }, [isAls, isReturning, derivedGrade, lastGradeCompleted, setValue]);
 
   useEffect(() => {
-    if (!lastSchoolType) {
+    if (!lastSchoolType && lastSchoolType !== "Public") {
       setValue("lastSchoolType", "Public", {
         shouldValidate: false,
         shouldDirty: false,
@@ -140,6 +145,7 @@ export default function Step4PreviousSchool() {
             {isAls && (
               <Input
                 id="lastGradeCompleted"
+                autoComplete="off"
                 readOnly
                 value="A&E Test Passer"
                 className="h-11 font-extrabold bg-muted text-foreground cursor-not-allowed"
