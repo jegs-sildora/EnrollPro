@@ -480,8 +480,8 @@ model SmartAcademicOutcome {
   enrollmentRecordId  Int            @unique(map: "uq_smart_outcomes_enrollment_record_id") @map("enrollment_record_id")
   finalGeneralAverage Float          @map("final_general_average")
   finalOutcome        AcademicStatus @map("final_outcome")
-  smartRevision       String         @map("smart_revision")
-  publishedAt         DateTime       @map("published_at") @db.Timestamptz(6)
+  smartRevision       String?        @map("smart_revision")
+  publishedAt         DateTime?      @map("published_at") @db.Timestamptz(6)
   syncedAt            DateTime       @default(now()) @map("synced_at") @db.Timestamptz(6)
   payloadHash         String         @map("payload_hash") @db.VarChar(64)
 

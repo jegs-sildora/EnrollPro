@@ -1,60 +1,118 @@
 # SMART API Guide
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-15
 
-## Boundary
+## Ownership
 
 SMART owns grades, learning-area results, final promotion outcomes, and attendance. EnrollPro owns learner identity, enrollment, official section placement, personnel, and school-year context.
 
-SMART must not create EnrollPro enrollment records. EnrollPro must not fabricate SMART outcomes.
+SMART never writes to EnrollPro. EnrollPro does not create grades, promotion outcomes, learning-area results, or fallback values when SMART is unavailable.
 
-## Configuration
+## Server Configuration
+
+Configure these variables on the EnrollPro server only:
 
 ```text
-ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration/v1
+SMART_API_BASE_URL=https://configured-smart-host
+SMART_API_KEY=server-only-bearer-token
 ```
 
-EnrollPro connects to SMART using server-side integration configuration.
+The key is never sent to the browser, returned by EnrollPro, or written to logs.
 
-## SMART Reads
+## Final Outcome Pull
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/health` | Verify EnrollPro integration availability |
-| GET | `/school-year` | Resolve active or explicit year |
-| GET | `/default/smart/students` | Current or archived SMART-ready learner roster |
-| GET | `/sections` | Section and adviser context |
-| GET | `/sections/:sectionId/learners` | Current or archived section masterlist |
+When an authorized EnrollPro administrator selects `Sync SMART Outcomes`, EnrollPro calls the SMART endpoint below:
 
-Pass `schoolYearId` for reconciliation. Current accepted enrollment statuses include officially enrolled, enrolled, and sectioned records.
+```text
+POST /api/integration/sections/:sectionId/sync-grades?schoolYear=YYYY-YYYY
+```
 
-## Final Outcome Synchronization
+Enrolled learners are matched by their 12-digit LRN. EnrollPro sends the configured server-only token using the `Authorization: Bearer ...` header.
 
-EnrollPro calls:
+The `sectionId` path value is the shared DepEd section name by default, such as `Bonifacio` or `Makatao`. EnrollPro's local numeric section primary key is not assumed to exist in SMART's separate database.
+
+The EnrollPro staff trigger remains:
 
 ```text
 POST /api/integration/smart/sections/:id/sync-grades
 ```
 
-SMART must return, for every active learner:
+This route requires an authenticated EnrollPro `SYSTEM_ADMIN` session or bearer token. It calls SMART server-side and never exposes the SMART key.
 
-- valid LRN
-- final general average
-- final outcome
-- learning-area results
-- publication time
-- revision
+## Required SMART Response
 
-The supported final outcomes are promoted, conditionally promoted, retained, dropped out, and transferred out. Missing, malformed, or unpublished outcomes are rejected.
+SMART must return the selected school-year label and an outcome for every active learner in the section. Each outcome must include:
 
-## EOSY And Rollover
+- a valid 12-digit `lrn`
+- `studentName`
+- `subjectGrades`
+- `generalAverage` or `finalGeneralAverage`
+- `promotionStatus` or `finalOutcome`
+- optional `publishedAt`
+- optional `revision`
 
-SMART synchronization occurs before section finalization and before SF5 or SF6 artifacts are recorded. A corrected SMART result invalidates stale form checksums. EnrollPro activates the new year only after the atomic rollover commits.
+Each `subjectGrades` row must include:
 
-SMART refreshes the new active roster after receiving the post-commit integration invalidation or observing the new value from `/school-year`.
+- `subjectCode`
+- `subjectName`
+- `T1`, `T2`, and `T3`
+- `finalRating`
+- `remarks`
+- `status` set to `GRADED`, `PARTIAL`, or `NG`
 
-## Attendance
+For EOSY rollover, every subject must be `GRADED` with a final rating. `PARTIAL` and `NG` rows remain unresolved and keep the learner in `Action Required` status. They do not create or update a finalized EnrollPro academic outcome.
 
-Attendance remains in SMART. EnrollPro provides identity, section, and school-year context only.
+The supported final outcomes are `Promoted`, `Conditionally Promoted`, and `Retained`. EnrollPro normalizes them to `PROMOTED`, `CONDITIONALLY_PROMOTED`, and `RETAINED`.
 
-See [School Year Lifecycle](ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) and [EnrollPro API](ENROLLPRO-API.md).
+## Validation and Storage
+
+EnrollPro rejects the complete synchronization request when it contains:
+
+- duplicate LRNs
+- an LRN not found in the selected EnrollPro section
+- an active EnrollPro learner missing from the SMART response
+- an invalid grade or date
+- a school-year mismatch
+- an invalid promotion outcome
+
+Successful results are stored in the normalized SMART outcome tables with learning-area results, optional publication time and revision, synchronization time, and a payload checksum. Compatibility fields on `EnrollmentRecord` are updated from the same validated result. Learners with `PARTIAL`, `NG`, a null promotion status, or a missing final subject rating remain unresolved and stay marked `Action Required`.
+
+Conditionally promoted deficiency notes are derived only from failed or incomplete learning-area results returned by SMART. EnrollPro does not infer or invent subjects.
+
+The database update is transactional for finalized and unresolved learner states. Valid finalized learners are stored, while learners with incomplete SMART results are cleared back to `Action Required` in the same transaction. A malformed response, duplicate LRN, school-year mismatch, or cross-section learner prevents the section update.
+
+## EOSY and Rollover Order
+
+1. SMART publishes final outcomes.
+2. EnrollPro pulls and validates the section outcomes.
+3. EnrollPro stores normalized outcomes.
+4. Staff resolve all remaining `Action Required` learners.
+5. Sections are finalized.
+6. SF5 and SF6 artifacts are recorded.
+7. The atomic school-year rollover may proceed.
+
+A corrected SMART result invalidates affected form checksums. SMART synchronization occurs before rollover and never inside the rollover transaction.
+
+## Errors
+
+- `401`: SMART rejected the configured bearer token.
+- `422`: SMART data is incomplete, mismatched, or not finalized.
+- `502`: SMART returned a malformed response.
+- `503`: SMART is unavailable or EnrollPro integration is not configured.
+
+EnrollPro does not retry through undocumented endpoints and does not fall back to quarterly grade or local placeholder data.
+
+## EnrollPro Feeds for SMART
+
+SMART reads learner and section context from the protected or compatibility feeds documented in [ENROLLPRO-API.md](./ENROLLPRO-API.md):
+
+```text
+GET /api/integration/v1/default/smart/students?schoolYearId=:id
+GET /api/integration/v1/sections?schoolYearId=:id
+GET /api/integration/v1/sections/:sectionId/learners?schoolYearId=:id
+GET /api/integration/v1/school-year?schoolYearId=:id
+```
+
+Historical school-year requests use immutable `EnrollmentHistory` data where live enrollment rows have been archived.
+
+Attendance remains entirely in SMART. EnrollPro supplies identity, enrollment, section, and school-year context only.

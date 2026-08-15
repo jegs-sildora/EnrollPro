@@ -35,7 +35,8 @@ export async function syncSmartSectionGrades(
         `SMART final-result sync: section #${sectionId} - `
         + `${result.syncedCount} updated, `
         + `${result.unmatchedSmartLrns.length} unmatched, `
-        + `${result.missingSmartLrns.length} missing from SMART.`,
+        + `${result.missingSmartLrns.length} missing from SMART, `
+        + `${result.unresolvedOutcomes.length} unresolved.`,
       subjectType: "Section",
       recordId: sectionId,
       req,
@@ -51,7 +52,10 @@ export async function syncSmartSectionGrades(
     res.json({
       success: true,
       ...result,
-      message: `Synchronized ${result.syncedCount} finalized learner outcome(s) from SMART.`,
+      message:
+        result.unresolvedOutcomes.length > 0
+          ? `Synchronized ${result.syncedCount} finalized learner outcome(s) from SMART. ${result.unresolvedOutcomes.length} learner outcome(s) still need complete final grades.`
+          : `Synchronized ${result.syncedCount} finalized learner outcome(s) from SMART.`,
     });
   } catch (error) {
     next(error);

@@ -15,7 +15,7 @@ SMART exposes final grades via a REST API endpoint. EnrollPro calls this endpoin
 - Remarks (Passed/Failed)
 - Promotion status (Promoted/Retained)
 
-**This is a READ-ONLY pull.** SMART never writes to EnrollPro.
+**This is a READ-ONLY pull.** SMART never writes to EnrollPro. EnrollPro stores only complete, published final outcomes after strict validation.
 
 ---
 
@@ -28,16 +28,16 @@ Pull final grades for all students in a specific section.
 ### Authentication
 
 ```
-Header: x-api-key: <your-webhook-key>
+Header: Authorization: Bearer <server-configured-smart-token>
 ```
 
-The API key is the same `ENROLLPRO_WEBHOOK_KEY` used for webhooks. If you don't have it, ask the SMART admin.
+EnrollPro sends the server-only `SMART_API_KEY` as a bearer token in the `Authorization` header. The token is configured on the EnrollPro server and must never be exposed to browser clients or committed to documentation.
 
 ### Request
 
 ```
 POST https://<smart-server>/api/integration/sections/{sectionId}/sync-grades?schoolYear=2026-2027
-Header: x-api-key: your-api-key-here
+Header: Authorization: Bearer <server-configured-smart-token>
 ```
 
 **Parameters:**
@@ -48,8 +48,10 @@ Header: x-api-key: your-api-key-here
 | `schoolYear` | string (query) | No | Defaults to current school year (2026-2027) |
 
 **The `sectionId` accepts:**
-- Database ID: `cmstrjq4301jjoove28e4tisk`
-- Section name: `Makatao`, `Pearl`, `Orchid`, etc.
+- The shared section name: `Makatao`, `Pearl`, `Orchid`, etc.
+- A SMART section identifier when the same identifier is shared with EnrollPro.
+
+Because EnrollPro and SMART maintain separate databases, EnrollPro sends the current section name by default. EnrollPro's local numeric section primary key is not sent as the SMART section reference.
 
 ### Response
 
@@ -151,6 +153,10 @@ Header: x-api-key: your-api-key-here
 - `"PARTIAL"` — Only 1 or 2 terms have grades. Final rating is averaged from available terms.
 - `"NG"` (No Grade) — No grades entered for any term. Final rating is null. Exclude from general average.
 
+Learners with `PARTIAL`, `NG`, a null promotion status, or missing final subject ratings remain unresolved in EnrollPro. Their existing EOSY result is cleared and the EOSY screen keeps them in `Action Required` until SMART publishes a complete final outcome. EnrollPro never creates a fallback grade or promotion result.
+
+The SMART response may also include `publishedAt` and `revision`. EnrollPro stores those values when supplied; the documented endpoint does not require them.
+
 ---
 
 ## How Final Rating is Computed
@@ -184,7 +190,7 @@ GET /api/admin/class-assignments?schoolYear=2026-2027
 
 # Then pull grades for each section
 POST /api/integration/sections/{sectionId}/sync-grades
-Header: x-api-key: YOUR_KEY
+Header: Authorization: Bearer YOUR_SMART_TOKEN
 ```
 
 ---
@@ -192,8 +198,8 @@ Header: x-api-key: YOUR_KEY
 ## Troubleshooting
 
 ### 401 Unauthorized
-- Check that `x-api-key` header is set correctly
-- The key must match `ENROLLPRO_WEBHOOK_KEY` on the SMART server
+- Check that the `Authorization: Bearer ...` header is set correctly
+- The bearer token must match the server-only `SMART_API_KEY` configured for the EnrollPro to SMART connection
 
 ### 404 Section not found
 - Verify the section ID or name is correct
@@ -209,6 +215,8 @@ Header: x-api-key: YOUR_KEY
 - If `status: "NG"` — the student has no grades for this subject (teacher hasn't entered them yet)
 - If `status: "PARTIAL"` — only some terms are graded, finalRating is averaged from available terms
 - If `status: "GRADED"` — all terms are graded, finalRating should not be null
+
+For EnrollPro EOSY rollover, `PARTIAL` and `NG` rows remain unresolved. EnrollPro does not store them as finalized academic outcomes until SMART publishes complete results. `publishedAt` and `revision` are stored when the endpoint provides them, but they are optional in the documented response.
 
 ### generalAverage is null
 - The student has no grades in any subject yet
@@ -273,17 +281,17 @@ SMART has seeded test data with various scenarios for testing. Here are the stud
 ```bash
 # 1. Pull grades for Makatao section (Grade 8)
 curl -X POST "http://localhost:5003/api/integration/sections/Makatao/sync-grades?schoolYear=2026-2027" \
-  -H "x-api-key: YOUR_WEBHOOK_KEY" \
+  -H "Authorization: Bearer YOUR_SMART_TOKEN" \
   -H "Content-Type: application/json"
 
 # 2. Pull grades for Pearl section (Grade 10)
 curl -X POST "http://localhost:5003/api/integration/sections/Pearl/sync-grades?schoolYear=2026-2027" \
-  -H "x-api-key: YOUR_WEBHOOK_KEY" \
+  -H "Authorization: Bearer YOUR_SMART_TOKEN" \
   -H "Content-Type: application/json"
 
 # 3. Pull grades for a specific section by ID
 curl -X POST "http://localhost:5003/api/integration/sections/cmstrjq4301jjoove28e4tisk/sync-grades?schoolYear=2026-2027" \
-  -H "x-api-key: YOUR_WEBHOOK_KEY" \
+  -H "Authorization: Bearer YOUR_SMART_TOKEN" \
   -H "Content-Type: application/json"
 ```
 
@@ -294,7 +302,7 @@ curl -X POST "http://localhost:5003/api/integration/sections/cmstrjq4301jjoove28
 - **School year** defaults to `2026-2027` if not specified
 - **Homeroom Guidance** subjects are excluded from the response (they use qualitative descriptors, not numeric grades)
 - **Rotation subjects** (e.g., Science split into Bio/Chem/EarthSci) are merged into a single row
-- The endpoint is **unauthenticated** (no JWT required) — only the `x-api-key` header is needed
+- The endpoint accepts the SMART partner bearer token in the `Authorization` header. EnrollPro keeps this token on the server and never sends it to the browser.
 - Grades are **real-time** — once a teacher saves a grade, it's immediately available via this endpoint
 
 ---

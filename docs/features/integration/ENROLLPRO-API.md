@@ -400,9 +400,11 @@ Base path: `/api/integration`
 
 | Method | Path | Auth and roles | Direction | Purpose |
 | --- | --- | --- | --- | --- |
-| POST | `/smart/sections/:id/sync-grades` | `SYSTEM_ADMIN` | SMART to EnrollPro | Pull strict final published outcomes, learning-area results, revision, and publication time by LRN |
+| POST | `/smart/sections/:id/sync-grades` | EnrollPro staff JWT, `SYSTEM_ADMIN` | EnrollPro to SMART, then SMART to EnrollPro | Pull and transactionally store strict final published outcomes by LRN from SMART `/api/integration/sections/:sectionId/sync-grades` |
 | POST | `/atlas/sync-faculty` | `SYSTEM_ADMIN` | EnrollPro to ATLAS trigger | Ask ATLAS to reconcile EnrollPro faculty |
 | GET | `/atlas/faculty/:id/teaching-load` | Staff JWT | ATLAS to EnrollPro proxy | Read a teacher's ATLAS assignments |
+
+The SMART outbound request uses the server-only `SMART_API_KEY` in the `Authorization: Bearer ...` header. EnrollPro rejects duplicate or unmatched LRNs and school-year mismatches. Learners with incomplete subject grades, `NG`, a null promotion status, or no final rating remain unresolved and stay marked `Action Required`; no fallback grades or promotion results are fabricated. Optional SMART publication and revision metadata are stored when supplied.
 
 ## Partner Integration v1
 

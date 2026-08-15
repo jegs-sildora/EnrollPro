@@ -98,9 +98,9 @@ System administrators set the phase through `PATCH /api/settings/phase`. Enterin
 
 ### Grade and Status Reconciliation
 
-1. EnrollPro pulls final published section outcomes from SMART through `POST /api/integration/smart/sections/:id/sync-grades`.
-2. SMART must provide a 12-digit LRN, final general average, final outcome, learning-area results, publication time, and revision.
-3. EnrollPro rejects incomplete SMART payloads and never fabricates grades or academic deficiencies.
+1. EnrollPro pulls final section outcomes from SMART through its protected trigger `POST /api/integration/smart/sections/:id/sync-grades`. The server calls SMART's `POST /api/integration/sections/:sectionId/sync-grades?schoolYear=YYYY-YYYY` endpoint using the server-only `Authorization: Bearer ...` credential.
+2. SMART must provide a 12-digit LRN, subject or learning-area results, and a finalized promotion outcome for learners that are ready for rollover. `PARTIAL`, `NG`, null promotion status, and missing final ratings remain unresolved. Optional publication time and revision metadata are stored when SMART provides them.
+3. EnrollPro rejects incomplete SMART payloads, including `PARTIAL` or `NG` subject rows, and never fabricates grades or academic deficiencies.
 4. SMART records are matched to EnrollPro by LRN and stored as normalized final academic outcomes.
 5. Final outcomes use:
    - `PROMOTED`

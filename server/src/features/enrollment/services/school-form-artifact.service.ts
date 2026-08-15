@@ -24,8 +24,8 @@ interface Sf5LearnerPayload {
   eosyStatus: string | null;
   academicDeficiencyNote: string | null;
   smartOutcome: {
-    revision: string;
-    publishedAt: string;
+    revision: string | null;
+    publishedAt: string | null;
     finalOutcome: string;
     learningAreas: Array<{
       code: string;
@@ -209,7 +209,7 @@ export async function buildSf5Payload(
         ? {
             revision: record.smartAcademicOutcome.smartRevision,
             publishedAt:
-              record.smartAcademicOutcome.publishedAt.toISOString(),
+              record.smartAcademicOutcome.publishedAt?.toISOString() ?? null,
             finalOutcome: record.smartAcademicOutcome.finalOutcome,
             learningAreas:
               record.smartAcademicOutcome.learningAreaResults.map((result) => ({

@@ -300,14 +300,12 @@ async function getReadiness(
     const recordsWithoutResult = section.enrollmentRecords.filter(
       (record) => record.eosyStatus === null,
     ).length;
-    const isSmartFallbackEnabled = process.env.SMART_SYNC_FALLBACK_ENABLED === "true";
-
-    const missingSmartOutcomes = isSmartFallbackEnabled ? 0 : section.enrollmentRecords.filter(
+    const missingSmartOutcomes = section.enrollmentRecords.filter(
       (record) =>
         !isDeparture(record.eosyStatus)
         && record.smartAcademicOutcome === null,
     ).length;
-    const mismatchedSmartOutcomes = isSmartFallbackEnabled ? 0 : section.enrollmentRecords.filter(
+    const mismatchedSmartOutcomes = section.enrollmentRecords.filter(
       (record) =>
         record.smartAcademicOutcome
         && record.eosyStatus !== record.smartAcademicOutcome.finalOutcome,
@@ -466,8 +464,8 @@ function academicOutcomeSnapshot(
   outcome: {
     finalGeneralAverage: number;
     finalOutcome: string;
-    smartRevision: string;
-    publishedAt: Date;
+    smartRevision: string | null;
+    publishedAt: Date | null;
     syncedAt: Date;
     payloadHash: string;
     learningAreaResults: Array<{
@@ -483,7 +481,7 @@ function academicOutcomeSnapshot(
     finalGeneralAverage: outcome.finalGeneralAverage,
     finalOutcome: outcome.finalOutcome,
     smartRevision: outcome.smartRevision,
-    publishedAt: outcome.publishedAt.toISOString(),
+    publishedAt: outcome.publishedAt?.toISOString() ?? null,
     syncedAt: outcome.syncedAt.toISOString(),
     payloadHash: outcome.payloadHash,
     learningAreas: outcome.learningAreaResults.map((area) => ({

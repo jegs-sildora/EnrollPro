@@ -317,7 +317,6 @@ export default function EosyUpdating() {
   const [reopenLoading, setReopenLoading] = useState<boolean>(false);
 
   const [syncingSmart, setSyncingSmart] = useState(false);
-  const autoSyncedGradesRef = useRef<Set<string>>(new Set());
 
   const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
@@ -567,7 +566,7 @@ export default function EosyUpdating() {
     }
   }, [ayId]);
 
-  const handleSyncSmartGrades = useCallback(async (isSilent = false) => {
+  const handleSyncSmartGrades = useCallback(async () => {
     if (!ayId || !activeTab || isHistoricalReadOnly) return;
 
     const targetSections = allSections.filter(s =>
@@ -577,65 +576,56 @@ export default function EosyUpdating() {
     );
 
     if (targetSections.length === 0) {
-      if (!isSilent) {
-        sileo.info({
-          title: "No Active Sections",
-          description: "All sections in this scope are already finalized or no sections were found.",
-        });
-      }
+      sileo.info({
+        title: "No Active Sections",
+        description: "All sections in this scope are already finalized or no sections were found.",
+      });
       return;
     }
 
     setSyncingSmart(true);
     try {
       let totalSynced = 0;
+      let totalUnresolved = 0;
+      const failedSections: string[] = [];
       for (const sec of targetSections) {
         try {
-          const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`, {
-            schoolYearId: ayId,
-          });
+          const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`);
           if (res.data?.syncedCount) {
             totalSynced += res.data.syncedCount;
           }
+          if (Array.isArray(res.data?.unresolvedOutcomes)) {
+            totalUnresolved += res.data.unresolvedOutcomes.length;
+          }
         } catch (secErr) {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
+          failedSections.push(sec.name);
         }
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId, activeTab] });
-      await fetchSectionsAndGrades();
-      await fetchExportLockState();
+      if (failedSections.length === targetSections.length) {
+        throw new Error(
+          `SMART did not return complete final outcomes for the selected sections: ${failedSections.join(", ")}.`,
+        );
+      }
 
-      if (!isSilent) {
+      if (failedSections.length > 0 || totalUnresolved > 0) {
+        sileo.warning({
+          title: "SMART Sync Partially Complete",
+          description: `${totalSynced} learner outcome(s) synchronized. ${totalUnresolved} learner outcome(s) still need complete final grades.${failedSections.length > 0 ? ` Review ${failedSections.length} section(s) still marked Action Required: ${failedSections.join(", ")}.` : ""}`,
+        });
+      } else {
         sileo.success({
-          title: "SMART Grades Synchronized",
+          title: "SMART Outcomes Synchronized",
           description: `Successfully synchronized ${totalSynced} learner outcome(s) across ${targetSections.length} section(s) from SMART.`,
         });
       }
     } catch (err) {
-      if (!isSilent) {
-        toastApiError(err as never);
-      }
+      toastApiError(err as never);
     } finally {
       setSyncingSmart(false);
     }
-  }, [ayId, activeTab, isHistoricalReadOnly, allSections, sectionFilter, queryClient, fetchSectionsAndGrades, fetchExportLockState]);
-
-  // Auto-sync fallback when records load for a tab with unpopulated grades
-  useEffect(() => {
-    if (!activeTab || isHistoricalReadOnly) return;
-    if (records.length > 0 && !autoSyncedGradesRef.current.has(activeTab)) {
-      const hasUnpopulated = records.some(
-        r => (r.finalAverage === null || r.finalAverage === undefined) &&
-             r.eosyStatus !== "TRANSFERRED_OUT" &&
-             r.eosyStatus !== "DROPPED_OUT"
-      );
-      if (hasUnpopulated) {
-        autoSyncedGradesRef.current.add(activeTab);
-        void handleSyncSmartGrades(true);
-      }
-    }
-  }, [activeTab, records, isHistoricalReadOnly, handleSyncSmartGrades]);
+  }, [ayId, activeTab, isHistoricalReadOnly, allSections, sectionFilter]);
 
   const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
     if (!gradeLevelId || !ayId) return;

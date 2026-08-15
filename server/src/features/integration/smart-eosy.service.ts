@@ -15,11 +15,121 @@ interface SmartSyncResult {
   syncedCount: number;
   unmatchedSmartLrns: string[];
   missingSmartLrns: string[];
+  unresolvedOutcomes: Array<{ lrn: string; reason: string }>;
   learnerIds: number[];
 }
 
-function buildDeficiencyNote(
+type AcademicStatus = "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
+
+interface NormalizedSmartOutcome {
+  lrn: string;
+  studentName?: string;
+  finalGeneralAverage: number;
+  finalOutcome: AcademicStatus;
+  learningAreas: Array<{
+    code: string;
+    name: string;
+    finalGrade: number;
+    result: "PASSED" | "FAILED" | "INCOMPLETE";
+  }>;
+  publishedAt: string | null;
+  revision: string | null;
+}
+
+function normalizePromotionStatus(
+  value: string | null | undefined,
+): AcademicStatus | null {
+  if (!value) return null;
+
+  switch (value.trim().toUpperCase().replace(/\s+/g, "_")) {
+    case "PROMOTED":
+      return "PROMOTED";
+    case "RETAINED":
+      return "RETAINED";
+    case "CONDITIONALLY_PROMOTED":
+      return "CONDITIONALLY_PROMOTED";
+    default:
+      return null;
+  }
+}
+
+function normalizeSmartOutcome(
   outcome: SmartEosyLearnerOutcome,
+): NormalizedSmartOutcome {
+  const subjectGrades = outcome.subjectGrades ?? [];
+  let learningAreas: NormalizedSmartOutcome["learningAreas"] =
+    outcome.learningAreas ?? [];
+
+  if (subjectGrades.length > 0) {
+    const incompleteSubject = subjectGrades.find((subject) => {
+      const status = subject.status ?? (
+        subject.finalRating === null ? "NG" : "GRADED"
+      );
+      return status !== "GRADED" || subject.finalRating === null;
+    });
+    if (incompleteSubject) {
+      throw new Error(
+        `Subject ${incompleteSubject.subjectName} is not fully graded (${incompleteSubject.status}).`,
+      );
+    }
+
+    learningAreas = subjectGrades.map((subject) => {
+      const finalGrade = subject.finalRating;
+      if (finalGrade === null) {
+        throw new Error(`Subject ${subject.subjectName} has no final rating.`);
+      }
+      return {
+        code: subject.subjectCode,
+        name: subject.subjectName,
+        finalGrade,
+        result: finalGrade >= 75 ? ("PASSED" as const) : ("FAILED" as const),
+      };
+    });
+  }
+
+  if (learningAreas.length === 0) {
+    throw new Error("SMART returned no learning-area results.");
+  }
+  if (learningAreas.some((area) => area.result === "INCOMPLETE")) {
+    throw new Error("SMART returned an incomplete learning-area result.");
+  }
+
+  const calculatedAverage =
+    learningAreas.reduce((total, area) => total + area.finalGrade, 0) /
+    learningAreas.length;
+  const providedAverage = outcome.finalGeneralAverage ?? outcome.generalAverage;
+  const finalGeneralAverage = providedAverage ?? calculatedAverage;
+
+  if (subjectGrades.length > 0) {
+    const roundedToTwoDecimals = Number(calculatedAverage.toFixed(2));
+    const roundedToWholeNumber = Number(calculatedAverage.toFixed(0));
+    const matchesSmartRounding =
+      Math.abs(finalGeneralAverage - roundedToTwoDecimals) <= 0.01
+      || Math.abs(finalGeneralAverage - roundedToWholeNumber) <= 0.01;
+    if (!matchesSmartRounding) {
+      throw new Error("SMART general average does not match the subject final ratings.");
+    }
+  }
+
+  const finalOutcome = normalizePromotionStatus(
+    outcome.finalOutcome ?? outcome.promotionStatus,
+  );
+  if (!finalOutcome) {
+    throw new Error("SMART did not return a finalized promotion outcome.");
+  }
+  return {
+    lrn: outcome.lrn,
+    studentName: outcome.studentName,
+    finalGeneralAverage,
+    finalOutcome,
+    learningAreas,
+    publishedAt: outcome.publishedAt ?? null,
+    revision: outcome.revision ?? null,
+  };
+}
+
+function buildDeficiencyNote(
+  outcome: NormalizedSmartOutcome,
 ): string | null {
   if (outcome.finalOutcome !== "CONDITIONALLY_PROMOTED") {
     return null;
@@ -66,6 +176,7 @@ export async function syncFinalSmartSectionOutcomes(
       syncedCount: 0,
       unmatchedSmartLrns: [],
       missingSmartLrns: [],
+      unresolvedOutcomes: [],
       learnerIds: [],
     };
   }
@@ -78,65 +189,30 @@ export async function syncFinalSmartSectionOutcomes(
     if (!baseUrl) {
       throw new Error("SMART is not configured.");
     }
-    const cleanBaseUrl = baseUrl.replace(/\/$/, "");
-    const headers = process.env.SMART_API_KEY
-      ? {
-          "X-Integration-Key": process.env.SMART_API_KEY,
-          "X-API-Key": process.env.SMART_API_KEY,
-        }
-      : undefined;
-
-    // Call SMART Section Grade Outcomes Sync Endpoint: POST /api/integration/smart/sections/:sectionId/sync-grades
-    try {
-      const postResponse = await axios.post<unknown>(
-        `${cleanBaseUrl}/api/integration/smart/sections/${sectionId}/sync-grades`,
-        {
-          schoolYearId: section.schoolYearId,
-          schoolYear: section.schoolYear.yearLabel,
-        },
-        {
-          headers,
-          timeout: 10_000,
-        },
-      );
-      rawResponse = postResponse.data;
-    } catch (postErr) {
-      // Compatibility alias: POST /api/integration/sections/:sectionId/sync-grades
-      if (axios.isAxiosError(postErr) && postErr.response?.status === 404) {
-        try {
-          const aliasResponse = await axios.post<unknown>(
-            `${cleanBaseUrl}/api/integration/sections/${sectionId}/sync-grades`,
-            {
-              schoolYearId: section.schoolYearId,
-              schoolYear: section.schoolYear.yearLabel,
-            },
-            {
-              headers,
-              timeout: 10_000,
-            },
-          );
-          rawResponse = aliasResponse.data;
-        } catch {
-          // Fallback to GET /api/grades/section/:id
-          const getResponse = await axios.get<unknown>(
-            `${cleanBaseUrl}/api/grades/section/${sectionId}`,
-            {
-              params: {
-                quarter: "FINAL",
-                schoolYearId: section.schoolYearId,
-                schoolYear: section.schoolYear.yearLabel,
-              },
-              headers,
-              timeout: 10_000,
-            },
-          );
-          rawResponse = getResponse.data;
-        }
-      } else {
-        throw postErr;
-      }
+    const smartToken = process.env.SMART_API_KEY?.trim();
+    if (!smartToken) {
+      throw new Error("SMART bearer token is not configured.");
     }
+    const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+    // SMART's section registry is keyed by the shared DepEd section name.
+    // EnrollPro's numeric primary key is local and is not a SMART identifier.
+    const response = await axios.post<unknown>(
+      `${cleanBaseUrl}/api/integration/sections/${encodeURIComponent(section.name)}/sync-grades`,
+      undefined,
+      {
+        params: { schoolYear: section.schoolYear.yearLabel },
+        headers: { Authorization: `Bearer ${smartToken}` },
+        timeout: 10_000,
+      },
+    );
+    rawResponse = response.data;
   } catch (error: unknown) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      throw new AppError(502, "SMART rejected the configured bearer token.");
+    }
     const reason = error instanceof Error ? error.message : "Unknown connection failure";
     throw new AppError(
       503,
@@ -154,6 +230,16 @@ export async function syncFinalSmartSectionOutcomes(
     );
   }
 
+  if (
+    parsed.data.schoolYear &&
+    parsed.data.schoolYear !== section.schoolYear.yearLabel
+  ) {
+    throw new AppError(
+      422,
+      `SMART returned school year ${parsed.data.schoolYear}, but this section belongs to ${section.schoolYear.yearLabel}.`,
+    );
+  }
+
   const rawOutcomesList: SmartEosyLearnerOutcome[] =
     parsed.data.outcomes ??
     parsed.data.students ??
@@ -161,38 +247,25 @@ export async function syncFinalSmartSectionOutcomes(
     parsed.data.data?.students ??
     [];
 
-  // Normalize outcomes
-  const studentOutcomes = rawOutcomesList.map((item) => {
-    const publishedAt = item.publishedAt || new Date().toISOString();
-    const learningAreas =
-      item.learningAreas && item.learningAreas.length > 0
-        ? item.learningAreas
-        : [
-            {
-              code: "GEN",
-              name: "General Average",
-              finalGrade: item.finalGeneralAverage,
-              result:
-                item.finalGeneralAverage >= 75
-                  ? ("PASSED" as const)
-                  : ("FAILED" as const),
-            },
-          ];
-    return {
-      ...item,
-      publishedAt,
-      learningAreas,
-    };
-  });
-
-  const duplicateLrns = studentOutcomes
+  const duplicateRawLrns = rawOutcomesList
     .map((student) => student.lrn)
     .filter((lrn, index, values) => values.indexOf(lrn) !== index);
-  if (duplicateLrns.length > 0) {
+  if (duplicateRawLrns.length > 0) {
     throw new AppError(
       502,
-      `SMART returned duplicate LRNs: ${Array.from(new Set(duplicateLrns)).join(", ")}`,
+      `SMART returned duplicate LRNs: ${Array.from(new Set(duplicateRawLrns)).join(", ")}`,
     );
+  }
+
+  const normalizedOutcomes: NormalizedSmartOutcome[] = [];
+  const unresolvedOutcomes: Array<{ lrn: string; reason: string }> = [];
+  for (const item of rawOutcomesList) {
+    try {
+      normalizedOutcomes.push(normalizeSmartOutcome(item));
+    } catch (error: unknown) {
+      const reason = error instanceof Error ? error.message : "Invalid final outcome.";
+      unresolvedOutcomes.push({ lrn: item.lrn, reason });
+    }
   }
 
   const localByLrn = new Map(
@@ -204,10 +277,25 @@ export async function syncFinalSmartSectionOutcomes(
         : [],
     ),
   );
+  const invalidLocalLrns = section.enrollmentRecords
+    .filter(
+      (record) =>
+        record.eosyStatus !== "DROPPED_OUT" &&
+        record.eosyStatus !== "TRANSFERRED_OUT" &&
+        !/^\d{12}$/.test(record.learner.lrn ?? ""),
+    )
+    .map((record) => record.learner.id);
+  if (invalidLocalLrns.length > 0) {
+    throw new AppError(
+      422,
+      `Active learners have invalid or missing LRNs: ${invalidLocalLrns.join(", ")}.`,
+    );
+  }
   const smartByLrn = new Map(
-    studentOutcomes.map((student) => [student.lrn, student]),
+    normalizedOutcomes.map((student) => [student.lrn, student]),
   );
-  const unmatchedSmartLrns = studentOutcomes
+  const returnedSmartLrns = new Set(rawOutcomesList.map((student) => student.lrn));
+  const unmatchedSmartLrns = rawOutcomesList
     .filter((student) => !localByLrn.has(student.lrn))
     .map((student) => student.lrn);
   const missingSmartLrns = section.enrollmentRecords
@@ -216,17 +304,17 @@ export async function syncFinalSmartSectionOutcomes(
         record.eosyStatus !== "DROPPED_OUT" &&
         record.eosyStatus !== "TRANSFERRED_OUT" &&
         record.learner.lrn &&
-        !smartByLrn.has(record.learner.lrn),
+        !returnedSmartLrns.has(record.learner.lrn),
     )
     .map((record) => record.learner.lrn)
     .filter((lrn): lrn is string => Boolean(lrn));
-  const matched = studentOutcomes.flatMap((student) => {
+  const matched = normalizedOutcomes.flatMap((student) => {
     const record = localByLrn.get(student.lrn);
     return record ? [{ student, record }] : [];
   });
 
   if (unmatchedSmartLrns.length > 0 || missingSmartLrns.length > 0) {
-    throw new AppError(
+      throw new AppError(
       422,
       [
         unmatchedSmartLrns.length > 0
@@ -250,8 +338,10 @@ export async function syncFinalSmartSectionOutcomes(
           update: {
             finalGeneralAverage: student.finalGeneralAverage,
             finalOutcome: student.finalOutcome,
-            smartRevision: String(student.revision),
-            publishedAt: new Date(student.publishedAt),
+            smartRevision: student.revision,
+            publishedAt: student.publishedAt
+              ? new Date(student.publishedAt)
+              : null,
             payloadHash,
             syncedAt: new Date(),
           },
@@ -259,8 +349,10 @@ export async function syncFinalSmartSectionOutcomes(
             enrollmentRecordId: record.id,
             finalGeneralAverage: student.finalGeneralAverage,
             finalOutcome: student.finalOutcome,
-            smartRevision: String(student.revision),
-            publishedAt: new Date(student.publishedAt),
+            smartRevision: student.revision,
+            publishedAt: student.publishedAt
+              ? new Date(student.publishedAt)
+              : null,
             payloadHash,
           },
           select: { id: true },
@@ -286,6 +378,21 @@ export async function syncFinalSmartSectionOutcomes(
           },
         });
       }
+      for (const unresolved of unresolvedOutcomes) {
+        const record = localByLrn.get(unresolved.lrn);
+        if (!record) continue;
+        await tx.smartAcademicOutcome.deleteMany({
+          where: { enrollmentRecordId: record.id },
+        });
+        await tx.enrollmentRecord.update({
+          where: { id: record.id },
+          data: {
+            finalAverage: null,
+            eosyStatus: null,
+            academicDeficiencyNote: null,
+          },
+        });
+      }
     },
     {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
@@ -300,6 +407,7 @@ export async function syncFinalSmartSectionOutcomes(
     syncedCount: matched.length,
     unmatchedSmartLrns,
     missingSmartLrns,
+    unresolvedOutcomes,
     learnerIds: matched.map(({ record }) => record.learner.id),
   };
 }
