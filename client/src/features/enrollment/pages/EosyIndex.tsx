@@ -15,6 +15,12 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/shared/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -35,6 +41,8 @@ import {
   MapPin,
   RefreshCw,
   Save,
+  ChevronDown,
+  FileText,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -569,11 +577,7 @@ export default function EosyUpdating() {
   const handleSyncSmartGrades = useCallback(async () => {
     if (!ayId || !activeTab || isHistoricalReadOnly) return;
 
-    const targetSections = allSections.filter(s =>
-      String(s.gradeLevelId) === activeTab &&
-      (sectionFilter === "ALL" || s.name === sectionFilter) &&
-      !s.isEosyFinalized
-    );
+    const targetSections = allSections.filter(s => !s.isEosyFinalized);
 
     if (targetSections.length === 0) {
       sileo.info({
@@ -588,6 +592,7 @@ export default function EosyUpdating() {
       let totalSynced = 0;
       let totalUnresolved = 0;
       const failedSections: string[] = [];
+      let firstError: unknown = null;
       for (const sec of targetSections) {
         try {
           const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`);
@@ -600,10 +605,14 @@ export default function EosyUpdating() {
         } catch (secErr) {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
           failedSections.push(sec.name);
+          if (!firstError) firstError = secErr;
         }
       }
 
       if (failedSections.length === targetSections.length) {
+        if (firstError) {
+          throw firstError;
+        }
         throw new Error(
           `SMART did not return complete final outcomes for the selected sections: ${failedSections.join(", ")}.`,
         );
@@ -1469,11 +1478,11 @@ export default function EosyUpdating() {
               ))}
             </TabsList>
 
-            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized || (blockersCount === 0 && pendingCount === 0))) && (
+            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
               <AtomicRolloverDialog
                 sourceSchoolYearId={activeSchoolYearId ?? 0}
                 sourceYearLabel={activeSchoolYearLabel ?? ""}
-                disabled={!isAllFinalized && blockersCount > 0}
+                disabled={!isAllFinalized && !isSchoolYearFinalized}
                 trigger={
                   <Button
                     size="lg"
@@ -1527,14 +1536,14 @@ export default function EosyUpdating() {
                             value={sectionFilter}
                             onValueChange={setSectionFilter}
                           >
-                            <SelectTrigger className="w-56 bg-background border-border font-extrabold">
+                            <SelectTrigger className="w-44 bg-background border-border font-extrabold">
                               <SelectValue placeholder="Filter by Section / Adviser" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
                               {sectionGroups.map(([groupName, secs]) => (
                                 <SelectGroup key={groupName}>
-                                  <SelectLabel className="font-bold text-muted-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
+                                  <SelectLabel className="font-bold text-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
                                   {secs.map(sec => (
                                     <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
                                   ))}
@@ -1557,7 +1566,7 @@ export default function EosyUpdating() {
                             ) : (
                               <>
                                 <RefreshCw className="h-4 w-4" />
-                                <span>Sync SMART Outcomes</span>
+                                <span>Sync SMART</span>
                               </>
                             )}
                           </Button>
@@ -1578,24 +1587,31 @@ export default function EosyUpdating() {
                           )}
 
                           {(isScopeFinalized || (blockersCount === 0 && pendingCount === 0)) ? (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                variant="outline"
-                                disabled={recordingForms}
-                                className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
-                                onClick={() => void recordSf5ForScope()}
-                              >
-                                {recordingForms ? "Exporting..." : "Export Official SF5"}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                disabled={recordingForms}
-                                className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground"
-                                onClick={() => void recordSf6()}
-                              >
-                                {recordingForms ? "Exporting..." : "Export Official SF6"}
-                              </Button>
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  disabled={recordingForms}
+                                  className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground uppercase"
+                                >
+                                  {recordingForms ? "Exporting..." : (
+                                    <>
+                                      <FileText className="w-4 h-4 mr-2" />
+                                      Export Forms
+                                      <ChevronDown className="w-4 h-4 ml-2" />
+                                    </>
+                                  )}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 font-extrabold">
+                                <DropdownMenuItem onClick={() => void recordSf5ForScope()} className="cursor-pointer">
+                                  Export Official SF5
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => void recordSf6()} className="cursor-pointer">
+                                  Export Official SF6
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           ) : Object.keys(rowSelection).length > 0 ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <Select
@@ -1672,7 +1688,7 @@ export default function EosyUpdating() {
                               size="lg"
                               className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
                             >
-                              Finalize & Lock {targetScopeName}
+                              Finalize {targetScopeName}
                             </Button>
                           )}
 

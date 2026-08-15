@@ -213,7 +213,27 @@ export async function syncFinalSmartSectionOutcomes(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       throw new AppError(502, "SMART rejected the configured bearer token.");
     }
-    const reason = error instanceof Error ? error.message : "Unknown connection failure";
+    let reason = "Unknown connection failure";
+    if (axios.isAxiosError(error)) {
+      if (error.response?.data?.message) {
+        reason = error.response.data.message;
+      } else {
+        const code = error.code || "";
+        if (code === "ECONNREFUSED") {
+          reason = "Connection refused. The SMART server is currently offline.";
+        } else if (code === "ETIMEDOUT" || code === "ECONNABORTED" || error.message?.includes("timeout")) {
+          reason = "Connection timed out. The SMART server took too long to respond.";
+        } else if (code === "ENOTFOUND") {
+          reason = "Server not found. The configured SMART API URL is unreachable.";
+        } else {
+          reason = error.message || code || reason;
+        }
+      }
+    } else if (error instanceof Error) {
+      reason = error.message;
+    } else if (typeof error === "string") {
+      reason = error;
+    }
     throw new AppError(
       503,
       `SMART final-result synchronization failed: ${reason}`,
