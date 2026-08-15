@@ -209,6 +209,15 @@ export const seedDatabase = async () => {
         }
       });
 
+      // Calculate realistic random data
+      const year = 1980 + (i % 15);
+      const month = i % 12;
+      const day = (i % 28) + 1;
+      const birthdate = new Date(year, month, day);
+      
+      const departmentName = DEPARTMENTS[i % DEPARTMENTS.length].name;
+      const majorSpecialization = departmentName;
+
       const teacher = await prisma.teacher.create({
         data: {
           employeeId,
@@ -220,7 +229,16 @@ export const seedDatabase = async () => {
           userId: user.id,
           plantillaPosition,
           designation: "CLASS ADVISER",
-          departmentId: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code]
+          departmentId: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code],
+          birthdate,
+          personnelType: "TEACHING",
+          undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION",
+          postgraduateDegree: "NONE",
+          majorSpecialization,
+          minorSpecialization: "NONE",
+          indigenousCommunity: "NOT_APPLICABLE",
+          natureOfAppointment: "REGULAR_PERMANENT",
+          fundingSource: "NATIONAL"
         }
       });
       teachers.push(teacher);

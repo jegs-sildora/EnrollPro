@@ -72,9 +72,7 @@ export async function syncFinalSmartSectionOutcomes(
 
   let rawResponse: unknown;
   const baseUrl = process.env.SMART_API_BASE_URL?.trim();
-  const isFallbackEnabled =
-    process.env.SMART_SYNC_FALLBACK_ENABLED === "true" ||
-    process.env.NODE_ENV !== "production";
+
 
   try {
     if (!baseUrl) {
@@ -139,52 +137,11 @@ export async function syncFinalSmartSectionOutcomes(
       }
     }
   } catch (error: unknown) {
-    if (isFallbackEnabled) {
-      const publishedAt = new Date().toISOString();
-      rawResponse = {
-        success: true,
-        ready: true,
-        sectionId,
-        outcomes: section.enrollmentRecords
-          .filter(
-            (record) =>
-              record.eosyStatus !== "DROPPED_OUT" &&
-              record.eosyStatus !== "TRANSFERRED_OUT" &&
-              record.learner.lrn,
-          )
-          .map((record) => {
-            const avg =
-              record.finalAverage !== null && record.finalAverage !== undefined
-                ? Number(record.finalAverage)
-                : 85;
-            const outcome =
-              record.eosyStatus || (avg >= 75 ? "PROMOTED" : "RETAINED");
-            return {
-              lrn: record.learner.lrn!,
-              studentName: `${record.learner.lastName}, ${record.learner.firstName}`,
-              finalGeneralAverage: avg,
-              finalOutcome: outcome,
-              learningAreas: [
-                {
-                  code: "GEN",
-                  name: "General Average",
-                  finalGrade: avg,
-                  result: avg >= 75 ? "PASSED" : "FAILED",
-                },
-              ],
-              publishedAt,
-              revision: "1",
-            };
-          }),
-      };
-    } else {
-      const reason =
-        error instanceof Error ? error.message : "Unknown connection failure";
-      throw new AppError(
-        503,
-        `SMART final-result synchronization failed: ${reason}`,
-      );
-    }
+    const reason = error instanceof Error ? error.message : "Unknown connection failure";
+    throw new AppError(
+      503,
+      `SMART final-result synchronization failed: ${reason}`,
+    );
   }
 
   const parsed = smartEosySectionResponseSchema.safeParse(rawResponse);
