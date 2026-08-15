@@ -487,7 +487,11 @@ export function VerificationWorkspace() {
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
-                  <span className="font-extrabold text-base leading-tight">No pending verifications found.</span>
+                  <span className="font-extrabold text-base leading-tight">
+                    {activeTab === "PENDING" && "No pending applications in the queue"}
+                    {activeTab === "READY" && "All verified learners have been assigned to sections"}
+                    {activeTab === "INCOMPLETE" && "No applications require parent follow up"}
+                  </span>
                 </div>
               ) : (
                 filteredVerifications.map((app) => (

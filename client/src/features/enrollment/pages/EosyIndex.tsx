@@ -6,7 +6,6 @@ import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverride
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { AtomicRolloverDialog } from "@/features/settings/components/AtomicRolloverDialog";
 import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
-import { Card } from "@/shared/ui/card";
 import {
   Select,
   SelectContent,
@@ -17,14 +16,7 @@ import {
   SelectLabel,
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -33,19 +25,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
-  CheckCircle2,
-  Lock,
   Unlock,
   Loader2,
   AlertTriangle,
   AlertCircle,
-  MoreHorizontal,
-  Pencil,
   Search,
   MapPin,
+  RefreshCw,
+  Save,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -55,7 +44,6 @@ import { useHeaderStore } from "@/store/header.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
-import { TableRow, TableCell } from "@/shared/ui/table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
@@ -63,7 +51,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shar
 import { sileo } from "sileo";
 import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate } from "react-router";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 import {
@@ -293,18 +281,15 @@ function GeofencingPopover({
 
 export default function EosyUpdating() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const {
     activeSchoolYearId,
     viewingSchoolYearId,
-    systemStatus,
     systemPhase,
     setHistoricalCorrectionToken,
     activeSchoolYearLabel,
   } = useSettingsStore();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const isEosyPhase = systemPhase === "EOSY_CLOSING";
-  const isEosyArchivedState = systemStatus === "ARCHIVED";
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
@@ -318,7 +303,6 @@ export default function EosyUpdating() {
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
-  const [batchUpdateLoading, setBatchUpdateLoading] = useState(false);
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -332,7 +316,9 @@ export default function EosyUpdating() {
   const [reopenJustification, setReopenJustification] = useState<string>("");
   const [reopenLoading, setReopenLoading] = useState<boolean>(false);
 
-  const [dismissSuccessCard, setDismissSuccessCard] = useState<boolean>(false);
+  const [syncingSmart, setSyncingSmart] = useState(false);
+  const autoSyncedGradesRef = useRef<Set<string>>(new Set());
+
   const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState<Record<number, {
@@ -404,104 +390,131 @@ export default function EosyUpdating() {
     });
   }, []);
 
+  const handleCommitChanges = useCallback(async () => {
+    if (isCommitting || Object.keys(unsavedChanges).length === 0) return;
+    setIsCommitting(true);
+
+    try {
+      const validUpdates: typeof unsavedChanges = {};
+      const revertedRecords: number[] = [];
+
+      for (const [idStr, changes] of Object.entries(unsavedChanges)) {
+        const recordId = Number(idStr);
+        const original = records.find(r => r.id === recordId);
+        if (!original) continue;
+
+        let hasInvalidField = false;
+
+        // LRN validation (Philippines LRN must be 12 digits if provided)
+        if ("lrn" in changes && changes.lrn !== original.enrollmentApplication.learner.lrn) {
+          if (changes.lrn && !/^\d{12}$/.test(changes.lrn)) {
+            hasInvalidField = true;
+          }
+        }
+
+        // Names validation
+        if ("firstName" in changes && !changes.firstName?.trim()) {
+          hasInvalidField = true;
+        }
+        if ("lastName" in changes && !changes.lastName?.trim()) {
+          hasInvalidField = true;
+        }
+
+        // General average validation (60-100)
+        if ("finalAverage" in changes && changes.finalAverage !== original.finalAverage) {
+          const avg = changes.finalAverage;
+          if (avg !== null && avg !== undefined && (avg < 60 || avg > 100)) {
+            hasInvalidField = true;
+          }
+        }
+
+        // DepEd Status Logic: General Average < 75 cannot be PROMOTED
+        const resolvedStatus = "eosyStatus" in changes ? changes.eosyStatus : original.eosyStatus;
+        const resolvedAvg = "finalAverage" in changes ? changes.finalAverage : original.finalAverage;
+        if (resolvedStatus === "PROMOTED" && resolvedAvg !== null && resolvedAvg !== undefined && resolvedAvg < 75) {
+          hasInvalidField = true;
+        }
+
+        if (hasInvalidField) {
+          revertedRecords.push(recordId);
+        } else {
+          validUpdates[recordId] = changes;
+        }
+      }
+
+      if (revertedRecords.length > 0) {
+        sileo.warning({
+          title: "Validation Reverted",
+          description: `${revertedRecords.length} record(s) failed validation (invalid LRN, empty name, average out of 60-100, or average below 75 while Promoted) and were reverted.`,
+        });
+      }
+
+      const validEntries = Object.entries(validUpdates);
+      if (validEntries.length > 0) {
+        const promises = validEntries.map(([idStr, changes]) => {
+          if (hasOverride) {
+            return api.post(`/eosy/records/${idStr}/override`, changes);
+          }
+          return api.patch(`/eosy/records/${idStr}`, changes);
+        });
+        await Promise.all(promises);
+
+        setRecords(prev =>
+          prev.map(r => {
+            const update = validUpdates[r.id];
+            if (!update) return r;
+            return {
+              ...r,
+              finalAverage: update.finalAverage !== undefined ? update.finalAverage : r.finalAverage,
+              eosyStatus: update.eosyStatus !== undefined ? update.eosyStatus : r.eosyStatus,
+              academicDeficiencyNote: update.academicDeficiencyNote !== undefined ? update.academicDeficiencyNote : r.academicDeficiencyNote,
+              enrollmentApplication: {
+                ...r.enrollmentApplication,
+                learner: {
+                  ...r.enrollmentApplication.learner,
+                  lrn: update.lrn !== undefined ? (update.lrn ?? null) : r.enrollmentApplication.learner.lrn,
+                  firstName: update.firstName !== undefined ? (update.firstName ?? r.enrollmentApplication.learner.firstName) : r.enrollmentApplication.learner.firstName,
+                  lastName: update.lastName !== undefined ? (update.lastName ?? r.enrollmentApplication.learner.lastName) : r.enrollmentApplication.learner.lastName,
+                }
+              }
+            };
+          })
+        );
+      }
+
+      if (hasOverride && ayId) {
+        await api.post("/admin/historical-correction/relock", { schoolYearId: ayId });
+        setHistoricalCorrectionToken(null);
+      }
+
+      setUnsavedChanges({});
+
+      sileo.success({
+        title: "Changes Saved",
+        description: `Successfully committed ${validEntries.length} learner modification(s) to the database.`,
+      });
+
+      if (hasOverride) {
+        setTimeout(() => window.location.reload(), 100);
+      }
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsCommitting(false);
+    }
+  }, [unsavedChanges, records, hasOverride, ayId, setHistoricalCorrectionToken, isCommitting]);
+
   // Listen for commit triggers from HistoricalBanner
   useEffect(() => {
-    const handleCommit = async () => {
-      if (isCommitting) return;
-      setIsCommitting(true);
-
-      try {
-        const validUpdates: typeof unsavedChanges = {};
-        const revertedRecords: number[] = [];
-
-        for (const [idStr, changes] of Object.entries(unsavedChanges)) {
-          const recordId = Number(idStr);
-          const original = records.find(r => r.id === recordId);
-          if (!original) continue;
-
-          let hasInvalidField = false;
-
-          // LRN validation (Philippines LRN must be 12 digits)
-          if (changes.hasOwnProperty("lrn") && changes.lrn !== original.enrollmentApplication.learner.lrn) {
-            if (!/^\d{12}$/.test(changes.lrn || "")) {
-              hasInvalidField = true;
-            }
-          }
-
-          // Names validation (Must not be empty)
-          if (changes.hasOwnProperty("firstName") && !changes.firstName?.trim()) {
-            hasInvalidField = true;
-          }
-          if (changes.hasOwnProperty("lastName") && !changes.lastName?.trim()) {
-            hasInvalidField = true;
-          }
-
-          // General average validation (60-100)
-          if (changes.hasOwnProperty("finalAverage") && changes.finalAverage !== original.finalAverage) {
-            const avg = changes.finalAverage;
-            if (avg !== null && avg !== undefined && (avg < 60 || avg > 100)) {
-              hasInvalidField = true;
-            }
-          }
-
-          // DepEd Status Logic: General Average < 75 cannot be PROMOTED
-          const resolvedStatus = changes.hasOwnProperty("eosyStatus") ? changes.eosyStatus : original.eosyStatus;
-          const resolvedAvg = changes.hasOwnProperty("finalAverage") ? changes.finalAverage : original.finalAverage;
-          if (resolvedStatus === "PROMOTED" && resolvedAvg !== null && resolvedAvg !== undefined && resolvedAvg < 75) {
-            hasInvalidField = true;
-          }
-
-          if (hasInvalidField) {
-            revertedRecords.push(recordId);
-          } else {
-            validUpdates[recordId] = changes;
-          }
-        }
-
-        if (revertedRecords.length > 0) {
-          sileo.warning({
-            title: "Validation Reverted",
-            description: `${revertedRecords.length} record(s) failed validation (invalid LRN, empty name, average out of 60-100, or average below 75 while Promoted) and were reverted.`,
-          });
-        }
-
-        const validEntries = Object.entries(validUpdates);
-        if (validEntries.length > 0) {
-          const promises = validEntries.map(([idStr, changes]) => {
-            return api.post(`/eosy/records/${idStr}/override`, changes);
-          });
-          await Promise.all(promises);
-        }
-
-        // Manually trigger relock
-        if (ayId) {
-          await api.post("/admin/historical-correction/relock", { schoolYearId: ayId });
-        }
-
-        setHistoricalCorrectionToken(null);
-        setUnsavedChanges({});
-
-        sileo.success({
-          title: "Changes Saved & Session Locked",
-          description: "All valid historical corrections have been committed and audit logs recorded.",
-        });
-
-        setTimeout(() => window.location.reload(), 100);
-      } catch (err) {
-        sileo.error({
-          title: "Commit Error",
-          description: "Failed to commit historical corrections. Please try again.",
-        });
-      } finally {
-        setIsCommitting(false);
-      }
+    const handleCommit = () => {
+      void handleCommitChanges();
     };
 
     window.addEventListener("historical-correction:trigger-commit", handleCommit);
     return () => {
       window.removeEventListener("historical-correction:trigger-commit", handleCommit);
     };
-  }, [unsavedChanges, records, ayId, setHistoricalCorrectionToken, isCommitting]);
+  }, [handleCommitChanges]);
 
   useEffect(() => {
     if (!ayId) return;
@@ -554,6 +567,76 @@ export default function EosyUpdating() {
     }
   }, [ayId]);
 
+  const handleSyncSmartGrades = useCallback(async (isSilent = false) => {
+    if (!ayId || !activeTab || isHistoricalReadOnly) return;
+
+    const targetSections = allSections.filter(s =>
+      String(s.gradeLevelId) === activeTab &&
+      (sectionFilter === "ALL" || s.name === sectionFilter) &&
+      !s.isEosyFinalized
+    );
+
+    if (targetSections.length === 0) {
+      if (!isSilent) {
+        sileo.info({
+          title: "No Active Sections",
+          description: "All sections in this scope are already finalized or no sections were found.",
+        });
+      }
+      return;
+    }
+
+    setSyncingSmart(true);
+    try {
+      let totalSynced = 0;
+      for (const sec of targetSections) {
+        try {
+          const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`, {
+            schoolYearId: ayId,
+          });
+          if (res.data?.syncedCount) {
+            totalSynced += res.data.syncedCount;
+          }
+        } catch (secErr) {
+          console.error(`SMART sync failed for section ${sec.name}:`, secErr);
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId, activeTab] });
+      await fetchSectionsAndGrades();
+      await fetchExportLockState();
+
+      if (!isSilent) {
+        sileo.success({
+          title: "SMART Grades Synchronized",
+          description: `Successfully synchronized ${totalSynced} learner outcome(s) across ${targetSections.length} section(s) from SMART.`,
+        });
+      }
+    } catch (err) {
+      if (!isSilent) {
+        toastApiError(err as never);
+      }
+    } finally {
+      setSyncingSmart(false);
+    }
+  }, [ayId, activeTab, isHistoricalReadOnly, allSections, sectionFilter, queryClient, fetchSectionsAndGrades, fetchExportLockState]);
+
+  // Auto-sync fallback when records load for a tab with unpopulated grades
+  useEffect(() => {
+    if (!activeTab || isHistoricalReadOnly) return;
+    if (records.length > 0 && !autoSyncedGradesRef.current.has(activeTab)) {
+      const hasUnpopulated = records.some(
+        r => (r.finalAverage === null || r.finalAverage === undefined) &&
+             r.eosyStatus !== "TRANSFERRED_OUT" &&
+             r.eosyStatus !== "DROPPED_OUT"
+      );
+      if (hasUnpopulated) {
+        autoSyncedGradesRef.current.add(activeTab);
+        void handleSyncSmartGrades(true);
+      }
+    }
+  }, [activeTab, records, isHistoricalReadOnly, handleSyncSmartGrades]);
+
   const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
     if (!gradeLevelId || !ayId) return;
     if (!silent) {
@@ -604,111 +687,17 @@ export default function EosyUpdating() {
     onRefresh: refreshEosyWorkspace,
   });
 
-  const handleStatusChange = useCallback(
-    async (
-      recordId: number,
-      status: string,
-      finalAverage?: number | null,
-      academicDeficiencyNote?: string | null,
-    ) => {
-      if (isHistoricalReadOnly && !hasOverride) {
-        sileo.error({ title: "Read-Only", description: "This school year is archived. All records are read-only." });
-        return;
-      }
-      if (exportLock?.schoolYearFinalized) {
-        sileo.error({ title: "School Year Locked", description: "School year EOSY is finalized. Updates are no longer allowed." });
-        return;
-      }
-
-      const record = records.find((r) => r.id === recordId);
-      const effectiveAve = finalAverage !== undefined ? finalAverage : record?.finalAverage;
-
-      if (status === "PROMOTED" && effectiveAve !== null && effectiveAve !== undefined && effectiveAve < 75) {
-        sileo.error({ title: "Academic Policy Violation", description: "Learner with General Average below 75.00 cannot be marked as PROMOTED." });
-        return;
-      }
-
-      if (record?.section.isEosyFinalized) {
-        sileo.error({ title: "Section Locked", description: "This section is already finalized." });
-        return;
-      }
-
-      try {
-        const payload: Record<string, unknown> = { eosyStatus: status };
-        if (finalAverage !== undefined) payload.finalAverage = finalAverage;
-        if (status !== "CONDITIONALLY_PROMOTED") {
-          payload.academicDeficiencyNote = null;
-        } else if (academicDeficiencyNote !== undefined) {
-          payload.academicDeficiencyNote = academicDeficiencyNote;
-        }
-
-        await api.patch(`/eosy/records/${recordId}`, payload);
-
-        setRecords((prev) =>
-          prev.map((r) =>
-            r.id === recordId
-              ? {
-                ...r,
-                eosyStatus: status as EosyStatus,
-                academicDeficiencyNote:
-                  status === "CONDITIONALLY_PROMOTED"
-                    ? academicDeficiencyNote ?? r.academicDeficiencyNote
-                    : null,
-                finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage,
-              }
-              : r,
-          ),
-        );
-
-        if (finalAverage === undefined) {
-          sileo.success({ title: "Status Updated", description: "Learner status saved successfully." });
-        }
-      } catch (err) {
-        toastApiError(err as never);
-      }
-    },
-    [exportLock?.schoolYearFinalized, records, isHistoricalReadOnly, hasOverride],
-  );
-
-  const handleAcademicDeficiencyNoteSave = useCallback(
-    async (recordId: number, note: string) => {
-      const record = records.find((item) => item.id === recordId);
-      if (!record || record.eosyStatus !== "CONDITIONALLY_PROMOTED") {
-        return;
-      }
-
-      try {
-        await api.patch(`/eosy/records/${recordId}`, {
-          eosyStatus: record.eosyStatus,
-          academicDeficiencyNote: note,
-        });
-
-        setRecords((prev) =>
-          prev.map((item) =>
-            item.id === recordId
-              ? { ...item, academicDeficiencyNote: note.trim() || null }
-              : item,
-          ),
-        );
-      } catch (err) {
-        toastApiError(err as never);
-      }
-    },
-    [records],
-  );
-
   const handleBatchUpdate = async () => {
     if (!batchActionStatus) return;
 
     const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedRecords = selectedIndexes.map((idx) => filteredRecords[idx]);
+    const selectedRecords = selectedIndexes.map((idx) => filteredRecords[idx]).filter(Boolean);
 
     if (selectedRecords.length === 0) {
       sileo.error({ title: "No Selection", description: "Please select at least one learner." });
       return;
     }
 
-    // Filter out records from finalized sections
     const editableRecords = selectedRecords.filter(r => !r.section.isEosyFinalized);
     if (editableRecords.length === 0) {
       sileo.error({ title: "Action Aborted", description: "All selected learners belong to finalized sections." });
@@ -719,7 +708,11 @@ export default function EosyUpdating() {
     let skippedCount = selectedRecords.length - editableRecords.length;
 
     if (batchActionStatus === "PROMOTED") {
-      targetRecords = editableRecords.filter((r) => r.finalAverage && r.finalAverage >= 75);
+      targetRecords = editableRecords.filter((r) => {
+        const unsaved = unsavedChanges[r.id] || {};
+        const ave = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+        return ave && ave >= 75;
+      });
       skippedCount += editableRecords.length - targetRecords.length;
     }
 
@@ -728,33 +721,16 @@ export default function EosyUpdating() {
       return;
     }
 
-    setBatchUpdateLoading(true);
-    try {
-      const payload = {
-        schoolYearId: ayId,
-        updates: targetRecords.map(r => ({ recordId: r.id, status: batchActionStatus }))
-      };
+    targetRecords.forEach(r => {
+      handleFieldChange(r.id, "eosyStatus", batchActionStatus as EosyStatus);
+    });
 
-      await api.put(`/eosy/grade/${activeTab}/batch-status`, payload);
-
-      setRecords((prev) =>
-        prev.map((r) => {
-          const match = targetRecords.find((tr) => tr.id === r.id);
-          return match ? { ...r, eosyStatus: batchActionStatus as EosyStatus } : r;
-        }),
-      );
-
-      sileo.success({
-        title: "Batch Updated",
-        description: `${targetRecords.length} learners updated.${skippedCount > 0 ? ` ${skippedCount} skipped due to policy or locked section.` : ""}`,
-      });
-      setRowSelection({});
-      setBatchActionStatus("");
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setBatchUpdateLoading(false);
-    }
+    sileo.info({
+      title: "Status Staged for Selected",
+      description: `Staged ${batchActionStatus} for ${targetRecords.length} learner(s).${skippedCount > 0 ? ` ${skippedCount} skipped.` : ""} Click 'Save Changes' to commit to database.`,
+    });
+    setRowSelection({});
+    setBatchActionStatus("");
   };
 
   const handleFinalizeGrade = async () => {
@@ -841,7 +817,6 @@ export default function EosyUpdating() {
     }
   };
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
-  const shouldShowFinalizedView = isEosyArchivedState || isSchoolYearFinalized;
 
   const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
 
@@ -888,13 +863,6 @@ export default function EosyUpdating() {
       setRecordingForms(false);
     }
   };
-
-  // Reset success card dismissal when the finalization status of the school year changes
-  useEffect(() => {
-    if (!isAllFinalized) {
-      setDismissSuccessCard(false);
-    }
-  }, [isAllFinalized]);
 
   const activeGradeName = gradeLevels.find((g) => String(g.id) === activeTab)?.name || "Grade Level";
 
@@ -994,11 +962,18 @@ export default function EosyUpdating() {
 
   const suppressEmptyState = loadingRecords && !showSkeleton && filteredRecords.length === 0;
 
-  const pendingCount = filteredRecords.filter(r =>
-    (r.finalAverage === null || r.finalAverage === undefined) &&
-    r.eosyStatus !== "TRANSFERRED_OUT" &&
-    r.eosyStatus !== "DROPPED_OUT"
-  ).length;
+  const pendingCount = useMemo(() => {
+    return filteredRecords.filter(r => {
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+
+      if (effectiveStatus === "TRANSFERRED_OUT" || effectiveStatus === "DROPPED_OUT") {
+        return false;
+      }
+      return effectiveAve === null || effectiveAve === undefined || !effectiveStatus;
+    }).length;
+  }, [filteredRecords, unsavedChanges]);
 
   const scopeRecords = useMemo(() => {
     return sectionFilter === "ALL" ? records : records.filter(r => r.section?.name === sectionFilter);
@@ -1009,21 +984,29 @@ export default function EosyUpdating() {
   const pendingClassesList = useMemo(() => {
     const sets = new Set<string>();
     filteredRecords.forEach((r) => {
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+
       if (
-        (r.finalAverage === null || r.finalAverage === undefined) &&
-        r.eosyStatus !== "TRANSFERRED_OUT" &&
-        r.eosyStatus !== "DROPPED_OUT" &&
+        (effectiveAve === null || effectiveAve === undefined) &&
+        effectiveStatus !== "TRANSFERRED_OUT" &&
+        effectiveStatus !== "DROPPED_OUT" &&
         r.section?.name
       ) {
         sets.add(r.section.name);
       }
     });
     return Array.from(sets);
-  }, [filteredRecords]);
+  }, [filteredRecords, unsavedChanges]);
 
   const pendingIrregularCount = useMemo(() => {
-    return filteredRecords.filter((r) => !r.eosyStatus).length;
-  }, [filteredRecords]);
+    return filteredRecords.filter((r) => {
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+      return !effectiveStatus;
+    }).length;
+  }, [filteredRecords, unsavedChanges]);
 
   const scopedUnlockedClassesCount = pendingClassesList.length;
   const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
@@ -1045,17 +1028,15 @@ export default function EosyUpdating() {
         cell: ({ row }) => {
           const r = row.original;
           const recordId = r.id;
-          const sex = r.enrollmentApplication.learner.sex;
-          const genderLabel = sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           const unsaved = unsavedChanges[recordId] || {};
-          const currentLrn = unsaved.hasOwnProperty("lrn") ? unsaved.lrn : r.enrollmentApplication.learner.lrn;
-          const currentFirstName = unsaved.hasOwnProperty("firstName") ? unsaved.firstName : r.enrollmentApplication.learner.firstName;
-          const currentLastName = unsaved.hasOwnProperty("lastName") ? unsaved.lastName : r.enrollmentApplication.learner.lastName;
+          const currentLrn = "lrn" in unsaved ? unsaved.lrn : r.enrollmentApplication.learner.lrn;
+          const currentFirstName = "firstName" in unsaved ? unsaved.firstName : r.enrollmentApplication.learner.firstName;
+          const currentLastName = "lastName" in unsaved ? unsaved.lastName : r.enrollmentApplication.learner.lastName;
 
-          const isLrnChanged = unsaved.hasOwnProperty("lrn") && unsaved.lrn !== r.enrollmentApplication.learner.lrn;
-          const isNameChanged = (unsaved.hasOwnProperty("firstName") && unsaved.firstName !== r.enrollmentApplication.learner.firstName) ||
-            (unsaved.hasOwnProperty("lastName") && unsaved.lastName !== r.enrollmentApplication.learner.lastName);
+          const isLrnChanged = "lrn" in unsaved && unsaved.lrn !== r.enrollmentApplication.learner.lrn;
+          const isNameChanged = ("firstName" in unsaved && unsaved.firstName !== r.enrollmentApplication.learner.firstName) ||
+            ("lastName" in unsaved && unsaved.lastName !== r.enrollmentApplication.learner.lastName);
 
           const reportedGrades =
             r.enrollmentApplication.reportedGrades ?? {};
@@ -1073,13 +1054,13 @@ export default function EosyUpdating() {
             typeof geofencing.longitude === "number"
               ? geofencing.longitude
               : null;
-          const currentLat = unsaved.hasOwnProperty("latitude")
+          const currentLat = "latitude" in unsaved
             ? unsaved.latitude
             : storedLatitude;
-          const currentLng = unsaved.hasOwnProperty("longitude")
+          const currentLng = "longitude" in unsaved
             ? unsaved.longitude
             : storedLongitude;
-          const isCoordsChanged = unsaved.hasOwnProperty("latitude") || unsaved.hasOwnProperty("longitude");
+          const isCoordsChanged = "latitude" in unsaved || "longitude" in unsaved;
 
           if (hasOverride) {
             return (
@@ -1155,8 +1136,8 @@ export default function EosyUpdating() {
           const r = row.original;
           const recordId = r.id;
           const unsaved = unsavedChanges[recordId] || {};
-          const currentSectionId = unsaved.hasOwnProperty("sectionId") ? unsaved.sectionId : r.sectionId;
-          const isSectionChanged = unsaved.hasOwnProperty("sectionId") && unsaved.sectionId !== r.sectionId;
+          const currentSectionId = "sectionId" in unsaved ? unsaved.sectionId : r.sectionId;
+          const isSectionChanged = "sectionId" in unsaved && unsaved.sectionId !== r.sectionId;
 
           const gradeSections = allSections.filter(s => String(s.gradeLevelId) === activeTab);
 
@@ -1200,8 +1181,8 @@ export default function EosyUpdating() {
           const ave = r.finalAverage;
 
           const unsaved = unsavedChanges[recordId] || {};
-          const currentAve = unsaved.hasOwnProperty("finalAverage") ? unsaved.finalAverage : ave;
-          const isAveChanged = unsaved.hasOwnProperty("finalAverage") && unsaved.finalAverage !== ave;
+          const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : ave;
+          const isAveChanged = "finalAverage" in unsaved && unsaved.finalAverage !== ave;
 
           if (hasOverride) {
             return (
@@ -1254,14 +1235,14 @@ export default function EosyUpdating() {
           const scpViolation = r.scpViolation;
 
           const unsaved = unsavedChanges[recordId] || {};
-          const currentStatus = unsaved.hasOwnProperty("eosyStatus") ? unsaved.eosyStatus : r.eosyStatus;
-          const isStatusChanged = unsaved.hasOwnProperty("eosyStatus") && unsaved.eosyStatus !== r.eosyStatus;
-          const currentDeficiencyNote = unsaved.hasOwnProperty("academicDeficiencyNote")
+          const currentStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+          const isStatusChanged = "eosyStatus" in unsaved && unsaved.eosyStatus !== r.eosyStatus;
+          const currentDeficiencyNote = "academicDeficiencyNote" in unsaved
             ? unsaved.academicDeficiencyNote
             : r.academicDeficiencyNote;
 
           const isScp = Boolean(r.section?.programType && r.section.programType !== "REGULAR");
-          const currentAve = unsaved.hasOwnProperty("finalAverage") ? unsaved.finalAverage : r.finalAverage;
+          const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
           const hasZeroOrBlankGrade = currentAve === 0 || currentAve === null || currentAve === undefined || isNaN(currentAve as number);
           const isFailing = currentAve !== null && currentAve !== undefined && currentAve > 0 && currentAve < 75;
           const isScpDemotedGrades = !activeGradeName.includes("10") && isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
@@ -1372,19 +1353,18 @@ export default function EosyUpdating() {
           }
 
           return (
-            <div className="flex flex-col items-center justify-center gap-2 w-full">
+            <div className="flex flex-col items-center justify-center gap-1.5 w-full">
               <Select
                 value={(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
                 onValueChange={(val) => {
-                  if (val === "PROMOTED_TO_BEC") handleStatusChange(r.id, "PROMOTED");
-                  else handleStatusChange(
-                    r.id,
-                    val,
-                    undefined,
-                    val === "CONDITIONALLY_PROMOTED"
-                      ? currentDeficiencyNote ?? ""
-                      : null,
-                  );
+                  if (val === "PROMOTED_TO_BEC") {
+                    handleFieldChange(r.id, "eosyStatus", "PROMOTED");
+                  } else {
+                    handleFieldChange(r.id, "eosyStatus", val as EosyStatus);
+                    if (val !== "CONDITIONALLY_PROMOTED") {
+                      handleFieldChange(r.id, "academicDeficiencyNote", null);
+                    }
+                  }
                 }}
                 disabled={isSectionFinalized || isScpDemotedGrades}>
                 {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
@@ -1401,9 +1381,10 @@ export default function EosyUpdating() {
                   <SelectTrigger
                     className={cn(
                       "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                      isStatusChanged && "border-amber-500 focus:ring-amber-500",
                       resolvedStatus === "ACTION_REQUIRED"
                         ? "text-red-700 bg-red-50 border-red-200"
-                        : !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                        : !resolvedStatus || resolvedStatus === "PROMOTED"
                           ? "text-green-700 bg-green-50 border-green-200"
                           : "text-amber-700 bg-amber-50 border-amber-200",
                     )}>
@@ -1431,11 +1412,14 @@ export default function EosyUpdating() {
               </Select>
               {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
                 <Input
-                  defaultValue={currentDeficiencyNote ?? ""}
-                  onBlur={(e) => void handleAcademicDeficiencyNoteSave(recordId, e.target.value)}
+                  value={currentDeficiencyNote ?? ""}
+                  onChange={(e) => handleFieldChange(recordId, "academicDeficiencyNote", e.target.value)}
                   placeholder="Enter failing subject or deficiency note"
                   className="h-8 w-full min-w-[220px] text-sm font-bold"
                 />
+              )}
+              {isStatusChanged && (
+                <span className="text-xs text-amber-600 font-extrabold uppercase tracking-wider">Unsaved</span>
               )}
             </div>
           );
@@ -1443,7 +1427,7 @@ export default function EosyUpdating() {
         meta: { className: "w-[240px] text-center" }
       },
     ],
-    [isScopeFinalized, handleStatusChange, handleAcademicDeficiencyNoteSave, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange],
+    [isScopeFinalized, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange, activeGradeName],
   );
 
   const columns = useMemo(() => {
@@ -1495,11 +1479,11 @@ export default function EosyUpdating() {
               ))}
             </TabsList>
 
-            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
+            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized || (blockersCount === 0 && pendingCount === 0))) && (
               <AtomicRolloverDialog
                 sourceSchoolYearId={activeSchoolYearId ?? 0}
                 sourceYearLabel={activeSchoolYearLabel ?? ""}
-                disabled={!isAllFinalized}
+                disabled={!isAllFinalized && blockersCount > 0}
                 trigger={
                   <Button
                     size="lg"
@@ -1569,7 +1553,41 @@ export default function EosyUpdating() {
                             </SelectContent>
                           </Select>
 
-                          {isScopeFinalized ? (
+                          <Button
+                            variant="outline"
+                            disabled={syncingSmart || isScopeFinalized}
+                            onClick={() => void handleSyncSmartGrades()}
+                            className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 shrink-0"
+                          >
+                            {syncingSmart ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Syncing SMART...</span>
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                <span>Sync SMART Outcomes</span>
+                              </>
+                            )}
+                          </Button>
+
+                          {hasUnsavedEosyChanges && (
+                            <Button
+                              onClick={() => void handleCommitChanges()}
+                              disabled={isCommitting}
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-4 flex items-center gap-1.5 shadow-md shrink-0"
+                            >
+                              {isCommitting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                              <span>Save Changes ({Object.keys(unsavedChanges).length})</span>
+                            </Button>
+                          )}
+
+                          {(isScopeFinalized || (blockersCount === 0 && pendingCount === 0)) ? (
                             <div className="flex flex-wrap gap-2">
                               <Button
                                 variant="outline"
@@ -1608,7 +1626,7 @@ export default function EosyUpdating() {
                               </Select>
                               <Button
                                 onClick={handleBatchUpdate}
-                                disabled={!batchActionStatus || Object.keys(rowSelection).length === 0 || batchUpdateLoading}
+                                disabled={!batchActionStatus || Object.keys(rowSelection).length === 0}
                                 variant={batchActionStatus ? "default" : "outline"}
                                 className={cn(
                                   "transition-all font-extrabold px-6",
@@ -1617,7 +1635,6 @@ export default function EosyUpdating() {
                                     : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
                                 )}
                               >
-                                {batchUpdateLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                                 Apply to Selected
                               </Button>
                             </div>
@@ -1629,7 +1646,7 @@ export default function EosyUpdating() {
                           {/* Status Indicators */}
                           <div className="flex items-center gap-3">
                             {pendingCount > 0 && !isScopeFinalized && (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
                                 {pendingCount} Pending Submissions
                               </div>
                             )}
@@ -1638,7 +1655,7 @@ export default function EosyUpdating() {
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
                                       <AlertCircle className="w-3.5 h-3.5" />
                                       {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
                                     </div>

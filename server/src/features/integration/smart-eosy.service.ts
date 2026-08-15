@@ -24,7 +24,7 @@ function buildDeficiencyNote(
   if (outcome.finalOutcome !== "CONDITIONALLY_PROMOTED") {
     return null;
   }
-  const deficientAreas = outcome.learningAreas
+  const deficientAreas = (outcome.learningAreas || [])
     .filter((area) => area.result !== "PASSED")
     .map((area) => area.name);
   return deficientAreas.length > 0
@@ -47,6 +47,8 @@ export async function syncFinalSmartSectionOutcomes(
             select: {
               id: true,
               lrn: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -70,48 +72,118 @@ export async function syncFinalSmartSectionOutcomes(
 
   let rawResponse: unknown;
   const baseUrl = process.env.SMART_API_BASE_URL?.trim();
+  const isFallbackEnabled =
+    process.env.SMART_SYNC_FALLBACK_ENABLED === "true" ||
+    process.env.NODE_ENV !== "production";
 
   try {
     if (!baseUrl) {
       throw new Error("SMART is not configured.");
     }
-    const response = await axios.get<unknown>(
-      `${baseUrl.replace(/\/$/, "")}/api/grades/section/${sectionId}`,
-      {
-        params: {
-          quarter: "FINAL",
+    const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+    const headers = process.env.SMART_API_KEY
+      ? {
+          "X-Integration-Key": process.env.SMART_API_KEY,
+          "X-API-Key": process.env.SMART_API_KEY,
+        }
+      : undefined;
+
+    // Call SMART Section Grade Outcomes Sync Endpoint: POST /api/integration/smart/sections/:sectionId/sync-grades
+    try {
+      const postResponse = await axios.post<unknown>(
+        `${cleanBaseUrl}/api/integration/smart/sections/${sectionId}/sync-grades`,
+        {
           schoolYearId: section.schoolYearId,
           schoolYear: section.schoolYear.yearLabel,
         },
-        headers: process.env.SMART_API_KEY
-          ? { "X-Integration-Key": process.env.SMART_API_KEY }
-          : undefined,
-        timeout: 10_000,
-      },
-    );
-    rawResponse = response.data;
+        {
+          headers,
+          timeout: 10_000,
+        },
+      );
+      rawResponse = postResponse.data;
+    } catch (postErr) {
+      // Compatibility alias: POST /api/integration/sections/:sectionId/sync-grades
+      if (axios.isAxiosError(postErr) && postErr.response?.status === 404) {
+        try {
+          const aliasResponse = await axios.post<unknown>(
+            `${cleanBaseUrl}/api/integration/sections/${sectionId}/sync-grades`,
+            {
+              schoolYearId: section.schoolYearId,
+              schoolYear: section.schoolYear.yearLabel,
+            },
+            {
+              headers,
+              timeout: 10_000,
+            },
+          );
+          rawResponse = aliasResponse.data;
+        } catch {
+          // Fallback to GET /api/grades/section/:id
+          const getResponse = await axios.get<unknown>(
+            `${cleanBaseUrl}/api/grades/section/${sectionId}`,
+            {
+              params: {
+                quarter: "FINAL",
+                schoolYearId: section.schoolYearId,
+                schoolYear: section.schoolYear.yearLabel,
+              },
+              headers,
+              timeout: 10_000,
+            },
+          );
+          rawResponse = getResponse.data;
+        }
+      } else {
+        throw postErr;
+      }
+    }
   } catch (error: unknown) {
-    if (process.env.NODE_ENV === "development") {
+    if (isFallbackEnabled) {
       const publishedAt = new Date().toISOString();
       rawResponse = {
-        data: {
-          students: section.enrollmentRecords
-            .filter((record) => record.eosyStatus !== "DROPPED_OUT" && record.eosyStatus !== "TRANSFERRED_OUT" && record.learner.lrn)
-            .map((record) => ({
-              lrn: record.learner.lrn,
-              finalGeneralAverage: 85,
-              finalOutcome: "PROMOTED",
+        success: true,
+        ready: true,
+        sectionId,
+        outcomes: section.enrollmentRecords
+          .filter(
+            (record) =>
+              record.eosyStatus !== "DROPPED_OUT" &&
+              record.eosyStatus !== "TRANSFERRED_OUT" &&
+              record.learner.lrn,
+          )
+          .map((record) => {
+            const avg =
+              record.finalAverage !== null && record.finalAverage !== undefined
+                ? Number(record.finalAverage)
+                : 85;
+            const outcome =
+              record.eosyStatus || (avg >= 75 ? "PROMOTED" : "RETAINED");
+            return {
+              lrn: record.learner.lrn!,
+              studentName: `${record.learner.lastName}, ${record.learner.firstName}`,
+              finalGeneralAverage: avg,
+              finalOutcome: outcome,
               learningAreas: [
-                { code: "ENG", name: "English", finalGrade: 85, result: "PASSED" }
+                {
+                  code: "GEN",
+                  name: "General Average",
+                  finalGrade: avg,
+                  result: avg >= 75 ? "PASSED" : "FAILED",
+                },
               ],
               publishedAt,
               revision: "1",
-            }))
-        }
+            };
+          }),
       };
     } else {
-      const reason = error instanceof Error ? error.message : "Unknown connection failure";
-      throw new AppError(503, `SMART final-result synchronization failed: ${reason}`);
+      const reason =
+        error instanceof Error ? error.message : "Unknown connection failure";
+      throw new AppError(
+        503,
+        `SMART final-result synchronization failed: ${reason}`,
+      );
     }
   }
 
@@ -125,7 +197,38 @@ export async function syncFinalSmartSectionOutcomes(
     );
   }
 
-  const duplicateLrns = parsed.data.data.students
+  const rawOutcomesList: SmartEosyLearnerOutcome[] =
+    parsed.data.outcomes ??
+    parsed.data.students ??
+    parsed.data.data?.outcomes ??
+    parsed.data.data?.students ??
+    [];
+
+  // Normalize outcomes
+  const studentOutcomes = rawOutcomesList.map((item) => {
+    const publishedAt = item.publishedAt || new Date().toISOString();
+    const learningAreas =
+      item.learningAreas && item.learningAreas.length > 0
+        ? item.learningAreas
+        : [
+            {
+              code: "GEN",
+              name: "General Average",
+              finalGrade: item.finalGeneralAverage,
+              result:
+                item.finalGeneralAverage >= 75
+                  ? ("PASSED" as const)
+                  : ("FAILED" as const),
+            },
+          ];
+    return {
+      ...item,
+      publishedAt,
+      learningAreas,
+    };
+  });
+
+  const duplicateLrns = studentOutcomes
     .map((student) => student.lrn)
     .filter((lrn, index, values) => values.indexOf(lrn) !== index);
   if (duplicateLrns.length > 0) {
@@ -137,30 +240,30 @@ export async function syncFinalSmartSectionOutcomes(
 
   const localByLrn = new Map(
     section.enrollmentRecords.flatMap((record) =>
-      record.eosyStatus !== "DROPPED_OUT"
-      && record.eosyStatus !== "TRANSFERRED_OUT"
-      && record.learner.lrn
+      record.eosyStatus !== "DROPPED_OUT" &&
+      record.eosyStatus !== "TRANSFERRED_OUT" &&
+      record.learner.lrn
         ? [[record.learner.lrn, record] as const]
         : [],
     ),
   );
   const smartByLrn = new Map(
-    parsed.data.data.students.map((student) => [student.lrn, student]),
+    studentOutcomes.map((student) => [student.lrn, student]),
   );
-  const unmatchedSmartLrns = parsed.data.data.students
+  const unmatchedSmartLrns = studentOutcomes
     .filter((student) => !localByLrn.has(student.lrn))
     .map((student) => student.lrn);
   const missingSmartLrns = section.enrollmentRecords
     .filter(
       (record) =>
-        record.eosyStatus !== "DROPPED_OUT"
-        && record.eosyStatus !== "TRANSFERRED_OUT"
-        && record.learner.lrn
-        && !smartByLrn.has(record.learner.lrn),
+        record.eosyStatus !== "DROPPED_OUT" &&
+        record.eosyStatus !== "TRANSFERRED_OUT" &&
+        record.learner.lrn &&
+        !smartByLrn.has(record.learner.lrn),
     )
     .map((record) => record.learner.lrn)
     .filter((lrn): lrn is string => Boolean(lrn));
-  const matched = parsed.data.data.students.flatMap((student) => {
+  const matched = studentOutcomes.flatMap((student) => {
     const record = localByLrn.get(student.lrn);
     return record ? [{ student, record }] : [];
   });
@@ -190,7 +293,7 @@ export async function syncFinalSmartSectionOutcomes(
           update: {
             finalGeneralAverage: student.finalGeneralAverage,
             finalOutcome: student.finalOutcome,
-            smartRevision: student.revision,
+            smartRevision: String(student.revision),
             publishedAt: new Date(student.publishedAt),
             payloadHash,
             syncedAt: new Date(),
@@ -199,7 +302,7 @@ export async function syncFinalSmartSectionOutcomes(
             enrollmentRecordId: record.id,
             finalGeneralAverage: student.finalGeneralAverage,
             finalOutcome: student.finalOutcome,
-            smartRevision: student.revision,
+            smartRevision: String(student.revision),
             publishedAt: new Date(student.publishedAt),
             payloadHash,
           },

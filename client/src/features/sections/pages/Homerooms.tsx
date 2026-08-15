@@ -512,7 +512,7 @@ export default function Homerooms() {
             {categoryConfig.title}
           </h3>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 pb-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 auto-rows-fr pb-4">
           {sections.map((s) => (
             <SectionCard
               key={s.id}
@@ -545,7 +545,7 @@ export default function Homerooms() {
                 )
               }
               disabled={!canAddCategory}
-              className="group flex min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:animate-focus-fade disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-foreground">
+              className="group flex h-full min-h-[180px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-transparent p-6 text-foreground transition-all hover:border-primary/50 hover:bg-muted/50 hover:text-primary focus-visible:outline-none focus-visible:animate-focus-fade disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-foreground">
               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
               </div>
@@ -1208,7 +1208,7 @@ export default function Homerooms() {
                             g.displayOrder,
                           )}
 
-                          {renderSectionGroup(
+                          {enableHomogeneousSections && renderSectionGroup(
                             "BEC_TOP_5",
                             g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous),
                             g.gradeLevelName,

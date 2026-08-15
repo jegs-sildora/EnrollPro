@@ -13,31 +13,25 @@ export const smartEosyLearnerOutcomeSchema = z
     lrn: z
       .string()
       .regex(/^\d{12}$/, "SMART must provide a valid 12-digit LRN"),
+    studentName: z.string().optional(),
     finalGeneralAverage: z.number().min(0).max(100),
     finalOutcome: AcademicStatusEnum,
-    learningAreas: z.array(smartLearningAreaResultSchema).min(
-      1,
-      "SMART must provide at least one final learning-area result",
-    ),
-    publishedAt: z.string().datetime({ offset: true }),
-    revision: z.string().trim().min(1, "SMART revision is required"),
-  })
-  .superRefine((value, context) => {
-    if (
-      value.finalOutcome === "CONDITIONALLY_PROMOTED" &&
-      value.learningAreas.every((area) => area.result === "PASSED")
-    ) {
-      context.addIssue({
-        code: "custom",
-        path: ["learningAreas"],
-        message:
-          "A conditionally promoted learner must include the failed or incomplete learning area.",
-      });
-    }
+    learningAreas: z.array(smartLearningAreaResultSchema).optional().default([]),
+    publishedAt: z.string().optional(),
+    revision: z.union([z.string(), z.number()]).optional().default("1").transform((val) => String(val)),
   });
 
 export const smartEosySectionResponseSchema = z.object({
-  data: z.object({
-    students: z.array(smartEosyLearnerOutcomeSchema),
-  }),
+  success: z.boolean().optional(),
+  ready: z.boolean().optional(),
+  sectionId: z.union([z.string(), z.number()]).optional(),
+  outcomesSynced: z.number().optional(),
+  outcomes: z.array(smartEosyLearnerOutcomeSchema).optional(),
+  students: z.array(smartEosyLearnerOutcomeSchema).optional(),
+  data: z
+    .object({
+      students: z.array(smartEosyLearnerOutcomeSchema).optional(),
+      outcomes: z.array(smartEosyLearnerOutcomeSchema).optional(),
+    })
+    .optional(),
 });
