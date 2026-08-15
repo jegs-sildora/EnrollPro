@@ -4,7 +4,6 @@ import { authorize } from "../../middleware/authorize.js";
 import {
   syncSmartSectionGrades,
   syncAtlasFaculty,
-  getAtlasTeachingLoad,
 } from "./integration-trigger.controller.js";
 
 const router: Router = Router();
@@ -22,12 +21,6 @@ router.post(
   authenticate,
   authorize("SYSTEM_ADMIN"),
   syncAtlasFaculty,
-);
-
-router.get(
-  "/atlas/faculty/:id/teaching-load",
-  authenticate,
-  getAtlasTeachingLoad,
 );
 
 export default router;

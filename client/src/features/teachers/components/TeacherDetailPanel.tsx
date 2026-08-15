@@ -84,17 +84,6 @@ interface TeacherDetailPanelProps {
   onSaveSuccess?: () => void;
 }
 
-interface TeachingLoadItem {
-  subjectName: string;
-  subjectCode: string;
-  sectionName: string;
-  gradeLevel: string;
-}
-
-interface TeachingLoadResponse {
-  data?: TeachingLoadItem[];
-}
-
 interface ApiErrorResponse {
   response?: {
     data?: {
@@ -280,9 +269,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   onOpenChange,
   onSaveSuccess,
 }: TeacherDetailPanelProps) {
-  const [teachingLoad, setTeachingLoad] = useState<TeachingLoadItem[]>([]);
-  const [loadLoading, setLoadLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [schedulePeriods, setSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
   const [initialSchedulePeriods, setInitialSchedulePeriods] = useState<SchedulePeriodDraft[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
@@ -487,27 +473,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       setValue("plantillaPosition", "", { shouldDirty: true });
     }
   }, [formRoles, formPlantillaPosition, designationPool, setValue]);
-
-  // Fetch teaching load
-  useEffect(() => {
-    const fetchLoad = async () => {
-      if (!teacher || !open) return;
-      if (isTeachingStaff) {
-        setLoadLoading(true);
-        setLoadError(null);
-        try {
-          const res = await api.get<TeachingLoadResponse>(`/integration/atlas/faculty/${teacher.id}/teaching-load`);
-          setTeachingLoad(res.data.data || []);
-        } catch {
-          setLoadError("Integration Service Offline");
-        } finally {
-          setLoadLoading(false);
-        }
-      }
-    };
-    if (open && teacher) fetchLoad();
-    else if (!open) setTeachingLoad([]);
-  }, [teacher, open]);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -962,83 +927,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
                   </div>
 
-                  {/* Assignments for This School Year */}
-                  {isTeachingStaff && (
-                    <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
-                      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-primary" />
-                        Assignments for This School Year
-                      </div>
-                      <div className="divide-y">
-                        <div className="p-4">
-                          <div className="space-y-1">
-                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Advisory Class</p>
-                            {teacher.designation?.advisorySection ? (
-                              <p className="font-extrabold text-base leading-tight text-slate-700 pt-1">
-                                {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
-                              </p>
-                            ) : (
-                              <p className="text-base leading-tight font-extrabold text-slate-400 italic pt-1">No advisory class assigned</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
-                            {loadLoading ? (
-                              <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
-                                <RefreshCw className="h-3 w-3" />
-                                Checking ATLAS...
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="text-base font-extrabold border-dashed border-primary/30 text-primary/60 bg-primary/5">
-                                {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            {loadLoading ? (
-                              <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
-                            ) : teachingLoad.length > 0 ? (
-                              <div className="grid gap-2">
-                                {teachingLoad.map((load, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
-                                    <div className="space-y-0.5">
-                                      <p className="text-base font-extrabold uppercase text-primary leading-none">{load.subjectName}</p>
-                                      <p className="text-base font-extrabold text-foreground uppercase">{load.subjectCode}</p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="font-extrabold text-base uppercase text-foreground leading-none">{load.sectionName}</p>
-                                      <p className="text-base font-extrabold text-foreground uppercase">{load.gradeLevel}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
-                                <p className="text-base font-extrabold uppercase text-foreground mb-1">
-                                  {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
-                                </p>
-                                <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
-                                  {loadError
-                                    ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
-                                    : "No teaching load found in ATLAS."}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-muted/10 text-center">
-                          <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
-                            Record created {teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }) : "date not available"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="mt-4 p-3 bg-muted/10 text-center rounded-xl">
+                    <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
+                      Record created {teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }) : "date not available"}
+                    </p>
+                  </div>
                 </>
               )}
 
@@ -1785,87 +1678,11 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                     </div>
                   </div>
 
-                  {/* Card 4: Assignments for This School Year (edit mode, read-only section) */}
-                  {!isAdding && isTeachingStaff && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                      <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
-                        <span className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-primary" />
-                          4. Assignments for This School Year
-                        </span>
-                      </div>
-                      <div className="divide-y">
-                        <div className="p-4">
-                          <div className="space-y-1">
-                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Advisory Class</p>
-                            {teacher?.designation?.advisorySection ? (
-                              <div className="space-y-0.5 pt-1">
-                                <p className="font-extrabold text-base leading-tight text-slate-700">
-                                  {formatAdvisorySectionSummary(teacher.designation.advisorySection)} Adviser
-                                </p>
-                              </div>
-                            ) : (
-                              <p className="text-base leading-tight font-extrabold text-slate-400 italic pt-1">No advisory class assigned</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-base font-extrabold uppercase text-foreground leading-none">Subject Teaching Load</p>
-                            {loadLoading ? (
-                              <div className="flex items-center gap-1.5 text-base font-extrabold text-primary animate-pulse">
-                                <RefreshCw className="h-3 w-3 " />
-                                Checking ATLAS...
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="text-base font-extrabold border-dashed border-primary/30 text-primary/60 bg-primary/5">
-                                {loadError ? "Could Not Load Teaching Schedule" : "From ATLAS Schedule"}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            {loadLoading ? (
-                              <div className="space-y-2">
-                                <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
-                              </div>
-                            ) : teachingLoad.length > 0 ? (
-                              <div className="grid gap-2">
-                                {teachingLoad.map((load, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
-                                    <div className="space-y-0.5">
-                                      <p className="text-base font-extrabold uppercase text-primary leading-none">{load.subjectName}</p>
-                                      <p className="text-base font-extrabold text-foreground uppercase">{load.subjectCode}</p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="font-extrabold text-base uppercase text-foreground leading-none">{load.sectionName}</p>
-                                      <p className="text-base font-extrabold text-foreground uppercase">{load.gradeLevel}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="p-4 rounded-lg border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center text-center">
-                                <p className="text-base font-extrabold uppercase text-foreground mb-1">
-                                  {loadError ? "Could Not Load Teaching Schedule" : "No Teaching Load Found"}
-                                </p>
-                                <p className="text-base font-extrabold text-foreground leading-tight max-w-[240px]">
-                                  {loadError
-                                    ? "Class schedule data is currently unavailable. Please ask the System Admin to check the ATLAS connection."
-                                    : "No teaching load found in ATLAS."}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-muted/10 text-center">
-                          <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
-                            Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
-                          </p>
-                        </div>
-                      </div>
+                  {!isAdding && (
+                    <div className="mt-4 p-3 bg-muted/10 text-center rounded-xl">
+                      <p className="text-sm font-extrabold text-foreground uppercase tracking-widest">
+                        Record created {teacher?.createdAt ? new Date(teacher.createdAt).toLocaleDateString(undefined, { timeZone: 'Asia/Manila',  year: 'numeric', month: 'long', day: 'numeric' }) : "date not available"}
+                      </p>
                     </div>
                   )}
                 </>
