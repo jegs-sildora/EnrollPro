@@ -203,9 +203,7 @@ async function getReadiness(
           enrollmentRecords: {
             select: {
               eosyStatus: true,
-              smartAcademicOutcome: {
-                select: { finalOutcome: true },
-              },
+              finalAverage: true,
             },
           },
         },
@@ -298,26 +296,12 @@ async function getReadiness(
   for (const section of sourceYear.sections) {
     const reasons: RolloverBlockerReason[] = [];
     const recordsWithoutResult = section.enrollmentRecords.filter(
-      (record) => record.eosyStatus === null,
-    ).length;
-    const missingSmartOutcomes = section.enrollmentRecords.filter(
-      (record) =>
-        !isDeparture(record.eosyStatus)
-        && record.smartAcademicOutcome === null,
-    ).length;
-    const mismatchedSmartOutcomes = section.enrollmentRecords.filter(
-      (record) =>
-        record.smartAcademicOutcome
-        && record.eosyStatus !== record.smartAcademicOutcome.finalOutcome,
+      (record) => record.eosyStatus === null || record.finalAverage === null,
     ).length;
 
     if (!section.isEosyFinalized) reasons.push("SECTION_NOT_FINALIZED");
     if (recordsWithoutResult > 0) {
       reasons.push("LEARNER_RESULT_NOT_FINALIZED");
-    }
-    if (missingSmartOutcomes > 0) reasons.push("SMART_OUTCOME_MISSING");
-    if (mismatchedSmartOutcomes > 0) {
-      reasons.push("SMART_OUTCOME_MISMATCH");
     }
 
     const sf5Status = await getSchoolFormArtifactStatus(
@@ -337,10 +321,7 @@ async function getReadiness(
         sectionId: section.id,
         gradeLevel: section.gradeLevel.name,
         sectionName: section.name,
-        unfinishedLearnerCount:
-          recordsWithoutResult
-          + missingSmartOutcomes
-          + mismatchedSmartOutcomes,
+        unfinishedLearnerCount: recordsWithoutResult,
         reasons,
       });
     }
@@ -623,13 +604,7 @@ export async function executeSchoolYearRollover({
                   },
                 },
               },
-              smartAcademicOutcome: {
-                include: {
-                  learningAreaResults: {
-                    orderBy: { learningAreaCode: "asc" },
-                  },
-                },
-              },
+
             },
           }),
           tx.section.findMany({
@@ -734,9 +709,7 @@ export async function executeSchoolYearRollover({
           eosyStatus: record.eosyStatus,
           academicDeficiencyNote: record.academicDeficiencyNote,
           learnerProfileSnapshot: getHistoricalProfileSnapshot(record),
-          academicOutcomeSnapshot: academicOutcomeSnapshot(
-            record.smartAcademicOutcome,
-          ),
+          academicOutcomeSnapshot: Prisma.DbNull,
         })),
         skipDuplicates: true,
       });

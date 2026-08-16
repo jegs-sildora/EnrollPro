@@ -6,7 +6,6 @@ import {
 import { Prisma } from "../../generated/prisma/index.js";
 import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
-import { hashPayload } from "../enrollment/services/school-form-artifact.service.js";
 
 interface SmartSyncResult {
   schoolYearId: number;
@@ -215,8 +214,13 @@ export async function syncFinalSmartSectionOutcomes(
     }
     let reason = "Unknown connection failure";
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.message) {
-        reason = error.response.data.message;
+      if (typeof error.response?.data === 'string' && error.response.data) {
+        // e.g. 503 HTML from a proxy or funnel
+        reason = `Server returned ${error.response.status} (${error.response.statusText})`;
+      } else if (error.response?.data?.message) {
+        reason = String(error.response.data.message);
+      } else if (error.response?.data?.error) {
+        reason = String(error.response.data.error);
       } else {
         const code = error.code || "";
         if (code === "ECONNREFUSED") {
@@ -225,6 +229,8 @@ export async function syncFinalSmartSectionOutcomes(
           reason = "Connection timed out. The SMART server took too long to respond.";
         } else if (code === "ENOTFOUND") {
           reason = "Server not found. The configured SMART API URL is unreachable.";
+        } else if (error.response?.status) {
+          reason = `HTTP ${error.response.status}: ${error.response.statusText || 'Unknown error'}`;
         } else {
           reason = error.message || code || reason;
         }
@@ -352,43 +358,6 @@ export async function syncFinalSmartSectionOutcomes(
   await prisma.$transaction(
     async (tx) => {
       for (const { student, record } of matched) {
-        const payloadHash = hashPayload(student);
-        const outcome = await tx.smartAcademicOutcome.upsert({
-          where: { enrollmentRecordId: record.id },
-          update: {
-            finalGeneralAverage: student.finalGeneralAverage,
-            finalOutcome: student.finalOutcome,
-            smartRevision: student.revision,
-            publishedAt: student.publishedAt
-              ? new Date(student.publishedAt)
-              : null,
-            payloadHash,
-            syncedAt: new Date(),
-          },
-          create: {
-            enrollmentRecordId: record.id,
-            finalGeneralAverage: student.finalGeneralAverage,
-            finalOutcome: student.finalOutcome,
-            smartRevision: student.revision,
-            publishedAt: student.publishedAt
-              ? new Date(student.publishedAt)
-              : null,
-            payloadHash,
-          },
-          select: { id: true },
-        });
-        await tx.smartLearningAreaResult.deleteMany({
-          where: { academicOutcomeId: outcome.id },
-        });
-        await tx.smartLearningAreaResult.createMany({
-          data: student.learningAreas.map((area) => ({
-            academicOutcomeId: outcome.id,
-            learningAreaCode: area.code,
-            learningAreaName: area.name,
-            finalGrade: area.finalGrade,
-            result: area.result,
-          })),
-        });
         await tx.enrollmentRecord.update({
           where: { id: record.id },
           data: {
@@ -401,9 +370,6 @@ export async function syncFinalSmartSectionOutcomes(
       for (const unresolved of unresolvedOutcomes) {
         const record = localByLrn.get(unresolved.lrn);
         if (!record) continue;
-        await tx.smartAcademicOutcome.deleteMany({
-          where: { enrollmentRecordId: record.id },
-        });
         await tx.enrollmentRecord.update({
           where: { id: record.id },
           data: {

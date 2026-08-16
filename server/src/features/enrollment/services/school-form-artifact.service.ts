@@ -170,13 +170,6 @@ export async function buildSf5Payload(
           birthdate: true,
         },
       },
-      smartAcademicOutcome: {
-        include: {
-          learningAreaResults: {
-            orderBy: [{ learningAreaCode: "asc" }],
-          },
-        },
-      },
     },
   });
 
@@ -205,21 +198,7 @@ export async function buildSf5Payload(
       finalAverage: record.finalAverage,
       eosyStatus: record.eosyStatus,
       academicDeficiencyNote: record.academicDeficiencyNote,
-      smartOutcome: record.smartAcademicOutcome
-        ? {
-            revision: record.smartAcademicOutcome.smartRevision,
-            publishedAt:
-              record.smartAcademicOutcome.publishedAt?.toISOString() ?? null,
-            finalOutcome: record.smartAcademicOutcome.finalOutcome,
-            learningAreas:
-              record.smartAcademicOutcome.learningAreaResults.map((result) => ({
-                code: result.learningAreaCode,
-                name: result.learningAreaName,
-                finalGrade: result.finalGrade,
-                result: result.result,
-              })),
-          }
-        : null,
+      smartOutcome: null,
     })),
   };
 }

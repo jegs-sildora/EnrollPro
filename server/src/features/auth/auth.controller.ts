@@ -282,9 +282,14 @@ export async function verifyCredentials(
     }
 
     // Return the user object (excluding password) to allow subsystem to provision its own session
+    // Set mustChangePassword to false so external portals (like AIMS) do not block the login 
+    // since they usually don't support password change screens.
+    const userResponse = toUserResponse(user);
+    userResponse.mustChangePassword = false;
+
     res.json({
       valid: true,
-      user: toUserResponse(user),
+      user: userResponse,
     });
   } catch (error) {
     res.status(500).json({ valid: false, message: "Verification error" });

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/features/smart/components/ui/avatar";
 import { cn, getAcronym } from "@/features/smart/lib/utils";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { useTheme } from "@/features/smart/contexts/ThemeContext";
 import { SERVER_URL } from "@/features/smart/lib/api";
 
@@ -91,6 +92,8 @@ export default function RegistrarLayout() {
     return saved === 'true';
   });
   const { colors, logoUrl, schoolName } = useTheme();
+  
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
@@ -319,8 +322,8 @@ export default function RegistrarLayout() {
                 <p className="text-[10px] font-extrabold text-[#0F1729]/50 truncate uppercase tracking-tight">School Registrar</p>
               </div>
               <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg hover:bg-muted hover:text-red-600 text-slate-400 transition-colors duration-200 ml-1"
+                onClick={() => setShowLogoutConfirm(true)}
+                className="p-1.5 rounded-lg hover:bg-muted hover:text-primary text-slate-400 transition-colors duration-200 ml-1"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -387,6 +390,16 @@ export default function RegistrarLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmationModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="Are you sure you want to sign out of the Registrar Portal?"
+        confirmText="Sign Out"
+        onConfirm={handleLogout}
+        variant="primary"
+        icon={LogOut}
+      />
     </div>
   );
 }

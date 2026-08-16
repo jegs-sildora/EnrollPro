@@ -204,7 +204,7 @@ function UserNav() {
             Change Password
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="cursor-pointer py-2 font-bold text-destructive focus:bg-destructive focus:text-destructive-foreground"
+            className="text-primary focus:text-primary focus:bg-primary/10 cursor-pointer font-medium"
             onSelect={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -220,6 +220,7 @@ function UserNav() {
         confirmText="Sign Out"
         onConfirm={handleLogout}
         variant="primary"
+        icon={LogOut}
       />
     </>
   );

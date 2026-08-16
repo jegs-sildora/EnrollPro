@@ -467,44 +467,13 @@ model EnrollmentRecord {
   learner                 Learner               @relation(fields: [learnerId], references: [id])
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
   section                 Section               @relation("HomeroomSection", fields: [sectionId], references: [id])
-  smartAcademicOutcome    SmartAcademicOutcome?
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
   @@map("enrollment_records")
 }
 
-/// Final academic result published by SMART for one enrolled learner.
-model SmartAcademicOutcome {
-  id                  Int            @id @default(autoincrement())
-  enrollmentRecordId  Int            @unique(map: "uq_smart_outcomes_enrollment_record_id") @map("enrollment_record_id")
-  finalGeneralAverage Float          @map("final_general_average")
-  finalOutcome        AcademicStatus @map("final_outcome")
-  smartRevision       String?        @map("smart_revision")
-  publishedAt         DateTime?      @map("published_at") @db.Timestamptz(6)
-  syncedAt            DateTime       @default(now()) @map("synced_at") @db.Timestamptz(6)
-  payloadHash         String         @map("payload_hash") @db.VarChar(64)
 
-  enrollmentRecord    EnrollmentRecord          @relation(fields: [enrollmentRecordId], references: [id], onDelete: Cascade)
-  learningAreaResults SmartLearningAreaResult[]
-
-  @@map("smart_academic_outcomes")
-}
-
-model SmartLearningAreaResult {
-  id                Int                      @id @default(autoincrement())
-  academicOutcomeId Int                      @map("academic_outcome_id")
-  learningAreaCode  String                   @map("learning_area_code")
-  learningAreaName  String                   @map("learning_area_name")
-  finalGrade        Float                    @map("final_grade")
-  result            LearningAreaResultStatus
-
-  academicOutcome   SmartAcademicOutcome     @relation(fields: [academicOutcomeId], references: [id], onDelete: Cascade)
-
-  @@unique([academicOutcomeId, learningAreaCode], name: "uq_smart_learning_area_outcome_code")
-  @@index([academicOutcomeId], map: "idx_smart_learning_area_outcome_id")
-  @@map("smart_learning_area_results")
-}
 
 /// Academic department linked to faculty
 model Department {
@@ -722,13 +691,7 @@ enum SchoolFormType {
   @@map("school_form_type")
 }
 
-enum LearningAreaResultStatus {
-  PASSED
-  FAILED
-  INCOMPLETE
 
-  @@map("learning_area_result_status")
-}
 
 enum ApplicantType {
   REGULAR

@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE ATLAS API Integration Verification v433
+# SYSTEM DIRECTIVE Sync Action UI Refinement v434
 
-**Context Persona** Act as a Senior Systems Architect and QA Engineer Your standard is strict adherence to microservice boundaries You must verify the ATLAS teaching load integration Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must fix the visual camouflage of the sync button Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must audit the frontend and backend codebase to ensure the subject teaching load UI correctly fetches and gracefully handles data from the ATLAS published schedule API
+**Core Mandate** You must visually separate the active synchronization button from the passive status badges so the school registrar immediately recognizes it as a clickable system action
 
-Execute the verification across the following three architectural rules
+Execute the UI upgrade across the following three architectural rules
 
-## 1 Proxy Endpoint Verification
-Audit the backend proxy controller to confirm it routes requests directly to the ATLAS published faculty schedule endpoint
-Ensure the payload correctly maps the active school year ID and the teacher external ID to fetch the official timetable blocks
+## 1 Button Elevation
+Upgrade the Sync SMART element from a plain text link into a clearly defined secondary action button with a distinct border and hover state
+This prevents the clickable API trigger from blending in with the passive informational badges sitting directly next to it
 
-## 2 Rollover Empty State Grace Period
-Verify that the backend explicitly traps the 404 not found error during the new school year rollover
-Confirm the system returns an empty array to trigger the clean empty state rather than crashing the interface
+## 2 Strict Functional Zoning
+Create spatial zones inside the top bar by isolating the pending submissions and blockers metrics and anchoring them securely to the far right edge of the container
+Establish a clear structural gap between the executable buttons and the read only badges to dramatically reduce cognitive load for the user
 
-## 3 UI Boundary Enforcement
-Inspect the personnel profile component to ensure the advisory class data is fetched natively from the local database
-Verify that the subject teaching load section strictly isolates its state to rely solely on the payload returned from the ATLAS integration
+## 3 Contextual Vocabulary
+Expand the action button text to read Sync SMART Outcomes
+This explicitly informs the registrar exactly what grade data is being pulled from the integration pipeline into the End of School Year workspace

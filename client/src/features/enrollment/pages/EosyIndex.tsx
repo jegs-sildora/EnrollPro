@@ -577,12 +577,12 @@ export default function EosyUpdating() {
   const handleSyncSmartGrades = useCallback(async () => {
     if (!ayId || !activeTab || isHistoricalReadOnly) return;
 
-    const targetSections = allSections.filter(s => !s.isEosyFinalized);
+    const targetSections = allSections.filter(s => !s.isEosyFinalized && String(s.gradeLevelId) === activeTab);
 
     if (targetSections.length === 0) {
       sileo.info({
         title: "No Active Sections",
-        description: "All sections in this scope are already finalized or no sections were found.",
+        description: "All sections in this grade level are already finalized or no sections were found.",
       });
       return;
     }
@@ -592,7 +592,7 @@ export default function EosyUpdating() {
       let totalSynced = 0;
       let totalUnresolved = 0;
       const failedSections: string[] = [];
-      let firstError: unknown = null;
+      let firstError: any = null;
       for (const sec of targetSections) {
         try {
           const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`);
@@ -602,10 +602,17 @@ export default function EosyUpdating() {
           if (Array.isArray(res.data?.unresolvedOutcomes)) {
             totalUnresolved += res.data.unresolvedOutcomes.length;
           }
-        } catch (secErr) {
+        } catch (secErr: any) {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
           failedSections.push(sec.name);
           if (!firstError) firstError = secErr;
+          
+          // Fail fast if it's a 502, 504, or network error (SMART unreachable)
+          const status = secErr.response?.status;
+          const msg = secErr.response?.data?.message || secErr.message || "";
+          if (status === 502 || status === 504 || msg.includes("unreachable") || msg.includes("Bad Gateway") || msg.includes("Proxy Error")) {
+            throw secErr;
+          }
         }
       }
 
@@ -614,7 +621,7 @@ export default function EosyUpdating() {
           throw firstError;
         }
         throw new Error(
-          `SMART did not return complete final outcomes for the selected sections: ${failedSections.join(", ")}.`,
+          `SMART did not return complete final outcomes for the selected sections: ${failedSections.join(", ")}.`
         );
       }
 

@@ -1161,7 +1161,7 @@ export default function Students() {
                     setPage(1);
                   });
                 }}>
-                <SelectTrigger className="h-10 w-full leading-tight font-extrabold sm:w-40">
+                <SelectTrigger className="h-10 w-full leading-tight font-extrabold sm:w-48">
                   <SelectValue placeholder="All Programs" />
                 </SelectTrigger>
                 <SelectContent>

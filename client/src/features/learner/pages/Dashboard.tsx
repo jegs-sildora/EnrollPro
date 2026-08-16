@@ -18,6 +18,7 @@ import { getLearnerApi } from "@/shared/api/axiosInstance";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/shared/ui/button";
 import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { SCP_LABELS, cn } from "@/shared/lib/utils";
 import {
   Sheet,
@@ -284,6 +285,7 @@ export default function LearnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("sf9");
 
   const handleNavClick = (tabKey: string, elementId?: string) => {
@@ -316,14 +318,6 @@ export default function LearnerDashboard() {
     clearAuth();
     navigate("/learner/login", { replace: true });
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background p-4 sm:p-6">
-        <PageLoadingSkeleton variant="dashboard" />
-      </div>
-    );
-  }
 
   return (
 <div className="min-h-screen bg-background relative">
@@ -410,6 +404,14 @@ export default function LearnerDashboard() {
                           <User className="h-5 w-5 text-primary shrink-0" />
                           <span>Official Learner Profile (SF1)</span>
                         </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start font-extrabold text-base h-11 px-3 gap-3 text-primary hover:bg-primary/10 hover:text-primary"
+                          onClick={() => setShowLogoutConfirm(true)}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Secure Sign Out</span>
+                        </Button>
                       </div>
                     </div>
 
@@ -467,7 +469,7 @@ export default function LearnerDashboard() {
               </div>
             )}
             <span className="font-extrabold text-xl text-foreground tracking-tight">
-              {data ? data.schoolAcronym : ""} Learner Information System
+              {data?.schoolAcronym || "EnrollPro"} Learner Information System
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -484,10 +486,10 @@ export default function LearnerDashboard() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleLogout}
-              className="h-9 w-9 text-foreground hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-4 w-4" />
+              onClick={() => setShowLogoutConfirm(true)}
+              className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
+              aria-label="Sign out"
+            >  <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -501,7 +503,11 @@ export default function LearnerDashboard() {
           </div>
         )}
 
-        {data && (
+        {loading ? (
+          <div className="flex-1 w-full p-4 sm:p-6 overflow-hidden">
+            <PageLoadingSkeleton variant="dashboard" />
+          </div>
+        ) : data && (
           <>
             {/* Left Pane (Fixed Identity Sidebar) */}
             <aside className="hidden md:flex md:w-[30%] bg-muted/30 md:border-r border-border md:h-full flex-col justify-between py-8 px-6 sm:py-12 overflow-y-auto shrink-0">
@@ -742,6 +748,17 @@ export default function LearnerDashboard() {
           </>
         )}
       </div>
+      
+      <ConfirmationModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="Are you sure you want to sign out of the Learner Portal?"
+        confirmText="Sign Out"
+        onConfirm={handleLogout}
+        variant="primary"
+        icon={LogOut}
+      />
     </div>
   );
 }

@@ -233,7 +233,7 @@ export default function LearnerLogin() {
     }
   };
 
-  if (user) {
+  if (user && !success) {
     return <Navigate to="/learner/portal" replace />;
   }
 

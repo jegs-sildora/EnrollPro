@@ -16,8 +16,8 @@ import NotFound from "@/shared/components/NotFound";
 const SMARTLayout = lazy(() => import("@/features/smart/layouts/SMARTLayout"));
 const Login = lazy(() => import("@/features/auth/pages/Login"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Index"));
-const LearnerLogin = lazy(() => import("@/features/learner/pages/Login"));
-const LearnerDashboard = lazy(() => import("@/features/learner/pages/Dashboard"));
+import LearnerLogin from "@/features/learner/pages/Login";
+import LearnerDashboard from "@/features/learner/pages/Dashboard";
 const Enrollment = lazy(() => import("@/features/enrollment/pages/Index"));
 const EosyUpdating = lazy(() => import("@/features/enrollment/pages/EosyIndex"));
 const RegistrarEOSYWorkspace = lazy(
@@ -108,7 +108,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/learner/login",
-            element: renderLazyPage(LearnerLogin),
+            element: <LearnerLogin />,
           },
           {
             path: "/learner/change-password",
@@ -120,7 +120,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/learner/portal",
-            element: renderLazyPage(LearnerDashboard),
+            element: <LearnerDashboard />,
           },
         ],
       },
