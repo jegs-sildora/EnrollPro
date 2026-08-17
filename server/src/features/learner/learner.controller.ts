@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import type { LearnerAuthPayload } from "../../middleware/authenticate-learner.js";
+import { fetchLiveSmartSectionGrades } from "../integration/smart-eosy.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
@@ -153,15 +154,14 @@ export async function learnerLogin(req: Request, res: Response): Promise<void> {
     passwordValid = await bcrypt.compare(password, user.password);
   }
 
-  if (!passwordValid && password === DEFAULT_LEARNER_PASSWORD) {
+  if (!passwordValid && password === DEFAULT_LEARNER_PASSWORD && !user) {
     isDefaultPassword = true;
     passwordValid = true;
 
     const hashed = await bcrypt.hash(password, 12);
     const accountName = `LRN-${learner.lrn}`;
 
-    if (!user) {
-      user = await prisma.user.create({
+    user = await prisma.user.create({
         data: {
           firstName: learner.firstName,
           lastName: learner.lastName,
@@ -177,12 +177,6 @@ export async function learnerLogin(req: Request, res: Response): Promise<void> {
         where: { id: learner.id },
         data: { userId: user.id },
       });
-    } else {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashed, mustChangePassword: true },
-      });
-    }
   }
 
   if (!passwordValid) {
@@ -404,6 +398,68 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
 
   const activeApp = allApps.find(a => a.schoolYearId === schoolSetting.activeSchoolYearId) || allApps[0];
 
+  // Attempt live SMART grades fetch for the active school year section
+  if (activeApp?.enrollmentRecord?.section?.name && activeApp?.schoolYear?.yearLabel && learner.lrn) {
+    try {
+      const smartOutcomes = await fetchLiveSmartSectionGrades(
+        activeApp.enrollmentRecord.section.name,
+        activeApp.schoolYear.yearLabel,
+      );
+      const matchedOutcome = smartOutcomes.find((o) => o.lrn === learner.lrn);
+      if (matchedOutcome) {
+        const liveGrades: Record<string, {
+          T1: number | null;
+          T2: number | null;
+          T3: number | null;
+          Final: number | null;
+          remarks: string | null;
+        }> = {};
+
+        if (matchedOutcome.subjectGrades && matchedOutcome.subjectGrades.length > 0) {
+          for (const sg of matchedOutcome.subjectGrades) {
+            liveGrades[sg.subjectName] = {
+              T1: sg.T1 ?? null,
+              T2: sg.T2 ?? null,
+              T3: sg.T3 ?? null,
+              Final: sg.finalRating ?? null,
+              remarks: sg.remarks ?? (sg.finalRating !== null && sg.finalRating !== undefined ? (sg.finalRating >= 75 ? "Passed" : "Failed") : null),
+            };
+          }
+        } else if (matchedOutcome.learningAreas && matchedOutcome.learningAreas.length > 0) {
+          for (const la of matchedOutcome.learningAreas) {
+            liveGrades[la.name] = {
+              T1: null,
+              T2: null,
+              T3: null,
+              Final: la.finalGrade,
+              remarks: la.result === "PASSED" ? "Passed" : la.result === "FAILED" ? "Failed" : null,
+            };
+          }
+        }
+
+        if (Object.keys(liveGrades).length > 0) {
+          activeApp.reportedGrades = liveGrades;
+          // Background asynchronous update so local database stays synchronized
+          prisma.enrollmentApplication.update({
+            where: { id: activeApp.id },
+            data: { reportedGrades: liveGrades },
+          }).catch((err) => console.error("Failed to cache live SMART grades in DB:", err));
+
+          const avg = matchedOutcome.finalGeneralAverage ?? matchedOutcome.generalAverage;
+          if (avg !== undefined && activeApp.enrollmentRecord?.id) {
+            activeApp.enrollmentRecord.finalAverage = avg;
+            prisma.enrollmentRecord.update({
+              where: { id: activeApp.enrollmentRecord.id },
+              data: { finalAverage: avg },
+            }).catch((err) => console.error("Failed to cache live SMART average in DB:", err));
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Live SMART grades fetch failed, using stored records:", err);
+    }
+  }
+
   const identity = {
     lrn: learner.lrn,
     firstName: learner.firstName,
@@ -474,17 +530,18 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   };
 
   const academicHistory = allApps.map(app => {
+    const rawGrades = app.reportedGrades as Record<string, any> | null;
     const hasGrades =
-      app.reportedGrades !== null &&
-      typeof app.reportedGrades === "object" &&
-      !Array.isArray(app.reportedGrades) &&
-      Object.keys(app.reportedGrades).length > 0;
+      rawGrades !== null &&
+      typeof rawGrades === "object" &&
+      !Array.isArray(rawGrades) &&
+      Object.keys(rawGrades).length > 0;
     return {
       grade_level: app.gradeLevel?.name || "Unknown",
       school_year: app.schoolYear.yearLabel,
       status: app.schoolYearId === schoolSetting.activeSchoolYearId ? "Active" : "Completed",
       term_format: app.schoolYear.termFormat ?? "TRIMESTER",
-      grades: app.reportedGrades || null,
+      grades: rawGrades || null,
       general_average: hasGrades ? (app.enrollmentRecord?.finalAverage || null) : null,
     };
   });

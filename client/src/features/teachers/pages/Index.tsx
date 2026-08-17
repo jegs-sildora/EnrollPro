@@ -586,187 +586,240 @@ export default function Teachers() {
   };
 
   const columns = useMemo<ColumnDef<Teacher>[]>(
-    () => [
-      {
-        id: "lastName",
-        accessorKey: "lastName",
-        size: 350,
-        minSize: 260,
-        maxSize: 450,
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="FACULTY NAME"
-          />
-        ),
-        cell: ({ row }) => {
-          const initials = getInitials(row.original.firstName, row.original.lastName);
-          return (
-            <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
-              <UserPhoto
-                photo={row.original.photoPath}
-                containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
-                className="w-full h-full object-cover"
-                alt={formatTeacherName(row.original)}
-                fallbackIcon={
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold  bg-primary">
-                    {initials}
-                  </div>
-                }
-              />
-              <div className="flex min-w-0 flex-col text-left">
-                <span className="break-words text-base font-extrabold uppercase leading-tight">
-                  {formatTeacherName(row.original)}
-                </span>
-                <span className="font-bold text-foreground mt-1 uppercase">
-                  EMPLOYEE ID: {row.original.employeeId || "N/A"}
-                </span>
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "department",
-        accessorKey: "department",
-        size: 200,
-        minSize: 150,
-        maxSize: 250,
-        meta: { className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="SUBJECT / DEPARTMENT"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => {
-          const dept = row.original.department;
-          const display = DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === dept)?.label || dept || "—";
-          return (
-            <div className="flex w-full justify-center py-3">
-              <span className="font-extrabold text-base leading-tight text-center uppercase">
-                {display}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        id: "advisoryClass",
-        accessorKey: "advisoryClass",
-        size: 200,
-        minSize: 150,
-        maxSize: 250,
-        meta: { className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="ADVISORY CLASS"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => {
-          const adv = row.original.designation?.advisorySection;
-
-          if (!adv) {
+    () => {
+      const baseColumns: ColumnDef<Teacher>[] = [
+        {
+          id: "lastName",
+          accessorKey: "lastName",
+          size: 350,
+          minSize: 260,
+          maxSize: 450,
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="PERSONNEL NAME"
+            />
+          ),
+          cell: ({ row }) => {
+            const initials = getInitials(row.original.firstName, row.original.lastName);
             return (
-              <div className="flex w-full justify-center py-3">
-                <span className="font-extrabold text-base leading-tight text-center uppercase">
-                  —
-                </span>
+              <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
+                <UserPhoto
+                  photo={row.original.photoPath}
+                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  className="w-full h-full object-cover"
+                  alt={formatTeacherName(row.original)}
+                  fallbackIcon={
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold  bg-primary">
+                      {initials}
+                    </div>
+                  }
+                />
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="break-words text-base font-extrabold uppercase leading-tight">
+                    {formatTeacherName(row.original)}
+                  </span>
+                  <span className="font-bold text-foreground mt-1 uppercase">
+                    EMPLOYEE ID: {row.original.employeeId || "N/A"}
+                  </span>
+                </div>
               </div>
             );
-          }
+          },
+        }
+      ];
 
-          return (
-            <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
-                  getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
-                )}
-              >
-                {adv.gradeLevelName || "Grade"}
-              </Badge>
-              <span className="font-extrabold text-sm leading-tight text-center uppercase">
-                {adv.name}
-              </span>
-            </div>
-          );
+      if (personnelTypeFilter === "NON_TEACHING") {
+        baseColumns.push({
+          id: "systemRoles",
+          accessorKey: "userAccount.roles",
+          size: 400,
+          minSize: 300,
+          maxSize: 500,
+          meta: { className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="SYSTEM ROLES"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => {
+            const roles = row.original.userAccount?.roles || [];
+            if (roles.length === 0) {
+              return (
+                <div className="flex w-full justify-center py-3">
+                  <span className="font-extrabold text-base leading-tight text-center uppercase text-gray-400">
+                    —
+                  </span>
+                </div>
+              );
+            }
+            return (
+              <div className="flex flex-wrap items-center justify-center py-2 gap-2 w-full">
+                {roles.map((role) => (
+                  <Badge
+                    key={role}
+                    variant="outline"
+                    className="font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider bg-indigo-50 text-indigo-700 border-indigo-800"
+                  >
+                    {role.replace(/_/g, " ")}
+                  </Badge>
+                ))}
+              </div>
+            );
+          },
+        });
+      } else {
+        baseColumns.push(
+          {
+            id: "department",
+            accessorKey: "department",
+            size: 200,
+            minSize: 150,
+            maxSize: 250,
+            meta: { className: "text-center", headerClassName: "text-center" },
+            header: ({ column }) => (
+              <DataTableColumnHeader
+                column={column}
+                title="SUBJECT / DEPARTMENT"
+                className="justify-center [&_button]:!m-0"
+              />
+            ),
+            cell: ({ row }) => {
+              const dept = row.original.department;
+              const display = DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === dept)?.label || dept || "—";
+              return (
+                <div className="flex w-full justify-center py-3">
+                  <span className="font-extrabold text-base leading-tight text-center uppercase">
+                    {display}
+                  </span>
+                </div>
+              );
+            },
+          },
+          {
+            id: "advisoryClass",
+            accessorKey: "advisoryClass",
+            size: 200,
+            minSize: 150,
+            maxSize: 250,
+            meta: { className: "text-center", headerClassName: "text-center" },
+            header: ({ column }) => (
+              <DataTableColumnHeader
+                column={column}
+                title="ADVISORY CLASS"
+                className="justify-center [&_button]:!m-0"
+              />
+            ),
+            cell: ({ row }) => {
+              const adv = row.original.designation?.advisorySection;
+
+              if (!adv) {
+                return (
+                  <div className="flex w-full justify-center py-3">
+                    <span className="font-extrabold text-base leading-tight text-center uppercase">
+                      —
+                    </span>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
+                      getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
+                    )}
+                  >
+                    {adv.gradeLevelName || "Grade"}
+                  </Badge>
+                  <span className="font-extrabold text-sm leading-tight text-center uppercase">
+                    {adv.name}
+                  </span>
+                </div>
+              );
+            },
+          }
+        );
+      }
+
+      baseColumns.push(
+        {
+          id: "serviceStatus",
+          accessorKey: "serviceStatus",
+          size: 150,
+          minSize: 120,
+          maxSize: 180,
+          meta: { className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="SERVICE STATUS"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => {
+            const status = row.original.serviceStatus || "ACTIVE";
+            const label = SERVICE_STATUS_LABELS[status] || status;
+            const isEnrolled = status === "ACTIVE";
+            const isLeave = status === "ON_LEAVE";
+            return (
+              <div className="flex w-full justify-center py-3">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-extrabold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
+                    isEnrolled
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-800"
+                      : isLeave
+                        ? "bg-amber-50 text-amber-700 border-amber-800 border-2"
+                        : "bg-slate-50 text-slate-600 border-slate-800 border-2"
+                  )}>
+                  {label}
+                </Badge>
+              </div>
+            );
+          },
         },
-      },
-      {
-        id: "serviceStatus",
-        accessorKey: "serviceStatus",
-        size: 150,
-        minSize: 120,
-        maxSize: 180,
-        meta: { className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="SERVICE STATUS"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => {
-          const status = row.original.serviceStatus || "ACTIVE";
-          const label = SERVICE_STATUS_LABELS[status] || status;
-          const isEnrolled = status === "ACTIVE";
-          const isLeave = status === "ON_LEAVE";
-          return (
+        {
+          id: "actions",
+          size: 120,
+          minSize: 100,
+          maxSize: 140,
+          meta: { className: "text-center", headerClassName: "text-center" },
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title="ACTIONS"
+              className="justify-center [&_button]:!m-0"
+            />
+          ),
+          cell: ({ row }) => (
             <div className="flex w-full justify-center py-3">
-              <Badge
+              <Button
                 variant="outline"
-                className={cn(
-                  "font-extrabold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
-                  isEnrolled
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-800"
-                    : isLeave
-                      ? "bg-amber-50 text-amber-700 border-amber-800 border-2"
-                      : "bg-slate-50 text-slate-600 border-slate-800 border-2"
-                )}>
-                {label}
-              </Badge>
+                size="sm"
+                className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewingTeacher(row.original);
+                  setIsPanelOpen(true);
+                }}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Profile
+              </Button>
             </div>
-          );
-        },
-      },
-      {
-        id: "actions",
-        size: 120,
-        minSize: 100,
-        maxSize: 140,
-        meta: { className: "text-center", headerClassName: "text-center" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="ACTIONS"
-            className="justify-center [&_button]:!m-0"
-          />
-        ),
-        cell: ({ row }) => (
-          <div className="flex w-full justify-center py-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                setViewingTeacher(row.original);
-                setIsPanelOpen(true);
-              }}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Profile
-            </Button>
-          </div>
-        ),
-      },
-    ],
-    [],
+          ),
+        }
+      );
+
+      return baseColumns;
+    },
+    [personnelTypeFilter]
   );
 
   // eSF7 profile validation is managed internally by the child panel component

@@ -574,15 +574,29 @@ export default function EosyUpdating() {
     }
   }, [ayId]);
 
-  const handleSyncSmartGrades = useCallback(async () => {
-    if (!ayId || !activeTab || isHistoricalReadOnly) return;
+  const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
+    if (!gradeLevelId || !ayId) return;
+    if (!silent) {
+      setRowSelection({});
+      setSectionFilter("ALL");
+    }
+    if (gradeLevelId !== activeTab) {
+      setActiveTab(gradeLevelId);
+      return;
+    }
+    await queryClient.refetchQueries({ queryKey: ["eosy", "grade-records", ayId, gradeLevelId] });
+  }, [activeTab, ayId, queryClient]);
 
-    const targetSections = allSections.filter(s => !s.isEosyFinalized && String(s.gradeLevelId) === activeTab);
+  const handleSyncSmartGrades = useCallback(async () => {
+    if (!ayId || isHistoricalReadOnly) return;
+
+    // Collect all unfinalized sections across all grade levels
+    const targetSections = allSections.filter((s) => !s.isEosyFinalized);
 
     if (targetSections.length === 0) {
       sileo.info({
         title: "No Active Sections",
-        description: "All sections in this grade level are already finalized or no sections were found.",
+        description: "All sections across all grade levels are already finalized or no sections were found.",
       });
       return;
     }
@@ -593,6 +607,7 @@ export default function EosyUpdating() {
       let totalUnresolved = 0;
       const failedSections: string[] = [];
       let firstError: any = null;
+
       for (const sec of targetSections) {
         try {
           const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`);
@@ -606,11 +621,20 @@ export default function EosyUpdating() {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
           failedSections.push(sec.name);
           if (!firstError) firstError = secErr;
-          
-          // Fail fast if it's a 502, 504, or network error (SMART unreachable)
+
+          // Fail fast if SMART is completely unreachable / offline
           const status = secErr.response?.status;
           const msg = secErr.response?.data?.message || secErr.message || "";
-          if (status === 502 || status === 504 || msg.includes("unreachable") || msg.includes("Bad Gateway") || msg.includes("Proxy Error")) {
+          if (
+            status === 502 ||
+            status === 503 ||
+            status === 504 ||
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("offline") ||
+            msg.includes("unreachable") ||
+            msg.includes("Bad Gateway") ||
+            msg.includes("Proxy Error")
+          ) {
             throw secErr;
           }
         }
@@ -625,36 +649,45 @@ export default function EosyUpdating() {
         );
       }
 
+      // Invalidate grade queries so the UI refreshes
+      queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
+      queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
+      if (activeTab) {
+        fetchGradeRecords(activeTab, true);
+      }
+
       if (failedSections.length > 0 || totalUnresolved > 0) {
         sileo.warning({
           title: "SMART Sync Partially Complete",
-          description: `${totalSynced} learner outcome(s) synchronized. ${totalUnresolved} learner outcome(s) still need complete final grades.${failedSections.length > 0 ? ` Review ${failedSections.length} section(s) still marked Action Required: ${failedSections.join(", ")}.` : ""}`,
+          description: `${totalSynced} learner outcome(s) synchronized across ${targetSections.length - failedSections.length} section(s). ${totalUnresolved} learner outcome(s) still need complete final grades.${failedSections.length > 0 ? ` Review ${failedSections.length} section(s) with pending grades: ${failedSections.join(", ")}.` : ""}`,
         });
       } else {
         sileo.success({
           title: "SMART Outcomes Synchronized",
-          description: `Successfully synchronized ${totalSynced} learner outcome(s) across ${targetSections.length} section(s) from SMART.`,
+          description: `Successfully synchronized ${totalSynced} learner outcome(s) across all ${targetSections.length} section(s) in Grades 7–10 from SMART.`,
         });
       }
-    } catch (err) {
-      toastApiError(err as never);
+    } catch (err: any) {
+      const status = err.response?.status;
+      const apiMessage = err.response?.data?.message || err.message || "";
+      
+      let description = apiMessage;
+      if (status === 503 || apiMessage.includes("ECONNREFUSED") || apiMessage.includes("offline")) {
+        description = "SMART server is offline or unreachable on port 5003. Please ensure the SMART service is running.";
+      } else if (status === 504 || apiMessage.includes("timeout") || apiMessage.includes("timed out")) {
+        description = "Connection to SMART timed out. The SMART server took too long to respond.";
+      } else if (status === 502) {
+        description = apiMessage || "SMART integration returned an invalid payload or rejected the connection token.";
+      }
+
+      sileo.error({
+        title: "SMART Sync Failed",
+        description,
+      });
     } finally {
       setSyncingSmart(false);
     }
-  }, [ayId, activeTab, isHistoricalReadOnly, allSections, sectionFilter]);
-
-  const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
-    if (!gradeLevelId || !ayId) return;
-    if (!silent) {
-      setRowSelection({});
-      setSectionFilter("ALL");
-    }
-    if (gradeLevelId !== activeTab) {
-      setActiveTab(gradeLevelId);
-      return;
-    }
-    await queryClient.refetchQueries({ queryKey: ["eosy", "grade-records", ayId, gradeLevelId] });
-  }, [activeTab, ayId, queryClient]);
+  }, [ayId, isHistoricalReadOnly, allSections, queryClient, activeTab, fetchGradeRecords]);
 
   useEffect(() => {
     void fetchSectionsAndGrades();

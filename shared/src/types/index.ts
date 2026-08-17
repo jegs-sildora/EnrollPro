@@ -59,6 +59,7 @@ import type {
   smartEosyLearnerOutcomeSchema,
   smartEosySectionResponseSchema,
   smartLearningAreaResultSchema,
+  smartSubjectGradeSchema,
 } from "../schemas/smart-eosy.schema.js";
 import type {
   healthRecordSchema,
@@ -149,6 +150,9 @@ export type ToggleOverrideInput = z.infer<typeof toggleOverrideSchema>;
 export type CalendarPolicyStatus = z.infer<typeof calendarPolicyStatusSchema>;
 export type SchoolYearCalendarPolicyInput = z.infer<
   typeof schoolYearCalendarPolicySchema
+>;
+export type SmartSubjectGrade = z.infer<
+  typeof smartSubjectGradeSchema
 >;
 export type SmartLearningAreaResult = z.infer<
   typeof smartLearningAreaResultSchema

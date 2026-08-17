@@ -57,6 +57,7 @@ interface SubjectGrades {
   term2?: number | null;
   term3?: number | null;
   Final?: number | null;
+  remarks?: string | null;
 }
 
 interface AcademicHistory {
@@ -162,11 +163,10 @@ function AcademicHistoryAccordion({
   const [isOpen, setIsOpen] = useState(isDefaultOpen);
   const isTrimester = history.term_format === "TRIMESTER" || history.term_format !== "QUARTERS";
 
-  const existingSubjects = history.grades ? Object.keys(history.grades) : [];
-  const extraSubjects = existingSubjects.filter(
-    (key) => !DEPED_JHS_CORE_SUBJECTS.some((core) => core.toLowerCase() === key.trim().toLowerCase())
-  );
-  const subjectsToRender = [...DEPED_JHS_CORE_SUBJECTS, ...extraSubjects];
+  const hasGrades = history.grades && Object.keys(history.grades).length > 0;
+  const subjectsToRender = hasGrades
+    ? Object.keys(history.grades!)
+    : DEPED_JHS_CORE_SUBJECTS;
 
   const getSubjectGrades = (subjectName: string): SubjectGrades | null => {
     if (!history.grades) return null;
@@ -175,6 +175,11 @@ function AcademicHistoryAccordion({
       (key) => key.trim().toLowerCase() === subjectName.trim().toLowerCase()
     );
     return matchKey ? (history.grades[matchKey] ?? null) : null;
+  };
+
+  const formatVal = (val: number | string | null | undefined) => {
+    if (val === null || val === undefined || val === "") return "—";
+    return String(val);
   };
 
   return (
@@ -231,10 +236,12 @@ function AcademicHistoryAccordion({
                   <tbody>
                     {subjectsToRender.map((subject) => {
                       const subjectGrades = getSubjectGrades(subject);
-                      const term1 = isTrimester ? (subjectGrades?.T1 ?? subjectGrades?.term1 ?? subjectGrades?.Q1 ?? "—") : (subjectGrades?.Q1 ?? subjectGrades?.T1 ?? "—");
-                      const term2 = isTrimester ? (subjectGrades?.T2 ?? subjectGrades?.term2 ?? subjectGrades?.Q2 ?? "—") : (subjectGrades?.Q2 ?? subjectGrades?.T2 ?? "—");
-                      const term3 = isTrimester ? (subjectGrades?.T3 ?? subjectGrades?.term3 ?? subjectGrades?.Q3 ?? "—") : (subjectGrades?.Q3 ?? subjectGrades?.T3 ?? "—");
-                      const term4 = !isTrimester ? (subjectGrades?.Q4 ?? "—") : null;
+                      const term1 = formatVal(isTrimester ? (subjectGrades?.T1 ?? subjectGrades?.term1 ?? subjectGrades?.Q1) : (subjectGrades?.Q1 ?? subjectGrades?.T1));
+                      const term2 = formatVal(isTrimester ? (subjectGrades?.T2 ?? subjectGrades?.term2 ?? subjectGrades?.Q2) : (subjectGrades?.Q2 ?? subjectGrades?.T2));
+                      const term3 = formatVal(isTrimester ? (subjectGrades?.T3 ?? subjectGrades?.term3 ?? subjectGrades?.Q3) : (subjectGrades?.Q3 ?? subjectGrades?.T3));
+                      const term4 = !isTrimester ? formatVal(subjectGrades?.Q4) : null;
+                      const finalRating = formatVal(subjectGrades?.Final);
+                      const remarks = subjectGrades?.remarks || (subjectGrades?.Final !== null && subjectGrades?.Final !== undefined ? (Number(subjectGrades.Final) >= 75 ? "Passed" : "Failed") : "—");
 
                       return (
                         <tr key={subject} className="bg-card hover:bg-muted/50 transition-colors">
@@ -246,10 +253,10 @@ function AcademicHistoryAccordion({
                             <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term4}</td>
                           )}
                           <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
-                            {subjectGrades?.Final ?? "—"}
+                            {finalRating}
                           </td>
                           <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
-                            {subjectGrades?.Final ? (Number(subjectGrades.Final) >= 75 ? "Passed" : "Failed") : "—"}
+                            {remarks}
                           </td>
                         </tr>
                       );
@@ -259,10 +266,12 @@ function AcademicHistoryAccordion({
                     <tr>
                       <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground">General Average:</td>
                       <td className="text-center font-extrabold bg-card border border-border text-lg text-foreground">
-                        {history.general_average}
+                        {formatVal(history.general_average)}
                       </td>
                       <td className="bg-card border border-border text-center text-base text-primary font-extrabold">
-                        {Number(history.general_average) >= 90 ? "WITH HONORS" : ""}
+                        {history.general_average !== null && history.general_average !== undefined ? (
+                          Number(history.general_average) >= 90 ? "WITH HONORS" : (Number(history.general_average) >= 75 ? "PASSED" : "FAILED")
+                        ) : "—"}
                       </td>
                     </tr>
                   </tfoot>

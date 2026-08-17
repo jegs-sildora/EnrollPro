@@ -185,7 +185,7 @@ export default function TeachingLoad() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-extrabold text-gray-700">Faculty Name</TableHead>
+                    <TableHead className="font-extrabold text-gray-700">Personnel Name</TableHead>
                     <TableHead className="font-extrabold text-gray-700 text-center">Subjects</TableHead>
                     <TableHead className="font-extrabold text-gray-700">Weekly Load</TableHead>
                     <TableHead className="font-extrabold text-gray-700 text-center">Load %</TableHead>

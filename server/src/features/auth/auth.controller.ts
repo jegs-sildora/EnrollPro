@@ -111,7 +111,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const accountName = String(req.body.accountName).trim();
   const { password } = req.body as { password: string };
 
-  const user = await prisma.user.findFirst({
+  let user = await prisma.user.findFirst({
     where: {
       OR: [
         { accountName: accountName },
@@ -120,6 +120,42 @@ export async function login(req: Request, res: Response): Promise<void> {
       ]
     }
   });
+
+  const DEFAULT_LEARNER_PASSWORD = "DepEd2026!";
+  let isDefaultPassword = false;
+  let passwordValid = false;
+
+  if (user) {
+    passwordValid = await bcrypt.compare(password, user.password);
+  }
+
+  if (!passwordValid && password === DEFAULT_LEARNER_PASSWORD && !user && accountName.startsWith("LRN-")) {
+    const lrn = accountName.replace("LRN-", "");
+    const learner = await prisma.learner.findUnique({ where: { lrn } });
+    if (learner) {
+      isDefaultPassword = true;
+      passwordValid = true;
+
+      const hashed = await bcrypt.hash(password, 12);
+      user = await prisma.user.create({
+        data: {
+          firstName: learner.firstName,
+          lastName: learner.lastName,
+          accountName: accountName,
+          password: hashed,
+          roles: ["LEARNER"],
+          mustChangePassword: true,
+          sex: learner.sex,
+          isActive: true,
+        },
+      });
+      await prisma.learner.update({
+        where: { id: learner.id },
+        data: { userId: user.id },
+      });
+    }
+  }
+
   if (!user) {
     res.status(401).json({ message: "Invalid employee ID or password" });
     return;
@@ -133,8 +169,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) {
+  if (!passwordValid) {
     res.status(401).json({ message: "Invalid employee ID or password" });
     return;
   }

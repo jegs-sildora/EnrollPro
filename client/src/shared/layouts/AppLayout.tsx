@@ -204,7 +204,7 @@ function UserNav() {
             Change Password
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="text-primary focus:text-primary focus:bg-primary/10 cursor-pointer font-medium"
+            className="text-primary focus:text-primary focus:bg-primary/10 cursor-pointer font-extrabold"
             onSelect={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out

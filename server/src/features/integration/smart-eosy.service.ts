@@ -31,6 +31,13 @@ interface NormalizedSmartOutcome {
     finalGrade: number;
     result: "PASSED" | "FAILED" | "INCOMPLETE";
   }>;
+  reportedGradesObj?: Record<string, {
+    T1?: number | null;
+    T2?: number | null;
+    T3?: number | null;
+    Final?: number | null;
+    remarks?: string | null;
+  }>;
   publishedAt: string | null;
   revision: string | null;
 }
@@ -59,7 +66,25 @@ function normalizeSmartOutcome(
   let learningAreas: NormalizedSmartOutcome["learningAreas"] =
     outcome.learningAreas ?? [];
 
+  const reportedGradesObj: Record<string, {
+    T1?: number | null;
+    T2?: number | null;
+    T3?: number | null;
+    Final?: number | null;
+    remarks?: string | null;
+  }> = {};
+
   if (subjectGrades.length > 0) {
+    for (const sg of subjectGrades) {
+      reportedGradesObj[sg.subjectName] = {
+        T1: sg.T1 ?? null,
+        T2: sg.T2 ?? null,
+        T3: sg.T3 ?? null,
+        Final: sg.finalRating ?? null,
+        remarks: sg.remarks ?? (sg.finalRating !== null && sg.finalRating !== undefined ? (sg.finalRating >= 75 ? "Passed" : "Failed") : null),
+      };
+    }
+
     const incompleteSubject = subjectGrades.find((subject) => {
       const status = subject.status ?? (
         subject.finalRating === null ? "NG" : "GRADED"
@@ -84,6 +109,13 @@ function normalizeSmartOutcome(
         result: finalGrade >= 75 ? ("PASSED" as const) : ("FAILED" as const),
       };
     });
+  } else if (learningAreas.length > 0) {
+    for (const la of learningAreas) {
+      reportedGradesObj[la.name] = {
+        Final: la.finalGrade,
+        remarks: la.result === "PASSED" ? "Passed" : la.result === "FAILED" ? "Failed" : null,
+      };
+    }
   }
 
   if (learningAreas.length === 0) {
@@ -122,6 +154,7 @@ function normalizeSmartOutcome(
     finalGeneralAverage,
     finalOutcome,
     learningAreas,
+    reportedGradesObj,
     publishedAt: outcome.publishedAt ?? null,
     revision: outcome.revision ?? null,
   };
@@ -366,6 +399,14 @@ export async function syncFinalSmartSectionOutcomes(
             academicDeficiencyNote: buildDeficiencyNote(student),
           },
         });
+        if (student.reportedGradesObj && Object.keys(student.reportedGradesObj).length > 0) {
+          await tx.enrollmentApplication.update({
+            where: { id: record.enrollmentApplicationId },
+            data: {
+              reportedGrades: student.reportedGradesObj,
+            },
+          });
+        }
       }
       for (const unresolved of unresolvedOutcomes) {
         const record = localByLrn.get(unresolved.lrn);
@@ -397,3 +438,40 @@ export async function syncFinalSmartSectionOutcomes(
     learnerIds: matched.map(({ record }) => record.learner.id),
   };
 }
+
+export async function fetchLiveSmartSectionGrades(
+  sectionName: string,
+  schoolYearLabel: string,
+): Promise<SmartEosyLearnerOutcome[]> {
+  const baseUrl = process.env.SMART_API_BASE_URL?.trim();
+  const smartToken = process.env.SMART_API_KEY?.trim();
+  if (!baseUrl || !smartToken) {
+    return [];
+  }
+  const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+  try {
+    const response = await axios.post<unknown>(
+      `${cleanBaseUrl}/api/integration/sections/${encodeURIComponent(sectionName)}/sync-grades`,
+      undefined,
+      {
+        params: { schoolYear: schoolYearLabel },
+        headers: { Authorization: `Bearer ${smartToken}` },
+        timeout: 5000,
+      },
+    );
+    const parsed = smartEosySectionResponseSchema.safeParse(response.data);
+    if (!parsed.success) {
+      return [];
+    }
+    return (
+      parsed.data.outcomes ??
+      parsed.data.students ??
+      parsed.data.data?.outcomes ??
+      parsed.data.data?.students ??
+      []
+    );
+  } catch {
+    return [];
+  }
+}
+
