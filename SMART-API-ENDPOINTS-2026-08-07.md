@@ -63,6 +63,31 @@ Called by EnrollPro during EOSY rollover validation to verify/pull final SMART a
 | `GET` | `/api/integration/status` | Bearer Token | Live reachability status of EnrollPro, ATLAS, and AIMS partners. |
 | `GET` | `/api/integration/sync/stream` | Bearer Token | Server-Sent Events (SSE) stream for real-time sync notifications. |
 
+#### SSE notification contract used by EnrollPro
+
+When published final outcomes change, SMART sends one JSON `data` message to the
+stream. EnrollPro accepts the notification only when it contains enough scope to
+identify one section and school year.
+
+```json
+{
+  "type": "GRADE_OUTCOMES_UPDATED",
+  "sectionName": "Rizal",
+  "schoolYear": "2026-2027",
+  "timestamp": "2026-08-17T09:00:00.000Z",
+  "learnerLrns": ["123456789012"],
+  "revision": 4
+}
+```
+
+`sectionId` may be used instead of `sectionName` when it is the shared section
+identifier. `schoolYear` must use the `YYYY-YYYY` format and `timestamp` must be
+an ISO 8601 timestamp with an offset. Invalid, incomplete, or unscoped messages
+are ignored by EnrollPro. A valid notification causes EnrollPro to pull and
+validate the complete section result through the documented grade endpoint. SMART
+remains the owner of grades and promotion outcomes; it never writes directly to
+EnrollPro.
+
 ---
 
 ## 🔐 Authentication & Session Endpoints

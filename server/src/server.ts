@@ -5,6 +5,10 @@ import path from "path";
 process.env.TZ = "Asia/Manila";
 
 import app from "./app.js";
+import {
+  startSmartSseBridge,
+  stopSmartSseBridge,
+} from "./features/integration/smart-sse-bridge.service.js";
 
 const __dirname = path.resolve();
 import express from "express";
@@ -26,6 +30,16 @@ app.all("/api/", (req, res) => {
 
 const PORT = process.env.PORT || 5002;
 
-app.listen(PORT as number, "0.0.0.0", () => {
+const server = app.listen(PORT as number, "0.0.0.0", () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
-}); 
+  startSmartSseBridge();
+});
+
+function shutdown(signal: string): void {
+  console.log(`[Server] Received ${signal}. Shutting down.`);
+  stopSmartSseBridge();
+  server.close(() => process.exit(0));
+}
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));

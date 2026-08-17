@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   REALTIME_INVALIDATION_TOPICS,
@@ -9,6 +9,23 @@ import { useAuthStore } from "@/store/auth.slice";
 
 const STREAM_URL = `${(import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "")}/events/stream`;
 const REALTIME_INVALIDATION_EVENT = "enrollpro:invalidate";
+const REALTIME_CONNECTION_EVENT = "enrollpro:realtime-status";
+
+export type RealtimeConnectionStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected";
+
+let currentConnectionStatus: RealtimeConnectionStatus = "disconnected";
+
+function setConnectionStatus(status: RealtimeConnectionStatus): void {
+  currentConnectionStatus = status;
+  window.dispatchEvent(
+    new CustomEvent<RealtimeConnectionStatus>(REALTIME_CONNECTION_EVENT, {
+      detail: status,
+    }),
+  );
+}
 
 type QueryKeyPrefix = readonly unknown[];
 
@@ -54,6 +71,10 @@ function parseInvalidationEvent(raw: string): RealtimeInvalidationEvent | null {
       learnerIds: Array.isArray(parsed.learnerIds)
         ? parsed.learnerIds.filter((id): id is number => typeof id === "number")
         : undefined,
+      smartRevision:
+        typeof parsed.smartRevision === "string" ? parsed.smartRevision : null,
+      smartEventAt:
+        typeof parsed.smartEventAt === "string" ? parsed.smartEventAt : null,
       emittedAt:
         typeof parsed.emittedAt === "string"
           ? parsed.emittedAt
@@ -167,12 +188,17 @@ export function useRealtimeInvalidations(): void {
 
   useEffect(() => {
     if (!hasStaffSession) {
+      setConnectionStatus("disconnected");
       return;
     }
 
+    setConnectionStatus("connecting");
     const eventSource = new EventSource(STREAM_URL, {
       withCredentials: true,
     });
+
+    eventSource.onopen = () => setConnectionStatus("connected");
+    eventSource.onerror = () => setConnectionStatus("disconnected");
 
     const handleInvalidation = (message: MessageEvent<string>) => {
       const payload = parseInvalidationEvent(message.data);
@@ -203,12 +229,34 @@ export function useRealtimeInvalidations(): void {
     return () => {
       eventSource.removeEventListener("invalidate", handleInvalidation);
       eventSource.close();
+      setConnectionStatus("disconnected");
     };
   }, [hasStaffSession, queryClient]);
 }
 
+export function useRealtimeConnectionStatus(): RealtimeConnectionStatus {
+  const [status, setStatus] = useState<RealtimeConnectionStatus>(
+    currentConnectionStatus,
+  );
+
+  useEffect(() => {
+    const handleStatus = (event: Event) => {
+      const detail = (event as CustomEvent<RealtimeConnectionStatus>).detail;
+      if (detail) {
+        setStatus(detail);
+      }
+    };
+
+    window.addEventListener(REALTIME_CONNECTION_EVENT, handleStatus);
+    return () => window.removeEventListener(REALTIME_CONNECTION_EVENT, handleStatus);
+  }, []);
+
+  return status;
+}
+
 export {
   REALTIME_INVALIDATION_EVENT,
+  REALTIME_CONNECTION_EVENT,
   type RealtimeInvalidationEvent,
   type RealtimeInvalidationTopic,
 };

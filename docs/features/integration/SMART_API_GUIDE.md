@@ -39,6 +39,30 @@ POST /api/integration/smart/sections/:id/sync-grades
 
 This route requires an authenticated EnrollPro `SYSTEM_ADMIN` session or bearer token. It calls SMART server-side and never exposes the SMART key.
 
+## Automatic Updates Through SMART SSE
+
+EnrollPro also maintains one server-side connection to SMART's:
+
+```text
+GET /api/integration/sync/stream
+```
+
+The connection uses the server-only `SMART_API_KEY`. Browser pages do not connect
+directly to SMART. When SMART publishes a scoped notification containing a section
+reference, school-year label, and timestamp, EnrollPro pulls the complete section
+outcomes through the same validated synchronization service used by the manual
+button. Repeated notifications for one section are coalesced.
+
+After a successful automatic pull, EnrollPro broadcasts its authenticated SSE
+invalidation event to EOSY Updating, learner records, the dashboard, and the
+integration status views. This means SMART changes appear in EnrollPro without
+clicking `Sync SMART` or refreshing the browser. The button remains available for
+manual retry and full verification.
+
+If SMART is offline, sends an invalid notification, or returns incomplete final
+outcomes, EnrollPro leaves the existing data unchanged or marks the affected
+learner as `Action Required`. It never creates fallback grades.
+
 ## Required SMART Response
 
 SMART must return the selected school-year label and an outcome for every active learner in the section. Each outcome must include:

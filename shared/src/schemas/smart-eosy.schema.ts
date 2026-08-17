@@ -65,3 +65,42 @@ export const smartEosySectionResponseSchema = z.object({
     })
     .optional(),
 });
+
+const smartSchoolYearLabelSchema = z
+  .string()
+  .regex(/^\d{4}-\d{4}$/, "SMART must provide a valid school-year label");
+
+const smartSectionReferenceSchema = z.union([
+  z.string().trim().min(1),
+  z.number().int().positive(),
+]);
+
+/**
+ * Notification sent by SMART when published section outcomes change.
+ * EnrollPro accepts only notifications with enough scope to identify one
+ * section in one school year. Unknown fields are ignored by design.
+ */
+export const smartSyncNotificationSchema = z
+  .object({
+    type: z.string().trim().min(1),
+    sectionId: smartSectionReferenceSchema.optional(),
+    sectionName: z.string().trim().min(1).optional(),
+    schoolYear: smartSchoolYearLabelSchema,
+    timestamp: z.string().datetime({ offset: true }),
+    learnerLrns: z
+      .array(z.string().regex(/^\d{12}$/, "Invalid learner LRN"))
+      .optional(),
+    revision: z
+      .union([z.string().trim().min(1), z.number().int().nonnegative()])
+      .optional()
+      .transform((value) => (value === undefined ? undefined : String(value))),
+  })
+  .superRefine((value, context) => {
+    if (value.sectionId === undefined && value.sectionName === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["sectionId"],
+        message: "SMART must provide a section identifier or section name",
+      });
+    }
+  });

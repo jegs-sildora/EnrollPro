@@ -45,6 +45,7 @@ import {
   FileText,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import axios from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
@@ -57,10 +58,10 @@ import { cn } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";
-import { useEosyStream, type EosyEventPayload } from "@/features/enrollment/hooks/useEosyStream";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate } from "react-router";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
+import { useRealtimeConnectionStatus } from "@/shared/hooks/useRealtimeInvalidations";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 import {
   useGuardedTabChange,
@@ -117,6 +118,33 @@ interface GradeLevel {
   id: number;
   name: string;
   displayOrder: number | null;
+}
+
+interface SmartErrorDetails {
+  status?: number;
+  message: string;
+}
+
+function getSmartErrorDetails(error: unknown): SmartErrorDetails {
+  if (axios.isAxiosError<unknown>(error)) {
+    const responseData = error.response?.data;
+    const responseMessage =
+      typeof responseData === "object" &&
+      responseData !== null &&
+      "message" in responseData &&
+      typeof responseData.message === "string"
+        ? responseData.message
+        : null;
+
+    return {
+      status: error.response?.status,
+      message: responseMessage ?? error.message,
+    };
+  }
+
+  return {
+    message: error instanceof Error ? error.message : "Unknown SMART synchronization error.",
+  };
 }
 
 interface Section {
@@ -325,6 +353,7 @@ export default function EosyUpdating() {
   const [reopenLoading, setReopenLoading] = useState<boolean>(false);
 
   const [syncingSmart, setSyncingSmart] = useState(false);
+  const smartConnectionStatus = useRealtimeConnectionStatus();
 
   const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
@@ -606,7 +635,7 @@ export default function EosyUpdating() {
       let totalSynced = 0;
       let totalUnresolved = 0;
       const failedSections: string[] = [];
-      let firstError: any = null;
+      let firstError: unknown = null;
 
       for (const sec of targetSections) {
         try {
@@ -617,14 +646,13 @@ export default function EosyUpdating() {
           if (Array.isArray(res.data?.unresolvedOutcomes)) {
             totalUnresolved += res.data.unresolvedOutcomes.length;
           }
-        } catch (secErr: any) {
+        } catch (secErr: unknown) {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
           failedSections.push(sec.name);
           if (!firstError) firstError = secErr;
 
           // Fail fast if SMART is completely unreachable / offline
-          const status = secErr.response?.status;
-          const msg = secErr.response?.data?.message || secErr.message || "";
+          const { status, message: msg } = getSmartErrorDetails(secErr);
           if (
             status === 502 ||
             status === 503 ||
@@ -667,9 +695,8 @@ export default function EosyUpdating() {
           description: `Successfully synchronized ${totalSynced} learner outcome(s) across all ${targetSections.length} section(s) in Grades 7–10 from SMART.`,
         });
       }
-    } catch (err: any) {
-      const status = err.response?.status;
-      const apiMessage = err.response?.data?.message || err.message || "";
+    } catch (err: unknown) {
+      const { status, message: apiMessage } = getSmartErrorDetails(err);
       
       let description = apiMessage;
       if (status === 503 || apiMessage.includes("ECONNREFUSED") || apiMessage.includes("offline")) {
@@ -699,19 +726,6 @@ export default function EosyUpdating() {
       void fetchGradeRecords(activeTab);
     }
   }, [activeTab, fetchGradeRecords]);
-
-  // Auto-refresh when teacher submits/locks their section using Server-Sent Events
-  useEosyStream(
-    useCallback((payload: EosyEventPayload) => {
-      if (!activeTab || isHistoricalReadOnly) return;
-      const relevantEvents = ["TEACHER_EOSY_SUBMITTED", "SECTION_UNLOCKED", "SECTION_FINALIZED", "GRADE_LEVEL_FINALIZED"];
-      if (relevantEvents.includes(payload.type)) {
-        void fetchSectionsAndGrades();
-        void fetchGradeRecords(activeTab, true);
-        void fetchExportLockState();
-      }
-    }, [activeTab, isHistoricalReadOnly, fetchSectionsAndGrades, fetchGradeRecords, fetchExportLockState])
-  );
 
   const refreshEosyWorkspace = useCallback(() => {
     if (!activeTab || isHistoricalReadOnly) return;

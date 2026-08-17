@@ -60,6 +60,7 @@ import type {
   smartEosySectionResponseSchema,
   smartLearningAreaResultSchema,
   smartSubjectGradeSchema,
+  smartSyncNotificationSchema,
 } from "../schemas/smart-eosy.schema.js";
 import type {
   healthRecordSchema,
@@ -162,6 +163,9 @@ export type SmartEosyLearnerOutcome = z.infer<
 >;
 export type SmartEosySectionResponse = z.infer<
   typeof smartEosySectionResponseSchema
+>;
+export type SmartSyncNotification = z.infer<
+  typeof smartSyncNotificationSchema
 >;
 
 // ─── Student Types ─────────────────────────────────────

@@ -18,6 +18,29 @@ interface SmartSyncResult {
   learnerIds: number[];
 }
 
+const sectionSyncLocks = new Map<number, Promise<SmartSyncResult>>();
+const SMART_TRANSPORT_ATTEMPTS = 3;
+
+function isRetryableSmartTransportError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  const status = error.response?.status;
+  const code = error.code ?? "";
+  return status === 502
+    || status === 503
+    || status === 504
+    || [
+      "ECONNREFUSED",
+      "ETIMEDOUT",
+      "ECONNABORTED",
+      "ENOTFOUND",
+      "ERR_NETWORK",
+    ].includes(code)
+    || error.message.toLowerCase().includes("timeout");
+}
+
 type AcademicStatus = "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
 
 interface NormalizedSmartOutcome {
@@ -174,7 +197,7 @@ function buildDeficiencyNote(
     : null;
 }
 
-export async function syncFinalSmartSectionOutcomes(
+async function syncFinalSmartSectionOutcomesInternal(
   sectionId: number,
 ): Promise<SmartSyncResult> {
   const section = await prisma.section.findUnique({
@@ -228,16 +251,40 @@ export async function syncFinalSmartSectionOutcomes(
     const cleanBaseUrl = baseUrl.replace(/\/$/, "");
     // SMART's section registry is keyed by the shared DepEd section name.
     // EnrollPro's numeric primary key is local and is not a SMART identifier.
-    const response = await axios.post<unknown>(
-      `${cleanBaseUrl}/api/integration/sections/${encodeURIComponent(section.name)}/sync-grades`,
-      undefined,
-      {
-        params: { schoolYear: section.schoolYear.yearLabel },
-        headers: { Authorization: `Bearer ${smartToken}` },
-        timeout: 10_000,
-      },
-    );
-    rawResponse = response.data;
+    let responseData: unknown;
+    let responseReceived = false;
+    let lastTransportError: unknown = null;
+
+    for (let attempt = 1; attempt <= SMART_TRANSPORT_ATTEMPTS; attempt += 1) {
+      try {
+        const response = await axios.post<unknown>(
+          `${cleanBaseUrl}/api/integration/sections/${encodeURIComponent(section.name)}/sync-grades`,
+          undefined,
+          {
+            params: { schoolYear: section.schoolYear.yearLabel },
+            headers: { Authorization: `Bearer ${smartToken}` },
+            timeout: 10_000,
+          },
+        );
+        responseData = response.data;
+        responseReceived = true;
+        break;
+      } catch (error: unknown) {
+        lastTransportError = error;
+        if (!isRetryableSmartTransportError(error) || attempt === SMART_TRANSPORT_ATTEMPTS) {
+          throw error;
+        }
+
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 400 * attempt);
+        });
+      }
+    }
+
+    if (!responseReceived) {
+      throw lastTransportError ?? new Error("SMART did not return a response.");
+    }
+    rawResponse = responseData;
   } catch (error: unknown) {
     if (error instanceof AppError) {
       throw error;
@@ -439,6 +486,29 @@ export async function syncFinalSmartSectionOutcomes(
   };
 }
 
+/**
+ * Serializes manual and automatic synchronization for one section. A SMART
+ * SSE burst and a registrar click therefore share one validated operation.
+ */
+export async function syncFinalSmartSectionOutcomes(
+  sectionId: number,
+): Promise<SmartSyncResult> {
+  const existing = sectionSyncLocks.get(sectionId);
+  if (existing) {
+    return existing;
+  }
+
+  const operation = syncFinalSmartSectionOutcomesInternal(sectionId);
+  sectionSyncLocks.set(sectionId, operation);
+  try {
+    return await operation;
+  } finally {
+    if (sectionSyncLocks.get(sectionId) === operation) {
+      sectionSyncLocks.delete(sectionId);
+    }
+  }
+}
+
 export async function fetchLiveSmartSectionGrades(
   sectionName: string,
   schoolYearLabel: string,
@@ -474,4 +544,3 @@ export async function fetchLiveSmartSectionGrades(
     return [];
   }
 }
-

@@ -8,6 +8,7 @@ import {
   broadcastEosyInvalidation,
 } from "../../lib/realtime-events.js";
 import { syncFinalSmartSectionOutcomes } from "./smart-eosy.service.js";
+import { retrySmartSseBridgeAfterManualSync } from "./smart-sse-bridge.service.js";
 
 /**
  * POST /api/integration/smart/sections/:id/sync-grades
@@ -26,6 +27,7 @@ export async function syncSmartSectionGrades(
       return;
     }
 
+    retrySmartSseBridgeAfterManualSync();
     const result = await syncFinalSmartSectionOutcomes(sectionId);
 
     await auditLog({
