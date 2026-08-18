@@ -63,7 +63,7 @@ const DEFAULT_CONFIG: PublicConfig = {
 
 export default function LearnerLogin() {
   const navigate = useNavigate();
-  const { user, sessionExpired, setAuth, setRequiresPasswordReset, setSessionExpired } =
+  const { user, requiresPasswordReset, sessionExpired, setAuth, setRequiresPasswordReset, setSessionExpired } =
     useLearnerAuthStore();
 
   const [publicConfig, setPublicConfig] = useState<PublicConfig>(DEFAULT_CONFIG);
@@ -234,6 +234,9 @@ export default function LearnerLogin() {
   };
 
   if (user && !success) {
+    if (requiresPasswordReset) {
+      return <Navigate to="/learner/change-password" state={{ isForcedReset: true }} replace />;
+    }
     return <Navigate to="/learner/portal" replace />;
   }
 

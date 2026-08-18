@@ -129,6 +129,8 @@ interface Student {
   section: string | null;
   sectionId: number | null;
   sectionIsHomogeneous?: boolean;
+  sectionAdviser?: string | null;
+  sectionAdviserEmployeeId?: string | null;
   createdAt: string;
   updatedAt: string;
   studentPhoto?: string | null;
@@ -286,7 +288,7 @@ const getGradeLevelTextClass = (gradeLevel: string | null | undefined): string =
   if (normalized.includes("8") || normalized.includes("g8")) return "text-amber-700";
   if (normalized.includes("9") || normalized.includes("g9")) return "text-rose-700";
   if (normalized.includes("10") || normalized.includes("g10")) return "text-sky-700";
-  return "text-muted-foreground";
+  return "text-foreground";
 };
 
 const getInitials = (firstName?: string | null, lastName?: string | null): string => {
@@ -973,29 +975,41 @@ export default function Students() {
             />
           ),
           cell: ({ row }) => (
-            <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
-                  getGradeLevelBadgeStyles(row.original.gradeLevel)
-                )}
-              >
-                {row.original.gradeLevel || "Grade"}
-              </Badge>
-              <span className="font-extrabold text-sm leading-tight text-center uppercase">
-                {formatSectionLabel(row.original.section)}
-              </span>
-              {activeTab === "completers" && (() => {
-                const sy = row.original.schoolYear
-                const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel
-                return label ? (
-                  <span className="text-sm text-foreground font-extrabold leading-tight">
-                    {label}
-                  </span>
-                ) : null
-              })()}
-            </div>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
+                          getGradeLevelBadgeStyles(row.original.gradeLevel)
+                        )}
+                      >
+                        {row.original.gradeLevel || "Grade"}
+                      </Badge>
+                      <span className="font-extrabold text-sm leading-tight text-center uppercase cursor-help">
+                        {formatSectionLabel(row.original.section)}
+                      </span>
+                      {activeTab === "completers" && (() => {
+                        const sy = row.original.schoolYear
+                        const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel
+                        return label ? (
+                          <span className="text-sm text-foreground font-extrabold leading-tight">
+                            {label}
+                          </span>
+                        ) : null
+                      })()}
+                    </div>
+                  </TooltipTrigger>
+                  {row.original.sectionAdviser && (
+                    <TooltipContent className={cn("px-3 py-2 outline-1", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
+                      <p className="font-bold">ADVISER: {row.original.sectionAdviser}</p>
+                      <p className="font-bold">EMPLOYEE ID: {row.original.sectionAdviserEmployeeId}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
           ),
         },
         {

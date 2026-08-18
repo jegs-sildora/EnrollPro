@@ -265,6 +265,11 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           section: applicant.enrollmentRecord?.section?.name || null,
           sectionId: applicant.enrollmentRecord?.sectionId || null,
           sectionIsHomogeneous: applicant.enrollmentRecord?.section?.isHomogeneous || false,
+          sectionAdviser: (() => {
+            const adviser = applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher;
+            return adviser ? `${adviser.firstName} ${adviser.lastName}` : null;
+          })(),
+          sectionAdviserEmployeeId: applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher?.employeeId || null,
           studentPhoto: applicant.learner?.studentPhoto || null,
           portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
           schoolYear: schoolYearInfo,

@@ -42,7 +42,11 @@ export const useLearnerAuthStore = create<LearnerAuthState>()(
     }),
     {
       name: "learner-auth-storage",
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        token: state.token,
+        requiresPasswordReset: state.requiresPasswordReset,
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
       },

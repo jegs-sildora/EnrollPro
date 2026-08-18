@@ -87,7 +87,7 @@ export function TableCellsTransitionLoader({
         </svg>
       </div>
 
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-primary/20 bg-card p-6 text-center shadow-xl">
+      <div className="relative z-10 w-full max-w-md rounded-lg border border-primary/20 bg-card px-8 py-12 text-center shadow-xl">
         <div className="mb-5 flex h-4 items-center justify-center gap-2.5">
           {[0, 1, 2].map((index) => (
             <motion.span
@@ -100,9 +100,9 @@ export function TableCellsTransitionLoader({
         </div>
 
         <h2 className="text-lg font-extrabold text-foreground">
-          Syncing SMART outcomes
+          Syncing SMART EOSY grades
         </h2>
-        <p className="mt-1 text-sm font-semibold text-muted-foreground">
+        <p className="mt-1 text-sm font-bold text-foreground">
           {currentSection
             ? `Fetching final grades for ${currentSection}.`
             : "Finishing the school-year grade update."}

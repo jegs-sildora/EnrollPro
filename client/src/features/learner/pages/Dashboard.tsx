@@ -164,17 +164,97 @@ function AcademicHistoryAccordion({
   const isTrimester = history.term_format === "TRIMESTER" || history.term_format !== "QUARTERS";
 
   const hasGrades = history.grades && Object.keys(history.grades).length > 0;
-  const subjectsToRender = hasGrades
-    ? Object.keys(history.grades!)
-    : DEPED_JHS_CORE_SUBJECTS;
+
+  const getCombinedLearningArea = (subjectName: string): "Science" | "TLE" | null => {
+    const normalized = subjectName.trim().toLowerCase();
+    if (
+      normalized === "science" ||
+      /^science \d+$/.test(normalized) ||
+      normalized.startsWith("science - ")
+    ) {
+      return "Science";
+    }
+    if (
+      normalized === "tle" ||
+      /^tle \d+$/.test(normalized) ||
+      normalized === "technology and livelihood education" ||
+      normalized.startsWith("tle - ") ||
+      normalized.startsWith("tle exploratory - ")
+    ) {
+      return "TLE";
+    }
+    return null;
+  };
+
+  const isDirectLearningArea = (subjectName: string, area: "Science" | "TLE"): boolean => {
+    const normalized = subjectName.trim().toLowerCase();
+    return area === "Science"
+      ? normalized === "science" || /^science \d+$/.test(normalized)
+      : normalized === "tle" || /^tle \d+$/.test(normalized) || normalized === "technology and livelihood education";
+  };
+
+  const averageGrades = (grades: SubjectGrades[]): SubjectGrades => {
+    const average = (values: Array<number | null | undefined>): number | null => {
+      const numericValues = values.filter((value): value is number => typeof value === "number");
+      return numericValues.length > 0
+        ? Math.round(numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length)
+        : null;
+    };
+
+    return {
+      T1: average(grades.map((grade) => grade.T1 ?? grade.term1 ?? grade.Q1)),
+      T2: average(grades.map((grade) => grade.T2 ?? grade.term2 ?? grade.Q2)),
+      T3: average(grades.map((grade) => grade.T3 ?? grade.term3 ?? grade.Q3)),
+      Q4: average(grades.map((grade) => grade.Q4)),
+      Final: average(grades.map((grade) => grade.Final)),
+      remarks: grades.every((grade) => grade.remarks === "Passed") ? "Passed" : "Failed",
+    };
+  };
+
+  const subjectsToRender: string[] = hasGrades ? [] : DEPED_JHS_CORE_SUBJECTS;
+  const processedGrades: Record<string, SubjectGrades> = {};
+
+  if (hasGrades) {
+    const combinedComponents: Record<"Science" | "TLE", SubjectGrades[]> = {
+      Science: [],
+      TLE: [],
+    };
+    const directLearningAreas: Partial<Record<"Science" | "TLE", SubjectGrades>> = {};
+
+    for (const [subjectName, subjectGrades] of Object.entries(history.grades!)) {
+      const combinedArea = getCombinedLearningArea(subjectName);
+      if (!combinedArea) {
+        subjectsToRender.push(subjectName);
+        processedGrades[subjectName] = subjectGrades;
+        continue;
+      }
+
+      if (isDirectLearningArea(subjectName, combinedArea)) {
+        directLearningAreas[combinedArea] = subjectGrades;
+      } else {
+        combinedComponents[combinedArea].push(subjectGrades);
+      }
+    }
+
+    for (const combinedArea of ["Science", "TLE"] as const) {
+      const directGrades = directLearningAreas[combinedArea];
+      const componentGrades = combinedComponents[combinedArea];
+      if (directGrades) {
+        processedGrades[combinedArea] = directGrades;
+        subjectsToRender.push(combinedArea);
+      } else if (componentGrades.length > 0) {
+        processedGrades[combinedArea] = averageGrades(componentGrades);
+        subjectsToRender.push(combinedArea);
+      }
+    }
+  }
 
   const getSubjectGrades = (subjectName: string): SubjectGrades | null => {
-    if (!history.grades) return null;
-    if (history.grades[subjectName]) return history.grades[subjectName];
-    const matchKey = Object.keys(history.grades).find(
+    if (processedGrades[subjectName]) return processedGrades[subjectName];
+    const matchKey = Object.keys(processedGrades).find(
       (key) => key.trim().toLowerCase() === subjectName.trim().toLowerCase()
     );
-    return matchKey ? (history.grades[matchKey] ?? null) : null;
+    return matchKey ? (processedGrades[matchKey] ?? null) : null;
   };
 
   const formatVal = (val: number | string | null | undefined) => {
@@ -515,6 +595,17 @@ export default function LearnerDashboard() {
         {loading ? (
           <div className="flex-1 w-full p-4 sm:p-6 overflow-hidden">
             <PageLoadingSkeleton variant="dashboard" />
+          </div>
+        ) : error ? (
+          <div className="flex-1 w-full p-4 sm:p-6 flex flex-col items-center justify-center min-h-[50vh]">
+            <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-xl max-w-md text-center">
+              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-lg font-extrabold text-foreground mb-2">Dashboard Error</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-6">{error}</p>
+              <Button onClick={() => window.location.reload()} variant="outline" className="font-extrabold w-full">
+                Refresh Page
+              </Button>
+            </div>
           </div>
         ) : data && (
           <>

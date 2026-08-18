@@ -44,6 +44,7 @@ export interface DataTableProps<TData, TValue> {
   forceEmptyState?: boolean;
   emptyStateContent?: ReactNode;
   bodyOverlay?: ReactNode;
+  disableScrolling?: boolean;
   prependBodyRow?: ReactNode;
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
@@ -164,6 +165,7 @@ export function DataTable<TData, TValue>({
   forceEmptyState = false,
   emptyStateContent,
   bodyOverlay,
+  disableScrolling = false,
   prependBodyRow,
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
@@ -230,14 +232,17 @@ export function DataTable<TData, TValue>({
   return (
     <div
       className={cn(
-        "rounded-md border overflow-hidden max-w-full flex flex-col h-full",
+        "rounded-md border overflow-hidden max-w-full flex flex-col h-full relative",
         className,
       )}>
       <div
         ref={containerRef}
-        className="overflow-auto relative flex-1 min-h-0 w-full"
+        className={cn(
+          "relative flex-1 min-h-0 w-full",
+          disableScrolling ? "overflow-hidden" : "overflow-auto"
+        )}
         style={containerHeight !== "100%" ? { maxHeight: containerHeight } : undefined}>
-        <Table className={cn("w-full", tableClassName)}>
+        <Table wrapperClassName="overflow-visible" className={cn("w-full", tableClassName)}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -441,17 +446,17 @@ export function DataTable<TData, TValue>({
             </TableBody>
           )}
         </Table>
-        {bodyOverlay && (
-          <div
-            className={cn(
-              "pointer-events-none absolute inset-x-0 bottom-0 top-11 z-40",
-              dense && "top-8",
-            )}
-          >
-            {bodyOverlay}
-          </div>
-        )}
       </div>
+      {bodyOverlay && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 top-11 z-40",
+            dense && "top-8",
+          )}
+        >
+          {bodyOverlay}
+        </div>
+      )}
     </div>
   );
 }

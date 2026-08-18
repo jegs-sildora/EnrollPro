@@ -1534,7 +1534,17 @@ export async function getGradeRecords(
         },
         include: {
           section: {
-            select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
+            select: { 
+              id: true, 
+              name: true, 
+              isEosyFinalized: true, 
+              programType: true, 
+              isHomogeneous: true,
+              advisers: {
+                where: { status: "ACTIVE" },
+                select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+              }
+            },
           },
           learner: true,
           gradeLevel: true,
@@ -1564,7 +1574,17 @@ export async function getGradeRecords(
         },
         include: {
           section: {
-            select: { id: true, name: true, isEosyFinalized: true, programType: true, isHomogeneous: true },
+            select: { 
+              id: true, 
+              name: true, 
+              isEosyFinalized: true, 
+              programType: true, 
+              isHomogeneous: true,
+              advisers: {
+                where: { status: "ACTIVE" },
+                select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+              }
+            },
           },
           enrollmentApplication: {
             include: {

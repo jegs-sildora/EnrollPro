@@ -54,7 +54,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";
@@ -106,6 +106,13 @@ export interface EnrollmentRecord {
     isEosyFinalized: boolean;
     programType?: string;
     isHomogeneous?: boolean;
+    advisers?: Array<{
+      teacher: {
+        firstName: string;
+        lastName: string;
+        employeeId: string;
+      };
+    }>;
   };
   enrollmentApplication: {
     id: number;
@@ -120,6 +127,7 @@ export interface EnrollmentRecord {
       sex?: "MALE" | "FEMALE" | null;
       studentPhoto?: string | null;
     };
+    gradeLevel?: GradeLevel;
   };
 }
 
@@ -172,6 +180,13 @@ interface Section {
   gradeLevelId: number;
   gradeLevel: GradeLevel;
   _count: { enrollmentRecords: number };
+  advisers?: Array<{
+    teacher: {
+      firstName: string;
+      lastName: string;
+      employeeId: string;
+    };
+  }>;
 }
 
 interface EosyExportLockState {
@@ -1299,9 +1314,21 @@ export default function EosyUpdating() {
           }
 
           return (
-            <div className="flex justify-center w-full">
-              <span className="text-base font-extrabold uppercase">{row.original.section?.name || "--"}</span>
-            </div>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex justify-center w-full">
+                    <span className="text-base font-extrabold uppercase cursor-help">{row.original.section?.name || "--"}</span>
+                  </div>
+                </TooltipTrigger>
+                {row.original.section?.advisers?.[0]?.teacher && (
+                  <TooltipContent className={cn("px-3 py-2", getGradeLevelBadgeStyles(row.original.enrollmentApplication.gradeLevel?.name))}>
+                    <p className="font-bold">ADVISER: {`${row.original.section.advisers[0].teacher.firstName} ${row.original.section.advisers[0].teacher.lastName}`}</p>
+                    <p className="font-bold">EMPLOYEE ID: {row.original.section.advisers[0].teacher.employeeId}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           );
         },
         meta: { className: "min-w-[150px] text-center" }
@@ -1584,7 +1611,7 @@ export default function EosyUpdating() {
 
   return (
     <>
-      <div className="flex flex-col pb-8">
+      <div className="flex min-h-0 flex-col pb-8">
 
 
 
@@ -1641,7 +1668,7 @@ export default function EosyUpdating() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="w-full flex flex-col space-y-4"
+                  className="flex min-h-0 w-full flex-col space-y-4"
                 >
                   {isScopeFinalized && (
                     <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 shrink-0">
@@ -1651,7 +1678,7 @@ export default function EosyUpdating() {
                     </div>
                   )}
 
-                  <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex flex-col overflow-hidden">
+                  <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex h-[calc(100dvh-12rem)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-11rem)]">
                     <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
                       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
                         {/* Left Side Actions */}
@@ -1849,7 +1876,7 @@ export default function EosyUpdating() {
                         <DataTable
                           columns={columns}
                           data={filteredRecords}
-                          loading={loadingRecords}
+                          loading={loadingRecords && isInitialLoad}
                           loadingBehavior="delayed"
                           containerHeight="100%"
                           bodyOverlay={(
@@ -1864,6 +1891,7 @@ export default function EosyUpdating() {
                               )}
                             </AnimatePresence>
                           )}
+                          disableScrolling={syncingSmart && !!smartSyncProgress}
                           rowSelection={rowSelection}
                           onRowSelectionChange={setRowSelection}
                           getRowClassName={(row: EnrollmentRecord) =>

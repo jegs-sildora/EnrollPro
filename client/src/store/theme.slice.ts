@@ -21,7 +21,7 @@ const getSystemTheme = (): ActiveTheme => {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      mode: "system",
+      mode: "light",
       setThemeMode: (mode) => set({ mode }),
       toggleTheme: () => {
         const currentMode = get().mode

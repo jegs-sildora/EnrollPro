@@ -10,6 +10,36 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "24h";
 
+interface StoredSubjectGrades {
+  Q1?: number | null;
+  Q2?: number | null;
+  Q3?: number | null;
+  Q4?: number | null;
+  T1?: number | null;
+  T2?: number | null;
+  T3?: number | null;
+  term1?: number | null;
+  term2?: number | null;
+  term3?: number | null;
+  Final?: number | null;
+  remarks?: string | null;
+}
+
+function isStoredSubjectGrades(value: unknown): value is StoredSubjectGrades {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseStoredGrades(value: unknown): Record<string, StoredSubjectGrades> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+
+  const entries = Object.entries(value).filter(([, grades]) => isStoredSubjectGrades(grades));
+  return entries.length > 0
+    ? Object.fromEntries(entries) as Record<string, StoredSubjectGrades>
+    : null;
+}
+
 function computeSchoolAcronym(schoolName: string): string {
   return schoolName
     .replace(/\b(?:de|del|dela|of|the|and|ng|mga|at)\b/gi, "")
@@ -152,6 +182,9 @@ export async function learnerLogin(req: Request, res: Response): Promise<void> {
 
   if (user) {
     passwordValid = await bcrypt.compare(password, user.password);
+    if (passwordValid && password === DEFAULT_LEARNER_PASSWORD) {
+      isDefaultPassword = true;
+    }
   }
 
   if (!passwordValid && password === DEFAULT_LEARNER_PASSWORD && !user) {
@@ -530,7 +563,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   };
 
   const academicHistory = allApps.map(app => {
-    const rawGrades = app.reportedGrades as Record<string, any> | null;
+    const rawGrades = parseStoredGrades(app.reportedGrades);
     const hasGrades =
       rawGrades !== null &&
       typeof rawGrades === "object" &&

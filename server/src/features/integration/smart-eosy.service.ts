@@ -18,6 +18,12 @@ interface SmartSyncResult {
   learnerIds: number[];
 }
 
+function firstNonEmptySmartOutcomes(
+  ...candidates: Array<SmartEosyLearnerOutcome[] | undefined>
+): SmartEosyLearnerOutcome[] {
+  return candidates.find((candidate) => candidate !== undefined && candidate.length > 0) ?? [];
+}
+
 const sectionSyncLocks = new Map<number, Promise<SmartSyncResult>>();
 const SMART_TRANSPORT_ATTEMPTS = 3;
 
@@ -352,12 +358,12 @@ async function syncFinalSmartSectionOutcomesInternal(
     );
   }
 
-  const rawOutcomesList: SmartEosyLearnerOutcome[] =
-    parsed.data.outcomes ??
-    parsed.data.students ??
-    parsed.data.data?.outcomes ??
-    parsed.data.data?.students ??
-    [];
+  const rawOutcomesList = firstNonEmptySmartOutcomes(
+    parsed.data.outcomes,
+    parsed.data.students,
+    parsed.data.data?.outcomes,
+    parsed.data.data?.students,
+  );
 
   const duplicateRawLrns = rawOutcomesList
     .map((student) => student.lrn)
@@ -539,12 +545,11 @@ export async function fetchLiveSmartSectionGrades(
     if (!parsed.success) {
       return [];
     }
-    return (
-      parsed.data.outcomes ??
-      parsed.data.students ??
-      parsed.data.data?.outcomes ??
-      parsed.data.data?.students ??
-      []
+    return firstNonEmptySmartOutcomes(
+      parsed.data.outcomes,
+      parsed.data.students,
+      parsed.data.data?.outcomes,
+      parsed.data.data?.students,
     );
   } catch {
     return [];

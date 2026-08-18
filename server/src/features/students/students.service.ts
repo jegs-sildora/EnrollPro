@@ -276,7 +276,18 @@ export async function findStudents(query: {
             gradeLevel: true,
             enrollmentRecord: {
               include: {
-                section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
+                section: {
+                  select: {
+                    id: true,
+                    name: true,
+                    programType: true,
+                    isHomogeneous: true,
+                    advisers: {
+                      where: { status: "ACTIVE" },
+                      select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+                    }
+                  }
+                },
               },
             },
             addresses: true,
@@ -390,7 +401,18 @@ export async function findStudents(query: {
         },
         gradeLevel: true,
         schoolYear: true,
-        section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
+        section: {
+          select: {
+            id: true,
+            name: true,
+            programType: true,
+            isHomogeneous: true,
+            advisers: {
+              where: { status: "ACTIVE" },
+              select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+            }
+          }
+        },
       },
       orderBy: sortBy === "lastName" ? { learner: { lastName: resolvedSortOrder } } : { createdAt: "desc" },
       skip,
@@ -540,7 +562,18 @@ export async function findStudents(query: {
       gradeLevel: true,
       enrollmentRecord: {
         include: {
-          section: { select: { id: true, name: true, programType: true, isHomogeneous: true } },
+          section: {
+            select: {
+              id: true,
+              name: true,
+              programType: true,
+              isHomogeneous: true,
+              advisers: {
+                where: { status: "ACTIVE" },
+                select: { teacher: { select: { firstName: true, lastName: true, employeeId: true } } }
+              }
+            }
+          },
         },
       },
       addresses: true,

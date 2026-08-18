@@ -22,6 +22,7 @@ export const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined):
   return "bg-gray-50 text-gray-700 border-gray-200";
 };
 
+
 export const MANILA_TIME_ZONE = "Asia/Manila";
 
 export const SCP_LABELS: Record<string, string> = {
