@@ -129,6 +129,7 @@ function TableRowComponentInner<TData>(
             key={cell.id}
             className={cn(
               dense ? "py-1.5 px-2" : "p-3",
+              "first:pl-6 last:pr-6",
               meta?.className,
               isPinned ? "sticky bg-inherit z-10" : "",
               isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
@@ -250,6 +251,7 @@ export function DataTable<TData, TValue>({
                       key={header.id}
                       className={cn(
                         "text-center font-extrabold text-foreground dark:text-slate-200 text-sm px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
+                        "first:pl-6 last:pr-6",
                         dense ? "h-8" : "h-11",
                         isPinned ? "z-30" : "z-20",
                         isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
@@ -295,6 +297,7 @@ export function DataTable<TData, TValue>({
                         key={index}
                         className={cn(
                           dense ? "py-1.5 px-2" : "p-4",
+                          "first:pl-6 last:pr-6",
                           isPinned ? "sticky bg-inherit z-10" : "",
                           isLeftPinned ? "left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : "",
                           isRightPinned ? "right-0 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-slate-800" : ""

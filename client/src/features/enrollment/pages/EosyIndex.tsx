@@ -67,6 +67,13 @@ import {
   useGuardedTabChange,
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
+import { UserPhoto } from "@/shared/components/UserPhoto";
+
+const getInitials = (firstName?: string | null, lastName?: string | null): string => {
+  const f = String(firstName || "").trim().charAt(0).toUpperCase();
+  const l = String(lastName || "").trim().charAt(0).toUpperCase();
+  return `${f}${l}` || "?";
+};
 
 const EOSY_REALTIME_TOPICS: RealtimeInvalidationTopic[] = [
   "eosy:sections",
@@ -110,6 +117,7 @@ export interface EnrollmentRecord {
       firstName: string;
       lastName: string;
       sex?: "MALE" | "FEMALE" | null;
+      studentPhoto?: string | null;
     };
   };
 }
@@ -1116,65 +1124,94 @@ export default function EosyUpdating() {
           const isCoordsChanged = "latitude" in unsaved || "longitude" in unsaved;
 
           if (hasOverride) {
+            const initials = getInitials(r.enrollmentApplication.learner.firstName, r.enrollmentApplication.learner.lastName);
             return (
-              <div className="flex flex-col gap-2 p-1 text-left">
-                <div className="flex gap-2 items-center">
-                  <Input
-                    value={currentLastName || ""}
-                    onChange={(e) => handleFieldChange(recordId, "lastName", e.target.value)}
-                    disabled={isCommitting}
-                    className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
-                    placeholder="Last Name"
-                  />
-                  <Input
-                    value={currentFirstName || ""}
-                    onChange={(e) => handleFieldChange(recordId, "firstName", e.target.value)}
-                    disabled={isCommitting}
-                    className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
-                    placeholder="First Name"
-                  />
-                  {isNameChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
-                </div>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 flex gap-1 items-center">
-                    <span className="text-sm font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
+              <div className="flex min-w-0 items-center gap-3 py-1 pl-1">
+                <UserPhoto
+                  photo={r.enrollmentApplication.learner.studentPhoto}
+                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  className="w-full h-full object-cover"
+                  alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
+                  fallbackIcon={
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                      {initials}
+                    </div>
+                  }
+                />
+                <div className="flex flex-col gap-2 text-left min-w-0 flex-1">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <Input
-                      value={currentLrn || ""}
-                      onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
+                      value={currentLastName || ""}
+                      onChange={(e) => handleFieldChange(recordId, "lastName", e.target.value)}
                       disabled={isCommitting}
-                      className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
-                      placeholder="12-digit LRN"
+                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      placeholder="Last Name"
                     />
-                    {isLrnChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                    <Input
+                      value={currentFirstName || ""}
+                      onChange={(e) => handleFieldChange(recordId, "firstName", e.target.value)}
+                      disabled={isCommitting}
+                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      placeholder="First Name"
+                    />
+                    {isNameChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
                   </div>
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <div className="flex-1 flex gap-1 items-center">
+                      <span className="text-sm font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
+                      <Input
+                        value={currentLrn || ""}
+                        onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
+                        disabled={isCommitting}
+                        className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                        placeholder="12-digit LRN"
+                      />
+                      {isLrnChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                    </div>
 
-                  <GeofencingPopover
-                    latitude={currentLat}
-                    longitude={currentLng}
-                    onChange={(latVal, lngVal) => {
-                      handleFieldChange(recordId, "latitude", latVal);
-                      handleFieldChange(recordId, "longitude", lngVal);
-                    }}
-                    isChanged={isCoordsChanged}
-                    disabled={isCommitting}
-                  />
+                    <GeofencingPopover
+                      latitude={currentLat}
+                      longitude={currentLng}
+                      onChange={(latVal, lngVal) => {
+                        handleFieldChange(recordId, "latitude", latVal);
+                        handleFieldChange(recordId, "longitude", lngVal);
+                      }}
+                      isChanged={isCoordsChanged}
+                      disabled={isCommitting}
+                    />
+                  </div>
                 </div>
               </div>
             );
           }
 
+          const initials = getInitials(r.enrollmentApplication.learner.firstName, r.enrollmentApplication.learner.lastName);
+
           return (
-            <div className="flex flex-col text-left py-0.5 leading-tight text-sm sm:text-base">
-              <span className="font-extrabold uppercase truncate">
-                {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
-              </span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-base text-foreground font-extrabold uppercase">
-                  LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
+            <div className="flex min-w-0 items-center gap-3 py-1 pl-1">
+              <UserPhoto
+                photo={r.enrollmentApplication.learner.studentPhoto}
+                containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                className="w-full h-full object-cover"
+                alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
+                fallbackIcon={
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                    {initials}
+                  </div>
+                }
+              />
+              <div className="flex flex-col text-left leading-tight text-sm sm:text-base min-w-0">
+                <span className="font-extrabold uppercase truncate">
+                  {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
                 </span>
-                {row.original.nextYearCurriculum === "REGULAR" &&
-                  row.original.enrollmentApplication.applicantType !== "REGULAR" &&
-                  row.original.enrollmentApplication.applicantType !== "LATE_ENROLLEE"}
+                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                  <span className="text-base text-foreground font-extrabold uppercase">
+                    LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
+                  </span>
+                  {row.original.nextYearCurriculum === "REGULAR" &&
+                    row.original.enrollmentApplication.applicantType !== "REGULAR" &&
+                    row.original.enrollmentApplication.applicantType !== "LATE_ENROLLEE"}
+                </div>
               </div>
             </div>
           );

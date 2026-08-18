@@ -158,7 +158,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   const params = useParams();
   const resolvedSectionId = propSectionId || Number(params.sectionId);
 
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, viewingSchoolYearId, systemPhase } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
@@ -580,7 +580,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
             </CardTitle>
           </div>
           <div className="flex items-center gap-3">
-            {!isHistoricalReadOnly && mode === "homeroom" && (
+            {!isHistoricalReadOnly && mode === "homeroom" && systemPhase !== "EOSY_CLOSING" && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

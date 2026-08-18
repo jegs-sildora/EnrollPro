@@ -400,6 +400,7 @@ async function loadEosyGradeRecords(
               firstName: true,
               lastName: true,
               sex: true,
+              studentPhoto: true,
             },
           },
         },

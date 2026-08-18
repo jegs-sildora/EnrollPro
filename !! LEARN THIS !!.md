@@ -151,3 +151,49 @@ flowchart TD
     R2 --> B2
     R3 --> B3
 ```
+
+# Capstone Defense Guide: School Year Rollover (Simple Version)
+
+## 1. The Main Idea: We Never Delete Anything
+The most important thing to know about our rollover process is that we never just "update" or "delete" old student records. Because public schools are audited by DepEd, they need to keep historical data safe. 
+
+Instead of deleting, our system does two things: it takes a permanent snapshot of the old school year to save it, and then it sets up a blank slate for the new school year.
+
+---
+
+## 2. What Happens to the Students?
+When the school year ends, the student's data goes through two steps:
+
+### Step 1: Saving the Past (The Digital Time Capsule)
+First, the system takes a snapshot of exactly where the student is right now. It permanently saves their current section, their adviser, and their final grades. 
+* **Why this matters:** If a principal needs to print a student's report card from five years ago, the system can pull up this exact snapshot. We guarantee the old data hasn't been changed by accident.
+
+### Step 2: Preparing for the Future (Auto-Filling Forms)
+Next, the system looks at whether the student passed or failed, and automatically prepares them for the next year. 
+* If a Grade 7 student passes, the system automatically creates a Grade 8 enrollment form for them. 
+* **The best part:** It copies over all their personal info, address, and parent details from the old year. Parents don't have to fill out the long form again; they just have to review it and click "Confirm."
+* If the student finished Grade 10 (graduated JHS) or dropped out, the system simply archives their record and doesn't make a new form.
+
+---
+
+## 3. What Happens to the Teachers?
+For teachers, we keep their accounts but hit the "reset" button on their class assignments.
+
+* **Accounts Stay Active:** The teacher's main profile and login stay exactly the same.
+* **Classes Reset:** The system removes them from the class section they advised last year. 
+* **Why this matters:** Teacher assignments change every year. By clearing out the old assignments, we give the Head Registrar a completely blank slate to easily assign teachers to their new classes for the upcoming year.
+
+---
+
+## 4. The Safety Checks (Preventing Mistakes)
+*What if a registrar accidentally clicks the "Rollover" button too early?*
+
+Our system won't let them. It has strict safety checks. The rollover is completely blocked until:
+1. Every single teacher has submitted their final grades.
+2. The official DepEd School Forms are generated and saved.
+3. The school admin has officially approved the calendar for the next year.
+
+---
+
+## 5. Telling the Other Systems
+Because EnrollPro is the "brain" of the school's operations, once it finishes this rollover, it automatically sends a signal to our other systems (like ATLAS for scheduling and SMART for grading). This tells them, "The old year is done, get ready for the new one!".

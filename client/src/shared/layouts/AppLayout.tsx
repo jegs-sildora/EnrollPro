@@ -531,7 +531,7 @@ function AppSidebar() {
           <SidebarMenuItem>
             <div className="flex items-center transition-all duration-300 ease-in-out group-data-[state=expanded]:gap-3 group-data-[state=collapsed]:gap-0 group-data-[state=collapsed]:justify-center">
               {logoUrl ? (
-                <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-muted p-1">
+                <div className="flex aspect-square size-12 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-muted p-1">
                   <img
                     src={`${API_BASE}${logoUrl}`}
                     alt="Logo"
