@@ -201,12 +201,20 @@ function AcademicHistoryAccordion({
         : null;
     };
 
+    // SMART's API merges rotation subjects (like Science and TLE) into a single unified grade across all terms.
+    let unifiedGrade = average(grades.map((grade) => grade.Final));
+    if (unifiedGrade === null) {
+      // Fallback: average all available terms across all components if Final is missing
+      const allTermGrades = grades.flatMap(g => [g.T1 ?? g.term1 ?? g.Q1, g.T2 ?? g.term2 ?? g.Q2, g.T3 ?? g.term3 ?? g.Q3]);
+      unifiedGrade = average(allTermGrades);
+    }
+
     return {
-      T1: average(grades.map((grade) => grade.T1 ?? grade.term1 ?? grade.Q1)),
-      T2: average(grades.map((grade) => grade.T2 ?? grade.term2 ?? grade.Q2)),
-      T3: average(grades.map((grade) => grade.T3 ?? grade.term3 ?? grade.Q3)),
-      Q4: average(grades.map((grade) => grade.Q4)),
-      Final: average(grades.map((grade) => grade.Final)),
+      T1: unifiedGrade,
+      T2: unifiedGrade,
+      T3: unifiedGrade,
+      Q4: unifiedGrade,
+      Final: unifiedGrade,
       remarks: grades.every((grade) => grade.remarks === "Passed") ? "Passed" : "Failed",
     };
   };
@@ -553,12 +561,12 @@ export default function LearnerDashboard() {
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-base font-extrabold text-primary-foreground">
-                  {data?.schoolAcronym?.slice(0, 2) || "EP"}
+                  {data?.schoolAcronym?.slice(0, 2) || "HN"}
                 </span>
               </div>
             )}
             <span className="font-extrabold text-xl text-foreground tracking-tight">
-              {data?.schoolAcronym || "EnrollPro"} Learner Information System
+              {data?.schoolAcronym || "HNHS"} Learner Information System
             </span>
           </div>
           <div className="flex items-center gap-1">
