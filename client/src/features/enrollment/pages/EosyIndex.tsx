@@ -679,7 +679,7 @@ export default function EosyUpdating() {
         let sectionSucceeded = false;
         setSmartSyncProgress((previous) => previous ? {
           ...previous,
-          currentSection: sec.name,
+          currentSection: `${sec.gradeLevel?.name || `Grade Level ${sec.gradeLevelId}`} - ${sec.name}`,
         } : previous);
 
         try {

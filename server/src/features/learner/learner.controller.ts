@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import type { LearnerAuthPayload } from "../../middleware/authenticate-learner.js";
-import { fetchLiveSmartSectionGrades } from "../integration/smart-eosy.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
@@ -30,7 +29,7 @@ function isStoredSubjectGrades(value: unknown): value is StoredSubjectGrades {
 }
 
 function getExpectedGradeNumber(gradeLevelName: string | null | undefined): number | null {
-  const match = gradeLevelName?.match(/\b(7|8|9|10)\b/);
+  const match = gradeLevelName?.match(/(?:GRADE[\s_-]*)?(10|[7-9])(?:\D|$)/i);
   return match ? Number(match[1]) : null;
 }
 
@@ -72,6 +71,15 @@ function parseStoredGrades(
   ));
   return entries.length > 0
     ? Object.fromEntries(entries) as Record<string, StoredSubjectGrades>
+    : null;
+}
+
+function getHistoricalReportedGrades(value: unknown): unknown {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return "reportedGrades" in value
+    ? (value as { reportedGrades?: unknown }).reportedGrades ?? null
     : null;
 }
 
@@ -441,99 +449,45 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   }
 
   // Get all enrollment applications/records
-  const allApps = await prisma.enrollmentApplication.findMany({
-    where: { learnerId: learnerPayload.learnerId },
-    orderBy: { schoolYear: { yearLabel: 'desc' } },
-    include: {
-      gradeLevel: true,
-      schoolYear: true,
-      familyMembers: true,
-      addresses: true,
-      enrollmentRecord: {
-        include: {
-          section: {
-            include: {
-              advisers: {
-                where: { status: "ACTIVE" },
-                include: { teacher: true },
+  const [allApps, enrollmentHistories] = await Promise.all([
+    prisma.enrollmentApplication.findMany({
+      where: { learnerId: learnerPayload.learnerId },
+      orderBy: { schoolYear: { yearLabel: "desc" } },
+      include: {
+        gradeLevel: true,
+        schoolYear: true,
+        familyMembers: true,
+        addresses: true,
+        enrollmentRecord: {
+          include: {
+            section: {
+              include: {
+                advisers: {
+                  where: { status: "ACTIVE" },
+                  include: { teacher: true },
+                },
               },
             },
           },
         },
-      }
-    }
-  });
+      },
+    }),
+    prisma.enrollmentHistory.findMany({
+      where: { learnerId: learnerPayload.learnerId },
+      orderBy: { schoolYear: { yearLabel: "desc" } },
+      include: {
+        gradeLevel: true,
+        schoolYear: true,
+      },
+    }),
+  ]);
 
-  const activeApp = allApps.find(a => a.schoolYearId === schoolSetting.activeSchoolYearId) || allApps[0];
-
-  // Attempt live SMART grades fetch for the active school year section
-  if (activeApp?.enrollmentRecord?.section?.name && activeApp?.schoolYear?.yearLabel && learner.lrn) {
-    try {
-      const smartOutcomes = await fetchLiveSmartSectionGrades(
-        activeApp.enrollmentRecord.section.name,
-        activeApp.schoolYear.yearLabel,
-      );
-      const matchedOutcome = smartOutcomes.find((o) => o.lrn === learner.lrn);
-      if (matchedOutcome) {
-        const liveGrades: Record<string, {
-          T1: number | null;
-          T2: number | null;
-          T3: number | null;
-          Final: number | null;
-          remarks: string | null;
-        }> = {};
-
-        if (matchedOutcome.subjectGrades && matchedOutcome.subjectGrades.length > 0) {
-          for (const sg of matchedOutcome.subjectGrades) {
-            liveGrades[sg.subjectName] = {
-              T1: sg.T1 ?? null,
-              T2: sg.T2 ?? null,
-              T3: sg.T3 ?? null,
-              Final: sg.finalRating ?? null,
-              remarks: sg.remarks ?? (sg.finalRating !== null && sg.finalRating !== undefined ? (sg.finalRating >= 75 ? "Passed" : "Failed") : null),
-            };
-          }
-        } else if (matchedOutcome.learningAreas && matchedOutcome.learningAreas.length > 0) {
-          for (const la of matchedOutcome.learningAreas) {
-            liveGrades[la.name] = {
-              T1: null,
-              T2: null,
-              T3: null,
-              Final: la.finalGrade,
-              remarks: la.result === "PASSED" ? "Passed" : la.result === "FAILED" ? "Failed" : null,
-            };
-          }
-        }
-
-        const filteredLiveGrades = Object.fromEntries(
-          Object.entries(liveGrades).filter(([subjectName, grades]) => (
-            hasReportedGrade(grades)
-            && subjectBelongsToGrade(subjectName, getExpectedGradeNumber(activeApp.gradeLevel?.name))
-          )),
-        );
-
-        if (Object.keys(filteredLiveGrades).length > 0) {
-          activeApp.reportedGrades = filteredLiveGrades;
-          // Background asynchronous update so local database stays synchronized
-          prisma.enrollmentApplication.update({
-            where: { id: activeApp.id },
-            data: { reportedGrades: filteredLiveGrades },
-          }).catch((err) => console.error("Failed to cache live SMART grades in DB:", err));
-
-          const avg = matchedOutcome.finalGeneralAverage ?? matchedOutcome.generalAverage;
-          if (avg !== undefined && activeApp.enrollmentRecord?.id) {
-            activeApp.enrollmentRecord.finalAverage = avg;
-            prisma.enrollmentRecord.update({
-              where: { id: activeApp.enrollmentRecord.id },
-              data: { finalAverage: avg },
-            }).catch((err) => console.error("Failed to cache live SMART average in DB:", err));
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Live SMART grades fetch failed, using stored records:", err);
-    }
-  }
+  // Grades are read only from EnrollPro's validated SMART synchronization
+  // snapshot. The SMART SSE bridge and the manual sync route are the only
+  // processes allowed to update this data.
+  const activeApp = allApps.find(
+    (application) => application.schoolYearId === schoolSetting.activeSchoolYearId,
+  );
 
   const identity = {
     lrn: learner.lrn,
@@ -604,7 +558,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
     })(),
   };
 
-  const academicHistory = allApps.map(app => {
+  const applicationHistory = allApps.map(app => {
     const rawGrades = parseStoredGrades(app.reportedGrades, app.gradeLevel?.name);
     const hasGrades =
       rawGrades !== null &&
@@ -617,9 +571,31 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       status: app.schoolYearId === schoolSetting.activeSchoolYearId ? "Active" : "Completed",
       term_format: app.schoolYear.termFormat ?? "TRIMESTER",
       grades: rawGrades || null,
-      general_average: hasGrades ? (app.enrollmentRecord?.finalAverage || null) : null,
+      general_average: hasGrades ? (app.enrollmentRecord?.finalAverage ?? null) : null,
     };
   });
+
+  const applicationYears = new Set(allApps.map((application) => application.schoolYearId));
+  const archivedHistory = enrollmentHistories
+    .filter((history) => !applicationYears.has(history.schoolYearId))
+    .map((history) => {
+      const rawGrades = parseStoredGrades(
+        getHistoricalReportedGrades(history.academicOutcomeSnapshot),
+        history.gradeLevel.name,
+      );
+      return {
+        grade_level: history.gradeLevel.name,
+        school_year: history.schoolYear.yearLabel,
+        status: "Completed",
+        term_format: history.schoolYear.termFormat ?? "TRIMESTER",
+        grades: rawGrades,
+        general_average: rawGrades ? history.genAve : null,
+      };
+    });
+
+  const academicHistory = [...applicationHistory, ...archivedHistory].sort(
+    (left, right) => right.school_year.localeCompare(left.school_year),
+  );
 
   res.json({
     identity,

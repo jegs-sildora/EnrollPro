@@ -89,7 +89,7 @@ function normalizePromotionStatus(
 }
 
 function getExpectedGradeNumber(gradeLevelName: string | null | undefined): number | null {
-  const match = gradeLevelName?.match(/\b(7|8|9|10)\b/);
+  const match = gradeLevelName?.match(/(?:GRADE[\s_-]*)?(10|[7-9])(?:\D|$)/i);
   return match ? Number(match[1]) : null;
 }
 
@@ -99,19 +99,71 @@ function subjectBelongsToGrade(subjectName: string, expectedGrade: number | null
   return match === null || Number(match[1]) === expectedGrade;
 }
 
-function filterSmartOutcomeForGrade(
+function assertSmartOutcomeGradeScope(
   outcome: SmartEosyLearnerOutcome,
   expectedGrade: number | null,
-): SmartEosyLearnerOutcome {
-  return {
-    ...outcome,
-    subjectGrades: outcome.subjectGrades?.filter((subject) => (
-      subjectBelongsToGrade(subject.subjectName, expectedGrade)
-    )),
-    learningAreas: outcome.learningAreas?.filter((area) => (
-      subjectBelongsToGrade(area.name, expectedGrade)
-    )),
-  };
+): void {
+  const mismatchedSubjects = [
+    ...(outcome.subjectGrades ?? []).map((subject) => subject.subjectName),
+    ...(outcome.learningAreas ?? []).map((area) => area.name),
+  ].filter((subjectName) => !subjectBelongsToGrade(subjectName, expectedGrade));
+
+  if (mismatchedSubjects.length > 0) {
+    throw new Error(
+      `SMART returned subjects from another grade level: ${mismatchedSubjects.join(", ")}.`,
+    );
+  }
+}
+
+function normalizedSubjectKey(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+}
+
+function assertUniqueSubjects(
+  subjects: Array<{ subjectCode: string; subjectName: string }>,
+): void {
+  const subjectCodes = new Set<string>();
+  const subjectNames = new Set<string>();
+  for (const subject of subjects) {
+    const code = normalizedSubjectKey(subject.subjectCode);
+    const name = normalizedSubjectKey(subject.subjectName);
+    if (subjectCodes.has(code)) {
+      throw new Error(`SMART returned duplicate subject code ${subject.subjectCode}.`);
+    }
+    if (subjectNames.has(name)) {
+      throw new Error(`SMART returned duplicate subject ${subject.subjectName}.`);
+    }
+    subjectCodes.add(code);
+    subjectNames.add(name);
+  }
+}
+
+function assertFinalSubjectGrade(subject: SmartEosyLearnerOutcome["subjectGrades"][number]): void {
+  if (
+    subject.status !== "GRADED"
+    || subject.T1 === null
+    || subject.T2 === null
+    || subject.T3 === null
+    || subject.finalRating === null
+  ) {
+    throw new Error(
+      `Subject ${subject.subjectName} is not fully graded (${subject.status ?? "UNKNOWN"}).`,
+    );
+  }
+
+  const calculatedFinal = Math.round((subject.T1 + subject.T2 + subject.T3) / 3);
+  if (subject.finalRating !== calculatedFinal) {
+    throw new Error(
+      `Subject ${subject.subjectName} final rating does not match its term grades.`,
+    );
+  }
+
+  const expectedRemark = subject.finalRating >= 75 ? "PASSED" : "FAILED";
+  if (subject.remarks && subject.remarks.trim().toUpperCase() !== expectedRemark) {
+    throw new Error(
+      `Subject ${subject.subjectName} remarks do not match its final rating.`,
+    );
+  }
 }
 
 function normalizeSmartOutcome(
@@ -130,7 +182,9 @@ function normalizeSmartOutcome(
   }> = {};
 
   if (subjectGrades.length > 0) {
+    assertUniqueSubjects(subjectGrades);
     for (const sg of subjectGrades) {
+      assertFinalSubjectGrade(sg);
       reportedGradesObj[sg.subjectName] = {
         T1: sg.T1 ?? null,
         T2: sg.T2 ?? null,
@@ -138,18 +192,6 @@ function normalizeSmartOutcome(
         Final: sg.finalRating ?? null,
         remarks: sg.remarks ?? (sg.finalRating !== null && sg.finalRating !== undefined ? (sg.finalRating >= 75 ? "Passed" : "Failed") : null),
       };
-    }
-
-    const incompleteSubject = subjectGrades.find((subject) => {
-      const status = subject.status ?? (
-        subject.finalRating === null ? "NG" : "GRADED"
-      );
-      return status !== "GRADED" || subject.finalRating === null;
-    });
-    if (incompleteSubject) {
-      throw new Error(
-        `Subject ${incompleteSubject.subjectName} is not fully graded (${incompleteSubject.status}).`,
-      );
     }
 
     learningAreas = subjectGrades.map((subject) => {
@@ -165,7 +207,16 @@ function normalizeSmartOutcome(
       };
     });
   } else if (learningAreas.length > 0) {
+    const learningAreaCodes = new Set<string>();
+    const learningAreaNames = new Set<string>();
     for (const la of learningAreas) {
+      const code = normalizedSubjectKey(la.code);
+      const name = normalizedSubjectKey(la.name);
+      if (learningAreaCodes.has(code) || learningAreaNames.has(name)) {
+        throw new Error(`SMART returned duplicate learning area ${la.name}.`);
+      }
+      learningAreaCodes.add(code);
+      learningAreaNames.add(name);
       reportedGradesObj[la.name] = {
         Final: la.finalGrade,
         remarks: la.result === "PASSED" ? "Passed" : la.result === "FAILED" ? "Failed" : null,
@@ -378,7 +429,6 @@ async function syncFinalSmartSectionOutcomesInternal(
   }
 
   if (
-    parsed.data.schoolYear &&
     parsed.data.schoolYear !== section.schoolYear.yearLabel
   ) {
     throw new AppError(
@@ -387,12 +437,44 @@ async function syncFinalSmartSectionOutcomesInternal(
     );
   }
 
+  if (
+    !parsed.data.sectionName
+    || normalizedSubjectKey(parsed.data.sectionName) !== normalizedSubjectKey(section.name)
+  ) {
+    throw new AppError(
+      422,
+      `SMART returned section ${parsed.data.sectionName ?? "without a name"}, but EnrollPro requested ${section.name}.`,
+    );
+  }
+
+  const expectedGrade = getExpectedGradeNumber(section.gradeLevel.name);
+  if (getExpectedGradeNumber(parsed.data.gradeLevel) !== expectedGrade) {
+    throw new AppError(
+      422,
+      `SMART returned grade level ${parsed.data.gradeLevel ?? "without a grade level"}, but ${section.name} belongs to ${section.gradeLevel.name}.`,
+    );
+  }
+
+  if (parsed.data.ready === false) {
+    throw new AppError(422, "SMART has not published complete outcomes for this section.");
+  }
+
   const rawOutcomesList = firstNonEmptySmartOutcomes(
     parsed.data.outcomes,
     parsed.data.students,
     parsed.data.data?.outcomes,
     parsed.data.data?.students,
   );
+
+  if (
+    parsed.data.outcomesSynced !== undefined
+    && parsed.data.outcomesSynced !== rawOutcomesList.length
+  ) {
+    throw new AppError(
+      502,
+      "SMART outcome count does not match the returned learner records.",
+    );
+  }
 
   const duplicateRawLrns = rawOutcomesList
     .map((student) => student.lrn)
@@ -406,12 +488,10 @@ async function syncFinalSmartSectionOutcomesInternal(
 
   const normalizedOutcomes: NormalizedSmartOutcome[] = [];
   const unresolvedOutcomes: Array<{ lrn: string; reason: string }> = [];
-  const expectedGrade = getExpectedGradeNumber(section.gradeLevel.name);
   for (const item of rawOutcomesList) {
     try {
-      normalizedOutcomes.push(
-        normalizeSmartOutcome(filterSmartOutcomeForGrade(item, expectedGrade)),
-      );
+      assertSmartOutcomeGradeScope(item, expectedGrade);
+      normalizedOutcomes.push(normalizeSmartOutcome(item));
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : "Invalid final outcome.";
       unresolvedOutcomes.push({ lrn: item.lrn, reason });
@@ -510,6 +590,10 @@ async function syncFinalSmartSectionOutcomesInternal(
             academicDeficiencyNote: null,
           },
         });
+        await tx.enrollmentApplication.update({
+          where: { id: record.enrollmentApplicationId },
+          data: { reportedGrades: Prisma.DbNull },
+        });
       }
     },
     {
@@ -550,40 +634,5 @@ export async function syncFinalSmartSectionOutcomes(
     if (sectionSyncLocks.get(sectionId) === operation) {
       sectionSyncLocks.delete(sectionId);
     }
-  }
-}
-
-export async function fetchLiveSmartSectionGrades(
-  sectionName: string,
-  schoolYearLabel: string,
-): Promise<SmartEosyLearnerOutcome[]> {
-  const baseUrl = process.env.SMART_API_BASE_URL?.trim();
-  const smartToken = process.env.SMART_API_KEY?.trim();
-  if (!baseUrl || !smartToken) {
-    return [];
-  }
-  const cleanBaseUrl = baseUrl.replace(/\/$/, "");
-  try {
-    const response = await axios.post<unknown>(
-      `${cleanBaseUrl}/api/integration/sections/${encodeURIComponent(sectionName)}/sync-grades`,
-      undefined,
-      {
-        params: { schoolYear: schoolYearLabel },
-        headers: { Authorization: `Bearer ${smartToken}` },
-        timeout: 5000,
-      },
-    );
-    const parsed = smartEosySectionResponseSchema.safeParse(response.data);
-    if (!parsed.success) {
-      return [];
-    }
-    return firstNonEmptySmartOutcomes(
-      parsed.data.outcomes,
-      parsed.data.students,
-      parsed.data.data?.outcomes,
-      parsed.data.data?.students,
-    );
-  } catch {
-    return [];
   }
 }

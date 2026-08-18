@@ -16,6 +16,7 @@
     "db:wipe-info": "tsx prisma/seeds/task-01-wipe.ts",
     "db:seed-eosy-mock": "tsx prisma/seeds/seed_eosy_mock.ts",
     "db:wipe-eosy-mock": "tsx prisma/seeds/wipe_eosy_mock.ts",
+    "audit:smart-grades": "tsx src/scripts/audit-smart-grade-sync.ts",
     "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts"
   },
   "dependencies": {

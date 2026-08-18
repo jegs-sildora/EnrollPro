@@ -420,34 +420,24 @@ export function getHistoricalProfileSnapshot(record: {
 
 function academicOutcomeSnapshot(
   outcome: {
-    finalGeneralAverage: number;
-    finalOutcome: string;
-    smartRevision: string | null;
-    publishedAt: Date | null;
-    syncedAt: Date;
-    payloadHash: string;
-    learningAreaResults: Array<{
-      learningAreaCode: string;
-      learningAreaName: string;
-      finalGrade: number;
-      result: string;
-    }>;
-  } | null,
+    finalGeneralAverage: number | null;
+    finalOutcome: string | null;
+    academicDeficiencyNote: string | null;
+    reportedGrades: Prisma.JsonValue | null;
+  },
 ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
-  if (!outcome) return Prisma.JsonNull;
+  if (outcome.finalGeneralAverage === null && outcome.reportedGrades === null) {
+    return Prisma.JsonNull;
+  }
+
+  const reportedGrades = outcome.reportedGrades === null
+    ? {}
+    : JSON.parse(JSON.stringify(outcome.reportedGrades)) as Prisma.InputJsonValue;
   return {
     finalGeneralAverage: outcome.finalGeneralAverage,
     finalOutcome: outcome.finalOutcome,
-    smartRevision: outcome.smartRevision,
-    publishedAt: outcome.publishedAt?.toISOString() ?? null,
-    syncedAt: outcome.syncedAt.toISOString(),
-    payloadHash: outcome.payloadHash,
-    learningAreas: outcome.learningAreaResults.map((area) => ({
-      code: area.learningAreaCode,
-      name: area.learningAreaName,
-      finalGrade: area.finalGrade,
-      result: area.result,
-    })),
+    academicDeficiencyNote: outcome.academicDeficiencyNote,
+    reportedGrades,
   };
 }
 
@@ -575,6 +565,7 @@ export async function executeSchoolYearRollover({
                   encodedById: true,
                   contactNumber: true,
                   guardianName: true,
+                  reportedGrades: true,
                   addresses: {
                     select: {
                       addressType: true,
@@ -698,7 +689,12 @@ export async function executeSchoolYearRollover({
           eosyStatus: record.eosyStatus,
           academicDeficiencyNote: record.academicDeficiencyNote,
           learnerProfileSnapshot: getHistoricalProfileSnapshot(record),
-          academicOutcomeSnapshot: Prisma.DbNull,
+          academicOutcomeSnapshot: academicOutcomeSnapshot({
+            finalGeneralAverage: record.finalAverage,
+            finalOutcome: record.eosyStatus,
+            academicDeficiencyNote: record.academicDeficiencyNote,
+            reportedGrades: record.enrollmentApplication.reportedGrades,
+          }),
         })),
         skipDuplicates: true,
       });
