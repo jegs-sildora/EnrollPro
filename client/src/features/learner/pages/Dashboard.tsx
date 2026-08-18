@@ -265,6 +265,16 @@ function AcademicHistoryAccordion({
     return matchKey ? (processedGrades[matchKey] ?? null) : null;
   };
 
+  const getAcademicHonors = (average: number | null | undefined): string => {
+    if (average === null || average === undefined) return "—";
+    const num = Number(average);
+    if (num >= 98 && num <= 100) return "WITH HIGHEST HONORS";
+    if (num >= 95 && num <= 97) return "WITH HIGH HONORS";
+    if (num >= 90 && num <= 94) return "WITH HONORS";
+    if (num >= 75) return "PASSED";
+    return "FAILED";
+  };
+
   const formatVal = (val: number | string | null | undefined) => {
     if (val === null || val === undefined || val === "") return "—";
     return String(val);
@@ -357,9 +367,7 @@ function AcademicHistoryAccordion({
                         {formatVal(history.general_average)}
                       </td>
                       <td className="bg-card border border-border text-center text-base text-primary font-extrabold">
-                        {history.general_average !== null && history.general_average !== undefined ? (
-                          Number(history.general_average) >= 90 ? "WITH HONORS" : (Number(history.general_average) >= 75 ? "PASSED" : "FAILED")
-                        ) : "—"}
+                        {getAcademicHonors(history.general_average)}
                       </td>
                     </tr>
                   </tfoot>

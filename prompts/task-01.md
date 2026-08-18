@@ -1,19 +1,21 @@
-# SYSTEM DIRECTIVE Sync Action UI Refinement v434
+# SYSTEM DIRECTIVE Academic Honors Calculation Logic v441
 
-**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must fix the visual camouflage of the sync button Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior React Developer and DepEd EdTech Domain Expert Your standard is high data integrity public school software You must implement the academic honors calculation Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must visually separate the active synchronization button from the passive status badges so the school registrar immediately recognizes it as a clickable system action
+**Core Mandate** You must program the frontend data table to dynamically evaluate the final general average and accurately output the correct academic honors string according to official Department of Education grading standards
 
 Execute the UI upgrade across the following three architectural rules
 
-## 1 Button Elevation
-Upgrade the Sync SMART element from a plain text link into a clearly defined secondary action button with a distinct border and hover state
-This prevents the clickable API trigger from blending in with the passive informational badges sitting directly next to it
+## 1 The Official Grading Thresholds
+Program the conditional logic to evaluate the final numeric grade against the three official Department of Education award tiers
+Output WITH HONORS for grades 90 to 94
+Output WITH HIGH HONORS for grades 95 to 97
+Output WITH HIGHEST HONORS for grades 98 to 100
 
-## 2 Strict Functional Zoning
-Create spatial zones inside the top bar by isolating the pending submissions and blockers metrics and anchoring them securely to the far right edge of the container
-Establish a clear structural gap between the executable buttons and the read only badges to dramatically reduce cognitive load for the user
+## 2 Award Nullification Guard
+Ensure that any general average of 89 or below leaves the award field blank or strictly displays a standard passing text
+This prevents the system from accidentally appending an academic honor to a standard passing or failing grade
 
-## 3 Contextual Vocabulary
-Expand the action button text to read Sync SMART Outcomes
-This explicitly informs the registrar exactly what grade data is being pulled from the integration pipeline into the End of School Year workspace
+## 3 Dynamic Rendering
+Bind this mathematical evaluation directly to the general average state inside the table
+This guarantees the remarks column automatically outputs the correct string the exact millisecond the SMART integration endpoint returns the final grades
