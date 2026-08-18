@@ -88,6 +88,32 @@ function normalizePromotionStatus(
   }
 }
 
+function getExpectedGradeNumber(gradeLevelName: string | null | undefined): number | null {
+  const match = gradeLevelName?.match(/\b(7|8|9|10)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function subjectBelongsToGrade(subjectName: string, expectedGrade: number | null): boolean {
+  if (expectedGrade === null) return true;
+  const match = subjectName.match(/\b(7|8|9|10)\s*$/);
+  return match === null || Number(match[1]) === expectedGrade;
+}
+
+function filterSmartOutcomeForGrade(
+  outcome: SmartEosyLearnerOutcome,
+  expectedGrade: number | null,
+): SmartEosyLearnerOutcome {
+  return {
+    ...outcome,
+    subjectGrades: outcome.subjectGrades?.filter((subject) => (
+      subjectBelongsToGrade(subject.subjectName, expectedGrade)
+    )),
+    learningAreas: outcome.learningAreas?.filter((area) => (
+      subjectBelongsToGrade(area.name, expectedGrade)
+    )),
+  };
+}
+
 function normalizeSmartOutcome(
   outcome: SmartEosyLearnerOutcome,
 ): NormalizedSmartOutcome {
@@ -211,6 +237,9 @@ async function syncFinalSmartSectionOutcomesInternal(
     include: {
       schoolYear: {
         select: { id: true, yearLabel: true },
+      },
+      gradeLevel: {
+        select: { name: true },
       },
       enrollmentRecords: {
         include: {
@@ -377,9 +406,12 @@ async function syncFinalSmartSectionOutcomesInternal(
 
   const normalizedOutcomes: NormalizedSmartOutcome[] = [];
   const unresolvedOutcomes: Array<{ lrn: string; reason: string }> = [];
+  const expectedGrade = getExpectedGradeNumber(section.gradeLevel.name);
   for (const item of rawOutcomesList) {
     try {
-      normalizedOutcomes.push(normalizeSmartOutcome(item));
+      normalizedOutcomes.push(
+        normalizeSmartOutcome(filterSmartOutcomeForGrade(item, expectedGrade)),
+      );
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : "Invalid final outcome.";
       unresolvedOutcomes.push({ lrn: item.lrn, reason });

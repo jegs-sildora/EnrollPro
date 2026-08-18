@@ -14,7 +14,8 @@ export type SkeletonPageVariant =
   | "modal"
   | "form"
   | "generic"
-  | "enrollmentForm";
+  | "enrollmentForm"
+  | "learnerProfile";
 
 interface SkeletonLayoutProps {
   className?: string;
@@ -235,6 +236,70 @@ export function ModalBodySkeleton({ className }: SkeletonLayoutProps) {
   );
 }
 
+export function LearnerProfileSkeleton({ className }: SkeletonLayoutProps) {
+  return (
+    <div className={cn("flex flex-col md:flex-row w-full h-full min-h-[calc(100vh-64px)] overflow-hidden bg-background", className)}>
+      {/* Left Pane (Sidebar) */}
+      <div className="hidden md:flex md:w-[30%] bg-muted/30 md:border-r border-border md:h-full flex-col justify-between py-8 px-6 sm:py-12 shrink-0">
+        <div className="flex flex-col items-center w-full">
+          <Skeleton className="w-36 h-36 sm:w-40 sm:h-40 rounded-full mb-5 sm:mb-6 shrink-0" />
+          <div className="w-full flex flex-col items-center space-y-3">
+            <Skeleton className="h-8 w-4/5" />
+            <Skeleton className="h-6 w-1/2" />
+          </div>
+          
+          <div className="w-full flex flex-col items-center space-y-3 mt-8">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-5 w-2/3" />
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center w-full mt-12 space-y-3">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-6 w-3/4" />
+        </div>
+      </div>
+
+      {/* Right Pane (Main Content) */}
+      <div className="flex-1 w-full md:w-[70%] bg-background h-full overflow-hidden flex flex-col p-6 md:p-8 shrink-0">
+        <Skeleton className="h-8 w-48 mb-6" />
+        
+        <div className="flex space-x-2 w-full mb-8 bg-muted/50 p-1 rounded-md">
+          <Skeleton className="h-10 flex-1 rounded-sm" />
+          <Skeleton className="h-10 flex-1 rounded-sm" />
+        </div>
+        
+        <div className="bg-background border border-border shadow-sm rounded-sm p-6 space-y-6 flex-1">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-3/4 max-w-lg" />
+          </div>
+          
+          <div className="border border-border rounded-sm overflow-hidden">
+            <div className="grid grid-cols-4 bg-muted/50 p-3 border-b border-border">
+              <Skeleton className="h-5 w-24 mx-auto" />
+              <Skeleton className="h-5 w-32 mx-auto" />
+              <Skeleton className="h-5 w-24 mx-auto" />
+              <Skeleton className="h-5 w-20 mx-auto" />
+            </div>
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="grid grid-cols-4 p-4 border-b border-border last:border-0 items-center">
+                <Skeleton className="h-4 w-4/5" />
+                <div className="flex justify-center gap-4">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-4 w-8" />
+                </div>
+                <Skeleton className="h-4 w-12 mx-auto" />
+                <Skeleton className="h-4 w-16 mx-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function renderVariant(variant: SkeletonPageVariant) {
   switch (variant) {
     case "dashboard":
@@ -287,6 +352,8 @@ function renderVariant(variant: SkeletonPageVariant) {
       return <FormSkeleton />;
     case "enrollmentForm":
       return <EnrollmentFormSkeleton />;
+    case "learnerProfile":
+      return <LearnerProfileSkeleton />;
     case "modal":
       return <ModalBodySkeleton />;
     case "generic":

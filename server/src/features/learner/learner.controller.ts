@@ -29,12 +29,47 @@ function isStoredSubjectGrades(value: unknown): value is StoredSubjectGrades {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseStoredGrades(value: unknown): Record<string, StoredSubjectGrades> | null {
+function getExpectedGradeNumber(gradeLevelName: string | null | undefined): number | null {
+  const match = gradeLevelName?.match(/\b(7|8|9|10)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function hasReportedGrade(grades: StoredSubjectGrades): boolean {
+  return [
+    grades.Q1,
+    grades.Q2,
+    grades.Q3,
+    grades.Q4,
+    grades.T1,
+    grades.T2,
+    grades.T3,
+    grades.term1,
+    grades.term2,
+    grades.term3,
+    grades.Final,
+  ].some((value) => typeof value === "number");
+}
+
+function subjectBelongsToGrade(subjectName: string, expectedGrade: number | null): boolean {
+  if (expectedGrade === null) return true;
+  const match = subjectName.match(/\b(7|8|9|10)\s*$/);
+  return match === null || Number(match[1]) === expectedGrade;
+}
+
+function parseStoredGrades(
+  value: unknown,
+  gradeLevelName?: string | null,
+): Record<string, StoredSubjectGrades> | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
 
-  const entries = Object.entries(value).filter(([, grades]) => isStoredSubjectGrades(grades));
+  const expectedGrade = getExpectedGradeNumber(gradeLevelName);
+  const entries = Object.entries(value).filter(([subjectName, grades]) => (
+    isStoredSubjectGrades(grades)
+    && hasReportedGrade(grades)
+    && subjectBelongsToGrade(subjectName, expectedGrade)
+  ));
   return entries.length > 0
     ? Object.fromEntries(entries) as Record<string, StoredSubjectGrades>
     : null;
@@ -470,12 +505,19 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
           }
         }
 
-        if (Object.keys(liveGrades).length > 0) {
-          activeApp.reportedGrades = liveGrades;
+        const filteredLiveGrades = Object.fromEntries(
+          Object.entries(liveGrades).filter(([subjectName, grades]) => (
+            hasReportedGrade(grades)
+            && subjectBelongsToGrade(subjectName, getExpectedGradeNumber(activeApp.gradeLevel?.name))
+          )),
+        );
+
+        if (Object.keys(filteredLiveGrades).length > 0) {
+          activeApp.reportedGrades = filteredLiveGrades;
           // Background asynchronous update so local database stays synchronized
           prisma.enrollmentApplication.update({
             where: { id: activeApp.id },
-            data: { reportedGrades: liveGrades },
+            data: { reportedGrades: filteredLiveGrades },
           }).catch((err) => console.error("Failed to cache live SMART grades in DB:", err));
 
           const avg = matchedOutcome.finalGeneralAverage ?? matchedOutcome.generalAverage;
@@ -563,7 +605,7 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
   };
 
   const academicHistory = allApps.map(app => {
-    const rawGrades = parseStoredGrades(app.reportedGrades);
+    const rawGrades = parseStoredGrades(app.reportedGrades, app.gradeLevel?.name);
     const hasGrades =
       rawGrades !== null &&
       typeof rawGrades === "object" &&

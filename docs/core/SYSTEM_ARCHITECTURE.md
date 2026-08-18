@@ -88,7 +88,7 @@ SSE is cache invalidation, not a second data store. Every page still reads autho
 
 ## School-Year Context
 
-Requests use the active school year unless a permitted historical context is supplied. The client sends `x-school-year-context-id` for staff historical views. Archived years are read-only. The atomic rollover changes the active year only after history, forms, calendar policy, sections, and learner outcomes pass the readiness checks.
+Requests use the active school year unless a permitted historical context is supplied. The client sends `x-school-year-context-id` for staff historical views. Archived years are read-only. The atomic rollover changes the active year only after history, forms, sections, learner outcomes, and target-year conflict checks pass readiness.
 
 ## Integration Boundary
 

@@ -13,7 +13,6 @@ Last reviewed: 2026-07-24
 | `TeacherSchedulePeriod` | School-year SF7 teaching-period snapshot |
 | `SchoolSetting` | School identity, active-year reference, branding, and operational configuration |
 | `SchoolYear` | Academic-year label, dates, phase, finalization, and active or archived state |
-| `SchoolYearCalendarPolicy` | Versioned draft, approved, and applied DepEd calendar details |
 | `GradeLevel` | Grade 7 to Grade 10 reference and display order |
 | `Section` | School-year section, program, capacity, order, and ranking |
 | `SectionAdviser` | Time-bound adviser assignment, handover, and revocation history |
@@ -65,7 +64,7 @@ Lifecycle outcomes include `TRANSFERRING_OUT`, `TRANSFERRED_OUT`, `DROPPED`, `AR
 ### School Year And Calendar
 
 - School years are `ACTIVE` or `ARCHIVED`.
-- Calendar policies move through `DRAFT`, `APPROVED`, and `APPLIED`.
+- School-year calendar dates are stored directly on `SchoolYear` and may be updated through System Configuration.
 - SF artifacts are `SF5` or `SF6`.
 
 ### Sectioning
@@ -90,7 +89,6 @@ Appointments include regular or permanent, provisional, substitute, contractual,
 | `ApplicationStatus` | Intake, verification, sectioning, enrollment, departure, archive, and remedial states described above |
 | `SystemAcademicPhase` | `OFFICIAL_ENROLLMENT`, `CLASSES_ONGOING`, `EOSY_CLOSING` |
 | `SchoolYearStatus` | `ACTIVE`, `ARCHIVED` |
-| `CalendarPolicyStatus` | `DRAFT`, `APPROVED`, `APPLIED` |
 | `SchoolFormType` | `SF5`, `SF6` |
 | `LearningAreaResultStatus` | `PASSED`, `FAILED`, `INCOMPLETE` |
 | `ApplicantType` | Regular BEC, STE, SPA, SPS, SPJ, SPFL, SPTVE, and authorized late enrollee |

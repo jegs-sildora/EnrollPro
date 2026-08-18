@@ -116,7 +116,8 @@ interface LearnerDashboardResponse {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
+  return d.toLocaleDateString("en-PH", {
+    timeZone: 'Asia/Manila',
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -284,9 +285,8 @@ function AcademicHistoryAccordion({
     <div className="mb-2">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-card border border-border px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-muted/50 transition-all duration-200 ${
-          isOpen ? "rounded-t-sm border-b-0" : "rounded-sm"
-        }`}
+        className={`w-full bg-card border border-border px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-muted/50 transition-all duration-200 ${isOpen ? "rounded-t-sm border-b-0" : "rounded-sm"
+          }`}
       >
         <div className="flex items-center gap-2">
           <span className="text-base leading-tight font-extrabold text-foreground uppercase">
@@ -294,9 +294,8 @@ function AcademicHistoryAccordion({
           </span>
         </div>
         <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ease-in-out ${
-            isOpen ? "rotate-180" : "rotate-0"
-          }`}
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"
+            }`}
         />
       </div>
 
@@ -319,7 +318,7 @@ function AcademicHistoryAccordion({
                       <th colSpan={isTrimester ? 3 : 4} className="px-4 py-2 text-center font-bold border-r border-border">
                         {isTrimester ? "Term" : "Quarter"}
                       </th>
-                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Final Rating</th>
+                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Final Grading</th>
                       <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle">Remarks</th>
                     </tr>
                     <tr>
@@ -353,7 +352,7 @@ function AcademicHistoryAccordion({
                           <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
                             {finalRating}
                           </td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">
                             {remarks}
                           </td>
                         </tr>
@@ -362,7 +361,7 @@ function AcademicHistoryAccordion({
                   </tbody>
                   <tfoot className="border border-border text-lg">
                     <tr>
-                      <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground">General Average:</td>
+                      <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground uppercase">General Average:</td>
                       <td className="text-center font-extrabold bg-card border border-border text-lg text-foreground">
                         {formatVal(history.general_average)}
                       </td>
@@ -425,7 +424,7 @@ export default function LearnerDashboard() {
   };
 
   return (
-<div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative">
       <svg
         className="fixed inset-0 h-full w-full opacity-[0.08] pointer-events-none z-0 print:hidden"
         xmlns="http://www.w3.org/2000/svg"
@@ -475,7 +474,7 @@ export default function LearnerDashboard() {
                             </span>
                           </div>
                         )}
-                        <span>{data.schoolAcronym} Learner Portal</span>
+                        <span>{data.schoolAcronym} Learner Information System</span>
                       </SheetTitle>
                       <SheetDescription id="mobile-nav-description">
                         Navigate academic records and verify student identity profile.
@@ -609,9 +608,7 @@ export default function LearnerDashboard() {
         )}
 
         {loading ? (
-          <div className="flex-1 w-full p-4 sm:p-6 overflow-hidden">
-            <PageLoadingSkeleton variant="dashboard" />
-          </div>
+          <PageLoadingSkeleton variant="learnerProfile" className="gap-0 w-full h-full" />
         ) : error ? (
           <div className="flex-1 w-full p-4 sm:p-6 flex flex-col items-center justify-center min-h-[50vh]">
             <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-xl max-w-md text-center">
@@ -723,34 +720,34 @@ export default function LearnerDashboard() {
                     >
                       {/* Section 3: The Digital SF9 */}
                       <TabsContent value="sf9" forceMount className="mt-0 focus-visible:outline-none ring-0">
-                  <div id="sf9-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
-                    <div className="bg-transparent pb-0 print:bg-transparent">
-                      <div className="mb-8 mt-0 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
-                              Official School Form 9 (SF9) - Historical Academic Records
-                            </h3>
+                        <div id="sf9-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
+                          <div className="bg-transparent pb-0 print:bg-transparent">
+                            <div className="mb-8 mt-0 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
+                                    Official School Form 9 (SF9) - Historical Academic Records
+                                  </h3>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="pb-8">
+                            {data.academicHistory && data.academicHistory.length > 0 ? (
+                              data.academicHistory.map((history, idx) => (
+                                <AcademicHistoryAccordion
+                                  key={idx}
+                                  history={history}
+                                  isDefaultOpen={history.status === "Active"}
+                                />
+                              ))
+                            ) : (
+                              <div className="text-center text-foreground py-8">
+                                No academic records available.
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="pb-8">
-                      {data.academicHistory && data.academicHistory.length > 0 ? (
-                        data.academicHistory.map((history, idx) => (
-                          <AcademicHistoryAccordion
-                            key={idx}
-                            history={history}
-                            isDefaultOpen={history.status === "Active"}
-                          />
-                        ))
-                      ) : (
-                        <div className="text-center text-foreground py-8">
-                          No academic records available.
-                        </div>
-                      )}
-                    </div>
-                  </div>
                       </TabsContent>
                     </motion.div>
                   )}
@@ -766,95 +763,95 @@ export default function LearnerDashboard() {
                     >
                       {/* Section 4: The Learner Profile (SF1) */}
                       <TabsContent value="sf1" forceMount className="mt-0 focus-visible:outline-none ring-0">
-                  <div id="sf1-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
-                    <div className="bg-transparent pb-0 print:bg-transparent">
-                      <div className="mb-8 mt-0 flex items-center gap-3">
-                        <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
-                          Official Learner Profile (for SF1 Reporting)
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      {/* Sub-Section 1: Learner Demographics */}
-                      <div className="mb-8">
-                        <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
-                        <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Sex" value={data.sf1.sex === "MALE" ? "Male" : "Female"} />
-                            <SectionItem label="Date of Birth" value={formatDate(data.sf1.birthdate)} />
+                        <div id="sf1-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
+                          <div className="bg-transparent pb-0 print:bg-transparent">
+                            <div className="mb-8 mt-0 flex items-center gap-3">
+                              <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
+                                Official Learner Profile (for SF1 Reporting)
+                              </h3>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Place of Birth" value={data.sf1.placeOfBirth || null} />
-                            <SectionItem label="Age" value={`${Math.floor((currentTimestamp - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Religion" value={data.sf1.religion || null} />
-                            <SectionItem label="Mother Tongue" value={data.sf1.motherTongue || null} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="IP Group Status" value={data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"} />
-                            <SectionItem label="4Ps Beneficiary" value={data.sf1.is4PsBeneficiary ? "Yes" : "No"} />
-                          </div>
-                        </div>
-                      </div>
+                          <div className="space-y-4">
+                            {/* Sub-Section 1: Learner Demographics */}
+                            <div className="mb-8">
+                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
+                              <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Sex" value={data.sf1.sex === "MALE" ? "Male" : "Female"} />
+                                  <SectionItem label="Date of Birth" value={formatDate(data.sf1.birthdate)} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Place of Birth" value={data.sf1.placeOfBirth || null} />
+                                  <SectionItem label="Age" value={`${Math.floor((currentTimestamp - new Date(data.sf1.birthdate).getTime()) / 31557600000)} years old`} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Religion" value={data.sf1.religion || null} />
+                                  <SectionItem label="Mother Tongue" value={data.sf1.motherTongue || null} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="IP Group Status" value={data.sf1.isIpCommunity ? `Yes (${data.sf1.ipGroupName || 'Not specified'})` : "No"} />
+                                  <SectionItem label="4Ps Beneficiary" value={data.sf1.is4PsBeneficiary ? "Yes" : "No"} />
+                                </div>
+                              </div>
+                            </div>
 
-                      {/* Sub-Section 2: Address & Contact Details */}
-                      <div className="mb-8">
-                        <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY & CONTACT</h3>
-                        <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
-                            <SectionItem label="Permanent Home Address" value={
-                              data.sf1.permanentAddress ?
-                                `${data.sf1.permanentAddress.houseNoStreet || ''} ${data.sf1.permanentAddress.barangay || ''}, ${data.sf1.permanentAddress.cityMunicipality || ''}, ${data.sf1.permanentAddress.province || ''}`.replace(/\s+/g, ' ').trim() : null
-                            } />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
-                            <SectionItem label="Current Home Address" value={
-                              (() => {
-                                if (!data.sf1.permanentAddress && !data.sf1.currentAddress) return null;
-                                if (!data.sf1.currentAddress) return "Same as Permanent Address";
-                                return `${data.sf1.currentAddress.houseNoStreet || ''} ${data.sf1.currentAddress.barangay || ''}, ${data.sf1.currentAddress.cityMunicipality || ''}, ${data.sf1.currentAddress.province || ''}`.replace(/\s+/g, ' ').trim();
-                              })()
-                            } />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Personal Email" value={data.sf1.email} />
-                            <SectionItem label="Contact Number" value={data.sf1.mobileNumber} />
-                          </div>
-                        </div>
-                      </div>
+                            {/* Sub-Section 2: Address & Contact Details */}
+                            <div className="mb-8">
+                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY & CONTACT</h3>
+                              <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
+                                <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
+                                  <SectionItem label="Permanent Home Address" value={
+                                    data.sf1.permanentAddress ?
+                                      `${data.sf1.permanentAddress.houseNoStreet || ''} ${data.sf1.permanentAddress.barangay || ''}, ${data.sf1.permanentAddress.cityMunicipality || ''}, ${data.sf1.permanentAddress.province || ''}`.replace(/\s+/g, ' ').trim() : null
+                                  } />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
+                                  <SectionItem label="Current Home Address" value={
+                                    (() => {
+                                      if (!data.sf1.permanentAddress && !data.sf1.currentAddress) return null;
+                                      if (!data.sf1.currentAddress) return "Same as Permanent Address";
+                                      return `${data.sf1.currentAddress.houseNoStreet || ''} ${data.sf1.currentAddress.barangay || ''}, ${data.sf1.currentAddress.cityMunicipality || ''}, ${data.sf1.currentAddress.province || ''}`.replace(/\s+/g, ' ').trim();
+                                    })()
+                                  } />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Personal Email" value={data.sf1.email} />
+                                  <SectionItem label="Contact Number" value={data.sf1.mobileNumber} />
+                                </div>
+                              </div>
+                            </div>
 
-                      {/* Sub-Section 3: Parent & Guardian Information */}
-                      <div className="mb-8">
-                        <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">III. PARENT/GUARDIAN BACKGROUND</h3>
-                        <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Mother's Full Maiden Name" value={data.sf1.mother ? `${data.sf1.mother.firstName} ${data.sf1.mother.lastName}` : null} />
-                            <SectionItem label="Mother's Contact Number" value={data.sf1.mother?.contactNumber || null} />
+                            {/* Sub-Section 3: Parent & Guardian Information */}
+                            <div className="mb-8">
+                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">III. PARENT/GUARDIAN BACKGROUND</h3>
+                              <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Mother's Full Maiden Name" value={data.sf1.mother ? `${data.sf1.mother.firstName} ${data.sf1.mother.lastName}` : null} />
+                                  <SectionItem label="Mother's Contact Number" value={data.sf1.mother?.contactNumber || null} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Father's Full Name" value={data.sf1.father ? `${data.sf1.father.firstName} ${data.sf1.father.lastName}` : null} />
+                                  <SectionItem label="Father's Contact Number" value={data.sf1.father?.contactNumber || null} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem label="Guardian's Full Name" value={data.sf1.guardian ? `${data.sf1.guardian.firstName} ${data.sf1.guardian.lastName}` : null} />
+                                  <SectionItem label="Guardian's Contact Number" value={data.sf1.guardian?.contactNumber || null} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                  <SectionItem
+                                    label="Guardian's Relationship"
+                                    value={data.sf1.guardian?.relationship || null}
+                                    valueClassName={!data.sf1.is4PsBeneficiary ? "md:col-span-3" : ""}
+                                  />
+                                  {data.sf1.is4PsBeneficiary && (
+                                    <SectionItem label="4Ps Household Number" value={data.sf1.householdId4Ps} />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Father's Full Name" value={data.sf1.father ? `${data.sf1.father.firstName} ${data.sf1.father.lastName}` : null} />
-                            <SectionItem label="Father's Contact Number" value={data.sf1.father?.contactNumber || null} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem label="Guardian's Full Name" value={data.sf1.guardian ? `${data.sf1.guardian.firstName} ${data.sf1.guardian.lastName}` : null} />
-                            <SectionItem label="Guardian's Contact Number" value={data.sf1.guardian?.contactNumber || null} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                            <SectionItem
-                              label="Guardian's Relationship"
-                              value={data.sf1.guardian?.relationship || null}
-                              valueClassName={!data.sf1.is4PsBeneficiary ? "md:col-span-3" : ""}
-                            />
-                            {data.sf1.is4PsBeneficiary && (
-                              <SectionItem label="4Ps Household Number" value={data.sf1.householdId4Ps} />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                  </div>
+                        </div>
                       </TabsContent>
                     </motion.div>
                   )}
@@ -864,12 +861,12 @@ export default function LearnerDashboard() {
           </>
         )}
       </div>
-      
+
       <ConfirmationModal
         open={showLogoutConfirm}
         onOpenChange={setShowLogoutConfirm}
         title="Sign Out"
-        description="Are you sure you want to sign out of the Learner Portal?"
+        description="Are you sure you want to sign out of the learner information system?"
         confirmText="Sign Out"
         onConfirm={handleLogout}
         variant="primary"

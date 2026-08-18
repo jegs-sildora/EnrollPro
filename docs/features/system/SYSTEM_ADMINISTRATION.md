@@ -4,7 +4,7 @@ Last reviewed: 2026-07-24
 
 ## School Configuration
 
-System Configuration manages school identity, DepEd school ID, address, contact details, uploaded logo, curriculum programs, enrollment dates, operational settings, school years, and calendar policies.
+System Configuration manages school identity, DepEd school ID, address, contact details, uploaded logo, curriculum programs, enrollment dates, operational settings, and school years.
 
 The uploaded logo supplies the EnrollPro primary and accent colors. Configuration changes must not introduce a separate SMART color theme.
 

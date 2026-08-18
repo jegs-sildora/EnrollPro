@@ -64,14 +64,14 @@ Companion systems may read current context during normal operations. The active 
 
 Downstream refresh order:
 
-1. EnrollPro commits history, learner outcomes, cloned empty sections, calendar policy, and active-year state.
+1. EnrollPro commits history, learner outcomes, cloned empty sections, the next-year calendar, and active-year state.
 2. EnrollPro broadcasts school-year and integration invalidations.
 3. SMART refreshes active learners and sections.
 4. ATLAS refreshes faculty, sections, and adviser context.
 5. AIMS refreshes learner and class context.
 6. MRF refreshes minimized identities.
 
-No downstream system should switch years when a target-year draft or calendar policy is merely created.
+No downstream system should switch years before EnrollPro completes the atomic rollover and publishes the new active school year.
 
 ## Failure Handling
 

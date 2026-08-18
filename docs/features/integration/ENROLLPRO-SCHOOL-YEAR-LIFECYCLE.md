@@ -128,7 +128,7 @@ Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals mu
 
 ### Readiness Gate
 
-`GET /api/system/rollover-readiness?calendarPolicyId=:id` and the rollover service require:
+`GET /api/system/rollover-readiness` and the rollover service require:
 
 - the selected source year is active and the system is in `EOSY_CLOSING`
 - every section is finalized
@@ -136,15 +136,14 @@ Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals mu
 - dropped and transferred learners have their local final result
 - every section has a current SF5 artifact
 - the school year has a current SF6 artifact
-- the target calendar policy is approved and matches the next year
 - an existing target-year shell contains no operational records
 
 If the gate fails, rollover returns `422` with class-level blockers.
 
 ### Atomic Rollover Work
 
-`POST /api/school-years/rollover` accepts `sourceSchoolYearId`,
-`calendarPolicyId`, and the administrator PIN. It acquires a PostgreSQL
+`POST /api/school-years/rollover` accepts `sourceSchoolYearId` and the
+administrator PIN. It acquires a PostgreSQL
 advisory transaction lock and runs with serializable isolation:
 
 1. Recheck every readiness rule inside the transaction.
@@ -156,7 +155,7 @@ advisory transaction lock and runs with serializable isolation:
 7. Create target-year BOSY applications for eligible continuing learners.
 8. Revoke active source-year adviserships.
 9. Remove live source applications and enrollment records after history is written.
-10. Apply the approved calendar, mark it applied, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
+10. Copy the source year calendar dates forward one year, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
 11. Broadcast browser and integration invalidations only after the transaction commits.
 
 ### Rollover Outcome Matrix
@@ -186,8 +185,7 @@ Remedial holds are excluded from active intake, class placement, and official po
 ## Authoritative Transaction Boundary
 
 There is no separate school-level EOSY transition endpoint. SF5 and SF6
-recording does not create or activate a new year. Calendar-policy drafts also
-do not create school-year rows. The successful response from
+recording does not create or activate a new year. The successful response from
 `POST /api/school-years/rollover` is the only publication boundary for the new
 active year.
 

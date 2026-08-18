@@ -52,8 +52,6 @@ import type {
   updateSchoolYearSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
-  calendarPolicyStatusSchema,
-  schoolYearCalendarPolicySchema,
 } from "../schemas/school-year.schema.js";
 import type {
   smartEosyLearnerOutcomeSchema,
@@ -148,10 +146,6 @@ export type TransitionSchoolYearInput = z.infer<
   typeof transitionSchoolYearSchema
 >;
 export type ToggleOverrideInput = z.infer<typeof toggleOverrideSchema>;
-export type CalendarPolicyStatus = z.infer<typeof calendarPolicyStatusSchema>;
-export type SchoolYearCalendarPolicyInput = z.infer<
-  typeof schoolYearCalendarPolicySchema
->;
 export type SmartSubjectGrade = z.infer<
   typeof smartSubjectGradeSchema
 >;

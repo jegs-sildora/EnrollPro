@@ -15,13 +15,6 @@ export interface RolloverReadinessPayload {
     code: string;
     message: string;
   }>;
-  calendarPolicy: {
-    id: number;
-    yearLabel: string;
-    version: number;
-    status: string;
-    depedIssuance: string;
-  } | null;
   formStatus: {
     currentSf5Count: number;
     totalSections: number;
@@ -30,12 +23,9 @@ export interface RolloverReadinessPayload {
   };
 }
 
-export async function getRolloverReadiness(
-  calendarPolicyId?: number,
-): Promise<RolloverReadinessPayload> {
+export async function getRolloverReadiness(): Promise<RolloverReadinessPayload> {
   const res = await api.get<RolloverReadinessPayload>(
     "/system/rollover-readiness",
-    { params: { calendarPolicyId } },
   );
   return res.data;
 }

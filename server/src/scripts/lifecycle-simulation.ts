@@ -104,13 +104,6 @@ interface CommitDraftResponse {
   }>
 }
 
-interface CalendarPolicyResponse {
-  calendarPolicy: {
-    id: number
-    status: string
-  }
-}
-
 interface RolloverResponse {
   year: {
     id: number
@@ -252,28 +245,6 @@ function startYear(yearLabel: string): number {
 
 function isoDate(year: number, month: number, day: number): string {
   return new Date(Date.UTC(year, month - 1, day, 12)).toISOString()
-}
-
-function createCalendarPayload(yearLabel: string): JsonObject {
-  const year = startYear(yearLabel)
-  return {
-    yearLabel,
-    depedIssuance: `Lifecycle Simulation DepEd Calendar ${yearLabel}`,
-    sourceUrl: null,
-    classOpeningDate: isoDate(year, 6, 2),
-    classEndDate: isoDate(year + 1, 3, 31),
-    enrollOpenDate: isoDate(year, 5, 1),
-    enrollCloseDate: isoDate(year, 5, 31),
-    termFormat: "QUARTERS",
-    term1Start: isoDate(year, 6, 2),
-    term1End: isoDate(year, 8, 31),
-    term2Start: isoDate(year, 9, 1),
-    term2End: isoDate(year, 11, 30),
-    term3Start: isoDate(year, 12, 1),
-    term3End: isoDate(year + 1, 2, 28),
-    term4Start: isoDate(year + 1, 3, 1),
-    term4End: isoDate(year + 1, 3, 31),
-  }
 }
 
 function createLrn(): string {
@@ -1080,45 +1051,14 @@ async function finalizeAndRecordForms(
   )
 }
 
-async function createApprovedCalendar(
-  context: SimulationContext,
-  sourceSchoolYearId: number,
-  targetYearLabel: string,
-): Promise<number> {
-  const draft = await requestJson<CalendarPolicyResponse>(
-    context,
-    "/api/school-years/calendar-policies",
-    {
-      method: "POST",
-      schoolYearId: sourceSchoolYearId,
-      expectedStatuses: [201],
-      body: createCalendarPayload(targetYearLabel),
-    },
-  )
-  const approved = await requestJson<CalendarPolicyResponse>(
-    context,
-    `/api/school-years/calendar-policies/${draft.data.calendarPolicy.id}/approve`,
-    {
-      method: "POST",
-      schoolYearId: sourceSchoolYearId,
-    },
-  )
-  assert.equal(approved.data.calendarPolicy.status, "APPROVED")
-  return approved.data.calendarPolicy.id
-}
-
 async function getReadiness(
   context: SimulationContext,
   sourceSchoolYearId: number,
-  calendarPolicyId?: number,
 ): Promise<RolloverReadinessResponse> {
-  const query = calendarPolicyId
-    ? `?calendarPolicyId=${calendarPolicyId}`
-    : ""
   return (
     await requestJson<RolloverReadinessResponse>(
       context,
-      `/api/system/rollover-readiness${query}`,
+      "/api/system/rollover-readiness",
       { schoolYearId: sourceSchoolYearId },
     )
   ).data
@@ -1161,7 +1101,6 @@ async function verifyIntegrationFeeds(
 async function executeRollover(
   context: SimulationContext,
   sourceSchoolYearId: number,
-  calendarPolicyId: number,
   concurrent: boolean,
 ): Promise<RolloverResponse> {
   const execute = () =>
@@ -1174,7 +1113,6 @@ async function executeRollover(
         expectedStatuses: concurrent ? [201, 409, 422] : [201],
         body: {
           sourceSchoolYearId,
-          calendarPolicyId,
           pin: process.env.ADMIN_BOSY_LOCK_PIN ?? "123456",
         },
       },
@@ -1339,15 +1277,9 @@ async function runYearCycle(
   })
 
   await setPhase(context, schoolYearId, "EOSY_CLOSING")
-  const targetPolicyId = await createApprovedCalendar(
-    context,
-    schoolYearId,
-    targetYearLabel,
-  )
   const blockedBeforeSmart = await getReadiness(
     context,
     schoolYearId,
-    targetPolicyId,
   )
   assert.equal(blockedBeforeSmart.ready, false)
   assert.ok(
@@ -1365,7 +1297,6 @@ async function runYearCycle(
   const blockedBeforeForms = await getReadiness(
     context,
     schoolYearId,
-    targetPolicyId,
   )
   assert.equal(blockedBeforeForms.ready, false)
   assert.ok(
@@ -1379,7 +1310,6 @@ async function runYearCycle(
   const ready = await getReadiness(
     context,
     schoolYearId,
-    targetPolicyId,
   )
   assert.equal(ready.ready, true)
   addCheckpoint(context.report, sourceYearLabel, "eosy-ready", {
@@ -1407,7 +1337,6 @@ async function runYearCycle(
   const rollover = await executeRollover(
     context,
     schoolYearId,
-    targetPolicyId,
     cycleIndex === 0,
   )
   assert.equal(rollover.year.yearLabel, targetYearLabel)

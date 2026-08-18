@@ -10,10 +10,6 @@ import {
   deleteSchoolYear,
   getNextDefaults,
   updateDates,
-  approveCalendarPolicy,
-  listCalendarPolicies,
-  saveCalendarPolicyDraft,
-  updateCalendarPolicyDraft,
 } from "./school-year.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -23,8 +19,6 @@ import {
   rolloverSchoolYearSchema,
   updateSchoolYearSchema,
   transitionSchoolYearSchema,
-  toggleOverrideSchema,
-  schoolYearCalendarPolicySchema,
 } from "@enrollpro/shared";
 
 const router: Router = Router();
@@ -47,32 +41,6 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   listGradeLevels,
-);
-router.get(
-  "/calendar-policies",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  listCalendarPolicies,
-);
-router.post(
-  "/calendar-policies",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  validate(schoolYearCalendarPolicySchema),
-  saveCalendarPolicyDraft,
-);
-router.put(
-  "/calendar-policies/:id",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  validate(schoolYearCalendarPolicySchema),
-  updateCalendarPolicyDraft,
-);
-router.post(
-  "/calendar-policies/:id/approve",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  approveCalendarPolicy,
 );
 router.get("/:id", authenticate, authorize("SYSTEM_ADMIN"), getSchoolYear);
 router.post(

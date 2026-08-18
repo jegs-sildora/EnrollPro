@@ -36,7 +36,6 @@ model User {
   enrollmentRecords                    EnrollmentRecord[]
   recordedHealthRecords                HealthRecord[]          @relation("HealthRecordRecordedBy")
   learnerProfile                       Learner?                @relation("UserLearnerProfile")
-  approvedCalendarPolicies             SchoolYearCalendarPolicy[] @relation("CalendarPolicyApprovedBy")
   recordedSchoolFormArtifacts          SchoolFormArtifact[]    @relation("SchoolFormArtifactRecordedBy")
   updatedTeacherDesignations           TeacherDesignation[]    @relation("TeacherDesignationUpdatedBy")
   teacherProfile                       Teacher?                @relation("UserTeacherProfile")
@@ -159,7 +158,6 @@ model SchoolYear {
   term3Start             DateTime?               @map("term3_start") @db.Date
   term4End               DateTime?               @map("term4_end") @db.Date
   term4Start             DateTime?               @map("term4_start") @db.Date
-  calendarPolicyId       Int?                    @unique(map: "uq_school_years_calendar_policy_id") @map("calendar_policy_id")
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
@@ -171,45 +169,9 @@ model SchoolYear {
   teacherDesignations    TeacherDesignation[]
   teacherSchedulePeriods TeacherSchedulePeriod[]
   enrollmentHistories    EnrollmentHistory[]
-  calendarPolicy         SchoolYearCalendarPolicy? @relation("AppliedCalendarPolicy", fields: [calendarPolicyId], references: [id])
   schoolFormArtifacts    SchoolFormArtifact[]
 
   @@map("school_years")
-}
-
-/// Versioned school calendar copied from the applicable DepEd issuance.
-model SchoolYearCalendarPolicy {
-  id                Int                  @id @default(autoincrement())
-  yearLabel         String               @map("year_label")
-  version           Int                  @default(1)
-  status            CalendarPolicyStatus @default(DRAFT)
-  depedIssuance     String               @map("deped_issuance")
-  sourceUrl         String?              @map("source_url")
-  classOpeningDate  DateTime             @map("class_opening_date") @db.Date
-  classEndDate      DateTime             @map("class_end_date") @db.Date
-  enrollOpenDate    DateTime?            @map("enroll_open_date") @db.Date
-  enrollCloseDate   DateTime?            @map("enroll_close_date") @db.Date
-  termFormat        TermFormat           @default(TRIMESTER) @map("term_format")
-  term1Start        DateTime             @map("term1_start") @db.Date
-  term1End          DateTime             @map("term1_end") @db.Date
-  term2Start        DateTime             @map("term2_start") @db.Date
-  term2End          DateTime             @map("term2_end") @db.Date
-  term3Start        DateTime             @map("term3_start") @db.Date
-  term3End          DateTime             @map("term3_end") @db.Date
-  term4Start        DateTime?            @map("term4_start") @db.Date
-  term4End          DateTime?            @map("term4_end") @db.Date
-  approvedAt        DateTime?            @map("approved_at") @db.Timestamptz(6)
-  approvedById      Int?                 @map("approved_by_id")
-  appliedAt         DateTime?            @map("applied_at") @db.Timestamptz(6)
-  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  approvedBy        User?                @relation("CalendarPolicyApprovedBy", fields: [approvedById], references: [id])
-  appliedSchoolYear SchoolYear?          @relation("AppliedCalendarPolicy")
-
-  @@unique([yearLabel, version], name: "uq_calendar_policy_year_version")
-  @@index([yearLabel, status], map: "idx_calendar_policy_year_status")
-  @@map("school_year_calendar_policies")
 }
 
 /// JHS grade levels (e.g. Grade 7, Grade 10) - Permanent global records
@@ -674,14 +636,6 @@ enum SchoolYearStatus {
   ARCHIVED
 
   @@map("school_year_status")
-}
-
-enum CalendarPolicyStatus {
-  DRAFT
-  APPROVED
-  APPLIED
-
-  @@map("calendar_policy_status")
 }
 
 enum SchoolFormType {

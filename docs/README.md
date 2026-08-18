@@ -23,7 +23,7 @@ Last reviewed: 2026-07-24
 | [Learner Enrollment and Sectioning](features/enrollment/LEARNER_ENROLLMENT_AND_SECTIONING.md) | Registrar | Intake, verification, temporary enrollment, sectioning, and SF1 |
 | [Learner Records](features/learners/LEARNER_RECORDS.md) | Registrar | Learner identity, contacts, health, portal, and lifecycle records |
 | [Personnel and SF7](features/personnel/PERSONNEL_AND_SF7.md) | School Head and Administrator | Personnel profiles, advisership, schedules, and SF7 |
-| [School Year Operations](features/school-year/SCHOOL_YEAR_OPERATIONS.md) | School Head and Registrar | Calendar policy, phases, EOSY forms, and rollover |
+| [School Year Operations](features/school-year/SCHOOL_YEAR_OPERATIONS.md) | School Head and Registrar | Calendar dates, phases, EOSY forms, and rollover |
 | [System Administration](features/system/SYSTEM_ADMINISTRATION.md) | System Administrator | Configuration, accounts, activity logs, and health checks |
 | [Design System](ui-ux/DESIGN_SYSTEM.md) | UI and Accessibility | EnrollPro visual, motion, responsive, and wording standards |
 

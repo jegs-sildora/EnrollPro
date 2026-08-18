@@ -108,7 +108,7 @@ Base path: `/api/system`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/public-config` | Public | Learner-login branding and public system context |
-| GET | `/rollover-readiness?calendarPolicyId=:id` | `SYSTEM_ADMIN` | SMART, SF5, SF6, calendar, section, and target-year rollover blockers |
+| GET | `/rollover-readiness` | `SYSTEM_ADMIN` | SMART, SF5, SF6, section, and target-year rollover blockers |
 
 ## Settings
 
@@ -145,12 +145,8 @@ Base path: `/api/school-years`
 | GET | `/next-defaults` | `SYSTEM_ADMIN` | Suggested next-year dates and label |
 | GET | `/grade-levels` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN`, `TEACHER` | List configured grade levels |
 | GET | `/:id` | `SYSTEM_ADMIN` | Read one school-year configuration |
-| GET | `/calendar-policies` | `SYSTEM_ADMIN` | List versioned DepEd school-calendar policies |
-| POST | `/calendar-policies` | `SYSTEM_ADMIN` | Save a calendar-policy draft without creating a school year |
-| PUT | `/calendar-policies/:id` | `SYSTEM_ADMIN` | Replace an editable calendar-policy draft |
-| POST | `/calendar-policies/:id/approve` | `SYSTEM_ADMIN` | Approve a calendar policy for rollover |
 | POST | `/activate` | `SYSTEM_ADMIN` | Create the first operational school year only |
-| POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, apply the approved calendar, clone empty sections, carry learners forward, and activate the new year |
+| POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, copy the calendar forward one year, clone empty sections, carry learners forward, and activate the new year |
 | PUT | `/:id` | `SYSTEM_ADMIN` | Update editable school-year settings |
 | PATCH | `/:id/status` | `SYSTEM_ADMIN` | First-time status control only; cannot bypass rollover while an operational year exists |
 | PATCH | `/:id/dates` | `SYSTEM_ADMIN` | Update class and enrollment dates |

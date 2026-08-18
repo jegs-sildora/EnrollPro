@@ -14,9 +14,3 @@ export {
   transitionSchoolYear,
   deleteSchoolYear,
 } from "./controllers/school-year.lifecycle.controller.js";
-export {
-  approveCalendarPolicy,
-  listCalendarPolicies,
-  saveCalendarPolicyDraft,
-  updateCalendarPolicyDraft,
-} from "./controllers/school-year.calendar-policy.controller.js";

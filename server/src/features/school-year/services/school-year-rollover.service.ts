@@ -11,7 +11,6 @@ type DatabaseClient = Pick<
   typeof prisma,
   | "schoolYear"
   | "schoolSetting"
-  | "schoolYearCalendarPolicy"
   | "schoolFormArtifact"
   | "section"
   | "enrollmentRecord"
@@ -45,9 +44,7 @@ export interface RolloverGlobalBlocker {
     | "SOURCE_NOT_ACTIVE"
     | "SOURCE_NOT_SELECTED"
     | "EOSY_PHASE_NOT_ACTIVE"
-    | "CALENDAR_POLICY_REQUIRED"
-    | "CALENDAR_POLICY_NOT_APPROVED"
-    | "CALENDAR_POLICY_YEAR_MISMATCH"
+    | "TARGET_YEAR_LABEL_INVALID"
     | "SF6_NOT_RECORDED"
     | "SF6_STALE"
     | "TARGET_YEAR_HAS_RECORDS"
@@ -60,13 +57,6 @@ export interface RolloverReadiness {
   schoolYearFinalized: boolean;
   blockers: RolloverClassBlocker[];
   globalBlockers: RolloverGlobalBlocker[];
-  calendarPolicy: {
-    id: number;
-    yearLabel: string;
-    version: number;
-    status: string;
-    depedIssuance: string;
-  } | null;
   formStatus: {
     currentSf5Count: number;
     totalSections: number;
@@ -137,6 +127,22 @@ function nextYearLabel(yearLabel: string): string | null {
   const start = Number(match[1]);
   const end = Number(match[2]);
   return end === start + 1 ? `${start + 1}-${end + 1}` : null;
+}
+
+function shiftCalendarDateOneYear(value: Date | null): Date | null {
+  if (!value) return null;
+  const targetYear = value.getUTCFullYear() + 1;
+  const month = value.getUTCMonth();
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(targetYear, month + 1, 0),
+  ).getUTCDate();
+  return new Date(
+    Date.UTC(
+      targetYear,
+      month,
+      Math.min(value.getUTCDate(), lastDayOfTargetMonth),
+    ),
+  );
 }
 
 function learnerIdentifier(learnerId: number, lrn: string | null): string {
@@ -221,7 +227,6 @@ async function getReadiness(
       schoolYearFinalized: false,
       blockers: [],
       globalBlockers,
-      calendarPolicy: null,
       formStatus: {
         currentSf5Count: 0,
         totalSections: 0,
@@ -232,27 +237,9 @@ async function getReadiness(
   }
 
   const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
-  const [setting, requestedPolicy] = await Promise.all([
-    client.schoolSetting.findFirst({
-      select: { activeSchoolYearId: true, systemPhase: true },
-    }),
-    expectedTargetLabel
-        ? client.schoolYearCalendarPolicy.findFirst({
-            where: {
-              yearLabel: expectedTargetLabel,
-              status: "APPROVED",
-            },
-            orderBy: { version: "desc" },
-            select: {
-              id: true,
-              yearLabel: true,
-              version: true,
-              status: true,
-              depedIssuance: true,
-            },
-          })
-        : null,
-  ]);
+  const setting = await client.schoolSetting.findFirst({
+    select: { activeSchoolYearId: true, systemPhase: true },
+  });
 
   if (sourceYear.status !== "ACTIVE") {
     globalBlockers.push({
@@ -274,21 +261,12 @@ async function getReadiness(
         "Move the system to End of School Year Closing before rollover.",
     });
   }
-  if (requestedPolicy) {
-    if (requestedPolicy.status !== "APPROVED") {
-      globalBlockers.push({
-        code: "CALENDAR_POLICY_NOT_APPROVED",
-        message:
-          "The incoming school-year calendar must be approved before rollover.",
-      });
-    }
-    if (requestedPolicy.yearLabel !== expectedTargetLabel) {
-      globalBlockers.push({
-        code: "CALENDAR_POLICY_YEAR_MISMATCH",
-        message:
-          "The approved calendar does not match the incoming school year.",
-      });
-    }
+  if (!expectedTargetLabel) {
+    globalBlockers.push({
+      code: "TARGET_YEAR_LABEL_INVALID",
+      message:
+        "The current school year must use consecutive years in YYYY-YYYY format before rollover.",
+    });
   }
 
   let currentSf5Count = 0;
@@ -342,10 +320,10 @@ async function getReadiness(
     });
   }
 
-  if (requestedPolicy) {
+  if (expectedTargetLabel) {
     const target = await getTargetOperationalCount(
       client,
-      requestedPolicy.yearLabel,
+      expectedTargetLabel,
     );
     if (target && target.id !== sourceYear.id && target.count > 0) {
       globalBlockers.push({
@@ -377,7 +355,6 @@ async function getReadiness(
     schoolYearFinalized: sourceYear.isEosyFinalized,
     blockers,
     globalBlockers,
-    calendarPolicy: requestedPolicy,
     formStatus: {
       currentSf5Count,
       totalSections: sourceYear.sections.length,
@@ -516,11 +493,32 @@ export async function executeSchoolYearRollover({
 
       const sourceYear = await tx.schoolYear.findUniqueOrThrow({
         where: { id: sourceSchoolYearId },
-        select: { id: true, yearLabel: true },
+        select: {
+          id: true,
+          yearLabel: true,
+          classOpeningDate: true,
+          classEndDate: true,
+          enrollOpenDate: true,
+          enrollCloseDate: true,
+          termFormat: true,
+          term1Start: true,
+          term1End: true,
+          term2Start: true,
+          term2End: true,
+          term3Start: true,
+          term3End: true,
+          term4Start: true,
+          term4End: true,
+        },
       });
       const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
+      if (!expectedTargetLabel) {
+        throw new Error(
+          "The current school year must use consecutive years in YYYY-YYYY format.",
+        );
+      }
 
-      const [sourceRecords, sourceSections, gradeLevels, setting, policy] =
+      const [sourceRecords, sourceSections, gradeLevels, setting] =
         await Promise.all([
           tx.enrollmentRecord.findMany({
             where: { schoolYearId: sourceSchoolYearId },
@@ -625,18 +623,9 @@ export async function executeSchoolYearRollover({
             select: { id: true, displayOrder: true },
           }),
           tx.schoolSetting.findFirst(),
-          expectedTargetLabel
-            ? tx.schoolYearCalendarPolicy.findFirst({
-                where: {
-                  yearLabel: expectedTargetLabel,
-                  status: "APPROVED",
-                },
-                orderBy: { version: "desc" },
-              })
-            : Promise.resolve(null),
         ]);
 
-      const targetLabel = policy?.yearLabel || nextYearLabel(sourceYear.yearLabel) || "Unknown Target Year";
+      const targetLabel = expectedTargetLabel;
 
       const targetOperational = await getTargetOperationalCount(
         tx,
@@ -648,26 +637,26 @@ export async function executeSchoolYearRollover({
         );
       }
 
-      const yearData = policy ? {
+      const yearData = {
         status: "ACTIVE" as const,
         clonedFromId: sourceSchoolYearId,
-        calendarPolicyId: policy.id,
-        classOpeningDate: policy.classOpeningDate,
-        classEndDate: policy.classEndDate,
-        enrollOpenDate: policy.enrollOpenDate,
-        enrollCloseDate: policy.enrollCloseDate,
-        termFormat: policy.termFormat,
-        term1Start: policy.term1Start,
-        term1End: policy.term1End,
-        term2Start: policy.term2Start,
-        term2End: policy.term2End,
-        term3Start: policy.term3Start,
-        term3End: policy.term3End,
-        term4Start: policy.term4Start,
-        term4End: policy.term4End,
-      } : {
-        status: "ACTIVE" as const,
-        clonedFromId: sourceSchoolYearId,
+        classOpeningDate: shiftCalendarDateOneYear(
+          sourceYear.classOpeningDate,
+        ),
+        classEndDate: shiftCalendarDateOneYear(sourceYear.classEndDate),
+        enrollOpenDate: shiftCalendarDateOneYear(sourceYear.enrollOpenDate),
+        enrollCloseDate: shiftCalendarDateOneYear(
+          sourceYear.enrollCloseDate,
+        ),
+        termFormat: sourceYear.termFormat,
+        term1Start: shiftCalendarDateOneYear(sourceYear.term1Start),
+        term1End: shiftCalendarDateOneYear(sourceYear.term1End),
+        term2Start: shiftCalendarDateOneYear(sourceYear.term2Start),
+        term2End: shiftCalendarDateOneYear(sourceYear.term2End),
+        term3Start: shiftCalendarDateOneYear(sourceYear.term3Start),
+        term3End: shiftCalendarDateOneYear(sourceYear.term3End),
+        term4Start: shiftCalendarDateOneYear(sourceYear.term4Start),
+        term4End: shiftCalendarDateOneYear(sourceYear.term4End),
       };
 
       const targetYear = targetOperational
@@ -868,15 +857,6 @@ export async function executeSchoolYearRollover({
             : undefined,
         },
       });
-      if (policy) {
-        await tx.schoolYearCalendarPolicy.update({
-          where: { id: policy.id },
-          data: {
-            status: "APPLIED",
-            appliedAt: rolloverTime,
-          },
-        });
-      }
       await tx.schoolSetting.updateMany({
         data: {
           activeSchoolYearId: targetYear.id,
@@ -896,8 +876,6 @@ export async function executeSchoolYearRollover({
           ipAddress,
           userAgent,
           metadata: {
-            calendarPolicyId: policy?.id,
-            calendarPolicyVersion: policy?.version,
             archivedRecords: sourceRecords.length,
             pendingConfirmations,
             remedialHolds,
@@ -909,7 +887,10 @@ export async function executeSchoolYearRollover({
 
       return {
         year: targetYear,
-        rolloverFrom: sourceYear,
+        rolloverFrom: {
+          id: sourceYear.id,
+          yearLabel: sourceYear.yearLabel,
+        },
         rolloverSummary: {
           archivedRecords: sourceRecords.length,
           pendingConfirmations,
