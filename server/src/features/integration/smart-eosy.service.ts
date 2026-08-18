@@ -289,8 +289,14 @@ async function syncFinalSmartSectionOutcomesInternal(
     if (error instanceof AppError) {
       throw error;
     }
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new AppError(502, "SMART rejected the configured bearer token.");
+    if (
+      axios.isAxiosError(error)
+      && (error.response?.status === 401 || error.response?.status === 403)
+    ) {
+      throw new AppError(
+        502,
+        "SMART rejected the configured Bearer token. Configure the valid SMART-issued token in server/.env.",
+      );
     }
     let reason = "Unknown connection failure";
     if (axios.isAxiosError(error)) {

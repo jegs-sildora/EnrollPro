@@ -19,6 +19,11 @@ SMART_API_KEY=server-only-bearer-token
 
 The key is never sent to the browser, returned by EnrollPro, or written to logs.
 
+SMART port reachability and authentication are separate checks. An HTTP 401 or 403
+means that SMART rejected the configured Bearer token. EnrollPro reports the token
+configuration problem without logging the secret and does not retry authentication
+failures. Network and upstream availability failures are retried up to three times.
+
 ## Final Outcome Pull
 
 When an authorized EnrollPro administrator selects `Sync SMART Outcomes`, EnrollPro calls the SMART endpoint below:

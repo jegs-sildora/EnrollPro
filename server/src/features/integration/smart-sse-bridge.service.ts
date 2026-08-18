@@ -16,6 +16,18 @@ const SMART_GRADE_EVENT_TYPES = new Set([
   "SECTION_SYNC_COMPLETE",
   "SYNC_COMPLETE",
 ]);
+const SMART_TOKEN_PLACEHOLDER_PATTERNS = [
+  /^server_only_/i,
+  /^your[_-]/i,
+  /^replace[_-]/i,
+  /^change[_-]?me/i,
+  /^example[_-]/i,
+];
+
+interface SmartConnectionConfig {
+  baseUrl: string;
+  token: string;
+}
 
 interface ResolvedSection {
   id: number;
@@ -37,6 +49,28 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown SMART bridge error";
 }
 
+function getSmartConnectionConfig(): SmartConnectionConfig | null {
+  const baseUrl = process.env.SMART_API_BASE_URL?.trim();
+  const token = process.env.SMART_API_KEY?.trim();
+
+  if (!baseUrl) {
+    console.warn("[SMART SSE] Bridge disabled. SMART_API_BASE_URL is not configured.");
+    return null;
+  }
+  if (!token) {
+    console.warn("[SMART SSE] Bridge disabled. SMART_API_KEY is not configured.");
+    return null;
+  }
+  if (SMART_TOKEN_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(token))) {
+    console.warn(
+      "[SMART SSE] Bridge disabled. Configure the valid SMART-issued Bearer token in server/.env.",
+    );
+    return null;
+  }
+
+  return { baseUrl, token };
+}
+
 class SmartSseBridge {
   private abortController: AbortController | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -48,8 +82,7 @@ class SmartSseBridge {
   private readonly running = new Set<string>();
 
   public start(): void {
-    if (!process.env.SMART_API_BASE_URL?.trim() || !process.env.SMART_API_KEY?.trim()) {
-      console.info("[SMART SSE] Bridge disabled because SMART is not configured.");
+    if (!getSmartConnectionConfig()) {
       return;
     }
 
@@ -90,9 +123,8 @@ class SmartSseBridge {
       return;
     }
 
-    const baseUrl = process.env.SMART_API_BASE_URL?.trim();
-    const token = process.env.SMART_API_KEY?.trim();
-    if (!baseUrl || !token) {
+    const config = getSmartConnectionConfig();
+    if (!config) {
       return;
     }
 
@@ -104,16 +136,25 @@ class SmartSseBridge {
     );
     try {
       const response = await fetch(
-        `${baseUrl.replace(/\/$/, "")}/api/integration/sync/stream`,
+        `${config.baseUrl.replace(/\/$/, "")}/api/integration/sync/stream`,
         {
           headers: {
             Accept: "text/event-stream",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${config.token}`,
           },
           signal: controller.signal,
         },
       );
       clearTimeout(connectionTimeout);
+
+      if (response.status === 401 || response.status === 403) {
+        this.exhausted = true;
+        this.stopped = true;
+        console.error(
+          `[SMART SSE] Authentication rejected by SMART (HTTP ${response.status}). Configure the valid SMART-issued Bearer token in server/.env.`,
+        );
+        return;
+      }
 
       if (!response.ok || !response.body) {
         throw new Error(`SMART SSE connection returned HTTP ${response.status}.`);

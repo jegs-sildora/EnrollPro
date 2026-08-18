@@ -88,6 +88,11 @@ validate the complete section result through the documented grade endpoint. SMAR
 remains the owner of grades and promotion outcomes; it never writes directly to
 EnrollPro.
 
+An HTTP 401 or 403 means that the configured EnrollPro Bearer token was rejected.
+It is an authentication configuration error, not a closed-port or network error.
+EnrollPro does not retry authentication failures. Transport failures may be retried
+up to three times before the bridge pauses until an administrator selects `Sync SMART`.
+
 ---
 
 ## 🔐 Authentication & Session Endpoints

@@ -68,6 +68,7 @@ import {
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
 import { UserPhoto } from "@/shared/components/UserPhoto";
+import { TableCellsTransitionLoader } from "@/shared/components/TableCellsTransitionLoader";
 
 const getInitials = (firstName?: string | null, lastName?: string | null): string => {
   const f = String(firstName || "").trim().charAt(0).toUpperCase();
@@ -131,6 +132,13 @@ interface GradeLevel {
 interface SmartErrorDetails {
   status?: number;
   message: string;
+}
+
+interface SmartSyncProgress {
+  totalSections: number;
+  completedSections: number;
+  currentSection: string | null;
+  failedSections: string[];
 }
 
 function getSmartErrorDetails(error: unknown): SmartErrorDetails {
@@ -361,6 +369,7 @@ export default function EosyUpdating() {
   const [reopenLoading, setReopenLoading] = useState<boolean>(false);
 
   const [syncingSmart, setSyncingSmart] = useState(false);
+  const [smartSyncProgress, setSmartSyncProgress] = useState<SmartSyncProgress | null>(null);
   const smartConnectionStatus = useRealtimeConnectionStatus();
 
   const [recordingForms, setRecordingForms] = useState(false);
@@ -639,6 +648,12 @@ export default function EosyUpdating() {
     }
 
     setSyncingSmart(true);
+    setSmartSyncProgress({
+      totalSections: targetSections.length,
+      completedSections: 0,
+      currentSection: null,
+      failedSections: [],
+    });
     try {
       let totalSynced = 0;
       let totalUnresolved = 0;
@@ -646,6 +661,12 @@ export default function EosyUpdating() {
       let firstError: unknown = null;
 
       for (const sec of targetSections) {
+        let sectionSucceeded = false;
+        setSmartSyncProgress((previous) => previous ? {
+          ...previous,
+          currentSection: sec.name,
+        } : previous);
+
         try {
           const res = await api.post(`/integration/smart/sections/${sec.id}/sync-grades`);
           if (res.data?.syncedCount) {
@@ -654,9 +675,14 @@ export default function EosyUpdating() {
           if (Array.isArray(res.data?.unresolvedOutcomes)) {
             totalUnresolved += res.data.unresolvedOutcomes.length;
           }
+          sectionSucceeded = true;
         } catch (secErr: unknown) {
           console.error(`SMART sync failed for section ${sec.name}:`, secErr);
           failedSections.push(sec.name);
+          setSmartSyncProgress((previous) => previous ? {
+            ...previous,
+            failedSections: [...previous.failedSections, sec.name],
+          } : previous);
           if (!firstError) firstError = secErr;
 
           // Fail fast if SMART is completely unreachable / offline
@@ -673,6 +699,12 @@ export default function EosyUpdating() {
           ) {
             throw secErr;
           }
+        } finally {
+          setSmartSyncProgress((previous) => previous ? {
+            ...previous,
+            completedSections: previous.completedSections + (sectionSucceeded ? 1 : 0),
+            currentSection: null,
+          } : previous);
         }
       }
 
@@ -685,11 +717,14 @@ export default function EosyUpdating() {
         );
       }
 
-      // Invalidate grade queries so the UI refreshes
-      queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
-      queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
+      // Refresh all EOSY data only after every section request has finished.
+      await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId] });
+      await queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
+      await queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
+      await fetchSectionsAndGrades();
+      await fetchExportLockState();
       if (activeTab) {
-        fetchGradeRecords(activeTab, true);
+        await fetchGradeRecords(activeTab, true);
       }
 
       if (failedSections.length > 0 || totalUnresolved > 0) {
@@ -721,8 +756,18 @@ export default function EosyUpdating() {
       });
     } finally {
       setSyncingSmart(false);
+      setSmartSyncProgress(null);
     }
-  }, [ayId, isHistoricalReadOnly, allSections, queryClient, activeTab, fetchGradeRecords]);
+  }, [
+    ayId,
+    isHistoricalReadOnly,
+    allSections,
+    queryClient,
+    activeTab,
+    fetchExportLockState,
+    fetchGradeRecords,
+    fetchSectionsAndGrades,
+  ]);
 
   useEffect(() => {
     void fetchSectionsAndGrades();
@@ -1551,6 +1596,7 @@ export default function EosyUpdating() {
                 <TabsTrigger
                   key={gl.id}
                   value={String(gl.id)}
+                  disabled={syncingSmart}
                   className={cn(
                     "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
                   )}
@@ -1798,7 +1844,7 @@ export default function EosyUpdating() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col bg-card h-full min-h-0">
+                    <div className="flex flex-col bg-card h-full min-h-0 relative">
                       <div className="overflow-x-auto flex-1 min-h-0 relative">
                         <DataTable
                           columns={columns}
@@ -1806,6 +1852,18 @@ export default function EosyUpdating() {
                           loading={loadingRecords}
                           loadingBehavior="delayed"
                           containerHeight="100%"
+                          bodyOverlay={(
+                            <AnimatePresence>
+                              {syncingSmart && smartSyncProgress && (
+                                <TableCellsTransitionLoader
+                                  currentSection={smartSyncProgress.currentSection}
+                                  completedSections={smartSyncProgress.completedSections}
+                                  failedSections={smartSyncProgress.failedSections.length}
+                                  totalSections={smartSyncProgress.totalSections}
+                                />
+                              )}
+                            </AnimatePresence>
+                          )}
                           rowSelection={rowSelection}
                           onRowSelectionChange={setRowSelection}
                           getRowClassName={(row: EnrollmentRecord) =>

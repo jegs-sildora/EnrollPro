@@ -43,6 +43,7 @@ export interface DataTableProps<TData, TValue> {
   noResultsMessage?: string;
   forceEmptyState?: boolean;
   emptyStateContent?: ReactNode;
+  bodyOverlay?: ReactNode;
   prependBodyRow?: ReactNode;
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
@@ -162,6 +163,7 @@ export function DataTable<TData, TValue>({
   noResultsMessage = "No results.",
   forceEmptyState = false,
   emptyStateContent,
+  bodyOverlay,
   prependBodyRow,
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
@@ -439,6 +441,16 @@ export function DataTable<TData, TValue>({
             </TableBody>
           )}
         </Table>
+        {bodyOverlay && (
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 top-11 z-40",
+              dense && "top-8",
+            )}
+          >
+            {bodyOverlay}
+          </div>
+        )}
       </div>
     </div>
   );

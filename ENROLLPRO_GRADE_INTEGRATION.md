@@ -33,6 +33,11 @@ Header: Authorization: Bearer <server-configured-smart-token>
 
 EnrollPro sends the server-only `SMART_API_KEY` as a bearer token in the `Authorization` header. The token is configured on the EnrollPro server and must never be exposed to browser clients or committed to documentation.
 
+Opening SMART port 5003 confirms host reachability only. If SMART returns HTTP 401 or
+403, the configured token is not accepted by SMART. EnrollPro reports this as an
+authentication configuration error and does not repeat the request. Connection and
+upstream availability failures may be retried up to three times.
+
 ### Request
 
 ```
