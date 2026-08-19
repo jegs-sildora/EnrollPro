@@ -68,6 +68,8 @@ import {
 } from "@/shared/hooks/useUnsavedChanges";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { TableCellsTransitionLoader } from "@/shared/components/TableCellsTransitionLoader";
+import { EosySf9GradeTable } from "@/features/enrollment/components/EosySf9GradeTable";
+import { TableCell, TableRow } from "@/shared/ui/table";
 
 const getInitials = (firstName?: string | null, lastName?: string | null): string => {
   const f = String(firstName || "").trim().charAt(0).toUpperCase();
@@ -379,6 +381,7 @@ export default function EosyUpdating() {
 
   const [syncingSmart, setSyncingSmart] = useState(false);
   const [smartSyncProgress, setSmartSyncProgress] = useState<SmartSyncProgress | null>(null);
+  const [expandedRecordId, setExpandedRecordId] = useState<number | null>(null);
 
   const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
@@ -399,6 +402,10 @@ export default function EosyUpdating() {
     setUnsavedChanges({});
   }, []);
   const guardedSetActiveTab = useGuardedTabChange(setActiveTab);
+
+  useEffect(() => {
+    setExpandedRecordId(null);
+  }, [activeTab, ayId]);
 
   useUnsavedChanges({
     id: "eosy-updating",
@@ -1404,7 +1411,7 @@ export default function EosyUpdating() {
                   onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
                   disabled={isCommitting}
                 >
-                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px]", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
+                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px] [&>svg]:hidden", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
                     <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1454,7 +1461,7 @@ export default function EosyUpdating() {
                   renderTooltip(
                     <SelectTrigger
                       className={cn(
-                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
@@ -1463,7 +1470,7 @@ export default function EosyUpdating() {
                 ) : (
                   <SelectTrigger
                     className={cn(
-                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100",
+                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
                       isStatusChanged && "border-amber-500 focus:ring-amber-500",
                       resolvedStatus === "ACTION_REQUIRED"
                         ? "text-red-700 bg-red-50 border-red-200"
@@ -1795,11 +1802,48 @@ export default function EosyUpdating() {
                           disableScrolling={syncingSmart && !!smartSyncProgress}
                           rowSelection={rowSelection}
                           onRowSelectionChange={setRowSelection}
+                          virtualize={false}
+                          onRowClick={(row) => {
+                            if (syncingSmart) return;
+                            setExpandedRecordId((current) => current === row.id ? null : row.id);
+                          }}
+                          isRowClickable={() => !syncingSmart}
+                          getRowAriaExpanded={(row) => expandedRecordId === row.id}
+                          getRowAriaLabel={(row) => {
+                            const learner = row.enrollmentApplication.learner;
+                            const action = expandedRecordId === row.id ? "Hide" : "Show";
+                            return `${action} SF9 grades for ${learner.lastName}, ${learner.firstName}`;
+                          }}
                           getRowClassName={(row: EnrollmentRecord) =>
-                            isScopeFinalized || row.section?.isEosyFinalized
-                              ? "pointer-events-none hover:bg-transparent"
+                            expandedRecordId === row.id
+                              ? "bg-muted/60 hover:bg-muted/60"
                               : ""
                           }
+                          renderRowAfter={(row) => (
+                            <TableRow className="border-0 bg-background hover:bg-background">
+                              <TableCell colSpan={columns.length} className="border-0 p-0">
+                                <AnimatePresence initial={false}>
+                                  {expandedRecordId === row.id && (
+                                    <motion.div
+                                      key={`sf9-${row.id}`}
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                                      className="overflow-hidden border-b border-border"
+                                    >
+                                      <EosySf9GradeTable
+                                        reportedGrades={row.enrollmentApplication.reportedGrades}
+                                        finalAverage={row.finalAverage}
+                                        gradeLevelName={activeGradeName}
+                                        schoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
+                                      />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </TableCell>
+                            </TableRow>
+                          )}
                         />
                       </div>
                     </div>

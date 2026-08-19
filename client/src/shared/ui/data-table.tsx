@@ -57,6 +57,8 @@ export interface DataTableProps<TData, TValue> {
   renderRowAfter?: (row: TData, index: number) => ReactNode;
   dense?: boolean;
   isRowClickable?: (row: TData) => boolean;
+  getRowAriaExpanded?: (row: TData) => boolean | undefined;
+  getRowAriaLabel?: (row: TData) => string | undefined;
   skeletonRowCount?: number;
   isHeaderRow?: (row: TData) => boolean;
   renderHeaderRow?: (row: TData, columnsCount: number, style?: React.CSSProperties) => ReactNode;
@@ -71,6 +73,14 @@ interface TableRowComponentProps<TData> {
   getRowClassName?: (row: TData) => string;
   dense?: boolean;
   isRowClickable?: (row: TData) => boolean;
+  getRowAriaExpanded?: (row: TData) => boolean | undefined;
+  getRowAriaLabel?: (row: TData) => string | undefined;
+}
+
+function isInteractiveRowTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest(
+    "button, a, input, select, textarea, [role='button'], [role='combobox'], [data-row-click-ignore='true']",
+  ));
 }
 
 function getColumnIdentifier<TData, TValue>(
@@ -97,6 +107,8 @@ function TableRowComponentInner<TData>(
     getRowClassName,
     dense,
     isRowClickable,
+    getRowAriaExpanded,
+    getRowAriaLabel,
   }: TableRowComponentProps<TData>,
   ref: React.ForwardedRef<HTMLTableRowElement>,
 ) {
@@ -109,8 +121,22 @@ function TableRowComponentInner<TData>(
       data-index={dataIndex}
       style={style}
       data-state={row.getIsSelected() && "selected"}
-      onClick={() => {
-        if (isClickable && onRowClick) {
+      tabIndex={isClickable ? 0 : undefined}
+      aria-expanded={isClickable ? getRowAriaExpanded?.(row.original) : undefined}
+      aria-label={isClickable ? getRowAriaLabel?.(row.original) : undefined}
+      onClick={(event) => {
+        if (isClickable && onRowClick && !isInteractiveRowTarget(event.target)) {
+          onRowClick(row.original);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (
+          isClickable
+          && onRowClick
+          && event.target === event.currentTarget
+          && (event.key === "Enter" || event.key === " ")
+        ) {
+          event.preventDefault();
           onRowClick(row.original);
         }
       }}
@@ -178,6 +204,8 @@ export function DataTable<TData, TValue>({
   renderRowAfter,
   dense = false,
   isRowClickable,
+  getRowAriaExpanded,
+  getRowAriaLabel,
   skeletonRowCount = 50,
   isHeaderRow,
   renderHeaderRow,
@@ -374,6 +402,8 @@ export function DataTable<TData, TValue>({
                         getRowClassName={getRowClassName}
                         dense={dense}
                         isRowClickable={isRowClickable}
+                        getRowAriaExpanded={getRowAriaExpanded}
+                        getRowAriaLabel={getRowAriaLabel}
                       />
                     );
                   }),
@@ -410,6 +440,8 @@ export function DataTable<TData, TValue>({
                         getRowClassName={getRowClassName}
                         dense={dense}
                         isRowClickable={isRowClickable}
+                        getRowAriaExpanded={getRowAriaExpanded}
+                        getRowAriaLabel={getRowAriaLabel}
                       />
                       {renderRowAfter?.(row.original, row.index)}
                     </React.Fragment>
