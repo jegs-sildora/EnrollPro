@@ -61,7 +61,6 @@ import { sileo } from "sileo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Navigate } from "react-router";
 import { useRealtimeRefresh } from "@/shared/hooks/useRealtimeRefresh";
-import { useRealtimeConnectionStatus } from "@/shared/hooks/useRealtimeInvalidations";
 import type { RealtimeInvalidationTopic } from "@enrollpro/shared";
 import {
   useGuardedTabChange,
@@ -378,14 +377,8 @@ export default function EosyUpdating() {
   const [sf5WatermarkOpen, setSf5WatermarkOpen] = useState(false);
   const [finalizeLoading, setFinalizeLoading] = useState(false);
 
-  const [reopenModalOpen, setReopenModalOpen] = useState<boolean>(false);
-  const [reopenPin, setReopenPin] = useState<string>("");
-  const [reopenJustification, setReopenJustification] = useState<string>("");
-  const [reopenLoading, setReopenLoading] = useState<boolean>(false);
-
   const [syncingSmart, setSyncingSmart] = useState(false);
   const [smartSyncProgress, setSmartSyncProgress] = useState<SmartSyncProgress | null>(null);
-  const smartConnectionStatus = useRealtimeConnectionStatus();
 
   const [recordingForms, setRecordingForms] = useState(false);
   const [allSections, setAllSections] = useState<Section[]>([]);
@@ -908,35 +901,6 @@ export default function EosyUpdating() {
     }
   };
 
-  const handleReopenEosySubmit = async () => {
-    setReopenLoading(true);
-    try {
-      await api.post("/eosy/school-year/unlock", {
-        schoolYearId: ayId,
-        pin: reopenPin,
-        justification: reopenJustification,
-      });
-
-      sileo.success({
-        title: "EOSY Reopened",
-        description: "The End of School Year updating has been reopened successfully.",
-      });
-
-      setReopenModalOpen(false);
-      setReopenPin("");
-      setReopenJustification("");
-
-      void fetchExportLockState();
-      void fetchSectionsAndGrades();
-      if (activeTab) {
-        void fetchGradeRecords(activeTab);
-      }
-    } catch (err) {
-      toastApiError(err as Parameters<typeof toastApiError>[0]);
-    } finally {
-      setReopenLoading(false);
-    }
-  };
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
 
   const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
@@ -1339,30 +1303,7 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const recordId = r.id;
           const ave = r.finalAverage;
-
-          const unsaved = unsavedChanges[recordId] || {};
-          const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : ave;
-          const isAveChanged = "finalAverage" in unsaved && unsaved.finalAverage !== ave;
-
-          if (hasOverride) {
-            return (
-              <div className="flex flex-col gap-1 items-center">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="60"
-                  max="100"
-                  value={currentAve !== null && currentAve !== undefined ? currentAve : ""}
-                  onChange={(e) => handleFieldChange(recordId, "finalAverage", e.target.value === "" ? null : parseFloat(e.target.value))}
-                  disabled={isCommitting}
-                  className={cn("h-8 w-20 text-center text-sm font-extrabold", isAveChanged && "border-amber-500 focus-visible:ring-amber-500")}
-                />
-                {isAveChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
-              </div>
-            );
-          }
 
           if (ave === null || ave === undefined) {
             return (
@@ -1405,18 +1346,9 @@ export default function EosyUpdating() {
 
           const isScp = Boolean(r.section?.programType && r.section.programType !== "REGULAR");
           const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
-          const hasZeroOrBlankGrade = currentAve === 0 || currentAve === null || currentAve === undefined || isNaN(currentAve as number);
-          const isFailing = currentAve !== null && currentAve !== undefined && currentAve > 0 && currentAve < 75;
           const isScpDemotedGrades = !activeGradeName.includes("10") && isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
 
-          let resolvedStatus: string = currentStatus ?? "";
-          if (!resolvedStatus) {
-            if (hasZeroOrBlankGrade || isFailing) {
-              resolvedStatus = "ACTION_REQUIRED";
-            } else {
-              resolvedStatus = "PROMOTED";
-            }
-          }
+          const resolvedStatus: string = currentStatus ?? "ACTION_REQUIRED";
           const isGrade10 = activeGradeName.includes("10");
           const statusLabel = formatStatusLabel(resolvedStatus as string, isGrade10);
           const isSectionFinalized = r.section.isEosyFinalized;
@@ -1476,26 +1408,15 @@ export default function EosyUpdating() {
                     <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
-                    <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
-                    <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                    {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
+                      <SelectItem value={resolvedStatus} disabled>
+                        {formatStatusLabel(resolvedStatus, isGrade10)} (SMART)
+                      </SelectItem>
+                    )}
                     <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
                     <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                   </SelectContent>
                 </Select>
-                {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
-                  <Input
-                    value={currentDeficiencyNote ?? ""}
-                    onChange={(e) => handleFieldChange(
-                      recordId,
-                      "academicDeficiencyNote",
-                      e.target.value,
-                    )}
-                    disabled={isCommitting}
-                    placeholder="Enter failing subject or deficiency note"
-                    className="h-8 w-full min-w-[220px] text-sm font-bold"
-                  />
-                )}
                 {isStatusChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
@@ -1554,34 +1475,17 @@ export default function EosyUpdating() {
                   </SelectTrigger>
                 )}
                 <SelectContent className="font-extrabold">
-                  {!hasZeroOrBlankGrade && !isFailing && (
-                    (isScpDemoted || isScpDemotedGrades) ? (
-                      <SelectItem value="PROMOTED_TO_BEC">PROMOTED (TO BEC)</SelectItem>
-                    ) : (
-                      <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
-                    )
-                  )}
-
-                  {!hasZeroOrBlankGrade && (
-                    <>
-                      <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
-                      <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
-                    </>
+                  {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
+                    <SelectItem value={resolvedStatus} disabled>
+                      {formatStatusLabel(resolvedStatus, isGrade10)} (SMART)
+                    </SelectItem>
                   )}
                   <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
                   <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                 </SelectContent>
               </Select>
-              {resolvedStatus === "CONDITIONALLY_PROMOTED" && (
-                <Input
-                  value={currentDeficiencyNote ?? ""}
-                  onChange={(e) => handleFieldChange(recordId, "academicDeficiencyNote", e.target.value)}
-                  placeholder="Enter failing subject or deficiency note"
-                  className="h-8 w-full min-w-[220px] text-sm font-bold"
-                />
-              )}
               {isStatusChanged && (
-                <span className="text-xs text-amber-600 font-extrabold uppercase tracking-wider">Unsaved</span>
+                <span className="text-sm text-amber-600 font-extrabold uppercase tracking-wider">Unsaved</span>
               )}
             </div>
           );
@@ -1787,9 +1691,6 @@ export default function EosyUpdating() {
                                   <SelectValue placeholder="Select New Status..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="PROMOTED">PROMOTED</SelectItem>
-                                  <SelectItem value="RETAINED">RETAINED</SelectItem>
-                                  <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
                                   <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
                                   <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
                                 </SelectContent>
@@ -1935,7 +1836,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground space-y-2 my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
             <p>• Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</p>
-            <p>• The School Form 5 (SF5) for {descriptionTarget} will be locked. Class advisers can no longer change the grades.</p>
+            <p>• The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</p>
             <p>• This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</p>
             <p className="font-extrabold text-[hsl(var(--primary))] underline mt-3">This action is final and cannot be undone.</p>
           </div>
@@ -1992,7 +1893,7 @@ export default function EosyUpdating() {
             <div>
               <DialogTitle className="text-lg font-extrabold">School Form 5 (SF5) Preview</DialogTitle>
               <DialogDescription asChild>
-                <span>Document generated with unsubmitted grades</span>
+                <span>Document generated with unresolved SMART outcomes</span>
               </DialogDescription>
             </div>
             <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-extrabold border border-red-200">
@@ -2077,82 +1978,6 @@ export default function EosyUpdating() {
         variant="warning"
         icon={Unlock}
       />
-
-      <Dialog open={reopenModalOpen} onOpenChange={setReopenModalOpen}>
-        <DialogContent className={cn("w-full max-w-3xl rounded-lg p-8 overflow-hidden", "bg-sidebar shadow-2xl")}>
-          <DialogHeader className="space-y-2 text-center items-center">
-            <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
-              <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
-            </div>
-            <DialogTitle className="text-center text-xl font-extrabold">Reopen EOSY Updating</DialogTitle>
-            <DialogDescription className="text-center pt-2 font-bold text-md">
-              Are you sure you want to reopen End of School Year (EOSY) updates? This will unlock the global lock and revert the system phase to allow roster corrections.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 my-4 text-left">
-            <div className="space-y-1">
-              <label className="text-sm font-extrabold text-foreground">Security PIN</label>
-              <Input
-                type="password"
-                placeholder="Enter 6-digit Security PIN"
-                value={reopenPin}
-                onChange={(e) => setReopenPin(e.target.value)}
-                className="bg-muted border-border"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-extrabold text-foreground">Justification</label>
-              <Input
-                type="text"
-                placeholder="Reason for reopening (min. 10 characters)"
-                value={reopenJustification}
-                onChange={(e) => setReopenJustification(e.target.value)}
-                className="bg-muted border-border"
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setReopenModalOpen(false);
-                setReopenPin("");
-                setReopenJustification("");
-              }}
-              disabled={reopenLoading}
-              className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "border border-gray-200 bg-muted text-foreground",
-                "hover:bg-gray-50 active:bg-gray-100",
-                "transition-all duration-150 active:scale-[0.97]"
-              )}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleReopenEosySubmit}
-              disabled={reopenLoading || !reopenPin || reopenJustification.trim().length < 10}
-              className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
-                "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
-                "hover:bg-[hsl(var(--primary)/0.9)]",
-                "shadow-md",
-                "transition-all duration-150 active:scale-[0.97]"
-              )}
-            >
-              {reopenLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Processing...
-                </span>
-              ) : (
-                "Confirm Reopen"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
     </>
   );

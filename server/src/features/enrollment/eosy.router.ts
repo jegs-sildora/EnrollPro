@@ -6,13 +6,6 @@ import * as ctrl from "./eosy.controller.js";
 const router: Router = Router();
 
 router.get(
-  "/stream",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
-  ctrl.streamEosyUpdates,
-);
-
-router.get(
   "/workspace",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
@@ -61,13 +54,6 @@ router.get(
   ctrl.getGradeRecords,
 );
 
-router.put(
-  "/grade/:gradeLevelId/batch-status",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  ctrl.batchUpdateGradeRecords,
-);
-
 router.post(
   "/grade/:gradeLevelId/finalize",
   authenticate,
@@ -80,13 +66,6 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.unlockGradeLevelEosy,
-);
-
-router.post(
-  "/batch-update",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  ctrl.batchUpdateEosyRecords,
 );
 
 router.post(
@@ -108,13 +87,6 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.downloadFinalLisExport,
-);
-
-router.post(
-  "/school-year/unlock",
-  authenticate,
-  authorize("SYSTEM_ADMIN"),
-  ctrl.unlockSchoolYearEosy,
 );
 
 router.post(

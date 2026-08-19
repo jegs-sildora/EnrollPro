@@ -3,10 +3,8 @@ import {
   Prisma,
   ApplicationStatus,
   ApplicantType,
-  type EosyStatus,
 } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
-import { resolveRolloverDestination } from "../school-year/services/school-year-transition.service.js";
 import { classifyDocumentReadiness } from "./bosy-intake-policy.service.js";
 
 export type BOSYQueueState =
@@ -84,20 +82,6 @@ export interface ConfirmReturnResult {
   missingDocuments: string[];
 }
 
-interface BOSYRolloverRepairSource {
-  learnerId: number;
-  eosyStatus: EosyStatus;
-  sourceGradeOrder: number;
-  applicantType: ApplicantType;
-  assignedProgram: ApplicantType | null;
-  isPrivacyConsentGiven: boolean;
-  guardianRelationship: string | null;
-  hasNoMother: boolean;
-  hasNoFather: boolean;
-  contactNumber: string | null;
-  guardianName: string | null;
-}
-
 function isJsonObject(
   value: Prisma.JsonValue | null | undefined,
 ): value is Prisma.JsonObject {
@@ -111,17 +95,6 @@ function readSnapshotString(
   if (!isJsonObject(snapshot)) return null;
   const value = snapshot[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function readSnapshotApplicantType(
-  snapshot: Prisma.JsonValue | null | undefined,
-  key: string,
-): ApplicantType | null {
-  const value = readSnapshotString(snapshot, key);
-  return value &&
-    Object.values(ApplicantType).includes(value as ApplicantType)
-    ? (value as ApplicantType)
-    : null;
 }
 
 function readSnapshotObject(
@@ -505,231 +478,6 @@ export async function getPreviousSections(schoolYearId: number): Promise<string[
   });
 
   return sections.map((s) => s.name);
-}
-
-export async function syncBOSYQueue(
-  schoolYearId: number,
-  actingUserId: number,
-): Promise<{ created: number; remedialHolds: number }> {
-  const schoolYear = await prisma.schoolYear.findUnique({
-    where: { id: schoolYearId },
-    select: { id: true, yearLabel: true, clonedFromId: true },
-  });
-
-  if (!schoolYear || !schoolYear.clonedFromId) {
-    return { created: 0, remedialHolds: 0 };
-  }
-
-  const prevSchoolYearId = schoolYear.clonedFromId;
-  const parsedStartYear = Number.parseInt(
-    schoolYear.yearLabel.split("-")[0]?.trim() ?? "",
-    10,
-  );
-  const startYear = Number.isFinite(parsedStartYear)
-    ? parsedStartYear
-    : new Date().getFullYear();
-
-  const liveSourceRecords = await prisma.enrollmentRecord.findMany({
-    where: {
-      schoolYearId: prevSchoolYearId,
-      eosyStatus: { not: null },
-    },
-    select: {
-      eosyStatus: true,
-      learnerId: true,
-      enrollmentApplication: {
-        select: {
-          applicantType: true,
-          assignedProgram: true,
-          isPrivacyConsentGiven: true,
-          guardianRelationship: true,
-          hasNoMother: true,
-          hasNoFather: true,
-          contactNumber: true,
-          guardianName: true,
-        },
-      },
-      section: {
-        select: {
-          gradeLevel: { select: { displayOrder: true } },
-        },
-      },
-    },
-  });
-  const sourceRecords: BOSYRolloverRepairSource[] =
-    liveSourceRecords.flatMap((record) =>
-      record.eosyStatus
-        ? [{
-          learnerId: record.learnerId,
-          eosyStatus: record.eosyStatus,
-          sourceGradeOrder: record.section.gradeLevel.displayOrder,
-          applicantType: record.enrollmentApplication.applicantType,
-          assignedProgram: record.enrollmentApplication.assignedProgram,
-          isPrivacyConsentGiven:
-            record.enrollmentApplication.isPrivacyConsentGiven,
-          guardianRelationship:
-            record.enrollmentApplication.guardianRelationship,
-          hasNoMother: record.enrollmentApplication.hasNoMother,
-          hasNoFather: record.enrollmentApplication.hasNoFather,
-          contactNumber: record.enrollmentApplication.contactNumber,
-          guardianName: record.enrollmentApplication.guardianName,
-        }]
-        : [],
-    );
-
-  if (sourceRecords.length === 0) {
-    const archivedSourceRecords = await prisma.enrollmentHistory.findMany({
-      where: {
-        schoolYearId: prevSchoolYearId,
-        eosyStatus: { not: null },
-      },
-      select: {
-        learnerId: true,
-        eosyStatus: true,
-        learnerProfileSnapshot: true,
-        gradeLevel: { select: { displayOrder: true } },
-      },
-    });
-
-    for (const record of archivedSourceRecords) {
-      if (!record.eosyStatus) continue;
-      const applicantType =
-        readSnapshotApplicantType(
-          record.learnerProfileSnapshot,
-          "applicantType",
-        ) ?? ApplicantType.REGULAR;
-      sourceRecords.push({
-        learnerId: record.learnerId,
-        eosyStatus: record.eosyStatus,
-        sourceGradeOrder: record.gradeLevel.displayOrder,
-        applicantType,
-        assignedProgram:
-          readSnapshotApplicantType(
-            record.learnerProfileSnapshot,
-            "assignedProgram",
-          ) ?? applicantType,
-        isPrivacyConsentGiven: false,
-        guardianRelationship: null,
-        hasNoMother: false,
-        hasNoFather: false,
-        contactNumber: readSnapshotString(
-          record.learnerProfileSnapshot,
-          "contactNumber",
-        ),
-        guardianName: readSnapshotString(
-          record.learnerProfileSnapshot,
-          "guardianName",
-        ),
-      });
-    }
-  }
-
-  // Find existing applications to avoid duplicates
-  const existingApplications = await prisma.enrollmentApplication.findMany({
-    where: { schoolYearId },
-    select: { learnerId: true },
-  });
-  const existingLearnerIds = new Set(
-    existingApplications.map((a) => a.learnerId),
-  );
-
-  const gradeLevels = await prisma.gradeLevel.findMany({
-    select: { id: true, displayOrder: true },
-  });
-  const gradeLevelByOrder = new Map(
-    gradeLevels.map((g) => [g.displayOrder, g.id]),
-  );
-
-  let createdCount = 0;
-  let remedialHolds = 0;
-
-  for (const record of sourceRecords) {
-    if (existingLearnerIds.has(record.learnerId)) continue;
-
-    const destination = resolveRolloverDestination({
-      eosyStatus: record.eosyStatus,
-      sourceGradeOrder: record.sourceGradeOrder,
-    });
-
-    if (destination.kind === "JHS_COMPLETER") {
-      await prisma.learner.update({
-        where: { id: record.learnerId },
-        data: { status: "JHS_COMPLETER" },
-      });
-      continue;
-    }
-    if (destination.kind === "ARCHIVE_ONLY") {
-      await prisma.learner.update({
-        where: { id: record.learnerId },
-        data: {
-          status:
-            record.eosyStatus === "TRANSFERRED_OUT"
-              ? "TRANSFERRED_OUT"
-              : "DROPPED",
-        },
-      });
-      continue;
-    }
-
-    const targetGradeLevelId = gradeLevelByOrder.get(
-      destination.targetGradeOrder,
-    );
-    if (!targetGradeLevelId) continue;
-
-    try {
-      const newApp = await prisma.enrollmentApplication.upsert({
-        where: {
-          uq_enrollment_learner_sy: {
-            learnerId: record.learnerId,
-            schoolYearId,
-          },
-        },
-        update: {},
-        create: {
-          learnerId: record.learnerId,
-          schoolYearId,
-          gradeLevelId: targetGradeLevelId,
-          applicantType: record.assignedProgram ?? record.applicantType,
-          assignedProgram: record.assignedProgram ?? record.applicantType,
-          learnerType: "CONTINUING",
-          learningModalities: [],
-          status:
-            destination.kind === "REMEDIAL_HOLD"
-              ? "REMEDIAL_HOLD"
-              : "PENDING_CONFIRMATION",
-          admissionChannel: "F2F",
-          isPrivacyConsentGiven: record.isPrivacyConsentGiven,
-          guardianRelationship: record.guardianRelationship,
-          hasNoMother: record.hasNoMother,
-          hasNoFather: record.hasNoFather,
-          contactNumber: record.contactNumber,
-          guardianName: record.guardianName,
-          encodedById: actingUserId,
-          academicStatus: destination.academicStatus,
-          isRemedialRequired: destination.isRemedialRequired,
-        },
-      });
-
-      const trackingNumber = `REG-${startYear}-${String(newApp.id).padStart(5, "0")}`;
-      await prisma.enrollmentApplication.update({
-        where: { id: newApp.id },
-        data: { trackingNumber },
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        continue;
-      }
-      throw error;
-    }
-
-    existingLearnerIds.add(record.learnerId);
-    createdCount++;
-    if (destination.kind === "REMEDIAL_HOLD") {
-      remedialHolds++;
-    }
-  }
-
-  return { created: createdCount, remedialHolds };
 }
 
 export async function confirmReturn(

@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
@@ -20,16 +20,16 @@ interface Props {
 export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [eosyStatus, setEosyStatus] = useState<EosyStatus | "">("");
-  const [finalAverage, setFinalAverage] = useState<string>("");
-  const [academicDeficiencyNote, setAcademicDeficiencyNote] = useState("");
   const [dropOutReason, setDropOutReason] = useState("");
   const [transferOutDate, setTransferOutDate] = useState("");
 
   useEffect(() => {
     if (record) {
-      setEosyStatus(record.eosyStatus || "");
-      setFinalAverage(record.finalAverage !== null ? String(record.finalAverage) : "");
-      setAcademicDeficiencyNote(record.academicDeficiencyNote || "");
+      setEosyStatus(
+        record.eosyStatus === "DROPPED_OUT" || record.eosyStatus === "TRANSFERRED_OUT"
+          ? record.eosyStatus
+          : "",
+      );
       setDropOutReason(record.dropOutReason || "");
       setTransferOutDate(record.transferOutDate ? new Date(record.transferOutDate).toISOString().split("T")[0] : "");
     }
@@ -47,26 +47,12 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
       return;
     }
 
-    let parsedAve: number | undefined;
-    if (finalAverage) {
-      parsedAve = parseFloat(finalAverage);
-      if (isNaN(parsedAve) || parsedAve < 60 || parsedAve > 100) {
-        sileo.error({ title: "Validation Error", description: "Final Average must be a number between 60 and 100." });
-        return;
-      }
-    }
-
     setLoading(true);
     try {
       await api.post(`/eosy/records/${record.id}/override`, {
         eosyStatus,
-        academicDeficiencyNote:
-          eosyStatus === "CONDITIONALLY_PROMOTED"
-            ? academicDeficiencyNote
-            : null,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate: eosyStatus === "TRANSFERRED_OUT" ? transferOutDate : null,
-        finalAverage: parsedAve,
       });
 
       sileo.success({
@@ -76,7 +62,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
       onSuccess();
       onClose();
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as Parameters<typeof toastApiError>[0]);
     } finally {
       setLoading(false);
     }
@@ -88,10 +74,10 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-800 uppercase font-extrabold text-xl">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
-            Emergency Data Override
+            Learner Departure Correction
           </DialogTitle>
           <DialogDescription className="text-amber-700/80 font-bold">
-            You are bypassing standard progression logic. This action is permanently logged to the system audit trail.
+            Record a verified dropped-out or transferred-out status. SMART remains the source of academic grades and promotion outcomes.
           </DialogDescription>
         </DialogHeader>
 
@@ -105,43 +91,17 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-extrabold text-amber-900">Final General Average</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={finalAverage}
-              onChange={(e) => setFinalAverage(e.target.value)}
-              placeholder="e.g. 85.50"
-              className="font-extrabold"
-            />
-          </div>
-
-          <div className="space-y-1.5">
             <Label className="font-extrabold text-amber-900">EOSY Status</Label>
             <Select value={eosyStatus} onValueChange={(val) => setEosyStatus(val as EosyStatus)}>
               <SelectTrigger className="font-extrabold">
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PROMOTED">PROMOTED</SelectItem>
-                <SelectItem value="RETAINED">RETAINED</SelectItem>
-                <SelectItem value="CONDITIONALLY_PROMOTED">CONDITIONALLY PROMOTED</SelectItem>
                 <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
                 <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          {eosyStatus === "CONDITIONALLY_PROMOTED" && (
-            <div className="space-y-1.5">
-              <Label className="font-extrabold text-amber-900">Academic Deficiency Note</Label>
-              <Input
-                value={academicDeficiencyNote}
-                onChange={(e) => setAcademicDeficiencyNote(e.target.value)}
-                placeholder="Example: Mathematics"
-              />
-            </div>
-          )}
 
           {eosyStatus === "DROPPED_OUT" && (
             <div className="space-y-1.5">
@@ -171,8 +131,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading || !eosyStatus} className="font-extrabold bg-amber-600 hover:bg-amber-700 text-white shadow-md">
-            {loading && <Loader2 className="w-4 h-4 mr-2 " />}
-            Confirm Override
+            {loading ? "Saving..." : "Confirm Correction"}
           </Button>
         </DialogFooter>
       </DialogContent>

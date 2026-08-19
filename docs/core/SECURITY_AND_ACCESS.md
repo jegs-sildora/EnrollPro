@@ -12,7 +12,7 @@ Never store passwords, tokens, integration keys, or production connection string
 
 - `SYSTEM_ADMIN` manages system configuration, accounts, health, logs, personnel administration, and protected exports.
 - `HEAD_REGISTRAR` manages enrollment, learner records, sections, EOSY, school forms, and rollover actions permitted by the route.
-- `CLASS_ADVISER` and `TEACHER` access assigned advisory and EOSY workspaces.
+- `CLASS_ADVISER` and `TEACHER` access their assigned advisory roster. They do not encode, submit, override, or finalize grades in EnrollPro.
 - `LEARNER` accesses only the learner-owned portal.
 - `MRF` represents authorized maintenance-system users where an EnrollPro account is required.
 
@@ -50,4 +50,3 @@ Validate MIME type, extension, size, and content before processing uploads. SF1 
 ## Environment Setup
 
 Start from `client/.env.example` and `server/.env.example`. Configure database, JWT, API base, email, and integration credentials locally. Do not commit `.env` files.
-

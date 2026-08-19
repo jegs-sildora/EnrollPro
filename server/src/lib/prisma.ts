@@ -40,7 +40,7 @@ export const prisma = basePrisma.$extends({
         if (model === 'AuditLog') return query(args);
 
         const ctx = getAuditContext();
-        if (!ctx) return query(args);
+        if (!ctx || ctx.suppressAutomaticAudit) return query(args);
 
         const oldRecord = await getDynamicModelClient(model).findUnique({
           where: args.where,
@@ -100,7 +100,7 @@ export const prisma = basePrisma.$extends({
         if (model === 'AuditLog') return query(args);
 
         const ctx = getAuditContext();
-        if (!ctx) return query(args);
+        if (!ctx || ctx.suppressAutomaticAudit) return query(args);
 
         const oldRecord = await getDynamicModelClient(model).findUnique({
           where: args.where,
@@ -137,3 +137,12 @@ export const prisma = basePrisma.$extends({
     }
   }
 });
+
+let prismaDisconnected = false;
+
+export async function disconnectPrisma(): Promise<void> {
+  if (prismaDisconnected) return;
+  prismaDisconnected = true;
+  await basePrisma.$disconnect();
+  await pool.end();
+}

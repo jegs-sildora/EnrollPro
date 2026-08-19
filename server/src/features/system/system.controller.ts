@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express"
 import { prisma } from "../../lib/prisma.js"
 import { AppError } from "../../lib/AppError.js"
 import { getSchoolYearRolloverReadiness } from "../school-year/services/school-year-rollover.service.js"
+import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js"
 
 export async function getPublicConfig(
   _req: Request,
@@ -51,18 +52,24 @@ export async function getRolloverReadiness(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const schoolSetting = await prisma.schoolSetting.findFirst({
-      select: { activeSchoolYearId: true, systemPhase: true },
-    })
-
-    if (!schoolSetting?.activeSchoolYearId) {
-      throw new AppError(400, "No active school year found.")
+    const activeResolution = await resolveActiveSchoolYearState()
+    if (activeResolution.state !== "VALID") {
+      throw new AppError(
+        409,
+        activeResolution.state === "INVALID"
+          ? activeResolution.message
+          : "No active school year has been initialized.",
+      )
     }
+    const schoolSetting = await prisma.schoolSetting.findUniqueOrThrow({
+      where: { id: activeResolution.active.settingId },
+      select: { systemPhase: true },
+    })
 
     const isEosyPhase = schoolSetting.systemPhase === "EOSY_CLOSING"
 
     const readiness = await getSchoolYearRolloverReadiness(
-      schoolSetting.activeSchoolYearId,
+      activeResolution.active.schoolYearId,
     )
     res.json({
       isEosyPhase,

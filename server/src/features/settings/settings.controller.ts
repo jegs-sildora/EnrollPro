@@ -15,6 +15,8 @@ import {
 } from "./enrollment-gate.service.js";
 import { activeLocks } from "../admin/historical-correction.controller.js";
 import { broadcastRealtimeInvalidation } from "../../lib/sse.js";
+import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
+import { AppError } from "../../lib/AppError.js";
 
 function broadcastSettingsInvalidation(): void {
   broadcastRealtimeInvalidation({
@@ -84,14 +86,15 @@ export async function getPublicSettings(
   try {
     const settings = await getOrCreateSettings();
 
-    // Determine the "True Active" SY: global setting or fallback to latest ACTIVE row
-    let activeSy = settings.activeSchoolYear;
-    if (!activeSy) {
-      activeSy = await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
-      });
+    const activeResolution = await resolveActiveSchoolYearState()
+    if (activeResolution.state === "INVALID") {
+      throw new AppError(409, activeResolution.message)
     }
+    const activeSy = activeResolution.state === "VALID"
+      ? await prisma.schoolYear.findUnique({
+          where: { id: activeResolution.active.schoolYearId },
+        })
+      : null
 
     // Determine the "Context SY" (what the user is currently viewing)
     // 1. If header context is provided, use it
@@ -215,14 +218,64 @@ export async function updateSystemPhase(req: Request, res: Response): Promise<vo
     return;
   }
 
+  const activeResolution = await resolveActiveSchoolYearState()
+  if (activeResolution.state !== "VALID") {
+    res.status(409).json({
+      code: "ACTIVE_SCHOOL_YEAR_CONFLICT",
+      message:
+        activeResolution.state === "INVALID"
+          ? activeResolution.message
+          : "Initialize the first school year before changing the academic phase.",
+    })
+    return
+  }
+  if (
+    req.schoolYearId !== activeResolution.active.schoolYearId
+    || req.activeSchoolYearId !== activeResolution.active.schoolYearId
+  ) {
+    res.status(409).json({
+      code: "ACTIVE_SCHOOL_YEAR_CONTEXT_REQUIRED",
+      message: "Academic phase changes are allowed only in the active school year.",
+    })
+    return
+  }
+
+  const settings = await prisma.schoolSetting.findUnique({
+    where: { id: activeResolution.active.settingId },
+    select: { systemPhase: true },
+  })
+  if (!settings) {
+    res.status(409).json({ message: "School settings are unavailable." })
+    return
+  }
+
+  const nextPhase: Partial<Record<SystemAcademicPhase, SystemAcademicPhase>> = {
+    OFFICIAL_ENROLLMENT: "CLASSES_ONGOING",
+    CLASSES_ONGOING: "EOSY_CLOSING",
+  }
+  if (phase !== settings.systemPhase && nextPhase[settings.systemPhase] !== phase) {
+    res.status(409).json({
+      code: "INVALID_PHASE_TRANSITION",
+      message:
+        settings.systemPhase === "EOSY_CLOSING"
+          ? "EOSY Closing can advance only through atomic school-year rollover."
+          : `The next allowed phase is ${nextPhase[settings.systemPhase] ?? "atomic rollover"}.`,
+    })
+    return
+  }
+
   await prisma.$transaction(async (tx) => {
-    await tx.schoolSetting.updateMany({
+    await tx.schoolSetting.update({
+      where: { id: activeResolution.active.settingId },
       data: { systemPhase: phase as SystemAcademicPhase },
     });
 
     if (phase === "EOSY_CLOSING") {
       await tx.enrollmentApplication.updateMany({
-        where: { status: "PENDING_VERIFICATION" },
+        where: {
+          schoolYearId: activeResolution.active.schoolYearId,
+          status: "PENDING_VERIFICATION",
+        },
         data: { status: "ARCHIVED_NO_SHOW" },
       });
     }

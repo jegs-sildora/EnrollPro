@@ -3,7 +3,6 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
   startTransition,
 } from "react";
 import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
@@ -25,7 +24,6 @@ import {
   markConfirmedTransferOut,
   bulkConfirm,
   getPreviousSections,
-  syncBOSYQueue,
 } from "../api/bosy.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -104,7 +102,6 @@ export default function BOSYPage() {
   const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
-  const repairedSchoolYearRef = useRef<number | null>(null);
 
   const [queueState, setQueueState] = useState<BOSYQueueState>("PENDING");
   const targetGrade = useSettingsStore((s) => s.uiPreferences.bosyGradeId);
@@ -123,8 +120,6 @@ export default function BOSYPage() {
   const [verificationStatus, setVerificationStatus] = useState<string>("ALL");
   const [queueItems, setQueueItems] = useState<BOSYQueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
-  const [repairReadySchoolYearId, setRepairReadySchoolYearId] =
-    useState<number | null>(null);
   const [queuePage, setQueuePage] = useState(1);
   const [queueLimit, setQueueLimit] = usePaginationLimit(50);
   const [queueLoading, setQueueLoading] = useState(false);
@@ -147,27 +142,6 @@ export default function BOSYPage() {
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
     try {
-      if (
-        syId === activeSchoolYearId &&
-        canMutate &&
-        repairedSchoolYearRef.current !== syId
-      ) {
-        repairedSchoolYearRef.current = syId;
-        try {
-          const repairResult = await syncBOSYQueue(syId);
-          if (repairResult.created > 0) {
-            sileo.success({
-              title: "Learner Enrollment Queue Restored",
-              description:
-                `${repairResult.created} learner record(s) were recovered from the previous school year.`,
-            });
-          }
-        } catch (e) {
-          repairedSchoolYearRef.current = null;
-          throw e;
-        }
-      }
-      setRepairReadySchoolYearId(syId);
       await Promise.all([
         getBOSYReadiness(syId).then(setReadiness),
         getPreviousSections(syId).then(setPreviousSections),
@@ -175,12 +149,12 @@ export default function BOSYPage() {
     } catch (e) {
       toastApiError(e as never);
     }
-  }, [activeSchoolYearId, canMutate, syId]);
+  }, [syId]);
 
 
 
   const fetchQueue = useCallback(async () => {
-    if (!syId || repairReadySchoolYearId !== syId) return;
+    if (!syId) return;
     setQueueLoading(true);
     try {
       const data = await getBOSYQueue({
@@ -207,7 +181,6 @@ export default function BOSYPage() {
     queueLimit,
     queueState,
     targetGrade,
-    repairReadySchoolYearId,
     activeQueueSearch,
     previousSectionName,
     curricularProgram,

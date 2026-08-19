@@ -92,12 +92,3 @@ export async function bulkConfirm(body: {
   const res = await api.post<BulkConfirmResult>(`/bosy/bulk-confirm`, body);
   return res.data;
 }
-
-export async function syncBOSYQueue(
-  schoolYearId: number,
-): Promise<{ created: number; remedialHolds: number }> {
-  const res = await api.post<{ created: number; remedialHolds: number }>(`/bosy/sync`, {
-    schoolYearId,
-  });
-  return res.data;
-}

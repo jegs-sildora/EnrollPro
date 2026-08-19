@@ -38,7 +38,6 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/admin/system": "System Health",
     "/smart": "SMART",
     "/monitoring/enrollment/requirements": "Documentary Requirements",
-    "/teacher/eosy": "EOSY Updating",
     "/teacher/advisory": "My Advisory Class",
   };
 

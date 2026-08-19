@@ -9,6 +9,7 @@ import {
   startSmartSseBridge,
   stopSmartSseBridge,
 } from "./features/integration/smart-sse-bridge.service.js";
+import { disconnectPrisma } from "./lib/prisma.js";
 
 const __dirname = path.resolve();
 import express from "express";
@@ -35,11 +36,39 @@ const server = app.listen(PORT as number, "0.0.0.0", () => {
   startSmartSseBridge();
 });
 
-function shutdown(signal: string): void {
-  console.log(`[Server] Received ${signal}. Shutting down.`);
-  stopSmartSseBridge();
-  server.close(() => process.exit(0));
+let shutdownStarted = false
+
+async function shutdown(signal: string): Promise<void> {
+  if (shutdownStarted) return
+  shutdownStarted = true
+  console.log(`[Server] Received ${signal}. Shutting down.`)
+  stopSmartSseBridge()
+
+  const closeServer = new Promise<void>((resolve, reject) => {
+    server.close((error) => {
+      if (error) reject(error)
+      else resolve()
+    })
+  })
+
+  const forceCloseTimer = setTimeout(() => {
+    server.closeAllConnections()
+  }, 10_000)
+  forceCloseTimer.unref()
+
+  try {
+    await closeServer
+    await disconnectPrisma()
+    clearTimeout(forceCloseTimer)
+    process.exitCode = 0
+  } catch (error: unknown) {
+    console.error(
+      "[Server] Graceful shutdown failed:",
+      error instanceof Error ? error.message : "Unknown shutdown error",
+    )
+    process.exitCode = 1
+  }
 }
 
-process.once("SIGINT", () => shutdown("SIGINT"));
-process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));

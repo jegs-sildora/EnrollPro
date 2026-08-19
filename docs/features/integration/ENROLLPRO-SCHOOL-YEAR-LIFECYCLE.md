@@ -113,14 +113,14 @@ System administrators set the phase through `PATCH /api/settings/phase`. Enterin
 
 ### Locking and Reports
 
-1. Advisers may submit their advisory class through `/api/teacher-eosy`.
-2. Registrars may update individual, batch, section, or grade-level EOSY records.
-3. Sections and grade levels are finalized and locked.
-4. Staff preview or download SF5 and SF6, then explicitly record official artifacts through the SF5 and SF6 recording endpoints.
-5. Each artifact stores the payload, version, source checksum, recording user, and timestamp.
-6. A later grade correction changes the source checksum and makes the affected SF5 and school-wide SF6 stale.
-7. Enrollment history and school-year archival are not written at this stage. They are written inside atomic rollover.
-8. Emergency reopening and correction require authorized administrative actions and audit records.
+1. Teachers and class advisers review their advisory roster but do not encode or submit grades in EnrollPro.
+2. SMART publishes finalized grades, learning-area results, and promotion outcomes. Authorized EnrollPro staff synchronize and verify those outcomes.
+3. EnrollPro permits local EOSY status entry only for officially dropped-out or transferred-out learners.
+4. Sections and grade levels are finalized and locked after all required SMART outcomes are present.
+5. Staff preview or download SF5 and SF6, then explicitly record official artifacts through the SF5 and SF6 recording endpoints.
+6. Each artifact stores the payload, version, source checksum, recording user, and timestamp.
+7. A later SMART correction changes the source checksum and makes the affected SF5 and school-wide SF6 stale.
+8. Enrollment history and school-year archival are not written at this stage. They are written inside atomic rollover.
 
 Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals must not grant active learner access to JHS completers.
 
@@ -136,18 +136,19 @@ Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals mu
 - dropped and transferred learners have their local final result
 - every section has a current SF5 artifact
 - the school year has a current SF6 artifact
+- an empty consecutive target year has complete reviewed calendar dates
 - an existing target-year shell contains no operational records
+- the active school-year row and school settings pointer agree
 
 If the gate fails, rollover returns `422` with class-level blockers.
 
 ### Atomic Rollover Work
 
-`POST /api/school-years/rollover` accepts `sourceSchoolYearId` and the
-administrator PIN. It acquires a PostgreSQL
+`POST /api/school-years/rollover` accepts `sourceSchoolYearId`. It acquires a PostgreSQL
 advisory transaction lock and runs with serializable isolation:
 
 1. Recheck every readiness rule inside the transaction.
-2. Reject a target-year shell containing sections, applications, enrollment records, history, adviserships, or teaching schedules.
+2. Reject a target-year shell containing sections, applications, enrollment records, history, adviserships, designations, schedules, health records, or school-form artifacts.
 3. Clone grade-level section structure, capacity, program, ordering, and section rank.
 4. Do not copy learners, enrollment records, or active advisers into target sections.
 5. Snapshot source enrollment records into `EnrollmentHistory`.
@@ -155,7 +156,7 @@ advisory transaction lock and runs with serializable isolation:
 7. Create target-year BOSY applications for eligible continuing learners.
 8. Revoke active source-year adviserships.
 9. Remove live source applications and enrollment records after history is written.
-10. Copy the source year calendar dates forward one year, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
+10. Apply the previously reviewed target-year calendar without shifting dates, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
 11. Broadcast browser and integration invalidations only after the transaction commits.
 
 ### Rollover Outcome Matrix
@@ -175,10 +176,7 @@ Returning dropouts must use a manual Balik-Aral or returning learner intake path
 
 ### Remedial Hold Resolution
 
-`PATCH /api/remedial/:learnerId/resolve` accepts a summer grade and final outcome.
-
-- `PROMOTED` updates historical EOSY data, marks the learner as JHS completer, and closes the hold as `REMEDIAL_RESOLVED`.
-- `RETAINED` updates historical EOSY data and converts the hold to Grade 10 `PENDING_CONFIRMATION`.
+EnrollPro exposes Grade 10 remedial holds through `GET /api/remedial/pending` for monitoring only. It does not accept a manually encoded summer grade or promotion decision. A hold remains excluded from active intake until a reviewed SMART remedial-result contract can supply and validate the published result.
 
 Remedial holds are excluded from active intake, class placement, and official population feeds until resolved.
 

@@ -1,6 +1,7 @@
 import type { Request } from "express";
 import type { ApplicationStatus, Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
+import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 
 export const OFFICIAL_ENROLLMENT_STATUSES = [
   "OFFICIALLY_ENROLLED",
@@ -85,44 +86,44 @@ export async function resolveSchoolYearScope(
     return { status: 400, message: "schoolYearId must be a positive integer" };
   }
 
-  const setting = await prisma.schoolSetting.findFirst({
+  const activeResolution = await resolveActiveSchoolYearState()
+  if (activeResolution.state !== "VALID") {
+    return {
+      status: 409,
+      message:
+        activeResolution.state === "INVALID"
+          ? activeResolution.message
+          : "No active school year has been initialized.",
+    }
+  }
+
+  const setting = await prisma.schoolSetting.findUnique({
+    where: { id: activeResolution.active.settingId },
     select: {
       id: true,
       schoolName: true,
-      activeSchoolYearId: true,
     },
-  });
+  })
+  if (!setting) {
+    return { status: 409, message: "The active school settings record is unavailable." }
+  }
 
   const configuredSchoolYearId =
-    requestedSchoolYearId ?? setting?.activeSchoolYearId ?? null;
+    requestedSchoolYearId ?? activeResolution.active.schoolYearId;
 
-  const schoolYear = configuredSchoolYearId
-    ? await prisma.schoolYear.findUnique({
-        where: { id: configuredSchoolYearId },
-        select: { id: true, yearLabel: true },
-      })
-    : await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
-        select: { id: true, yearLabel: true },
-        orderBy: { id: "asc" },
-      });
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: configuredSchoolYearId },
+    select: { id: true, yearLabel: true },
+  });
 
   if (!schoolYear) {
-    if (configuredSchoolYearId) {
-      return { status: 404, message: "School year not found" };
-    }
-
-    return {
-      status: 400,
-      message:
-        "No schoolYearId provided and no active school year could be resolved",
-    };
+    return { status: 404, message: "School year not found" };
   }
 
   return {
     scope: {
-      schoolId: setting?.id ?? null,
-      schoolName: setting?.schoolName ?? null,
+      schoolId: setting.id,
+      schoolName: setting.schoolName,
       schoolYearId: schoolYear.id,
       schoolYearLabel: schoolYear.yearLabel,
     },

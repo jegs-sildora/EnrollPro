@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import type { LearnerAuthPayload } from "../../middleware/authenticate-learner.js";
+import { getStoredSmartSubjects } from "../integration/smart-outcome-envelope.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
@@ -59,12 +60,11 @@ function parseStoredGrades(
   value: unknown,
   gradeLevelName?: string | null,
 ): Record<string, StoredSubjectGrades> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return null;
-  }
+  const storedSubjects = getStoredSmartSubjects(value);
+  if (!storedSubjects) return null;
 
   const expectedGrade = getExpectedGradeNumber(gradeLevelName);
-  const entries = Object.entries(value).filter(([subjectName, grades]) => (
+  const entries = Object.entries(storedSubjects).filter(([subjectName, grades]) => (
     isStoredSubjectGrades(grades)
     && hasReportedGrade(grades)
     && subjectBelongsToGrade(subjectName, expectedGrade)

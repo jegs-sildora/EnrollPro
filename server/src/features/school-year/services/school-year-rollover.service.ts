@@ -4,7 +4,12 @@ import {
   type EosyStatus,
 } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../lib/prisma.js";
+import { runWithAutomaticAuditSuppressed } from "../../../lib/context.js";
 import { getSchoolFormArtifactStatus } from "../../enrollment/services/school-form-artifact.service.js";
+import {
+  matchesStoredSmartOutcome,
+  readSmartOutcomeEnvelope,
+} from "../../integration/smart-outcome-envelope.js";
 import { resolveRolloverDestination } from "./school-year-transition.service.js";
 
 type DatabaseClient = Pick<
@@ -48,7 +53,10 @@ export interface RolloverGlobalBlocker {
     | "SF6_NOT_RECORDED"
     | "SF6_STALE"
     | "TARGET_YEAR_HAS_RECORDS"
-    | "ANOTHER_ACTIVE_YEAR_EXISTS";
+    | "TARGET_YEAR_NOT_PREPARED"
+    | "TARGET_CALENDAR_INCOMPLETE"
+    | "ANOTHER_ACTIVE_YEAR_EXISTS"
+    | "ENROLLMENT_HISTORY_CONFLICT";
   message: string;
 }
 
@@ -129,22 +137,6 @@ function nextYearLabel(yearLabel: string): string | null {
   return end === start + 1 ? `${start + 1}-${end + 1}` : null;
 }
 
-function shiftCalendarDateOneYear(value: Date | null): Date | null {
-  if (!value) return null;
-  const targetYear = value.getUTCFullYear() + 1;
-  const month = value.getUTCMonth();
-  const lastDayOfTargetMonth = new Date(
-    Date.UTC(targetYear, month + 1, 0),
-  ).getUTCDate();
-  return new Date(
-    Date.UTC(
-      targetYear,
-      month,
-      Math.min(value.getUTCDate(), lastDayOfTargetMonth),
-    ),
-  );
-}
-
 function learnerIdentifier(learnerId: number, lrn: string | null): string {
   const normalizedLrn = lrn?.trim();
   return normalizedLrn ? `LRN:${normalizedLrn}` : `LEARNER:${learnerId}`;
@@ -157,11 +149,32 @@ function isDeparture(status: EosyStatus | null): boolean {
 async function getTargetOperationalCount(
   client: DatabaseClient,
   targetYearLabel: string,
-): Promise<{ id: number; count: number } | null> {
+): Promise<{
+  id: number;
+  status: string;
+  clonedFromId: number | null;
+  calendarComplete: boolean;
+  count: number;
+} | null> {
   const target = await client.schoolYear.findUnique({
     where: { yearLabel: targetYearLabel },
     select: {
       id: true,
+      status: true,
+      clonedFromId: true,
+      classOpeningDate: true,
+      classEndDate: true,
+      enrollOpenDate: true,
+      enrollCloseDate: true,
+      termFormat: true,
+      term1Start: true,
+      term1End: true,
+      term2Start: true,
+      term2End: true,
+      term3Start: true,
+      term3End: true,
+      term4Start: true,
+      term4End: true,
       _count: {
         select: {
           sections: true,
@@ -171,13 +184,40 @@ async function getTargetOperationalCount(
           sectionAdvisers: true,
           teacherDesignations: true,
           teacherSchedulePeriods: true,
+          healthRecords: true,
+          schoolFormArtifacts: true,
         },
       },
     },
   });
   if (!target) return null;
+  const requiredDates = [
+    target.classOpeningDate,
+    target.classEndDate,
+    target.enrollOpenDate,
+    target.enrollCloseDate,
+    target.term1Start,
+    target.term1End,
+    target.term2Start,
+    target.term2End,
+    target.term3Start,
+    target.term3End,
+    ...(target.termFormat === "QUARTERS"
+      ? [target.term4Start, target.term4End]
+      : []),
+  ];
   return {
     id: target.id,
+    status: target.status,
+    clonedFromId: target.clonedFromId,
+    calendarComplete:
+      requiredDates.every((value) => value !== null)
+      && target.classOpeningDate !== null
+      && target.classEndDate !== null
+      && target.enrollOpenDate !== null
+      && target.enrollCloseDate !== null
+      && target.classOpeningDate <= target.classEndDate
+      && target.enrollOpenDate <= target.enrollCloseDate,
     count: Object.values(target._count).reduce(
       (total, count) => total + count,
       0,
@@ -208,8 +248,12 @@ async function getReadiness(
           gradeLevel: { select: { name: true } },
           enrollmentRecords: {
             select: {
+              learnerId: true,
               eosyStatus: true,
               finalAverage: true,
+              enrollmentApplication: {
+                select: { reportedGrades: true },
+              },
             },
           },
         },
@@ -237,9 +281,19 @@ async function getReadiness(
   }
 
   const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
-  const setting = await client.schoolSetting.findFirst({
+  const settings = await client.schoolSetting.findMany({
     select: { activeSchoolYearId: true, systemPhase: true },
+    take: 2,
   });
+  const setting = settings.length === 1 ? settings[0] : null;
+
+  if (settings.length !== 1) {
+    globalBlockers.push({
+      code: "ANOTHER_ACTIVE_YEAR_EXISTS",
+      message:
+        "The school settings record is missing or duplicated. Resolve this configuration conflict before rollover.",
+    });
+  }
 
   if (sourceYear.status !== "ACTIVE") {
     globalBlockers.push({
@@ -273,14 +327,42 @@ async function getReadiness(
   const blockers: RolloverClassBlocker[] = [];
   for (const section of sourceYear.sections) {
     const reasons: RolloverBlockerReason[] = [];
-    const recordsWithoutResult = section.enrollmentRecords.filter(
-      (record) => record.eosyStatus === null || record.finalAverage === null,
-    ).length;
+    let recordsWithoutResult = 0;
+    let missingSmartOutcome = false;
+    let mismatchedSmartOutcome = false;
+
+    for (const record of section.enrollmentRecords) {
+      if (isDeparture(record.eosyStatus)) continue;
+      if (record.eosyStatus === null || record.finalAverage === null) {
+        recordsWithoutResult += 1;
+        continue;
+      }
+      const smartOutcome = readSmartOutcomeEnvelope(
+        record.enrollmentApplication.reportedGrades,
+      );
+      if (!smartOutcome) {
+        missingSmartOutcome = true;
+        recordsWithoutResult += 1;
+        continue;
+      }
+      if (!matchesStoredSmartOutcome({
+        value: record.enrollmentApplication.reportedGrades,
+        schoolYearId,
+        sectionId: section.id,
+        finalAverage: record.finalAverage,
+        eosyStatus: record.eosyStatus,
+      })) {
+        mismatchedSmartOutcome = true;
+        recordsWithoutResult += 1;
+      }
+    }
 
     if (!section.isEosyFinalized) reasons.push("SECTION_NOT_FINALIZED");
     if (recordsWithoutResult > 0) {
       reasons.push("LEARNER_RESULT_NOT_FINALIZED");
     }
+    if (missingSmartOutcome) reasons.push("SMART_OUTCOME_MISSING");
+    if (mismatchedSmartOutcome) reasons.push("SMART_OUTCOME_MISMATCH");
 
     const sf5Status = await getSchoolFormArtifactStatus(
       "SF5",
@@ -325,29 +407,63 @@ async function getReadiness(
       client,
       expectedTargetLabel,
     );
-    if (target && target.id !== sourceYear.id && target.count > 0) {
+    if (!target) {
+      globalBlockers.push({
+        code: "TARGET_YEAR_NOT_PREPARED",
+        message:
+          "Prepare and review the incoming school year calendar before rollover.",
+      });
+    } else if (!target.calendarComplete) {
+      globalBlockers.push({
+        code: "TARGET_CALENDAR_INCOMPLETE",
+        message:
+          "Complete the incoming school year calendar before rollover.",
+      });
+    }
+    if (
+      target
+      && (target.status === "ACTIVE"
+        || (target.clonedFromId !== null
+          && target.clonedFromId !== sourceYear.id))
+    ) {
+      globalBlockers.push({
+        code: "TARGET_YEAR_HAS_RECORDS",
+        message:
+          "The incoming school year is not an unused prepared calendar shell.",
+      });
+    } else if (target && target.id !== sourceYear.id && target.count > 0) {
       globalBlockers.push({
         code: "TARGET_YEAR_HAS_RECORDS",
         message:
           "The incoming school year already contains operational records. Rollover will not delete them.",
       });
     }
-    const otherActive = await client.schoolYear.findFirst({
-      where: {
-        status: "ACTIVE",
-        id: {
-          notIn: [sourceYear.id, ...(target ? [target.id] : [])],
-        },
-      },
-      select: { id: true },
+  }
+
+  const activeYears = await client.schoolYear.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (
+    activeYears.length !== 1
+    || activeYears[0]?.id !== sourceYear.id
+  ) {
+    globalBlockers.push({
+      code: "ANOTHER_ACTIVE_YEAR_EXISTS",
+      message:
+        "The active school year records conflict with the selected operational school year.",
     });
-    if (otherActive) {
-      globalBlockers.push({
-        code: "ANOTHER_ACTIVE_YEAR_EXISTS",
-        message:
-          "Another active school year must be resolved before rollover.",
-      });
-    }
+  }
+
+  const historyCount = await client.enrollmentHistory.count({
+    where: { schoolYearId },
+  });
+  if (historyCount > 0) {
+    globalBlockers.push({
+      code: "ENROLLMENT_HISTORY_CONFLICT",
+      message:
+        "Enrollment history already exists for this school year. Resolve the conflict before rollover.",
+    });
   }
 
   return {
@@ -386,8 +502,38 @@ export function getHistoricalProfileSnapshot(record: {
     applicantType: ApplicantType;
     assignedProgram: ApplicantType | null;
     learnerType: string;
+    isPrivacyConsentGiven: boolean;
+    guardianRelationship: string | null;
+    hasNoMother: boolean;
+    hasNoFather: boolean;
     contactNumber: string | null;
     guardianName: string | null;
+    addresses: Array<{
+      addressType: string;
+      houseNoStreet: string | null;
+      street: string | null;
+      sitio: string | null;
+      barangay: string | null;
+      cityMunicipality: string | null;
+      province: string | null;
+      country: string | null;
+      zipCode: string | null;
+    }>;
+    familyMembers: Array<{
+      relationship: string;
+      firstName: string;
+      lastName: string;
+      middleName: string | null;
+      extensionName: string | null;
+      contactNumber: string | null;
+      email: string | null;
+      maidenName: string | null;
+    }>;
+  };
+  section: {
+    name: string;
+    gradeLevelId: number;
+    gradeLevel: { name: string; displayOrder: number };
   };
   enrolledBy: {
     firstName: string;
@@ -409,8 +555,41 @@ export function getHistoricalProfileSnapshot(record: {
     applicantType: record.enrollmentApplication.applicantType,
     assignedProgram: record.enrollmentApplication.assignedProgram ?? "",
     learnerType: record.enrollmentApplication.learnerType,
+    privacyConsentGiven:
+      record.enrollmentApplication.isPrivacyConsentGiven,
+    guardianRelationship:
+      record.enrollmentApplication.guardianRelationship ?? "",
+    hasNoMother: record.enrollmentApplication.hasNoMother,
+    hasNoFather: record.enrollmentApplication.hasNoFather,
     contactNumber: record.enrollmentApplication.contactNumber ?? "",
     guardianName: record.enrollmentApplication.guardianName ?? "",
+    section: {
+      name: record.section.name,
+      gradeLevelId: record.section.gradeLevelId,
+      gradeLevel: record.section.gradeLevel.name,
+      gradeOrder: record.section.gradeLevel.displayOrder,
+    },
+    addresses: record.enrollmentApplication.addresses.map((address) => ({
+      addressType: address.addressType,
+      houseNoStreet: address.houseNoStreet ?? "",
+      street: address.street ?? "",
+      sitio: address.sitio ?? "",
+      barangay: address.barangay ?? "",
+      cityMunicipality: address.cityMunicipality ?? "",
+      province: address.province ?? "",
+      country: address.country ?? "",
+      zipCode: address.zipCode ?? "",
+    })),
+    familyMembers: record.enrollmentApplication.familyMembers.map((member) => ({
+      relationship: member.relationship,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      middleName: member.middleName ?? "",
+      extensionName: member.extensionName ?? "",
+      contactNumber: member.contactNumber ?? "",
+      email: member.email ?? "",
+      maidenName: member.maidenName ?? "",
+    })),
     enrolledBy: {
       firstName: record.enrolledBy.firstName,
       lastName: record.enrolledBy.lastName,
@@ -430,14 +609,14 @@ function academicOutcomeSnapshot(
     return Prisma.JsonNull;
   }
 
-  const reportedGrades = outcome.reportedGrades === null
-    ? {}
-    : JSON.parse(JSON.stringify(outcome.reportedGrades)) as Prisma.InputJsonValue;
+  const smartOutcome = readSmartOutcomeEnvelope(outcome.reportedGrades);
   return {
     finalGeneralAverage: outcome.finalGeneralAverage,
     finalOutcome: outcome.finalOutcome,
     academicDeficiencyNote: outcome.academicDeficiencyNote,
-    reportedGrades,
+    smartOutcome: smartOutcome
+      ? JSON.parse(JSON.stringify(smartOutcome)) as Prisma.InputJsonValue
+      : null,
   };
 }
 
@@ -470,7 +649,7 @@ export async function executeSchoolYearRollover({
   ipAddress,
   userAgent,
 }: ExecuteRolloverInput): Promise<ExecuteRolloverResult> {
-  return prisma.$transaction(
+  return runWithAutomaticAuditSuppressed(() => prisma.$transaction(
     async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${sourceSchoolYearId})`;
       const readiness = await getReadiness(
@@ -486,19 +665,6 @@ export async function executeSchoolYearRollover({
         select: {
           id: true,
           yearLabel: true,
-          classOpeningDate: true,
-          classEndDate: true,
-          enrollOpenDate: true,
-          enrollCloseDate: true,
-          termFormat: true,
-          term1Start: true,
-          term1End: true,
-          term2Start: true,
-          term2End: true,
-          term3Start: true,
-          term3End: true,
-          term4Start: true,
-          term4End: true,
         },
       });
       const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
@@ -508,7 +674,7 @@ export async function executeSchoolYearRollover({
         );
       }
 
-      const [sourceRecords, sourceSections, gradeLevels, setting] =
+      const [sourceRecords, sourceSections, gradeLevels, settingRows] =
         await Promise.all([
           tx.enrollmentRecord.findMany({
             where: { schoolYearId: sourceSchoolYearId },
@@ -613,8 +779,15 @@ export async function executeSchoolYearRollover({
           tx.gradeLevel.findMany({
             select: { id: true, displayOrder: true },
           }),
-          tx.schoolSetting.findFirst(),
+          tx.schoolSetting.findMany({ take: 2 }),
         ]);
+
+      if (settingRows.length !== 1) {
+        throw new Error(
+          "Exactly one school settings record is required before rollover.",
+        );
+      }
+      const setting = settingRows[0];
 
       const targetLabel = expectedTargetLabel;
 
@@ -622,50 +795,28 @@ export async function executeSchoolYearRollover({
         tx,
         targetLabel,
       );
-      if (targetOperational?.count) {
+      if (!targetOperational) {
         throw new Error(
-          "The incoming school year contains operational records and cannot be overwritten.",
+          "The incoming school year calendar has not been prepared.",
+        );
+      }
+      if (
+        targetOperational.status === "ACTIVE"
+        || !targetOperational.calendarComplete
+        || targetOperational.count > 0
+        || (targetOperational.clonedFromId !== null
+          && targetOperational.clonedFromId !== sourceSchoolYearId)
+      ) {
+        throw new Error(
+          "The incoming school year is not an empty reviewed calendar shell.",
         );
       }
 
-      const yearData = {
-        status: "ACTIVE" as const,
-        clonedFromId: sourceSchoolYearId,
-        classOpeningDate: shiftCalendarDateOneYear(
-          sourceYear.classOpeningDate,
-        ),
-        classEndDate: shiftCalendarDateOneYear(sourceYear.classEndDate),
-        enrollOpenDate: shiftCalendarDateOneYear(sourceYear.enrollOpenDate),
-        enrollCloseDate: shiftCalendarDateOneYear(
-          sourceYear.enrollCloseDate,
-        ),
-        termFormat: sourceYear.termFormat,
-        term1Start: shiftCalendarDateOneYear(sourceYear.term1Start),
-        term1End: shiftCalendarDateOneYear(sourceYear.term1End),
-        term2Start: shiftCalendarDateOneYear(sourceYear.term2Start),
-        term2End: shiftCalendarDateOneYear(sourceYear.term2End),
-        term3Start: shiftCalendarDateOneYear(sourceYear.term3Start),
-        term3End: shiftCalendarDateOneYear(sourceYear.term3End),
-        term4Start: shiftCalendarDateOneYear(sourceYear.term4Start),
-        term4End: shiftCalendarDateOneYear(sourceYear.term4End),
+      const targetYear = {
+        id: targetOperational.id,
+        yearLabel: targetLabel,
+        status: "ACTIVE",
       };
-
-      const targetYear = targetOperational
-        ? await tx.schoolYear.update({
-            where: { id: targetOperational.id },
-            data: {
-              ...yearData,
-              isEosyFinalized: false,
-            },
-            select: { id: true, yearLabel: true, status: true },
-          })
-        : await tx.schoolYear.create({
-            data: {
-              yearLabel: targetLabel,
-              ...yearData,
-            },
-            select: { id: true, yearLabel: true, status: true },
-          });
 
 
       await cloneSectionStructure({
@@ -674,8 +825,7 @@ export async function executeSchoolYearRollover({
         sourceSections,
       });
 
-      await tx.enrollmentHistory.createMany({
-        data: sourceRecords.map((record) => ({
+      const historyRows = sourceRecords.map((record) => ({
           learnerId: record.learnerId,
           learnerIdentifier: learnerIdentifier(
             record.learnerId,
@@ -695,9 +845,37 @@ export async function executeSchoolYearRollover({
             academicDeficiencyNote: record.academicDeficiencyNote,
             reportedGrades: record.enrollmentApplication.reportedGrades,
           }),
-        })),
-        skipDuplicates: true,
-      });
+        }));
+      const historyIdentifiers = historyRows.map(
+        (row) => row.learnerIdentifier,
+      );
+      if (new Set(historyIdentifiers).size !== historyIdentifiers.length) {
+        throw new Error(
+          "Duplicate learner identifiers were found in the rollover source records.",
+        );
+      }
+      if (historyIdentifiers.length > 0) {
+        const existingHistory = await tx.enrollmentHistory.findFirst({
+          where: {
+            schoolYearId: sourceSchoolYearId,
+            learnerIdentifier: { in: historyIdentifiers },
+          },
+          select: { id: true },
+        });
+        if (existingHistory) {
+          throw new Error(
+            "Enrollment history already exists for one or more rollover learners.",
+          );
+        }
+        const createdHistory = await tx.enrollmentHistory.createMany({
+          data: historyRows,
+        });
+        if (createdHistory.count !== sourceRecords.length) {
+          throw new Error(
+            "Not every source learner was archived into enrollment history.",
+          );
+        }
+      }
 
       const targetGradeByOrder = new Map(
         gradeLevels.map((grade) => [grade.displayOrder, grade.id]),
@@ -816,6 +994,19 @@ export async function executeSchoolYearRollover({
       }
 
       const rolloverTime = new Date();
+      if (historyIdentifiers.length > 0) {
+        const archivedCoverage = await tx.enrollmentHistory.count({
+          where: {
+            schoolYearId: sourceSchoolYearId,
+            learnerIdentifier: { in: historyIdentifiers },
+          },
+        });
+        if (archivedCoverage !== sourceRecords.length) {
+          throw new Error(
+            "Enrollment history coverage failed before live records were removed.",
+          );
+        }
+      }
       await tx.enrollmentRecord.deleteMany({
         where: { schoolYearId: sourceSchoolYearId },
       });
@@ -838,22 +1029,29 @@ export async function executeSchoolYearRollover({
         data: {
           status: "ARCHIVED",
           isEosyFinalized: true,
-          settingsSnapshot: setting
-            ? {
-                steEnabled: setting.steEnabled,
-                spaEnabled: setting.spaEnabled,
-                spsEnabled: setting.spsEnabled,
-                enableHomogeneousSections:
-                  setting.enableHomogeneousSections,
-                homogeneousSectionCount:
-                  setting.homogeneousSectionCount,
-                heterogeneousRoundRobin:
-                  setting.heterogeneousRoundRobin,
-              }
-            : undefined,
+          settingsSnapshot: {
+            steEnabled: setting.steEnabled,
+            spaEnabled: setting.spaEnabled,
+            spsEnabled: setting.spsEnabled,
+            enableHomogeneousSections:
+              setting.enableHomogeneousSections,
+            homogeneousSectionCount:
+              setting.homogeneousSectionCount,
+            heterogeneousRoundRobin:
+              setting.heterogeneousRoundRobin,
+          },
         },
       });
-      await tx.schoolSetting.updateMany({
+      await tx.schoolYear.update({
+        where: { id: targetYear.id },
+        data: {
+          status: "ACTIVE",
+          clonedFromId: sourceSchoolYearId,
+          isEosyFinalized: false,
+        },
+      });
+      await tx.schoolSetting.update({
+        where: { id: setting.id },
         data: {
           activeSchoolYearId: targetYear.id,
           systemPhase: "OFFICIAL_ENROLLMENT",
@@ -901,5 +1099,5 @@ export async function executeSchoolYearRollover({
       timeout: 60_000,
       maxWait: 5_000,
     },
-  );
+  ));
 }

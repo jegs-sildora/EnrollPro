@@ -146,7 +146,8 @@ Base path: `/api/school-years`
 | GET | `/grade-levels` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN`, `TEACHER` | List configured grade levels |
 | GET | `/:id` | `SYSTEM_ADMIN` | Read one school-year configuration |
 | POST | `/activate` | `SYSTEM_ADMIN` | Create the first operational school year only |
-| POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, copy the calendar forward one year, clone empty sections, carry learners forward, and activate the new year |
+| POST | `/prepare-next` | `SYSTEM_ADMIN` | Save or update an empty, inactive, reviewed calendar shell for the consecutive incoming school year |
+| POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, apply the reviewed target calendar, clone empty sections, carry eligible learners forward, and activate the new year |
 | PUT | `/:id` | `SYSTEM_ADMIN` | Update editable school-year settings |
 | PATCH | `/:id/status` | `SYSTEM_ADMIN` | First-time status control only; cannot bypass rollover while an operational year exists |
 | PATCH | `/:id/dates` | `SYSTEM_ADMIN` | Update class and enrollment dates |
@@ -255,7 +256,6 @@ Base path: `/api/bosy`
 | GET | `/readiness` | Registrar, admin | Pending, confirmed, temporary, and rollover readiness metrics |
 | GET | `/queue` | Registrar, admin | Filtered continuing learner queue |
 | GET | `/previous-sections` | Registrar, admin | Prior-year section filter values |
-| POST | `/sync` | Registrar, admin | Idempotently repair missing rollover applications |
 | POST | `/confirm-return/:applicationId` | Registrar, admin, teacher | Confirm continuing enrollment and classify documents |
 | POST | `/transfer-request/:applicationId` | Registrar or admin | Tag pending learner as not returning |
 | POST | `/revoke-confirmation/:applicationId` | Registrar or admin | Return an unsectioned confirmed learner to pending |
@@ -270,7 +270,8 @@ Base path: `/api/remedial`
 | Method | Path | Roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/pending` | Registrar, admin | Conditionally promoted and remedial-hold cases |
-| PATCH | `/:learnerId/resolve` | Registrar, admin | Apply summer grade and `PROMOTED` or `RETAINED` outcome |
+
+The remedial queue is read-only in EnrollPro. EnrollPro does not accept a manually encoded summer grade or academic outcome. A remedial hold remains blocked until a reviewed SMART remedial-result contract is available and the published SMART outcome can be validated server-side.
 
 ## EOSY
 
@@ -278,22 +279,18 @@ Base path: `/api/eosy`
 
 | Method | Path | Roles | Purpose |
 | --- | --- | --- | --- |
-| GET | `/stream` | Registrar, admin, adviser, teacher | EOSY-specific SSE stream |
 | GET | `/workspace` | Registrar, admin | Unified grade, section, record, and export-lock payload |
 | GET | `/sections` | Registrar, admin | Sections available for EOSY processing |
 | GET | `/sections/:id/records` | Registrar, admin | Section EOSY records |
-| PATCH | `/records/:id` | Registrar, admin | Update one EOSY result |
-| POST | `/records/:id/override` | Registrar, admin | Authorized historical or locked-record correction |
+| PATCH | `/records/:id` | Registrar, admin | Record an official dropped-out or transferred-out status; academic outcomes remain SMART-owned |
+| POST | `/records/:id/override` | Registrar, admin | Correct identity or section context without replacing SMART-owned grades or promotion outcomes |
 | POST | `/sections/:id/finalize` | Registrar, admin | Lock section EOSY results |
 | GET | `/grade/:gradeLevelId/records` | Registrar, admin | Grade-level EOSY records |
-| PUT | `/grade/:gradeLevelId/batch-status` | Registrar, admin | Batch update grade-level results |
 | POST | `/grade/:gradeLevelId/finalize` | Registrar, admin | Finalize grade-level EOSY |
 | POST | `/grade/:gradeLevelId/unlock` | Registrar, admin | Unlock grade-level EOSY |
-| POST | `/batch-update` | Registrar, admin | Batch update selected EOSY records |
 | POST | `/sections/:id/reopen` | `SYSTEM_ADMIN` | Reopen section before school-level lock |
 | GET | `/school-year/:schoolYearId/export-lock` | Registrar, admin | School EOSY lock and finalization readiness |
 | GET | `/school-year/:schoolYearId/final-lis-export` | Registrar, admin | Download locked final LIS export |
-| POST | `/school-year/unlock` | `SYSTEM_ADMIN` | Emergency school EOSY unlock |
 | POST | `/sections/:id/unlock` | Registrar, admin | Unlock section EOSY |
 | POST | `/sections/:id/forms/sf5/record` | Registrar, admin | Record an immutable, checksummed SF5 payload for a finalized section |
 | POST | `/school-years/:schoolYearId/forms/sf6/record` | Registrar, admin | Record an immutable, checksummed school-wide SF6 payload |
@@ -304,14 +301,17 @@ SF5 and SF6 GET routes are previews or downloads. Only the POST recording
 routes create official immutable artifacts. School closing and new-year
 activation occur only through `/api/school-years/rollover`.
 
-## Teacher EOSY
+## Teacher Advisory Roster
 
-Base path: `/api/teacher-eosy`; routes allow adviser, teacher, registrar, and admin roles.
+Base path: `/api/teacher-advisory`; the route allows adviser, teacher,
+registrar, and admin roles.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/advisory` | Load the authenticated teacher's advisory EOSY workspace |
-| POST | `/advisory/submit` | Submit and finalize advisory EOSY results |
+| GET | `/` | Load the authenticated teacher's current advisory roster as a read-only view |
+
+This API does not accept grades or EOSY submissions. SMART is the only source
+of grades, learning-area results, and promotion outcomes.
 
 ## Personnel Directory
 

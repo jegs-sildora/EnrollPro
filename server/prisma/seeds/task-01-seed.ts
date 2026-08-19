@@ -333,6 +333,9 @@ export const seedDatabase = async () => {
             }
           });
 
+          const cities = ["BACOLOD CITY", "SILAY CITY", "TALISAY CITY", "BAGO CITY", "MURCIA"];
+          const placeOfBirth = `${cities[learnerNameIndex % cities.length]}, NEGROS OCCIDENTAL`;
+
           const learner = await prisma.learner.create({
             data: {
               lrn,
@@ -347,6 +350,7 @@ export const seedDatabase = async () => {
               motherTongue,
               isIpCommunity: isIp,
               ipGroupName,
+              placeOfBirth,
               hasPsaBirthCertificate: true,
               birthCertificateType: "PSA_BIRTH_CERTIFICATE",
               previousGenAve: 75 + ((learnerNameIndex * 3) % 25) + ((learnerNameIndex % 10) / 10),

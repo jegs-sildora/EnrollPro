@@ -5,9 +5,26 @@ import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { broadcastEnrollmentInvalidation } from "../../lib/realtime-events.js";
 import { isStaffIntakeAllowed } from "../settings/enrollment-gate.service.js";
 import type { ApplicantType } from "../../generated/prisma/index.js";
+import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 
-async function assertStaffIntakeAllowed(): Promise<void> {
-  const setting = await prisma.schoolSetting.findFirst({
+interface StaffIntakeContext {
+  schoolYearId: number;
+  systemPhase: string;
+}
+
+async function assertStaffIntakeAllowed(): Promise<StaffIntakeContext> {
+  const activeResolution = await resolveActiveSchoolYearState();
+  if (activeResolution.state !== "VALID") {
+    throw new AppError(
+      409,
+      activeResolution.state === "INVALID"
+        ? activeResolution.message
+        : "Initialize the active school year before processing learner intake.",
+    );
+  }
+
+  const setting = await prisma.schoolSetting.findUnique({
+    where: { id: activeResolution.active.settingId },
     select: { systemPhase: true },
   });
   if (!isStaffIntakeAllowed(setting?.systemPhase)) {
@@ -16,6 +33,11 @@ async function assertStaffIntakeAllowed(): Promise<void> {
       "Learner intake is locked during EOSY Closing. Complete enrollment changes before starting year-end processing.",
     );
   }
+
+  return {
+    schoolYearId: activeResolution.active.schoolYearId,
+    systemPhase: setting!.systemPhase,
+  };
 }
 
 
@@ -229,7 +251,7 @@ export async function flagDeficient(req: Request, res: Response) {
 
 export async function directEncodeWalkIn(req: Request, res: Response) {
   try {
-    await assertStaffIntakeAllowed();
+    const intakeContext = await assertStaffIntakeAllowed();
     const payload = req.body;
     const {
       lrn, firstName, lastName, middleName, birthdate, sex,
@@ -243,10 +265,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
       return res.status(400).json({ message: "Missing required basic fields." });
     }
 
-    const schoolYearId = req.schoolYearId || (await prisma.schoolSetting.findFirst({ select: { activeSchoolYearId: true } }))?.activeSchoolYearId;
-    if (!schoolYearId) {
-      return res.status(400).json({ message: "Active school year not found." });
-    }
+    const schoolYearId = intakeContext.schoolYearId;
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Upsert Learner
@@ -283,9 +302,6 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
         });
       }
 
-      // Fetch school setting to check system phase
-      const setting = await tx.schoolSetting.findFirst({ select: { systemPhase: true } });
-
       // 2. Create Application
       const isTemporarilyEnrolled = !(hasSf9 && hasPsa);
 
@@ -296,7 +312,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           gradeLevelId,
           applicantType: "REGULAR",
           assignedProgram: assignedProgram || null,
-          isLateEnrollee: setting?.systemPhase === "CLASSES_ONGOING",
+          isLateEnrollee: intakeContext.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",
           trackingNumber: null, // intentionally null for direct encode
           isTemporarilyEnrolled,

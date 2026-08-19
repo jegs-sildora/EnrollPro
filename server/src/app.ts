@@ -21,7 +21,7 @@ import learnerRoutes from "./features/learner/learner.router.js";
 import { admissionRoutes } from "./features/admission/admission.router.js";
 
 import eosyRoutes from "./features/enrollment/eosy.router.js";
-import teacherEosyRoutes from "./features/enrollment/teacher-eosy.router.js";
+import teacherAdvisoryRoutes from "./features/teachers/teacher-advisory.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
 import exportRoutes from "./features/export/export.router.js";
 import sf7Routes from "./features/sf7/sf7.router.js";
@@ -37,7 +37,10 @@ import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
 import { auditContext } from "./lib/context.js";
 import { streamEvents } from "./lib/sse.js";
-import { authenticate } from "./middleware/authenticate.js";
+import {
+  authenticate,
+  optionalAuthenticate,
+} from "./middleware/authenticate.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -113,13 +116,7 @@ app.use((req, res, next) => {
   }, next);
 });
 
-app.use(historicalReadOnlyGuard);
-
 const apiRouter = express.Router();
-
-// 5. School Year Context
-// Resolve the school year ID for all API requests (from header or active settings)
-apiRouter.use(schoolYearContext);
 
 // Prevent aggressive browser caching of API GET requests (crucial for SSE triggers)
 apiRouter.use((req, res, next) => {
@@ -134,8 +131,15 @@ apiRouter.use((req, res, next) => {
 apiRouter.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
-apiRouter.get("/events/stream", authenticate, streamEvents);
 apiRouter.use("/auth", authRoutes);
+
+// Resolve optional cookie or bearer authentication before school-year guards.
+// Protected routers still enforce their own role-specific authentication.
+apiRouter.use(optionalAuthenticate);
+apiRouter.use(schoolYearContext);
+apiRouter.use(historicalReadOnlyGuard);
+
+apiRouter.get("/events/stream", authenticate, streamEvents);
 apiRouter.use("/system", systemRoutes);
 apiRouter.use("/settings", settingsRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
@@ -151,7 +155,7 @@ apiRouter.use("/learner", learnerRoutes);
 apiRouter.use("/applications", admissionRoutes);
 
 apiRouter.use("/eosy", eosyRoutes);
-apiRouter.use("/teacher-eosy", teacherEosyRoutes);
+apiRouter.use("/teacher-advisory", teacherAdvisoryRoutes);
 apiRouter.use("/enrollment", enrollmentRoutes);
 apiRouter.use("/export", exportRoutes);
 apiRouter.use("/sf7", sf7Routes);

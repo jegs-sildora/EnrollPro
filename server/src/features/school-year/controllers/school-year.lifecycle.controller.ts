@@ -1,6 +1,3 @@
-import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveSchoolYear, cloneSchoolYearStructure, getCurrentManilaYear, parseDateInput } from "../services/school-year-controller-shared.service.js";
-
-import { normalizeDateToUtcNoon } from "../school-year.service.js";
 import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
 import { broadcastSchoolYearInvalidation } from "../../../lib/realtime-events.js";
@@ -15,67 +12,12 @@ function parseSchoolYearId(req: Request): number {
   export async function transitionSchoolYear(
     req: Request,
     res: Response): Promise<void> {
-    const id = parseSchoolYearId(req);
-    const { status } = req.body;
-
-    const validStatuses = [
-      "ACTIVE",
-      "ARCHIVED",
-    ];
-    if (!validStatuses.includes(status)) {
-      res.status(400).json({
-        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
-      });
-      return;
-    }
-
-    const year = await prisma.schoolYear.findUnique({ where: { id } });
-    if (!year) {
-      res.status(404).json({ message: "School year not found" });
-      return;
-    }
-
-    const settings = await prisma.schoolSetting.findFirst({
-      select: { activeSchoolYearId: true },
+    void req;
+    res.status(409).json({
+      code: "ROLLOVER_REQUIRED",
+      message:
+        "School year status cannot be changed directly. Initial setup uses activation; later years use atomic rollover.",
     });
-    if (settings?.activeSchoolYearId) {
-      res.status(409).json({
-        code: "ROLLOVER_REQUIRED",
-        message:
-          "An operational school year already exists. Use the approved school-year rollover process.",
-      });
-      return;
-    }
-
-    if (status === "ACTIVE") {
-      await prisma.schoolYear.update({
-        where: { id },
-        data: { status: "ACTIVE" },
-      });
-
-      await ensureDefaultGradeLevels();
-      await setActiveSchoolYear( id);
-    } else {
-      await prisma.schoolYear.update({
-        where: { id },
-        data: { status },
-      });
-
-      if (year.status === "ACTIVE") {
-        await clearActiveSchoolYearIfMatches( id);
-      }
-    }
-
-    await prisma.auditLog.create({ data: { ipAddress: req.ip || "unknown", userAgent: req.headers["user-agent"] || null, userId: req.user!.userId,
-      actionType: "SY_STATUS_CHANGED",
-      description: `School year "${year.yearLabel}" status changed to ${status}`,
-      subjectType: "SchoolYear",
-      recordId: id,
-      } });
-
-    const updated = await prisma.schoolYear.findUnique({ where: { id } });
-    broadcastSchoolYearInvalidation(id);
-    res.json({ year: updated });
   }
 
   export async function deleteSchoolYear(req: Request, res: Response): Promise<void> {
@@ -86,8 +28,15 @@ function parseSchoolYearId(req: Request): number {
       include: {
         _count: {
           select: {
+            sections: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
+            enrollmentHistories: true,
+            sectionAdvisers: true,
+            teacherDesignations: true,
+            teacherSchedulePeriods: true,
+            healthRecords: true,
+            schoolFormArtifacts: true,
           },
         },
       },
@@ -106,13 +55,10 @@ function parseSchoolYearId(req: Request): number {
       return;
     }
 
-    if (
-      year._count.enrollmentApplications > 0 ||
-      year._count.enrollmentRecords > 0
-    ) {
+    if (Object.values(year._count).some((count) => count > 0)) {
       res
         .status(400)
-        .json({ message: "Cannot delete a school year with existing records" });
+        .json({ message: "Cannot delete a school year that contains operational or historical records." });
       return;
     }
 

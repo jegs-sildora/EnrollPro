@@ -24,7 +24,7 @@ Primary EnrollPro route groups include:
 - Learner Directory, Personnel Directory, and Class Sections
 - EOSY Updating and registrar EOSY workspace
 - Settings, activity logs, and system health
-- Teacher advisory and EOSY workspaces
+- Teacher advisory roster workspace
 - Learner authentication and learner portal
 
 ### Frontend Route Map
@@ -43,7 +43,6 @@ Primary EnrollPro route groups include:
 | `/continuing-learners` | Unified Learner Enrollment tabs | Registrar and system administrator |
 | `/monitoring/enrollment` | Section Assignment | Registrar and system administrator |
 | `/eosy` | EOSY Updating | Registrar and system administrator |
-| `/eosy/workspace` | Registrar EOSY workspace | Registrar and system administrator |
 | `/students` | Learner Directory | Registrar and system administrator |
 | `/students/:id` | Learner profile | Registrar and system administrator |
 | `/sections` | Class Sections | Registrar and system administrator |
@@ -54,7 +53,6 @@ Primary EnrollPro route groups include:
 | `/audit-logs` | Activity logs | System administrator |
 | `/my-activity` | Signed-in user's own activity log | Authorized staff |
 | `/help` | Enrollment, SF1, SF7, and rollover guidance | Authorized staff |
-| `/teacher/eosy` | Teacher EOSY dashboard | Teacher, adviser, registrar, or system administrator |
 | `/teacher/advisory` | Teacher advisory class | Teacher, adviser, registrar, or system administrator |
 
 The root route `/` redirects authenticated staff to the Master Dashboard. Removed
@@ -70,7 +68,7 @@ Mounted API domains are:
 - authentication and learner authentication
 - system health, settings, dashboard, and school years
 - sections, sectioning, learners, personnel, and administrative users
-- applications, BOSY, enrollment, EOSY, teacher EOSY, remedial processing, and exports
+- applications, BOSY, enrollment, registrar EOSY verification, remedial processing, and exports
 - SF7, audit logs, Server-Sent Events, and integration feeds
 - address and geography reference data
 
@@ -95,3 +93,7 @@ Requests use the active school year unless a permitted historical context is sup
 See [Microservice Architecture](../../ARCHITECTURE_MICROSERVICES.md). EnrollPro owns identity, enrollment, placement, personnel, and school-year context. SMART owns grades and attendance. ATLAS owns schedules and teaching loads. AIMS owns intervention data. MRF owns maintenance operations.
 
 EnrollPro has no hardware or Internet of Things dependency.
+
+Teachers and class advisers do not encode, submit, or finalize grades in
+EnrollPro. SMART is the only source of grades, learning-area results, and
+promotion outcomes. The teacher advisory route is a read-only roster view.

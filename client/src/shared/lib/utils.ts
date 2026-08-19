@@ -381,7 +381,7 @@ export function formatApplicationStatus(
   if (s === "DROPPED") return "Dropped";
   if (s === "ARCHIVED_NO_SHOW") return "No Show";
   if (s === "REMEDIAL_HOLD") return "For Summer Grade Review";
-  if (s === "REMEDIAL_RESOLVED") return "Summer Grade Resolved";
+  if (s === "REMEDIAL_RESOLVED") return "SMART Remedial Outcome Resolved";
 
   return s
     .replaceAll("_", " ")

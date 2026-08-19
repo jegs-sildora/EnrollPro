@@ -5,6 +5,7 @@ import {
 } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../lib/prisma.js";
 import { AppError } from "../../../lib/AppError.js";
+import { readSmartOutcomeEnvelope } from "../../integration/smart-outcome-envelope.js";
 
 type DatabaseClient = Pick<
   typeof prisma,
@@ -79,6 +80,11 @@ export interface Sf6Payload {
     dropOut: number;
     transferOut: number;
   };
+  smartOutcomeChecksums: Array<{
+    learnerId: number;
+    eosyStatus: string | null;
+    checksum: string | null;
+  }>;
 }
 
 export interface SchoolFormArtifactStatus {
@@ -170,6 +176,9 @@ export async function buildSf5Payload(
           birthdate: true,
         },
       },
+      enrollmentApplication: {
+        select: { reportedGrades: true },
+      },
     },
   });
 
@@ -186,20 +195,39 @@ export async function buildSf5Payload(
       isEosyFinalized: section.isEosyFinalized,
     },
     totalLearners: records.length,
-    learners: records.map((record) => ({
-      learnerId: record.learnerId,
-      lrn: record.learner.lrn,
-      lastName: record.learner.lastName,
-      firstName: record.learner.firstName,
-      middleName: record.learner.middleName,
-      extensionName: record.learner.extensionName,
-      sex: record.learner.sex,
-      birthdate: toDateOnly(record.learner.birthdate),
-      finalAverage: record.finalAverage,
-      eosyStatus: record.eosyStatus,
-      academicDeficiencyNote: record.academicDeficiencyNote,
-      smartOutcome: null,
-    })),
+    learners: records.map((record) => {
+      const smartOutcome = readSmartOutcomeEnvelope(
+        record.enrollmentApplication.reportedGrades,
+      );
+      return {
+        learnerId: record.learnerId,
+        lrn: record.learner.lrn,
+        lastName: record.learner.lastName,
+        firstName: record.learner.firstName,
+        middleName: record.learner.middleName,
+        extensionName: record.learner.extensionName,
+        sex: record.learner.sex,
+        birthdate: toDateOnly(record.learner.birthdate),
+        finalAverage: record.finalAverage,
+        eosyStatus: record.eosyStatus,
+        academicDeficiencyNote: record.academicDeficiencyNote,
+        smartOutcome: smartOutcome
+          ? {
+              revision: smartOutcome.revision,
+              publishedAt: smartOutcome.publishedAt,
+              finalOutcome: smartOutcome.finalOutcome,
+              learningAreas: Object.entries(smartOutcome.subjects).map(
+                ([name, grades]) => ({
+                  code: name,
+                  name,
+                  finalGrade: grades.Final ?? 0,
+                  result: (grades.Final ?? 0) >= 75 ? "PASSED" : "FAILED",
+                }),
+              ),
+            }
+          : null,
+      };
+    }),
   };
 }
 
@@ -219,6 +247,7 @@ export async function buildSf6Payload(
     where: { schoolYearId },
     include: {
       learner: { select: { sex: true } },
+      enrollmentApplication: { select: { reportedGrades: true } },
       section: {
         include: {
           gradeLevel: {
@@ -336,6 +365,15 @@ export async function buildSf6Payload(
     schoolYear,
     rows,
     grandTotal,
+    smartOutcomeChecksums: records
+      .map((record) => ({
+        learnerId: record.learnerId,
+        eosyStatus: record.eosyStatus,
+        checksum:
+          readSmartOutcomeEnvelope(record.enrollmentApplication.reportedGrades)
+            ?.checksum ?? null,
+      }))
+      .sort((left, right) => left.learnerId - right.learnerId),
   };
 }
 

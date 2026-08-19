@@ -20,9 +20,6 @@ import LearnerLogin from "@/features/learner/pages/Login";
 import LearnerDashboard from "@/features/learner/pages/Dashboard";
 const Enrollment = lazy(() => import("@/features/enrollment/pages/Index"));
 const EosyUpdating = lazy(() => import("@/features/enrollment/pages/EosyIndex"));
-const RegistrarEOSYWorkspace = lazy(
-  () => import("@/features/enrollment/pages/RegistrarEOSYWorkspace"),
-);
 const Students = lazy(() => import("@/features/students/pages/Index"));
 const Profile = lazy(() => import("@/features/students/pages/Profile"));
 const ChangePassword = lazy(
@@ -43,9 +40,6 @@ const Teachers = lazy(() => import("@/features/teachers/pages/Index"));
 const Monitor = lazy(() => import("@/features/admission/pages/online-enrollment/Monitor"));
 const Apply = lazy(() => import("@/features/admission/pages/online-enrollment/Index"));
 const BOSYPage = lazy(() => import("@/features/bosy/pages/BOSYPage"));
-const TeacherEosyDashboard = lazy(
-  () => import("@/features/teachers/pages/EosyDashboard"),
-);
 const AdvisoryClass = lazy(() => import("@/features/teachers/pages/AdvisoryClass"));
 import { smartRoutes } from "@/features/smart/routes";
 
@@ -180,10 +174,6 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(EosyUpdating),
               },
               {
-                path: "/eosy/workspace",
-                element: renderLazyPage(RegistrarEOSYWorkspace),
-              },
-              {
                 path: "/continuing-learners",
                 element: renderLazyPage(BOSYPage),
               },
@@ -254,10 +244,6 @@ export const router = createBrowserRouter([
           {
             element: <AppLayout />,
             children: [
-              {
-                path: "/teacher/eosy",
-                element: renderLazyPage(TeacherEosyDashboard),
-              },
               {
                 path: "/teacher/advisory",
                 element: renderLazyPage(AdvisoryClass),

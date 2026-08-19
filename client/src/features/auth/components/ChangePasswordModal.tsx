@@ -323,9 +323,11 @@ export default function ChangePassword() {
         });
 
         const roles = res.data.user?.roles ?? [];
-        const finalHome = roles.some((r: string) => r === "TEACHER" || r === "MRF")
-          ? "/teacher/eosy"
-          : "/dashboard";
+        const finalHome = roles.includes("TEACHER")
+          ? "/teacher/advisory"
+          : roles.includes("MRF")
+            ? "/my-activity"
+            : "/dashboard";
         setTimeout(() => {
           window.location.replace(finalHome);
         }, 500);

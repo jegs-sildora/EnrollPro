@@ -7,10 +7,8 @@ import type {
   ApplicantType,
   Prisma,
 } from "../../generated/prisma/index.js";
-import { addEosyClient, broadcastEosyUpdate } from "./eosy-events.service.js";
 import {
   broadcastEosyInvalidation,
-  broadcastSchoolYearInvalidation,
 } from "../../lib/realtime-events.js";
 import {
   buildSf5Payload,
@@ -18,6 +16,32 @@ import {
   getSchoolFormArtifactStatus,
   recordSchoolFormArtifact,
 } from "./services/school-form-artifact.service.js";
+import {
+  clearSmartOutcomeFromReportedGrades,
+  matchesStoredSmartOutcome,
+} from "../integration/smart-outcome-envelope.js";
+
+function hasFinalizedEosyOutcome(record: {
+  schoolYearId: number;
+  sectionId: number;
+  eosyStatus: EosyStatus | null;
+  finalAverage: number | null;
+  enrollmentApplication: { reportedGrades: Prisma.JsonValue | null };
+}): boolean {
+  if (
+    record.eosyStatus === "DROPPED_OUT"
+    || record.eosyStatus === "TRANSFERRED_OUT"
+  ) {
+    return true;
+  }
+  return matchesStoredSmartOutcome({
+    value: record.enrollmentApplication.reportedGrades,
+    schoolYearId: record.schoolYearId,
+    sectionId: record.sectionId,
+    finalAverage: record.finalAverage,
+    eosyStatus: record.eosyStatus,
+  });
+}
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -579,20 +603,13 @@ export async function updateEosyRecord(
   try {
     const { id } = req.params;
     const recordId = parseInt(String(id), 10);
-    const {
-      eosyStatus,
-      dropOutReason,
-      transferOutDate,
-      finalAverage,
-      academicDeficiencyNote,
-    } =
-      req.body;
+    const { eosyStatus, dropOutReason, transferOutDate } = req.body;
 
     const record = await prisma.enrollmentRecord.findUnique({
       where: { id: recordId },
       include: {
         enrollmentApplication: {
-          select: { applicantType: true }
+          select: { applicantType: true, reportedGrades: true }
         },
         section: {
           include: {
@@ -620,54 +637,35 @@ export async function updateEosyRecord(
       );
     }
 
-    const ave = finalAverage !== undefined ? parseFloat(String(finalAverage)) : record.finalAverage !== null ? parseFloat(String(record.finalAverage)) : null;
-    const isScp = record.section?.programType && record.section.programType !== "REGULAR";
-
-    let targetStatus = eosyStatus;
-    let nextYearCurriculum: ApplicantType | undefined;
-
-    if (ave === 0 || ave === null || isNaN(ave)) {
-      if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
-        throw new AppError(400, "Learner with 0.00 or blank Final Average cannot be assigned an academic evaluation status. Must be DROPPED OUT or TRANSFERRED OUT.");
-      }
-    } else if (ave < 75) {
-      if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC") {
-         throw new AppError(400, "Learner with Final Average below 75 cannot be promoted.");
-      }
-      targetStatus = "RETAINED";
-      if (isScp) {
-        nextYearCurriculum = "REGULAR";
-      }
-    } else if (isScp && ave < 85) {
-      if (targetStatus === "PROMOTED") {
-        throw new AppError(400, "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy must be assigned 'Promoted (To BEC)'.");
-      }
-      targetStatus = "PROMOTED";
-      nextYearCurriculum = "REGULAR";
-    }
-
-    if (targetStatus === "PROMOTED_TO_BEC") {
-      targetStatus = "PROMOTED";
-      nextYearCurriculum = "REGULAR";
+    if (eosyStatus !== "DROPPED_OUT" && eosyStatus !== "TRANSFERRED_OUT") {
+      throw new AppError(
+        409,
+        "Academic outcomes are owned by SMART. Use Sync SMART for promotion, retention, conditional promotion, and final grades.",
+      );
     }
 
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },
       data: {
-        eosyStatus: targetStatus as EosyStatus,
-        academicDeficiencyNote: normalizeAcademicDeficiencyNote(
-          targetStatus as EosyStatus,
-          academicDeficiencyNote,
-        ),
-        nextYearCurriculum: nextYearCurriculum !== undefined ? nextYearCurriculum : undefined,
-        dropOutReason: targetStatus === "DROPPED_OUT" ? dropOutReason : null,
+        eosyStatus,
+        academicDeficiencyNote: null,
+        nextYearCurriculum: null,
+        dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
-          targetStatus === "TRANSFERRED_OUT"
+          eosyStatus === "TRANSFERRED_OUT"
             ? transferOutDate
               ? new Date(transferOutDate)
               : null
             : null,
-        finalAverage: ave !== null ? ave : undefined,
+        finalAverage: null,
+      },
+    });
+    await prisma.enrollmentApplication.update({
+      where: { id: record.enrollmentApplicationId },
+      data: {
+        reportedGrades: clearSmartOutcomeFromReportedGrades(
+          record.enrollmentApplication.reportedGrades,
+        ),
       },
     });
 
@@ -685,90 +683,6 @@ export async function updateEosyRecord(
     broadcastEosyInvalidation(updated.schoolYearId, [updated.sectionId], [updated.learnerId]);
 
     res.json(updated);
-  } catch (error) {
-    next(error);
-  }
-}
-
-/**
- * POST /api/eosy/batch-update
- * Body: { sectionId: number, updates: { recordId: number, status: EosyStatus }[] }
- */
-export async function batchUpdateEosyRecords(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { sectionId, updates } = req.body;
-
-    if (!sectionId || !Array.isArray(updates)) {
-      throw new AppError(400, "Invalid payload. sectionId and updates array required.");
-    }
-
-    const section = await prisma.section.findUnique({
-      where: { id: sectionId },
-      include: { schoolYear: { select: { isEosyFinalized: true } } },
-    });
-
-    if (!section) throw new AppError(404, "Section not found.");
-    if (section.schoolYear.isEosyFinalized) {
-      throw new AppError(422, "Cannot update statuses. School year EOSY is finalized.");
-    }
-    if (section.isEosyFinalized) {
-      throw new AppError(403, `Section '${section.name}' is finalized and locked for EOSY updates.`);
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      let count = 0;
-
-      for (const update of updates) {
-        const current = await tx.enrollmentRecord.findUnique({
-          where: { id: update.recordId },
-          select: { eosyStatus: true, learner: { select: { firstName: true, lastName: true } } },
-        });
-
-        if (!current) continue;
-
-        await tx.enrollmentRecord.update({
-          where: { id: update.recordId },
-          data: {
-            eosyStatus: update.status as EosyStatus,
-            academicDeficiencyNote: normalizeAcademicDeficiencyNote(
-              update.status as EosyStatus,
-              "academicDeficiencyNote" in update
-                ? update.academicDeficiencyNote
-                : null,
-            ),
-          },
-        });
-
-        await tx.auditLog.create({
-          data: {
-            userId: req.user!.userId,
-            actionType: "EOSY_STATUS_BATCH_UPDATE",
-            description: `Updated EOSY status for ${current.learner.lastName}, ${current.learner.firstName}`,
-            subjectType: "EnrollmentRecord",
-            recordId: update.recordId,
-            oldValue: current.eosyStatus || "PENDING",
-            newValue: update.status,
-            ipAddress: req.ip ?? "0.0.0.0",
-            userAgent: (req.headers["user-agent"] as string) ?? null,
-            metadata: { sectionId, sectionName: section.name },
-          },
-        });
-
-        count++;
-      }
-
-      return { count, sectionName: section.name };
-    });
-
-    broadcastEosyInvalidation(section.schoolYearId, [section.id]);
-
-    res.json({
-      message: `Successfully processed ${result.count} updates for ${result.sectionName}.`,
-    });
   } catch (error) {
     next(error);
   }
@@ -807,19 +721,19 @@ export async function finalizeSection(
 
     const records = await prisma.enrollmentRecord.findMany({
       where: { sectionId },
-      include: { learner: true },
+      include: {
+        learner: true,
+        enrollmentApplication: { select: { reportedGrades: true } },
+      },
     });
 
     const pendingLearners = records.filter(
-      (r) =>
-        (r.finalAverage === null || r.finalAverage === undefined) &&
-        r.eosyStatus !== "TRANSFERRED_OUT" &&
-        r.eosyStatus !== "DROPPED_OUT",
+      (record) => !hasFinalizedEosyOutcome(record),
     );
     if (pendingLearners.length > 0) {
       throw new AppError(
         400,
-        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`,
+        `Cannot finalize. ${pendingLearners.length} learner(s) do not have a matching finalized SMART outcome.`,
       );
     }
 
@@ -922,68 +836,6 @@ export async function getSchoolYearExportLock(
 
     const state = await getSchoolYearExportLockState(syId);
     res.json(state);
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function unlockSchoolYearEosy(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { schoolYearId, pin, justification } = req.body;
-    const requestedSchoolYearId = Number.isInteger(parseInt(String(schoolYearId)))
-      ? parseInt(String(schoolYearId))
-      : null;
-
-    // Security PIN and justification removed per request.
-    // Always target the latest archived/finalized school year for emergency unlock.
-    // This prevents stale client state from unlocking an older school year.
-    const schoolYear = await prisma.schoolYear.findFirst({
-      where: {
-        status: "ARCHIVED",
-        isEosyFinalized: true,
-      },
-      orderBy: {
-        id: "desc",
-      },
-      select: { id: true, yearLabel: true, isEosyFinalized: true },
-    });
-
-    if (!schoolYear) {
-      throw new AppError(
-        404,
-        "No archived/finalized school year found to unlock.",
-      );
-    }
-
-    if (!schoolYear.isEosyFinalized) {
-      throw new AppError(400, "School year is not finalized.");
-    }
-
-    const updated = await prisma.schoolYear.update({
-      where: { id: schoolYear.id },
-      data: {
-        isEosyFinalized: false,
-        status: "ACTIVE", // Revert to ACTIVE so teachers can correct records
-      },
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "SCHOOL_YEAR_EMERGENCY_UNLOCK",
-      description: `Admin triggered EMERGENCY EOSY UNLOCK for latest archived S.Y. ${updated.yearLabel}${requestedSchoolYearId && requestedSchoolYearId !== updated.id ? ` (requested ${requestedSchoolYearId}, system applied ${updated.id})` : ""}. Justification: ${justification}`,
-      subjectType: "SchoolYear",
-      recordId: updated.id,
-      req,
-    });
-
-    const state = await getSchoolYearExportLockState(updated.id);
-    broadcastEosyInvalidation(updated.id);
-    broadcastSchoolYearInvalidation(updated.id);
-    res.json({ schoolYear: updated, exportLock: state });
   } catch (error) {
     next(error);
   }
@@ -1631,144 +1483,6 @@ export async function getGradeRecords(
   }
 }
 
-export async function batchUpdateGradeRecords(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { gradeLevelId } = req.params;
-    const { schoolYearId, updates } = req.body;
-
-    if (!schoolYearId || !Array.isArray(updates)) {
-      throw new AppError(
-        400,
-        "Invalid payload. schoolYearId and updates array required.",
-      );
-    }
-
-    // Check if any sections in this grade level are already finalized
-    const finalizedSections = await prisma.section.findMany({
-      where: {
-        gradeLevelId: parseInt(String(gradeLevelId), 10),
-        schoolYearId: parseInt(String(schoolYearId), 10),
-        isEosyFinalized: true,
-      },
-    });
-
-    if (finalizedSections.length > 0) {
-      throw new AppError(
-        422,
-        "Cannot update statuses. One or more sections in this grade level are already finalized.",
-      );
-    }
-
-    const schoolYear = await prisma.schoolYear.findUnique({
-      where: { id: parseInt(String(schoolYearId), 10) },
-    });
-
-    if (schoolYear?.isEosyFinalized) {
-      throw new AppError(
-        422,
-        "Cannot update statuses. School year EOSY is finalized.",
-      );
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      let count = 0;
-
-      for (const update of updates) {
-        const current = await tx.enrollmentRecord.findUnique({
-          where: { id: update.recordId },
-          select: {
-            eosyStatus: true,
-            finalAverage: true,
-            learner: { select: { firstName: true, lastName: true } },
-            section: { select: { programType: true } },
-          },
-        });
-
-        if (!current) continue;
-
-          const isScp = current.section.programType && current.section.programType !== "REGULAR";
-          const ave = current.finalAverage !== null ? parseFloat(String(current.finalAverage)) : null;
-
-        let targetStatus = update.status;
-        const dataToUpdate: {
-          eosyStatus?: EosyStatus
-          nextYearCurriculum?: "REGULAR" | null
-          academicDeficiencyNote?: string | null
-        } = {};
-
-        if (ave === 0 || ave === null || isNaN(ave!)) {
-          if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC" || targetStatus === "RETAINED" || targetStatus === "CONDITIONALLY_PROMOTED") {
-            throw new AppError(400, "Learner with 0.00 or blank Final Average cannot be assigned an academic evaluation status. Must be DROPPED OUT or TRANSFERRED OUT.");
-          }
-        } else if (ave! < 75) {
-          if (targetStatus === "PROMOTED" || targetStatus === "PROMOTED_TO_BEC") {
-             throw new AppError(400, `Cannot promote ${current.learner.lastName}, ${current.learner.firstName}. Final average is below 75.`);
-          }
-          targetStatus = "RETAINED";
-          if (isScp) {
-            dataToUpdate.nextYearCurriculum = "REGULAR";
-          }
-        } else if (isScp && ave! < 85) {
-          if (targetStatus === "PROMOTED") {
-            throw new AppError(400, "Cannot assign standard Promoted status. SCP learners failing to meet the retention policy must be assigned 'Promoted (To BEC)'.");
-          }
-          targetStatus = "PROMOTED";
-          dataToUpdate.nextYearCurriculum = "REGULAR";
-        }
-
-        if (targetStatus === "PROMOTED_TO_BEC") {
-          targetStatus = "PROMOTED";
-          dataToUpdate.nextYearCurriculum = "REGULAR";
-        }
-
-        dataToUpdate.eosyStatus = targetStatus as EosyStatus;
-        dataToUpdate.academicDeficiencyNote = normalizeAcademicDeficiencyNote(
-          targetStatus as EosyStatus,
-          "academicDeficiencyNote" in update
-            ? update.academicDeficiencyNote
-            : null,
-        )
-
-        await tx.enrollmentRecord.update({
-          where: { id: update.recordId },
-          data: dataToUpdate,
-        });
-
-        await tx.auditLog.create({
-          data: {
-            userId: req.user!.userId,
-            actionType: "EOSY_STATUS_BATCH_UPDATE",
-            description: `Updated EOSY status for ${current.learner.lastName}, ${current.learner.firstName}`,
-            subjectType: "EnrollmentRecord",
-            recordId: update.recordId,
-            oldValue: current.eosyStatus || "PENDING",
-            newValue: update.status,
-            ipAddress: req.ip ?? "0.0.0.0",
-            userAgent: (req.headers["user-agent"] as string) ?? null,
-            metadata: { gradeLevelId },
-          },
-        });
-
-        count++;
-      }
-
-      return { count };
-    });
-
-    broadcastEosyInvalidation(parseInt(String(schoolYearId), 10));
-
-    res.json({
-      message: `Successfully processed ${result.count} updates.`,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
 export async function finalizeGradeLevel(
   req: Request,
   res: Response,
@@ -1835,20 +1549,17 @@ export async function finalizeGradeLevel(
       },
       include: {
         learner: true,
+        enrollmentApplication: { select: { reportedGrades: true } },
       },
     });
 
-    // Verify all records have a locked, submitted GEN AVE from their Class Adviser
     const pendingLearners = records.filter(
-      (r) =>
-        (r.finalAverage === null || r.finalAverage === undefined) &&
-        r.eosyStatus !== "TRANSFERRED_OUT" &&
-        r.eosyStatus !== "DROPPED_OUT",
+      (record) => !hasFinalizedEosyOutcome(record),
     );
     if (pendingLearners.length > 0) {
       throw new AppError(
         400,
-        `Cannot finalize. ${pendingLearners.length} learner(s) still have pending grades.`,
+        `Cannot finalize. ${pendingLearners.length} learner(s) do not have a matching finalized SMART outcome.`,
       );
     }
 
@@ -1873,8 +1584,8 @@ export async function finalizeGradeLevel(
           userId: req.user!.userId,
           actionType: isGlobal ? "GRADE_LEVEL_FINALIZED" : "SECTION_FINALIZED",
           description: isGlobal
-            ? `Finalized EOSY and executed grade progression for ${gradeLevel.name}`
-            : `Finalized EOSY and executed grade progression for section ID ${targetSectionId}`,
+            ? `Finalized EOSY review for ${gradeLevel.name}`
+            : `Finalized EOSY review for section ID ${targetSectionId}`,
           subjectType: isGlobal ? "GradeLevel" : "Section",
           recordId: isGlobal ? glId : targetSectionId!,
           oldValue: "false",
@@ -1956,7 +1667,7 @@ export async function unlockGradeLevelEosy(
       await auditLog({
         userId: req.user!.userId,
         actionType: "EOSY_GRADE_LEVEL_UNLOCKED",
-        description: `Unlocked grade level ${gradeLevel.name} to revert control back to Class Advisers for corrections.`,
+        description: `Unlocked grade level ${gradeLevel.name} so updated SMART outcomes can be synchronized and reviewed.`,
         subjectType: "GradeLevel",
         recordId: glId,
         req,
@@ -1967,7 +1678,6 @@ export async function unlockGradeLevelEosy(
 
     res.json({ success: true, message: "Grade level successfully unlocked." });
 
-    broadcastEosyUpdate({ type: "GRADE_LEVEL_UNLOCKED", gradeLevelId: glId });
   } catch (error) {
     next(error);
   }
@@ -2008,7 +1718,7 @@ export async function unlockSectionEosy(
       await auditLog({
         userId: req.user!.userId,
         actionType: "EOSY_SECTION_UNLOCKED",
-        description: `Unlocked section ${section.name} to revert control back to Class Adviser for corrections.`,
+        description: `Unlocked section ${section.name} so updated SMART outcomes can be synchronized and reviewed.`,
         subjectType: "Section",
         recordId: sectionId,
         req,
@@ -2019,7 +1729,6 @@ export async function unlockSectionEosy(
 
     res.json({ success: true, message: "Section roster successfully unlocked." });
 
-    broadcastEosyUpdate({ type: "SECTION_UNLOCKED", sectionId: section.id });
   } catch (error) {
     next(error);
   }
@@ -2066,6 +1775,39 @@ export async function overrideEosyRecord(
         "Cannot override status. School year EOSY is finalized globally.",
       );
     }
+    if (finalAverage !== undefined || academicDeficiencyNote !== undefined) {
+      throw new AppError(
+        409,
+        "Final grades and academic deficiencies are owned by SMART and cannot be overridden in EnrollPro.",
+      );
+    }
+    if (
+      eosyStatus !== undefined
+      && eosyStatus !== "DROPPED_OUT"
+      && eosyStatus !== "TRANSFERRED_OUT"
+    ) {
+      throw new AppError(
+        409,
+        "Promotion, retention, and conditional promotion must be synchronized from SMART.",
+      );
+    }
+    if (sectionId !== undefined && Number(sectionId) !== record.sectionId) {
+      const destination = await prisma.section.findUnique({
+        where: { id: Number(sectionId) },
+        select: { schoolYearId: true, gradeLevelId: true, programType: true },
+      });
+      if (
+        !destination
+        || destination.schoolYearId !== record.schoolYearId
+        || destination.gradeLevelId !== record.section.gradeLevelId
+        || destination.programType !== record.section.programType
+      ) {
+        throw new AppError(
+          400,
+          "A correction may move a learner only to a section in the same school year, grade level, and program.",
+        );
+      }
+    }
 
     // 1. Update Learner model
     if (lrn !== undefined || firstName !== undefined || lastName !== undefined) {
@@ -2079,18 +1821,28 @@ export async function overrideEosyRecord(
       });
     }
 
-    // 2. Update address coordinates inside reportedGrades JSON
-    if (latitude !== undefined || longitude !== undefined) {
-      const currentGrades = asJsonObject(
-        record.enrollmentApplication.reportedGrades,
-      );
+    // 2. Preserve non-academic metadata while invalidating SMART provenance
+    // when a local departure status is recorded.
+    if (
+      latitude !== undefined
+      || longitude !== undefined
+      || eosyStatus === "DROPPED_OUT"
+      || eosyStatus === "TRANSFERRED_OUT"
+    ) {
+      const currentGrades = asJsonObject(record.enrollmentApplication.reportedGrades);
+      const gradesWithCoordinates = latitude !== undefined || longitude !== undefined
+        ? {
+            ...currentGrades,
+            geofencing: { latitude, longitude },
+          }
+        : currentGrades;
       await prisma.enrollmentApplication.update({
         where: { id: record.enrollmentApplicationId },
         data: {
-          reportedGrades: {
-            ...currentGrades,
-            geofencing: { latitude, longitude },
-          },
+          reportedGrades:
+            eosyStatus === "DROPPED_OUT" || eosyStatus === "TRANSFERRED_OUT"
+              ? clearSmartOutcomeFromReportedGrades(gradesWithCoordinates)
+              : gradesWithCoordinates,
         },
       });
     }
@@ -2101,18 +1853,8 @@ export async function overrideEosyRecord(
       data: {
         sectionId: sectionId !== undefined ? sectionId : undefined,
         eosyStatus: eosyStatus !== undefined ? (eosyStatus as EosyStatus) : undefined,
-        academicDeficiencyNote:
-          eosyStatus !== undefined
-            ? normalizeAcademicDeficiencyNote(
-                eosyStatus as EosyStatus,
-                academicDeficiencyNote,
-              )
-            : academicDeficiencyNote !== undefined
-              ? normalizeAcademicDeficiencyNote(
-                  record.eosyStatus,
-                  academicDeficiencyNote,
-                )
-              : undefined,
+        academicDeficiencyNote: eosyStatus !== undefined ? null : undefined,
+        nextYearCurriculum: eosyStatus !== undefined ? null : undefined,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
           eosyStatus === "TRANSFERRED_OUT"
@@ -2120,10 +1862,7 @@ export async function overrideEosyRecord(
               ? new Date(transferOutDate)
               : null
             : null,
-        finalAverage:
-          finalAverage !== undefined && finalAverage !== null
-            ? parseFloat(String(finalAverage))
-            : undefined,
+        finalAverage: eosyStatus !== undefined ? null : undefined,
       },
     });
 
@@ -2133,12 +1872,7 @@ export async function overrideEosyRecord(
     if (firstName !== undefined && firstName !== record.enrollmentApplication.learner.firstName) auditDetails.push(`First Name: ${record.enrollmentApplication.learner.firstName} -> ${firstName}`);
     if (lastName !== undefined && lastName !== record.enrollmentApplication.learner.lastName) auditDetails.push(`Last Name: ${record.enrollmentApplication.learner.lastName} -> ${lastName}`);
     if (sectionId !== undefined && sectionId !== record.sectionId) auditDetails.push(`Section ID: ${record.sectionId} -> ${sectionId}`);
-    if (finalAverage !== undefined && finalAverage !== record.finalAverage) auditDetails.push(`Average: ${record.finalAverage} -> ${finalAverage}`);
     if (eosyStatus !== undefined && eosyStatus !== record.eosyStatus) auditDetails.push(`Status: ${record.eosyStatus} -> ${eosyStatus}`);
-    if (
-      academicDeficiencyNote !== undefined &&
-      academicDeficiencyNote !== record.academicDeficiencyNote
-    ) auditDetails.push(`Deficiency Note: ${record.academicDeficiencyNote ?? "none"} -> ${academicDeficiencyNote ?? "none"}`);
     if (latitude !== undefined || longitude !== undefined) auditDetails.push(`Coords: Lat ${latitude}, Lng ${longitude}`);
 
     await auditLog({
@@ -2156,64 +1890,7 @@ export async function overrideEosyRecord(
       req,
     });
 
-    // 5. Data Realignment Ripple Effect (Forward Ripple)
-    if (eosyStatus !== undefined && eosyStatus !== record.eosyStatus) {
-      const activeSy = await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
-      });
-      if (activeSy) {
-        const activeApp = await prisma.enrollmentApplication.findFirst({
-          where: {
-            learnerId: record.learnerId,
-            schoolYearId: activeSy.id,
-          },
-        });
-        if (activeApp) {
-          const histGradeLevel = await prisma.gradeLevel.findUnique({
-            where: { id: record.enrollmentApplication.gradeLevelId },
-          });
-          if (histGradeLevel) {
-            let targetGradeLevelId = histGradeLevel.id;
-            if (eosyStatus === "PROMOTED" || eosyStatus === "CONDITIONALLY_PROMOTED") {
-              const nextGradeLevel = await prisma.gradeLevel.findFirst({
-                where: { displayOrder: { gt: histGradeLevel.displayOrder } },
-                orderBy: { displayOrder: "asc" },
-              });
-              if (nextGradeLevel) {
-                targetGradeLevelId = nextGradeLevel.id;
-              }
-            }
-
-            const activeAppGrades = asJsonObject(activeApp.reportedGrades);
-            await prisma.enrollmentApplication.update({
-              where: { id: activeApp.id },
-              data: {
-                gradeLevelId: targetGradeLevelId,
-                status: "READY_FOR_SECTIONING",
-                reportedGrades: {
-                  ...activeAppGrades,
-                  sectionReassignmentRequired: true,
-                  reassignmentReason: `Historical promotion status changed to ${eosyStatus}`,
-                },
-              },
-            });
-
-            await prisma.enrollmentRecord.deleteMany({
-              where: {
-                enrollmentApplicationId: activeApp.id,
-                schoolYearId: activeSy.id,
-              },
-            });
-          }
-        }
-      }
-    }
-
-    // 6. Broadcast update
-    broadcastEosyUpdate({
-      type: "SECTION_FINALIZED",
-      sectionId: record.sectionId,
-    });
+    // Broadcast only after the correction writes have completed.
     broadcastEosyInvalidation(
       updated.schoolYearId,
       [updated.sectionId],
@@ -2224,17 +1901,4 @@ export async function overrideEosyRecord(
   } catch (error) {
     next(error);
   }
-}
-
-export async function streamEosyUpdates(req: Request, res: Response) {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
-  res.flushHeaders();
-
-  addEosyClient(res);
-
-  // Send an initial heartbeat
-  res.write(":\n\n");
 }

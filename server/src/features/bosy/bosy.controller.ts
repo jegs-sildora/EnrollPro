@@ -9,7 +9,6 @@ import {
   markConfirmedTransferOut,
   bulkConfirmReturn,
   getJHSCompleters,
-  syncBOSYQueue,
   getPreviousSections,
   type BOSYQueueState,
 } from "./bosy.service.js";
@@ -50,37 +49,6 @@ export async function getBosyReadiness(
 
     const data = await getBOSYReadiness(schoolYearId);
     res.json(data);
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function syncBosyQueueHandler(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const schoolYearId = parsePositiveInt(req.body.schoolYearId, 0);
-    if (!schoolYearId) {
-      res.status(400).json({ message: "schoolYearId is required." });
-      return;
-    }
-
-    const result = await syncBOSYQueue(schoolYearId, req.user!.userId);
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "BOSY_QUEUE_SYNCED",
-      description: `Synchronized BOSY queue; created ${result.created} missing applications, including ${result.remedialHolds} Grade 10 remedial hold(s).`,
-      subjectType: "SchoolYear",
-      recordId: schoolYearId,
-      req,
-    });
-
-    broadcastBosyInvalidation(schoolYearId);
-
-    res.json(result);
   } catch (error) {
     next(error);
   }

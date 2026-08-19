@@ -87,6 +87,9 @@ export interface RealtimeInvalidationEvent {
   learnerIds?: number[];
   smartRevision?: string | null;
   smartEventAt?: string | null;
+  sourceSchoolYearId?: number | null;
+  rolloverAt?: string | null;
+  eventRevision?: string | null;
   emittedAt: string;
 }
 

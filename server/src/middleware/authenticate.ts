@@ -48,6 +48,11 @@ async function performAuth(
   next: NextFunction,
   cookieName: string,
 ): Promise<void> {
+  if (req.user) {
+    next()
+    return
+  }
+
   const auth = req.headers.authorization;
   const bearerToken = auth?.startsWith("Bearer ") ? auth.split(" ")[1] : null;
   const cookieToken = req.cookies?.[cookieName];
@@ -56,7 +61,6 @@ async function performAuth(
   const token = bearerToken ?? cookieToken ?? queryToken;
 
   if (!token) {
-    console.log(`[AuthDebug] No token found in request to ${req.path}. Cookie name: ${cookieName}, cookies:`, req.cookies);
     res.status(401).json({ code: "UNAUTHORIZED", message: "Unauthorized" });
     return;
   }
@@ -65,7 +69,6 @@ async function performAuth(
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
   } catch (err) {
-    console.log(`[AuthDebug] JWT verification failed for request to ${req.path} with token: ${token.substring(0, 15)}... Error:`, err);
     if (err instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         code: "TOKEN_EXPIRED",
@@ -107,6 +110,54 @@ async function performAuth(
       .status(500)
       .json({ code: "SERVER_ERROR", message: "Authentication check failed." });
   }
+}
+
+export async function optionalAuthenticate(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  if (req.user) {
+    next()
+    return
+  }
+
+  const auth = req.headers.authorization
+  const bearerToken = auth?.startsWith("Bearer ") ? auth.slice(7) : null
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME]
+  const token = bearerToken ?? cookieToken ?? null
+  if (!token) {
+    next()
+    return
+  }
+
+  let decoded: AuthPayload
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload
+  } catch {
+    res.status(401).json({
+      code: "INVALID_TOKEN",
+      message: "Your session is invalid or expired. Please sign in again.",
+    })
+    return
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+    select: { isActive: true },
+  })
+  if (!user?.isActive) {
+    res.status(401).json({
+      code: "ACCOUNT_INACTIVE",
+      message: "Account is inactive. Contact your system administrator.",
+    })
+    return
+  }
+
+  req.user = decoded
+  const auditCtx = getAuditContext()
+  if (auditCtx) auditCtx.userId = decoded.userId
+  next()
 }
 
 

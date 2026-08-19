@@ -1,14 +1,21 @@
-import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveSchoolYear, cloneSchoolYearStructure, getCurrentManilaYear, parseDateInput } from "../services/school-year-controller-shared.service.js";
+import {
+  ensureDefaultGradeLevels,
+  setActiveSchoolYear,
+  getCurrentManilaYear,
+  parseDateInput,
+} from "../services/school-year-controller-shared.service.js";
 
 import { normalizeDateToUtcNoon, deriveSchoolYearScheduleFromOpeningDate } from "../school-year.service.js";
 import { prisma } from "../../../lib/prisma.js";
-import { EosyStatus, AcademicStatus } from "../../../generated/prisma/index.js";
 import type { Request, Response } from "express";
 import {
   executeSchoolYearRollover,
   RolloverNotReadyError,
 } from "../services/school-year-rollover.service.js";
-import { broadcastSchoolYearInvalidation } from "../../../lib/realtime-events.js";
+import {
+  broadcastRolloverInvalidation,
+  broadcastSchoolYearInvalidation,
+} from "../../../lib/realtime-events.js";
 
 
 
@@ -16,24 +23,8 @@ function parseSchoolYearId(req: Request): number {
   return Number.parseInt(String(req.params.id ?? ""), 10);
 }
 
-const EOSY_SKIP_OUTCOMES = new Set([
-  "DROPPED_OUT",
-  "TRANSFERRED_OUT",
-  "IRREGULAR",
-]);
-const EOSY_RETAINED_OUTCOMES = new Set(["RETAINED"]);
 const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-interface RolloverSummary {
-  processedRecords: number;
-  createdApplications: number;
-  skippedByEosyOutcome: number;
-  skippedIrregular: number;
-  skippedNoTargetGrade: number;
-  skippedExistingApplications: number;
-  skippedDuplicateRecords: number;
-}
 
 function isSerializableWriteConflict(
   error: unknown,
@@ -41,11 +32,6 @@ function isSerializableWriteConflict(
   return error instanceof Error
     && "code" in error
     && error.code === "P2034";
-}
-
-function parseStartYearFromLabel(yearLabel: string): number {
-  const parsed = Number.parseInt(yearLabel.split("-")[0] ?? "", 10);
-  return Number.isInteger(parsed) ? parsed : new Date().getUTCFullYear();
 }
 
 function resolveRequestedYearLabel(
@@ -59,195 +45,42 @@ function resolveRequestedYearLabel(
   return trimmedYearLabel.length > 0 ? trimmedYearLabel : fallbackYearLabel;
 }
 
-function buildEnrollmentTrackingNumber(
-  startYear: number,
-  enrollmentApplicationId: number): string {
-  return `REG-${startYear}-${String(enrollmentApplicationId).padStart(5, "0")}`;
+function nextYearLabel(yearLabel: string): string | null {
+  const match = /^(\d{4})-(\d{4})$/.exec(yearLabel);
+  if (!match) return null;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  return end === start + 1 ? `${start + 1}-${end + 1}` : null;
 }
 
-async function carryOverEligibleLearners(
-  sourceSchoolYearId: number,
-  targetSchoolYearId: number,
-  targetStartYear: number,
-  actingUserId: number | null): Promise<RolloverSummary> {
-  const [sourceRecords, targetGradeLevels, existingTargetApplications] =
-    await Promise.all([
-      prisma.enrollmentRecord.findMany({
-        where: {
-          schoolYearId: sourceSchoolYearId,
-          enrollmentApplication: {
-            status: {
-              in: ["OFFICIALLY_ENROLLED"],
-            },
-          },
-        },
-        select: {
-          eosyStatus: true,
-          enrollmentApplication: {
-            select: {
-              learnerId: true,
-              applicantType: true,
-              isPrivacyConsentGiven: true,
-              guardianRelationship: true,
-              hasNoMother: true,
-              hasNoFather: true,
-              encodedById: true,
-            },
-          },
-          section: {
-            select: {
-              gradeLevelId: true,
-              gradeLevel: {
-                select: {
-                  displayOrder: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      prisma.gradeLevel.findMany({
-        select: {
-          id: true,
-          displayOrder: true,
-        },
-      }),
-      prisma.enrollmentApplication.findMany({
-        where: { schoolYearId: targetSchoolYearId },
-        select: {
-          learnerId: true,
-        },
-      }),
-    ]);
-
-  const targetGradeLevelByDisplayOrder = new Map<number, { id: number }>();
-  for (const gradeLevel of targetGradeLevels) {
-    targetGradeLevelByDisplayOrder.set(gradeLevel.displayOrder, {
-      id: gradeLevel.id,
-    });
+function requiredCalendarDate(value: unknown, label: string): Date {
+  const parsed = value instanceof Date ? value : parseDateInput(value);
+  if (!parsed) {
+    throw new Error(`${label} must be a valid date.`);
   }
-
-  const existingTargetLearnerIds = new Set<number>(
-    existingTargetApplications.map((application) => application.learnerId));
-  const processedLearnerIds = new Set<number>();
-
-  const summary: RolloverSummary = {
-    processedRecords: sourceRecords.length,
-    createdApplications: 0,
-    skippedByEosyOutcome: 0,
-    skippedIrregular: 0,
-    skippedNoTargetGrade: 0,
-    skippedExistingApplications: 0,
-    skippedDuplicateRecords: 0,
-  };
-
-  for (const record of sourceRecords) {
-    const learnerId = record.enrollmentApplication.learnerId;
-
-    if (processedLearnerIds.has(learnerId)) {
-      summary.skippedDuplicateRecords += 1;
-      continue;
-    }
-    processedLearnerIds.add(learnerId);
-
-    if (existingTargetLearnerIds.has(learnerId)) {
-      summary.skippedExistingApplications += 1;
-      continue;
-    }
-
-    const eosyStatus = record.eosyStatus ?? EosyStatus.PROMOTED;
-    const isIrregular = eosyStatus === EosyStatus.CONDITIONALLY_PROMOTED;
-
-    if (isIrregular) {
-      summary.skippedIrregular += 1;
-      continue;
-    }
-    if (EOSY_SKIP_OUTCOMES.has(eosyStatus)) {
-      summary.skippedByEosyOutcome += 1;
-      continue;
-    }
-
-    const sourceDisplayOrder = record.section.gradeLevel.displayOrder;
-    const targetDisplayOrder =
-      eosyStatus === EosyStatus.PROMOTED
-        ? sourceDisplayOrder + 1
-        : sourceDisplayOrder;
-    const targetGradeLevel =
-      targetGradeLevelByDisplayOrder.get(targetDisplayOrder) ?? null;
-
-    if (!targetGradeLevel) {
-      summary.skippedNoTargetGrade += 1;
-      // A PROMOTED learner with no target grade is a JHS Completer (e.g. Grade 10 → no Grade 11).
-      // EOSY section finalization should already have set this, but we enforce it here as a
-      // belt-and-suspenders guard so the Alumni / JHS Completers table is always consistent.
-      if (eosyStatus === EosyStatus.PROMOTED) {
-        await prisma.learner.update({
-          where: { id: learnerId },
-          data: { status: "JHS_COMPLETER" },
-        });
-      }
-      continue;
-    }
-
-    const resolvedAcademicStatus =
-      eosyStatus === EosyStatus.PROMOTED
-        ? AcademicStatus.PROMOTED
-        : AcademicStatus.RETAINED;
-
-    const createdApplication = await prisma.enrollmentApplication.create({
-      data: {
-        learnerId,
-        schoolYearId: targetSchoolYearId,
-        gradeLevelId: targetGradeLevel.id,
-        applicantType: record.enrollmentApplication.applicantType,
-        learnerType: "CONTINUING",
-        status: "PENDING_VERIFICATION",
-        admissionChannel: "F2F",
-        isPrivacyConsentGiven:
-          record.enrollmentApplication.isPrivacyConsentGiven,
-        guardianRelationship: record.enrollmentApplication.guardianRelationship,
-        hasNoMother: record.enrollmentApplication.hasNoMother,
-        hasNoFather: record.enrollmentApplication.hasNoFather,
-        encodedById:
-          record.enrollmentApplication.encodedById ?? actingUserId ?? null,
-        academicStatus: resolvedAcademicStatus,
-        isRemedialRequired: isIrregular,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const trackingNumber = buildEnrollmentTrackingNumber(
-      targetStartYear,
-      createdApplication.id);
-    await prisma.enrollmentApplication.update({
-      where: { id: createdApplication.id },
-      data: { trackingNumber },
-    });
-
-    await prisma.learner.update({
-      where: { id: learnerId },
-      data: { promotionStatus: eosyStatus },
-    });
-
-    existingTargetLearnerIds.add(learnerId);
-    summary.createdApplications += 1;
-  }
-
-  return summary;
+  return normalizeDateToUtcNoon(parsed);
 }
-
 
   export async function createSchoolYear(req: Request, res: Response): Promise<void> {
     const { yearLabel, classOpeningDate, classEndDate, cloneFromId, termFormat } = req.body;
 
-    const [schoolYearCount, setting] = await Promise.all([
+    const [schoolYearCount, settings] = await Promise.all([
       prisma.schoolYear.count(),
-      prisma.schoolSetting.findFirst({
-        select: { activeSchoolYearId: true },
+      prisma.schoolSetting.findMany({
+        take: 2,
+        orderBy: { id: "asc" },
+        select: { id: true, activeSchoolYearId: true },
       }),
     ]);
+    if (settings.length !== 1) {
+      res.status(409).json({
+        code: "SCHOOL_SETTINGS_CONFLICT",
+        message:
+          "Exactly one school settings record is required before the first school year can be activated.",
+      });
+      return;
+    }
+    const setting = settings[0]!;
     if (schoolYearCount > 0 || setting?.activeSchoolYearId) {
       res.status(409).json({
         code: "ROLLOVER_REQUIRED",
@@ -313,34 +146,8 @@ async function carryOverEligibleLearners(
       return;
     }
 
-    await prisma.schoolYear.updateMany({
-      where: { status: "ACTIVE" },
-      data: { status: "ARCHIVED" },
-    });
-
-    const normalizedCloneFromId =
-      cloneFromId === null || cloneFromId === undefined
-        ? null
-        : Number(cloneFromId);
-
-    const year = await prisma.schoolYear.upsert({
-      where: { yearLabel: resolvedYearLabel },
-      update: {
-        status: "ACTIVE",
-        classOpeningDate: schedule.classOpeningDate,
-        classEndDate: schedule.classEndDate,
-        enrollOpenDate: schedule.enrollOpenDate,
-        enrollCloseDate: schedule.enrollCloseDate,
-        term1Start: schedule.term1Start,
-        term1End: schedule.term1End,
-        term2Start: schedule.term2Start,
-        term2End: schedule.term2End,
-        term3Start: schedule.term3Start,
-        term3End: schedule.term3End,
-        termFormat: termFormat ?? "TRIMESTER",
-        clonedFromId: normalizedCloneFromId,
-      },
-      create: {
+    const year = await prisma.schoolYear.create({
+      data: {
         yearLabel: resolvedYearLabel,
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
@@ -354,21 +161,16 @@ async function carryOverEligibleLearners(
         term3Start: schedule.term3Start,
         term3End: schedule.term3End,
         termFormat: termFormat ?? "TRIMESTER",
-        clonedFromId: normalizedCloneFromId,
       },
     });
 
-    await setActiveSchoolYear( year.id);
-
-    if (normalizedCloneFromId) {
-      await cloneSchoolYearStructure( normalizedCloneFromId, year.id);
-    }
+    await setActiveSchoolYear(setting.id, year.id);
 
     await ensureDefaultGradeLevels();
 
     await prisma.auditLog.create({ data: { ipAddress: req.ip || "unknown", userAgent: req.headers["user-agent"] || null, userId: req.user!.userId,
       actionType: "SY_CREATED",
-      description: `Created and activated school year "${resolvedYearLabel}"${normalizedCloneFromId ? ` (cloned from ID ${normalizedCloneFromId})` : ""}`,
+      description: `Created and activated initial school year "${resolvedYearLabel}"`,
       subjectType: "SchoolYear",
       recordId: year.id,
       } });
@@ -412,7 +214,13 @@ async function carryOverEligibleLearners(
         userAgent: req.headers["user-agent"] ?? null,
       });
 
-      broadcastSchoolYearInvalidation(result.year.id);
+      const rolloverAt = new Date().toISOString()
+      broadcastRolloverInvalidation({
+        sourceSchoolYearId: result.rolloverFrom.id,
+        activeSchoolYearId: result.year.id,
+        rolloverAt,
+        eventRevision: `${result.rolloverFrom.id}:${result.year.id}:${rolloverAt}`,
+      })
 
       res.status(201).json(result);
     } catch (error: unknown) {
@@ -434,6 +242,202 @@ async function carryOverEligibleLearners(
       }
       throw error;
     }
+  }
+
+  export async function prepareNextSchoolYear(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const {
+      sourceSchoolYearId,
+      yearLabel,
+      classOpeningDate,
+      classEndDate,
+      enrollOpenDate,
+      enrollCloseDate,
+      term1Start,
+      term1End,
+      term2Start,
+      term2End,
+      term3Start,
+      term3End,
+      term4Start,
+      term4End,
+      termFormat,
+    } = req.body;
+
+    const [sourceYear, settings, activeYears] = await Promise.all([
+      prisma.schoolYear.findUnique({
+        where: { id: sourceSchoolYearId },
+        select: { id: true, yearLabel: true, status: true },
+      }),
+      prisma.schoolSetting.findMany({
+        select: { activeSchoolYearId: true },
+        take: 2,
+      }),
+      prisma.schoolYear.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true },
+      }),
+    ]);
+    const setting = settings.length === 1 ? settings[0] : null;
+    if (!sourceYear || sourceYear.status !== "ACTIVE") {
+      res.status(409).json({ message: "The source school year is not active." });
+      return;
+    }
+    if (
+      settings.length !== 1
+      || setting?.activeSchoolYearId !== sourceYear.id
+      || activeYears.length !== 1
+      || activeYears[0]?.id !== sourceYear.id
+    ) {
+      res.status(409).json({
+        code: "ACTIVE_SCHOOL_YEAR_CONFLICT",
+        message: "Resolve the active school year conflict before preparing the next calendar.",
+      });
+      return;
+    }
+    const expectedLabel = nextYearLabel(sourceYear.yearLabel);
+    if (!expectedLabel || yearLabel !== expectedLabel) {
+      res.status(400).json({
+        message: `The next school year must be ${expectedLabel ?? "a consecutive YYYY-YYYY label"}.`,
+      });
+      return;
+    }
+
+    let calendar: {
+      classOpeningDate: Date;
+      classEndDate: Date;
+      enrollOpenDate: Date;
+      enrollCloseDate: Date;
+      term1Start: Date;
+      term1End: Date;
+      term2Start: Date;
+      term2End: Date;
+      term3Start: Date;
+      term3End: Date;
+      term4Start: Date | null;
+      term4End: Date | null;
+    };
+    try {
+      calendar = {
+        classOpeningDate: requiredCalendarDate(classOpeningDate, "Start of classes"),
+        classEndDate: requiredCalendarDate(classEndDate, "End of classes"),
+        enrollOpenDate: requiredCalendarDate(enrollOpenDate, "Enrollment opening"),
+        enrollCloseDate: requiredCalendarDate(enrollCloseDate, "Enrollment closing"),
+        term1Start: requiredCalendarDate(term1Start, "Term 1 start"),
+        term1End: requiredCalendarDate(term1End, "Term 1 end"),
+        term2Start: requiredCalendarDate(term2Start, "Term 2 start"),
+        term2End: requiredCalendarDate(term2End, "Term 2 end"),
+        term3Start: requiredCalendarDate(term3Start, "Term 3 start"),
+        term3End: requiredCalendarDate(term3End, "Term 3 end"),
+        term4Start: term4Start
+          ? requiredCalendarDate(term4Start, "Term 4 start")
+          : null,
+        term4End: term4End
+          ? requiredCalendarDate(term4End, "Term 4 end")
+          : null,
+      };
+    } catch (error) {
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "The calendar is invalid.",
+      });
+      return;
+    }
+    const orderedDates = [
+      calendar.classOpeningDate,
+      calendar.term1Start,
+      calendar.term1End,
+      calendar.term2Start,
+      calendar.term2End,
+      calendar.term3Start,
+      calendar.term3End,
+      ...(termFormat === "QUARTERS" && calendar.term4Start && calendar.term4End
+        ? [calendar.term4Start, calendar.term4End]
+        : []),
+      calendar.classEndDate,
+    ];
+    if (
+      orderedDates.some((date, index) => (
+        index > 0 && date.getTime() < orderedDates[index - 1]!.getTime()
+      ))
+      || calendar.enrollCloseDate < calendar.enrollOpenDate
+    ) {
+      res.status(400).json({
+        message: "Calendar dates must be complete and in chronological order.",
+      });
+      return;
+    }
+
+    const existing = await prisma.schoolYear.findUnique({
+      where: { yearLabel },
+      select: {
+        id: true,
+        status: true,
+        clonedFromId: true,
+        _count: {
+          select: {
+            sections: true,
+            enrollmentApplications: true,
+            enrollmentRecords: true,
+            enrollmentHistories: true,
+            sectionAdvisers: true,
+            teacherDesignations: true,
+            teacherSchedulePeriods: true,
+            healthRecords: true,
+            schoolFormArtifacts: true,
+          },
+        },
+      },
+    });
+    const operationalCount = existing
+      ? Object.values(existing._count).reduce((sum, value) => sum + value, 0)
+      : 0;
+    if (
+      existing
+      && (existing.status === "ACTIVE"
+        || operationalCount > 0
+        || (existing.clonedFromId !== null
+          && existing.clonedFromId !== sourceYear.id))
+    ) {
+      res.status(409).json({
+        message: "The incoming school year already contains operational records.",
+      });
+      return;
+    }
+
+    const target = existing
+      ? await prisma.schoolYear.update({
+          where: { id: existing.id },
+          data: {
+            ...calendar,
+            termFormat,
+            status: "ARCHIVED",
+            isEosyFinalized: false,
+          },
+        })
+      : await prisma.schoolYear.create({
+          data: {
+            yearLabel,
+            ...calendar,
+            termFormat,
+            status: "ARCHIVED",
+          },
+        });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        actionType: "SY_TARGET_CALENDAR_PREPARED",
+        description: `Prepared the reviewed calendar for ${target.yearLabel}.`,
+        subjectType: "SchoolYear",
+        recordId: target.id,
+        ipAddress: req.ip || "unknown",
+        userAgent: req.headers["user-agent"] ?? null,
+      },
+    });
+    broadcastSchoolYearInvalidation(target.id);
+    res.status(existing ? 200 : 201).json({ year: target });
   }
 
   export async function updateDates(req: Request, res: Response): Promise<void> {

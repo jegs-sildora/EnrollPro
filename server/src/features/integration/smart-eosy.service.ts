@@ -6,6 +6,11 @@ import {
 import { Prisma } from "../../generated/prisma/index.js";
 import { AppError } from "../../lib/AppError.js";
 import { prisma } from "../../lib/prisma.js";
+import {
+  buildSmartOutcomeEnvelope,
+  clearSmartOutcomeFromReportedGrades,
+  mergeSmartOutcomeIntoReportedGrades,
+} from "./smart-outcome-envelope.js";
 
 interface SmartSyncResult {
   schoolYearId: number;
@@ -67,7 +72,7 @@ interface NormalizedSmartOutcome {
     Final?: number | null;
     remarks?: string | null;
   }>;
-  publishedAt: string | null;
+  publishedAt: string;
   revision: string | null;
 }
 
@@ -254,6 +259,9 @@ function normalizeSmartOutcome(
   if (!finalOutcome) {
     throw new Error("SMART did not return a finalized promotion outcome.");
   }
+  if (!outcome.publishedAt || Number.isNaN(Date.parse(outcome.publishedAt))) {
+    throw new Error("SMART did not return a valid publication time for the finalized outcome.");
+  }
   return {
     lrn: outcome.lrn,
     studentName: outcome.studentName,
@@ -261,7 +269,7 @@ function normalizeSmartOutcome(
     finalOutcome,
     learningAreas,
     reportedGradesObj,
-    publishedAt: outcome.publishedAt ?? null,
+    publishedAt: outcome.publishedAt,
     revision: outcome.revision ?? null,
   };
 }
@@ -301,6 +309,9 @@ async function syncFinalSmartSectionOutcomesInternal(
               firstName: true,
               lastName: true,
             },
+          },
+          enrollmentApplication: {
+            select: { reportedGrades: true },
           },
         },
       },
@@ -571,10 +582,22 @@ async function syncFinalSmartSectionOutcomesInternal(
           },
         });
         if (student.reportedGradesObj && Object.keys(student.reportedGradesObj).length > 0) {
+          const envelope = buildSmartOutcomeEnvelope({
+            schoolYearId: section.schoolYearId,
+            sectionId: section.id,
+            finalGeneralAverage: student.finalGeneralAverage,
+            finalOutcome: student.finalOutcome,
+            publishedAt: student.publishedAt,
+            revision: student.revision,
+            subjects: student.reportedGradesObj,
+          });
           await tx.enrollmentApplication.update({
             where: { id: record.enrollmentApplicationId },
             data: {
-              reportedGrades: student.reportedGradesObj,
+              reportedGrades: mergeSmartOutcomeIntoReportedGrades(
+                record.enrollmentApplication.reportedGrades,
+                envelope,
+              ),
             },
           });
         }
@@ -592,7 +615,11 @@ async function syncFinalSmartSectionOutcomesInternal(
         });
         await tx.enrollmentApplication.update({
           where: { id: record.enrollmentApplicationId },
-          data: { reportedGrades: Prisma.DbNull },
+          data: {
+            reportedGrades: clearSmartOutcomeFromReportedGrades(
+              record.enrollmentApplication.reportedGrades,
+            ),
+          },
         });
       }
     },

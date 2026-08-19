@@ -136,7 +136,7 @@ function SectionItem({ label, value, valueClassName }: { label: string; value: s
             Not Specified
           </span>
         ) : (
-          value
+          <span className="uppercase">{value}</span>
         )}
       </div>
     </>
@@ -767,7 +767,7 @@ export default function LearnerDashboard() {
                           <div className="bg-transparent pb-0 print:bg-transparent">
                             <div className="mb-8 mt-0 flex items-center gap-3">
                               <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
-                                Official Learner Profile (for SF1 Reporting)
+                                Official Learner Profile
                               </h3>
                             </div>
                           </div>
@@ -797,7 +797,7 @@ export default function LearnerDashboard() {
 
                             {/* Sub-Section 2: Address & Contact Details */}
                             <div className="mb-8">
-                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY & CONTACT</h3>
+                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY</h3>
                               <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
                                 <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
                                   <SectionItem label="Permanent Home Address" value={
@@ -813,10 +813,6 @@ export default function LearnerDashboard() {
                                       return `${data.sf1.currentAddress.houseNoStreet || ''} ${data.sf1.currentAddress.barangay || ''}, ${data.sf1.currentAddress.cityMunicipality || ''}, ${data.sf1.currentAddress.province || ''}`.replace(/\s+/g, ' ').trim();
                                     })()
                                   } />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                                  <SectionItem label="Personal Email" value={data.sf1.email} />
-                                  <SectionItem label="Contact Number" value={data.sf1.mobileNumber} />
                                 </div>
                               </div>
                             </div>
@@ -839,7 +835,7 @@ export default function LearnerDashboard() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                                   <SectionItem
-                                    label="Guardian's Relationship"
+                                    label="Relationship to Learner"
                                     value={data.sf1.guardian?.relationship || null}
                                     valueClassName={!data.sf1.is4PsBeneficiary ? "md:col-span-3" : ""}
                                   />

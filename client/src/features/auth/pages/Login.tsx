@@ -303,9 +303,10 @@ export default function Login() {
         return;
       }
 
-      const destination =
-        payload.user.roles?.includes("TEACHER") || payload.user.roles?.includes("MRF")
-          ? "/teacher/eosy"
+      const destination = payload.user.roles?.includes("TEACHER")
+        ? "/teacher/advisory"
+        : payload.user.roles?.includes("MRF")
+          ? "/my-activity"
           : "/dashboard";
 
       redirectTimeoutRef.current = window.setTimeout(() => {
@@ -342,8 +343,11 @@ export default function Login() {
   };
 
   if (user && !user.mustChangePassword) {
-    const homeRoute =
-      user.roles?.includes("TEACHER") || user.roles?.includes("MRF") ? "/teacher/eosy" : "/dashboard";
+    const homeRoute = user.roles?.includes("TEACHER")
+      ? "/teacher/advisory"
+      : user.roles?.includes("MRF")
+        ? "/my-activity"
+        : "/dashboard";
     return (
       <Navigate
         to={homeRoute}

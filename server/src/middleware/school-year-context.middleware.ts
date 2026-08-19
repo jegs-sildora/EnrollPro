@@ -1,14 +1,23 @@
-import type { NextFunction, Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import type { NextFunction, Request, Response } from "express"
+import { prisma } from "../lib/prisma.js"
+import { resolveActiveSchoolYearState } from "../features/school-year/services/active-school-year.service.js"
 
-const CONTEXT_SCHOOL_YEAR_HEADER = "x-school-year-context-id";
+const CONTEXT_SCHOOL_YEAR_HEADER = "x-school-year-context-id"
 
 declare global {
   namespace Express {
     interface Request {
-      schoolYearId?: number;
+      schoolYearId?: number
+      activeSchoolYearId?: number
     }
   }
+}
+
+function parseContextHeader(value: string | string[] | undefined): number | null | "INVALID" {
+  const normalized = Array.isArray(value) ? value[0] : value
+  if (!normalized) return null
+  const parsed = Number.parseInt(normalized, 10)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : "INVALID"
 }
 
 export async function schoolYearContext(
@@ -16,38 +25,50 @@ export async function schoolYearContext(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  // 1. Try to get ID from header
-  const headerValue = req.headers[CONTEXT_SCHOOL_YEAR_HEADER];
-  const normalized = Array.isArray(headerValue) ? headerValue[0] : headerValue;
-  
-  if (normalized) {
-    const parsed = Number.parseInt(normalized, 10);
-    if (Number.isInteger(parsed) && parsed > 0) {
-      req.schoolYearId = parsed;
-      return next();
+  const requestedId = parseContextHeader(req.headers[CONTEXT_SCHOOL_YEAR_HEADER])
+  if (requestedId === "INVALID") {
+    res.status(400).json({
+      code: "INVALID_SCHOOL_YEAR_CONTEXT",
+      message: `${CONTEXT_SCHOOL_YEAR_HEADER} must be a positive integer when provided.`,
+    })
+    return
+  }
+
+  const resolution = await resolveActiveSchoolYearState()
+  if (resolution.state === "INVALID") {
+    res.status(409).json({ code: resolution.code, message: resolution.message })
+    return
+  }
+
+  if (resolution.state === "UNINITIALIZED") {
+    if (requestedId !== null) {
+      res.status(404).json({
+        code: "SCHOOL_YEAR_NOT_FOUND",
+        message: "No school year has been initialized.",
+      })
+      return
     }
+    next()
+    return
   }
 
-  // 2. Fallback to SchoolSetting.activeSchoolYearId
-  const settings = await prisma.schoolSetting.findFirst({
-    select: { activeSchoolYearId: true },
-  });
-
-  if (settings?.activeSchoolYearId) {
-    req.schoolYearId = settings.activeSchoolYearId;
-    return next();
+  req.activeSchoolYearId = resolution.active.schoolYearId
+  if (requestedId !== null) {
+    const requestedYear = await prisma.schoolYear.findUnique({
+      where: { id: requestedId },
+      select: { id: true },
+    })
+    if (!requestedYear) {
+      res.status(404).json({
+        code: "SCHOOL_YEAR_NOT_FOUND",
+        message: "The requested school year does not exist.",
+      })
+      return
+    }
+    req.schoolYearId = requestedId
+  } else {
+    req.schoolYearId = resolution.active.schoolYearId
   }
 
-  // 3. Last resort: Find any ACTIVE school year
-  const activeSy = await prisma.schoolYear.findFirst({
-    where: { status: "ACTIVE" },
-    orderBy: { id: "desc" },
-    select: { id: true },
-  });
-
-  if (activeSy) {
-    req.schoolYearId = activeSy.id;
-  }
-
-  next();
+  next()
 }

@@ -78,11 +78,11 @@ export default function AdvisoryClass() {
 
   const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ["teacher", "advisory"],
-    queryFn: () => api.get<AdvisoryResponse>("/teacher-eosy/advisory").then(res => res.data),
+    queryFn: () => api.get<AdvisoryResponse>("/teacher-advisory").then(res => res.data),
   });
 
   const section = data?.section;
-  const records = data?.records || [];
+  const records = useMemo(() => data?.records ?? [], [data?.records]);
 
   const handleDownloadSf1 = async () => {
     if (!section) return;
@@ -120,18 +120,6 @@ export default function AdvisoryClass() {
     () => [...records].filter((r) => r.enrollmentApplication.learner.sex === "FEMALE").sort((a, b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName)),
     [records]
   );
-
-  const getProgramTypeLabel = (pt: string) => {
-    switch (pt) {
-      case "REGULAR": return "Basic Education Curriculum — Regular / Heterogeneous";
-      case "SCIENCE_TECHNOLOGY_AND_ENGINEERING":
-      case "STE": return "Special Curricular Program — Science, Technology, and Engineering (STE)";
-      case "SPA": return "Special Program in the Arts (SPA)";
-      case "SPS": return "Special Program in Sports (SPS)";
-      case "BEC_HOMO": return "Basic Education Curriculum — Homogeneous";
-      default: return pt;
-    }
-  };
 
   const formatDate = (d?: string | null) => {
     if (!d) return "—";

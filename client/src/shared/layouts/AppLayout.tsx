@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   CalendarClock,
   Wrench,
-  CircleHelp,
   KeyRound,
   UserRound,
 } from "lucide-react";
@@ -511,8 +510,7 @@ const NavItem = memo(function NavItem({
 
 function AppSidebar() {
   const location = useLocation();
-  const { schoolName, logoUrl, systemStatus, systemPhase } = useSettingsStore();
-  const isEosyArchivedState = systemStatus === "ARCHIVED";
+  const { schoolName, logoUrl, systemPhase } = useSettingsStore();
   const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
   const isHeadRegistrar = useAuthStore(
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
@@ -690,20 +688,6 @@ function AppSidebar() {
 
               {isTeacher && (
                 <>
-                  <NavDivider label="Operations" />
-                  <NavItem
-                    to="/dashboard"
-                    icon={LayoutDashboard}
-                    label="Dashboard"
-                    pathname={pathname}
-                  />
-                  <NavItem
-                    to="/teacher/eosy"
-                    icon={ArrowUpRightSquare}
-                    label="EOSY Updating"
-                    pathname={pathname}
-                  />
-
                   <NavDivider label="Management" />
                   <NavItem
                     to="/teacher/advisory"

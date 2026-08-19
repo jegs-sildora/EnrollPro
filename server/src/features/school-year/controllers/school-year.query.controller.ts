@@ -1,6 +1,4 @@
-import { clearActiveSchoolYearIfMatches, ensureDefaultGradeLevels, setActiveSchoolYear, cloneSchoolYearStructure, getCurrentManilaYear, parseDateInput } from "../services/school-year-controller-shared.service.js";
-
-import { normalizeDateToUtcNoon, deriveNextSchoolYear } from "../school-year.service.js";
+import { deriveNextSchoolYear } from "../school-year.service.js";
 import { prisma } from "../../../lib/prisma.js";
 import type { Request, Response } from "express";
 
@@ -19,23 +17,7 @@ function parseSchoolYearIdFromQuery(req: Request): number | null {
 
 
   export async function listGradeLevels(req: Request, res: Response): Promise<void> {
-    let schoolYearId = parseSchoolYearIdFromQuery(req);
-
-    if (!schoolYearId) {
-      const setting = await prisma.schoolSetting.findFirst({
-        select: { activeSchoolYearId: true },
-      });
-      schoolYearId = setting?.activeSchoolYearId ?? null;
-    }
-
-    if (!schoolYearId) {
-      const activeYear = await prisma.schoolYear.findFirst({
-        where: { status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
-        select: { id: true },
-      });
-      schoolYearId = activeYear?.id ?? null;
-    }
+    const schoolYearId = parseSchoolYearIdFromQuery(req) ?? req.schoolYearId ?? null;
 
     if (!schoolYearId) {
       res.status(422).json({ message: "No active school year found." });

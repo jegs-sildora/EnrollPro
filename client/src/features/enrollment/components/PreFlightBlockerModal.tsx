@@ -47,7 +47,7 @@ export function PreFlightBlockerModal({
                 <span>{unlockedClassesCount} Sections pending School Form 5 (SF5) submission.</span>
               </div>
               <span className="text-amber-700 block text-base ml-6 mt-0.5">
-                Remind class advisers to lock their final grades.
+                Synchronize the finalized SMART outcomes, then record the current SF5 for each section.
               </span>
             </div>
           )}
@@ -59,7 +59,7 @@ export function PreFlightBlockerModal({
                 <span>{irregularBlockerCount} Learners require End-of-School-Year (EOSY) Class grades.</span>
               </div>
               <span className="text-amber-700 block text-base ml-6 mt-0.5">
-                Encode their remedial results to finalize promotion status.
+                Review the unresolved SMART results or record an official dropped-out or transferred-out status.
               </span>
             </div>
           )}

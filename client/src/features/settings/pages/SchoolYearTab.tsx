@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
-import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
@@ -50,42 +48,18 @@ import {
 } from "@/shared/ui/table";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-import {
-  LoaderCore,
-  type LoadingState as MultiStepLoadingState,
-} from "@/components/ui/multi-step-loader";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { DualPaneDateRangePicker } from "@/shared/components/DualPaneDateRangePicker";
-import { AdminPinInput } from "@/shared/components/AdminPinInput";
 import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
-import {
-  getRolloverReadiness,
-  type RolloverReadinessPayload,
-} from "../api/system.api";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
 
-const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
-  { text: "Validating EOSY completion and confirming the approved school calendar." },
-  {
-    text: "Archiving the current school-year record and locking audit history.",
-  },
-  {
-    text: "Preparing the next school-year timeline, enrollment windows, and registrar controls.",
-  },
-  {
-    text: "Preparing empty class lists and pending returning-learner confirmations.",
-  },
-  { text: "Refreshing active school-year context across connected modules." },
-];
-
-const ROLLOVER_CLOSE_COUNTDOWN_SECONDS = 5;
 type AcademicPhase = Exclude<SettingsState["systemPhase"], null>;
 
 function isAcademicPhase(value: string): value is AcademicPhase {
@@ -256,20 +230,48 @@ interface SYItem {
   sections?: { id: number }[];
 }
 
+interface IncomingCalendarDraft {
+  termFormat: "TRIMESTER" | "QUARTERS";
+  classOpeningDate: string;
+  classEndDate: string;
+  enrollOpenDate: string;
+  enrollCloseDate: string;
+  term1Start: string;
+  term1End: string;
+  term2Start: string;
+  term2End: string;
+  term3Start: string;
+  term3End: string;
+  term4Start: string;
+  term4End: string;
+}
+
+const EMPTY_INCOMING_CALENDAR: IncomingCalendarDraft = {
+  termFormat: "TRIMESTER",
+  classOpeningDate: "",
+  classEndDate: "",
+  enrollOpenDate: "",
+  enrollCloseDate: "",
+  term1Start: "",
+  term1End: "",
+  term2Start: "",
+  term2End: "",
+  term3Start: "",
+  term3End: "",
+  term4Start: "",
+  term4End: "",
+};
+
+function dateInputValue(value: string | null | undefined): string {
+  return value ? value.split("T")[0] ?? "" : "";
+}
+
 interface Defaults {
   yearLabel: string;
   classOpeningDate: string;
   classEndDate: string;
   enrollOpenDate: string;
   enrollCloseDate: string;
-}
-
-interface RolloverSummary {
-  archivedRecords: number;
-  pendingConfirmations: number;
-  remedialHolds: number;
-  completers: number;
-  archiveOnlyDepartures: number;
 }
 
 interface RolloverDraftSnapshot {
@@ -302,7 +304,6 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 }
 
 export default function SchoolYearTab() {
-  const location = useLocation();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const {
     setSettings,
@@ -326,28 +327,26 @@ export default function SchoolYearTab() {
   const [creating, setCreating] = useState(false);
   const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
-  const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
-  const [rolloverLoaderStep, setRolloverLoaderStep] = useState(0);
-  const [isRolloverFinishing, setIsRolloverFinishing] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
-  const pendingSuccessToastRef = useRef<(() => void) | null>(null);
 
   // Phase Shift State
   const [selectedPhase, setSelectedPhase] =
     useState<SettingsState["systemPhase"]>(null);
   const [showPhaseModal, setShowPhaseModal] = useState(false);
   const [isUpdatingPhase, setIsUpdatingPhase] = useState(false);
+  const [showIncomingCalendar, setShowIncomingCalendar] = useState(false);
+  const [preparingIncomingCalendar, setPreparingIncomingCalendar] = useState(false);
+  const [incomingCalendar, setIncomingCalendar] = useState<IncomingCalendarDraft>(
+    EMPTY_INCOMING_CALENDAR,
+  );
+  const [incomingCalendarBaseline, setIncomingCalendarBaseline] =
+    useState<IncomingCalendarDraft>(EMPTY_INCOMING_CALENDAR);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
   const [editClassOpening, setClassOpening] = useState<Date | undefined>();
   const [editClassEnd, setClassEnd] = useState<Date | undefined>();
-
-  const [rolloverPin, setRolloverPin] = useState("");
-  const [rolloverReadiness, setRolloverReadiness] =
-    useState<RolloverReadinessPayload | null>(null);
 
   // Activation & Legal state
 
@@ -410,19 +409,6 @@ export default function SchoolYearTab() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    syncPreference();
-
-    mediaQuery.addEventListener("change", syncPreference);
-    return () => mediaQuery.removeEventListener("change", syncPreference);
-  }, []);
-
   const handleUpdateAlgorithm = async (
     updates: Partial<{
       enableHomogeneousSections: boolean;
@@ -455,14 +441,6 @@ export default function SchoolYearTab() {
     }
   };
 
-
-  useEffect(() => {
-    // Check for bridge state
-    if (location.state?.highlightUpcoming) {
-      // Bridge state removed - transitions are handled in EOSY module now
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
 
   useEffect(() => {
     if (!editClassOpening) {
@@ -562,10 +540,6 @@ export default function SchoolYearTab() {
     });
   }, [activeYear]);
 
-  const isRolloverReady = activeYear
-    ? rolloverReadiness?.ready === true
-    : true;
-
   const nextRolloverYearLabel = useMemo(() => {
     if (!activeYear) {
       return defaults?.yearLabel ?? editYearLabel;
@@ -576,6 +550,110 @@ export default function SchoolYearTab() {
       defaults?.yearLabel ?? editYearLabel,
     );
   }, [activeYear, defaults?.yearLabel, editYearLabel]);
+
+  const preparedIncomingYear = useMemo(
+    () => years.find((year) => year.yearLabel === nextRolloverYearLabel),
+    [nextRolloverYearLabel, years],
+  );
+
+  const openIncomingCalendar = useCallback(() => {
+    if (!activeYear) return;
+    const draft: IncomingCalendarDraft = preparedIncomingYear
+      ? {
+          termFormat: preparedIncomingYear.termFormat ?? "TRIMESTER",
+          classOpeningDate: dateInputValue(preparedIncomingYear.classOpeningDate),
+          classEndDate: dateInputValue(preparedIncomingYear.classEndDate),
+          enrollOpenDate: dateInputValue(preparedIncomingYear.enrollOpenDate),
+          enrollCloseDate: dateInputValue(preparedIncomingYear.enrollCloseDate),
+          term1Start: dateInputValue(preparedIncomingYear.term1Start),
+          term1End: dateInputValue(preparedIncomingYear.term1End),
+          term2Start: dateInputValue(preparedIncomingYear.term2Start),
+          term2End: dateInputValue(preparedIncomingYear.term2End),
+          term3Start: dateInputValue(preparedIncomingYear.term3Start),
+          term3End: dateInputValue(preparedIncomingYear.term3End),
+          term4Start: dateInputValue(preparedIncomingYear.term4Start),
+          term4End: dateInputValue(preparedIncomingYear.term4End),
+        }
+      : {
+          ...EMPTY_INCOMING_CALENDAR,
+          termFormat: activeYear.termFormat ?? "TRIMESTER",
+        };
+    setIncomingCalendar(draft);
+    setIncomingCalendarBaseline(draft);
+    setShowIncomingCalendar(true);
+  }, [activeYear, preparedIncomingYear]);
+
+  const incomingCalendarDirty = useMemo(
+    () => JSON.stringify(incomingCalendar) !== JSON.stringify(incomingCalendarBaseline),
+    [incomingCalendar, incomingCalendarBaseline],
+  );
+
+  const discardIncomingCalendar = useCallback(() => {
+    setIncomingCalendar(incomingCalendarBaseline);
+    setShowIncomingCalendar(false);
+  }, [incomingCalendarBaseline]);
+
+  useUnsavedChanges({
+    id: "settings-incoming-school-year-calendar",
+    label: "Incoming school year calendar",
+    isDirty: showIncomingCalendar && incomingCalendarDirty,
+    isSubmitting: preparingIncomingCalendar,
+    onDiscard: discardIncomingCalendar,
+  });
+
+  const saveIncomingCalendar = async () => {
+    if (!activeYear) return;
+    const requiredFields: Array<keyof IncomingCalendarDraft> = [
+      "classOpeningDate",
+      "classEndDate",
+      "enrollOpenDate",
+      "enrollCloseDate",
+      "term1Start",
+      "term1End",
+      "term2Start",
+      "term2End",
+      "term3Start",
+      "term3End",
+    ];
+    if (
+      requiredFields.some((field) => !incomingCalendar[field])
+      || (incomingCalendar.termFormat === "QUARTERS"
+        && (!incomingCalendar.term4Start || !incomingCalendar.term4End))
+    ) {
+      sileo.error({
+        title: "Complete the calendar",
+        description: "Enter every required date before preparing the incoming school year.",
+      });
+      return;
+    }
+    setPreparingIncomingCalendar(true);
+    try {
+      await api.post("/school-years/prepare-next", {
+        sourceSchoolYearId: activeYear.id,
+        yearLabel: nextRolloverYearLabel,
+        ...incomingCalendar,
+        term4Start:
+          incomingCalendar.termFormat === "QUARTERS"
+            ? incomingCalendar.term4Start
+            : null,
+        term4End:
+          incomingCalendar.termFormat === "QUARTERS"
+            ? incomingCalendar.term4End
+            : null,
+      });
+      sileo.success({
+        title: "Incoming Calendar Prepared",
+        description: `The reviewed calendar for School Year ${nextRolloverYearLabel} is saved but remains inactive.`,
+      });
+      setIncomingCalendarBaseline(incomingCalendar);
+      setShowIncomingCalendar(false);
+      await fetchData();
+    } catch (error: unknown) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+    } finally {
+      setPreparingIncomingCalendar(false);
+    }
+  };
 
   const archivedYears = useMemo(
     () => years.filter((year: SYItem) => year.status === "ARCHIVED"),
@@ -652,17 +730,11 @@ export default function SchoolYearTab() {
 
     setShowNextForm(false);
     setRolloverDraftBaseline(null);
-    setRolloverPin("");
-    setRolloverReadiness(null);
   }, [defaults, rolloverDraftBaseline]);
 
   const requestCloseNextForm = useCallback(() => {
-    if (isRolloverLoaderOpen) {
-      return;
-    }
-
     confirmOrRun(discardRolloverDraftChanges);
-  }, [confirmOrRun, discardRolloverDraftChanges, isRolloverLoaderOpen]);
+  }, [confirmOrRun, discardRolloverDraftChanges]);
 
   useUnsavedChanges({
     id: "settings-school-year-calendar-setup",
@@ -670,9 +742,8 @@ export default function SchoolYearTab() {
     isDirty:
       showNextForm &&
       isRolloverDraftChanged &&
-      !creating &&
-      !isRolloverLoaderOpen,
-    isSubmitting: creating || isRolloverLoaderOpen,
+      !creating,
+    isSubmitting: creating,
     onDiscard: discardRolloverDraftChanges,
   });
 
@@ -863,100 +934,6 @@ export default function SchoolYearTab() {
 
   return (
     <fieldset disabled={isArchived} className="space-y-6 relative pb-6 group min-w-0">
-      <AnimatePresence>
-        {isRolloverLoaderOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
-            className="fixed inset-0 z-[200] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-muted/75 backdrop-blur-2xl"
-            role="status"
-            aria-live="polite"
-            aria-label="Running school year rollover"
-          >
-            <div className="absolute inset-0 pointer-events-none">
-              <svg
-                aria-hidden="true"
-                className="h-full w-full"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <pattern
-                    id="school-year-rollover-pixel-grid"
-                    x="0"
-                    y="0"
-                    width="80"
-                    height="80"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <rect
-                      x="2"
-                      y="2"
-                      width="36"
-                      height="36"
-                      rx="6"
-                      fill="none"
-                      stroke="rgba(128,0,0,0.12)"
-                      strokeWidth="1.1"
-                    />
-                    <rect
-                      x="42"
-                      y="2"
-                      width="36"
-                      height="36"
-                      rx="6"
-                      fill="none"
-                      stroke="rgba(128,0,0,0.1)"
-                      strokeWidth="1.1"
-                    />
-                    <rect
-                      x="2"
-                      y="42"
-                      width="36"
-                      height="36"
-                      rx="6"
-                      fill="none"
-                      stroke="rgba(128,0,0,0.09)"
-                      strokeWidth="1.1"
-                    />
-                    <rect
-                      x="42"
-                      y="42"
-                      width="36"
-                      height="36"
-                      rx="6"
-                      fill="none"
-                      stroke="rgba(128,0,0,0.11)"
-                      strokeWidth="1.1"
-                    />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#school-year-rollover-pixel-grid)" />
-              </svg>
-            </div>
-
-            <div className="relative z-10 w-full max-w-3xl px-6">
-              <div className="text-center mb-5">
-                <h3 className="text-md font-extrabold text-foreground uppercase">
-                  Processing School Year Rollover
-                </h3>
-                <p className="text-md font-extrabold text-foreground">
-                  Please keep this window open while records are being updated.
-                </p>
-              </div>
-              <LoaderCore
-                loadingStates={ROLLOVER_LOADING_STATES}
-                value={rolloverLoaderStep}
-                showCompletionMessage={isRolloverFinishing}
-                completionCountdownSeconds={ROLLOVER_CLOSE_COUNTDOWN_SECONDS}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-
       {!loading && isZeroState ? (
         <Card className="shadow-lg bg-muted">
           <CardContent className="pt-12 pb-14 flex flex-col items-center text-center">
@@ -1007,8 +984,19 @@ export default function SchoolYearTab() {
                     </CardTitle>
                   </div>
                 </div>
-
-
+                {activeYear && !isArchived && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openIncomingCalendar}
+                    className="font-extrabold"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {preparedIncomingYear
+                      ? `Review S.Y. ${nextRolloverYearLabel} Calendar`
+                      : `Prepare S.Y. ${nextRolloverYearLabel} Calendar`}
+                  </Button>
+                )}
               </div>
 
               {activeYear ? (
@@ -1406,10 +1394,6 @@ export default function SchoolYearTab() {
       <Dialog
         open={showNextForm}
         onOpenChange={(open) => {
-          if (isRolloverLoaderOpen) {
-            return;
-          }
-
           if (open) {
             setShowNextForm(true);
             return;
@@ -1512,6 +1496,153 @@ export default function SchoolYearTab() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={showIncomingCalendar}
+        onOpenChange={(open) => {
+          if (open) {
+            setShowIncomingCalendar(true);
+            return;
+          }
+          if (!preparingIncomingCalendar) {
+            confirmOrRun(discardIncomingCalendar);
+          }
+        }}
+      >
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Prepare S.Y. {nextRolloverYearLabel} Calendar</DialogTitle>
+            <DialogDescription>
+              Enter the reviewed DepEd calendar dates. Saving this calendar does not activate the school year or start rollover.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="incoming-class-opening">Start of Classes</Label>
+                <Input
+                  id="incoming-class-opening"
+                  type="date"
+                  value={incomingCalendar.classOpeningDate}
+                  onChange={(event) => setIncomingCalendar((current) => ({
+                    ...current,
+                    classOpeningDate: event.target.value,
+                  }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incoming-class-end">End of Classes</Label>
+                <Input
+                  id="incoming-class-end"
+                  type="date"
+                  value={incomingCalendar.classEndDate}
+                  onChange={(event) => setIncomingCalendar((current) => ({
+                    ...current,
+                    classEndDate: event.target.value,
+                  }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incoming-enrollment-open">Enrollment Opens</Label>
+                <Input
+                  id="incoming-enrollment-open"
+                  type="date"
+                  value={incomingCalendar.enrollOpenDate}
+                  onChange={(event) => setIncomingCalendar((current) => ({
+                    ...current,
+                    enrollOpenDate: event.target.value,
+                  }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incoming-enrollment-close">Enrollment Closes</Label>
+                <Input
+                  id="incoming-enrollment-close"
+                  type="date"
+                  value={incomingCalendar.enrollCloseDate}
+                  onChange={(event) => setIncomingCalendar((current) => ({
+                    ...current,
+                    enrollCloseDate: event.target.value,
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+              <Label>Grading Period Format</Label>
+              <RadioGroup
+                value={incomingCalendar.termFormat}
+                onValueChange={(value) => {
+                  if (value === "TRIMESTER" || value === "QUARTERS") {
+                    setIncomingCalendar((current) => ({
+                      ...current,
+                      termFormat: value,
+                    }));
+                  }
+                }}
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+              >
+                <Label className="flex items-center gap-3 rounded-md border p-3">
+                  <RadioGroupItem value="TRIMESTER" /> Three Terms
+                </Label>
+                <Label className="flex items-center gap-3 rounded-md border p-3">
+                  <RadioGroupItem value="QUARTERS" /> Four Quarters
+                </Label>
+              </RadioGroup>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {[
+                ["term1Start", "Period 1 Start"],
+                ["term1End", "Period 1 End"],
+                ["term2Start", "Period 2 Start"],
+                ["term2End", "Period 2 End"],
+                ["term3Start", "Period 3 Start"],
+                ["term3End", "Period 3 End"],
+                ...(incomingCalendar.termFormat === "QUARTERS"
+                  ? [["term4Start", "Period 4 Start"], ["term4End", "Period 4 End"]]
+                  : []),
+              ].map(([field, label]) => (
+                <div key={field} className="space-y-2">
+                  <Label htmlFor={`incoming-${field}`}>{label}</Label>
+                  <Input
+                    id={`incoming-${field}`}
+                    type="date"
+                    value={incomingCalendar[field as keyof IncomingCalendarDraft]}
+                    onChange={(event) => setIncomingCalendar((current) => ({
+                      ...current,
+                      [field]: event.target.value,
+                    }))}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm font-bold text-amber-950">
+              Rollover remains blocked until this calendar is complete and all SMART, section, SF5, and SF6 requirements are current.
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={preparingIncomingCalendar}
+              onClick={() => confirmOrRun(discardIncomingCalendar)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={preparingIncomingCalendar}
+              onClick={() => void saveIncomingCalendar()}
+            >
+              {preparingIncomingCalendar ? "Saving..." : "Save Reviewed Calendar"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Phase Shift Confirmation Modal */}
       <ConfirmationModal
         open={showPhaseModal}
@@ -1538,13 +1669,13 @@ export default function SchoolYearTab() {
             {selectedPhase === "CLASSES_ONGOING" && (
               <>
                 <p>You are officially closing the regular enrollment window to mark the start of ongoing classes.</p>
-                <p>The public forms will remain open, but all learners encoded after today will be permanently flagged as "Late Enrollees" for BOSY LIS reporting.</p>
+                <p>Public online enrollment closes at this phase. Authorized staff may still encode approved late enrollees through the Learner Enrollment workspace.</p>
               </>
             )}
             {selectedPhase === "EOSY_CLOSING" && (
               <>
                 <p>You are officially closing School Year {activeYear?.yearLabel || "2026–2027"} to begin End of School Year (EOSY) finalization.</p>
-                <p>This locks all active class rolls across Grades 7 to 10. Class advisers will no longer be able to encode learner transfers or update profile details, allowing the administration to safely finalize promotional statuses and general averages.</p>
+                <p>This locks enrollment changes across Grades 7 to 10. SMART remains the source of final grades and promotion outcomes, while authorized EnrollPro staff verify synchronized results and record the required school forms.</p>
               </>
             )}
           </span>
@@ -1553,7 +1684,7 @@ export default function SchoolYearTab() {
           selectedPhase === "CLASSES_ONGOING"
             ? "LIS POLICY: Reverting a Late Enrollee timestamp requires an overriding Administrative pass."
             : selectedPhase === "EOSY_CLOSING"
-              ? "CRITICAL LIS POLICY: Do not proceed until all class advisers have finalized their SMART electronic class records."
+              ? "CRITICAL LIS POLICY: Do not proceed until SMART has published complete final outcomes for every active learner."
               : undefined
         }
         cancelText={

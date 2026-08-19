@@ -1,5 +1,4 @@
 import { prisma } from "../../../lib/prisma.js";
-import { Prisma } from "../../../generated/prisma/index.js";
 
 
 const MANILA_TIME_ZONE = "Asia/Manila";
@@ -25,7 +24,6 @@ export async function ensureDefaultGradeLevels(
     });
   }
 }
-
 export function parseDateInput(value: unknown): Date | null {
   if (!value || typeof value !== "string") {
     return null;
@@ -48,59 +46,11 @@ export function getCurrentManilaYear(): number {
 }
 
 export async function setActiveSchoolYear(
-  
+  settingId: number,
   schoolYearId: number,
 ): Promise<void> {
-  const settings = await prisma.schoolSetting.findFirst();
-  if (settings) {
-    await prisma.schoolSetting.update({
-      where: { id: settings.id },
-      data: { activeSchoolYearId: schoolYearId },
-    });
-  }
-}
-
-export async function clearActiveSchoolYearIfMatches(
-  
-  schoolYearId: number,
-): Promise<void> {
-  const settings = await prisma.schoolSetting.findFirst();
-  if (settings && settings.activeSchoolYearId === schoolYearId) {
-    await prisma.schoolSetting.update({
-      where: { id: settings.id },
-      data: { activeSchoolYearId: null },
-    });
-  }
-}
-
-export async function cloneSchoolYearStructure(
-  
-  cloneFromId: number,
-  targetSchoolYearId: number,
-): Promise<void> {
-  const source = await prisma.schoolYear.findUnique({
-    where: { id: cloneFromId },
-    include: {
-      sections: true,
-    },
+  await prisma.schoolSetting.update({
+    where: { id: settingId },
+    data: { activeSchoolYearId: schoolYearId },
   });
-
-  if (!source) {
-    return;
-  }
-
-  for (const section of source.sections) {
-    await prisma.section.create({
-      data: {
-        name: section.name,
-        sortOrder: section.sortOrder,
-        maxCapacity: section.maxCapacity,
-        gradeLevelId: section.gradeLevelId,
-        schoolYearId: targetSchoolYearId,
-        programType: section.programType,
-        isHomogeneous: section.isHomogeneous,
-        isSnake: section.isSnake,
-      },
-    });
-  }
 }

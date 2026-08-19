@@ -13,6 +13,7 @@ import {
   resolveSchoolYearScope,
 } from "./integration.shared.js";
 import { SectionAdviserStatus } from "../../generated/prisma/index.js";
+import { resolveActiveSchoolYearState } from "../school-year/services/active-school-year.service.js";
 
 // ---------------------------------------------------------------------------
 // Local Prisma payload types — replace `any` throughout this file
@@ -58,13 +59,13 @@ export async function integrationHealth(
     }
   };
 
-  const activeSchoolYear = await prisma.schoolYear.findFirst({
-    where: { status: "ACTIVE" },
-    select: { id: true },
-  });
+  const activeResolution = await resolveActiveSchoolYearState()
+  const activeSchoolYearId = activeResolution.state === "VALID"
+    ? activeResolution.active.schoolYearId
+    : null
 
-  const atlasHealthPath = activeSchoolYear
-    ? `/api/v1/health?schoolYearId=${activeSchoolYear.id}`
+  const atlasHealthPath = activeSchoolYearId
+    ? `/api/v1/health?schoolYearId=${activeSchoolYearId}`
     : "/api/v1/health";
 
   const [dbStatus, atlasHealth, aimsHealth, smartHealth] = await Promise.all([

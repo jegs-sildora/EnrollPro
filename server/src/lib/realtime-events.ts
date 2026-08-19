@@ -8,6 +8,9 @@ interface DomainInvalidationOptions {
   teacherIds?: number[];
   sectionIds?: number[];
   learnerIds?: number[];
+  sourceSchoolYearId?: number | null;
+  rolloverAt?: string | null;
+  eventRevision?: string | null;
 }
 
 export function broadcastDomainInvalidation({
@@ -16,6 +19,9 @@ export function broadcastDomainInvalidation({
   teacherIds,
   sectionIds,
   learnerIds,
+  sourceSchoolYearId,
+  rolloverAt,
+  eventRevision,
 }: DomainInvalidationOptions): void {
   const uniqueTopics = Array.from(new Set(topics));
   
@@ -25,6 +31,9 @@ export function broadcastDomainInvalidation({
     teacherIds,
     sectionIds,
     learnerIds,
+    sourceSchoolYearId,
+    rolloverAt,
+    eventRevision,
   });
 
   // Trigger SMART webhook asynchronously in the background
@@ -126,4 +135,33 @@ export function broadcastSchoolYearInvalidation(
     ],
     schoolYearId,
   });
+}
+
+export function broadcastRolloverInvalidation(input: {
+  sourceSchoolYearId: number
+  activeSchoolYearId: number
+  rolloverAt: string
+  eventRevision: string
+}): void {
+  broadcastDomainInvalidation({
+    topics: [
+      "school-years:list",
+      "settings:public",
+      "bosy:queue",
+      "bosy:readiness",
+      "students:list",
+      "students:detail",
+      "homerooms:sections",
+      "sectioning:sections",
+      "sectioning:pool",
+      "dashboard:summary",
+      "eosy:sections",
+      "eosy:records",
+      "integration:hub",
+    ],
+    schoolYearId: input.activeSchoolYearId,
+    sourceSchoolYearId: input.sourceSchoolYearId,
+    rolloverAt: input.rolloverAt,
+    eventRevision: input.eventRevision,
+  })
 }

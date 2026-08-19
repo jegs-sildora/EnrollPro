@@ -707,39 +707,20 @@ async function assignReadyLearners(
   return response.data.committedCount
 }
 
-async function resolveRemedialHolds(
-  context: SimulationContext,
+async function assertNoUnresolvedRemedialHolds(
   schoolYearId: number,
-): Promise<{ promoted: number; retained: number }> {
-  const holds = await prisma.enrollmentApplication.findMany({
+): Promise<void> {
+  const holdCount = await prisma.enrollmentApplication.count({
     where: {
       schoolYearId,
       status: "REMEDIAL_HOLD",
     },
-    orderBy: { id: "asc" },
   })
-  let promoted = 0
-  let retained = 0
-  for (let index = 0; index < holds.length; index += 1) {
-    const hold = holds[index]!
-    const outcome = index % 2 === 0 ? "PROMOTED" : "RETAINED"
-    await requestJson(
-      context,
-      `/api/remedial/${hold.learnerId}/resolve`,
-      {
-        method: "PATCH",
-        schoolYearId,
-        body: {
-          schoolYearId,
-          summerGrade: outcome === "PROMOTED" ? 78 : 72,
-          outcome,
-        },
-      },
+  if (holdCount > 0) {
+    throw new Error(
+      `${holdCount} Grade 10 remedial hold(s) require a published SMART remedial outcome. The simulator cannot author grades or promotion decisions in EnrollPro.`,
     )
-    if (outcome === "PROMOTED") promoted += 1
-    else retained += 1
   }
-  return { promoted, retained }
 }
 
 async function confirmContinuingLearners(
@@ -1233,10 +1214,9 @@ async function runYearCycle(
   await setPhase(context, schoolYearId, "OFFICIAL_ENROLLMENT")
   let confirmedContinuing = 0
   let incomingGradeSeven = 0
-  let remedialResolved = { promoted: 0, retained: 0 }
 
   if (cycleIndex > 0) {
-    remedialResolved = await resolveRemedialHolds(context, schoolYearId)
+    await assertNoUnresolvedRemedialHolds(schoolYearId)
     confirmedContinuing = await confirmContinuingLearners(
       context,
       schoolYearId,
@@ -1252,7 +1232,7 @@ async function runYearCycle(
     incomingGradeSeven,
     assignedAtBosy,
     baselineEnrollment,
-    remedialResolved,
+    unresolvedRemedialHolds: 0,
   })
 
   await setPhase(context, schoolYearId, "CLASSES_ONGOING")

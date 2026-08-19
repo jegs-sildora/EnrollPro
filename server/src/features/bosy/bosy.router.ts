@@ -5,7 +5,6 @@ import { staffIntakePhaseGuard } from "../../middleware/staff-intake-phase.guard
 import {
   getBosyReadiness,
   getBosyQueue,
-  syncBosyQueueHandler,
   confirmReturnHandler,
   markTransferRequestHandler,
   revokeConfirmedReturnHandler,
@@ -36,14 +35,6 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   getPreviousSectionsHandler,
-);
-
-router.post(
-  "/sync",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  staffIntakePhaseGuard,
-  syncBosyQueueHandler,
 );
 
 router.post(

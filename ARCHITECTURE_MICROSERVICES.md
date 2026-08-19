@@ -27,6 +27,7 @@ EnrollPro owns:
 - section structure, capacity, and class adviser
 - current personnel service status
 - immutable enrollment history and recorded SF5 or SF6 artifacts
+- synchronization provenance and readiness state for finalized SMART outcomes
 
 EnrollPro does not own:
 
@@ -35,6 +36,11 @@ EnrollPro does not own:
 - AIMS intervention records
 - MRF maintenance or waste records
 - No Early Registration, reading assessment, enrollment listing, hardware, or Internet of Things workflows
+
+Teachers and class advisers do not enter or finalize academic results in
+EnrollPro. SMART publishes the academic results. EnrollPro synchronizes them,
+validates their learner and school-year scope, records school-form readiness,
+and uses them during atomic rollover.
 
 ## Connectivity
 
@@ -64,7 +70,7 @@ Companion systems may read current context during normal operations. The active 
 
 Downstream refresh order:
 
-1. EnrollPro commits history, learner outcomes, cloned empty sections, the next-year calendar, and active-year state.
+1. EnrollPro commits history, learner outcome snapshots, cloned empty sections, the reviewed next-year calendar, and active-year state.
 2. EnrollPro broadcasts school-year and integration invalidations.
 3. SMART refreshes active learners and sections.
 4. ATLAS refreshes faculty, sections, and adviser context.

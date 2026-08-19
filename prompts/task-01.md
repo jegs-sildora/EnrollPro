@@ -1,21 +1,19 @@
-# SYSTEM DIRECTIVE Academic Honors Calculation Logic v441
+# SYSTEM DIRECTIVE Guardian Kinship Validation v442
 
-**Context Persona** Act as a Senior React Developer and DepEd EdTech Domain Expert Your standard is high data integrity public school software You must implement the academic honors calculation Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must correct the tautological guardian relationship data Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must program the frontend data table to dynamically evaluate the final general average and accurately output the correct academic honors string according to official Department of Education grading standards
+**Core Mandate** You must update the relationship data field to capture exact kinship rather than allowing a redundant role label
 
 Execute the UI upgrade across the following three architectural rules
 
-## 1 The Official Grading Thresholds
-Program the conditional logic to evaluate the final numeric grade against the three official Department of Education award tiers
-Output WITH HONORS for grades 90 to 94
-Output WITH HIGH HONORS for grades 95 to 97
-Output WITH HIGHEST HONORS for grades 98 to 100
+## 1 Eliminate Redundant Labels
+Prevent the system from accepting or displaying Guardian as the answer for the guardian relationship field
+This is a tautological error that fails to provide the school registrar with actual kinship context during emergencies
 
-## 2 Award Nullification Guard
-Ensure that any general average of 89 or below leaves the award field blank or strictly displays a standard passing text
-This prevents the system from accidentally appending an academic honor to a standard passing or failing grade
+## 2 Enforce Kinship Taxonomy
+Ensure the data entry form utilizes a strict dropdown menu for this specific field
+Require the parent to select exact relational values such as Aunt Uncle Grandmother Grandfather or Older Sibling
 
-## 3 Dynamic Rendering
-Bind this mathematical evaluation directly to the general average state inside the table
-This guarantees the remarks column automatically outputs the correct string the exact millisecond the SMART integration endpoint returns the final grades
+## 3 Display Accuracy
+Update the rendering logic on the learner profile to display the exact familial tie
+This ensures official school records perfectly match the intent of the Department of Education enrollment forms

@@ -75,6 +75,14 @@ function parseInvalidationEvent(raw: string): RealtimeInvalidationEvent | null {
         typeof parsed.smartRevision === "string" ? parsed.smartRevision : null,
       smartEventAt:
         typeof parsed.smartEventAt === "string" ? parsed.smartEventAt : null,
+      sourceSchoolYearId:
+        typeof parsed.sourceSchoolYearId === "number"
+          ? parsed.sourceSchoolYearId
+          : null,
+      rolloverAt:
+        typeof parsed.rolloverAt === "string" ? parsed.rolloverAt : null,
+      eventRevision:
+        typeof parsed.eventRevision === "string" ? parsed.eventRevision : null,
       emittedAt:
         typeof parsed.emittedAt === "string"
           ? parsed.emittedAt
