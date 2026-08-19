@@ -72,7 +72,7 @@ interface NormalizedSmartOutcome {
     Final?: number | null;
     remarks?: string | null;
   }>;
-  publishedAt: string;
+  publishedAt: string | null;
   revision: string | null;
 }
 
@@ -259,7 +259,7 @@ function normalizeSmartOutcome(
   if (!finalOutcome) {
     throw new Error("SMART did not return a finalized promotion outcome.");
   }
-  if (!outcome.publishedAt || Number.isNaN(Date.parse(outcome.publishedAt))) {
+  if (outcome.publishedAt && Number.isNaN(Date.parse(outcome.publishedAt))) {
     throw new Error("SMART did not return a valid publication time for the finalized outcome.");
   }
   return {
@@ -269,7 +269,7 @@ function normalizeSmartOutcome(
     finalOutcome,
     learningAreas,
     reportedGradesObj,
-    publishedAt: outcome.publishedAt,
+    publishedAt: outcome.publishedAt ?? null,
     revision: outcome.revision ?? null,
   };
 }

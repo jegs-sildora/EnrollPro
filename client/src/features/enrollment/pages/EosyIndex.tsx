@@ -1410,7 +1410,7 @@ export default function EosyUpdating() {
                   <SelectContent>
                     {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
                       <SelectItem value={resolvedStatus} disabled>
-                        {formatStatusLabel(resolvedStatus, isGrade10)} (SMART)
+                        {formatStatusLabel(resolvedStatus, isGrade10)}
                       </SelectItem>
                     )}
                     <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
@@ -1477,7 +1477,7 @@ export default function EosyUpdating() {
                 <SelectContent className="font-extrabold">
                   {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
                     <SelectItem value={resolvedStatus} disabled>
-                      {formatStatusLabel(resolvedStatus, isGrade10)} (SMART)
+                      {formatStatusLabel(resolvedStatus, isGrade10)}
                     </SelectItem>
                   )}
                   <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>

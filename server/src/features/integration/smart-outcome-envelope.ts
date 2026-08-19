@@ -20,7 +20,7 @@ export interface SmartOutcomeEnvelope {
   ready: true;
   finalGeneralAverage: number;
   finalOutcome: "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
-  publishedAt: string;
+  publishedAt: string | null;
   revision: string | null;
   synchronizedAt: string;
   checksum: string;
@@ -70,7 +70,7 @@ export function buildSmartOutcomeEnvelope(input: {
   sectionId: number;
   finalGeneralAverage: number;
   finalOutcome: SmartOutcomeEnvelope["finalOutcome"];
-  publishedAt: string;
+  publishedAt: string | null;
   revision: string | null;
   synchronizedAt?: string;
   subjects: Record<string, StoredSmartSubjectGrades>;
@@ -110,8 +110,14 @@ export function readSmartOutcomeEnvelope(value: unknown): SmartOutcomeEnvelope |
     || typeof candidate.finalGeneralAverage !== "number"
     || !Number.isFinite(candidate.finalGeneralAverage)
     || !["PROMOTED", "RETAINED", "CONDITIONALLY_PROMOTED"].includes(String(finalOutcome))
-    || typeof candidate.publishedAt !== "string"
-    || candidate.publishedAt.length === 0
+    || !(
+      candidate.publishedAt === null
+      || (
+        typeof candidate.publishedAt === "string"
+        && candidate.publishedAt.length > 0
+        && !Number.isNaN(Date.parse(candidate.publishedAt))
+      )
+    )
     || typeof candidate.synchronizedAt !== "string"
     || typeof candidate.checksum !== "string"
     || !subjects
