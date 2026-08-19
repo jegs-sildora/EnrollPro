@@ -8,10 +8,7 @@ School-year settings store the label, opening and closing dates, enrollment date
 
 Only first-time initialization may directly activate a school year. Once operational records exist, the next active year must be created through atomic rollover.
 
-Before rollover, a system administrator prepares the consecutive incoming
-school-year calendar through `/api/school-years/prepare-next`. This creates or
-updates an empty inactive shell. EnrollPro does not infer or shift dates from
-the source year.
+
 
 ## Operational Phases
 

@@ -54,7 +54,6 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
-import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 
 
 const MANILA_TIME_ZONE = "Asia/Manila";
@@ -230,41 +229,6 @@ interface SYItem {
   sections?: { id: number }[];
 }
 
-interface IncomingCalendarDraft {
-  termFormat: "TRIMESTER" | "QUARTERS";
-  classOpeningDate: string;
-  classEndDate: string;
-  enrollOpenDate: string;
-  enrollCloseDate: string;
-  term1Start: string;
-  term1End: string;
-  term2Start: string;
-  term2End: string;
-  term3Start: string;
-  term3End: string;
-  term4Start: string;
-  term4End: string;
-}
-
-const EMPTY_INCOMING_CALENDAR: IncomingCalendarDraft = {
-  termFormat: "TRIMESTER",
-  classOpeningDate: "",
-  classEndDate: "",
-  enrollOpenDate: "",
-  enrollCloseDate: "",
-  term1Start: "",
-  term1End: "",
-  term2Start: "",
-  term2End: "",
-  term3Start: "",
-  term3End: "",
-  term4Start: "",
-  term4End: "",
-};
-
-function dateInputValue(value: string | null | undefined): string {
-  return value ? value.split("T")[0] ?? "" : "";
-}
 
 interface Defaults {
   yearLabel: string;
@@ -335,13 +299,6 @@ export default function SchoolYearTab() {
     useState<SettingsState["systemPhase"]>(null);
   const [showPhaseModal, setShowPhaseModal] = useState(false);
   const [isUpdatingPhase, setIsUpdatingPhase] = useState(false);
-  const [showIncomingCalendar, setShowIncomingCalendar] = useState(false);
-  const [preparingIncomingCalendar, setPreparingIncomingCalendar] = useState(false);
-  const [incomingCalendar, setIncomingCalendar] = useState<IncomingCalendarDraft>(
-    EMPTY_INCOMING_CALENDAR,
-  );
-  const [incomingCalendarBaseline, setIncomingCalendarBaseline] =
-    useState<IncomingCalendarDraft>(EMPTY_INCOMING_CALENDAR);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
@@ -550,110 +507,6 @@ export default function SchoolYearTab() {
       defaults?.yearLabel ?? editYearLabel,
     );
   }, [activeYear, defaults?.yearLabel, editYearLabel]);
-
-  const preparedIncomingYear = useMemo(
-    () => years.find((year) => year.yearLabel === nextRolloverYearLabel),
-    [nextRolloverYearLabel, years],
-  );
-
-  const openIncomingCalendar = useCallback(() => {
-    if (!activeYear) return;
-    const draft: IncomingCalendarDraft = preparedIncomingYear
-      ? {
-          termFormat: preparedIncomingYear.termFormat ?? "TRIMESTER",
-          classOpeningDate: dateInputValue(preparedIncomingYear.classOpeningDate),
-          classEndDate: dateInputValue(preparedIncomingYear.classEndDate),
-          enrollOpenDate: dateInputValue(preparedIncomingYear.enrollOpenDate),
-          enrollCloseDate: dateInputValue(preparedIncomingYear.enrollCloseDate),
-          term1Start: dateInputValue(preparedIncomingYear.term1Start),
-          term1End: dateInputValue(preparedIncomingYear.term1End),
-          term2Start: dateInputValue(preparedIncomingYear.term2Start),
-          term2End: dateInputValue(preparedIncomingYear.term2End),
-          term3Start: dateInputValue(preparedIncomingYear.term3Start),
-          term3End: dateInputValue(preparedIncomingYear.term3End),
-          term4Start: dateInputValue(preparedIncomingYear.term4Start),
-          term4End: dateInputValue(preparedIncomingYear.term4End),
-        }
-      : {
-          ...EMPTY_INCOMING_CALENDAR,
-          termFormat: activeYear.termFormat ?? "TRIMESTER",
-        };
-    setIncomingCalendar(draft);
-    setIncomingCalendarBaseline(draft);
-    setShowIncomingCalendar(true);
-  }, [activeYear, preparedIncomingYear]);
-
-  const incomingCalendarDirty = useMemo(
-    () => JSON.stringify(incomingCalendar) !== JSON.stringify(incomingCalendarBaseline),
-    [incomingCalendar, incomingCalendarBaseline],
-  );
-
-  const discardIncomingCalendar = useCallback(() => {
-    setIncomingCalendar(incomingCalendarBaseline);
-    setShowIncomingCalendar(false);
-  }, [incomingCalendarBaseline]);
-
-  useUnsavedChanges({
-    id: "settings-incoming-school-year-calendar",
-    label: "Incoming school year calendar",
-    isDirty: showIncomingCalendar && incomingCalendarDirty,
-    isSubmitting: preparingIncomingCalendar,
-    onDiscard: discardIncomingCalendar,
-  });
-
-  const saveIncomingCalendar = async () => {
-    if (!activeYear) return;
-    const requiredFields: Array<keyof IncomingCalendarDraft> = [
-      "classOpeningDate",
-      "classEndDate",
-      "enrollOpenDate",
-      "enrollCloseDate",
-      "term1Start",
-      "term1End",
-      "term2Start",
-      "term2End",
-      "term3Start",
-      "term3End",
-    ];
-    if (
-      requiredFields.some((field) => !incomingCalendar[field])
-      || (incomingCalendar.termFormat === "QUARTERS"
-        && (!incomingCalendar.term4Start || !incomingCalendar.term4End))
-    ) {
-      sileo.error({
-        title: "Complete the calendar",
-        description: "Enter every required date before preparing the incoming school year.",
-      });
-      return;
-    }
-    setPreparingIncomingCalendar(true);
-    try {
-      await api.post("/school-years/prepare-next", {
-        sourceSchoolYearId: activeYear.id,
-        yearLabel: nextRolloverYearLabel,
-        ...incomingCalendar,
-        term4Start:
-          incomingCalendar.termFormat === "QUARTERS"
-            ? incomingCalendar.term4Start
-            : null,
-        term4End:
-          incomingCalendar.termFormat === "QUARTERS"
-            ? incomingCalendar.term4End
-            : null,
-      });
-      sileo.success({
-        title: "Incoming Calendar Prepared",
-        description: `The reviewed calendar for School Year ${nextRolloverYearLabel} is saved but remains inactive.`,
-      });
-      setIncomingCalendarBaseline(incomingCalendar);
-      setShowIncomingCalendar(false);
-      await fetchData();
-    } catch (error: unknown) {
-      toastApiError(error as Parameters<typeof toastApiError>[0]);
-    } finally {
-      setPreparingIncomingCalendar(false);
-    }
-  };
 
   const archivedYears = useMemo(
     () => years.filter((year: SYItem) => year.status === "ARCHIVED"),
@@ -984,19 +837,7 @@ export default function SchoolYearTab() {
                     </CardTitle>
                   </div>
                 </div>
-                {activeYear && !isArchived && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={openIncomingCalendar}
-                    className="font-extrabold"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {preparedIncomingYear
-                      ? `Review S.Y. ${nextRolloverYearLabel} Calendar`
-                      : `Prepare S.Y. ${nextRolloverYearLabel} Calendar`}
-                  </Button>
-                )}
+
               </div>
 
               {activeYear ? (
@@ -1496,152 +1337,7 @@ export default function SchoolYearTab() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={showIncomingCalendar}
-        onOpenChange={(open) => {
-          if (open) {
-            setShowIncomingCalendar(true);
-            return;
-          }
-          if (!preparingIncomingCalendar) {
-            confirmOrRun(discardIncomingCalendar);
-          }
-        }}
-      >
-        <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Prepare S.Y. {nextRolloverYearLabel} Calendar</DialogTitle>
-            <DialogDescription>
-              Enter the reviewed DepEd calendar dates. Saving this calendar does not activate the school year or start rollover.
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="space-y-5 py-2">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="incoming-class-opening">Start of Classes</Label>
-                <Input
-                  id="incoming-class-opening"
-                  type="date"
-                  value={incomingCalendar.classOpeningDate}
-                  onChange={(event) => setIncomingCalendar((current) => ({
-                    ...current,
-                    classOpeningDate: event.target.value,
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="incoming-class-end">End of Classes</Label>
-                <Input
-                  id="incoming-class-end"
-                  type="date"
-                  value={incomingCalendar.classEndDate}
-                  onChange={(event) => setIncomingCalendar((current) => ({
-                    ...current,
-                    classEndDate: event.target.value,
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="incoming-enrollment-open">Enrollment Opens</Label>
-                <Input
-                  id="incoming-enrollment-open"
-                  type="date"
-                  value={incomingCalendar.enrollOpenDate}
-                  onChange={(event) => setIncomingCalendar((current) => ({
-                    ...current,
-                    enrollOpenDate: event.target.value,
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="incoming-enrollment-close">Enrollment Closes</Label>
-                <Input
-                  id="incoming-enrollment-close"
-                  type="date"
-                  value={incomingCalendar.enrollCloseDate}
-                  onChange={(event) => setIncomingCalendar((current) => ({
-                    ...current,
-                    enrollCloseDate: event.target.value,
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3 border-t pt-4">
-              <Label>Grading Period Format</Label>
-              <RadioGroup
-                value={incomingCalendar.termFormat}
-                onValueChange={(value) => {
-                  if (value === "TRIMESTER" || value === "QUARTERS") {
-                    setIncomingCalendar((current) => ({
-                      ...current,
-                      termFormat: value,
-                    }));
-                  }
-                }}
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-              >
-                <Label className="flex items-center gap-3 rounded-md border p-3">
-                  <RadioGroupItem value="TRIMESTER" /> Three Terms
-                </Label>
-                <Label className="flex items-center gap-3 rounded-md border p-3">
-                  <RadioGroupItem value="QUARTERS" /> Four Quarters
-                </Label>
-              </RadioGroup>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[
-                ["term1Start", "Period 1 Start"],
-                ["term1End", "Period 1 End"],
-                ["term2Start", "Period 2 Start"],
-                ["term2End", "Period 2 End"],
-                ["term3Start", "Period 3 Start"],
-                ["term3End", "Period 3 End"],
-                ...(incomingCalendar.termFormat === "QUARTERS"
-                  ? [["term4Start", "Period 4 Start"], ["term4End", "Period 4 End"]]
-                  : []),
-              ].map(([field, label]) => (
-                <div key={field} className="space-y-2">
-                  <Label htmlFor={`incoming-${field}`}>{label}</Label>
-                  <Input
-                    id={`incoming-${field}`}
-                    type="date"
-                    value={incomingCalendar[field as keyof IncomingCalendarDraft]}
-                    onChange={(event) => setIncomingCalendar((current) => ({
-                      ...current,
-                      [field]: event.target.value,
-                    }))}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm font-bold text-amber-950">
-              Rollover remains blocked until this calendar is complete and all SMART, section, SF5, and SF6 requirements are current.
-            </div>
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={preparingIncomingCalendar}
-              onClick={() => confirmOrRun(discardIncomingCalendar)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={preparingIncomingCalendar}
-              onClick={() => void saveIncomingCalendar()}
-            >
-              {preparingIncomingCalendar ? "Saving..." : "Save Reviewed Calendar"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Phase Shift Confirmation Modal */}
       <ConfirmationModal

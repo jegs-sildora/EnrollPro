@@ -159,7 +159,6 @@ Base path: `/api/school-years`
 | GET | `/grade-levels` | `HEAD_REGISTRAR`, `SYSTEM_ADMIN`, `TEACHER` | List configured grade levels |
 | GET | `/:id` | `SYSTEM_ADMIN` | Read one school-year configuration |
 | POST | `/activate` | `SYSTEM_ADMIN` | Create the first operational school year only |
-| POST | `/prepare-next` | `SYSTEM_ADMIN` | Save or update an empty, inactive, reviewed calendar shell for the consecutive incoming school year |
 | POST | `/rollover` | `SYSTEM_ADMIN` | Atomically archive EOSY, apply the reviewed target calendar, clone empty sections, carry eligible learners forward, and activate the new year |
 | PUT | `/:id` | `SYSTEM_ADMIN` | Update editable school-year settings |
 | PATCH | `/:id/status` | `SYSTEM_ADMIN` | First-time status control only; cannot bypass rollover while an operational year exists |
