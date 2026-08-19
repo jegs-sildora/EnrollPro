@@ -27,7 +27,7 @@ interface LearnerAccountStore {
         accountName: string;
         password: string;
         roles: ["LEARNER"];
-        mustChangePassword: false;
+        mustChangePassword: true;
         sex: "MALE" | "FEMALE";
         isActive: true;
       };
@@ -92,7 +92,7 @@ export async function ensureLearnerUserAccount(
       accountName: desiredAccountName,
       password: defaultPasswordHash,
       roles: ["LEARNER"],
-      mustChangePassword: false,
+      mustChangePassword: true,
       sex: (learner.sex as "MALE" | "FEMALE") || "FEMALE",
       isActive: true,
     },

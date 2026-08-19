@@ -8,6 +8,14 @@ Staff authentication uses the protected authentication routes and an HTTP-only c
 
 Never store passwords, tokens, integration keys, or production connection strings in Markdown or committed `.env` files.
 
+SMART, AIMS, and ATLAS credential verification must honor
+`mustChangePassword`. EnrollPro blocks companion-system login while a default
+password is active and provides a five-minute, single-purpose handoff to the
+existing password-change form. The handoff does not issue a normal EnrollPro
+staff session. Companion return destinations are allowlisted through
+`COMPANION_APP_URLS` and bound into the signed handoff ticket. Configure
+`ENROLLPRO_PUBLIC_URL` with the browser-facing EnrollPro address.
+
 ## Roles
 
 - `SYSTEM_ADMIN` manages system configuration, accounts, health, logs, personnel administration, and protected exports.

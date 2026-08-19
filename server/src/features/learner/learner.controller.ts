@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import type { LearnerAuthPayload } from "../../middleware/authenticate-learner.js";
 import { getStoredSmartSubjects } from "../integration/smart-outcome-envelope.js";
+import { isConfiguredDefaultPassword } from "../auth/default-password.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
@@ -345,6 +346,14 @@ export async function learnerSetupPassword(req: Request, res: Response): Promise
     res.status(400).json({
       code: "SAME_PASSWORD",
       message: "New password cannot be the same as your current password.",
+    });
+    return;
+  }
+
+  if (await isConfiguredDefaultPassword(newPassword)) {
+    res.status(400).json({
+      code: "DEFAULT_PASSWORD_NOT_ALLOWED",
+      message: "Choose a private password instead of the configured default password.",
     });
     return;
   }

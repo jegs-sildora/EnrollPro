@@ -94,10 +94,23 @@ Base path: `/api/auth`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | POST | `/login` | Public | Authenticate an active staff account and issue staff session data |
-| POST | `/verify` | Public | Verify staff credentials without creating the normal session workflow |
+| POST | `/verify` | Public | Verify staff credentials for SMART, AIMS, or ATLAS without creating an EnrollPro staff session |
 | POST | `/logout` | Public | Clear the staff authentication cookie |
 | GET | `/me` | Staff JWT | Return the authenticated staff profile |
 | PATCH | `/change-password` | Staff cookie or bearer fallback | Change the authenticated staff password |
+| PATCH | `/external/change-password` | Five-minute password-change ticket | Replace a default password during a companion-system login handoff without issuing an EnrollPro staff session |
+
+If `/verify` receives valid credentials for an account with
+`mustChangePassword=true`, it denies companion-system login with HTTP `428` and
+returns `code: PASSWORD_CHANGE_REQUIRED`, a relative `passwordChangePath`, and
+an absolute `passwordChangeUrl`. Companion systems should send their exact
+login page as `returnTo`; EnrollPro signs that destination into the ticket and
+redirects back to it after the password is replaced. The path contains a
+short-lived, single-purpose ticket in
+the URL fragment. SMART, AIMS, and ATLAS must open that EnrollPro path in a
+popup or full-page handoff. After the existing EnrollPro password form succeeds,
+the companion system must ask the user to sign in again with the new password.
+The ticket cannot be used as a normal staff session.
 
 Learner authentication is mounted under `/api/learner`, not `/api/auth`.
 

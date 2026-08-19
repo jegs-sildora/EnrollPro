@@ -61,6 +61,7 @@ Private network transport may use Tailscale or another school-approved network. 
 - Learner routes use a learner-scoped JWT.
 - The MRF identity feed uses `X-Integration-Key`.
 - Existing public integration feeds remain compatibility endpoints and must contain only approved fields.
+- SMART, AIMS, and ATLAS must send their exact login page as `returnTo` and refuse login when EnrollPro credential verification returns `PASSWORD_CHANGE_REQUIRED`. They navigate to the returned absolute EnrollPro password-change URL and create their own session only after EnrollPro redirects back and the user signs in with the replacement password.
 
 Integration keys and user credentials must never appear in logs, responses, or committed documentation.
 

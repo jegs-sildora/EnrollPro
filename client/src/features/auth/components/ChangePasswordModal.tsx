@@ -63,6 +63,22 @@ interface ChangePasswordFormProps {
   children?: React.ReactNode;
 }
 
+interface ExternalPasswordChangeResponse {
+  success: true;
+  message: string;
+  returnTo: string | null;
+}
+
+function getSafeBrowserReturnUrl(value: string | null): URL | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function ChangePasswordForm({
   onSubmit,
   loading,
@@ -247,7 +263,16 @@ export default function ChangePassword() {
 
   const [searchParams] = useSearchParams();
   const origin = searchParams.get("origin");
-  const isLearner = origin === "staff" ? false : Boolean(learnerAuth.user);
+  const isExternalHandoff = origin === "external";
+  const [externalTicket] = useState<string | null>(() => {
+    if (origin !== "external") return null;
+    return new URLSearchParams(window.location.hash.slice(1)).get("ticket");
+  });
+  const isLearner = isExternalHandoff
+    ? false
+    : origin === "staff"
+      ? false
+      : Boolean(learnerAuth.user);
   const auth = isLearner ? learnerAuth : staffAuth;
 
   const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
@@ -258,7 +283,21 @@ export default function ChangePassword() {
   const user = auth.user;
   const hasSession = Boolean(auth.user);
 
-  if (!hasSession || !user) {
+  useEffect(() => {
+    if (isExternalHandoff && window.location.hash) {
+      window.history.replaceState(
+        null,
+        document.title,
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+  }, [isExternalHandoff]);
+
+  if (isExternalHandoff && !externalTicket) {
+    return <Navigate to="/staff/login" replace />;
+  }
+
+  if (!isExternalHandoff && (!hasSession || !user)) {
     return <Navigate to={isLearner ? "/learner/login" : "/staff/login"} replace />;
   }
 
@@ -267,7 +306,11 @@ export default function ChangePassword() {
     return <Navigate to="/learner/login" replace />;
   }
 
-  if (!isLearner && !(user as { mustChangePassword?: boolean }).mustChangePassword) {
+  if (
+    !isExternalHandoff
+    && !isLearner
+    && !(user as { mustChangePassword?: boolean }).mustChangePassword
+  ) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -279,7 +322,34 @@ export default function ChangePassword() {
     setLoading(true);
     setError(null);
     try {
-      if (isLearner) {
+      if (isExternalHandoff && externalTicket) {
+        const response = await api.patch<ExternalPasswordChangeResponse>(
+          "/auth/external/change-password",
+          { newPassword },
+          { headers: { Authorization: `Bearer ${externalTicket}` } },
+        );
+        const returnUrl = getSafeBrowserReturnUrl(response.data.returnTo);
+
+        sileo.success({
+          title: "Password Updated",
+          description: returnUrl
+            ? "Returning you to the system where you signed in."
+            : "Return to the companion system and sign in with your new password.",
+        });
+
+        window.setTimeout(() => {
+          if (returnUrl && window.opener && !window.opener.closed) {
+            window.opener.postMessage(
+              { type: "ENROLLPRO_PASSWORD_CHANGED" },
+              returnUrl.origin,
+            );
+          }
+
+          window.location.replace(
+            returnUrl?.toString() ?? "/staff/login?passwordChanged=1",
+          );
+        }, 700);
+      } else if (isLearner && user) {
         const token = useLearnerAuthStore.getState().token;
         if (!token) {
           setError("Session not found. Please log in again.");
@@ -313,7 +383,7 @@ export default function ChangePassword() {
         setTimeout(() => {
           window.location.replace("/learner/portal");
         }, 500);
-      } else {
+      } else if (user) {
         const res = await api.patch("/auth/change-password", { newPassword });
 
         staffAuth.setAuth(res.data.user);
@@ -390,10 +460,12 @@ export default function ChangePassword() {
               <ShieldCheck className="h-8 w-8" />
             </div>
             <CardTitle className="text-3xl font-extrabold ">
-              Activate Official Account
+              {isExternalHandoff ? "Replace Default Password" : "Activate Official Account"}
             </CardTitle>
             <CardDescription className="text-base font-extrabold">
-              Please replace the initial access key provided by the Registrar with your own private password.
+              {isExternalHandoff
+                ? "Your account is using the initial password. Set a private password before returning to SMART, AIMS, or ATLAS."
+                : "Please replace the initial access key provided by the Registrar with your own private password."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 px-8">

@@ -13,6 +13,43 @@ ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration
 
 Do not commit a real host or key. A Tailscale address may be supplied through these variables for a private deployment.
 
+## Shared Staff Login
+
+SMART, AIMS, and ATLAS may verify an EnrollPro-managed staff account through:
+
+```text
+POST <ENROLLPRO_BASE_URL>/api/auth/verify
+```
+
+Send the exact browser page that initiated sign-in so EnrollPro can return the
+user to that page after the required password change:
+
+```json
+{
+  "accountName": "<employee ID or account name>",
+  "password": "<submitted password>",
+  "returnTo": "https://configured-smart-host/login/teacher"
+}
+```
+
+When the response is HTTP `428` with
+`code: PASSWORD_CHANGE_REQUIRED`, do not create a companion-system session.
+Navigate the current browser window to the returned absolute
+`passwordChangeUrl`, or open it in a popup. The user completes the existing
+EnrollPro password-change form and EnrollPro redirects to the signed `returnTo`
+URL. The companion system must then require sign-in with the replacement
+password. The ticket expires after five minutes and cannot authenticate any
+other EnrollPro route.
+
+The companion browser host must match its configured SMART, AIMS, or ATLAS API
+host, or its browser origin must be listed in `COMPANION_APP_URLS` on the
+EnrollPro server. `ENROLLPRO_PUBLIC_URL` should identify the browser-facing
+EnrollPro application when the API and frontend use different hosts. A
+companion login page that treats HTTP `428` as a generic error will not open the
+password-change form.
+
+Companion systems must not copy, store, or replace EnrollPro passwords.
+
 ## Health And School Year
 
 ```bash
