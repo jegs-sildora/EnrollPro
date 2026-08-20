@@ -1003,7 +1003,7 @@ export default function Students() {
                     </div>
                   </TooltipTrigger>
                   {row.original.sectionAdviser && (
-                    <TooltipContent className={cn("px-3 py-2 outline-1", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
+                    <TooltipContent className={cn("px-3 py-2 border", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
                       <p className="font-bold">ADVISER: {row.original.sectionAdviser}</p>
                       <p className="font-bold">EMPLOYEE ID: {row.original.sectionAdviserEmployeeId}</p>
                     </TooltipContent>

@@ -1293,7 +1293,7 @@ export default function EosyUpdating() {
                   </div>
                 </TooltipTrigger>
                 {row.original.section?.advisers?.[0]?.teacher && (
-                  <TooltipContent className={cn("px-3 py-2", getGradeLevelBadgeStyles(row.original.enrollmentApplication.gradeLevel?.name))}>
+                  <TooltipContent className={cn("px-3 py-2 border", getGradeLevelBadgeStyles(row.original.enrollmentApplication.gradeLevel?.name))}>
                     <p className="font-bold">ADVISER: {`${row.original.section.advisers[0].teacher.firstName} ${row.original.section.advisers[0].teacher.lastName}`}</p>
                     <p className="font-bold">EMPLOYEE ID: {row.original.section.advisers[0].teacher.employeeId}</p>
                   </TooltipContent>
