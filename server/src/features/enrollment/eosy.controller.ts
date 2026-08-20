@@ -19,6 +19,8 @@ import {
 import {
   clearSmartOutcomeFromReportedGrades,
   matchesStoredSmartOutcome,
+  readSmartOutcomeEnvelope,
+  type StoredSmartSubjectGrades,
 } from "../integration/smart-outcome-envelope.js";
 
 function hasFinalizedEosyOutcome(record: {
@@ -227,13 +229,13 @@ interface EosyRecordPayload {
     learner: EosyLearnerPayload;
   };
   isScpDemoted: boolean;
-  scpViolation: {
+  scpViolations: Array<{
     subject: string;
     term: string;
     actualGrade: number;
     requiredGrade: number;
     violationType: string;
-  } | null;
+  }> | null;
 }
 
 async function loadEosySections(schoolYearId: number): Promise<EosySectionPayload[]> {
@@ -274,44 +276,127 @@ function getEosyGradeLevels(sections: EosySectionPayload[]) {
   );
 }
 
+function unifySmartSubjects(
+  subjects: Record<string, StoredSmartSubjectGrades>
+): Record<string, StoredSmartSubjectGrades> {
+  const unified: Record<string, StoredSmartSubjectGrades> = {};
+  const groups: Record<string, StoredSmartSubjectGrades[]> = {};
+  
+  for (const [subject, grades] of Object.entries(subjects)) {
+    let overarching = subject;
+    const lower = subject.toLowerCase();
+    
+    if (lower.startsWith("science")) overarching = "Science";
+    else if (lower.startsWith("tle") || lower.startsWith("technology and livelihood education")) overarching = "TLE";
+    else if (lower.startsWith("math")) overarching = "Mathematics";
+    else if (lower.startsWith("english")) overarching = "English";
+    else if (lower.startsWith("filipino")) overarching = "Filipino";
+    else if (lower.startsWith("araling panlipunan") || lower.startsWith("ap ")) overarching = "Araling Panlipunan";
+    else if (lower.startsWith("edukasyon sa pagpapakatao") || lower.startsWith("esp ")) overarching = "Edukasyon sa Pagpapakatao";
+    else if (lower.startsWith("mapeh")) overarching = "MAPEH";
+    
+    if (!groups[overarching]) groups[overarching] = [];
+    groups[overarching].push(grades);
+  }
+
+  for (const [overarching, gradesArray] of Object.entries(groups)) {
+    if (gradesArray.length === 1) {
+      unified[overarching] = gradesArray[0];
+    } else {
+      const averaged: StoredSmartSubjectGrades = {};
+      const keys = ["T1", "T2", "T3", "Final"] as const;
+      for (const k of keys) {
+        let sum = 0;
+        let count = 0;
+        for (const g of gradesArray) {
+          const val = g[k];
+          if (typeof val === "number") {
+            sum += val;
+            count++;
+          }
+        }
+        if (count > 0) {
+          averaged[k] = Math.round(sum / count);
+        }
+      }
+      unified[overarching] = averaged;
+    }
+  }
+  return unified;
+}
+
 function buildScpMetadata(
   programType: string | null | undefined,
   nextYearCurriculum: string | null | undefined,
   finalAverage: number | null,
+  smartOutcome?: import("../integration/smart-outcome-envelope.js").SmartOutcomeEnvelope | null
 ) {
   const isScp = Boolean(programType && programType !== "REGULAR");
   const isScpDemoted = nextYearCurriculum === "REGULAR" && isScp;
+  let scpViolations: NonNullable<EosyRecordPayload["scpViolations"]> = [];
 
-  let scpViolation: EosyRecordPayload["scpViolation"] = null;
-  if (isScp && finalAverage !== null && finalAverage < 85) {
+  if (isScp && smartOutcome?.subjects) {
+    const unifiedSubjects = unifySmartSubjects(smartOutcome.subjects);
+    for (const [subject, grades] of Object.entries(unifiedSubjects)) {
+      if (grades.T1 && grades.T1 < 80) {
+        scpViolations.push({ subject, term: "Quarter 1", actualGrade: grades.T1, requiredGrade: 80, violationType: "Quarterly Minimum" });
+      }
+      if (grades.T2 && grades.T2 < 80) {
+        scpViolations.push({ subject, term: "Quarter 2", actualGrade: grades.T2, requiredGrade: 80, violationType: "Quarterly Minimum" });
+      }
+      if (grades.T3 && grades.T3 < 80) {
+        scpViolations.push({ subject, term: "Quarter 3", actualGrade: grades.T3, requiredGrade: 80, violationType: "Quarterly Minimum" });
+      }
+      if (grades.Final) {
+        let isCore = false;
+        let required = 83;
+
+        if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+          const lower = subject.toLowerCase();
+          isCore = lower.includes("science") || lower.includes("math") || lower.includes("english") || lower.includes("research") || lower.includes("biotech") || lower.includes("environmental");
+          required = isCore ? 85 : 83;
+        } else if (programType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
+          const lower = subject.toLowerCase();
+          isCore = lower.includes("arts") || lower.includes("specialization");
+          required = isCore ? 85 : 83;
+        } else if (programType === "SPECIAL_PROGRAM_IN_SPORTS") {
+          const lower = subject.toLowerCase();
+          isCore = lower.includes("sports") || lower.includes("specialization");
+          required = isCore ? 85 : 83;
+        } else {
+          const lower = subject.toLowerCase();
+          isCore = lower.includes("science") || lower.includes("math");
+          required = isCore ? 85 : 83;
+        }
+
+        if (grades.Final < required) {
+          scpViolations.push({ subject, term: "Final Grade", actualGrade: grades.Final, requiredGrade: required, violationType: isCore ? "Core Subject Minimum" : "Subject Final Minimum" });
+        }
+      }
+    }
+  }
+
+  if (isScp && scpViolations.length === 0 && finalAverage !== null && finalAverage < 85) {
     if (finalAverage < 80) {
-      scpViolation = {
+      scpViolations.push({
         subject: "MAPEH",
         term: "Quarter 2",
         actualGrade: Math.floor(finalAverage),
         requiredGrade: 80,
-        violationType: "Quarterly Minimum",
-      };
-    } else if (finalAverage < 83) {
-      scpViolation = {
-        subject: "Araling Panlipunan",
-        term: "Final Grade",
-        actualGrade: finalAverage,
-        requiredGrade: 83,
-        violationType: "Subject Final Minimum",
-      };
+        violationType: "Quarterly Minimum"
+      });
     } else {
-      scpViolation = {
+      scpViolations.push({
         subject: "Science",
         term: "Final Grade",
-        actualGrade: finalAverage,
+        actualGrade: Math.floor(finalAverage),
         requiredGrade: 85,
-        violationType: "Core Subject Minimum",
-      };
+        violationType: "Core Subject Minimum"
+      });
     }
   }
 
-  return { isScpDemoted, scpViolation };
+  return { isScpDemoted, scpViolations: scpViolations.length > 0 ? scpViolations : null };
 }
 
 async function loadEosyGradeRecords(
@@ -364,6 +449,7 @@ async function loadEosyGradeRecords(
         section.programType,
         null,
         finalAverage,
+        null
       );
 
       return {
@@ -454,6 +540,7 @@ async function loadEosyGradeRecords(
       record.section.programType,
       record.nextYearCurriculum,
       finalAverage,
+      readSmartOutcomeEnvelope(record.enrollmentApplication.reportedGrades)
     );
 
     return {
@@ -1461,19 +1548,23 @@ export async function getGradeRecords(
       });
 
     const mappedRecords = records.map((record) => {
-      const isScp = record.section?.programType && record.section.programType !== "REGULAR";
-      const isScpDemoted = record.nextYearCurriculum === "REGULAR" && isScp;
+      const finalAverage = record.finalAverage !== null && record.finalAverage !== undefined
+        ? Number(record.finalAverage)
+        : null;
+
+      const scpMetadata = buildScpMetadata(
+        record.section?.programType,
+        record.nextYearCurriculum,
+        finalAverage,
+        readSmartOutcomeEnvelope("reportedGrades" in record.enrollmentApplication ? record.enrollmentApplication.reportedGrades : null)
+      );
 
       return {
         ...record,
         nextYearCurriculum: record.nextYearCurriculum,
-        isScpDemoted,
-        scpViolation: null,
-        finalAverage:
-          record.finalAverage !== null &&
-          record.finalAverage !== undefined
-            ? Number(record.finalAverage)
-            : null,
+        isScpDemoted: scpMetadata.isScpDemoted,
+        scpViolations: scpMetadata.scpViolations,
+        finalAverage,
       };
     });
 

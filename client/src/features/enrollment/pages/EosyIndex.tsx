@@ -93,13 +93,13 @@ export interface EnrollmentRecord {
   nextYearCurriculum: string | null;
   transferOutDate: string | null;
   isScpDemoted?: boolean;
-  scpViolation?: {
+  scpViolations?: Array<{
     subject: string;
     term: string;
     actualGrade: number;
     requiredGrade: number;
     violationType: string;
-  } | null;
+  }> | null;
   sectionId: number;
   section: {
     id: number;
@@ -1341,8 +1341,8 @@ export default function EosyUpdating() {
         cell: ({ row }) => {
           const r = row.original;
           const recordId = r.id;
-          const isScpDemoted = !activeGradeName.includes("10") && (r.isScpDemoted || !!r.scpViolation);
-          const scpViolation = r.scpViolation;
+          const isScpDemoted = !activeGradeName.includes("10") && (r.isScpDemoted || !!r.scpViolations);
+          const scpViolations = r.scpViolations;
 
           const unsaved = unsavedChanges[recordId] || {};
           const currentStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
@@ -1389,19 +1389,52 @@ export default function EosyUpdating() {
                   <p className="text-base  leading-snug">
                     Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
                   </p>
-                  {scpViolation && (
+                  {scpViolations && scpViolations.length > 0 && (
                     <div className="mt-3 bg-amber-100/50 rounded p-2 text-base leading-tight border border-amber-200/50">
-                      <p><span className="font-bold text-amber-900">Subject:</span> {scpViolation.subject}</p>
-                      <p><span className="font-bold text-amber-900">Term:</span> {scpViolation.term}</p>
-                      <p className="mt-1 text-red-700 font-extrabold">
-                        Grade: {scpViolation.actualGrade} <span className="text-amber-700  text-base">(Required: {scpViolation.requiredGrade})</span>
-                      </p>
+                      {scpViolations.length > 1 ? (
+                        <ul className="list-disc pl-5 space-y-1">
+                          {scpViolations.map((v, i) => (
+                            <li key={i}>
+                              <span className="font-bold text-amber-900">{v.subject}</span> - Final Rating: <span className="text-red-700 font-extrabold">{v.actualGrade}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <>
+                          <p><span className="font-bold text-amber-900">Subject:</span> {scpViolations[0].subject}</p>
+                          <p className="mt-1 text-red-700 font-extrabold">
+                            Final Rating: {scpViolations[0].actualGrade}
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           );
+
+          const renderRetainedTooltip = (trigger: React.ReactNode) => {
+            const isFailingAve = currentAve !== null && currentAve !== undefined && currentAve < 75;
+            const reason = isFailingAve ? `Final average of ${currentAve} is below the passing threshold of 75` : "Learner passed the general average but failed 3 or more individual learning areas";
+            return (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {trigger}
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-red-50 border border-red-300 text-red-900 shadow-lg rounded-md p-4 w-100 text-left">
+                    <h4 className="text-base font-extrabold uppercase tracking-wide text-red-800 border-b border-red-200 pb-2 mb-2">
+                      Retention Reason
+                    </h4>
+                    <p className="text-base leading-snug">
+                      {reason}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          };
 
           if (hasOverride) {
             return (
@@ -1432,7 +1465,11 @@ export default function EosyUpdating() {
           if (isSectionFinalized || isScopeFinalized) {
             return (
               <div className="flex flex-col items-center justify-center gap-1 w-full">
-                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? renderTooltip(renderStatusContent()) : renderStatusContent()}
+                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" 
+                  ? renderTooltip(renderStatusContent()) 
+                  : resolvedStatus === "RETAINED"
+                    ? renderRetainedTooltip(renderStatusContent())
+                    : renderStatusContent()}
                 {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
                   <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
                     Deficiency: {currentDeficiencyNote}
@@ -1465,6 +1502,17 @@ export default function EosyUpdating() {
                         "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
                       )}>
                       <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
+                    </SelectTrigger>
+                  )
+                ) : resolvedStatus === "RETAINED" ? (
+                  renderRetainedTooltip(
+                    <SelectTrigger
+                      className={cn(
+                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
+                        isStatusChanged && "border-amber-500 focus:ring-amber-500",
+                        "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
+                      )}>
+                      <SelectValue />
                     </SelectTrigger>
                   )
                 ) : (
