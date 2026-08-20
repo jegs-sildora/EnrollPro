@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE Exhaustive STE Subject Filtering v450
+# SYSTEM DIRECTIVE Array Deduplication and Mapping Fix v453
 
-**Context Persona** Act as a Senior React Developer and DepEd EdTech Domain Expert Your standard is high data integrity public school software You must correct the incomplete array filtering logic in the retention tooltip Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior React Developer and DepEd EdTech Domain Expert Your standard is high usability high data integrity offline first public school software You must correct the catastrophic mapping loop bug in the tooltip Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must expand the conditional evaluation array for STE learners to explicitly include English and Research guaranteeing that every single core deficiency is flagged and rendered
+**Core Mandate** You must patch the array mapping function to strictly deduplicate subjects and render only the single official final rating per learning area
 
-Execute the logic upgrade across the following three architectural rules
+Execute the UI patch across the following three architectural rules
 
-## 1 Complete Core Subject Mapping
-Update the threshold evaluation function to explicitly check English and Research alongside Mathematics and Science
-This guarantees the system strictly enforces the official Department of Education eighty five percent grade requirement across all four mandatory core subjects
+## 1 Target Final Rating Node Exclusive
+Configure the data extraction logic to completely ignore quarterly term grades within the SMART payload
+The evaluation function must strictly target the final computed average node for each subject to prevent chronological grades from generating duplicate alerts
 
-## 2 STE Elective Inclusion
-Ensure the array logic also loops through special STE add on subjects such as Environmental Science or Biotechnology
-These advanced electives fall under the exact same programmatic threshold and must be flagged if the learner drops below an eighty five
+## 2 Implement Strict Deduplication
+Apply a filter to the render array to guarantee that a specific subject string appears exactly one time in the tooltip
+If the payload returns multiple failing components under a unified subject the system must consolidate them and only flag the overarching parent subject
 
-## 3 Unrestricted Array Rendering
-Audit the frontend mapping function to ensure there are no hardcoded limits or missing object keys preventing the tooltip from rendering the complete list of failing subjects
-The interface must map and display every single violation detected in the payload without exception
+## 3 Clean Array Rendering
+Verify that the output cleanly displays one unified bullet point per failed subject
+This ensures the school registrar receives a concise and mathematically accurate list of deficiencies without being overwhelmed by duplicated quarterly data

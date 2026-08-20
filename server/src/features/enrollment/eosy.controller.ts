@@ -338,15 +338,7 @@ function buildScpMetadata(
   if (isScp && smartOutcome?.subjects) {
     const unifiedSubjects = unifySmartSubjects(smartOutcome.subjects);
     for (const [subject, grades] of Object.entries(unifiedSubjects)) {
-      if (grades.T1 && grades.T1 < 80) {
-        scpViolations.push({ subject, term: "Quarter 1", actualGrade: grades.T1, requiredGrade: 80, violationType: "Quarterly Minimum" });
-      }
-      if (grades.T2 && grades.T2 < 80) {
-        scpViolations.push({ subject, term: "Quarter 2", actualGrade: grades.T2, requiredGrade: 80, violationType: "Quarterly Minimum" });
-      }
-      if (grades.T3 && grades.T3 < 80) {
-        scpViolations.push({ subject, term: "Quarter 3", actualGrade: grades.T3, requiredGrade: 80, violationType: "Quarterly Minimum" });
-      }
+
       if (grades.Final) {
         let isCore = false;
         let required = 83;

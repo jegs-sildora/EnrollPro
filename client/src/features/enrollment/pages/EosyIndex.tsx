@@ -1382,31 +1382,22 @@ export default function EosyUpdating() {
                 <TooltipTrigger asChild>
                   {trigger}
                 </TooltipTrigger>
-                <TooltipContent className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-100 text-left">
+                <TooltipContent className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-120 text-left mr-6">
                   <h4 className="text-base font-extrabold uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
-                    Special Program Retention Alert
+                    SPECIAL PROGRAM TRANSFER ALERT
                   </h4>
                   <p className="text-base  leading-snug">
                     Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
                   </p>
                   {scpViolations && scpViolations.length > 0 && (
                     <div className="mt-3 bg-amber-100/50 rounded p-2 text-base leading-tight border border-amber-200/50">
-                      {scpViolations.length > 1 ? (
-                        <ul className="list-disc pl-5 space-y-1">
-                          {scpViolations.map((v, i) => (
-                            <li key={i}>
-                              <span className="font-bold text-amber-900">{v.subject}</span> - Final Rating: <span className="text-red-700 font-extrabold">{v.actualGrade}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <>
-                          <p><span className="font-bold text-amber-900">Subject:</span> {scpViolations[0].subject}</p>
-                          <p className="mt-1 text-red-700 font-extrabold">
-                            Final Rating: {scpViolations[0].actualGrade}
-                          </p>
-                        </>
-                      )}
+                      <ul className="list-disc pl-5 space-y-1">
+                        {Array.from(new Map(scpViolations.map((v) => [v.subject, v])).values()).map((v, i) => (
+                          <li key={i}>
+                            <span className="font-bold text-amber-900">{v.subject}</span> - Final Rating: <span className="text-red-700 font-extrabold">{v.actualGrade}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </TooltipContent>
@@ -1570,7 +1561,7 @@ export default function EosyUpdating() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-col pb-8">
+      <div className="flex min-h-0 flex-col overflow-hidden">
 
 
 
@@ -1637,7 +1628,7 @@ export default function EosyUpdating() {
                     </div>
                   )}
 
-                  <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex h-[calc(100dvh-12rem)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-11rem)]">
+                  <div className="bg-muted border border-slate-200 rounded-md shadow-sm flex h-[calc(100dvh-11rem)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-10rem)]">
                     <div className="bg-gray-50 border-b border-gray-200 p-2 sm:p-3 shrink-0">
                       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
                         {/* Left Side Actions */}
