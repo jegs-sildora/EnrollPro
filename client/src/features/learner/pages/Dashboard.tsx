@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { useThemeStore } from "@/store/theme.slice";
+import axios from "axios";
 import { getLearnerApi } from "@/shared/api/axiosInstance";
 
 import { motion, AnimatePresence } from "motion/react";
@@ -342,14 +343,14 @@ function AcademicHistoryAccordion({
 
                       return (
                         <tr key={subject} className="bg-card hover:bg-muted/50 transition-colors">
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{subject}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term1}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term2}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term3}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{subject}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term1}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term2}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term3}</td>
                           {!isTrimester && (
-                            <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">{term4}</td>
+                            <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term4}</td>
                           )}
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold">
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">
                             {finalRating}
                           </td>
                           <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">
@@ -410,7 +411,14 @@ export default function LearnerDashboard() {
     api
       .get<LearnerDashboardResponse>("/learner/dashboard-unified")
       .then((res) => setData(res.data))
-      .catch(() => setError("Failed to load dashboard data. Please try again later."))
+      .catch((err) => {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          clearAuth();
+          navigate("/learner/login", { replace: true });
+        } else {
+          setError("Failed to load dashboard data. Please try again later.");
+        }
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -599,7 +607,7 @@ export default function LearnerDashboard() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] overflow-hidden bg-background relative z-10 print:h-auto print:overflow-visible">
+      <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-56px)] md:h-[calc(100vh-56px)] overflow-hidden bg-background relative z-10 print:h-auto print:overflow-visible">
         {error && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-center gap-3 shadow-md">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />

@@ -83,6 +83,14 @@ async function performAuth(
     return;
   }
 
+  if (!decoded.userId) {
+    res.status(401).json({
+      code: "INVALID_TOKEN",
+      message: "Invalid token type.",
+    });
+    return;
+  }
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -142,6 +150,11 @@ export async function optionalAuthenticate(
     return
   }
 
+  if (!decoded.userId) {
+    next()
+    return
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: decoded.userId },
     select: { isActive: true },
@@ -186,6 +199,10 @@ export function authenticateFromCookies(
       try {
         decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
       } catch {
+        continue;
+      }
+
+      if (!decoded.userId) {
         continue;
       }
 

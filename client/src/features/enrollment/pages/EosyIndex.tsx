@@ -1382,7 +1382,7 @@ export default function EosyUpdating() {
                 <TooltipTrigger asChild>
                   {trigger}
                 </TooltipTrigger>
-                <TooltipContent className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-120 text-left mr-6">
+                <TooltipContent collisionPadding={24} className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-120 text-left mr-6">
                   <h4 className="text-base font-extrabold uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
                     SPECIAL PROGRAM TRANSFER ALERT
                   </h4>
@@ -1414,7 +1414,7 @@ export default function EosyUpdating() {
                   <TooltipTrigger asChild>
                     {trigger}
                   </TooltipTrigger>
-                  <TooltipContent className="bg-red-50 border border-red-300 text-red-900 shadow-lg rounded-md p-4 w-100 text-left">
+                  <TooltipContent collisionPadding={24} className="bg-red-50 border border-red-300 text-red-900 shadow-lg rounded-md p-4 w-100 text-left mr-6">
                     <h4 className="text-base font-extrabold uppercase tracking-wide text-red-800 border-b border-red-200 pb-2 mb-2">
                       Retention Reason
                     </h4>
