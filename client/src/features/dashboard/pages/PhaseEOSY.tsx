@@ -1,5 +1,5 @@
-import { Award, ClipboardCheck, FileCheck2, GraduationCap } from "lucide-react"
-import { useNavigate } from "react-router"
+import { AlertTriangle, Award, Check, ClipboardCheck, FileCheck2, GraduationCap } from "lucide-react"
+import { useNavigate, Link } from "react-router"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Progress } from "@/shared/ui/progress"
@@ -50,82 +50,80 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
       </section>
 
       <Card className="border-slate-200 bg-card shadow-sm">
-        <CardHeader className="pb-3">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
           <CardTitle className="text-base font-extrabold">
-            EOSY Completion Progress
+            Rollover Readiness Checklist
           </CardTitle>
-          <p className="text-sm font-semibold text-muted-foreground">
-            Learners with recorded final EOSY outcomes across all grade levels.
+          <p className="font-semibold text-foreground">
+            All requirements must be satisfied before transitioning to the next school year
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-4xl font-black text-primary">
-                {readiness.promotionCompletionPercent}%
-              </p>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                {stats.eosyStats.promotedTotal} promoted, {readiness.conditionallyPromoted} conditionally promoted, and {readiness.retained} retained
-              </p>
-            </div>
-            <GraduationCap className="size-8 text-primary/60" />
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link to="/eosy?status=pending" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
+              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {readiness.pendingSections === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+              </div>
+              <div>
+                <p className="font-bold text-foreground">Section Finalization</p>
+                <p className="text-sm font-semibold text-muted-foreground">All class advisers must submit and finalize their EOSY records</p>
+              </div>
+            </Link>
+
+            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
+              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.incompleteLearnerOutcomes === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {readiness.incompleteLearnerOutcomes === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+              </div>
+              <div>
+                <p className="font-bold text-foreground">SMART Grade Synchronization</p>
+                <p className="text-sm font-semibold text-muted-foreground">All learner outcomes must be resolved and synced</p>
+              </div>
+            </Link>
+
+            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
+              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.sf5Ready && readiness.sf6Ready ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {readiness.sf5Ready && readiness.sf6Ready ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+              </div>
+              <div>
+                <p className="font-bold text-foreground">School Form Generation</p>
+                <p className="text-sm font-semibold text-muted-foreground">School Forms 5 and 6 must be ready for review</p>
+              </div>
+            </Link>
+
+            <Link to="/settings" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
+              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.calendarPolicyApproved ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {readiness.calendarPolicyApproved ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
+              </div>
+              <div>
+                <p className="font-bold text-foreground">Calendar Policy Approval</p>
+                <p className="text-sm font-semibold text-muted-foreground">School year calendar policies must be approved</p>
+              </div>
+            </Link>
           </div>
-          <Progress value={readiness.promotionCompletionPercent} className="mt-5 h-3" />
         </CardContent>
       </Card>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.eosyStats.gradeLevelFinalization.map((grade) => (
-          <button
-            type="button"
-            key={grade.id}
+          <Card 
+            key={grade.id} 
+            className="border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => navigate(`/eosy?gradeLevelId=${grade.id}&status=pending`)}
-            className="rounded-md border border-slate-200 bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-extrabold text-foreground">{grade.name}</p>
-              <span className="text-lg font-black text-primary">{grade.percent}%</span>
-            </div>
-            <Progress value={grade.percent} className="my-3 h-2" />
-            <p className="text-sm font-bold text-muted-foreground">
-              {grade.finalized} of {grade.total} sections finalized
-            </p>
-          </button>
+            <CardContent className="flex min-h-32 flex-col justify-center gap-3 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-base font-extrabold leading-tight text-foreground">{grade.name}</p>
+                <span className="text-lg font-black leading-none text-primary">{grade.percent}%</span>
+              </div>
+              <Progress value={grade.percent} className="h-2" />
+              <p className="mt-2 text-base font-semibold text-foreground">
+                {grade.finalized} of {grade.total} sections finalized
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card className="border-slate-200 bg-card shadow-sm">
-          <CardContent className="flex items-center justify-between gap-4 p-5">
-            <div>
-              <p className="font-extrabold">School Form 5 Readiness</p>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                {readiness.sf5Ready
-                  ? "All section and learner outcomes are complete."
-                  : "Complete pending sections and learner outcomes first."}
-              </p>
-            </div>
-            <FileCheck2 className={readiness.sf5Ready ? "size-7 text-emerald-700" : "size-7 text-amber-700"} />
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-card shadow-sm">
-          <CardContent className="flex items-center justify-between gap-4 p-5">
-            <div>
-              <p className="font-extrabold">School Form 6 Readiness</p>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                {readiness.sf6Ready
-                  ? "School-level promotion totals are ready for review."
-                  : "School-level totals remain pending EOSY completion."}
-              </p>
-            </div>
-            <FileCheck2 className={readiness.sf6Ready ? "size-7 text-emerald-700" : "size-7 text-amber-700"} />
-          </CardContent>
-        </Card>
-      </section>
-
-      <div className="flex justify-end">
-        <Button className="hover:bg-primary hover:text-primary-foreground" onClick={() => navigate("/eosy")}>Open EOSY Updating</Button>
-      </div>
     </div>
   )
 }

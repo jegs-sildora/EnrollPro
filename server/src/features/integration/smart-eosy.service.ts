@@ -173,6 +173,7 @@ function assertFinalSubjectGrade(subject: SmartEosyLearnerOutcome["subjectGrades
 
 function normalizeSmartOutcome(
   outcome: SmartEosyLearnerOutcome,
+  expectedGrade: number | null,
 ): NormalizedSmartOutcome {
   const subjectGrades = outcome.subjectGrades ?? [];
   let learningAreas: NormalizedSmartOutcome["learningAreas"] =
@@ -188,8 +189,17 @@ function normalizeSmartOutcome(
 
   if (subjectGrades.length > 0) {
     assertUniqueSubjects(subjectGrades);
+    
+    // In DepEd, back-subjects might be present in the outcome but should not be
+    // included in the current year's general average calculation.
+    const currentGradeSubjects = subjectGrades.filter((sg) => 
+      subjectBelongsToGrade(sg.subjectName, expectedGrade)
+    );
+
     for (const sg of subjectGrades) {
-      assertFinalSubjectGrade(sg);
+      if (subjectBelongsToGrade(sg.subjectName, expectedGrade)) {
+        assertFinalSubjectGrade(sg);
+      }
       reportedGradesObj[sg.subjectName] = {
         T1: sg.T1 ?? null,
         T2: sg.T2 ?? null,
@@ -199,7 +209,7 @@ function normalizeSmartOutcome(
       };
     }
 
-    learningAreas = subjectGrades.map((subject) => {
+    learningAreas = currentGradeSubjects.map((subject) => {
       const finalGrade = subject.finalRating;
       if (finalGrade === null) {
         throw new Error(`Subject ${subject.subjectName} has no final rating.`);
@@ -501,8 +511,7 @@ async function syncFinalSmartSectionOutcomesInternal(
   const unresolvedOutcomes: Array<{ lrn: string; reason: string }> = [];
   for (const item of rawOutcomesList) {
     try {
-      assertSmartOutcomeGradeScope(item, expectedGrade);
-      normalizedOutcomes.push(normalizeSmartOutcome(item));
+      normalizedOutcomes.push(normalizeSmartOutcome(item, expectedGrade));
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : "Invalid final outcome.";
       unresolvedOutcomes.push({ lrn: item.lrn, reason });

@@ -583,6 +583,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       promotionCompletionPercent,
       sf5Ready: eosyPendingSections === 0 && incompleteLearnerOutcomes === 0,
       sf6Ready: eosyPendingSections === 0 && incompleteLearnerOutcomes === 0,
+      calendarPolicyApproved: true,
     };
 
     const summaryRibbon = {

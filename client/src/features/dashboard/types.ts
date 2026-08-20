@@ -111,6 +111,7 @@ export interface DashboardStats {
     promotionCompletionPercent: number
     sf5Ready: boolean
     sf6Ready: boolean
+    calendarPolicyApproved: boolean
   }
   classesOngoing: {
     lateIntakeCount: number

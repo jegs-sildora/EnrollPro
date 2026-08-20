@@ -151,7 +151,7 @@ export default function AdvisoryClass() {
   const renderTable = (data: AdvisoryRecord[], title: string, sex: "MALE" | "FEMALE") => (
     <div className="flex-1 min-w-0 flex flex-col">
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className={`font-extrabold text-lg uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
+        <h3 className={`font-extrabold uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
           {title}
         </h3>
         <span className="font-extrabold text-sm text-foreground uppercase">

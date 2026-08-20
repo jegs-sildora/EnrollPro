@@ -1680,7 +1680,7 @@ export default function EosyUpdating() {
                             ) : (
                               <>
                                 <RefreshCw className="h-4 w-4" />
-                                <span>Sync SMART</span>
+                                <span>SYNC SMART</span>
                               </>
                             )}
                           </Button>
