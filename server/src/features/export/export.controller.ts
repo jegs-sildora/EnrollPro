@@ -269,8 +269,8 @@ export const exportSF1 = async (req: Request, res: Response) => {
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="SF1_${section.name.replace(/\s+/g, '_')}.xlsx"`);
-    await workbook.xlsx.write(res);
-    res.end();
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.send(Buffer.from(buffer));
   } catch (error) {
     console.error('SF1 Export Error:', error);
     if (!res.headersSent) res.status(500).json({ message: 'Internal Server Error' });
@@ -312,8 +312,8 @@ export const exportLisMaster = async (req: Request, res: Response) => {
     applyAutoFit(worksheet, 1, records.length + 2, headers.length);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="LIS_Master.xlsx"`);
-    await workbook.xlsx.write(res);
-    res.end();
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.send(Buffer.from(buffer));
   } catch (error) {
     console.error('Master Export Error:', error);
     if (!res.headersSent) res.status(500).json({ message: 'Internal Server Error' });
@@ -902,8 +902,8 @@ export const exportSF7 = async (req: Request, res: Response) => {
       'Content-Disposition',
       `attachment; filename="SF7_${schoolYear.yearLabel.replace(/\s+/g, '_')}.xlsx"`,
     );
-    await workbook.xlsx.write(res);
-    res.end();
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.send(Buffer.from(buffer));
   } catch (error: unknown) {
     console.error('SF7 Export Error:', error);
     if (!res.headersSent) {

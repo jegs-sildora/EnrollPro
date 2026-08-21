@@ -59,13 +59,13 @@ router.get(
 router.get(
   "/",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
   listSections,
 );
 router.get(
   "/:ayId",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
   listSections,
 );
 router.post(
@@ -101,28 +101,28 @@ router.delete(
 router.get(
 	'/:id/masterlist',
 	authenticate,
-	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN', 'CLASS_ADVISER', 'TEACHER'),
 	getSectionMasterlist,
 );
 
 router.get(
 	'/:id/masterlist/sf1',
 	authenticate,
-	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN', 'CLASS_ADVISER', 'TEACHER'),
 	exportSectionSf1,
 );
 
 router.get(
   "/:id/masterlist/sf1/template",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
   downloadSectionSf1Template,
 );
 
 router.post(
   "/:id/masterlist/sf1/import/preview",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
   sf1Upload.single("file"),
   previewSectionSf1Import,
 );
@@ -130,7 +130,7 @@ router.post(
 router.post(
   "/:id/masterlist/sf1/import/commit",
   authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "CLASS_ADVISER", "TEACHER"),
   validate(sf1ImportCommitSchema),
   staffIntakePhaseGuard,
   commitSectionSf1Import,
