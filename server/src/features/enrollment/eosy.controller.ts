@@ -716,12 +716,7 @@ export async function updateEosyRecord(
       );
     }
 
-    if (eosyStatus !== "DROPPED_OUT" && eosyStatus !== "TRANSFERRED_OUT") {
-      throw new AppError(
-        409,
-        "Academic outcomes are owned by SMART. Use Sync SMART for promotion, retention, conditional promotion, and final grades.",
-      );
-    }
+    // Removed manual status restriction to support the reverted dropdown for all statuses
 
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },

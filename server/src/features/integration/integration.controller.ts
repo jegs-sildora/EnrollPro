@@ -121,6 +121,58 @@ export async function getActiveSchoolYear(
     data: {
       id: scope.schoolYearId,
       yearLabel: scope.schoolYearLabel,
+      term1Start: scope.term1Start,
+      term1End: scope.term1End,
+      term2Start: scope.term2Start,
+      term2End: scope.term2End,
+      term3Start: scope.term3Start,
+      term3End: scope.term3End,
+      term4Start: scope.term4Start,
+      term4End: scope.term4End,
+    },
+  });
+}
+
+export async function getActiveTerm(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const scopeResult = await resolveSchoolYearScope(req);
+  if ("status" in scopeResult) {
+    res
+      .status(scopeResult.status)
+      .json({ error: { message: scopeResult.message } });
+    return;
+  }
+
+  const { scope } = scopeResult;
+  const now = new Date();
+  
+  const checkTerm = (start: Date | null, end: Date | null) => {
+    if (!start || !end) return false;
+    // Set end date to end of day to properly include the last day
+    const endOfDay = new Date(end);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+    return now >= start && now <= endOfDay;
+  };
+
+  let activeTerm: string | null = null;
+  if (checkTerm(scope.term1Start, scope.term1End)) {
+    activeTerm = "T1";
+  } else if (checkTerm(scope.term2Start, scope.term2End)) {
+    activeTerm = "T2";
+  } else if (checkTerm(scope.term3Start, scope.term3End)) {
+    activeTerm = "T3";
+  } else if (checkTerm(scope.term4Start, scope.term4End)) {
+    activeTerm = "T4";
+  } else {
+    activeTerm = "T1";
+  }
+
+  res.json({
+    data: {
+      activeTerm,
+      schoolYearId: scope.schoolYearId,
     },
   });
 }

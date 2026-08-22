@@ -23,8 +23,9 @@ The configured host may be local, private-network, or deployed. Companion system
 | --- | --- | --- |
 | Staff JWT | `Authorization: Bearer <token>`, `enrollpro_session` cookie, or compatibility `token` query parameter | Protected staff and teacher routes |
 | Learner JWT | `Authorization: Bearer <learner-token>` | `/api/learner` self-service routes |
-| MRF service key | `X-Integration-Key: <secret>` | `/api/integration/v1/default/mrf/identities` |
-| Public | No credential | Public application, reference-data, and compatibility integration feeds |
+| Integration key | `X-Integration-Key: <secret>` or `Authorization: Bearer <secret>` | ATLAS, SMART, and AIMS integration feeds |
+| MRF service key | `X-Integration-Key: <secret>` or `Authorization: Bearer <secret>` | `/api/integration/v1/default/mrf/identities` |
+| Public | No credential | Public application and reference-data feeds |
 
 Protected API calls may send `x-school-year-context-id: <positive integer>`. If absent, EnrollPro resolves `SchoolSetting.activeSchoolYearId`, then the latest active school year. Partner v1 feeds use `schoolYearId`; feeds documented as optional fall back to the active year.
 
@@ -294,7 +295,7 @@ Base path: `/api/eosy`
 | GET | `/workspace` | Registrar, admin | Unified grade, section, record, and export-lock payload |
 | GET | `/sections` | Registrar, admin | Sections available for EOSY processing |
 | GET | `/sections/:id/records` | Registrar, admin | Section EOSY records |
-| PATCH | `/records/:id` | Registrar, admin | Record an official dropped-out or transferred-out status; academic outcomes remain SMART-owned |
+| PATCH | `/records/:id` | Registrar, admin | Record an official EOSY status including academic outcomes (PROMOTED, RETAINED, etc.) or dropped-out/transferred-out status |
 | POST | `/records/:id/override` | Registrar, admin | Correct identity or section context without replacing SMART-owned grades or promotion outcomes |
 | POST | `/sections/:id/finalize` | Registrar, admin | Lock section EOSY results |
 | GET | `/grade/:gradeLevelId/records` | Registrar, admin | Grade-level EOSY records |
@@ -418,22 +419,23 @@ The SMART outbound request uses the server-only `SMART_API_KEY` in the `Authoriz
 
 Base path: `/api/integration/v1`
 
-Existing ATLAS, SMART, and AIMS endpoints remain public and read-only for compatibility. The MRF feed is service-key protected. All payloads are DPA-minimized for their stated consumer.
+Existing ATLAS, SMART, and AIMS endpoints are now key-protected for machine-to-machine service integration. The MRF feed is also service-key protected. All payloads are DPA-minimized for their stated consumer.
 
 | Method | Path | Auth | School-year scope | Purpose |
 | --- | --- | --- | --- | --- |
 | GET | `/health` | Public | None | EnrollPro DB plus ATLAS, AIMS, and SMART connectivity |
-| GET | `/school-year` | Public | Optional `schoolYearId` | Resolve school-year ID and label |
-| GET | `/learners` | Public | Optional `schoolYearId` | Paginated current or archived learner roster |
-| GET | `/students` | Public alias | Optional `schoolYearId` | Alias of `/learners` |
-| GET | `/faculty` | Public | Optional `schoolYearId` | Paginated faculty and designation context |
-| GET | `/teachers` | Public alias | Optional `schoolYearId` | Alias of `/faculty` |
-| GET | `/staff` | Public | Not school-year bound | Active EnrollPro staff accounts, excluding MRF compatibility role |
-| GET | `/sections` | Public | Optional `schoolYearId` | Sections, grade levels, capacity, count, and adviser |
-| GET | `/sections/:sectionId/learners` | Public | Optional `schoolYearId` | Current or archived section roster |
-| GET | `/default/faculty` | Public | Optional `schoolYearId` | ATLAS-ready active faculty feed |
-| GET | `/default/smart/students` | Public | Optional `schoolYearId` | SMART-ready current or archived grade roster |
-| GET | `/default/aims/context` | Public | Optional `schoolYearId` | AIMS-ready current or archived learner context |
+| GET | `/school-year` | Integration key | Optional `schoolYearId` | Resolve school-year ID and label (defaults to the environment's `SchoolSetting.activeSchoolYearId` if absent) |
+| GET | `/active-term` | Integration key | Optional `schoolYearId` | Computes and broadcasts the active term state ("T1", "T2", "T3", "T4") on the fly based on server date |
+| GET | `/learners` | Integration key | Optional `schoolYearId` | Paginated current or archived learner roster |
+| GET | `/students` | Integration key | Optional `schoolYearId` | Alias of `/learners` |
+| GET | `/faculty` | Integration key | Optional `schoolYearId` | Paginated faculty and designation context |
+| GET | `/teachers` | Integration key | Optional `schoolYearId` | Alias of `/faculty` |
+| GET | `/staff` | Integration key | Not school-year bound | Active EnrollPro staff accounts, excluding MRF compatibility role |
+| GET | `/sections` | Integration key | Optional `schoolYearId` | Sections, grade levels, capacity, count, and adviser |
+| GET | `/sections/:sectionId/learners` | Integration key | Optional `schoolYearId` | Current or archived section roster |
+| GET | `/default/faculty` | Integration key | Optional `schoolYearId` | ATLAS-ready active faculty feed |
+| GET | `/default/smart/students` | Integration key | Optional `schoolYearId` | SMART-ready current or archived grade roster |
+| GET | `/default/aims/context` | Integration key | Optional `schoolYearId` | AIMS-ready current or archived learner context |
 | GET | `/default/mrf/identities` | `X-Integration-Key` | Optional `schoolYearId` | MRF learner, teacher, staff, and MRF-role identity groups |
 
 ### MRF Identity Feed
@@ -476,3 +478,44 @@ Compatibility base path: `/api/geography`
 Use only the mounted routes documented above. Routes copied from deleted planning files are unsupported and must not be called.
 
 EnrollPro does not implement Early Registration, reading assessment, enrollment listings, removed TLE laboratory assignment, hardware, or Internet of Things workflows.
+
+### Active School Year Payload Update
+The `GET /api/integration/v1/school-year` endpoint payload now exposes the active term dates to support realistic JWT generation and lifecycle states for integration partners (ATLAS, SMART, AIMS).
+
+```json
+{
+  "data": {
+    "id": 1,
+    "yearLabel": "2026-2027",
+    "term1Start": "2026-08-01T00:00:00.000Z",
+    "term1End": "2026-10-15T00:00:00.000Z",
+    "term2Start": "2026-10-16T00:00:00.000Z",
+    "term2End": "2026-12-20T00:00:00.000Z",
+    "term3Start": "2027-01-05T00:00:00.000Z",
+    "term3End": "2027-03-15T00:00:00.000Z",
+    "term4Start": "2027-03-16T00:00:00.000Z",
+    "term4End": "2027-05-30T00:00:00.000Z"
+  }
+}
+```
+
+### Active Term Endpoint
+**Endpoint:** `GET /api/integration/v1/active-term`
+
+Dependent microservices (SMART, ATLAS, and AIMS) are strictly instructed to implement a pull mechanism for the active term state. These services must query this specific EnrollPro endpoint:
+1. Every time a user session initializes.
+2. Every time a critical module loads.
+
+This guarantees that all dependent systems always receive the absolute most current temporal state directly from the master configuration node. The endpoint runs on-the-fly date comparison logic evaluating the server timestamp against the stored grading period boundaries whenever pinged.
+
+It is protected from external public access and requires secure internal authentication tokens (`X-Integration-Key`) so only official approved microservices can request the active term data, preventing unauthorized temporal manipulation.
+
+**Example Payload:**
+```json
+{
+  "data": {
+    "activeTerm": "T1",
+    "schoolYearId": 1
+  }
+}
+```

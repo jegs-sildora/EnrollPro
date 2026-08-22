@@ -48,9 +48,14 @@ async function performAuth(
   next: NextFunction,
   cookieName: string,
 ): Promise<void> {
+  if (req.originalUrl.startsWith("/api/integration/v1")) {
+    next();
+    return;
+  }
+
   if (req.user) {
-    next()
-    return
+    next();
+    return;
   }
 
   const auth = req.headers.authorization;
@@ -125,24 +130,33 @@ export async function optionalAuthenticate(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  if (req.user) {
-    next()
-    return
+  if (req.originalUrl.startsWith("/api/integration/v1")) {
+    next();
+    return;
   }
 
-  const auth = req.headers.authorization
-  const bearerToken = auth?.startsWith("Bearer ") ? auth.slice(7) : null
-  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME]
-  const token = bearerToken ?? cookieToken ?? null
+  if (req.user) {
+    next();
+    return;
+  }
+
+  const auth = req.headers.authorization;
+  const bearerToken = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+  const token = bearerToken ?? cookieToken ?? null;
   if (!token) {
-    next()
-    return
+    next();
+    return;
   }
 
   let decoded: AuthPayload
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload
   } catch {
+    if (req.originalUrl.startsWith("/api/integration/v1")) {
+      next()
+      return
+    }
     res.status(401).json({
       code: "INVALID_TOKEN",
       message: "Your session is invalid or expired. Please sign in again.",

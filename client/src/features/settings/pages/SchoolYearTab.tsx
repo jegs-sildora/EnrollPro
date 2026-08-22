@@ -54,7 +54,7 @@ import {
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
-
+import { useActiveTerm } from "@/shared/hooks/useActiveTerm";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 
@@ -268,6 +268,7 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 }
 
 export default function SchoolYearTab() {
+  const { activeTerm } = useActiveTerm();
   const { confirmOrRun } = useUnsavedChangesPrompt();
   const {
     setSettings,
@@ -961,9 +962,16 @@ export default function SchoolYearTab() {
                       { num: 2, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 2" : "Term 2", startField: "term2Start", endField: "term2End", start: localCalendarState.term2Start, end: localCalendarState.term2End },
                       { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
                       ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
-                    ].map((term) => (
-                      <div key={term.num} className="flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border border-border/40">
-                        <div className="w-24 shrink-0 font-extrabold text-primary">{term.label}</div>
+                    ].map((term) => {
+                      const isActiveTerm = activeTerm === `T${term.num}`;
+                      return (
+                      <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
+                        <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1">
+                          {term.label}
+                          {isActiveTerm && (
+                            <span className="inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 self-start">ACTIVE</span>
+                          )}
+                        </div>
                         <DualPaneDateRangePicker
                           startValue={term.start || ""}
                           endValue={term.end || ""}
@@ -1010,7 +1018,7 @@ export default function SchoolYearTab() {
                           }
                         />
                       </div>
-                    ))}
+                    )})}
                   </div>
 
 

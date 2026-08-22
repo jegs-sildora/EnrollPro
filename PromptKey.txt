@@ -1,0 +1,33 @@
+We need to harden the EnrollPro -> ATLAS integration contract.
+
+Current issue:
+ATLAS was configured with `ENROLLPRO_SERVICE_TOKEN`, but that token is a user-session JWT. It expired or became invalid, so EnrollPro returned `INVALID_TOKEN` when ATLAS called protected/current-year integration endpoints. This will recur any time the JWT expires or the signing/session state changes.
+
+Requested change:
+Please provide a stable machine-to-machine integration authentication contract for ATLAS instead of requiring a user session JWT.
+
+Target contract:
+- EnrollPro shall accept a long-lived integration key for ATLAS service calls.
+- ATLAS shall send the key as either:
+  - `X-Integration-Key: <key>`, preferred, or
+  - `Authorization: Bearer <machine-token>` if EnrollPro prefers bearer semantics.
+- The key must not be tied to a human user session expiration.
+- The key should be scoped only to ATLAS-required read/sync endpoints.
+
+ATLAS-required endpoints:
+- `GET /api/integration/v1/school-year`
+- `GET /api/integration/v1/sections`
+- `GET /api/integration/v1/faculty`
+- Any rollover/setup feed endpoints EnrollPro expects ATLAS to use for active school-year sync.
+
+Acceptance criteria:
+1. ATLAS can call the required integration feeds after server restart without a user login session.
+2. The credential does not expire like a normal UI JWT.
+3. Invalid or missing keys return a clear `401` or `403` with a machine-readable code.
+4. EnrollPro documents the required header name, environment variable name, and rotation process.
+5. EnrollPro confirms whether the public integration feeds will remain public or become key-protected.
+
+Recommended environment contract:
+- EnrollPro owns and stores the accepted key as something like `ATLAS_INTEGRATION_API_KEY`.
+- ATLAS stores the matching client-side server secret as something like `ENROLLPRO_INTEGRATION_KEY`.
+- We should stop using `ENROLLPRO_SERVICE_TOKEN` for long-running service sync because user JWTs expire and will keep causing `INVALID_TOKEN` failures.

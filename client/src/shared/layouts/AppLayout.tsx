@@ -58,6 +58,7 @@ import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHeaderStore } from "@/store/header.slice";
 import { resolvePageTitle } from "@/shared/hooks/usePageTitle";
+import { useActiveTerm } from "@/shared/hooks/useActiveTerm";
 import api from "@/shared/api/axiosInstance";
 import { PageTransition } from "@/shared/components/PageTransition";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -285,7 +286,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-md",
+          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm ",
           badge.className,
         )}>
         {badge.label}
@@ -924,6 +925,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           </div>
 
           <div className="ml-auto flex items-center gap-2 sm:gap-4">
+            <ActiveTermBadge />
             <SYSwitcher />
 
             <div className="hidden lg:flex items-center gap-1 border-x px-1.5 sm:px-3 h-8">
@@ -963,5 +965,20 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         )}
       </AnimatePresence>
     </SidebarProvider>
+  );
+}
+
+function ActiveTermBadge() {
+  const { activeTerm, isLoading } = useActiveTerm();
+
+  if (isLoading || !activeTerm) return null;
+
+  return (
+    <Badge
+      variant="outline"
+      className="hidden sm:inline-flex uppercase text-green-700 border-green-300 bg-green-50 font-extrabold tracking-widest px-2.5 py-0.5"
+    >
+      TERM {activeTerm.replace("T", "")}
+    </Badge>
   );
 }

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useRef, useState, useEffect } from "react";
-import { Plus, Minus, Trash2 } from "lucide-react";
+import { Plus, Minus, Trash2, Lock } from "lucide-react";
+import { useActiveTerm } from "@/shared/hooks/useActiveTerm";
 import { Button } from "@/features/smart/components/ui/button";
 import {
   Select,
@@ -515,6 +516,7 @@ export function ClassRecordTable({
   ledgerHeaderRef,
   onClearScores,
 }: ClassRecordTableProps) {
+  const { activeTerm } = useActiveTerm();
   const headerScrollRef = useRef<HTMLDivElement | null>(null);
   const bodyScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -674,15 +676,22 @@ export function ClassRecordTable({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 shadow-2xl p-1">
-                  {terms.map((q) => (
+                  {terms.map((q) => {
+                    const isLocked = activeTerm !== null && q !== activeTerm;
+                    return (
                     <SelectItem
                       key={q}
                       value={q}
-                      className="text-[11px] font-extrabold uppercase rounded-lg py-1.5 px-3 focus:bg-indigo-50 focus:text-indigo-600 transition-colors cursor-pointer"
+                      disabled={isLocked}
+                      className={`text-[11px] font-extrabold uppercase rounded-lg py-1.5 px-3 transition-colors ${isLocked ? "text-slate-400 opacity-50 focus:bg-transparent focus:text-slate-400" : "focus:bg-indigo-50 focus:text-indigo-600 cursor-pointer"}`}
                     >
-                      {q === "T1" ? "Term 1" : q === "T2" ? "Term 2" : "Term 3"}
+                      <div className="flex items-center gap-1.5">
+                        {q === "T1" ? "Term 1" : q === "T2" ? "Term 2" : "Term 3"}
+                        {isLocked && <Lock className="w-3 h-3 text-slate-400" />}
+                      </div>
                     </SelectItem>
-                  ))}
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

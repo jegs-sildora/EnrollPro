@@ -5,6 +5,7 @@ import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFligh
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { AtomicRolloverDialog } from "@/features/settings/components/AtomicRolloverDialog";
+import { EosyUnlockModal } from "@/features/enrollment/components/EosyUnlockModal";
 import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
 import {
   Select,
@@ -356,7 +357,7 @@ export default function EosyUpdating() {
     setHistoricalCorrectionToken,
     activeSchoolYearLabel,
   } = useSettingsStore();
-  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const { isHistoricalReadOnly, hasOverride, isSystemAdmin } = useHistoricalReadOnly();
   const isEosyPhase = systemPhase === "EOSY_CLOSING";
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
@@ -884,22 +885,29 @@ export default function EosyUpdating() {
 
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
-  const handleUnlockSection = async () => {
-    if (sectionFilter === "ALL") return;
-
-    const sectionIdPayload = records.find(r => r.section?.name === sectionFilter)?.section?.id;
-    if (!sectionIdPayload) return;
-
+  const handleUnlock = async () => {
     setUnlockLoading(true);
     try {
-      await api.post(`/eosy/sections/${sectionIdPayload}/unlock`);
-      sileo.success({
-        title: "Section Unlocked",
-        description: `Section ${sectionFilter} has been successfully unlocked.`,
-      });
+      if (sectionFilter === "ALL" || sectionFilter === "all" || !sectionFilter) {
+        await api.post(`/eosy/grade/${activeTab}/unlock`, { schoolYearId: ayId });
+        sileo.success({
+          title: "Grade Level Unlocked",
+          description: `${activeGradeName} has been successfully unlocked.`,
+        });
+      } else {
+        const sectionIdPayload = records.find(r => r.section?.name === sectionFilter)?.section?.id;
+        if (!sectionIdPayload) throw new Error("Section ID not found for unlock.");
+
+        await api.post(`/eosy/sections/${sectionIdPayload}/unlock`);
+        sileo.success({
+          title: "Section Unlocked",
+          description: `Section ${sectionFilter} has been successfully unlocked.`,
+        });
+      }
+      
       void fetchExportLockState();
       void fetchSectionsAndGrades();
-      void fetchGradeRecords(activeTab);
+      void fetchGradeRecords(activeTab, true);
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -1439,11 +1447,9 @@ export default function EosyUpdating() {
                     <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
                   </SelectTrigger>
                   <SelectContent>
-                    {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
-                      <SelectItem value={resolvedStatus} disabled>
-                        {formatStatusLabel(resolvedStatus, isGrade10)}
-                      </SelectItem>
-                    )}
+                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                    <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                    <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
                     <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
                     <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                   </SelectContent>
@@ -1521,11 +1527,9 @@ export default function EosyUpdating() {
                   </SelectTrigger>
                 )}
                 <SelectContent className="font-extrabold">
-                  {resolvedStatus !== "ACTION_REQUIRED" && !["TRANSFERRED_OUT", "DROPPED_OUT"].includes(resolvedStatus) && (
-                    <SelectItem value={resolvedStatus} disabled>
-                      {formatStatusLabel(resolvedStatus, isGrade10)}
-                    </SelectItem>
-                  )}
+                  <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                  <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                  <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
                   <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
                   <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
                 </SelectContent>
@@ -1621,10 +1625,21 @@ export default function EosyUpdating() {
                   className="flex min-h-0 w-full flex-col space-y-4"
                 >
                   {isScopeFinalized && (
-                    <div className="flex items-center justify-center w-full bg-amber-50 border border-amber-200 rounded-sm py-3 shrink-0">
+                    <div className="flex items-center justify-between w-full bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 shrink-0">
                       <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
                         EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER CHANGES ALLOWED.
                       </span>
+                      {isSystemAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setUnlockModalOpen(true)}
+                          className="font-extrabold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
+                        >
+                          <Unlock className="w-3 h-3 mr-1.5" />
+                          Override Lock
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -2049,19 +2064,19 @@ export default function EosyUpdating() {
         }}
       />
 
-      <ConfirmationModal
+
+
+      <EosyUnlockModal
         open={unlockModalOpen}
         onOpenChange={setUnlockModalOpen}
-        title="Unlock Section Roster?"
-        description={`Are you sure you want to unlock the section roster for ${sectionFilter}? This will revert control back to the Class Adviser.`}
-        onConfirm={handleUnlockSection}
-        confirmText="Unlock Section Roster"
-        cancelText="Cancel"
+        onConfirm={handleUnlock}
         loading={unlockLoading}
-        variant="warning"
-        icon={Unlock}
+        targetName={
+          sectionFilter === "ALL" || sectionFilter === "all" || !sectionFilter
+            ? activeGradeName
+            : `Section ${sectionFilter}`
+        }
       />
-
     </>
   );
 }
