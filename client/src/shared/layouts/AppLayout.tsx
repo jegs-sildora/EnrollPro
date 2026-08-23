@@ -969,16 +969,16 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 }
 
 function ActiveTermBadge() {
-  const { activeTerm, isLoading } = useActiveTerm();
+  const { activeTermLabel, isLoading } = useActiveTerm();
 
-  if (isLoading || !activeTerm) return null;
+  if (isLoading || !activeTermLabel) return null;
 
   return (
     <Badge
       variant="outline"
       className="hidden sm:inline-flex uppercase text-green-700 border-green-300 bg-green-50 font-extrabold tracking-widest px-2.5 py-0.5"
     >
-      TERM {activeTerm.replace("T", "")}
+      {activeTermLabel}
     </Badge>
   );
 }

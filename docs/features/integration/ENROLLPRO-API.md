@@ -515,6 +515,8 @@ It is protected from external public access and requires secure internal authent
 {
   "data": {
     "activeTerm": "T1",
+    "activeTermLabel": "QUARTER 1",
+    "termFormat": "QUARTERS",
     "schoolYearId": 1
   }
 }

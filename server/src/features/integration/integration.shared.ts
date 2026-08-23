@@ -38,6 +38,7 @@ export type SchoolYearScope = {
   schoolName: string | null;
   schoolYearId: number;
   schoolYearLabel: string;
+  termFormat: string;
   term1Start: Date | null;
   term1End: Date | null;
   term2Start: Date | null;
@@ -122,7 +123,7 @@ export async function resolveSchoolYearScope(
   const schoolYear = await prisma.schoolYear.findUnique({
     where: { id: configuredSchoolYearId },
     select: { 
-      id: true, yearLabel: true,
+      id: true, yearLabel: true, termFormat: true,
       term1Start: true, term1End: true,
       term2Start: true, term2End: true,
       term3Start: true, term3End: true,
@@ -140,6 +141,7 @@ export async function resolveSchoolYearScope(
       schoolName: setting.schoolName,
       schoolYearId: schoolYear.id,
       schoolYearLabel: schoolYear.yearLabel,
+      termFormat: schoolYear.termFormat,
       term1Start: schoolYear.term1Start,
       term1End: schoolYear.term1End,
       term2Start: schoolYear.term2Start,

@@ -169,9 +169,15 @@ export async function getActiveTerm(
     activeTerm = "T1";
   }
 
+  const termFormat = (scope as any).termFormat || "TRIMESTER";
+  const prefix = termFormat === "QUARTERS" ? "QUARTER" : "TERM";
+  const activeTermLabel = `${prefix} ${activeTerm.replace("T", "")}`;
+
   res.json({
     data: {
       activeTerm,
+      activeTermLabel,
+      termFormat,
       schoolYearId: scope.schoolYearId,
     },
   });
