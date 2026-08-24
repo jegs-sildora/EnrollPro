@@ -249,20 +249,20 @@ export async function updateSystemPhase(req: Request, res: Response): Promise<vo
     return
   }
 
-  const nextPhase: Partial<Record<SystemAcademicPhase, SystemAcademicPhase>> = {
-    OFFICIAL_ENROLLMENT: "CLASSES_ONGOING",
-    CLASSES_ONGOING: "EOSY_CLOSING",
-  }
-  if (phase !== settings.systemPhase && nextPhase[settings.systemPhase] !== phase) {
-    res.status(409).json({
-      code: "INVALID_PHASE_TRANSITION",
-      message:
-        settings.systemPhase === "EOSY_CLOSING"
-          ? "EOSY Closing can advance only through atomic school-year rollover."
-          : `The next allowed phase is ${nextPhase[settings.systemPhase] ?? "atomic rollover"}.`,
-    })
-    return
-  }
+  // const nextPhase: Partial<Record<SystemAcademicPhase, SystemAcademicPhase>> = {
+  //   OFFICIAL_ENROLLMENT: "CLASSES_ONGOING",
+  //   CLASSES_ONGOING: "EOSY_CLOSING",
+  // }
+  // if (phase !== settings.systemPhase && nextPhase[settings.systemPhase] !== phase) {
+  //   res.status(409).json({
+  //     code: "INVALID_PHASE_TRANSITION",
+  //     message:
+  //       settings.systemPhase === "EOSY_CLOSING"
+  //         ? "EOSY Closing can advance only through atomic school-year rollover."
+  //         : `The next allowed phase is ${nextPhase[settings.systemPhase] ?? "atomic rollover"}.`,
+  //   })
+  //   return
+  // }
 
   await prisma.$transaction(async (tx) => {
     await tx.schoolSetting.update({
