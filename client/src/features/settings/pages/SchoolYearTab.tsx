@@ -849,16 +849,16 @@ export default function SchoolYearTab() {
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
-                            Enrollment Operations Status
+                            SCHOOL YEAR PHASE STATUS
                           </h4>
                         </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       {[
-                        { value: "OFFICIAL_ENROLLMENT", title: "OFFICIAL ENROLLMENT BOSY", desc: "Opens the system for regular learner intake and Beginning of School Year operations" },
+                        { value: "OFFICIAL_ENROLLMENT", title: "OFFICIAL ENROLLMENT (BOSY)", desc: "Opens the system for regular learner intake and Beginning of School Year operations" },
                         { value: "CLASSES_ONGOING", title: "CLASSES ONGOING", desc: "Closes public enrollment but permits registrars to manually encode late enrollees" },
-                        { value: "EOSY_CLOSING", title: "EOSY CLOSING", desc: "Locks all enrollment actions and prepares official School Forms for the End of School Year rollover" }
+                        { value: "EOSY_CLOSING", title: "EOSY CLOSING", desc: "Locks all enrollment actions for the End of School Year rollover" }
                       ].map(opt => {
                         const isChecked = (isArchived ? "EOSY_CLOSING" : (selectedPhase ?? systemPhase ?? "OFFICIAL_ENROLLMENT")) === opt.value;
                         return (
