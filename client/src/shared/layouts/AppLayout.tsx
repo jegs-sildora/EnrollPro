@@ -277,7 +277,7 @@ function SYSwitcher() {
 
     return {
       label: "ACTIVE",
-      className: "bg-green-100 text-green-800",
+      className: "bg-green-100 text-green-800 border border-green-500",
     };
   };
 

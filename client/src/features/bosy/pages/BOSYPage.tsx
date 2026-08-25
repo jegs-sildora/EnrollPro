@@ -128,6 +128,7 @@ export default function BOSYPage() {
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [busyActionIds, setBusyActionIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
 
 
   const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
@@ -384,6 +385,7 @@ export default function BOSYPage() {
       toastApiError(e as never);
     } finally {
       setBulkLoading(false);
+      setShowBulkConfirmModal(false);
     }
   };
 
@@ -554,7 +556,7 @@ export default function BOSYPage() {
                             <BulkConfirmBar
                               selectedCount={selectedIds.length}
                               loading={bulkLoading}
-                              onConfirm={() => void handleBulkConfirm()}
+                              onConfirm={() => setShowBulkConfirmModal(true)}
                               onClear={() => setRowSelection({})}
                             />
                           </div>
@@ -793,6 +795,75 @@ export default function BOSYPage() {
                           </div>
                         )}
                       </>
+                    }
+                  />
+
+                  <ConfirmationModal
+                    open={showBulkConfirmModal}
+                    onOpenChange={(open) => {
+                      if (!open && !bulkLoading) setShowBulkConfirmModal(false);
+                    }}
+                    title="Enroll Selected Learners"
+                    loading={bulkLoading}
+                    confirmText="Enroll"
+                    onConfirm={() => { void handleBulkConfirm(); }}
+                    description={
+                      <div className="space-y-4">
+                        <p>Are you sure you want to enroll the selected learner{selectedIds.length > 1 ? 's' : ''}?</p>
+                        {selectedIds.length === 1 ? (
+                          <div className="rounded-md border bg-muted/40 px-4 py-3 text-left">
+                            {(() => {
+                              const item = queueItems.find(i => i.applicationId === selectedIds[0]);
+                              if (!item) return null;
+                              return (
+                                <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                                  {item.lastName}, {item.firstName}
+                                  {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                </p>
+                              );
+                            })()}
+                          </div>
+                        ) : selectedIds.length > 1 ? (
+                          <div className="rounded-md border bg-muted/40 overflow-hidden flex flex-col text-left">
+                            <div className="px-4 py-3 border-b bg-muted flex justify-center items-center">
+                              <p className="text-base leading-tight font-extrabold text-foreground">
+                                {selectedIds.length} Learners Selected
+                              </p>
+                            </div>
+                            <div className="max-h-[320px] overflow-y-auto">
+                              <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 border-b shadow-sm">
+                                  <tr>
+                                    <th className="h-10 px-4 text-left font-extrabold text-foreground">Learner Name</th>
+                                    <th className="h-10 px-4 text-center font-extrabold text-foreground">Incoming Grade</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedIds.map((id) => {
+                                    const item = queueItems.find((i) => i.applicationId === id);
+                                    if (!item) return null;
+                                    return (
+                                      <tr key={id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                                        <td className="p-3 px-4 font-extrabold uppercase text-foreground">
+                                          {item.lastName}, {item.firstName}
+                                          {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
+                                        </td>
+                                        <td className="p-3 px-4 font-extrabold text-center">
+                                          <Badge
+                                            variant="outline"
+                                            className={cn(" font-extrabold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                                            {item.gradeLevelName}
+                                          </Badge>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     }
                   />
 

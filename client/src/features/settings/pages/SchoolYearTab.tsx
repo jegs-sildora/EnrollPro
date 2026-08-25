@@ -197,8 +197,8 @@ function getEnrollmentWindowStatus(
   }
 
   return {
-    label: ` ENROLLMENT OPEN`,
-    color: "bg-green-100 text-green-800",
+    label: "ENROLLMENT OPEN",
+    color: "bg-green-100 text-green-800 border border-green-500",
   };
 }
 
@@ -969,7 +969,7 @@ export default function SchoolYearTab() {
                         <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1">
                           {term.label}
                           {isActiveTerm && (
-                            <span className="inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 self-start">ACTIVE</span>
+                            <span className="inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
                           )}
                         </div>
                         <DualPaneDateRangePicker

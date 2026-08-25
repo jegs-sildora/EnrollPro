@@ -1442,6 +1442,73 @@ export default function EosyUpdating() {
             );
           };
 
+          const renderGeneralTooltip = (trigger: React.ReactNode) => {
+            if ((isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED") {
+              return renderTooltip(trigger);
+            }
+            if (resolvedStatus === "RETAINED") {
+              return renderRetainedTooltip(trigger);
+            }
+
+            let title = "";
+            let description = "";
+            let colorClass = "bg-green-50 border-green-300 text-green-900";
+            let titleColorClass = "text-green-800 border-green-200";
+
+            switch (resolvedStatus) {
+              case "PROMOTED":
+                title = isGrade10 ? "COMPLETER" : "PROMOTED";
+                description = "Learner met all academic requirements and is eligible for the next grade level.";
+                break;
+              case "CONDITIONALLY_PROMOTED":
+                title = "CONDITIONALLY PROMOTED";
+                description = currentDeficiencyNote 
+                  ? `Learner has academic deficiencies. Deficiency: ${currentDeficiencyNote}`
+                  : "Learner has academic deficiencies that must be addressed.";
+                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
+                titleColorClass = "text-amber-800 border-amber-200";
+                break;
+              case "DROPPED_OUT":
+                title = "DROPPED OUT";
+                description = "Learner did not complete the school year.";
+                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
+                titleColorClass = "text-amber-800 border-amber-200";
+                break;
+              case "TRANSFERRED_OUT":
+                title = "TRANSFERRED OUT";
+                description = "Learner transferred to another school before completing the year.";
+                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
+                titleColorClass = "text-amber-800 border-amber-200";
+                break;
+              case "ACTION_REQUIRED":
+                title = "ACTION REQUIRED";
+                description = "Please review the learner's records and select an appropriate EOSY status.";
+                colorClass = "bg-red-50 border-red-300 text-red-900";
+                titleColorClass = "text-red-800 border-red-200";
+                break;
+              default:
+                return trigger;
+            }
+
+            return (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {trigger}
+                  </TooltipTrigger>
+                  <TooltipContent collisionPadding={24} className={cn("shadow-lg rounded-md p-4 w-100 text-left mr-6", colorClass)}>
+                    <h4 className={cn("text-base font-extrabold uppercase tracking-wide border-b pb-2 mb-2", titleColorClass)}>
+                      {title}
+                    </h4>
+                    <p className="text-base leading-snug">
+                      {description}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          };
+
           if (hasOverride) {
             return (
               <div className="flex flex-col gap-1 items-center justify-center w-full">
@@ -1450,9 +1517,11 @@ export default function EosyUpdating() {
                   onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
                   disabled={isCommitting}
                 >
-                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px] [&>svg]:hidden", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
-                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
-                  </SelectTrigger>
+                  {renderGeneralTooltip(
+                    <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px] [&>svg]:hidden", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
+                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
+                    </SelectTrigger>
+                  )}
                   <SelectContent>
                     <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
                     <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
@@ -1469,11 +1538,7 @@ export default function EosyUpdating() {
           if (isSectionFinalized || isScopeFinalized) {
             return (
               <div className="flex flex-col items-center justify-center gap-1 w-full">
-                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" 
-                  ? renderTooltip(renderStatusContent()) 
-                  : resolvedStatus === "RETAINED"
-                    ? renderRetainedTooltip(renderStatusContent())
-                    : renderStatusContent()}
+                {renderGeneralTooltip(renderStatusContent())}
                 {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
                   <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
                     Deficiency: {currentDeficiencyNote}
@@ -1498,39 +1563,24 @@ export default function EosyUpdating() {
                   }
                 }}
                 disabled={isSectionFinalized || isScpDemotedGrades}>
-                {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
-                  renderTooltip(
-                    <SelectTrigger
-                      className={cn(
-                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
-                        "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
-                      )}>
-                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
-                    </SelectTrigger>
-                  )
-                ) : resolvedStatus === "RETAINED" ? (
-                  renderRetainedTooltip(
-                    <SelectTrigger
-                      className={cn(
-                        "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
-                        isStatusChanged && "border-amber-500 focus:ring-amber-500",
-                        "text-amber-700 bg-amber-50 border-amber-200 cursor-help"
-                      )}>
-                      <SelectValue />
-                    </SelectTrigger>
-                  )
-                ) : (
+                {renderGeneralTooltip(
                   <SelectTrigger
                     className={cn(
-                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden",
+                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden cursor-help",
                       isStatusChanged && "border-amber-500 focus:ring-amber-500",
-                      resolvedStatus === "ACTION_REQUIRED"
-                        ? "text-red-700 bg-red-50 border-red-200"
-                        : !resolvedStatus || resolvedStatus === "PROMOTED"
-                          ? "text-green-700 bg-green-50 border-green-200"
-                          : "text-amber-700 bg-amber-50 border-amber-200",
+                      (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
+                        ? "text-amber-700 bg-amber-50 border-amber-200"
+                        : resolvedStatus === "ACTION_REQUIRED"
+                          ? "text-red-700 bg-red-50 border-red-200"
+                          : !resolvedStatus || resolvedStatus === "PROMOTED"
+                            ? "text-green-700 bg-green-50 border-green-200"
+                            : "text-amber-700 bg-amber-50 border-amber-200"
                     )}>
-                    <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
+                    {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
+                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
+                    ) : (
+                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
+                    )}
                   </SelectTrigger>
                 )}
                 <SelectContent className="font-extrabold">
@@ -1563,6 +1613,20 @@ export default function EosyUpdating() {
     setTitle("EOSY Updating");
     return () => setTitle(null);
   }, [setTitle]);
+
+  const isRolloverReady = useMemo(() => {
+    if (!allSections || allSections.length === 0) return false;
+    
+    const grade7Sections = allSections.filter(s => s.gradeLevel.name.toLowerCase().includes("grade 7"));
+    const grade7HasLearners = grade7Sections.some(s => (s._count?.enrollmentRecords || 0) > 0);
+    if (!grade7HasLearners) return false;
+
+    const hasUnfinalizedActiveSections = allSections.some(s => 
+      !s.isEosyFinalized && (s._count?.enrollmentRecords || 0) > 0
+    );
+
+    return !hasUnfinalizedActiveSections;
+  }, [allSections]);
 
 
 
@@ -1603,7 +1667,7 @@ export default function EosyUpdating() {
               ))}
             </TabsList>
 
-            {!isHistoricalReadOnly && (records.length === 0 || isScopeFinalized) && (
+            {!isHistoricalReadOnly && isRolloverReady && (
               <AtomicRolloverDialog
                 sourceSchoolYearId={activeSchoolYearId ?? 0}
                 sourceYearLabel={activeSchoolYearLabel ?? ""}

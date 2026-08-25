@@ -424,17 +424,24 @@ export function QueueTable({
           const r = row.original;
           const learnerName = buildLearnerDisplayName(r);
           return (
-            <div className="flex min-w-0 flex-col py-3 pl-2 text-left leading-tight">
-              <span
-                className="truncate text-base font-extrabold uppercase leading-tight xl:whitespace-normal"
-                title={learnerName}>
-                {learnerName}
-              </span>
-              <span
-                className="mt-1 truncate font-extrabold uppercase text-foreground xl:whitespace-normal"
-                title={r.lrn ?? "NO LRN"}>
-                LRN: {r.lrn ?? "NO LRN"}
-              </span>
+            <div className="flex items-center min-w-0 gap-3 py-3 pl-2">
+              <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-primary">
+                <span className="text-sm font-extrabold uppercase text-primary-foreground">
+                  {r.firstName?.charAt(0) || ""}{r.lastName?.charAt(0) || ""}
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-col text-left leading-tight">
+                <span
+                  className="truncate text-base font-extrabold uppercase leading-tight xl:whitespace-normal"
+                  title={learnerName}>
+                  {learnerName}
+                </span>
+                <span
+                  className="mt-1 truncate font-extrabold uppercase text-foreground xl:whitespace-normal"
+                  title={r.lrn ?? "NO LRN"}>
+                  LRN: {r.lrn ?? "NO LRN"}
+                </span>
+              </div>
             </div>
           );
         },
@@ -478,7 +485,7 @@ export function QueueTable({
               >
                 {formatAcademicStatusLabel(s)}
               </Badge>
-              {genAve && s === "PROMOTED" && (
+              {genAve && (
                 <span className="max-w-full truncate text-sm font-extrabold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
                   Final Gen Ave: {genAve}
                 </span>
