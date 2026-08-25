@@ -17,7 +17,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { PageLoadingSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Button } from "@/shared/ui/button";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -242,8 +242,68 @@ export default function LearnerLogin() {
 
   if (!configLoaded) {
     return (
-      <div className="min-h-screen w-full bg-background p-6">
-        <PageLoadingSkeleton variant="form" />
+      <div className="relative h-screen w-full overflow-hidden bg-background">
+        <svg
+          className="absolute inset-0 h-full w-full opacity-[0.08]"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern
+              id="learner-login-pixel-grid"
+              x="0"
+              y="0"
+              width="80"
+              height="80"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#learner-login-pixel-grid)" />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl">
+            <Card className="bg-card shadow-xl rounded-2xl w-full border">
+              <CardContent className="px-6 py-8 space-y-6">
+                <div className="text-center space-y-4">
+                  <div className="flex justify-center">
+                    <Skeleton className="h-16 w-16 rounded-xl" />
+                  </div>
+                  <div className="flex justify-center">
+                    <Skeleton className="h-7 w-64 rounded-md" />
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-5 w-64 rounded-md mb-2" />
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <Skeleton className="h-5 w-24 rounded-md mb-2" />
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <Skeleton className="h-5 w-32 rounded-md" />
+                  </div>
+
+                  <div className="pt-4">
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                  </div>
+                </div>
+
+                <div className="flex justify-center pt-6">
+                  <Skeleton className="h-4 w-72 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

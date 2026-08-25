@@ -417,7 +417,7 @@ export function QueueTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="LRN & Learner's Name"
+            title="Learner's Name & LRN"
           />
         ),
         cell: ({ row }) => {

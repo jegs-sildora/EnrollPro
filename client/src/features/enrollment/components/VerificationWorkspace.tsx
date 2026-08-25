@@ -486,7 +486,7 @@ export function VerificationWorkspace() {
             <div className="flex-1 overflow-y-auto space-y-2">
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
+                  <CheckCircle2 className="h-8 w-8 text-primary" />
                   <span className="font-extrabold text-base leading-tight">
                     {activeTab === "PENDING" && "No pending applications in the queue"}
                     {activeTab === "READY" && "All verified learners have been assigned to sections"}
@@ -541,7 +541,7 @@ export function VerificationWorkspace() {
                         <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-extrabold text-base shrink-0">FEMALE</Badge>
                       )}
                     </div>
-                    
+
                     {/* TRACKING AND ENROLLMENT DATA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full bg/20 border border-border/50 rounded-lg p-4">
                       <div className="flex flex-col min-w-0">
@@ -586,7 +586,7 @@ export function VerificationWorkspace() {
                       return null;
                     })()}
 
-                    
+
                   </div>
 
                   {duplicateInfo && (
@@ -845,6 +845,6 @@ export function VerificationWorkspace() {
           }
         }}
       />
-</div>
+    </div>
   );
 }

@@ -966,7 +966,7 @@ export function SectioningWorkspace() {
         ),
     ) ?? [])
     : [];
-  const normalMoveSourceSection = normalMoveAction 
+  const normalMoveSourceSection = normalMoveAction
     ? currentGradeSections.find(s => s.id === normalMoveAction.fromSectionId)
     : null;
 
@@ -1006,7 +1006,7 @@ export function SectioningWorkspace() {
             setActiveGradeLevelId(val);
           }
         }}
-        >
+      >
         <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           {gradeLevels.map((g) => (
             <TabsTrigger
@@ -1080,653 +1080,653 @@ export function SectioningWorkspace() {
       <PageTransition key={activeGradeLevelId} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
         <Card className="flex flex-col flex-1 min-h-0 h-full shadow-sm border-none bg-card overflow-hidden">
           <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-          {/* LEFT PANE: UNSECTIONED POOL */}
-          <div className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground">
-            <CardHeader className="border-b border-border bg-muted/20">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                    <Users className="h-5 w-5 text-primary" />
-                    LEARNERS READY FOR SECTIONING
-                  </CardTitle>
-                  <CardDescription className="text-sm font-extrabold text-foreground">
-                    Enrolled learners ready to be sectioned
-                  </CardDescription>
+            {/* LEFT PANE: UNSECTIONED POOL */}
+            <div className="flex-1 flex flex-col h-full overflow-y-auto border-r border-border bg-card text-card-foreground">
+              <CardHeader className="border-b border-border bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                      <Users className="h-5 w-5 text-primary" />
+                      LEARNERS READY FOR SECTIONING
+                    </CardTitle>
+                    <CardDescription className="text-sm font-extrabold text-foreground">
+                      Enrolled learners ready to be sectioned
+                    </CardDescription>
+                  </div>
+                  {selectedAppIds.length > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="font-extrabold bg-background border-border">
+                      {selectedAppIds.length} Selected
+                    </Badge>
+                  )}
                 </div>
-                {selectedAppIds.length > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="font-extrabold bg-background border-border">
-                    {selectedAppIds.length} Selected
-                  </Badge>
-                )}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
-                  <Input
-                    placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                    className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold uppercase"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                <div className="flex gap-2 mt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+                    <Input
+                      placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
+                      className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold uppercase"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Select
+                    isFilter
+                    value={filterProgram}
+                    onValueChange={setFilterProgram}>
+                    <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-extrabold transition-colors">
+                      <SelectValue placeholder="All Programs">
+                        {filterProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
+                          : filterProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
+                            : filterProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
+                              : filterProgram === "REGULAR" ? "BEC"
+                                : "All Programs"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="leading-tight font-extrabold">All Programs</SelectItem>
+                      <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
+                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
+                      <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
+                      <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select
-                  isFilter
-                  value={filterProgram}
-                  onValueChange={setFilterProgram}>
-                  <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-extrabold transition-colors">
-                    <SelectValue placeholder="All Programs">
-                      {filterProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
-                        : filterProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
-                          : filterProgram === "SPECIAL_PROGRAM_IN_SPORTS" ? "SPS"
-                            : filterProgram === "REGULAR" ? "BEC"
-                              : "All Programs"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="leading-tight font-extrabold">All Programs</SelectItem>
-                    <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
-                    <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
-                    <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
-                    <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <div className="p-0 relative flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 bg-muted z-10 border-b border-border">
-                  <tr className="uppercase">
-                    <th className="p-4 w-10">
-                      <Checkbox
-                        className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                        checked={
-                          selectedAppIds.length === filteredPool.length &&
-                          filteredPool.length > 0
-                        }
-                        disabled={
-                          isDraftActive ||
-                          (selectedProgramTypes.size === 0 &&
-                            new Set(filteredPool.map((l) => l.programType)).size > 1)
-                        }
-                        onCheckedChange={(checked) => {
-                          if (isDraftActive) return;
-                          if (checked) {
-                            const targetProgram =
-                              selectedProgramTypes.size > 0
-                                ? Array.from(selectedProgramTypes)[0]
-                                : null;
-                            setSelectedAppIds(
-                              filteredPool
-                                .filter(
-                                  (l) =>
-                                    !targetProgram ||
-                                    l.programType === targetProgram
-                                )
-                                .map((l) => l.applicationId)
-                            );
-                          } else setSelectedAppIds([]);
-                        }}
-                      />
-                    </th>
-                    <th className="p-4 font-extrabold">Learner Detail</th>
-                    <th
-                      className="p-4 cursor-pointer  select-none font-extrabold"
-                      onClick={() => handleSort("genAve")}>
-                      <div className="flex items-center gap-1 justify-center">
-                        Final Gen Ave
-                        {sortConfig?.key === "genAve" &&
-                          (sortConfig.direction === "asc" ? (
-                            <ChevronUp className="h-3 w-3 text-primary" />
-                          ) : (
-                            <ChevronDown className="h-3 w-3 text-primary" />
-                          ))}
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border text-base leading-tight bg-card text-center">
-                  {filteredAndSortedPool.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="h-[400px] text-center text-muted-foreground font-semibold">
-                        <div className="flex flex-col items-center justify-center h-full space-y-3">
-                          {activeSearchQuery || filterProgram !== "all" ? (
-                            <>
-                              <Search className="h-8 w-8" />
-                              <p className="text-foreground font-extrabold">No unsectioned learners match this search</p>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="h-8 w-8 text-green-500" />
-                              <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    (() => {
-                      const scpLearners = filteredAndSortedPool.filter(l => l.programType !== "REGULAR").sort((a, b) => {
-                        const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 };
-                        const orderA = order[a.programType as keyof typeof order] || 4;
-                        const orderB = order[b.programType as keyof typeof order] || 4;
-                        return orderA - orderB;
-                      });
-                      const becLearners = filteredAndSortedPool.filter(l => l.programType === "REGULAR");
-
-                      const groups = [
-                        { title: "Special Curricular Programs (SCP)", learners: scpLearners },
-                        { title: "Basic Education Curriculum (BEC)", learners: becLearners }
-                      ].filter(g => g.learners.length > 0);
-
-                      return groups.flatMap((group) => {
-                        const headerRow = (
-                          <tr key={`header-${group.title}`} className="bg-muted/50 border-y border-border">
-                            <td colSpan={3} className="py-2.5 px-4 text-center font-extrabold text-foreground uppercase tracking-wider">
-                              {group.title}
-                            </td>
-                          </tr>
-                        );
-
-                        const learnerRows = group.learners.map((l) => {
-                          const isSelected = selectedAppIds.includes(
-                            l.applicationId,
-                          );
-                          const isDisabled =
+              </CardHeader>
+              <div className="p-0 relative flex-1">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-muted z-10 border-b border-border">
+                    <tr className="uppercase">
+                      <th className="p-4 w-10">
+                        <Checkbox
+                          className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          checked={
+                            selectedAppIds.length === filteredPool.length &&
+                            filteredPool.length > 0
+                          }
+                          disabled={
                             isDraftActive ||
-                            (selectedProgramTypes.size > 0 &&
-                              !selectedProgramTypes.has(l.programType));
+                            (selectedProgramTypes.size === 0 &&
+                              new Set(filteredPool.map((l) => l.programType)).size > 1)
+                          }
+                          onCheckedChange={(checked) => {
+                            if (isDraftActive) return;
+                            if (checked) {
+                              const targetProgram =
+                                selectedProgramTypes.size > 0
+                                  ? Array.from(selectedProgramTypes)[0]
+                                  : null;
+                              setSelectedAppIds(
+                                filteredPool
+                                  .filter(
+                                    (l) =>
+                                      !targetProgram ||
+                                      l.programType === targetProgram
+                                  )
+                                  .map((l) => l.applicationId)
+                              );
+                            } else setSelectedAppIds([]);
+                          }}
+                        />
+                      </th>
+                      <th className="p-4 font-extrabold">Learner Detail</th>
+                      <th
+                        className="p-4 cursor-pointer  select-none font-extrabold"
+                        onClick={() => handleSort("genAve")}>
+                        <div className="flex items-center gap-1 justify-center">
+                          Final Gen Ave
+                          {sortConfig?.key === "genAve" &&
+                            (sortConfig.direction === "asc" ? (
+                              <ChevronUp className="h-3 w-3 text-primary" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3 text-primary" />
+                            ))}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border text-base leading-tight bg-card text-center">
+                    {filteredAndSortedPool.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="h-[400px] text-center text-muted-foreground font-semibold">
+                          <div className="flex flex-col items-center justify-center h-full space-y-3">
+                            {activeSearchQuery || filterProgram !== "all" ? (
+                              <>
+                                <Search className="h-8 w-8" />
+                                <p className="text-foreground font-extrabold">No unsectioned learners match this search</p>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-8 w-8 text-primary" />
+                                <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      (() => {
+                        const scpLearners = filteredAndSortedPool.filter(l => l.programType !== "REGULAR").sort((a, b) => {
+                          const order = { SCIENCE_TECHNOLOGY_AND_ENGINEERING: 1, SPECIAL_PROGRAM_IN_THE_ARTS: 2, SPECIAL_PROGRAM_IN_SPORTS: 3 };
+                          const orderA = order[a.programType as keyof typeof order] || 4;
+                          const orderB = order[b.programType as keyof typeof order] || 4;
+                          return orderA - orderB;
+                        });
+                        const becLearners = filteredAndSortedPool.filter(l => l.programType === "REGULAR");
 
-                          return (
-                            <tr
-                              key={l.applicationId}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                setSelectedAppIds((prev) =>
-                                  prev.includes(l.applicationId)
-                                    ? prev.filter((id) => id !== l.applicationId)
-                                    : [...prev, l.applicationId],
-                                );
-                              }}
-                              className={cn(
-                                "group transition-colors",
-                                isDisabled
-                                  ? "opacity-50 cursor-not-allowed"
-                                  : "cursor-pointer",
-                                isSelected && "bg-primary/5 hover:bg-primary/10",
-                              )}>
-                              <td
-                                className="p-4"
-                                onClick={(e) => e.stopPropagation()}>
-                                <Checkbox
-                                  checked={isSelected}
-                                  disabled={isDisabled}
-                                  onCheckedChange={(checked) => {
-                                    if (isDisabled) return;
-                                    setSelectedAppIds((prev) =>
-                                      checked
-                                        ? [...prev, l.applicationId]
-                                        : prev.filter(
-                                          (id) => id !== l.applicationId,
-                                        ),
-                                    );
-                                  }}
-                                />
-                              </td>
-                              <td className="p-4">
-                                <div className="flex flex-col">
-                                  <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
-                                    {l.lastName}, {l.firstName}{" "}
-                                    {l.middleName?.charAt(0)
-                                      ? `${l.middleName.charAt(0)}.`
-                                      : ""}
-                                    {l.duplicateFlag && (
-                                      <Badge
-                                        variant="destructive"
-                                        className="text-sm px-1 py-0 h-4">
-                                        DUPLICATE DETECTED - RESOLVE OVER COUNTER
-                                      </Badge>
-                                    )}
-                                  </span>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-sm font-extrabold uppercase text-foreground">
-                                      {l.lrn || "NO LRN"}
-                                    </span>
-                                    <Badge
-                                      className={cn(
-                                        "text-sm uppercase font-extrabold",
-                                        l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
-                                      )}>
-                                      {l.sex}
-                                    </Badge>
-                                    <Badge
-                                      variant="outline"
-                                      className={cn(
-                                        "text-sm uppercase font-extrabold",
-                                        l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
-                                      )}>
-                                      {SCP_SHORT_LABELS[l.programType] ??
-                                        l.programType}
-                                    </Badge>
-                                  </div>
-                                  {draftPlacement &&
-                                    draftSectionByApplicationId.has(
-                                      l.applicationId,
-                                    ) && (
-                                      <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
-                                        Section:{" "}
-                                        {draftSectionByApplicationId.get(
-                                          l.applicationId,
-                                        )}{" "}
-                                        (Draft)
-                                      </span>
-                                    )}
-                                </div>
-                              </td>
-                              <td className="p-4 font-extrabold text-foreground">
-                                {l.genAve ? (
-                                  l.genAve.toFixed(2)
-                                ) : (
-                                  <span className="text-foreground">--</span>
-                                )}
+                        const groups = [
+                          { title: "Special Curricular Programs (SCP)", learners: scpLearners },
+                          { title: "Basic Education Curriculum (BEC)", learners: becLearners }
+                        ].filter(g => g.learners.length > 0);
+
+                        return groups.flatMap((group) => {
+                          const headerRow = (
+                            <tr key={`header-${group.title}`} className="bg-muted/50 border-y border-border">
+                              <td colSpan={3} className="py-2.5 px-4 text-center font-extrabold text-foreground uppercase tracking-wider">
+                                {group.title}
                               </td>
                             </tr>
                           );
-                        });
 
-                        return [headerRow, ...learnerRows];
-                      });
-                    })()
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                          const learnerRows = group.learners.map((l) => {
+                            const isSelected = selectedAppIds.includes(
+                              l.applicationId,
+                            );
+                            const isDisabled =
+                              isDraftActive ||
+                              (selectedProgramTypes.size > 0 &&
+                                !selectedProgramTypes.has(l.programType));
 
-          {/* RIGHT PANE: AVAILABLE SECTIONS */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="border-b border-border bg-muted/20">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
-                    <LayoutGrid className="h-5 w-5 text-primary" />
-                    {draftPlacement
-                      ? "TEMPORARY CLASS LISTS"
-                      : "Available Sections"}
-                  </CardTitle>
-                  <CardDescription className="text-foreground text-sm font-extrabold">
-                    {draftPlacement
-                      ? "Please review the temporary assignments before creating the official lists"
-                      : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
-                  </CardDescription>
-                </div>
-              </div>
-
-              {!draftPlacement && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  disabled={
-                    currentGradePool.length === 0 ||
-                    processing ||
-                    isDraftActive ||
-                    isHistoricalReadOnly
-                  }
-                  onClick={() => setAutoAssignConfirmOpen(true)}
-                  className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
-                  AUTO ASSIGN SECTIONS
-                </Button>
-              )}
-            </CardHeader>
-            <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
-              {displayedRosters.length === 0 ? (
-                <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
-                  <Info className="h-8 w-8" />
-                  <span className="font-extrabold text-base leading-tight">
-                    No sections defined for this grade.
-                  </span>
-                </div>
-              ) : (
-                [
-                  {
-                    title: "Special Curricular Programs (SCP)",
-                    rosters: displayedRosters
-                      .filter((r) => r.section.programType !== "REGULAR")
-                      .filter(
-                        (r) =>
-                          draftPlacement ||
-                          selectedProgramTypes.size === 0 ||
-                          selectedProgramTypes.has(r.section.programType)
-                      )
-                      .sort(
-                        (a, b) =>
-                          a.section.programType.localeCompare(
-                            b.section.programType,
-                          ) || a.section.name.localeCompare(b.section.name),
-                      ),
-                  },
-                  {
-                    title: "Basic Education Curriculum (BEC)",
-                    rosters: displayedRosters
-                      .filter((r) => r.section.programType === "REGULAR")
-                      .filter(
-                        (r) =>
-                          draftPlacement ||
-                          selectedProgramTypes.size === 0 ||
-                          selectedProgramTypes.has(r.section.programType)
-                      )
-                      .sort((a, b) => {
-                        if (selectedProgramTypes.has("REGULAR") || selectedProgramTypes.size === 0) {
-                          if (a.section.isHomogeneous && !b.section.isHomogeneous) return -1;
-                          if (!a.section.isHomogeneous && b.section.isHomogeneous) return 1;
-                        }
-                        return a.section.name.localeCompare(b.section.name);
-                      }),
-                  },
-                ]
-                  .filter((group) => group.rosters.length > 0)
-                  .map((group, groupIdx) => (
-                    <div
-                      key={group.title}
-                      className={cn("space-y-3", groupIdx > 0 && "mt-6")}>
-                      <h3 className="text-center font-extrabold text-foreground uppercase tracking-wider">
-                        {group.title}
-                      </h3>
-                      {group.rosters.map((roster) => {
-                  const s = roster.section;
-                  const isOverCapacity =
-                    roster.isOverCapacity || roster.totalCount >= s.maxCapacity;
-                  const isSelected =
-                    !draftPlacement && targetSectionId === s.id;
-                  const isExpanded = expandedSectionIds.has(s.id);
-                  const isProgramCompatible =
-                    draftPlacement ||
-                    selectedProgramTypes.size === 0 ||
-                    (selectedProgramTypes.size === 1 &&
-                      selectedProgramTypes.has(s.programType));
-
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        if (draftPlacement) {
-                          toggleExpandedSection(s.id);
-                          return;
-                        }
-
-                        if (selectedAppIds.length > 0) {
-                          if (isProgramCompatible) {
-                            setTargetSectionId(s.id);
-                          }
-                        } else {
-                          if (s.currentCount > 0) {
-                            setMasterlistModalSectionId(s.id);
-                          } else if (isProgramCompatible) {
-                            setTargetSectionId(s.id);
-                          }
-                        }
-                      }}
-                      className={cn(
-                        "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
-                        !isProgramCompatible && "cursor-not-allowed opacity-45",
-                        isSelected
-                          ? "bg-primary/5 border-primary shadow-sm"
-                          : "bg-background hover:bg-muted/50 border-border",
-                        draftPlacement &&
-                        isExpanded &&
-                        "border-primary/50 bg-primary/5",
-                      )}>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <h4
-                            className={cn(
-                              "font-extrabold text-lg uppercase transition-colors flex items-center gap-2",
-                              isSelected ? "text-primary" : "text-foreground",
-                            )}>
-                            {s.name}
-                          </h4>
-                          <span className="text-sm font-extrabold uppercase text-foreground">
-                            {s.adviser || "No Adviser Assigned"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {draftPlacement && roster.isOverCapacity && (
-                            <Badge
-                              variant="destructive"
-                              className="text-sm font-extrabold uppercase">
-                              Over Capacity
-                            </Badge>
-                          )}
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-sm font-extrabold uppercase bg-background",
-                              s.programType === "REGULAR"
-                                ? s.isHomogeneous
-                                  ? "text-amber-600 border-amber-600/30"
-                                  : "text-foreground border-border"
-                                : "text-primary border-primary/30",
-                            )}>
-                            {s.programType === "REGULAR" && s.isHomogeneous
-                              ? "TOP BEC"
-                              : SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-base font-extrabold">
-                          <span className="text-foreground uppercase text-sm">
-                            Capacity Fill
-                          </span>
-                          <span
-                            className={cn(
-                              isOverCapacity
-                                ? "text-destructive font-extrabold"
-                                : "text-foreground",
-                            )}>
-                            {roster.totalCount} / {s.maxCapacity}{" "}
-                            {isOverCapacity && (
-                              <AlertTriangle className="inline h-3 w-3 ml-1" />
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm font-extrabold uppercase text-foreground">
-                          <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2">
-                            Male: {roster.genderCounts.boys}
-                          </Badge>
-                          <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2">
-                            Female: {roster.genderCounts.girls}
-                          </Badge>
-                          {draftPlacement && (
-                            <Badge variant="secondary">
-                              Draft: {roster.learners.length}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="h-2 rounded-full bg-card overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              roster.isOverCapacity
-                                ? "bg-destructive"
-                                : isSelected
-                                  ? "bg-primary"
-                                  : "bg-primary",
-                            )}
-                            style={{
-                              width: `${Math.min((roster.totalCount / s.maxCapacity) * 100, 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {draftPlacement && isExpanded && (
-                        <div
-                          className="mt-4 overflow-hidden rounded-md border bg-card"
-                          onClick={(event) => event.stopPropagation()}>
-                          <table className="w-full text-left text-sm">
-                            <thead className="bg-muted text-foreground">
-                              <tr className="uppercase">
-                                <th className="p-3 font-black">Learner</th>
-                                <th className="p-3 text-center font-black">Sex</th>
-                                <th className="p-3 text-center font-black">Gen Ave</th>
-                                <th className="p-3 text-right font-black">Action</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {roster.learners.length === 0 ? (
-                                <tr>
-                                  <td
-                                    colSpan={4}
-                                    className="p-4 text-center font-extrabold text-foreground">
-                                    No drafted learners in this section.
-                                  </td>
-                                </tr>
-                              ) : (
-                                roster.learners.map((learner) => (
-                                  <tr key={learner.applicationId}>
-                                    <td className="p-3">
-                                      <div className="flex flex-col">
-                                        <span className="font-extrabold uppercase text-foreground">
-                                          {formatLearnerName(learner)}
-                                        </span>
-                                        <span className="font-bold uppercase text-foreground">
-                                          {learner.lrn ?? "NO LRN"}
-                                          {learner.isOverridden && (
-                                            <Badge className="ml-2 bg-amber-600 text-white hover:bg-amber-600">
-                                              Manual Override
-                                            </Badge>
-                                          )}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3 font-extrabold text-center">
+                            return (
+                              <tr
+                                key={l.applicationId}
+                                onClick={() => {
+                                  if (isDisabled) return;
+                                  setSelectedAppIds((prev) =>
+                                    prev.includes(l.applicationId)
+                                      ? prev.filter((id) => id !== l.applicationId)
+                                      : [...prev, l.applicationId],
+                                  );
+                                }}
+                                className={cn(
+                                  "group transition-colors",
+                                  isDisabled
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "cursor-pointer",
+                                  isSelected && "bg-primary/5 hover:bg-primary/10",
+                                )}>
+                                <td
+                                  className="p-4"
+                                  onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    disabled={isDisabled}
+                                    onCheckedChange={(checked) => {
+                                      if (isDisabled) return;
+                                      setSelectedAppIds((prev) =>
+                                        checked
+                                          ? [...prev, l.applicationId]
+                                          : prev.filter(
+                                            (id) => id !== l.applicationId,
+                                          ),
+                                      );
+                                    }}
+                                  />
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
+                                      {l.lastName}, {l.firstName}{" "}
+                                      {l.middleName?.charAt(0)
+                                        ? `${l.middleName.charAt(0)}.`
+                                        : ""}
+                                      {l.duplicateFlag && (
+                                        <Badge
+                                          variant="destructive"
+                                          className="text-sm px-1 py-0 h-4">
+                                          DUPLICATE DETECTED - RESOLVE OVER COUNTER
+                                        </Badge>
+                                      )}
+                                    </span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-sm font-extrabold uppercase text-foreground">
+                                        {l.lrn || "NO LRN"}
+                                      </span>
                                       <Badge
                                         className={cn(
-                                          "uppercase",
-                                          learner.sex === "MALE"
-                                            ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2"
-                                            : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                          "text-sm uppercase font-extrabold",
+                                          l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                         )}>
-                                        {learner.sex}
+                                        {l.sex}
                                       </Badge>
-                                    </td>
-                                    <td className="p-3 font-extrabold text-center">
-                                      {learner.genAve?.toFixed(2) ?? "--"}
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem
-                                            onClick={() =>
-                                              openMoveDialog(
-                                                learner.applicationId,
-                                                s.id,
-                                              )
-                                            }>
-                                            <MoveRight className="mr-2 h-4 w-4" />
-                                            Move to Section
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={() =>
-                                              openSwapDialog(
-                                                learner.applicationId,
-                                                s.id,
-                                              )
-                                            }>
-                                            <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                            Swap Placement
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </td>
-                                  </tr>
-                                ))
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "text-sm uppercase font-extrabold",
+                                          l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
+                                        )}>
+                                        {SCP_SHORT_LABELS[l.programType] ??
+                                          l.programType}
+                                      </Badge>
+                                    </div>
+                                    {draftPlacement &&
+                                      draftSectionByApplicationId.has(
+                                        l.applicationId,
+                                      ) && (
+                                        <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
+                                          Section:{" "}
+                                          {draftSectionByApplicationId.get(
+                                            l.applicationId,
+                                          )}{" "}
+                                          (Draft)
+                                        </span>
+                                      )}
+                                  </div>
+                                </td>
+                                <td className="p-4 font-extrabold text-foreground">
+                                  {l.genAve ? (
+                                    l.genAve.toFixed(2)
+                                  ) : (
+                                    <span className="text-foreground">--</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          });
 
-                      {!draftPlacement && s.currentCount > 0 && (
-                        <InlineSectionTable
-                          sectionId={s.id}
-                          onMoveLearner={!isHistoricalReadOnly ? openNormalMoveDialog : undefined}
-                        />
-                      )}
-                    </div>
-                  );
-                })
-              }
+                          return [headerRow, ...learnerRows];
+                        });
+                      })()
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )))}
-            </div>
-          <AnimatePresence>
-            {(draftPlacement || selectedAppIds.length > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
-                {draftPlacement ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Button
-                      variant="outline"
-                      onClick={discardDraft}
-                      disabled={commitProcessing}
-                      className="h-12 text-base font-extrabold uppercase">
-                      CANCEL TEMPORARY SECTIONS
-                    </Button>
-                    <Button
-                      onClick={() => setCommitDialogOpen(true)}
-                      disabled={
-                        commitProcessing ||
-                        draftLearnerCount === 0 ||
-                        isHistoricalReadOnly
-                      }
-                      className="h-12 text-base font-extrabold uppercase">
-                      FINALIZE OFFICIAL SECTIONS
-                    </Button>
+
+            {/* RIGHT PANE: AVAILABLE SECTIONS */}
+            <div className="flex-1 flex flex-col h-full overflow-hidden bg-card text-card-foreground">
+              <CardHeader className="border-b border-border bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                      <LayoutGrid className="h-5 w-5 text-primary" />
+                      {draftPlacement
+                        ? "TEMPORARY CLASS LISTS"
+                        : "Available Sections"}
+                    </CardTitle>
+                    <CardDescription className="text-foreground text-sm font-extrabold">
+                      {draftPlacement
+                        ? "Please review the temporary assignments before creating the official lists"
+                        : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
+                    </CardDescription>
                   </div>
-                ) : (
+                </div>
+
+                {!draftPlacement && (
                   <Button
-                    onClick={assignLearners}
+                    size="sm"
+                    variant="default"
                     disabled={
-                      selectedAppIds.length === 0 ||
-                      !targetSectionId ||
+                      currentGradePool.length === 0 ||
                       processing ||
+                      isDraftActive ||
                       isHistoricalReadOnly
                     }
-                    className={cn(
-                      "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
-                      selectedAppIds.length > 0 && targetSectionId
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                        : "bg-muted text-foreground hover:bg-muted",
-                    )}>
-                    {processing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 " />
-                        Assigning...
-                      </>
-                    ) : (
-                      `Assign to Section ${targetSectionId ? (sections.find(s => s.id === targetSectionId)?.name ?? '') : ''} (${selectedAppIds.length})`
-                    )}
+                    onClick={() => setAutoAssignConfirmOpen(true)}
+                    className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
+                    AUTO ASSIGN SECTIONS
                   </Button>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-          </div>
+              </CardHeader>
+              <div className="p-4 space-y-3 relative flex-1 overflow-y-auto">
+                {displayedRosters.length === 0 ? (
+                  <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
+                    <Info className="h-8 w-8" />
+                    <span className="font-extrabold text-base leading-tight">
+                      No sections defined for this grade.
+                    </span>
+                  </div>
+                ) : (
+                  [
+                    {
+                      title: "Special Curricular Programs (SCP)",
+                      rosters: displayedRosters
+                        .filter((r) => r.section.programType !== "REGULAR")
+                        .filter(
+                          (r) =>
+                            draftPlacement ||
+                            selectedProgramTypes.size === 0 ||
+                            selectedProgramTypes.has(r.section.programType)
+                        )
+                        .sort(
+                          (a, b) =>
+                            a.section.programType.localeCompare(
+                              b.section.programType,
+                            ) || a.section.name.localeCompare(b.section.name),
+                        ),
+                    },
+                    {
+                      title: "Basic Education Curriculum (BEC)",
+                      rosters: displayedRosters
+                        .filter((r) => r.section.programType === "REGULAR")
+                        .filter(
+                          (r) =>
+                            draftPlacement ||
+                            selectedProgramTypes.size === 0 ||
+                            selectedProgramTypes.has(r.section.programType)
+                        )
+                        .sort((a, b) => {
+                          if (selectedProgramTypes.has("REGULAR") || selectedProgramTypes.size === 0) {
+                            if (a.section.isHomogeneous && !b.section.isHomogeneous) return -1;
+                            if (!a.section.isHomogeneous && b.section.isHomogeneous) return 1;
+                          }
+                          return a.section.name.localeCompare(b.section.name);
+                        }),
+                    },
+                  ]
+                    .filter((group) => group.rosters.length > 0)
+                    .map((group, groupIdx) => (
+                      <div
+                        key={group.title}
+                        className={cn("space-y-3", groupIdx > 0 && "mt-6")}>
+                        <h3 className="text-center font-extrabold text-foreground uppercase tracking-wider">
+                          {group.title}
+                        </h3>
+                        {group.rosters.map((roster) => {
+                          const s = roster.section;
+                          const isOverCapacity =
+                            roster.isOverCapacity || roster.totalCount >= s.maxCapacity;
+                          const isSelected =
+                            !draftPlacement && targetSectionId === s.id;
+                          const isExpanded = expandedSectionIds.has(s.id);
+                          const isProgramCompatible =
+                            draftPlacement ||
+                            selectedProgramTypes.size === 0 ||
+                            (selectedProgramTypes.size === 1 &&
+                              selectedProgramTypes.has(s.programType));
+
+                          return (
+                            <div
+                              key={s.id}
+                              onClick={() => {
+                                if (draftPlacement) {
+                                  toggleExpandedSection(s.id);
+                                  return;
+                                }
+
+                                if (selectedAppIds.length > 0) {
+                                  if (isProgramCompatible) {
+                                    setTargetSectionId(s.id);
+                                  }
+                                } else {
+                                  if (s.currentCount > 0) {
+                                    setMasterlistModalSectionId(s.id);
+                                  } else if (isProgramCompatible) {
+                                    setTargetSectionId(s.id);
+                                  }
+                                }
+                              }}
+                              className={cn(
+                                "group cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden",
+                                !isProgramCompatible && "cursor-not-allowed opacity-45",
+                                isSelected
+                                  ? "bg-primary/5 border-primary shadow-sm"
+                                  : "bg-background hover:bg-muted/50 border-border",
+                                draftPlacement &&
+                                isExpanded &&
+                                "border-primary/50 bg-primary/5",
+                              )}>
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div>
+                                  <h4
+                                    className={cn(
+                                      "font-extrabold text-lg uppercase transition-colors flex items-center gap-2",
+                                      isSelected ? "text-primary" : "text-foreground",
+                                    )}>
+                                    {s.name}
+                                  </h4>
+                                  <span className="text-sm font-extrabold uppercase text-foreground">
+                                    {s.adviser || "No Adviser Assigned"}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap justify-end gap-2">
+                                  {draftPlacement && roster.isOverCapacity && (
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-sm font-extrabold uppercase">
+                                      Over Capacity
+                                    </Badge>
+                                  )}
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-sm font-extrabold uppercase bg-background",
+                                      s.programType === "REGULAR"
+                                        ? s.isHomogeneous
+                                          ? "text-amber-600 border-amber-600/30"
+                                          : "text-foreground border-border"
+                                        : "text-primary border-primary/30",
+                                    )}>
+                                    {s.programType === "REGULAR" && s.isHomogeneous
+                                      ? "TOP BEC"
+                                      : SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-base font-extrabold">
+                                  <span className="text-foreground uppercase text-sm">
+                                    Capacity Fill
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      isOverCapacity
+                                        ? "text-destructive font-extrabold"
+                                        : "text-foreground",
+                                    )}>
+                                    {roster.totalCount} / {s.maxCapacity}{" "}
+                                    {isOverCapacity && (
+                                      <AlertTriangle className="inline h-3 w-3 ml-1" />
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm font-extrabold uppercase text-foreground">
+                                  <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2">
+                                    Male: {roster.genderCounts.boys}
+                                  </Badge>
+                                  <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2">
+                                    Female: {roster.genderCounts.girls}
+                                  </Badge>
+                                  {draftPlacement && (
+                                    <Badge variant="secondary">
+                                      Draft: {roster.learners.length}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="h-2 rounded-full bg-card overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      roster.isOverCapacity
+                                        ? "bg-destructive"
+                                        : isSelected
+                                          ? "bg-primary"
+                                          : "bg-primary",
+                                    )}
+                                    style={{
+                                      width: `${Math.min((roster.totalCount / s.maxCapacity) * 100, 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {draftPlacement && isExpanded && (
+                                <div
+                                  className="mt-4 overflow-hidden rounded-md border bg-card"
+                                  onClick={(event) => event.stopPropagation()}>
+                                  <table className="w-full text-left text-sm">
+                                    <thead className="bg-muted text-foreground">
+                                      <tr className="uppercase">
+                                        <th className="p-3 font-black">Learner</th>
+                                        <th className="p-3 text-center font-black">Sex</th>
+                                        <th className="p-3 text-center font-black">Gen Ave</th>
+                                        <th className="p-3 text-right font-black">Action</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {roster.learners.length === 0 ? (
+                                        <tr>
+                                          <td
+                                            colSpan={4}
+                                            className="p-4 text-center font-extrabold text-foreground">
+                                            No drafted learners in this section.
+                                          </td>
+                                        </tr>
+                                      ) : (
+                                        roster.learners.map((learner) => (
+                                          <tr key={learner.applicationId}>
+                                            <td className="p-3">
+                                              <div className="flex flex-col">
+                                                <span className="font-extrabold uppercase text-foreground">
+                                                  {formatLearnerName(learner)}
+                                                </span>
+                                                <span className="font-bold uppercase text-foreground">
+                                                  {learner.lrn ?? "NO LRN"}
+                                                  {learner.isOverridden && (
+                                                    <Badge className="ml-2 bg-amber-600 text-white hover:bg-amber-600">
+                                                      Manual Override
+                                                    </Badge>
+                                                  )}
+                                                </span>
+                                              </div>
+                                            </td>
+                                            <td className="p-3 font-extrabold text-center">
+                                              <Badge
+                                                className={cn(
+                                                  "uppercase",
+                                                  learner.sex === "MALE"
+                                                    ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2"
+                                                    : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                                )}>
+                                                {learner.sex}
+                                              </Badge>
+                                            </td>
+                                            <td className="p-3 font-extrabold text-center">
+                                              {learner.genAve?.toFixed(2) ?? "--"}
+                                            </td>
+                                            <td className="p-3 text-center">
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      openMoveDialog(
+                                                        learner.applicationId,
+                                                        s.id,
+                                                      )
+                                                    }>
+                                                    <MoveRight className="mr-2 h-4 w-4" />
+                                                    Move to Section
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      openSwapDialog(
+                                                        learner.applicationId,
+                                                        s.id,
+                                                      )
+                                                    }>
+                                                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                                    Swap Placement
+                                                  </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            </td>
+                                          </tr>
+                                        ))
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+
+                              {!draftPlacement && s.currentCount > 0 && (
+                                <InlineSectionTable
+                                  sectionId={s.id}
+                                  onMoveLearner={!isHistoricalReadOnly ? openNormalMoveDialog : undefined}
+                                />
+                              )}
+                            </div>
+                          );
+                        })
+                        }
+                      </div>
+                    )))}
+              </div>
+              <AnimatePresence>
+                {(draftPlacement || selectedAppIds.length > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="p-4 border-t border-border bg-muted/20 w-full shrink-0">
+                    {draftPlacement ? (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Button
+                          variant="outline"
+                          onClick={discardDraft}
+                          disabled={commitProcessing}
+                          className="h-12 text-base font-extrabold uppercase">
+                          CANCEL TEMPORARY SECTIONS
+                        </Button>
+                        <Button
+                          onClick={() => setCommitDialogOpen(true)}
+                          disabled={
+                            commitProcessing ||
+                            draftLearnerCount === 0 ||
+                            isHistoricalReadOnly
+                          }
+                          className="h-12 text-base font-extrabold uppercase">
+                          FINALIZE OFFICIAL SECTIONS
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={assignLearners}
+                        disabled={
+                          selectedAppIds.length === 0 ||
+                          !targetSectionId ||
+                          processing ||
+                          isHistoricalReadOnly
+                        }
+                        className={cn(
+                          "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
+                          selectedAppIds.length > 0 && targetSectionId
+                            ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                            : "bg-muted text-foreground hover:bg-muted",
+                        )}>
+                        {processing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 " />
+                            Assigning...
+                          </>
+                        ) : (
+                          `Assign to Section ${targetSectionId ? (sections.find(s => s.id === targetSectionId)?.name ?? '') : ''} (${selectedAppIds.length})`
+                        )}
+                      </Button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </Card>
       </PageTransition>
