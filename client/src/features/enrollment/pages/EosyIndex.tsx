@@ -1079,7 +1079,14 @@ export default function EosyUpdating() {
     return sectionFilter === "ALL" ? records : records.filter(r => r.section?.name === sectionFilter);
   }, [records, sectionFilter]);
 
-  const isScopeFinalized = scopeRecords.length > 0 && scopeRecords.every(r => r.section.isEosyFinalized);
+  const scopeSections = useMemo(() => {
+    return allSections.filter(s => 
+      String(s.gradeLevelId) === activeTab && 
+      (sectionFilter === "ALL" || s.name === sectionFilter)
+    );
+  }, [allSections, activeTab, sectionFilter]);
+
+  const isScopeFinalized = scopeSections.length > 0 && scopeSections.every(s => s.isEosyFinalized);
 
   const pendingClassesList = useMemo(() => {
     const sets = new Set<string>();
@@ -1596,11 +1603,10 @@ export default function EosyUpdating() {
               ))}
             </TabsList>
 
-            {(!isHistoricalReadOnly && (isAllFinalized || isSchoolYearFinalized)) && (
+            {!isHistoricalReadOnly && (records.length === 0 || isScopeFinalized) && (
               <AtomicRolloverDialog
                 sourceSchoolYearId={activeSchoolYearId ?? 0}
                 sourceYearLabel={activeSchoolYearLabel ?? ""}
-                disabled={!isAllFinalized && !isSchoolYearFinalized}
                 trigger={
                   <Button
                     size="lg"
@@ -1808,7 +1814,7 @@ export default function EosyUpdating() {
                           </div>
 
                           {/* Finalize Button */}
-                          {!isScopeFinalized && blockersCount === 0 && filteredRecords.length > 0 && (
+                          {!isScopeFinalized && blockersCount === 0 && scopeSections.length > 0 && (
                             <Button
                               onClick={() => setFinalizeModalOpen(true)}
                               size="lg"

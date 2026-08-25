@@ -39,6 +39,15 @@ function nextYearLabel(label: string): string {
   return `${Number(match[1]) + 1}-${Number(match[2]) + 1}`
 }
 
+const FORMATTED_REASONS: Record<string, string> = {
+  SECTION_NOT_FINALIZED: "Section is not finalized",
+  LEARNER_RESULT_NOT_FINALIZED: "Pending learner statuses",
+  SMART_OUTCOME_MISSING: "Missing SMART outcomes",
+  SMART_OUTCOME_MISMATCH: "SMART outcome mismatch",
+  SF5_NOT_RECORDED: "Missing School Form 5 (SF5)",
+  SF5_STALE: "Outdated School Form 5 (SF5)",
+}
+
 export function AtomicRolloverDialog({
   sourceSchoolYearId,
   sourceYearLabel,
@@ -140,12 +149,6 @@ export function AtomicRolloverDialog({
               Grade 7 to 10 class sections regenerated for incoming enrollments
             </span>
           </li>
-          <li className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-            <span className="text-base text-foreground">
-              The reviewed incoming school-year calendar is applied without changing its dates
-            </span>
-          </li>
         </ul>
       </div>
       {readinessLoading && (
@@ -154,20 +157,23 @@ export function AtomicRolloverDialog({
         </p>
       )}
       {!readinessLoading && readiness && !readiness.ready && (
-        <div className="mt-4 w-full rounded-lg border border-amber-300 bg-amber-50 p-4 text-left">
-          <p className="text-sm font-extrabold text-amber-900">
+        <div className="mt-4 w-full rounded-lg border border-amber-300 bg-amber-50 p-4 text-left flex flex-col max-h-[40vh]">
+          <p className="text-sm font-extrabold text-amber-900 shrink-0">
             Complete these requirements before rollover:
           </p>
-          <ul className="mt-2 space-y-1 text-sm font-bold text-amber-900">
-            {readiness.globalBlockers.map((blocker) => (
-              <li key={blocker.code}>{blocker.message}</li>
-            ))}
-            {readiness.blockers.map((blocker) => (
-              <li key={blocker.sectionId}>
-                {blocker.gradeLevel} {blocker.sectionName}: {blocker.reasons.join(", ")}
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-y-auto mt-2 pr-2 custom-scrollbar">
+            <ul className="space-y-1.5 text-sm text-amber-900">
+              {readiness.globalBlockers.map((blocker) => (
+                <li key={blocker.code} className="font-bold flex gap-2"><span className="shrink-0">•</span> {blocker.message}</li>
+              ))}
+              {readiness.blockers.map((blocker) => (
+                <li key={blocker.sectionId} className="flex gap-2">
+                  <span className="shrink-0 font-bold">• {blocker.gradeLevel} {blocker.sectionName}:</span>
+                  <span className="font-medium">{blocker.reasons.map(r => FORMATTED_REASONS[r] || r).join(", ")}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
       <div className="flex items-center space-x-3 mt-6 mb-2">

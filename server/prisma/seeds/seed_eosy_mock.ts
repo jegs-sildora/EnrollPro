@@ -57,7 +57,7 @@ async function main() {
         const droppedId = records[3].id;
 
         // 1. The Retained Learner (65-74)
-        const retainedGrade = 72; // Hardcoded deterministic value
+        const retainedGrade = Math.floor(Math.random() * (74 - 65 + 1)) + 65;
         await tx.enrollmentRecord.update({
           where: { id: retainedId },
           data: { finalAverage: retainedGrade, eosyStatus: "RETAINED" },
@@ -87,8 +87,8 @@ async function main() {
       // For the rest of the learners, 95% pass (75-98, PROMOTED)
       const startIndex = records.length >= 4 ? 4 : 0;
       for (let i = startIndex; i < records.length; i++) {
-        // We ensure a deterministic pass grade
-        const passGrade = 75 + (i % 24) + ((i % 4) * 0.25);
+        // We ensure random grade with 2 decimals
+        const passGrade = Math.round((Math.random() * (98 - 75) + 75) * 100) / 100;
         await tx.enrollmentRecord.update({
           where: { id: records[i].id },
           data: { finalAverage: passGrade, eosyStatus: "PROMOTED" },

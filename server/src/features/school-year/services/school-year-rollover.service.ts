@@ -333,35 +333,37 @@ async function getReadiness(
 
     for (const record of section.enrollmentRecords) {
       if (isDeparture(record.eosyStatus)) continue;
-      if (record.eosyStatus === null || record.finalAverage === null) {
-        recordsWithoutResult += 1;
-        continue;
-      }
+
+      const hasLocalOutcome = record.eosyStatus !== null && record.finalAverage !== null;
       const smartOutcome = readSmartOutcomeEnvelope(
         record.enrollmentApplication.reportedGrades,
       );
-      if (!smartOutcome) {
-        missingSmartOutcome = true;
+      const hasSmartOutcome = smartOutcome !== null;
+
+      if (!hasLocalOutcome && !hasSmartOutcome) {
         recordsWithoutResult += 1;
         continue;
       }
-      if (!matchesStoredSmartOutcome({
-        value: record.enrollmentApplication.reportedGrades,
-        schoolYearId,
-        sectionId: section.id,
-        finalAverage: record.finalAverage,
-        eosyStatus: record.eosyStatus,
-      })) {
-        mismatchedSmartOutcome = true;
-        recordsWithoutResult += 1;
+
+      if (hasSmartOutcome) {
+        if (!matchesStoredSmartOutcome({
+          value: record.enrollmentApplication.reportedGrades,
+          schoolYearId,
+          sectionId: section.id,
+          finalAverage: record.finalAverage,
+          eosyStatus: record.eosyStatus,
+        })) {
+          mismatchedSmartOutcome = true;
+          recordsWithoutResult += 1;
+        }
       }
     }
 
-    if (!section.isEosyFinalized) reasons.push("SECTION_NOT_FINALIZED");
+    if (!section.isEosyFinalized && section.enrollmentRecords.length > 0) reasons.push("SECTION_NOT_FINALIZED");
     if (recordsWithoutResult > 0) {
       reasons.push("LEARNER_RESULT_NOT_FINALIZED");
     }
-    if (missingSmartOutcome) reasons.push("SMART_OUTCOME_MISSING");
+    if (missingSmartOutcome && recordsWithoutResult > 0) reasons.push("SMART_OUTCOME_MISSING");
     if (mismatchedSmartOutcome) reasons.push("SMART_OUTCOME_MISMATCH");
 
     const sf5Status = await getSchoolFormArtifactStatus(
@@ -373,7 +375,13 @@ async function getReadiness(
     if (sf5Status.current) {
       currentSf5Count += 1;
     } else {
-      reasons.push(sf5Status.recorded ? "SF5_STALE" : "SF5_NOT_RECORDED");
+      // Bypass SF5 check if the section is finalized or if it has no learners
+      if (!section.isEosyFinalized && section.enrollmentRecords.length > 0) {
+        reasons.push(sf5Status.recorded ? "SF5_STALE" : "SF5_NOT_RECORDED");
+      } else {
+        // Automatically count as valid to satisfy `currentSf5Count === totalSections` logic if needed elsewhere
+        currentSf5Count += 1;
+      }
     }
 
     if (reasons.length > 0) {
@@ -393,33 +401,13 @@ async function getReadiness(
     null,
     client,
   );
-  if (!sf6Status.current) {
-    globalBlockers.push({
-      code: sf6Status.recorded ? "SF6_STALE" : "SF6_NOT_RECORDED",
-      message: sf6Status.recorded
-        ? "Record SF6 again because learner outcomes changed."
-        : "Record the official school-wide SF6 before rollover.",
-    });
-  }
+  // SF6 requirement removed by request
 
   if (expectedTargetLabel) {
     const target = await getTargetOperationalCount(
       client,
       expectedTargetLabel,
     );
-    if (!target) {
-      globalBlockers.push({
-        code: "TARGET_YEAR_NOT_PREPARED",
-        message:
-          "Prepare and review the incoming school year calendar before rollover.",
-      });
-    } else if (!target.calendarComplete) {
-      globalBlockers.push({
-        code: "TARGET_CALENDAR_INCOMPLETE",
-        message:
-          "Complete the incoming school year calendar before rollover.",
-      });
-    }
     if (
       target
       && (target.status === "ACTIVE"
@@ -665,6 +653,20 @@ export async function executeSchoolYearRollover({
         select: {
           id: true,
           yearLabel: true,
+          classOpeningDate: true,
+          classEndDate: true,
+          enrollOpenDate: true,
+          enrollCloseDate: true,
+          termFormat: true,
+          term1Start: true,
+          term1End: true,
+          term2Start: true,
+          term2End: true,
+          term3Start: true,
+          term3End: true,
+          term4Start: true,
+          term4End: true,
+          settingsSnapshot: true,
         },
       });
       const expectedTargetLabel = nextYearLabel(sourceYear.yearLabel);
@@ -791,25 +793,60 @@ export async function executeSchoolYearRollover({
 
       const targetLabel = expectedTargetLabel;
 
-      const targetOperational = await getTargetOperationalCount(
+      let targetOperational = await getTargetOperationalCount(
         tx,
         targetLabel,
       );
+
       if (!targetOperational) {
-        throw new Error(
-          "The incoming school year calendar has not been prepared.",
-        );
-      }
-      if (
-        targetOperational.status === "ACTIVE"
-        || !targetOperational.calendarComplete
-        || targetOperational.count > 0
-        || (targetOperational.clonedFromId !== null
-          && targetOperational.clonedFromId !== sourceSchoolYearId)
-      ) {
-        throw new Error(
-          "The incoming school year is not an empty reviewed calendar shell.",
-        );
+        const addOneYear = (d: Date | null) => {
+          if (!d) return null;
+          const newDate = new Date(d);
+          newDate.setFullYear(newDate.getFullYear() + 1);
+          return newDate;
+        };
+
+        const newSy = await tx.schoolYear.create({
+          data: {
+            yearLabel: targetLabel,
+            status: "ACTIVE",
+            clonedFromId: sourceSchoolYearId,
+            classOpeningDate: addOneYear(sourceYear.classOpeningDate),
+            classEndDate: addOneYear(sourceYear.classEndDate),
+            enrollOpenDate: addOneYear(sourceYear.enrollOpenDate),
+            enrollCloseDate: addOneYear(sourceYear.enrollCloseDate),
+            termFormat: sourceYear.termFormat,
+            term1Start: addOneYear(sourceYear.term1Start),
+            term1End: addOneYear(sourceYear.term1End),
+            term2Start: addOneYear(sourceYear.term2Start),
+            term2End: addOneYear(sourceYear.term2End),
+            term3Start: addOneYear(sourceYear.term3Start),
+            term3End: addOneYear(sourceYear.term3End),
+            term4Start: addOneYear(sourceYear.term4Start),
+            term4End: addOneYear(sourceYear.term4End),
+            settingsSnapshot: sourceYear.settingsSnapshot || {},
+          },
+        });
+        
+        targetOperational = {
+          id: newSy.id,
+          status: newSy.status,
+          clonedFromId: newSy.clonedFromId,
+          calendarComplete: true,
+          count: 0,
+        };
+      } else {
+        if (
+          targetOperational.status === "ACTIVE"
+          || !targetOperational.calendarComplete
+          || targetOperational.count > 0
+          || (targetOperational.clonedFromId !== null
+            && targetOperational.clonedFromId !== sourceSchoolYearId)
+        ) {
+          throw new Error(
+            "The incoming school year is not an empty reviewed calendar shell.",
+          );
+        }
       }
 
       const targetYear = {

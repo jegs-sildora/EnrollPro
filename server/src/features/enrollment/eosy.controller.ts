@@ -36,13 +36,17 @@ function hasFinalizedEosyOutcome(record: {
   ) {
     return true;
   }
-  return matchesStoredSmartOutcome({
-    value: record.enrollmentApplication.reportedGrades,
-    schoolYearId: record.schoolYearId,
-    sectionId: record.sectionId,
-    finalAverage: record.finalAverage,
-    eosyStatus: record.eosyStatus,
-  });
+  
+  // 1. Check if SMART API has finalized the outcome
+  const smartEnvelope = readSmartOutcomeEnvelope(record.enrollmentApplication.reportedGrades);
+  const hasSmartOutcome = smartEnvelope !== null;
+  
+  // 2. Check if EnrollPro has local mock grades 
+  const hasLocalOutcome = record.finalAverage !== null && record.eosyStatus !== null;
+
+  // 3. If either exists, we allow finalization. 
+  // (SMART is conceptually prioritized, but either satisfies the check)
+  return hasSmartOutcome || hasLocalOutcome;
 }
 
 function csvEscape(value: unknown): string {

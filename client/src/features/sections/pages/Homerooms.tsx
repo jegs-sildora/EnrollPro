@@ -580,23 +580,32 @@ export default function Homerooms() {
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const handleInlineAdviserChange = async (section: SectionItem, newAdviserId: string) => {
     try {
-      const payload = {
-        name: section.name,
-        programType: section.programType,
-        isHomogeneous: section.isHomogeneous,
-        maxCapacity: section.maxCapacity,
-        advisingTeacherId: newAdviserId === "none" ? null : parseInt(newAdviserId),
-      };
-      await api.put(`/sections/${section.id}`, payload);
-      setDraftAdvisers((prev) => {
-        const next = { ...prev };
-        delete next[section.id];
-        return next;
-      });
+      const effectiveDrafts = { ...draftAdvisers, [section.id]: newAdviserId };
+      const allSections = groups.flatMap(g => g.sections);
+      const updates = [];
+
+      for (const [sIdStr, tId] of Object.entries(effectiveDrafts)) {
+        const sId = Number(sIdStr);
+        const sec = allSections.find(s => s.id === sId);
+        if (!sec) continue;
+
+        updates.push(
+          api.put(`/sections/${sId}`, {
+            name: sec.name,
+            programType: sec.programType,
+            isHomogeneous: sec.isHomogeneous,
+            maxCapacity: sec.maxCapacity,
+            advisingTeacherId: tId === "none" ? null : parseInt(tId),
+          })
+        );
+      }
+
+      await Promise.all(updates);
+      setDraftAdvisers({});
       fetchData();
       sileo.success({
-        title: "Adviser updated",
-        description: `Class adviser for ${section.name} has been updated.`,
+        title: "Advisers updated",
+        description: `Class advisers have been successfully updated.`,
       });
     } catch (err) {
       showSectionsErrorToast("update", err);

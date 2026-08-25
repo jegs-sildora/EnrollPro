@@ -227,15 +227,17 @@ export async function findStudents(query: {
   }
 
   if (search) {
-    const s = String(search);
-    const searchFilter = {
-      OR: [
-        { lrn: { contains: s, mode: "insensitive" as const } },
-        { firstName: { contains: s, mode: "insensitive" as const } },
-        { lastName: { contains: s, mode: "insensitive" as const } },
-      ],
-    };
-    Object.assign(learnerWhere, { ...learnerWhere, ...searchFilter });
+    const terms = String(search).replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
+    if (terms.length > 0) {
+      learnerWhere.AND = terms.map(term => ({
+        OR: [
+          { lrn: { contains: term, mode: "insensitive" as const } },
+          { firstName: { contains: term, mode: "insensitive" as const } },
+          { lastName: { contains: term, mode: "insensitive" as const } },
+          { middleName: { contains: term, mode: "insensitive" as const } },
+        ]
+      }));
+    }
   }
 
   // GLOBAL SEARCH (Alumni, Inactive) - No School Year provided
@@ -369,15 +371,16 @@ export async function findStudents(query: {
     }
 
     if (search) {
-      const s = String(search);
-      const historySearch = {
+      const terms = String(search).replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
+      const historySearch = terms.map(term => ({
         OR: [
-          { learner: { lrn: { contains: s, mode: "insensitive" as const } } },
-          { learner: { firstName: { contains: s, mode: "insensitive" as const } } },
-          { learner: { lastName: { contains: s, mode: "insensitive" as const } } },
+          { learner: { lrn: { contains: term, mode: "insensitive" as const } } },
+          { learner: { firstName: { contains: term, mode: "insensitive" as const } } },
+          { learner: { lastName: { contains: term, mode: "insensitive" as const } } },
+          { learner: { middleName: { contains: term, mode: "insensitive" as const } } },
         ],
-      };
-      historyWhere.AND = [{ learner: learnerWhere }, historySearch];
+      }));
+      historyWhere.AND = [{ learner: learnerWhere }, ...historySearch];
       delete historyWhere.learner;
     }
 
@@ -527,24 +530,27 @@ export async function findStudents(query: {
 
   // Add search to the application level as well if needed (tracking number)
   if (search) {
-    const s = String(search);
-    const appSearch = {
+    const terms = String(search).replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
+    const appSearch = terms.map(term => ({
       OR: [
-        { trackingNumber: { contains: s, mode: "insensitive" as const } },
-        { learner: { lrn: { contains: s, mode: "insensitive" as const } } },
-        { learner: { firstName: { contains: s, mode: "insensitive" as const } } },
-        { learner: { lastName: { contains: s, mode: "insensitive" as const } } },
+        { trackingNumber: { contains: term, mode: "insensitive" as const } },
+        { learner: { lrn: { contains: term, mode: "insensitive" as const } } },
+        { learner: { firstName: { contains: term, mode: "insensitive" as const } } },
+        { learner: { lastName: { contains: term, mode: "insensitive" as const } } },
+        { learner: { middleName: { contains: term, mode: "insensitive" as const } } },
       ]
-    };
+    }));
     
     // Combine with the learner status filter
     if (where.AND) {
        (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push({ learner: learnerWhere });
-       (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push(appSearch);
+       appSearch.forEach(searchCondition => {
+         (where.AND as Prisma.EnrollmentApplicationWhereInput[]).push(searchCondition);
+       });
     } else {
        where.AND = [
          { learner: learnerWhere },
-         appSearch
+         ...appSearch
        ];
     }
     delete where.learner; // Use AND instead

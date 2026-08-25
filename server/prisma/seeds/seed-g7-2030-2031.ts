@@ -39,8 +39,8 @@ async function seedGrade7() {
   const defaultPassword = await bcrypt.hash("DepEd" + BASE_YEAR + "!", 10);
   const generateLRN = createLRNGenerator(BASE_YEAR);
 
-  let maleLearnerIndex = 0;
-  let femaleLearnerIndex = 0;
+  let maleLearnerIndex = 563;
+  let femaleLearnerIndex = 563;
   let totalSeeded = 0;
 
   for (const section of sections) {
