@@ -144,7 +144,7 @@ export const router = createBrowserRouter([
         element: <AuthLayout />,
         children: [
           {
-            path: "/staff/login",
+            path: "/personnel/login",
             element: renderLazyPage(Login),
           },
         ],

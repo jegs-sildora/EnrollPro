@@ -31,7 +31,7 @@ Primary EnrollPro route groups include:
 
 | Route | Workspace or behavior | Access |
 | --- | --- | --- |
-| `/staff/login` | Staff login | Public |
+| `/personnel/login` | Staff login | Public |
 | `/enrollment` | Online learner enrollment | Public while enrollment is open |
 | `/monitor` | Public application monitoring | Public |
 | `/change-password` | Public password-change entry | Public |

@@ -15,7 +15,7 @@ export default function SMARTLayout() {
   const { user: enrollProUser } = useAuthStore();
 
   if (!enrollProUser) {
-    return <Navigate to="/staff/login" replace />;
+    return <Navigate to="/personnel/login" replace />;
   }
 
   // SSO sync: Map EnrollPro role(s) to SMART role
@@ -35,7 +35,7 @@ export default function SMARTLayout() {
     firstName: enrollProUser.firstName || "SSO",
     lastName: enrollProUser.lastName || "User"
   };
-  
+
   sessionStorage.setItem("token", "sso-bypass-token");
   sessionStorage.setItem("user", JSON.stringify(ssoUser));
 

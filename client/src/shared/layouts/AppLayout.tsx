@@ -115,7 +115,7 @@ function UserNav() {
       // Ignore network/logout failures and clear local session regardless.
     }
     clearAuth();
-    navigate("/staff/login");
+    navigate("/personnel/login");
   };
 
   const initials = user?.firstName

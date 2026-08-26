@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth.slice";
 export function SMARTRedirector() {
   const { user } = useAuthStore();
   if (!user) {
-    return <Navigate to="/staff/login" replace />;
+    return <Navigate to="/personnel/login" replace />;
   }
 
   let smartRole = "TEACHER";

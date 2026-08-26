@@ -294,11 +294,11 @@ export default function ChangePassword() {
   }, [isExternalHandoff]);
 
   if (isExternalHandoff && !externalTicket) {
-    return <Navigate to="/staff/login" replace />;
+    return <Navigate to="/personnel/login" replace />;
   }
 
   if (!isExternalHandoff && (!hasSession || !user)) {
-    return <Navigate to={isLearner ? "/learner/login" : "/staff/login"} replace />;
+    return <Navigate to={isLearner ? "/learner/login" : "/personnel/login"} replace />;
   }
 
   // Learner must have a token to make authenticated requests
@@ -346,7 +346,7 @@ export default function ChangePassword() {
           }
 
           window.location.replace(
-            returnUrl?.toString() ?? "/staff/login?passwordChanged=1",
+            returnUrl?.toString() ?? "/personnel/login?passwordChanged=1",
           );
         }, 700);
       } else if (isLearner && user) {

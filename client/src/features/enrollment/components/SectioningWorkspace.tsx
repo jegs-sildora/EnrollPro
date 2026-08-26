@@ -1052,25 +1052,28 @@ export function SectioningWorkspace() {
             animate={{ opacity: 1, y: 0, height: "auto", marginBottom: "1rem" }}
             exit={{ opacity: 0, y: -20, height: 0, marginBottom: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden rounded-md border-2 border-primary bg-primary/5 px-4 py-3 text-primary shadow-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-base font-extrabold uppercase">
-                  TEMPORARY SECTIONS PENDING REVIEW
-                </p>
-                <p className="text-sm font-bold text-primary">
-                  {draftLearnerCount} learner(s) are currently assigned across{" "}
-                  {
-                    draftPlacement.rosters.filter(
-                      (roster) => roster.learners.length > 0,
-                    ).length
-                  }{" "}
-                  section(s) pending final approval
-                </p>
+            className="bg-white rounded-md shadow-sm"
+          >
+            <div className="overflow-hidden rounded-md border-2 border-primary bg-primary/5 px-4 py-3 text-primary">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-base font-extrabold uppercase">
+                    TEMPORARY SECTIONS PENDING REVIEW
+                  </p>
+                  <p className="text-sm font-bold text-primary">
+                    {draftLearnerCount} learner(s) are currently assigned across{" "}
+                    {
+                      draftPlacement.rosters.filter(
+                        (roster) => roster.learners.length > 0,
+                      ).length
+                    }{" "}
+                    section(s) pending final approval
+                  </p>
+                </div>
+                <Badge className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+                  Reviewing Temporary List
+                </Badge>
               </div>
-              <Badge className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
-                Reviewing Temporary List
-              </Badge>
             </div>
           </motion.div>
         )}

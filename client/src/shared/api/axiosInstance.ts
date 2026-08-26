@@ -115,13 +115,13 @@ api.interceptors.response.use(
 
           setTimeout(() => {
             _sessionExpiredHandled = false;
-            if (window.location.pathname !== "/staff/login") {
-              window.location.replace("/staff/login");
+            if (window.location.pathname !== "/personnel/login") {
+              window.location.replace("/personnel/login");
             }
           }, 1500);
         } else {
-          if (window.location.pathname !== "/staff/login") {
-            window.location.replace("/staff/login");
+          if (window.location.pathname !== "/personnel/login") {
+            window.location.replace("/personnel/login");
           }
         }
       }

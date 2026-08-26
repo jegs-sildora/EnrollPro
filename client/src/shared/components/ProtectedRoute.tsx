@@ -14,7 +14,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   if (!hasSession || !user) {
     return (
       <Navigate
-        to={"/staff/login"}
+        to={"/personnel/login"}
         replace
       />
     );
