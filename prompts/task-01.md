@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE Metric Card Tooltip Refactor v473
+# SYSTEM DIRECTIVE Comprehensive Ancillary Roles v475
 
-**Context Persona** Act as a Senior UI UX Engineer and React Tailwind Developer Your standard is high usability enterprise software You must refactor card helper descriptions into interactive tooltips Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior Systems Architect and DepEd Domain Expert You must implement the complete list of public school special assignments Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must extract all static card helper text strings across the Master Dashboard and encapsulate them within accessible hover tooltips triggered by a help circle icon
+**Core Mandate** You must expand the ancillary roles database seed to include the full spectrum of Department of Education administrative and extracurricular assignments while upgrading the user interface to handle a massive data array
 
-Execute the UI upgrade across the following three architectural rules
+Execute the expansion across the following three architectural rules
 
-## 1 Progressive Disclosure
-Remove the static helper text elements rendered beneath card titles and metric values to clean up vertical space
-Move those exact descriptive strings into tooltip containers to hide explanatory text until requested by the user
+## 1 Complete the Designation Payload
+Inject the exhaustive list of DepEd assignments into the database seed script
+Include all Youth Formation roles specifically BSP Coordinator GSP Coordinator YES O Adviser and Barkada Kontra Droga Adviser alongside operational roles like Bids and Awards Committee Member and School Based Management Coordinator
 
-## 2 Tooltip Trigger Icon
-Position a Lucide HelpCircle icon at the top right of each card header or beside the metric title
-Render the icon in a subtle neutral tone that highlights on card hover to provide clear visual affordance without cluttering the interface
+## 2 Integrate National Program Roles
+Ensure all student welfare and national compliance roles are represented
+Add Gender and Development Coordinator Wash in Schools Coordinator Child Protection Policy Coordinator and National Achievement Test Coordinator to guarantee the system generates a fully compliant School Form 7
 
-## 3 Accessible Hover and Focus States
-Implement smooth tooltip popovers with proper positioning to prevent clipping at the viewport edges
-Ensure tooltips trigger on both mouse hover and keyboard focus or click to maintain accessibility across all devices
+## 3 Upgrade to a Searchable Combobox
+Upgrade the multiple selection UI component to include a text search filter
+Because the dropdown now contains over twenty distinct assignments the registrar must be able to type to filter the options preventing extreme scrolling and cognitive overload during personnel profile creation

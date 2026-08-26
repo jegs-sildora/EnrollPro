@@ -76,6 +76,7 @@ model Teacher {
   birthdate           DateTime?            @db.Date
   personnelType       String?              @map("personnel_type")
   functionalAssignment String?             @map("functional_assignment")
+  ancillaryRoles       String[]            @default([]) @map("ancillary_roles")
   advisoryHistory     SectionAdviser[]
   teacherDesignations TeacherDesignation[]
   schedulePeriods     TeacherSchedulePeriod[]

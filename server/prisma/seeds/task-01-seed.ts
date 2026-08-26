@@ -27,6 +27,34 @@ const DEPARTMENTS = [
   { name: 'TECHNOLOGY AND LIVELIHOOD EDUCATION', code: 'TLE' }
 ];
 const POSITIONS = ['TEACHER I', 'TEACHER II', 'TEACHER III', 'MASTER TEACHER I', 'MASTER TEACHER II'];
+
+const ANCILLARY_ROLES_POOL = [
+  "LIS COORDINATOR",
+  "ICT COORDINATOR",
+  "SDRRM COORDINATOR",
+  "GUIDANCE DESIGNATE",
+  "SCHOOL PAPER ADVISER (SPA)",
+  "PROPERTY CUSTODIAN",
+  "CLINIC TEACHER / HEALTH COORDINATOR",
+  "SPORTS COORDINATOR",
+  "BSP / GSP COORDINATOR",
+  "GULAYAN SA PAARALAN (GPP) COORDINATOR",
+  "FEEDING COORDINATOR",
+  "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER",
+  "SSG ADVISER",
+  "GRADE LEVEL CHAIRMAN",
+  "SUBJECT AREA COORDINATOR",
+  "BSP COORDINATOR",
+  "GSP COORDINATOR",
+  "YES-O ADVISER",
+  "BARKADA KONTRA DROGA ADVISER",
+  "BIDS AND AWARDS COMMITTEE MEMBER",
+  "SCHOOL-BASED MANAGEMENT COORDINATOR",
+  "GENDER AND DEVELOPMENT COORDINATOR",
+  "WASH IN SCHOOLS COORDINATOR",
+  "CHILD PROTECTION POLICY COORDINATOR",
+  "NATIONAL ACHIEVEMENT TEST COORDINATOR"
+];
 const FILIPINO_MALE_FIRST_NAMES = [
   "JUAN MIGUEL",
   "JOSE GABRIEL",
@@ -238,7 +266,8 @@ export const seedDatabase = async () => {
           minorSpecialization: "NONE",
           indigenousCommunity: "NOT_APPLICABLE",
           natureOfAppointment: "REGULAR_PERMANENT",
-          fundingSource: "NATIONAL"
+          fundingSource: "NATIONAL",
+          ancillaryRoles: [ANCILLARY_ROLES_POOL[i % ANCILLARY_ROLES_POOL.length]]
         }
       });
       teachers.push(teacher);
@@ -293,6 +322,7 @@ export const seedDatabase = async () => {
             schoolYearId: sy.id,
             isClassAdviser: true,
             advisorySectionId: section.id,
+            ancillaryRoles: [ANCILLARY_ROLES_POOL[teacherIdx % ANCILLARY_ROLES_POOL.length]]
           }
         });
 

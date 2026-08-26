@@ -45,6 +45,7 @@ export interface Teacher {
   birthdate: string | null;
   personnelType: string | null;
   functionalAssignment: string | null;
+  ancillaryRoles: string[];
   sectionCount: number;
   designation: TeacherDesignation | null;
   isActive: boolean;

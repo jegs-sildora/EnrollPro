@@ -818,6 +818,19 @@ export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
     value: "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER",
     label: "Supreme Secondary Learner Government (SSLG) Adviser",
   },
+  { value: "SSG ADVISER", label: "Supreme Student Government (SSG) Adviser" },
+  { value: "GRADE LEVEL CHAIRMAN", label: "Grade Level Chairman" },
+  { value: "SUBJECT AREA COORDINATOR", label: "Subject Area Coordinator" },
+  { value: "BSP COORDINATOR", label: "BSP Coordinator" },
+  { value: "GSP COORDINATOR", label: "GSP Coordinator" },
+  { value: "YES-O ADVISER", label: "YES-O Adviser" },
+  { value: "BARKADA KONTRA DROGA ADVISER", label: "Barkada Kontra Droga Adviser" },
+  { value: "BIDS AND AWARDS COMMITTEE MEMBER", label: "Bids and Awards Committee Member" },
+  { value: "SCHOOL-BASED MANAGEMENT COORDINATOR", label: "School-Based Management Coordinator" },
+  { value: "GENDER AND DEVELOPMENT COORDINATOR", label: "Gender and Development Coordinator" },
+  { value: "WASH IN SCHOOLS COORDINATOR", label: "Wash in Schools Coordinator" },
+  { value: "CHILD PROTECTION POLICY COORDINATOR", label: "Child Protection Policy Coordinator" },
+  { value: "NATIONAL ACHIEVEMENT TEST COORDINATOR", label: "National Achievement Test Coordinator" },
 ] as const;
 
 export const TEACHER_NATURE_OF_APPOINTMENT_VALUES = [

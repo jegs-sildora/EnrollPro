@@ -241,6 +241,7 @@ export async function index(req: Request, res: Response) {
         birthdate: teacher.birthdate,
         personnelType: teacher.personnelType,
         functionalAssignment: teacher.functionalAssignment,
+        ancillaryRoles: teacher.ancillaryRoles,
         subjects: [],
         isActive: teacher.isActive,
         serviceStatus: teacher.serviceStatus,
@@ -327,6 +328,7 @@ export async function show(req: Request, res: Response) {
         subjects: [],
         department: teacher.department?.code || null,
         serviceStatus: teacher.serviceStatus,
+        ancillaryRoles: teacher.ancillaryRoles,
       },
     });
   } catch (error: unknown) {
@@ -357,6 +359,7 @@ interface TeacherUpsertPayload {
   indigenousCommunity?: string | null;
   natureOfAppointment?: string | null;
   fundingSource?: string | null;
+  ancillaryRoles?: string[];
 }
 
 export async function store(req: Request, res: Response) {
@@ -389,6 +392,7 @@ export async function store(req: Request, res: Response) {
       serviceStatus,
       serviceEffectiveDate,
       serviceRemarks,
+      ancillaryRoles,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -486,6 +490,7 @@ export async function store(req: Request, res: Response) {
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
           ...(serviceStatus ? { serviceStatus } : {}),
+          ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
         },
       });
 
@@ -558,6 +563,7 @@ export async function update(req: Request, res: Response) {
       indigenousCommunity,
       natureOfAppointment,
       fundingSource,
+      ancillaryRoles,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -635,6 +641,7 @@ export async function update(req: Request, res: Response) {
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
+          ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
         },
       });
 

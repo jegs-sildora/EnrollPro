@@ -40,6 +40,7 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Textarea } from "@/shared/ui/textarea";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { SearchableCombobox } from "@/shared/ui/searchable-combobox";
+import { MultiSearchableCombobox } from "@/shared/ui/multi-searchable-combobox";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   cn,
@@ -132,6 +133,7 @@ const formSchema = z
       "NGO",
       "OTHER",
     ]).optional().nullable(),
+    ancillaryRoles: z.array(z.string()).default([]),
     roles: z.array(z.string()),
 
     contactNumber: z
@@ -289,6 +291,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       natureOfAppointment: "REGULAR_PERMANENT",
       fundingSource: "NATIONAL",
       roles: [],
+      ancillaryRoles: [],
       contactNumber: "",
       serviceStatus: "ACTIVE",
       serviceEffectiveDate: new Date().toISOString().slice(0, 10),
@@ -347,6 +350,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
         fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
+        ancillaryRoles: teacher.ancillaryRoles || [],
         contactNumber: teacher.contactNumber || "",
         serviceStatus: teacher.serviceStatus || "ACTIVE",
         serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
@@ -375,6 +379,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         natureOfAppointment: "REGULAR_PERMANENT",
         fundingSource: "NATIONAL",
         roles: [],
+        ancillaryRoles: [],
         contactNumber: "",
         serviceStatus: "ACTIVE",
         serviceEffectiveDate: new Date().toISOString().slice(0, 10),
@@ -458,6 +463,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         natureOfAppointment: data.natureOfAppointment,
         fundingSource: data.fundingSource,
         roles: data.roles,
+        ancillaryRoles: data.ancillaryRoles,
         contactNumber: data.contactNumber,
         serviceStatus: data.serviceStatus,
         serviceEffectiveDate: data.serviceEffectiveDate,
@@ -1241,6 +1247,25 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <AnimatedError error={errors.fundingSource?.message as string} />
                           </div>
 
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <Label className="text-base font-extrabold uppercase text-foreground">Ancillary Roles</Label>
+                          <Controller
+                            name="ancillaryRoles"
+                            control={control}
+                            render={({ field }) => (
+                              <MultiSearchableCombobox
+                                items={[...DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS]}
+                                value={field.value || []}
+                                onChange={(value) => field.onChange(value)}
+                                disabled={!isEditing}
+                                placeholder="Select ancillary roles"
+                                searchPlaceholder="Search roles..."
+                                className="w-full font-extrabold text-base leading-tight bg-background text-foreground border-border"
+                              />
+                            )}
+                          />
                         </div>
                       </div>
                       )}
