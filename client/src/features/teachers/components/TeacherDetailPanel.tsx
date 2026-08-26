@@ -1365,7 +1365,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 
                             <div className="space-y-2 pt-2">
                               <Label className="text-base font-extrabold uppercase text-foreground">
-                                {isAdding ? "Initial Password" : "Password Control"}
+                                {isAdding ? "Default Password" : "Password Control"}
                               </Label>
                               <div className={cn("grid gap-2", isAdding ? "grid-cols-1" : "grid-cols-2")}>
                                 <Input autoComplete="off" disabled={!isEditing}
@@ -1388,7 +1388,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                               </div>
                               <p className="text-sm font-extrabold leading-tight text-foreground">
                                 {isAdding 
-                                  ? "The initial portal password for this user. They will be forced to change it on their first login."
+                                  ? "The default portal password for this user. They will be forced to change it on their first login."
                                   : "This will reset the user's portal password to the value above and force a password change on next login."
                                 }
                               </p>

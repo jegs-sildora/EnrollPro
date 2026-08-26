@@ -1078,10 +1078,10 @@ export default function SchoolYearTab() {
                       {localCalendarState.enrollOpenDate !== "" &&
                         localCalendarState.enrollCloseDate !== "" &&
                         toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
-                          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-extrabold text-destructive">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-extrabold text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
                             <p>
-                              Closes On date cannot be earlier than Opens On.
+                              Please select a closing date that comes after the opening date.
                             </p>
                           </div>
                         )}
@@ -1209,7 +1209,7 @@ export default function SchoolYearTab() {
                     <TableBody>
                       {archivedYears.map((year) => (
                         <TableRow key={year.id}>
-                          <TableCell className="font-extrabold text-center uppercase font-extrabold whitespace-nowrap">
+                          <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
                             S.Y. {year.yearLabel}
                           </TableCell>
                           <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">

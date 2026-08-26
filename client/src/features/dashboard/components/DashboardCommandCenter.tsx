@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
+  HelpCircle,
   Presentation,
   RefreshCw,
   School,
@@ -89,19 +90,31 @@ export function DashboardSummaryRibbon({
         return (
           <Card
             key={item.key}
-            className="border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
+            className="group border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => navigate(item.route)}
           >
-            <CardContent className="flex min-h-32 items-center gap-4 p-5">
-              <div className="min-w-0">
-                <p className="text-base font-extrabold leading-tight text-foreground">
-                  {item.label}
-                </p>
+            <CardContent className="flex min-h-24 items-center gap-4 p-5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-base font-extrabold leading-tight text-foreground">
+                    {item.label}
+                  </p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="mt-0.5 text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                          <HelpCircle className="size-4" />
+                          <span className="sr-only">Help</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" align="start" className="max-w-xs">
+                        {item.helper}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="mt-1 text-3xl font-black leading-none text-primary">
                   <AnimatedNumber value={summary[item.key]} />
-                </p>
-                <p className="mt-2 text-base font-semibold text-foreground">
-                  {item.helper}
                 </p>
               </div>
             </CardContent>
@@ -144,17 +157,29 @@ export function DashboardActionToolbar({
   return (
     <section
       aria-label="Dashboard quick actions"
-      className="flex flex-col gap-2 rounded-md border border-slate-200 bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+      className="group flex flex-col gap-2 rounded-md border border-slate-200 bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
     >
       <div className="flex-1 min-w-0 lg:pr-2">
-        <p className="text-base font-extrabold text-foreground">
-          Quick Actions
-        </p>
-        <p className="text-base font-semibold text-foreground">
-          {isEosy
-            ? "End of School Year processing is active. Please ensure all final grades and promotion outcomes are synced before initiating the database rollover."
-            : "Open common school year \ tasks for this school year."}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-base font-extrabold text-foreground">
+            Quick Actions
+          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center">
+                  <HelpCircle className="size-4" />
+                  <span className="sr-only">Help</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="start" className="max-w-xs">
+                {isEosy
+                  ? "End of School Year processing is active. Please ensure all final grades and promotion outcomes are synced before initiating the database rollover."
+                  : "Open common school year tasks for this school year."}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       <div
@@ -230,16 +255,26 @@ export function OperationalQueueCard({
   return (
     <Card
       className={cn(
-        "flex h-full flex-col border-slate-200 bg-card shadow-sm",
+        "group flex h-full flex-col border-slate-200 bg-card shadow-sm",
         warning && !isClear && "border-amber-300",
       )}
     >
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-        <div>
+        <div className="flex items-center gap-2">
           <CardTitle className="text-base font-extrabold">{title}</CardTitle>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            {detail}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                  <HelpCircle className="size-4" />
+                  <span className="sr-only">Help</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="start" className="max-w-xs">
+                {detail}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         {icon}
       </CardHeader>
@@ -296,14 +331,24 @@ export function CurriculumDistributionPanel({
   ]
 
   return (
-    <Card className="flex h-full flex-col border-slate-200 bg-card shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
+      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-base font-extrabold">
           Learners by Curriculum Program
         </CardTitle>
-        <p className="text-base font-semibold text-foreground">
-          Enrolled learners grouped by their current curriculum program.
-        </p>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" className="max-w-xs">
+              Enrolled learners grouped by their current curriculum program.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center space-y-6">
         {visibleItems.map((item) => {
@@ -338,14 +383,24 @@ export function IntakePipelinePanel({
   rows: DashboardStats["intakePipeline"]
 }) {
   return (
-    <Card className="flex h-full flex-col border-slate-200 bg-card shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
+      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-base font-extrabold">
           Enrollment Records by Grade
         </CardTitle>
-        <p className="text-base font-semibold text-foreground">
-          Continuing or promoted learners, new entrants, and transferees for each grade level.
-        </p>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" className="max-w-xs">
+              Continuing or promoted learners, new entrants, and transferees for each grade level.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center p-6 pt-0 overflow-hidden">
         <div className="overflow-x-auto w-full">
@@ -421,15 +476,25 @@ export function SectionSaturationPanel({
     .slice(0, 4)
 
   return (
-    <Card className="flex h-full flex-col border-slate-200 bg-card shadow-sm">
+    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
-        <div>
+        <div className="flex items-center gap-2">
           <CardTitle className="text-base font-extrabold">
             Class Section Capacity
           </CardTitle>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            Highest seat occupancy per grade level
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                  <HelpCircle className="size-4" />
+                  <span className="sr-only">Help</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="start" className="max-w-xs">
+                Highest seat occupancy per grade level
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
@@ -521,15 +586,25 @@ export function Sf1CompliancePanel({
   const isComplete = compliance.affectedLearners === 0
 
   return (
-    <Card className="flex h-full flex-col border-slate-200 bg-card shadow-sm">
+    <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
-        <div>
+        <div className="flex items-center gap-2">
           <CardTitle className="text-base font-extrabold">
             SF1 Learner Information Check
           </CardTitle>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            Learner information required for School Form 1.
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                  <HelpCircle className="size-4" />
+                  <span className="sr-only">Help</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="start" className="max-w-xs">
+                Learner information required for School Form 1.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <span
           className={cn(
@@ -584,14 +659,24 @@ export function ActiveTallyPanel({
   ] as const
 
   return (
-    <Card className="border-slate-200 bg-card shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="group border-slate-200 bg-card shadow-sm">
+      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-base font-extrabold">
           Current Enrollment Count
         </CardTitle>
-        <p className="text-base font-semibold text-foreground">
-          BOSY enrollment plus late enrollees, minus officially dropped learners.
-        </p>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                <HelpCircle className="size-4" />
+                <span className="sr-only">Help</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" className="max-w-xs">
+              BOSY enrollment plus late enrollees, minus officially dropped learners.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

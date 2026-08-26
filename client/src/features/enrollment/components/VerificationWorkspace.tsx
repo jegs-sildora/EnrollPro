@@ -628,7 +628,7 @@ export function VerificationWorkspace() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 gap-4">
                         <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
-                          <label className="text-sm font-extrabold uppercase text-foreground">Requested Program (From Online Form)</label>
+                          <label className="text-sm font-extrabold uppercase text-foreground">Requested Curriuculum (From Online Enrollment Form)</label>
                           <div className="h-10 px-3 py-2 bg/50 rounded-md border border-border flex items-center text-base leading-tight text-foreground font-extrabold">
                             {selectedApp.applicantType.replace(/_/g, " ")}
                           </div>

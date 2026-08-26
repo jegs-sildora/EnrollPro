@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE Walk In Enrollment UI Versatility v471
+# SYSTEM DIRECTIVE Metric Card Tooltip Refactor v473
 
-**Context Persona** Act as a Senior UI UX Engineer and React Developer Your standard is high usability public school software You must upgrade the walk in enrollment modal to dynamically handle transferee workflows Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and React Tailwind Developer Your standard is high usability enterprise software You must refactor card helper descriptions into interactive tooltips Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must restructure the learner profile form to conditionally render fields and enforce strict Department of Education validation rules based on the selected enrollment category
+**Core Mandate** You must extract all static card helper text strings across the Master Dashboard and encapsulate them within accessible hover tooltips triggered by a help circle icon
 
 Execute the UI upgrade across the following three architectural rules
 
-## 1 Implement the Learner Type Toggle
-Inject a mandatory segmented control at the absolute top of the form with three distinct options specifically New Entrant Transferee and Returnee
-This ensures the system immediately knows which validation schema to apply before the registrar begins typing
+## 1 Progressive Disclosure
+Remove the static helper text elements rendered beneath card titles and metric values to clean up vertical space
+Move those exact descriptive strings into tooltip containers to hide explanatory text until requested by the user
 
-## 2 Enforce Conditional LRN Logic
-Program the form state to actively monitor the learner type toggle
-If the user selects Transferee the system must completely hide the Learner has no LRN yet checkbox and force the twelve digit LRN input field to be strictly required preventing undocumented ghost enrollments
+## 2 Tooltip Trigger Icon
+Position a Lucide HelpCircle icon at the top right of each card header or beside the metric title
+Render the icon in a subtle neutral tone that highlights on card hover to provide clear visual affordance without cluttering the interface
 
-## 3 Expand Previous School Metadata
-Upgrade the previous school data section to align with the national Learner Information System requirements
-Add a required input for the Originating School ID and a dropdown selection for the SF9 Eligibility Status specifically containing Promoted Conditionally Promoted and Retained to ensure the receiving section assignment is mathematically accurate
+## 3 Accessible Hover and Focus States
+Implement smooth tooltip popovers with proper positioning to prevent clipping at the viewport edges
+Ensure tooltips trigger on both mouse hover and keyboard focus or click to maintain accessibility across all devices

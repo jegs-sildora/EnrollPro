@@ -54,7 +54,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
           <CardTitle className="text-base font-extrabold">
             Rollover Readiness Checklist
           </CardTitle>
-          <p className="font-semibold text-foreground">
+          <p className="font-semibold text-foreground text-sm">
             All requirements must be satisfied before transitioning to the next school year
           </p>
         </CardHeader>
@@ -66,7 +66,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">Section Finalization</p>
-                <p className="font-semibold text-foreground">All class advisers must submit and finalize their EOSY records</p>
+                <p className="font-semibold text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
               </div>
             </Link>
 
@@ -76,7 +76,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">SMART Grade Synchronization</p>
-                <p className="font-semibold text-foreground">All learner outcomes must be resolved and synced</p>
+                <p className="font-semibold text-foreground text-sm">All learner outcomes must be resolved and synced</p>
               </div>
             </Link>
 
@@ -86,7 +86,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">School Form Generation</p>
-                <p className="font-semibold text-foreground">School Forms 5 and 6 must be ready for review</p>
+                <p className="font-semibold text-foreground text-sm">School Forms 5 and 6 must be ready for review</p>
               </div>
             </Link>
 
@@ -96,7 +96,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">Calendar Policy Approval</p>
-                <p className="font-semibold text-foreground">School year calendar policies must be approved</p>
+                <p className="font-semibold text-foreground text-sm">School year calendar policies must be approved</p>
               </div>
             </Link>
           </div>
