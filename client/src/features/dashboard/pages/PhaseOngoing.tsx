@@ -45,7 +45,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           detail="Campus walk-in records awaiting verification"
           zeroLabel="No Late Enrollment Records Pending"
           actionLabel="Process Late Walk-In Records"
-          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          onAction={() => navigate("/learner-enrollment?tab=incoming")}
           icon={<UserPlus className="size-5 text-primary" />}
         />
         <OperationalQueueCard
@@ -54,7 +54,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           detail="Verified learners not yet listed in an SF1 section"
           zeroLabel="All Enrolled Learners Have Sections"
           actionLabel="Review Class Placement"
-          onAction={() => navigate("/monitoring/enrollment")}
+          onAction={() => navigate("/section-assignment")}
           icon={<School className="size-5 text-primary" />}
         />
         <OperationalQueueCard
@@ -63,7 +63,7 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
           detail="Temporary enrollment requirements still unresolved"
           zeroLabel="All Required Documents Recorded"
           actionLabel="Review Missing Requirements"
-          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          onAction={() => navigate("/learner-enrollment?tab=incoming")}
           icon={<ComplianceWarningIcon active={overdueDocuments > 0} />}
           warning
         />

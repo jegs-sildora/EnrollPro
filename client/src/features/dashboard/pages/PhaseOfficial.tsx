@@ -100,7 +100,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           detail="Learner applications waiting for school verification"
           zeroLabel="No Pending Enrollment Records"
           actionLabel="Process Enrollment Records"
-          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          onAction={() => navigate("/learner-enrollment?tab=incoming")}
         />
         <OperationalQueueCard
           title="Unsectioned Learners"
@@ -108,7 +108,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           detail="Enrolled learners waiting for an SF1 class section"
           zeroLabel="All Enrolled Learners Have Sections"
           actionLabel="Assign Class Sections"
-          onAction={() => navigate("/monitoring/enrollment")}
+          onAction={() => navigate("/section-assignment")}
         />
         <OperationalQueueCard
           title="Missing School Requirements"
@@ -116,7 +116,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           detail="Learners requiring SF9 or PSA document follow-up"
           zeroLabel="All Required Documents Recorded"
           actionLabel="Review Missing Requirements"
-          onAction={() => navigate("/continuing-learners?tab=incoming")}
+          onAction={() => navigate("/learner-enrollment?tab=incoming")}
           warning
         />
       </section>
@@ -139,7 +139,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
           onReview={() => navigate("/students")}
         />
       </section>
-      
+
     </div>
   )
 }

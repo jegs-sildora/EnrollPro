@@ -58,8 +58,8 @@ function getFallbackVariant(pathname: string): SkeletonPageVariant {
     return "enrollmentForm";
   }
   if (
-    pathname === "/continuing-learners" ||
-    pathname === "/monitoring/enrollment" ||
+    pathname === "/learner-enrollment" ||
+    pathname === "/section-assignment" ||
     pathname.includes("sectioning")
   ) {
     return "twoPanel";
@@ -166,7 +166,7 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(Dashboard),
               },
               {
-                path: "/monitoring/enrollment",
+                path: "/section-assignment",
                 element: renderLazyPage(Enrollment),
               },
               {
@@ -174,7 +174,7 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(EosyUpdating),
               },
               {
-                path: "/continuing-learners",
+                path: "/learner-enrollment",
                 element: renderLazyPage(BOSYPage),
               },
               {

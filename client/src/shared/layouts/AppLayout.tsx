@@ -479,7 +479,7 @@ const NavItem = memo(function NavItem({
 
   // Surgical exclusion for EOSY updating overlapping with Sectioning & Masterlists
   if (
-    to === "/monitoring/enrollment" &&
+    to === "/section-assignment" &&
     pathname.startsWith("/eosy")
   ) {
     isActive = false;
@@ -585,13 +585,13 @@ function AppSidebar() {
                   {(systemPhase === "OFFICIAL_ENROLLMENT" || systemPhase === "CLASSES_ONGOING" || !systemPhase) && (
                     <>
                       <NavItem
-                        to="/continuing-learners"
+                        to="/learner-enrollment"
                         icon={UserPlus}
                         label="Learner Enrollment"
                         pathname={pathname}
                       />
                       <NavItem
-                        to="/monitoring/enrollment"
+                        to="/section-assignment"
                         icon={Calendar}
                         label="Section Assignment"
                         pathname={pathname}
@@ -726,22 +726,22 @@ const ROUTE_PHASES: Record<string, {
   redirectTo: string;
   redirectLabel: string;
 }> = {
-  "/continuing-learners": {
+  "/learner-enrollment": {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Learner Enrollment",
-    redirectTo: "/monitoring/enrollment",
+    redirectTo: "/section-assignment",
     redirectLabel: "Take me to Section Assignment"
   },
-  "/monitoring/enrollment": {
+  "/section-assignment": {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Section Assignment",
     redirectTo: "/sections",
     redirectLabel: "Take me to Class Sections"
   },
-  "/monitoring/enrollment/walk-in": {
+  "/section-assignment/walk-in": {
     allowedPhases: ["OFFICIAL_ENROLLMENT", "CLASSES_ONGOING"],
     moduleName: "Learner Enrollment",
-    redirectTo: "/continuing-learners",
+    redirectTo: "/learner-enrollment",
     redirectLabel: "Take me to Learner Enrollment"
   },
   "/eosy": {
@@ -806,9 +806,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     location.pathname.startsWith("/admin/system") ||
     location.pathname.startsWith("/settings") ||
     // BOSY rollover always targets the active year ΓÇö intentional bypass
-    location.pathname === "/continuing-learners" ||
+    location.pathname === "/learner-enrollment" ||
     // Walk-in encoder is a direct mutation flow ΓÇö intentional bypass
-    location.pathname === "/monitoring/enrollment/walk-in";
+    location.pathname === "/section-assignment/walk-in";
   const shouldShowNoSchoolYearState =
     !isSchoolYearBypassRoute && !selectedSchoolYearId;
 

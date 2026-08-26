@@ -70,7 +70,7 @@ const SUMMARY_ITEMS = [
     label: "Learner Records for Review",
     helper: "Learners counted once even with several concerns",
     icon: ShieldCheck,
-    route: "/continuing-learners",
+    route: "/learner-enrollment",
   },
 ]
 
@@ -87,8 +87,8 @@ export function DashboardSummaryRibbon({
       {SUMMARY_ITEMS.map((item) => {
         const Icon = item.icon
         return (
-          <Card 
-            key={item.key} 
+          <Card
+            key={item.key}
             className="border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => navigate(item.route)}
           >
@@ -168,7 +168,7 @@ export function DashboardActionToolbar({
             variant="outline"
             disabled={intakeLocked || !canManageEnrollment}
             onClick={() =>
-              navigate("/continuing-learners?tab=incoming&action=walk-in")
+              navigate("/learner-enrollment?tab=incoming&action=walk-in")
             }
             className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
           >
@@ -183,7 +183,7 @@ export function DashboardActionToolbar({
           <Button
             variant="outline"
             disabled={intakeLocked || !canManageSectioning}
-            onClick={() => navigate("/monitoring/enrollment")}
+            onClick={() => navigate("/section-assignment")}
             className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
           >
             <Users className="mr-2 size-4" />

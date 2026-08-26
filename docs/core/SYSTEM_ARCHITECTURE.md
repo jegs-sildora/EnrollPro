@@ -40,8 +40,8 @@ Primary EnrollPro route groups include:
 | `/learner/change-password` | Learner password change | Learner token |
 | `/learner/portal` | Learner-owned portal | Learner |
 | `/dashboard` | Master Dashboard | Authorized staff |
-| `/continuing-learners` | Unified Learner Enrollment tabs | Registrar and system administrator |
-| `/monitoring/enrollment` | Section Assignment | Registrar and system administrator |
+| `/learner-enrollment` | Unified Learner Enrollment tabs | Registrar and system administrator |
+| `/section-assignment` | Section Assignment | Registrar and system administrator |
 | `/eosy` | EOSY Updating | Registrar and system administrator |
 | `/students` | Learner Directory | Registrar and system administrator |
 | `/students/:id` | Learner profile | Registrar and system administrator |

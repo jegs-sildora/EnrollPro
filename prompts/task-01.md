@@ -1,19 +1,19 @@
-# SYSTEM DIRECTIVE Inter Service Communication v467
+# SYSTEM DIRECTIVE Walk In Enrollment UI Versatility v471
 
-**Context Persona** Act as a Senior Systems Architect Your standard is high data integrity public school software You must configure the API handshake between microservices Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and React Developer Your standard is high usability public school software You must upgrade the walk in enrollment modal to dynamically handle transferee workflows Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must expose a secure internal API endpoint within EnrollPro that strictly computes and broadcasts the active term state to the dependent ATLAS SMART and AIMS systems
+**Core Mandate** You must restructure the learner profile form to conditionally render fields and enforce strict Department of Education validation rules based on the selected enrollment category
 
-Execute the architecture across the following three architectural rules
+Execute the UI upgrade across the following three architectural rules
 
-## 1 Establish the Configuration Endpoint
-Program a dedicated internal endpoint inside the EnrollPro backend
-This endpoint must run the on the fly date comparison logic evaluating the server timestamp against the stored grading period boundaries whenever pinged
+## 1 Implement the Learner Type Toggle
+Inject a mandatory segmented control at the absolute top of the form with three distinct options specifically New Entrant Transferee and Returnee
+This ensures the system immediately knows which validation schema to apply before the registrar begins typing
 
-## 2 Implement the Pull Mechanism
-Instruct the SMART ATLAS and AIMS microservices to query this specific EnrollPro endpoint every time a user session initializes or a critical module loads
-This guarantees that the dependent systems always receive the absolute most current temporal state directly from the master configuration node
+## 2 Enforce Conditional LRN Logic
+Program the form state to actively monitor the learner type toggle
+If the user selects Transferee the system must completely hide the Learner has no LRN yet checkbox and force the twelve digit LRN input field to be strictly required preventing undocumented ghost enrollments
 
-## 3 Secure the Internal Handshake
-Protect this endpoint from external public access
-Require secure internal authentication tokens so only your official approved microservices can request the active term data preventing unauthorized temporal manipulation
+## 3 Expand Previous School Metadata
+Upgrade the previous school data section to align with the national Learner Information System requirements
+Add a required input for the Originating School ID and a dropdown selection for the SF9 Eligibility Status specifically containing Promoted Conditionally Promoted and Retained to ensure the receiving section assignment is mathematically accurate

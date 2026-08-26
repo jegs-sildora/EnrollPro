@@ -24,9 +24,9 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",
     "/applications/enrollment": "Enrollment",
-    "/continuing-learners": "Learner Enrollment",
-    "/monitoring/enrollment": "Section Assignment",
-    "/monitoring/enrollment/walk-in": "Learner Enrollment",
+    "/learner-enrollment": "Learner Enrollment",
+    "/section-assignment": "Section Assignment",
+    "/section-assignment/walk-in": "Learner Enrollment",
     "/eosy": "EOSY Updating",
     "/students": "Learner Directory",
     "/sections": "Class Sections",
@@ -37,7 +37,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/teachers": "Personnel Directory",
     "/admin/system": "System Health",
     "/smart": "SMART",
-    "/monitoring/enrollment/requirements": "Documentary Requirements",
+    "/section-assignment/requirements": "Documentary Requirements",
     "/teacher/advisory": "My Advisory Class",
   };
 

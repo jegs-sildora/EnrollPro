@@ -111,7 +111,7 @@ export default function HelpDocumentation() {
             "Send enrolled learners to Section Assignment for class placement.",
           ]}
           actionLabel="Open Learner Enrollment"
-          actionTo="/continuing-learners"
+          actionTo="/learner-enrollment"
         />
 
         <GuideSection
