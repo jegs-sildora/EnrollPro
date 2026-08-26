@@ -12,6 +12,7 @@ import {
   Loader2,
   Venus,
   Mars,
+  Maximize2,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -170,7 +171,10 @@ interface Props {
   onRefreshData?: () => void;
   onTransferOut?: (payload: StudentTransferOutPayload) => void;
   onDropout?: (payload: StudentDropoutPayload) => void;
+  onExpand?: () => void;
+  onStudentLoaded?: (student: any) => void;
   canEditProfile?: boolean;
+  showHeader?: boolean;
 }
 
 export interface StudentTransferOutPayload {
@@ -194,7 +198,10 @@ export function StudentDetailPanel({
   onRefreshData,
   onTransferOut,
   onDropout,
+  onExpand,
+  onStudentLoaded,
   canEditProfile = true,
+  showHeader = true,
 }: Props) {
   const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -354,6 +361,7 @@ export function StudentDetailPanel({
         student.historicalGrades = historicalGrades;
       }
       setStudent(student);
+      onStudentLoaded?.(student);
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
@@ -727,20 +735,22 @@ export function StudentDetailPanel({
   if (showSkeleton) {
     return (
       <div className="flex flex-col h-full overflow-hidden bg-background">
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-          <div>
-            <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
-              <Skeleton className="h-6 w-40" />
-            </SheetTitle>
-            <SheetDescription
-              asChild
-              className="text-sm sm:text-base text-foreground mt-1">
-              <div>
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </SheetDescription>
+        {showHeader && (
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
+            <div>
+              <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
+                <Skeleton className="h-6 w-40" />
+              </SheetTitle>
+              <SheetDescription
+                asChild
+                className="text-sm sm:text-base text-foreground mt-1">
+                <div>
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </SheetDescription>
+            </div>
           </div>
-        </div>
+        )}
         <div className="flex-1 p-3 sm:p-6 space-y-4 overflow-y-auto">
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-[200px] w-full mt-8" />
@@ -753,11 +763,13 @@ export function StudentDetailPanel({
   if (error || !student) {
     return (
       <div className="flex flex-col h-full overflow-hidden bg-background">
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-          <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
-            Error
-          </SheetTitle>
-        </div>
+        {showHeader && (
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
+            <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
+              Error
+            </SheetTitle>
+          </div>
+        )}
         <div className="h-full flex flex-col p-4 sm:p-6 items-center justify-center text-center">
           <p className="text-destructive mb-4">
             {error || "Student not found"}
@@ -842,21 +854,42 @@ export function StudentDetailPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold">
-        <div>
-          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase flex items-center gap-2">
-            {isJhsCompleter ? (
-              <>
-                Alumni Record Details
-              </>
-            ) : (
-              <>
-                Enrolled Learner Details
-              </>
-            )}
-          </SheetTitle>
+      {showHeader && (
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold relative">
+          <div>
+            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase flex items-center gap-2">
+              {isJhsCompleter ? (
+                <>
+                  Alumni Record Details
+                </>
+              ) : (
+                <>
+                  Enrolled Learner Details
+                </>
+              )}
+            </SheetTitle>
+          </div>
+          {onExpand && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={onExpand}
+                    className="absolute right-18 top-3 rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
+                  >
+                    <Maximize2 className="h-5 w-5" />
+                    <span className="sr-only">Expand</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Expand to full page</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-extrabold">
@@ -1106,43 +1139,7 @@ export function StudentDetailPanel({
           </div>
         )}
 
-        {/* Historical Final Averages */}
-        {student.historicalGrades && (
-          <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-            <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
-              <FileBadge2 className="h-4 w-4 text-primary" />
-              Historical Final Averages
-            </div>
-            <div className="text-base leading-tight">
-              {student.historicalGrades.length > 0 ? (
-                <table className="w-full text-center border-collapse border border-border">
-                  <thead>
-                    <tr className="font-extrabold border-b border-border bg-muted/30">
-                      <th className="text-foreground p-3 border-r border-border font-extrabold text-center">Grade Level</th>
-                      <th className="text-foreground p-3 border-r border-border font-extrabold text-center">Final Gen Ave</th>
-                      <th className="text-foreground p-3 font-extrabold text-center">School Year</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {student.historicalGrades.map((hg, idx) => (
-                      <tr key={idx} className="font-extrabold border-b border-border last:border-b-0">
-                        <td className="p-3 border-r border-border">{hg.gradeLevel}</td>
-                        <td className="p-3 border-r border-border">
-                          {hg.genAve != null ? hg.genAve.toFixed(2) : "N/A"}
-                        </td>
-                        <td className="p-3">{hg.schoolYear}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-muted-foreground text-center font-extrabold py-2">
-                  No historical grades available.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {/* Main Body content: Either Edit Form or Read-only BeefSections */}
         {isEditing ? (
@@ -1951,13 +1948,13 @@ export function StudentDetailPanel({
             )}
           </form>
         ) : (
-          <div className="space-y-2">
-            <PersonalInfo applicant={typedStudentShim} />
-            <AddressInfo applicant={typedStudentShim} />
-            <GuardianContact applicant={typedStudentShim} />
-            <PreviousSchool applicant={typedStudentShim} />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+              <PersonalInfo applicant={typedStudentShim} />
+              <AddressInfo applicant={typedStudentShim} />
+              <GuardianContact applicant={typedStudentShim} />
+            </div>
             <Classifications applicant={typedStudentShim} />
-
             {!isJhsCompleter && (
               <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden mb-4">
                 <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">

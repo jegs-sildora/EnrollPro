@@ -1673,7 +1673,8 @@ export default function Students() {
                 onRefreshData={refreshTables}
                 onTransferOut={handlePanelTransferOut}
                 onDropout={handlePanelDropout}
-                canEditProfile={canEditProfile}
+                onExpand={() => navigate(`/students/${retainedStudentId}`)}
+                canEditProfile={false}
               />
             </div>
           )}

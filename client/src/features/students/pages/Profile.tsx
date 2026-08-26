@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, HeartPulse, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { sileo } from "sileo";
+import { motion } from "motion/react";
+import { cn } from "@/shared/lib/utils";
 
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -14,12 +16,15 @@ import {
   type StudentDropoutPayload,
   type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
-import { HealthRecords } from "../components/tabs/HealthRecords";
+import { Badge } from "@/shared/ui/badge";
+import { RemedialWorkspace } from "../components/tabs/RemedialWorkspace";
+import { AcademicHistoryTab } from "../components/tabs/AcademicHistoryTab";
 
 export default function StudentProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [activeTab, setActiveTab] = useState("record");
   const learnerId = Number.parseInt(id ?? "", 10);
   const activeSchoolYearId = useSettingsStore((state) => state.activeSchoolYearId);
   const viewingSchoolYearId = useSettingsStore(
@@ -27,6 +32,10 @@ export default function StudentProfile() {
   );
   const systemPhase = useSettingsStore((state) => state.systemPhase);
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+
+  // We capture the loaded student here to render the Hero Header
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [loadedStudent, setLoadedStudent] = useState<any>(null);
 
   const schoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const canEditProfile = useMemo(
@@ -87,6 +96,8 @@ export default function StudentProfile() {
     );
   }
 
+  const needsRemedial = loadedStudent?.enrollment?.eosyStatus === "CONDITIONALLY_PROMOTED";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
       <div className="flex items-center">
@@ -100,19 +111,75 @@ export default function StudentProfile() {
         </Button>
       </div>
 
+      {loadedStudent && (
+        <div className="w-full bg-background border rounded-lg p-6 shadow-sm mb-2 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold uppercase text-foreground">{loadedStudent.fullName}</h1>
+            <p className="text-muted-foreground font-extrabold text-sm mt-1">LRN: {loadedStudent.lrn}</p>
+          </div>
+          {needsRemedial && (
+            <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold uppercase text-sm px-4 py-1.5 shadow-sm">
+              Conditionally Promoted
+            </Badge>
+          )}
+        </div>
+      )}
+
       <Tabs
-        defaultValue="record"
+        value={activeTab}
+        onValueChange={setActiveTab}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="record">
-            <UserRound className="mr-2 h-4 w-4" />
-            Learner Record
+        <TabsList className={cn("grid w-full h-auto gap-1 p-1 bg-muted border border-border rounded-md relative shadow-sm", needsRemedial ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}>
+          <TabsTrigger
+            value="record"
+            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+          >
+            {activeTab === "record" && (
+              <motion.div
+                layoutId="profile-active-pill"
+                className="absolute inset-0 bg-primary shadow-sm rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "record" ? "text-primary-foreground" : "text-foreground")}>
+              <UserRound className="mr-2 h-4 w-4" />
+              Primary Profile
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="health">
-            <HeartPulse className="mr-2 h-4 w-4" />
-            Health and Nutrition
+          <TabsTrigger
+            value="academic"
+            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+          >
+            {activeTab === "academic" && (
+              <motion.div
+                layoutId="profile-active-pill"
+                className="absolute inset-0 bg-primary shadow-sm rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "academic" ? "text-primary-foreground" : "text-foreground")}>
+              <HeartPulse className="mr-2 h-4 w-4" />
+              Academic History
+            </span>
           </TabsTrigger>
+          {needsRemedial && (
+            <TabsTrigger
+              value="remedial"
+              className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+            >
+              {activeTab === "remedial" && (
+                <motion.div
+                  layoutId="profile-active-pill"
+                  className="absolute inset-0 bg-amber-600 shadow-sm rounded-md"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "remedial" ? "text-white" : "text-amber-600")}>
+                Remedial Subjects
+              </span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent
@@ -128,15 +195,26 @@ export default function StudentProfile() {
             onTransferOut={handleTransferOut}
             onDropout={handleDropout}
             canEditProfile={canEditProfile}
+            onStudentLoaded={setLoadedStudent}
+            showHeader={false}
           />
         </TabsContent>
 
         <TabsContent
-          value="health"
+          value="academic"
           className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-background p-4"
         >
-          <HealthRecords learnerId={learnerId} />
+          <AcademicHistoryTab student={loadedStudent} />
         </TabsContent>
+
+        {needsRemedial && (
+          <TabsContent
+            value="remedial"
+            className="min-h-0 flex-1 overflow-hidden rounded-md border bg-background"
+          >
+            <RemedialWorkspace student={loadedStudent} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -1,19 +1,15 @@
-# SYSTEM DIRECTIVE Comprehensive Ancillary Roles v475
+# SYSTEM DIRECTIVE Full Page Layout Correction v487
 
-**Context Persona** Act as a Senior Systems Architect and DepEd Domain Expert You must implement the complete list of public school special assignments Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer Your standard is strict adherence to layout mandates You must correct the wasted horizontal space and hallucinated tab content Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must expand the ancillary roles database seed to include the full spectrum of Department of Education administrative and extracurricular assignments while upgrading the user interface to handle a massive data array
+**Core Mandate** You must refactor the Primary Profile tab to utilize a multi column grid layout and replace the hallucinated nutritional data in the Academic History tab with actual historical grades
 
-Execute the expansion across the following three architectural rules
+Execute the UI correction across the following two rules
 
-## 1 Complete the Designation Payload
-Inject the exhaustive list of DepEd assignments into the database seed script
-Include all Youth Formation roles specifically BSP Coordinator GSP Coordinator YES O Adviser and Barkada Kontra Droga Adviser alongside operational roles like Bids and Awards Committee Member and School Based Management Coordinator
+## 1 Enforce CSS Grid for Primary Profile
+Completely abandon the single column vertical layout currently rendering inside the Primary Profile tab
+Implement a CSS Grid layout that places the Personal Information Address and Parents cards side by side utilizing the full desktop width to eliminate vertical scrolling fatigue completely
 
-## 2 Integrate National Program Roles
-Ensure all student welfare and national compliance roles are represented
-Add Gender and Development Coordinator Wash in Schools Coordinator Child Protection Policy Coordinator and National Achievement Test Coordinator to guarantee the system generates a fully compliant School Form 7
-
-## 3 Upgrade to a Searchable Combobox
-Upgrade the multiple selection UI component to include a text search filter
-Because the dropdown now contains over twenty distinct assignments the registrar must be able to type to filter the options preventing extreme scrolling and cognitive overload during personnel profile creation
+## 2 Correct Academic History Content
+Remove the Nutritional Status Assessment SF8 interface from the Academic History tab
+Replace it strictly with a data table displaying the learners historical final averages and previous school data as originally mandated
