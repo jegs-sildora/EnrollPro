@@ -254,11 +254,12 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
     const intakeContext = await assertStaffIntakeAllowed();
     const payload = req.body;
     const {
+      learnerType,
       lrn, firstName, lastName, middleName, birthdate, sex,
       gradeLevelId, assignedProgram,
-      previousSchoolName, previousGenAve,
+      previousSchoolName, previousGenAve, originatingSchoolId,
       guardianName, guardianContact,
-      hasSf9, hasPsa
+      hasSf9, hasPsa, sf9EligibilityStatus
     } = payload;
 
     if (!gradeLevelId || !firstName || !lastName || !birthdate || !sex) {
@@ -304,13 +305,14 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
 
       // 2. Create Application
       const isTemporarilyEnrolled = !(hasSf9 && hasPsa);
+      const applicantType = learnerType === "NEW_ENROLLEE" ? "REGULAR" : learnerType;
 
       const application = await tx.enrollmentApplication.create({
         data: {
           learnerId: learner.id,
           schoolYearId,
           gradeLevelId,
-          applicantType: "REGULAR",
+          applicantType,
           assignedProgram: assignedProgram || null,
           isLateEnrollee: intakeContext.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",
@@ -318,10 +320,12 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           isTemporarilyEnrolled,
           encodedById: req.user!.userId,
           status: "READY_FOR_SECTIONING",
+          academicStatus: sf9EligibilityStatus || "PROMOTED",
           // create previous school if provided
           previousSchool: previousSchoolName ? {
             create: {
               schoolName: previousSchoolName,
+              schoolId: originatingSchoolId || null,
               generalAverage: previousGenAve ? parseFloat(previousGenAve) : null,
             }
           } : undefined,

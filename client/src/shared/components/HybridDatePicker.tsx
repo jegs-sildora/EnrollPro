@@ -124,15 +124,7 @@ export function HybridDatePicker({
       const yyyy = parts[2];
       const typedDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
       const isDateValid = !isNaN(typedDate.getTime());
-      let failsMinDate = false;
-      if (isDateValid && minDate) {
-        // Strip time from minDate for comparison
-        const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
-        if (typedDate < minDateOnly) {
-          failsMinDate = true;
-        }
-      }
-      if (!failsMinDate && isDateValid && Number(mm) >= 1 && Number(mm) <= 12 && Number(dd) >= 1 && Number(dd) <= 31) {
+      if (isDateValid && Number(mm) >= 1 && Number(mm) <= 12 && Number(dd) >= 1 && Number(dd) <= 31) {
         onChange(`${yyyy}-${mm}-${dd}`);
       } else {
         onChange("");

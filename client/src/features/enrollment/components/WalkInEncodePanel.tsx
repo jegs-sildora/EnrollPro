@@ -109,7 +109,9 @@ export function WalkInEncodePanel() {
 
   const form = useForm<DirectEncodeWalkInPayload>({
     resolver: zodResolver(directEncodeWalkInSchema) as Resolver<DirectEncodeWalkInPayload>,
+    mode: "onChange",
     defaultValues: {
+      learnerType: "NEW_ENROLLEE",
       lrn: "",
       firstName: "",
       lastName: "",
@@ -124,9 +126,11 @@ export function WalkInEncodePanel() {
       guardianContact: "",
       hasSf9: false,
       hasPsa: false,
+      originatingSchoolId: "",
+      sf9EligibilityStatus: "" as any,
     },
   });
-  const { isDirty, isSubmitting } = form.formState;
+  const { isDirty, isSubmitting, isValid } = form.formState;
 
   useEffect(() => {
     if (searchParams.get("action") === "walk-in") {
@@ -152,7 +156,7 @@ export function WalkInEncodePanel() {
       }
       if (data.sex) form.setValue("sex", data.sex);
       if (data.previousSchool) {
-        form.setValue("previousSchoolName", data.previousSchool.schoolName);
+        form.setValue("previousSchoolName", data.previousSchool.schoolName || "");
         if (data.previousSchool.generalAverage) {
           form.setValue("previousGenAve", data.previousSchool.generalAverage);
         }
@@ -239,6 +243,8 @@ export function WalkInEncodePanel() {
   const hasPsa = form.watch("hasPsa");
   const isCompleteDocs = hasSf9 && hasPsa;
 
+  console.log("dirtyFields:", form.formState.dirtyFields);
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
@@ -287,64 +293,147 @@ export function WalkInEncodePanel() {
                       Learner Profile
                     </span>
                   </div>
+                  <div className="px-5 pt-5 pb-1">
+                    <div className="grid grid-cols-3 gap-4 font-extrabold">
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("learnerType", "NEW_ENROLLEE", { shouldDirty: true })}
+                      className={cn(
+                        "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                        form.watch('learnerType') === "NEW_ENROLLEE"
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted/50 text-foreground"
+                      )}
+                    >
+                      New Entrant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("learnerType", "TRANSFEREE", { shouldDirty: true })}
+                      className={cn(
+                        "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                        form.watch('learnerType') === "TRANSFEREE"
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted/50 text-foreground"
+                      )}
+                    >
+                      Transferee
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("learnerType", "RETURNING", { shouldDirty: true })}
+                      className={cn(
+                        "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                        form.watch('learnerType') === "RETURNING"
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted/50 text-foreground"
+                      )}
+                    >
+                      Returnee
+                    </button>
+                    </div>
+                  </div>
                   <div className="px-5 pb-5 pt-4">
                     <div className="space-y-4">
 
-                      <FormField
-                        control={form.control}
-                        name="lrn"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex justify-between font-extrabold">
-                              <span>Learner Reference Number (LRN)</span>
-                              {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input
-                                  placeholder="12-digit Learner Reference Number (LRN)"
-                                  disabled={noLrn}
-                                  className="uppercase font-extrabold"
-                                  value={field.value ?? ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, '').slice(0, 12);
-                                    field.onChange(val);
-                                    if (val.length === 12) {
-                                      handleLrnLookup(val);
-                                    }
-                                  }}
-                                  onBlur={() => {
-                                    field.onBlur();
-                                    const value = field.value ?? "";
-                                    if (value.length === 12) {
-                                      handleLrnLookup(value);
-                                    }
-                                  }}
-                                />
-                                <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-primary" />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex items-center space-x-2 -mt-2">
-                        <Checkbox
-                          id="noLrn"
-                          checked={noLrn}
-                          onCheckedChange={(checked) => {
-                            const isChecked = checked === true;
-                            setNoLrn(isChecked);
-                            if (isChecked) {
-                              form.setValue("lrn", "");
-                              form.clearErrors("lrn");
-                            }
-                          }}
+                      {form.watch('learnerType') === "TRANSFEREE" ? (
+                        <FormField
+                          control={form.control}
+                          name="lrn"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex justify-between font-extrabold">
+                                <span>Learner Reference Number (LRN) <span className="text-destructive">*</span></span>
+                                {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    placeholder="12-digit Learner Reference Number (LRN)"
+                                    disabled={false}
+                                    className="uppercase font-extrabold"
+                                    value={field.value ?? ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                                      field.onChange(val);
+                                      if (val.length === 12) {
+                                        handleLrnLookup(val);
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      field.onBlur();
+                                      const value = field.value ?? "";
+                                      if (value.length === 12) {
+                                        handleLrnLookup(value);
+                                      }
+                                    }}
+                                  />
+                                  <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-primary" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                        <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground font-extrabold">
-                          Learner has no LRN yet
-                        </label>
-                      </div>
+                      ) : (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="lrn"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex justify-between font-extrabold">
+                                  <span>Learner Reference Number (LRN)</span>
+                                  {isLookingUp && <Loader2 className="w-4 h-4  text-primary" />}
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input
+                                      placeholder="12-digit Learner Reference Number (LRN)"
+                                      disabled={noLrn}
+                                      className="uppercase font-extrabold"
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                                        field.onChange(val);
+                                        if (val.length === 12) {
+                                          handleLrnLookup(val);
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        field.onBlur();
+                                        const value = field.value ?? "";
+                                        if (value.length === 12) {
+                                          handleLrnLookup(value);
+                                        }
+                                      }}
+                                    />
+                                    <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-primary" />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex items-center space-x-2 -mt-2">
+                            <Checkbox
+                              id="noLrn"
+                              checked={noLrn}
+                              onCheckedChange={(checked) => {
+                                const isChecked = checked === true;
+                                setNoLrn(isChecked);
+                                if (isChecked) {
+                                  form.setValue("lrn", "");
+                                  form.clearErrors("lrn");
+                                }
+                              }}
+                            />
+                            <label htmlFor="noLrn" className="text-base  leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground font-extrabold">
+                              Learner has no LRN yet
+                            </label>
+                          </div>
+                        </>
+                      )}
 
                       <div className="grid grid-cols-3 gap-4 font-extrabold">
                         <FormField
@@ -352,7 +441,7 @@ export function WalkInEncodePanel() {
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-extrabold">First Name</FormLabel>
+                              <FormLabel className="font-extrabold">First Name <span className="text-destructive">*</span></FormLabel>
                               <FormControl><Input placeholder="e.g. JUAN" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                               <FormMessage />
                             </FormItem>
@@ -373,7 +462,7 @@ export function WalkInEncodePanel() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-extrabold">Last Name</FormLabel>
+                              <FormLabel className="font-extrabold">Last Name <span className="text-destructive">*</span></FormLabel>
                               <FormControl><Input placeholder="e.g. DELA CRUZ" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                               <FormMessage />
                             </FormItem>
@@ -387,7 +476,7 @@ export function WalkInEncodePanel() {
                           name="birthdate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-extrabold">Birthdate</FormLabel>
+                              <FormLabel className="font-extrabold">Birthdate <span className="text-destructive">*</span></FormLabel>
                               <FormControl>
                                 <HybridDatePicker value={field.value} onChange={field.onChange} />
                               </FormControl>
@@ -400,7 +489,7 @@ export function WalkInEncodePanel() {
                           name="sex"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-extrabold">Sex</FormLabel>
+                              <FormLabel className="font-extrabold">Sex <span className="text-destructive">*</span></FormLabel>
                               <div className="flex gap-4">
                                 {(
                                   [
@@ -439,7 +528,7 @@ export function WalkInEncodePanel() {
                         name="gradeLevelId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-extrabold">Incoming Grade Level</FormLabel>
+                            <FormLabel className="font-extrabold">Incoming Grade Level <span className="text-destructive">*</span></FormLabel>
                             <div className="grid grid-cols-4 gap-4">
                               {activeSchoolYear?.gradeLevels?.map((gl) => (
                                 <button
@@ -465,7 +554,7 @@ export function WalkInEncodePanel() {
                         name="assignedProgram"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-extrabold">Curriculum Type</FormLabel>
+                            <FormLabel className="font-extrabold">Curriculum Type <span className="text-destructive">*</span></FormLabel>
                             <div className="flex gap-4">
                               {programOptions.map((prog) => (
                                 <button
@@ -497,43 +586,105 @@ export function WalkInEncodePanel() {
                       Previous School Data
                     </span>
                   </div>
-                  <div className="px-5 pb-5 pt-4">
-                    <div className="grid grid-cols-4 gap-4">
+                  <div className="px-5 pb-5 pt-4 space-y-4">
+                    <div>
                       <FormField
                         control={form.control}
                         name="previousSchoolName"
                         render={({ field }) => (
-                          <FormItem className="col-span-3">
-                            <FormLabel className="font-extrabold">School Name</FormLabel>
-                            <FormControl><Input placeholder="e.g. RIZAL ELEM. SCHOOL" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
+                          <FormItem>
+                            <FormLabel className="font-extrabold">School Name <span className="text-destructive">*</span></FormLabel>
+                            <FormControl><Input placeholder="e.g. RIZAL ELEMENTARY SCHOOL" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                           </FormItem>
                         )}
                       />
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name="originatingSchoolId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-extrabold">Originating School ID <span className="text-destructive">*</span></FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g. 123456"
+                                  className="font-extrabold"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                    field.onChange(val);
+                                  }}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name="previousGenAve"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-extrabold">Final Gen Ave</FormLabel>
+                              <FormControl>
+                                <Input
+                                  className="font-extrabold"
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="e.g. 85.50"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    field.onChange(
+                                      e.target.value === ""
+                                        ? undefined
+                                        : Number(e.target.value),
+                                    );
+                                  }}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div>
                       <FormField
                         control={form.control}
-                        name="previousGenAve"
+                        name="sf9EligibilityStatus"
                         render={({ field }) => (
-                          <FormItem className="col-span-1">
-                            <FormLabel className="font-extrabold">Final Gen Ave</FormLabel>
-                            <FormControl>
-                              <Input
-                                className="font-extrabold"
-                                type="number"
-                                step="0.01"
-                                placeholder="e.g. 85.50"
-                                value={field.value ?? ""}
-                                onChange={(e) => {
-                                  field.onChange(
-                                    e.target.value === ""
-                                      ? undefined
-                                      : Number(e.target.value),
-                                  );
-                                }}
-                                onBlur={field.onBlur}
-                                name={field.name}
-                                ref={field.ref}
-                              />
-                            </FormControl>
+                          <FormItem>
+                            <FormLabel className="font-extrabold">SF9 Eligibility Status <span className="text-destructive">*</span></FormLabel>
+                            <div className="flex gap-4">
+                              {[
+                                { val: "PROMOTED", label: "Promoted" },
+                                { val: "CONDITIONALLY_PROMOTED", label: "Conditionally Promoted" },
+                                { val: "RETAINED", label: "Retained" },
+                              ].map((s) => (
+                                <button
+                                  key={s.val}
+                                  type="button"
+                                  onClick={() => field.onChange(s.val)}
+                                  className={cn(
+                                    "flex flex-1 items-center justify-center rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase",
+                                    field.value === s.val
+                                      ? "border-primary bg-primary/5 text-primary"
+                                      : "border-border hover:bg-muted/50 text-foreground"
+                                  )}
+                                >
+                                  {s.label}
+                                </button>
+                              ))}
+                            </div>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -556,7 +707,7 @@ export function WalkInEncodePanel() {
                         name="guardianName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-extrabold">Parent/Guardian Name</FormLabel>
+                            <FormLabel className="font-extrabold">Parent/Guardian Name <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Input placeholder="e.g. MARIA DELA CRUZ" className="uppercase font-extrabold" {...field} value={field.value || ""} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -567,7 +718,7 @@ export function WalkInEncodePanel() {
                         name="guardianContact"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-extrabold">Contact Number</FormLabel>
+                            <FormLabel className="font-extrabold">Contact Number <span className="text-destructive">*</span></FormLabel>
                             <FormControl>
                               <Input
                                 className="font-extrabold"
@@ -630,20 +781,26 @@ export function WalkInEncodePanel() {
               </div>
             </div>
 
-            <div className="p-4 bg-muted/10 border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row">
+            <div className="p-4 bg-white border-t border-border grid grid-cols-2 gap-3 shrink-0">
               <Button
                 variant="outline"
                 type="button"
                 onClick={requestClosePanel}
                 disabled={isSubmitting}
-                className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
+                className="w-full font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className={`font-extrabold uppercase text-base px-6 cursor-pointer ${isCompleteDocs ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
+                disabled={isSubmitting || !isValid}
+                className={`w-full font-extrabold uppercase text-base px-6 ${
+                  (!isValid || isSubmitting)
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : isCompleteDocs
+                      ? 'bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
+                }`}
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4  mr-2" />

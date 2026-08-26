@@ -387,13 +387,13 @@ export function VerificationWorkspace() {
               onValueChange={(val) => setIntakeCategoryFilter(val)}
             >
               <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
-                <SelectValue placeholder="All Intake Categories" />
+                <SelectValue placeholder="ALL ENROLLMENT STATUSES" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL" className="leading-tight font-extrabold">All Intake Categories</SelectItem>
-                <SelectItem value="NEW_ENROLLEE" className="leading-tight font-extrabold">Incoming Grade 7 Feeder Graduates</SelectItem>
-                <SelectItem value="TRANSFEREE" className="leading-tight font-extrabold">External Transferees</SelectItem>
-                <SelectItem value="BALIK_ARAL" className="leading-tight font-extrabold">Returning Balik-Aral</SelectItem>
+                <SelectItem value="ALL" className="leading-tight font-extrabold">ALL ENROLLMENT STATUSES</SelectItem>
+                <SelectItem value="NEW_ENROLLEE" className="leading-tight font-extrabold">NEW ENTRANTS</SelectItem>
+                <SelectItem value="TRANSFEREE" className="leading-tight font-extrabold">TRANSFEREES</SelectItem>
+                <SelectItem value="BALIK_ARAL" className="leading-tight font-extrabold">RETURNEE (Balik-Aral)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -483,7 +483,7 @@ export function VerificationWorkspace() {
                 );
               })()}
             </div>
-            <div className="flex-1 overflow-y-auto space-y-2">
+            <div className="flex-1 overflow-y-auto">
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   <CheckCircle2 className="h-8 w-8 text-primary" />
@@ -502,7 +502,7 @@ export function VerificationWorkspace() {
                       "cursor-pointer border-2 p-3 transition-all relative overflow-hidden",
                       selectedAppId === app.id
                         ? getGradeCardClasses(app.gradeLevel.name)
-                        : "bg-background hover:bg/50 border-border"
+                        : "bg-white hover:bg/50 border-border"
                     )}
                   >
                     <div className="flex justify-between items-start mb-1">

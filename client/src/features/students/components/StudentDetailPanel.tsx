@@ -2004,7 +2004,7 @@ export function StudentDetailPanel({
           </div>
         </div>
       ) : isEditing ? (
-        <div className="p-4 bg-muted/10 border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row">
+        <div className="p-4 bg-white border-t border-border flex gap-3 shrink-0 justify-end sm:flex-row">
           <Button
             variant="outline"
             type="button"
