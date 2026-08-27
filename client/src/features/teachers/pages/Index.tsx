@@ -254,7 +254,7 @@ export default function Teachers() {
         file.name.toLowerCase().endsWith(".xlsx") ||
         file.name.toLowerCase().endsWith(".csv") ||
         file.type ===
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
         file.type === "text/csv" ||
         file.type === "application/csv" ||
         file.type === "application/vnd.ms-excel";
@@ -399,7 +399,7 @@ export default function Teachers() {
     const requestedTeacher = teachers.find(
       (teacher) => String(teacher.employeeId).trim() === String(requestedEmployeeId).trim(),
     );
-    
+
     if (requestedTeacher) {
       setViewingTeacher(requestedTeacher);
       setIsPanelOpen(true);
@@ -606,7 +606,7 @@ export default function Teachers() {
               <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
                 <UserPhoto
                   photo={row.original.photoPath}
-                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0"
                   className="w-full h-full object-cover"
                   alt={formatTeacherName(row.original)}
                   fallbackIcon={

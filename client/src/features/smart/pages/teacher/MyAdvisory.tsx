@@ -384,7 +384,7 @@ export default function MyAdvisory() {
                       <TableCell className="font-mono text-xs text-slate-400 font-extrabold tracking-tighter group-hover:text-slate-900 transition-colors">{student.lrn}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-4">
-                          <Avatar className="w-9 h-9 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                          <Avatar className="w-12 h-12 border-2 border-white shadow-sm ring-1 ring-slate-100">
                             <AvatarFallback className={cn(
                               "text-white font-extrabold text-xs",
                               student.gender?.toLowerCase() === "male" ? "bg-blue-500" : "bg-pink-500"

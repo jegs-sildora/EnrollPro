@@ -932,7 +932,7 @@ export default function Students() {
               <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
                 <UserPhoto
                   photo={row.original.studentPhoto}
-                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0 border-2 border-primary border-solid"
+                  containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-2 border-primary border-solid"
                   className="w-full h-full object-cover"
                   alt={row.original.fullName}
                   fallbackIcon={
@@ -975,41 +975,41 @@ export default function Students() {
             />
           ),
           cell: ({ row }) => (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
-                          getGradeLevelBadgeStyles(row.original.gradeLevel)
-                        )}
-                      >
-                        {row.original.gradeLevel || "Grade"}
-                      </Badge>
-                      <span className="font-extrabold text-sm leading-tight text-center uppercase cursor-help">
-                        {formatSectionLabel(row.original.section)}
-                      </span>
-                      {activeTab === "completers" && (() => {
-                        const sy = row.original.schoolYear
-                        const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel
-                        return label ? (
-                          <span className="text-sm text-foreground font-extrabold leading-tight">
-                            {label}
-                          </span>
-                        ) : null
-                      })()}
-                    </div>
-                  </TooltipTrigger>
-                  {row.original.sectionAdviser && (
-                    <TooltipContent className={cn("px-3 py-2 border", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
-                      <p className="font-bold">ADVISER: {row.original.sectionAdviser}</p>
-                      <p className="font-bold">EMPLOYEE ID: {row.original.sectionAdviserEmployeeId}</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex flex-col items-center justify-center py-2 gap-1 w-full">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
+                        getGradeLevelBadgeStyles(row.original.gradeLevel)
+                      )}
+                    >
+                      {row.original.gradeLevel || "Grade"}
+                    </Badge>
+                    <span className="font-extrabold text-sm leading-tight text-center uppercase cursor-help">
+                      {formatSectionLabel(row.original.section)}
+                    </span>
+                    {activeTab === "completers" && (() => {
+                      const sy = row.original.schoolYear
+                      const label = !sy ? null : typeof sy === "string" ? sy : sy.yearLabel
+                      return label ? (
+                        <span className="text-sm text-foreground font-extrabold leading-tight">
+                          {label}
+                        </span>
+                      ) : null
+                    })()}
+                  </div>
+                </TooltipTrigger>
+                {row.original.sectionAdviser && (
+                  <TooltipContent className={cn("px-3 py-2 border", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
+                    <p className="font-bold">ADVISER: {row.original.sectionAdviser}</p>
+                    <p className="font-bold">EMPLOYEE ID: {row.original.sectionAdviserEmployeeId}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           ),
         },
         {

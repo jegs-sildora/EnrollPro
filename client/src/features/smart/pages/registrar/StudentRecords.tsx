@@ -87,7 +87,8 @@ const formatDate = (dateString?: string) => {
   if (!dateString) return "-";
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Manila',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -324,7 +325,7 @@ export default function StudentRecords() {
   }
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -548,7 +549,7 @@ export default function StudentRecords() {
                             <TableCell className="py-4">
                               <div className="flex items-center gap-3">
                                 <div
-                                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm"
+                                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm"
                                   style={{ backgroundColor: colors.primary }}
                                 >
                                   {student.lastName.charAt(0)}

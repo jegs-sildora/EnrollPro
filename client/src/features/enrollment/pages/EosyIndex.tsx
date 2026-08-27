@@ -44,6 +44,7 @@ import {
   Save,
   ChevronDown,
   FileText,
+  HelpCircle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import axios from "axios";
@@ -156,9 +157,9 @@ function getSmartErrorDetails(error: unknown): SmartErrorDetails {
     const responseData = error.response?.data;
     const responseMessage =
       typeof responseData === "object" &&
-      responseData !== null &&
-      "message" in responseData &&
-      typeof responseData.message === "string"
+        responseData !== null &&
+        "message" in responseData &&
+        typeof responseData.message === "string"
         ? responseData.message
         : null;
 
@@ -756,7 +757,7 @@ export default function EosyUpdating() {
       }
     } catch (err: unknown) {
       const { status, message: apiMessage } = getSmartErrorDetails(err);
-      
+
       let description = apiMessage;
       if (status === 503 || apiMessage.includes("ECONNREFUSED") || apiMessage.includes("offline")) {
         description = "SMART server is offline or unreachable on port 5003. Please ensure the SMART service is running.";
@@ -904,7 +905,7 @@ export default function EosyUpdating() {
           description: `Section ${sectionFilter} has been successfully unlocked.`,
         });
       }
-      
+
       void fetchExportLockState();
       void fetchSectionsAndGrades();
       void fetchGradeRecords(activeTab, true);
@@ -1080,8 +1081,8 @@ export default function EosyUpdating() {
   }, [records, sectionFilter]);
 
   const scopeSections = useMemo(() => {
-    return allSections.filter(s => 
-      String(s.gradeLevelId) === activeTab && 
+    return allSections.filter(s =>
+      String(s.gradeLevelId) === activeTab &&
       (sectionFilter === "ALL" || s.name === sectionFilter)
     );
   }, [allSections, activeTab, sectionFilter]);
@@ -1150,7 +1151,7 @@ export default function EosyUpdating() {
           const geofencingValue = reportedGrades.geofencing;
           const geofencing =
             typeof geofencingValue === "object" &&
-            geofencingValue !== null
+              geofencingValue !== null
               ? (geofencingValue as Record<string, unknown>)
               : {};
           const storedLatitude =
@@ -1175,7 +1176,7 @@ export default function EosyUpdating() {
               <div className="flex min-w-0 items-center gap-3 py-1 pl-1">
                 <UserPhoto
                   photo={r.enrollmentApplication.learner.studentPhoto}
-                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0"
                   className="w-full h-full object-cover"
                   alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                   fallbackIcon={
@@ -1237,7 +1238,7 @@ export default function EosyUpdating() {
             <div className="flex min-w-0 items-center gap-3 py-1 pl-1">
               <UserPhoto
                 photo={r.enrollmentApplication.learner.studentPhoto}
-                containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0"
                 className="w-full h-full object-cover"
                 alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                 fallbackIcon={
@@ -1451,7 +1452,7 @@ export default function EosyUpdating() {
             }
 
             let title = "";
-            let description = "";
+            let description: React.ReactNode = "";
             let colorClass = "bg-green-50 border-green-300 text-green-900";
             let titleColorClass = "text-green-800 border-green-200";
 
@@ -1462,8 +1463,17 @@ export default function EosyUpdating() {
                 break;
               case "CONDITIONALLY_PROMOTED":
                 title = "CONDITIONALLY PROMOTED";
-                description = currentDeficiencyNote 
-                  ? `Learner has academic deficiencies. Deficiency: ${currentDeficiencyNote}`
+                description = currentDeficiencyNote
+                  ? (
+                    <>
+                      <span className="block mb-1">Learner has academic deficiencies. {currentDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
+                      <ul className="list-disc pl-6 font-extrabold space-y-1">
+                        {currentDeficiencyNote.split(',').map((def, i) => (
+                          <li key={i}>{def.trim()}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )
                   : "Learner has academic deficiencies that must be addressed.";
                 colorClass = "bg-amber-50 border-amber-300 text-amber-900";
                 titleColorClass = "text-amber-800 border-amber-200";
@@ -1537,12 +1547,27 @@ export default function EosyUpdating() {
 
           if (isSectionFinalized || isScopeFinalized) {
             return (
-              <div className="flex flex-col items-center justify-center gap-1 w-full">
+              <div className="flex flex-col items-start justify-center gap-1 w-full">
                 {renderGeneralTooltip(renderStatusContent())}
                 {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
-                  <span className="max-w-[220px] text-center text-sm font-bold text-amber-800">
-                    Deficiency: {currentDeficiencyNote}
-                  </span>
+                  <div className="max-w-[220px] text-sm font-bold text-amber-800 mt-1 flex items-center justify-center gap-1.5">
+                    <span>{currentDeficiencyNote.split(',').length > 1 ? "Deficiencies" : "Deficiency"}</span>
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 cursor-help text-amber-700/60 hover:text-amber-800 transition-colors shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent collisionPadding={24} className="max-w-[250px] p-3 text-sm text-left font-bold font-sans bg-amber-50 text-amber-900 border border-amber-200">
+                          <span className="block mb-1">Learner has academic deficiencies. {currentDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
+                          <ul className="list-disc pl-6 font-extrabold space-y-1">
+                            {currentDeficiencyNote.split(',').map((def, i) => (
+                              <li key={i}>{def.trim()}</li>
+                            ))}
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 )}
               </div>
             );
@@ -1616,12 +1641,12 @@ export default function EosyUpdating() {
 
   const isRolloverReady = useMemo(() => {
     if (!allSections || allSections.length === 0) return false;
-    
+
     const grade7Sections = allSections.filter(s => s.gradeLevel.name.toLowerCase().includes("grade 7"));
     const grade7HasLearners = grade7Sections.some(s => (s._count?.enrollmentRecords || 0) > 0);
     if (!grade7HasLearners) return false;
 
-    const hasUnfinalizedActiveSections = allSections.some(s => 
+    const hasUnfinalizedActiveSections = allSections.some(s =>
       !s.isEosyFinalized && (s._count?.enrollmentRecords || 0) > 0
     );
 
@@ -2002,11 +2027,13 @@ export default function EosyUpdating() {
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground space-y-2 my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
-            <p>• Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</p>
-            <p>• The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</p>
-            <p>• This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</p>
-            <p className="font-extrabold text-[hsl(var(--primary))] underline mt-3">This action is final and cannot be undone.</p>
+          <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</li>
+              <li>The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</li>
+              <li>This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</li>
+            </ul>
+            <p className="font-extrabold text-[hsl(var(--primary))] underline mt-5 text-center">This action is final and cannot be undone.</p>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
             <Button

@@ -24,6 +24,7 @@ import {
   cn,
   getGradeLevelBadgeStyles,
 } from "@/shared/lib/utils";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   createFadeShiftVariants,
   createMotionTransition,
@@ -424,12 +425,13 @@ export function QueueTable({
           const r = row.original;
           const learnerName = buildLearnerDisplayName(r);
           return (
-            <div className="flex items-center min-w-0 gap-3 py-3 pl-2">
-              <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-primary">
-                <span className="text-sm font-extrabold uppercase text-primary-foreground">
-                  {r.firstName?.charAt(0) || ""}{r.lastName?.charAt(0) || ""}
-                </span>
-              </div>
+            <div className="flex items-center min-w-0 gap-4 py-3 pl-2">
+              <UserPhoto
+                photo={r.studentPhoto}
+                containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-2 border-primary"
+                className="w-full h-full object-cover"
+                alt={`${r.firstName} ${r.lastName}`}
+              />
               <div className="flex min-w-0 flex-col text-left leading-tight">
                 <span
                   className="truncate text-base font-extrabold uppercase leading-tight xl:whitespace-normal"
@@ -491,7 +493,7 @@ export function QueueTable({
                 </span>
               )}
               {deficiencyText && (
-                <span className="max-w-full truncate text-sm font-bold leading-tight text-amber-800" title={formatDeficiencyText(deficiencyText) ?? undefined}>
+                <span className="max-w-full truncate text-sm font-extrabold leading-tight text-amber-800">
                   {formatDeficiencyText(deficiencyText)}
                 </span>
               )}

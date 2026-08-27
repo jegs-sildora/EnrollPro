@@ -39,6 +39,7 @@ export interface BOSYQueueItem {
   priorAdviserName: string | null;
   priorYearGenAve: number | null;
   priorYearDeficiencyNote: string | null;
+  studentPhoto?: string | null;
 }
 
 export interface BOSYQueuePage {

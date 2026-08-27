@@ -92,7 +92,7 @@ export default function RegistrarLayout() {
     return saved === 'true';
   });
   const { colors, logoUrl, schoolName } = useTheme();
-  
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
@@ -306,8 +306,8 @@ export default function RegistrarLayout() {
             "flex items-center transition-all duration-200 px-1 py-1",
             sidebarCollapsed ? "justify-center" : "w-full"
           )}>
-            <div className="w-9 h-9 flex flex-shrink-0 items-center justify-center">
-              <Avatar className="w-9 h-9 border border-white shadow-sm transition-transform duration-200" style={{ transform: sidebarCollapsed ? 'scale(0.9)' : 'scale(1)' }}>
+            <div className="w-12 h-12 flex flex-shrink-0 items-center justify-center">
+              <Avatar className="w-12 h-12 border border-white shadow-sm transition-transform duration-200" style={{ transform: sidebarCollapsed ? 'scale(0.9)' : 'scale(1)' }}>
                 <AvatarFallback className="bg-slate-100 text-slate-700 font-extrabold text-xs uppercase">
                   {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
@@ -375,7 +375,7 @@ export default function RegistrarLayout() {
                     Registrar
                   </span>
                 </div>
-                <Avatar className="w-9 h-9 ring-2 ring-slate-100 ring-offset-2">
+                <Avatar className="w-12 h-12 ring-2 ring-slate-100 ring-offset-2">
                   <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-extrabold">
                     {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </AvatarFallback>

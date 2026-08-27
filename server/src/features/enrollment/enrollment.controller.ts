@@ -177,6 +177,9 @@ export async function getPendingVerifications(req: Request, res: Response) {
       status: {
         in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION"],
       },
+      learnerType: {
+        in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
+      },
     },
     include: {
       learner: {
@@ -186,6 +189,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
           middleName: true,
           lrn: true,
           sex: true,
+          studentPhoto: true,
           previousGenAve: true,
           birthdate: true,
         },

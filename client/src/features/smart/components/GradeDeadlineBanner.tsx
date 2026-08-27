@@ -13,7 +13,8 @@ interface GradeDeadlineBannerProps {
 }
 
 function formatDeadlineDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
+  return new Date(isoDate).toLocaleDateString("en-PH", {
+    timeZone: 'Asia/Manila',
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -250,7 +251,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
             )}
             <button
               onClick={handleDismiss}
-              className="w-9 h-9 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
+              className="w-12 h-12 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
               title="Dismiss reminder"
             >
               <X className="w-4 h-4" />

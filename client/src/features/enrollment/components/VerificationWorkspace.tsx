@@ -25,11 +25,12 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 
 
 interface PendingVerification {
@@ -45,6 +46,7 @@ interface PendingVerification {
     middleName: string | null;
     lrn: string | null;
     sex: "MALE" | "FEMALE";
+    studentPhoto?: string | null;
     previousGenAve?: number | null;
     birthdate: string;
   };
@@ -71,14 +73,7 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-const getGradeColorClasses = (gradeName: string) => {
-  const name = gradeName.toUpperCase();
-  if (name.includes("7")) return "bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80";
-  if (name.includes("8")) return "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100/80";
-  if (name.includes("9")) return "bg-red-100 text-red-800 border-red-200 hover:bg-red-100/80";
-  if (name.includes("10")) return "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100/80";
-  return "bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-100/80";
-};
+
 
 const SCP_LABELS: Record<string, string> = {
   REGULAR: "Regular Basic Education Curriculum (BEC)",
@@ -505,18 +500,31 @@ export function VerificationWorkspace() {
                         : "bg-white hover:bg/50 border-border"
                     )}
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")}>
-                        {app.learner.lastName}, {app.learner.firstName}
-                      </h4>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline" className={cn("text-sm uppercase font-extrabold", getGradeColorClasses(app.gradeLevel.name))}>
-                        {app.gradeLevel.name}
-                      </Badge>
-                      <div className="flex items-center text-sm text-foreground font-extrabold">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {format(new Date(app.createdAt), "MMM d, h:mm a")}
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <UserPhoto
+                          photo={app.learner.studentPhoto}
+                          containerClassName={cn("w-12 h-12 rounded-full shadow-sm border shrink-0 border-2", selectedAppId === app.id ? "border-primary" : "border-primary")}
+                          className="w-full h-full object-cover"
+                          alt={`${app.learner.firstName} ${app.learner.lastName}`}
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <h4 className={cn("font-extrabold text-base leading-tight uppercase tracking-tight truncate", selectedAppId === app.id ? getGradeTextColor(app.gradeLevel.name) : "text-foreground")} title={`${app.learner.lastName}, ${app.learner.firstName}`}>
+                            {app.learner.lastName}, {app.learner.firstName}
+                          </h4>
+                          <span className="text-sm font-extrabold uppercase text-foreground mt-0.5 truncate text-foreground">
+                            LRN: {app.learner.lrn || "NO LRN"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0 ml-3">
+                        <Badge variant="outline" className={cn("text-sm uppercase font-extrabold w-fit px-2.5 py-0.5", getGradeLevelBadgeStyles(app.gradeLevel.name))}>
+                          {app.gradeLevel.name}
+                        </Badge>
+                        <div className="flex items-center text-sm text-foreground font-extrabold whitespace-nowrap text-foreground">
+                          <Clock className="w-3 h-3 mr-1 shrink-0" />
+                          {format(new Date(app.createdAt), "MMM d, h:mm a")}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -532,6 +540,12 @@ export function VerificationWorkspace() {
                 <div className="flex-1 overflow-y-auto p-6 md:p-12 relative w-full overflow-x-hidden">
                   <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col gap-4", getGradeCardClasses(selectedApp.gradeLevel.name))}>
                     <div className="flex flex-wrap items-center gap-3 w-full">
+                      <UserPhoto
+                        photo={selectedApp.learner.studentPhoto}
+                        containerClassName="w-16 h-16 rounded-full shadow-sm border shrink-0 border-2 border-primary/20"
+                        className="w-full h-full object-cover"
+                        alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
+                      />
                       <h2 className="text-2xl font-extrabold uppercase tracking-tight text-foreground whitespace-normal break-words">
                         {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
                       </h2>
@@ -550,7 +564,7 @@ export function VerificationWorkspace() {
                       </div>
                       <div className="flex flex-col min-w-0 items-start">
                         <span className="text-sm font-extrabold uppercase text-foreground flex items-center gap-1">Incoming Grade</span>
-                        <Badge variant="outline" className={cn("font-extrabold uppercase text-base shrink-0 mt-1", getGradeColorClasses(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
+                        <Badge variant="outline" className={cn("font-extrabold uppercase text-base shrink-0 mt-1 w-fit px-3 py-1", getGradeLevelBadgeStyles(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
                       </div>
                     </div>
 

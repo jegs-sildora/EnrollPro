@@ -124,6 +124,7 @@ export async function getSectioningPool(req: Request, res: Response) {
             firstName: true,
             lastName: true,
             middleName: true,
+            studentPhoto: true,
             sex: true,
             isBalikAral: true,
             previousGenAve: true,
@@ -150,6 +151,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       firstName: app.learner.firstName,
       lastName: app.learner.lastName,
       middleName: app.learner.middleName,
+      studentPhoto: app.learner.studentPhoto,
       sex: app.learner.sex,
       genAve:
         app.learner.enrollmentRecords?.[0]?.finalAverage ??

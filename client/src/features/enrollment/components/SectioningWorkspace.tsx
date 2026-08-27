@@ -65,6 +65,7 @@ import {
 } from "@/shared/hooks/useUnsavedChanges";
 import { TwoPanelSkeleton } from "@/shared/components/PageLoadingSkeleton";
 import { PageTransition } from "@/shared/components/PageTransition";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 
 interface SectionSummary {
   id: number;
@@ -99,6 +100,7 @@ interface PoolLearner {
   applicantType: ApplicantType;
   assignedProgram: ApplicantType | null;
   programType: ApplicantType;
+  studentPhoto?: string | null;
 }
 
 interface GradeLevelOption {
@@ -1278,53 +1280,61 @@ export function SectioningWorkspace() {
                                   />
                                 </td>
                                 <td className="p-4">
-                                  <div className="flex flex-col">
-                                    <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
-                                      {l.lastName}, {l.firstName}{" "}
-                                      {l.middleName?.charAt(0)
-                                        ? `${l.middleName.charAt(0)}.`
-                                        : ""}
-                                      {l.duplicateFlag && (
-                                        <Badge
-                                          variant="destructive"
-                                          className="text-sm px-1 py-0 h-4">
-                                          DUPLICATE DETECTED - RESOLVE OVER COUNTER
-                                        </Badge>
-                                      )}
-                                    </span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-sm font-extrabold uppercase text-foreground">
-                                        {l.lrn || "NO LRN"}
+                                  <div className="flex items-center gap-4">
+                                    <UserPhoto
+                                      photo={l.studentPhoto}
+                                      containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-2 border-primary"
+                                      className="w-full h-full object-cover"
+                                      alt={`${l.firstName} ${l.lastName}`}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
+                                        {l.lastName}, {l.firstName}{" "}
+                                        {l.middleName?.charAt(0)
+                                          ? `${l.middleName.charAt(0)}.`
+                                          : ""}
+                                        {l.duplicateFlag && (
+                                          <Badge
+                                            variant="destructive"
+                                            className="text-sm px-1 py-0 h-4">
+                                            DUPLICATE DETECTED - RESOLVE OVER COUNTER
+                                          </Badge>
+                                        )}
                                       </span>
-                                      <Badge
-                                        className={cn(
-                                          "text-sm uppercase font-extrabold",
-                                          l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
-                                        )}>
-                                        {l.sex}
-                                      </Badge>
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "text-sm uppercase font-extrabold",
-                                          l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
-                                        )}>
-                                        {SCP_SHORT_LABELS[l.programType] ??
-                                          l.programType}
-                                      </Badge>
-                                    </div>
-                                    {draftPlacement &&
-                                      draftSectionByApplicationId.has(
-                                        l.applicationId,
-                                      ) && (
-                                        <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
-                                          Section:{" "}
-                                          {draftSectionByApplicationId.get(
-                                            l.applicationId,
-                                          )}{" "}
-                                          (Draft)
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-sm font-extrabold uppercase text-foreground">
+                                          {l.lrn || "NO LRN"}
                                         </span>
-                                      )}
+                                        <Badge
+                                          className={cn(
+                                            "text-sm uppercase font-extrabold",
+                                            l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
+                                          )}>
+                                          {l.sex}
+                                        </Badge>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            "text-sm uppercase font-extrabold",
+                                            l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
+                                          )}>
+                                          {SCP_SHORT_LABELS[l.programType] ??
+                                            l.programType}
+                                        </Badge>
+                                      </div>
+                                      {draftPlacement &&
+                                        draftSectionByApplicationId.has(
+                                          l.applicationId,
+                                        ) && (
+                                          <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
+                                            Section:{" "}
+                                            {draftSectionByApplicationId.get(
+                                              l.applicationId,
+                                            )}{" "}
+                                            (Draft)
+                                          </span>
+                                        )}
+                                    </div>
                                   </div>
                                 </td>
                                 <td className="p-4 font-extrabold text-foreground">

@@ -9,6 +9,7 @@ import { usePaginationLimit } from '@/shared/hooks/usePaginationLimit';
 
 import {
   Search,
+  HelpCircle,
 } from "lucide-react";
 
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -47,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Badge } from "@/shared/ui/badge";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
 import {
@@ -503,15 +505,25 @@ export default function BOSYPage() {
                         }}
                         aria-pressed={queueState === filterVal}
                         className={cn(
-                          "relative flex h-full flex-col rounded-md border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
+                          "group relative flex h-full flex-col rounded-md border bg-card px-4 pt-4 pb-2 text-left shadow-sm transition-colors text-foreground",
                           queueState === filterVal
                             ? "border-primary ring-1 ring-primary text-primary"
                             : "border-border hover:border-primary",
                         )}>
                         <div className="flex h-full flex-col">
                           <div>
-                            <span className="block text-lg font-extrabold leading-snug ">
+                            <span className="flex items-center gap-2 text-lg font-extrabold leading-snug">
                               {label}
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-4 w-4 text-muted-foreground/60 hover:text-primary transition-all cursor-help shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[250px] p-2 text-sm text-center font-bold font-sans">
+                                    {subBadge}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </span>
                           </div>
                           <div className="mt-auto flex flex-col gap-2">
@@ -523,9 +535,6 @@ export default function BOSYPage() {
                                   : "text-primary",
                               )}>
                               {value}
-                            </span>
-                            <span className="text-sm font-extrabold mb-2">
-                              {subBadge}
                             </span>
                           </div>
                         </div>

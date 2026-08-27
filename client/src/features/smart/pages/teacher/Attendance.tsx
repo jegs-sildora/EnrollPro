@@ -417,7 +417,7 @@ export default function Attendance() {
                             <button
                               key={option.id}
                               onClick={() => handleStatusChange(student.studentId, option.id as any)}
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${student.status === option.id
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${student.status === option.id
                                 ? `bg-${option.color}-500 text-white shadow-lg shadow-${option.color}-200 scale-110`
                                 : `bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600`
                                 }`}

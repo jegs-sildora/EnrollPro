@@ -275,7 +275,7 @@ export default function TeacherDashboard() {
   }
 
   return (
-<div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Grade Submission Deadline Banner */}
       {data.gradeDeadline && (
         <GradeDeadlineBanner deadline={data.gradeDeadline} />
@@ -640,7 +640,7 @@ export default function TeacherDashboard() {
                         <tr key={idx} className="hover:bg-slate-50/50 transition-all">
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-9 h-9 border-2 border-white shadow-sm">
+                              <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
                                 <AvatarFallback className="font-extrabold text-xs text-white" style={{ backgroundColor: colors.primary }}>
                                   {student.name.charAt(0)}
                                 </AvatarFallback>

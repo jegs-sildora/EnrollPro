@@ -966,7 +966,7 @@ export default function SchoolYearTab() {
                       const isActiveTerm = activeTerm === `T${term.num}`;
                       return (
                       <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
-                        <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1">
+                        <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase">
                           {term.label}
                           {isActiveTerm && (
                             <span className="inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
