@@ -334,28 +334,25 @@ async function getReadiness(
     for (const record of section.enrollmentRecords) {
       if (isDeparture(record.eosyStatus)) continue;
 
-      const hasLocalOutcome = record.eosyStatus !== null && record.finalAverage !== null;
       const smartOutcome = readSmartOutcomeEnvelope(
         record.enrollmentApplication.reportedGrades,
       );
-      const hasSmartOutcome = smartOutcome !== null;
 
-      if (!hasLocalOutcome && !hasSmartOutcome) {
+      if (!smartOutcome) {
+        missingSmartOutcome = true;
         recordsWithoutResult += 1;
         continue;
       }
 
-      if (hasSmartOutcome) {
-        if (!matchesStoredSmartOutcome({
-          value: record.enrollmentApplication.reportedGrades,
-          schoolYearId,
-          sectionId: section.id,
-          finalAverage: record.finalAverage,
-          eosyStatus: record.eosyStatus,
-        })) {
-          mismatchedSmartOutcome = true;
-          recordsWithoutResult += 1;
-        }
+      if (!matchesStoredSmartOutcome({
+        value: record.enrollmentApplication.reportedGrades,
+        schoolYearId,
+        sectionId: section.id,
+        finalAverage: record.finalAverage,
+        eosyStatus: record.eosyStatus,
+      })) {
+        mismatchedSmartOutcome = true;
+        recordsWithoutResult += 1;
       }
     }
 

@@ -13,7 +13,6 @@ interface Sf9SubjectRow extends Sf9SubjectGrades {
 interface EosySf9GradeTableProps {
   reportedGrades: Record<string, unknown> | null | undefined;
   finalAverage: number | null;
-  gradeLevelName: string;
   schoolYearLabel: string;
 }
 
@@ -52,110 +51,26 @@ function readSubjectGrades(value: unknown): Sf9SubjectGrades | null {
   };
 }
 
-function getCombinedLearningArea(subjectName: string): "Science" | "TLE" | null {
-  const normalized = subjectName.trim().toLowerCase();
-  if (
-    normalized === "science"
-    || /^science \d+$/.test(normalized)
-    || normalized.startsWith("science - ")
-  ) {
-    return "Science";
-  }
-  if (
-    normalized === "tle"
-    || /^tle \d+$/.test(normalized)
-    || normalized === "technology and livelihood education"
-    || normalized.startsWith("tle - ")
-    || normalized.startsWith("tle exploratory - ")
-  ) {
-    return "TLE";
-  }
-  return null;
-}
-
-function isDirectLearningArea(subjectName: string, area: "Science" | "TLE"): boolean {
-  const normalized = subjectName.trim().toLowerCase();
-  return area === "Science"
-    ? normalized === "science" || /^science \d+$/.test(normalized)
-    : normalized === "tle"
-      || /^tle \d+$/.test(normalized)
-      || normalized === "technology and livelihood education";
-}
-
-function average(values: Array<number | null>): number | null {
-  const available = values.filter((value): value is number => value !== null);
-  return available.length > 0
-    ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length)
-    : null;
-}
-
-function combineSubjectGrades(grades: Sf9SubjectGrades[]): Sf9SubjectGrades {
-  const finalRating = average(grades.map((grade) => grade.Final));
-  return {
-    T1: average(grades.map((grade) => grade.T1)),
-    T2: average(grades.map((grade) => grade.T2)),
-    T3: average(grades.map((grade) => grade.T3)),
-    Final: finalRating,
-    remarks: finalRating === null ? null : finalRating >= 75 ? "Passed" : "Failed",
-  };
-}
-
-function getExpectedGradeNumber(gradeLevelName: string): number | null {
-  const match = gradeLevelName.match(/(?:GRADE[\s_-]*)?(10|[7-9])(?:\D|$)/i);
-  return match ? Number(match[1]) : null;
-}
-
-function subjectBelongsToGrade(subjectName: string, expectedGrade: number | null): boolean {
-  if (expectedGrade === null) return true;
-  const match = subjectName.match(/\b(7|8|9|10)\s*$/);
-  return match === null || Number(match[1]) === expectedGrade;
-}
-
 function getSubjects(
   reportedGrades: Record<string, unknown> | null | undefined,
-  gradeLevelName: string,
 ): { subjects: Sf9SubjectRow[]; envelopeAverage: number | null } {
   const root = reportedGrades ?? {};
   const envelope = asObject(root.__smartOutcome);
-  const subjectMap = asObject(envelope?.subjects) ?? root;
-  const expectedGrade = getExpectedGradeNumber(gradeLevelName);
-  const regularSubjects: Sf9SubjectRow[] = [];
-  const combinedComponents: Record<"Science" | "TLE", Sf9SubjectGrades[]> = {
-    Science: [],
-    TLE: [],
-  };
-  const directLearningAreas: Partial<Record<"Science" | "TLE", Sf9SubjectGrades>> = {};
+  const subjectMap = asObject(envelope?.subjects);
+  const subjects: Sf9SubjectRow[] = [];
 
-  for (const [subjectName, value] of Object.entries(subjectMap)) {
-    if (!subjectBelongsToGrade(subjectName, expectedGrade)) continue;
-    const grades = readSubjectGrades(value);
-    if (!grades) continue;
-
-    const combinedArea = getCombinedLearningArea(subjectName);
-    if (!combinedArea) {
-      regularSubjects.push({ name: subjectName, ...grades });
-      continue;
-    }
-
-    if (isDirectLearningArea(subjectName, combinedArea)) {
-      directLearningAreas[combinedArea] = grades;
-    } else {
-      combinedComponents[combinedArea].push(grades);
-    }
+  if (!subjectMap) {
+    return { subjects, envelopeAverage: null };
   }
 
-  for (const area of ["Science", "TLE"] as const) {
-    const directGrades = directLearningAreas[area];
-    const componentGrades = combinedComponents[area];
-    if (directGrades) {
-      regularSubjects.push({ name: area, ...directGrades });
-    } else if (componentGrades.length > 0) {
-      regularSubjects.push({ name: area, ...combineSubjectGrades(componentGrades) });
-    }
+  for (const [subjectName, value] of Object.entries(subjectMap)) {
+    const grades = readSubjectGrades(value);
+    if (!grades) continue;
+    subjects.push({ name: subjectName, ...grades });
   }
 
   return {
-    subjects: regularSubjects,
+    subjects,
     envelopeAverage: asFiniteNumber(envelope?.finalGeneralAverage),
   };
 }
@@ -176,11 +91,10 @@ function getAcademicStanding(averageValue: number | null): string {
 export function EosySf9GradeTable({
   reportedGrades,
   finalAverage,
-  gradeLevelName,
   schoolYearLabel,
 }: EosySf9GradeTableProps) {
-  const { subjects, envelopeAverage } = getSubjects(reportedGrades, gradeLevelName);
-  const displayedAverage = finalAverage ?? envelopeAverage;
+  const { subjects, envelopeAverage } = getSubjects(reportedGrades);
+  const displayedAverage = envelopeAverage ?? finalAverage;
 
   return (
     <div className="bg-muted/20 px-5 py-4 sm:px-8">
@@ -221,8 +135,7 @@ export function EosySf9GradeTable({
             </thead>
             <tbody>
               {subjects.map((subject) => {
-                const remarks = subject.remarks
-                  ?? (subject.Final === null ? "--" : subject.Final >= 75 ? "Passed" : "Failed");
+                const remarks = subject.remarks ?? "--";
                 return (
                   <tr key={subject.name} className="bg-card">
                     <td className="border border-border px-4 py-3 text-center font-extrabold text-foreground">

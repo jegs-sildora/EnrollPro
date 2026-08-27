@@ -2,7 +2,19 @@ import { createHash } from "node:crypto";
 import { Prisma } from "../../generated/prisma/index.js";
 
 export const SMART_OUTCOME_ENVELOPE_KEY = "__smartOutcome";
+export const SMART_SYNC_ISSUE_KEY = "__smartSyncIssue";
 export const SMART_OUTCOME_SCHEMA_VERSION = "enrollpro.smart-outcome.v1";
+
+export type SmartSyncIssueStatus =
+  | "WAITING_FOR_SMART_FINALIZATION"
+  | "INCOMPLETE_SUBJECT_GRADES"
+  | "SMART_DATA_NEEDS_REVIEW";
+
+export interface SmartSyncIssue {
+  status: SmartSyncIssueStatus;
+  reason: string;
+  synchronizedAt: string;
+}
 
 export interface StoredSmartSubjectGrades {
   T1?: number | null;
@@ -150,7 +162,9 @@ export function mergeSmartOutcomeIntoReportedGrades(
   const current = asObject(currentValue) ?? {};
   const metadata = Object.fromEntries(
     Object.entries(current).filter(([key, value]) => (
-      key !== SMART_OUTCOME_ENVELOPE_KEY && !isStoredSubjectGrades(value)
+      key !== SMART_OUTCOME_ENVELOPE_KEY
+      && key !== SMART_SYNC_ISSUE_KEY
+      && !isStoredSubjectGrades(value)
     )),
   );
   return {
@@ -166,12 +180,62 @@ export function clearSmartOutcomeFromReportedGrades(
   if (!current) return Prisma.DbNull;
   const metadata = Object.fromEntries(
     Object.entries(current).filter(([key, value]) => (
-      key !== SMART_OUTCOME_ENVELOPE_KEY && !isStoredSubjectGrades(value)
+      key !== SMART_OUTCOME_ENVELOPE_KEY
+      && key !== SMART_SYNC_ISSUE_KEY
+      && !isStoredSubjectGrades(value)
     )),
   );
   return Object.keys(metadata).length > 0
     ? metadata as Prisma.InputJsonObject
     : Prisma.DbNull;
+}
+
+export function replaceSmartOutcomeWithIssue(
+  currentValue: unknown,
+  issue: Omit<SmartSyncIssue, "synchronizedAt"> & { synchronizedAt?: string },
+): Prisma.InputJsonObject {
+  const current = asObject(currentValue) ?? {};
+  const metadata = Object.fromEntries(
+    Object.entries(current).filter(([key, value]) => (
+      key !== SMART_OUTCOME_ENVELOPE_KEY
+      && key !== SMART_SYNC_ISSUE_KEY
+      && !isStoredSubjectGrades(value)
+    )),
+  );
+  return {
+    ...metadata,
+    [SMART_SYNC_ISSUE_KEY]: {
+      status: issue.status,
+      reason: issue.reason,
+      synchronizedAt: issue.synchronizedAt ?? new Date().toISOString(),
+    },
+  };
+}
+
+export function readSmartSyncIssue(value: unknown): SmartSyncIssue | null {
+  const root = asObject(value);
+  const candidate = root ? asObject(root[SMART_SYNC_ISSUE_KEY]) : null;
+  if (!candidate) return null;
+
+  if (
+    ![
+      "WAITING_FOR_SMART_FINALIZATION",
+      "INCOMPLETE_SUBJECT_GRADES",
+      "SMART_DATA_NEEDS_REVIEW",
+    ].includes(String(candidate.status))
+    || typeof candidate.reason !== "string"
+    || candidate.reason.trim().length === 0
+    || typeof candidate.synchronizedAt !== "string"
+    || Number.isNaN(Date.parse(candidate.synchronizedAt))
+  ) {
+    return null;
+  }
+
+  return {
+    status: candidate.status as SmartSyncIssueStatus,
+    reason: candidate.reason,
+    synchronizedAt: candidate.synchronizedAt,
+  };
 }
 
 export function getStoredSmartSubjects(

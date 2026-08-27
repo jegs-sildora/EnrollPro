@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { AtomicRolloverDialog } from "@/features/settings/components/AtomicRolloverDialog";
 import { EosyUnlockModal } from "@/features/enrollment/components/EosyUnlockModal";
 import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
@@ -44,7 +43,7 @@ import {
   Save,
   ChevronDown,
   FileText,
-  HelpCircle,
+  MoreHorizontal,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import axios from "axios";
@@ -53,7 +52,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
@@ -94,6 +93,14 @@ export interface EnrollmentRecord {
   finalAverage: number | null;
   nextYearCurriculum: string | null;
   transferOutDate: string | null;
+  smartSyncStatus:
+    | "FINALIZED_SMART_GRADES_RECEIVED"
+    | "WAITING_FOR_SMART_FINALIZATION"
+    | "INCOMPLETE_SUBJECT_GRADES"
+    | "SMART_DATA_NEEDS_REVIEW"
+    | null;
+  smartSyncReason: string | null;
+  smartSynchronizedAt: string | null;
   isScpDemoted?: boolean;
   scpViolations?: Array<{
     subject: string;
@@ -200,6 +207,19 @@ interface EosyExportLockState {
   finalizedSections: number;
   canFinalizeSchoolYear: boolean;
   lockReason: string | null;
+}
+
+interface SmartConnectionStatus {
+  state:
+    | "DISABLED"
+    | "CONNECTING"
+    | "CONNECTED"
+    | "UNAVAILABLE"
+    | "AUTHENTICATION_FAILED"
+    | "PAUSED";
+  connectionAttempts: number;
+  lastConnectedAt: string | null;
+  lastEventAt: string | null;
 }
 
 const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolean = false) => {
@@ -371,8 +391,6 @@ export default function EosyUpdating() {
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -392,9 +410,6 @@ export default function EosyUpdating() {
     firstName?: string;
     lastName?: string;
     sectionId?: number;
-    finalAverage?: number | null;
-    eosyStatus?: EosyStatus;
-    academicDeficiencyNote?: string | null;
     latitude?: number;
     longitude?: number;
   }>>({});
@@ -424,6 +439,18 @@ export default function EosyUpdating() {
       return (res.data.records || []) as EnrollmentRecord[];
     },
     enabled: Boolean(ayId && activeTab),
+  });
+
+  const smartConnectionQuery = useQuery({
+    queryKey: ["integration", "smart-status"],
+    queryFn: async () => {
+      const response = await api.get<SmartConnectionStatus>("/integration/smart/status");
+      return response.data;
+    },
+    enabled: !isHistoricalReadOnly,
+    refetchInterval: 15_000,
+    staleTime: 5_000,
+    retry: false,
   });
 
   const loadingRecords = isInitialLoad || (Boolean(ayId && activeTab) && (recordsQuery.isPending || recordsQuery.isFetching));
@@ -490,21 +517,6 @@ export default function EosyUpdating() {
           hasInvalidField = true;
         }
 
-        // General average validation (60-100)
-        if ("finalAverage" in changes && changes.finalAverage !== original.finalAverage) {
-          const avg = changes.finalAverage;
-          if (avg !== null && avg !== undefined && (avg < 60 || avg > 100)) {
-            hasInvalidField = true;
-          }
-        }
-
-        // DepEd Status Logic: General Average < 75 cannot be PROMOTED
-        const resolvedStatus = "eosyStatus" in changes ? changes.eosyStatus : original.eosyStatus;
-        const resolvedAvg = "finalAverage" in changes ? changes.finalAverage : original.finalAverage;
-        if (resolvedStatus === "PROMOTED" && resolvedAvg !== null && resolvedAvg !== undefined && resolvedAvg < 75) {
-          hasInvalidField = true;
-        }
-
         if (hasInvalidField) {
           revertedRecords.push(recordId);
         } else {
@@ -515,7 +527,7 @@ export default function EosyUpdating() {
       if (revertedRecords.length > 0) {
         sileo.warning({
           title: "Validation Reverted",
-          description: `${revertedRecords.length} record(s) failed validation (invalid LRN, empty name, average out of 60-100, or average below 75 while Promoted) and were reverted.`,
+          description: `${revertedRecords.length} record(s) failed learner identity validation and were reverted.`,
         });
       }
 
@@ -535,9 +547,6 @@ export default function EosyUpdating() {
             if (!update) return r;
             return {
               ...r,
-              finalAverage: update.finalAverage !== undefined ? update.finalAverage : r.finalAverage,
-              eosyStatus: update.eosyStatus !== undefined ? update.eosyStatus : r.eosyStatus,
-              academicDeficiencyNote: update.academicDeficiencyNote !== undefined ? update.academicDeficiencyNote : r.academicDeficiencyNote,
               enrollmentApplication: {
                 ...r.enrollmentApplication,
                 learner: {
@@ -640,7 +649,6 @@ export default function EosyUpdating() {
   const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
     if (!gradeLevelId || !ayId) return;
     if (!silent) {
-      setRowSelection({});
       setSectionFilter("ALL");
     }
     if (gradeLevelId !== activeTab) {
@@ -738,6 +746,7 @@ export default function EosyUpdating() {
       await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
+      await queryClient.invalidateQueries({ queryKey: ["integration", "smart-status"] });
       await fetchSectionsAndGrades();
       await fetchExportLockState();
       if (activeTab) {
@@ -810,52 +819,6 @@ export default function EosyUpdating() {
     onRefresh: refreshEosyWorkspace,
   });
 
-  const handleBatchUpdate = async () => {
-    if (!batchActionStatus) return;
-
-    const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedRecords = selectedIndexes.map((idx) => filteredRecords[idx]).filter(Boolean);
-
-    if (selectedRecords.length === 0) {
-      sileo.error({ title: "No Selection", description: "Please select at least one learner." });
-      return;
-    }
-
-    const editableRecords = selectedRecords.filter(r => !r.section.isEosyFinalized);
-    if (editableRecords.length === 0) {
-      sileo.error({ title: "Action Aborted", description: "All selected learners belong to finalized sections." });
-      return;
-    }
-
-    let targetRecords = editableRecords;
-    let skippedCount = selectedRecords.length - editableRecords.length;
-
-    if (batchActionStatus === "PROMOTED") {
-      targetRecords = editableRecords.filter((r) => {
-        const unsaved = unsavedChanges[r.id] || {};
-        const ave = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
-        return ave && ave >= 75;
-      });
-      skippedCount += editableRecords.length - targetRecords.length;
-    }
-
-    if (targetRecords.length === 0) {
-      sileo.error({ title: "Action Aborted", description: "None of the selected learners meet the criteria for this status (e.g. >= 75 for Promoted)." });
-      return;
-    }
-
-    targetRecords.forEach(r => {
-      handleFieldChange(r.id, "eosyStatus", batchActionStatus as EosyStatus);
-    });
-
-    sileo.info({
-      title: "Status Staged for Selected",
-      description: `Staged ${batchActionStatus} for ${targetRecords.length} learner(s).${skippedCount > 0 ? ` ${skippedCount} skipped.` : ""} Click 'Save Changes' to commit to database.`,
-    });
-    setRowSelection({});
-    setBatchActionStatus("");
-  };
-
   const handleFinalizeGrade = async () => {
     setFinalizeLoading(true);
     try {
@@ -918,9 +881,6 @@ export default function EosyUpdating() {
   };
 
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
-
-  const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
-
 
   const recordSf5ForScope = async () => {
     const sections = allSections.filter(
@@ -1065,20 +1025,22 @@ export default function EosyUpdating() {
 
   const pendingCount = useMemo(() => {
     return filteredRecords.filter(r => {
-      const unsaved = unsavedChanges[r.id] || {};
-      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
-      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
-
-      if (effectiveStatus === "TRANSFERRED_OUT" || effectiveStatus === "DROPPED_OUT") {
+      if (r.eosyStatus === "TRANSFERRED_OUT" || r.eosyStatus === "DROPPED_OUT") {
         return false;
       }
-      return effectiveAve === null || effectiveAve === undefined || !effectiveStatus;
+      return r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
     }).length;
-  }, [filteredRecords, unsavedChanges]);
+  }, [filteredRecords]);
 
-  const scopeRecords = useMemo(() => {
-    return sectionFilter === "ALL" ? records : records.filter(r => r.section?.name === sectionFilter);
-  }, [records, sectionFilter]);
+  const latestSmartSyncAt = useMemo(() => {
+    const timestamps = records
+      .map((record) => record.smartSynchronizedAt)
+      .filter((value): value is string => Boolean(value))
+      .map((value) => new Date(value).getTime())
+      .filter(Number.isFinite);
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps));
+  }, [records]);
 
   const scopeSections = useMemo(() => {
     return allSections.filter(s =>
@@ -1092,29 +1054,25 @@ export default function EosyUpdating() {
   const pendingClassesList = useMemo(() => {
     const sets = new Set<string>();
     filteredRecords.forEach((r) => {
-      const unsaved = unsavedChanges[r.id] || {};
-      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
-      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
-
       if (
-        (effectiveAve === null || effectiveAve === undefined) &&
-        effectiveStatus !== "TRANSFERRED_OUT" &&
-        effectiveStatus !== "DROPPED_OUT" &&
+        r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED" &&
+        r.eosyStatus !== "TRANSFERRED_OUT" &&
+        r.eosyStatus !== "DROPPED_OUT" &&
         r.section?.name
       ) {
         sets.add(r.section.name);
       }
     });
     return Array.from(sets);
-  }, [filteredRecords, unsavedChanges]);
+  }, [filteredRecords]);
 
   const pendingIrregularCount = useMemo(() => {
     return filteredRecords.filter((r) => {
-      const unsaved = unsavedChanges[r.id] || {};
-      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
-      return !effectiveStatus;
+      return r.eosyStatus !== "DROPPED_OUT"
+        && r.eosyStatus !== "TRANSFERRED_OUT"
+        && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
     }).length;
-  }, [filteredRecords, unsavedChanges]);
+  }, [filteredRecords]);
 
   const scopedUnlockedClassesCount = pendingClassesList.length;
   const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
@@ -1326,7 +1284,9 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const ave = r.finalAverage;
+          const ave = r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
+            ? r.finalAverage
+            : null;
 
           if (ave === null || ave === undefined) {
             return (
@@ -1356,268 +1316,72 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const recordId = r.id;
-          const isScpDemoted = !activeGradeName.includes("10") && (r.isScpDemoted || !!r.scpViolations);
-          const scpViolations = r.scpViolations;
-
-          const unsaved = unsavedChanges[recordId] || {};
-          const currentStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
-          const isStatusChanged = "eosyStatus" in unsaved && unsaved.eosyStatus !== r.eosyStatus;
-          const currentDeficiencyNote = "academicDeficiencyNote" in unsaved
-            ? unsaved.academicDeficiencyNote
-            : r.academicDeficiencyNote;
-
-          const isScp = Boolean(r.section?.programType && r.section.programType !== "REGULAR");
-          const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
-          const isScpDemotedGrades = !activeGradeName.includes("10") && isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
-
-          const resolvedStatus: string = currentStatus ?? "ACTION_REQUIRED";
+          const resolvedStatus: string = r.eosyStatus ?? "ACTION_REQUIRED";
           const isGrade10 = activeGradeName.includes("10");
           const statusLabel = formatStatusLabel(resolvedStatus as string, isGrade10);
-          const isSectionFinalized = r.section.isEosyFinalized;
-
-          const renderStatusContent = () => (
-            <div
-              className={cn(
-                "inline-flex items-center justify-center w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold text-center whitespace-nowrap rounded-md border transition-colors",
-                (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
-                  ? "text-amber-700 bg-amber-50 border-amber-200"
-                  : resolvedStatus === "ACTION_REQUIRED"
-                    ? "text-red-700 bg-red-50 border-red-200"
-                    : !resolvedStatus || resolvedStatus === "PROMOTED"
-                      ? "text-green-700 bg-green-50 border-green-200"
-                      : "text-amber-700 bg-amber-50 border-amber-200"
-              )}>
-              <span>{(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
-            </div>
-          );
-
-          const renderTooltip = (trigger: React.ReactNode) => (
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {trigger}
-                </TooltipTrigger>
-                <TooltipContent collisionPadding={24} className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-120 text-left mr-6">
-                  <h4 className="text-base font-extrabold uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
-                    SPECIAL PROGRAM TRANSFER ALERT
-                  </h4>
-                  <p className="text-base  leading-snug">
-                    Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
-                  </p>
-                  {scpViolations && scpViolations.length > 0 && (
-                    <div className="mt-3 bg-amber-100/50 rounded p-2 text-base leading-tight border border-amber-200/50">
-                      <ul className="list-disc pl-5 space-y-1">
-                        {Array.from(new Map(scpViolations.map((v) => [v.subject, v])).values()).map((v, i) => (
-                          <li key={i}>
-                            <span className="font-bold text-amber-900">{v.subject}</span> - Final Rating: <span className="text-red-700 font-extrabold">{v.actualGrade}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-
-          const renderRetainedTooltip = (trigger: React.ReactNode) => {
-            const isFailingAve = currentAve !== null && currentAve !== undefined && currentAve < 75;
-            const reason = isFailingAve ? `Final average of ${currentAve} is below the passing threshold of 75` : "Learner passed the general average but failed 3 or more individual learning areas";
-            return (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {trigger}
-                  </TooltipTrigger>
-                  <TooltipContent collisionPadding={24} className="bg-red-50 border border-red-300 text-red-900 shadow-lg rounded-md p-4 w-100 text-left mr-6">
-                    <h4 className="text-base font-extrabold uppercase tracking-wide text-red-800 border-b border-red-200 pb-2 mb-2">
-                      Retention Reason
-                    </h4>
-                    <p className="text-base leading-snug">
-                      {reason}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          };
-
-          const renderGeneralTooltip = (trigger: React.ReactNode) => {
-            if ((isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED") {
-              return renderTooltip(trigger);
-            }
-            if (resolvedStatus === "RETAINED") {
-              return renderRetainedTooltip(trigger);
-            }
-
-            let title = "";
-            let description: React.ReactNode = "";
-            let colorClass = "bg-green-50 border-green-300 text-green-900";
-            let titleColorClass = "text-green-800 border-green-200";
-
-            switch (resolvedStatus) {
-              case "PROMOTED":
-                title = isGrade10 ? "COMPLETER" : "PROMOTED";
-                description = "Learner met all academic requirements and is eligible for the next grade level.";
-                break;
-              case "CONDITIONALLY_PROMOTED":
-                title = "CONDITIONALLY PROMOTED";
-                description = currentDeficiencyNote
-                  ? (
-                    <>
-                      <span className="block mb-1">Learner has academic deficiencies. {currentDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
-                      <ul className="list-disc pl-6 font-extrabold space-y-1">
-                        {currentDeficiencyNote.split(',').map((def, i) => (
-                          <li key={i}>{def.trim()}</li>
-                        ))}
-                      </ul>
-                    </>
-                  )
-                  : "Learner has academic deficiencies that must be addressed.";
-                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
-                titleColorClass = "text-amber-800 border-amber-200";
-                break;
-              case "DROPPED_OUT":
-                title = "DROPPED OUT";
-                description = "Learner did not complete the school year.";
-                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
-                titleColorClass = "text-amber-800 border-amber-200";
-                break;
-              case "TRANSFERRED_OUT":
-                title = "TRANSFERRED OUT";
-                description = "Learner transferred to another school before completing the year.";
-                colorClass = "bg-amber-50 border-amber-300 text-amber-900";
-                titleColorClass = "text-amber-800 border-amber-200";
-                break;
-              case "ACTION_REQUIRED":
-                title = "ACTION REQUIRED";
-                description = "Please review the learner's records and select an appropriate EOSY status.";
-                colorClass = "bg-red-50 border-red-300 text-red-900";
-                titleColorClass = "text-red-800 border-red-200";
-                break;
-              default:
-                return trigger;
-            }
-
-            return (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {trigger}
-                  </TooltipTrigger>
-                  <TooltipContent collisionPadding={24} className={cn("shadow-lg rounded-md p-4 w-100 text-left mr-6", colorClass)}>
-                    <h4 className={cn("text-base font-extrabold uppercase tracking-wide border-b pb-2 mb-2", titleColorClass)}>
-                      {title}
-                    </h4>
-                    <p className="text-base leading-snug">
-                      {description}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          };
-
-          if (hasOverride) {
-            return (
-              <div className="flex flex-col gap-1 items-center justify-center w-full">
-                <Select
-                  value={resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
-                  onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
-                  disabled={isCommitting}
-                >
-                  {renderGeneralTooltip(
-                    <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px] [&>svg]:hidden", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
-                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
-                    </SelectTrigger>
-                  )}
-                  <SelectContent>
-                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
-                    <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
-                    <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
-                    <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
-                    <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
-                  </SelectContent>
-                </Select>
-                {isStatusChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
-              </div>
-            );
-          }
-
-          if (isSectionFinalized || isScopeFinalized) {
-            return (
-              <div className="flex flex-col items-start justify-center gap-1 w-full">
-                {renderGeneralTooltip(renderStatusContent())}
-                {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
-                  <div className="max-w-[220px] text-sm font-bold text-amber-800 mt-1 flex items-center justify-center gap-1.5">
-                    <span>{currentDeficiencyNote.split(',').length > 1 ? "Deficiencies" : "Deficiency"}</span>
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 cursor-help text-amber-700/60 hover:text-amber-800 transition-colors shrink-0" />
-                        </TooltipTrigger>
-                        <TooltipContent collisionPadding={24} className="max-w-[250px] p-3 text-sm text-left font-bold font-sans bg-amber-50 text-amber-900 border border-amber-200">
-                          <span className="block mb-1">Learner has academic deficiencies. {currentDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
-                          <ul className="list-disc pl-6 font-extrabold space-y-1">
-                            {currentDeficiencyNote.split(',').map((def, i) => (
-                              <li key={i}>{def.trim()}</li>
-                            ))}
-                          </ul>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
-              </div>
-            );
-          }
+          const isDeparture = resolvedStatus === "DROPPED_OUT" || resolvedStatus === "TRANSFERRED_OUT";
+          const syncLabel = r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
+            ? "Finalized SMART Grades Received"
+            : r.smartSyncStatus === "INCOMPLETE_SUBJECT_GRADES"
+              ? "Incomplete Subject Grades"
+              : r.smartSyncStatus === "SMART_DATA_NEEDS_REVIEW"
+                ? "SMART Data Needs Review"
+                : "Waiting for Finalization";
+          const displayLabel = isDeparture ? statusLabel : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
+            ? (r.isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel)
+            : syncLabel;
+          const canRecordDeparture = !r.section.isEosyFinalized && !isScopeFinalized && !isHistoricalReadOnly;
 
           return (
-            <div className="flex flex-col items-center justify-center gap-1.5 w-full">
-              <Select
-                value={(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
-                onValueChange={(val) => {
-                  if (val === "PROMOTED_TO_BEC") {
-                    handleFieldChange(r.id, "eosyStatus", "PROMOTED");
-                  } else {
-                    handleFieldChange(r.id, "eosyStatus", val as EosyStatus);
-                    if (val !== "CONDITIONALLY_PROMOTED") {
-                      handleFieldChange(r.id, "academicDeficiencyNote", null);
-                    }
-                  }
-                }}
-                disabled={isSectionFinalized || isScpDemotedGrades}>
-                {renderGeneralTooltip(
-                  <SelectTrigger
-                    className={cn(
-                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden cursor-help",
-                      isStatusChanged && "border-amber-500 focus:ring-amber-500",
-                      (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
-                        ? "text-amber-700 bg-amber-50 border-amber-200"
-                        : resolvedStatus === "ACTION_REQUIRED"
-                          ? "text-red-700 bg-red-50 border-red-200"
-                          : !resolvedStatus || resolvedStatus === "PROMOTED"
-                            ? "text-green-700 bg-green-50 border-green-200"
-                            : "text-amber-700 bg-amber-50 border-amber-200"
+            <div className="flex w-full items-center justify-center gap-2">
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex min-w-[220px] flex-col items-start rounded-md border px-3 py-2 text-left",
+                      isDeparture || resolvedStatus === "CONDITIONALLY_PROMOTED" || resolvedStatus === "RETAINED"
+                        ? "border-amber-200 bg-amber-50 text-amber-800"
+                        : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : "border-red-200 bg-red-50 text-red-700",
                     )}>
-                    {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
-                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
-                    ) : (
-                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
-                    )}
-                  </SelectTrigger>
-                )}
-                <SelectContent className="font-extrabold">
-                  <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
-                  <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
-                  <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
-                  <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
-                  <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
-                </SelectContent>
-              </Select>
-              {isStatusChanged && (
-                <span className="text-sm text-amber-600 font-extrabold uppercase tracking-wider">Unsaved</span>
+                      <span className="text-sm font-extrabold uppercase">{displayLabel}</span>
+                      {r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED" && !isDeparture && (
+                        <span className="text-sm font-bold normal-case opacity-80">{syncLabel}</span>
+                      )}
+                      {r.academicDeficiencyNote && !isDeparture && (
+                        <span className="text-sm font-bold normal-case">Deficiency: {r.academicDeficiencyNote}</span>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm text-sm font-bold">
+                    {r.smartSyncReason ?? (isDeparture
+                      ? "This learner status was recorded by EnrollPro."
+                      : "The academic result matches the finalized SMART record for this school year and section.")}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {canRecordDeparture && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 shrink-0"
+                      aria-label={`Learner status actions for ${r.enrollmentApplication.learner.firstName} ${r.enrollmentApplication.learner.lastName}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                    <DropdownMenuItem onSelect={() => setOverrideRecord(r)}>
+                      Record Dropped Out or Transferred Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           );
@@ -1625,7 +1389,7 @@ export default function EosyUpdating() {
         meta: { className: "w-[240px] text-center" }
       },
     ],
-    [isScopeFinalized, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange, activeGradeName],
+    [isScopeFinalized, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange, activeGradeName, isHistoricalReadOnly],
   );
 
   const columns = useMemo(() => {
@@ -1785,7 +1549,7 @@ export default function EosyUpdating() {
                             {syncingSmart ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Syncing SMART...</span>
+                                <span>Syncing SMART outcomes</span>
                               </>
                             ) : (
                               <>
@@ -1836,35 +1600,6 @@ export default function EosyUpdating() {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          ) : Object.keys(rowSelection).length > 0 ? (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Select
-                                value={batchActionStatus}
-                                onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
-                                disabled={Object.keys(rowSelection).length === 0}
-                              >
-                                <SelectTrigger className="w-48 bg-background border-border font-extrabold">
-                                  <SelectValue placeholder="Select New Status..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
-                                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Button
-                                onClick={handleBatchUpdate}
-                                disabled={!batchActionStatus || Object.keys(rowSelection).length === 0}
-                                variant={batchActionStatus ? "default" : "outline"}
-                                className={cn(
-                                  "transition-all font-extrabold px-6",
-                                  batchActionStatus && Object.keys(rowSelection).length > 0
-                                    ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-                                    : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
-                                )}
-                              >
-                                Apply to Selected
-                              </Button>
-                            </div>
                           ) : null}
                         </div>
 
@@ -1874,7 +1609,7 @@ export default function EosyUpdating() {
                           <div className="flex items-center gap-3">
                             {pendingCount > 0 && !isScopeFinalized && (
                               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
-                                {pendingCount} Pending Submissions
+                                {pendingCount} Waiting for Finalization
                               </div>
                             )}
 
@@ -1893,8 +1628,8 @@ export default function EosyUpdating() {
                                       Pending Requirements
                                     </p>
                                     <div className="space-y-1.5 text-destructive-foreground/90">
-                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} sections missing School Form 5 (SF5).</p>}
-                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learners require encoded EOSY (Summer) classes.</p>}
+                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} section(s) still have learners waiting for finalized SMART grades.</p>}
+                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learner(s) have incomplete or unverified SMART outcomes.</p>}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1949,8 +1684,6 @@ export default function EosyUpdating() {
                             </AnimatePresence>
                           )}
                           disableScrolling={syncingSmart && !!smartSyncProgress}
-                          rowSelection={rowSelection}
-                          onRowSelectionChange={setRowSelection}
                           virtualize={false}
                           onRowClick={(row) => {
                             if (syncingSmart) return;
@@ -1984,7 +1717,6 @@ export default function EosyUpdating() {
                                       <EosySf9GradeTable
                                         reportedGrades={row.enrollmentApplication.reportedGrades}
                                         finalAverage={row.finalAverage}
-                                        gradeLevelName={activeGradeName}
                                         schoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
                                       />
                                     </motion.div>
@@ -2029,7 +1761,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
             <ul className="list-disc pl-5 space-y-2">
-              <li>Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</li>
+              <li>Finalized SMART grades and EOSY outcomes will be locked for this reporting period.</li>
               <li>The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</li>
               <li>This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</li>
             </ul>
@@ -2154,6 +1886,7 @@ export default function EosyUpdating() {
 
       <EosyOverrideModal
         record={overrideRecord}
+        historicalOverride={hasOverride}
         onClose={() => setOverrideRecord(null)}
         onSuccess={() => {
           void fetchGradeRecords(activeTab);

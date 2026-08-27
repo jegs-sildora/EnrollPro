@@ -3,6 +3,16 @@ import { AcademicStatusEnum } from "../constants/index.js";
 
 const nullableGradeSchema = z.number().min(0).max(100).nullable();
 
+const smartGradeLevelSchema = z
+  .union([
+    z.number().int().min(7).max(10),
+    z.string().trim().regex(/^(?:GRADE[\s_-]*)?(?:7|8|9|10)$/i),
+  ])
+  .transform((value) => {
+    if (typeof value === "number") return value;
+    return Number(value.match(/(?:7|8|9|10)/)?.[0]);
+  });
+
 export const smartLearningAreaResultSchema = z.object({
   code: z.string().trim().min(1, "Learning area code is required"),
   name: z.string().trim().min(1, "Learning area name is required"),
@@ -14,12 +24,12 @@ export const smartSubjectGradeSchema = z.object({
   subjectCode: z.string().trim().min(1, "Subject code is required"),
   subjectName: z.string().trim().min(1, "Subject name is required"),
   teacher: z.string().trim().optional(),
-  T1: nullableGradeSchema.optional().default(null),
-  T2: nullableGradeSchema.optional().default(null),
-  T3: nullableGradeSchema.optional().default(null),
-  finalRating: nullableGradeSchema.optional().default(null),
-  remarks: z.string().trim().nullable().optional(),
-  status: z.enum(["GRADED", "PARTIAL", "NG"]).optional(),
+  T1: nullableGradeSchema,
+  T2: nullableGradeSchema,
+  T3: nullableGradeSchema,
+  finalRating: nullableGradeSchema,
+  remarks: z.string().trim().nullable(),
+  status: z.enum(["GRADED", "PARTIAL", "NG"]),
 });
 
 export const smartPromotionStatusSchema = z.enum([
@@ -32,12 +42,12 @@ export const smartEosyLearnerOutcomeSchema = z.object({
   lrn: z
     .string()
     .regex(/^\d{12}$/, "SMART must provide a valid 12-digit LRN"),
-  studentName: z.string().trim().optional(),
-  subjectGrades: z.array(smartSubjectGradeSchema).optional().default([]),
-  generalAverage: nullableGradeSchema.optional(),
+  studentName: z.string().trim().min(1, "SMART learner name is required"),
+  subjectGrades: z.array(smartSubjectGradeSchema).min(1, "SMART must provide subject grades"),
+  generalAverage: nullableGradeSchema,
   finalGeneralAverage: nullableGradeSchema.optional(),
-  remarks: z.string().trim().nullable().optional(),
-  promotionStatus: smartPromotionStatusSchema.nullable().optional(),
+  remarks: z.string().trim().nullable(),
+  promotionStatus: smartPromotionStatusSchema.nullable(),
   finalOutcome: z.union([AcademicStatusEnum, z.string().trim().min(1)]).nullable().optional(),
   learningAreas: z.array(smartLearningAreaResultSchema).optional(),
   publishedAt: z.string().datetime({ offset: true }).optional(),
@@ -48,15 +58,16 @@ export const smartEosyLearnerOutcomeSchema = z.object({
 });
 
 export const smartEosySectionResponseSchema = z.object({
-  success: z.boolean().optional(),
-  ready: z.boolean().optional(),
+  success: z.literal(true),
+  ready: z.literal(true),
   sectionId: z.union([z.string(), z.number()]).optional(),
-  sectionName: z.string().trim().optional(),
-  gradeLevel: z.string().trim().optional(),
-  schoolYear: z.string().trim().optional(),
-  adviser: z.string().trim().optional(),
-  outcomesSynced: z.number().optional(),
-  outcomes: z.array(smartEosyLearnerOutcomeSchema).optional(),
+  sectionName: z.string().trim().min(1, "SMART section name is required"),
+  gradeLevel: smartGradeLevelSchema,
+  schoolYear: z.string().regex(/^\d{4}-\d{4}$/, "SMART school year is invalid"),
+  program: z.string().trim().optional(),
+  adviser: z.string().trim().nullable().optional(),
+  outcomesSynced: z.number().int().nonnegative(),
+  outcomes: z.array(smartEosyLearnerOutcomeSchema),
   students: z.array(smartEosyLearnerOutcomeSchema).optional(),
   data: z
     .object({

@@ -20,7 +20,7 @@ import {
   clearSmartOutcomeFromReportedGrades,
   matchesStoredSmartOutcome,
   readSmartOutcomeEnvelope,
-  type StoredSmartSubjectGrades,
+  readSmartSyncIssue,
 } from "../integration/smart-outcome-envelope.js";
 
 function hasFinalizedEosyOutcome(record: {
@@ -37,16 +37,13 @@ function hasFinalizedEosyOutcome(record: {
     return true;
   }
   
-  // 1. Check if SMART API has finalized the outcome
-  const smartEnvelope = readSmartOutcomeEnvelope(record.enrollmentApplication.reportedGrades);
-  const hasSmartOutcome = smartEnvelope !== null;
-  
-  // 2. Check if EnrollPro has local mock grades 
-  const hasLocalOutcome = record.finalAverage !== null && record.eosyStatus !== null;
-
-  // 3. If either exists, we allow finalization. 
-  // (SMART is conceptually prioritized, but either satisfies the check)
-  return hasSmartOutcome || hasLocalOutcome;
+  return matchesStoredSmartOutcome({
+    value: record.enrollmentApplication.reportedGrades,
+    schoolYearId: record.schoolYearId,
+    sectionId: record.sectionId,
+    finalAverage: record.finalAverage,
+    eosyStatus: record.eosyStatus,
+  });
 }
 
 function csvEscape(value: unknown): string {
@@ -240,6 +237,14 @@ interface EosyRecordPayload {
     requiredGrade: number;
     violationType: string;
   }> | null;
+  smartSyncStatus:
+    | "FINALIZED_SMART_GRADES_RECEIVED"
+    | "WAITING_FOR_SMART_FINALIZATION"
+    | "INCOMPLETE_SUBJECT_GRADES"
+    | "SMART_DATA_NEEDS_REVIEW"
+    | null;
+  smartSyncReason: string | null;
+  smartSynchronizedAt: string | null;
 }
 
 async function loadEosySections(schoolYearId: number): Promise<EosySectionPayload[]> {
@@ -280,55 +285,6 @@ function getEosyGradeLevels(sections: EosySectionPayload[]) {
   );
 }
 
-function unifySmartSubjects(
-  subjects: Record<string, StoredSmartSubjectGrades>
-): Record<string, StoredSmartSubjectGrades> {
-  const unified: Record<string, StoredSmartSubjectGrades> = {};
-  const groups: Record<string, StoredSmartSubjectGrades[]> = {};
-  
-  for (const [subject, grades] of Object.entries(subjects)) {
-    let overarching = subject;
-    const lower = subject.toLowerCase();
-    
-    if (lower.startsWith("science")) overarching = "Science";
-    else if (lower.startsWith("tle") || lower.startsWith("technology and livelihood education")) overarching = "TLE";
-    else if (lower.startsWith("math")) overarching = "Mathematics";
-    else if (lower.startsWith("english")) overarching = "English";
-    else if (lower.startsWith("filipino")) overarching = "Filipino";
-    else if (lower.startsWith("araling panlipunan") || lower.startsWith("ap ")) overarching = "Araling Panlipunan";
-    else if (lower.startsWith("edukasyon sa pagpapakatao") || lower.startsWith("esp ")) overarching = "Edukasyon sa Pagpapakatao";
-    else if (lower.startsWith("mapeh")) overarching = "MAPEH";
-    
-    if (!groups[overarching]) groups[overarching] = [];
-    groups[overarching].push(grades);
-  }
-
-  for (const [overarching, gradesArray] of Object.entries(groups)) {
-    if (gradesArray.length === 1) {
-      unified[overarching] = gradesArray[0];
-    } else {
-      const averaged: StoredSmartSubjectGrades = {};
-      const keys = ["T1", "T2", "T3", "Final"] as const;
-      for (const k of keys) {
-        let sum = 0;
-        let count = 0;
-        for (const g of gradesArray) {
-          const val = g[k];
-          if (typeof val === "number") {
-            sum += val;
-            count++;
-          }
-        }
-        if (count > 0) {
-          averaged[k] = Math.round(sum / count);
-        }
-      }
-      unified[overarching] = averaged;
-    }
-  }
-  return unified;
-}
-
 function buildScpMetadata(
   programType: string | null | undefined,
   nextYearCurriculum: string | null | undefined,
@@ -340,8 +296,7 @@ function buildScpMetadata(
   let scpViolations: NonNullable<EosyRecordPayload["scpViolations"]> = [];
 
   if (isScp && smartOutcome?.subjects) {
-    const unifiedSubjects = unifySmartSubjects(smartOutcome.subjects);
-    for (const [subject, grades] of Object.entries(unifiedSubjects)) {
+    for (const [subject, grades] of Object.entries(smartOutcome.subjects)) {
 
       if (grades.Final) {
         let isCore = false;
@@ -369,26 +324,6 @@ function buildScpMetadata(
           scpViolations.push({ subject, term: "Final Grade", actualGrade: grades.Final, requiredGrade: required, violationType: isCore ? "Core Subject Minimum" : "Subject Final Minimum" });
         }
       }
-    }
-  }
-
-  if (isScp && scpViolations.length === 0 && finalAverage !== null && finalAverage < 85) {
-    if (finalAverage < 80) {
-      scpViolations.push({
-        subject: "MAPEH",
-        term: "Quarter 2",
-        actualGrade: Math.floor(finalAverage),
-        requiredGrade: 80,
-        violationType: "Quarterly Minimum"
-      });
-    } else {
-      scpViolations.push({
-        subject: "Science",
-        term: "Final Grade",
-        actualGrade: Math.floor(finalAverage),
-        requiredGrade: 85,
-        violationType: "Core Subject Minimum"
-      });
     }
   }
 
@@ -471,6 +406,9 @@ async function loadEosyGradeRecords(
             sex: record.learner.sex,
           },
         },
+        smartSyncStatus: null,
+        smartSyncReason: null,
+        smartSynchronizedAt: null,
         ...scpMetadata,
       };
     });
@@ -532,11 +470,27 @@ async function loadEosyGradeRecords(
       record.finalAverage !== null && record.finalAverage !== undefined
         ? Number(record.finalAverage)
         : null;
+    const smartOutcome = readSmartOutcomeEnvelope(
+      record.enrollmentApplication.reportedGrades,
+    );
+    const smartIssue = readSmartSyncIssue(
+      record.enrollmentApplication.reportedGrades,
+    );
+    const hasMatchingSmartOutcome = matchesStoredSmartOutcome({
+      value: record.enrollmentApplication.reportedGrades,
+      schoolYearId,
+      sectionId: record.sectionId,
+      finalAverage,
+      eosyStatus: record.eosyStatus,
+    });
+    const isLocalDeparture =
+      record.eosyStatus === "DROPPED_OUT"
+      || record.eosyStatus === "TRANSFERRED_OUT";
     const scpMetadata = buildScpMetadata(
       record.section.programType,
       record.nextYearCurriculum,
       finalAverage,
-      readSmartOutcomeEnvelope(record.enrollmentApplication.reportedGrades)
+      smartOutcome,
     );
 
     return {
@@ -553,6 +507,18 @@ async function loadEosyGradeRecords(
         ...record.enrollmentApplication,
         trackingNumber: record.enrollmentApplication.trackingNumber ?? "",
       },
+      smartSyncStatus: isLocalDeparture
+        ? null
+        : hasMatchingSmartOutcome
+          ? "FINALIZED_SMART_GRADES_RECEIVED"
+          : smartIssue?.status ?? "WAITING_FOR_SMART_FINALIZATION",
+      smartSyncReason: isLocalDeparture || hasMatchingSmartOutcome
+        ? null
+        : smartIssue?.reason
+          ?? "Waiting for SMART to publish complete finalized grades.",
+      smartSynchronizedAt: hasMatchingSmartOutcome
+        ? smartOutcome?.synchronizedAt ?? null
+        : smartIssue?.synchronizedAt ?? null,
       ...scpMetadata,
     };
   });
@@ -720,7 +686,19 @@ export async function updateEosyRecord(
       );
     }
 
-    // Removed manual status restriction to support the reverted dropdown for all statuses
+    if (eosyStatus !== "DROPPED_OUT" && eosyStatus !== "TRANSFERRED_OUT") {
+      throw new AppError(
+        422,
+        "Academic outcomes must come from finalized SMART grades. Only Dropped Out and Transferred Out may be recorded in EnrollPro.",
+      );
+    }
+
+    if (eosyStatus === "DROPPED_OUT" && !String(dropOutReason ?? "").trim()) {
+      throw new AppError(422, "A drop-out reason is required.");
+    }
+    if (eosyStatus === "TRANSFERRED_OUT" && !transferOutDate) {
+      throw new AppError(422, "A transfer-out date is required.");
+    }
 
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },

@@ -13,11 +13,12 @@ import type { EnrollmentRecord } from "@/features/enrollment/pages/EosyIndex";
 
 interface Props {
   record: EnrollmentRecord | null;
+  historicalOverride: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
+export function EosyOverrideModal({ record, historicalOverride, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [eosyStatus, setEosyStatus] = useState<EosyStatus | "">("");
   const [dropOutReason, setDropOutReason] = useState("");
@@ -49,15 +50,20 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
 
     setLoading(true);
     try {
-      await api.post(`/eosy/records/${record.id}/override`, {
+      const payload = {
         eosyStatus,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate: eosyStatus === "TRANSFERRED_OUT" ? transferOutDate : null,
-      });
+      };
+      if (historicalOverride) {
+        await api.post(`/eosy/records/${record.id}/override`, payload);
+      } else {
+        await api.patch(`/eosy/records/${record.id}`, payload);
+      }
 
       sileo.success({
-        title: "Override Applied",
-        description: `Successfully overrode data for ${record.enrollmentApplication.learner.firstName} ${record.enrollmentApplication.learner.lastName}.`,
+        title: "Learner Status Recorded",
+        description: `Recorded the verified learner status for ${record.enrollmentApplication.learner.firstName} ${record.enrollmentApplication.learner.lastName}.`,
       });
       onSuccess();
       onClose();
@@ -74,7 +80,7 @@ export function EosyOverrideModal({ record, onClose, onSuccess }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-800 uppercase font-extrabold text-xl">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
-            Learner Departure Correction
+            Record Learner Status
           </DialogTitle>
           <DialogDescription className="text-amber-700/80 font-bold">
             Record a verified dropped-out or transferred-out status. SMART remains the source of academic grades and promotion outcomes.

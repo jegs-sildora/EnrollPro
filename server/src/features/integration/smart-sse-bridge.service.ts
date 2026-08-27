@@ -35,6 +35,21 @@ interface ResolvedSection {
   name: string;
 }
 
+export type SmartSseConnectionState =
+  | "DISABLED"
+  | "CONNECTING"
+  | "CONNECTED"
+  | "UNAVAILABLE"
+  | "AUTHENTICATION_FAILED"
+  | "PAUSED";
+
+export interface SmartSseBridgeStatus {
+  state: SmartSseConnectionState;
+  connectionAttempts: number;
+  lastConnectedAt: string | null;
+  lastEventAt: string | null;
+}
+
 function getSectionKey(section: ResolvedSection): string {
   return `${section.schoolYearId}:${section.id}`;
 }
@@ -78,11 +93,15 @@ class SmartSseBridge {
   private connectionFailures = 0;
   private exhausted = false;
   private stopped = true;
+  private connectionState: SmartSseConnectionState = "DISABLED";
+  private lastConnectedAt: string | null = null;
+  private lastEventAt: string | null = null;
   private readonly pending = new Map<string, SmartSyncNotification>();
   private readonly running = new Set<string>();
 
   public start(): void {
     if (!getSmartConnectionConfig()) {
+      this.connectionState = "DISABLED";
       return;
     }
 
@@ -94,6 +113,7 @@ class SmartSseBridge {
     this.exhausted = false;
     this.reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
     this.stopped = false;
+    this.connectionState = "CONNECTING";
     void this.connect();
   }
 
@@ -116,6 +136,15 @@ class SmartSseBridge {
 
     this.stop();
     this.start();
+  }
+
+  public getStatus(): SmartSseBridgeStatus {
+    return {
+      state: this.connectionState,
+      connectionAttempts: this.connectionFailures,
+      lastConnectedAt: this.lastConnectedAt,
+      lastEventAt: this.lastEventAt,
+    };
   }
 
   private async connect(): Promise<void> {
@@ -150,6 +179,7 @@ class SmartSseBridge {
       if (response.status === 401 || response.status === 403) {
         this.exhausted = true;
         this.stopped = true;
+        this.connectionState = "AUTHENTICATION_FAILED";
         console.error(
           `[SMART SSE] Authentication rejected by SMART (HTTP ${response.status}). Configure the valid SMART-issued Bearer token in server/.env.`,
         );
@@ -162,6 +192,8 @@ class SmartSseBridge {
 
       this.connectionFailures = 0;
       this.reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
+      this.connectionState = "CONNECTED";
+      this.lastConnectedAt = new Date().toISOString();
       await this.readStream(response.body);
     } catch (error: unknown) {
       if (!this.stopped && !controller.signal.aborted) {
@@ -173,14 +205,17 @@ class SmartSseBridge {
         this.abortController = null;
       }
       if (!this.stopped) {
+        this.connectionState = "UNAVAILABLE";
         this.connectionFailures += 1;
         if (this.connectionFailures >= MAX_CONNECTION_ATTEMPTS) {
           this.exhausted = true;
           this.stopped = true;
+          this.connectionState = "PAUSED";
           console.warn(
             "[SMART SSE] Retry limit reached after 3 attempts. Automatic retries are paused until Sync SMART is clicked.",
           );
         } else {
+          this.connectionState = "CONNECTING";
           this.scheduleReconnect();
         }
       }
@@ -237,6 +272,8 @@ class SmartSseBridge {
     if (!SMART_GRADE_EVENT_TYPES.has(notification.data.type)) {
       return;
     }
+
+    this.lastEventAt = notification.data.timestamp;
 
     void this.enqueue(notification.data);
   }
@@ -377,4 +414,16 @@ export function retrySmartSseBridgeAfterManualSync(): void {
     smartSseBridge = new SmartSseBridge();
   }
   smartSseBridge.retryAfterManualSync();
+}
+
+export function getSmartSseBridgeStatus(): SmartSseBridgeStatus {
+  if (!smartSseBridge) {
+    return {
+      state: "DISABLED",
+      connectionAttempts: 0,
+      lastConnectedAt: null,
+      lastEventAt: null,
+    };
+  }
+  return smartSseBridge.getStatus();
 }

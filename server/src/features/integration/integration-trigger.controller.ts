@@ -8,7 +8,17 @@ import {
   broadcastEosyInvalidation,
 } from "../../lib/realtime-events.js";
 import { syncFinalSmartSectionOutcomes } from "./smart-eosy.service.js";
-import { retrySmartSseBridgeAfterManualSync } from "./smart-sse-bridge.service.js";
+import {
+  getSmartSseBridgeStatus,
+  retrySmartSseBridgeAfterManualSync,
+} from "./smart-sse-bridge.service.js";
+
+export function getSmartConnectionStatus(
+  _req: Request,
+  res: Response,
+): void {
+  res.json(getSmartSseBridgeStatus());
+}
 
 /**
  * POST /api/integration/smart/sections/:id/sync-grades

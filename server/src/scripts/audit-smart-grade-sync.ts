@@ -35,7 +35,10 @@ function maskLrn(lrn: string): string {
   return `********${lrn.slice(-4)}`;
 }
 
-function gradeNumber(value: string | null | undefined): number | null {
+function gradeNumber(value: string | number | null | undefined): number | null {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value >= 7 && value <= 10 ? value : null;
+  }
   const match = value?.match(/(?:GRADE[_\s-]*)?(7|8|9|10)/i);
   return match ? Number(match[1]) : null;
 }
