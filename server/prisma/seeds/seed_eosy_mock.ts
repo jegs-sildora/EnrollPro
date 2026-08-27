@@ -66,7 +66,11 @@ async function main() {
         // 2. The Irregular (Conditionally Promoted) Learner (passing e.g. 76)
         await tx.enrollmentRecord.update({
           where: { id: irregularId },
-          data: { finalAverage: 76, eosyStatus: "CONDITIONALLY_PROMOTED" },
+          data: { 
+            finalAverage: 76, 
+            eosyStatus: "CONDITIONALLY_PROMOTED",
+            academicDeficiencyNote: "Mathematics, Science" // Added 2 failed subjects for testing
+          },
         });
 
         // 3. The Transferred Out Learner (NULL grade)

@@ -24,6 +24,7 @@ async function main() {
     data: {
       finalAverage: null,
       eosyStatus: null,
+      academicDeficiencyNote: null,
     },
   });
 

@@ -111,20 +111,6 @@ export default function StudentProfile() {
         </Button>
       </div>
 
-      {loadedStudent && (
-        <div className="w-full bg-background border rounded-lg p-6 shadow-sm mb-2 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold uppercase text-foreground">{loadedStudent.fullName}</h1>
-            <p className="text-muted-foreground font-extrabold text-sm mt-1">LRN: {loadedStudent.lrn}</p>
-          </div>
-          {needsRemedial && (
-            <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold uppercase text-sm px-4 py-1.5 shadow-sm">
-              Conditionally Promoted
-            </Badge>
-          )}
-        </div>
-      )}
-
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -142,8 +128,7 @@ export default function StudentProfile() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "record" ? "text-primary-foreground" : "text-foreground")}>
-              <UserRound className="mr-2 h-4 w-4" />
+            <span className={cn("relative z-20 text-base uppercase truncate flex items-center justify-center", activeTab === "record" ? "text-primary-foreground" : "text-foreground")}>
               Primary Profile
             </span>
           </TabsTrigger>
@@ -158,8 +143,7 @@ export default function StudentProfile() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "academic" ? "text-primary-foreground" : "text-foreground")}>
-              <HeartPulse className="mr-2 h-4 w-4" />
+            <span className={cn("relative z-20 text-base uppercase truncate flex items-center justify-center", activeTab === "academic" ? "text-primary-foreground" : "text-foreground")}>
               Academic History
             </span>
           </TabsTrigger>

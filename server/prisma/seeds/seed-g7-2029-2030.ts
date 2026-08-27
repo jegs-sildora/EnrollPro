@@ -74,6 +74,13 @@ async function seedGrade7() {
       const motherTongue = motherTongues[l % motherTongues.length];
       
       const lrn = generateLRN();
+      
+      const offset = (BASE_YEAR - 2026) * 20;
+      const randomPhotoNum = (learnerNameIndex + offset) % 100;
+      const studentPhoto = prismaLSex === Sex.MALE 
+        ? `https://randomuser.me/api/portraits/men/${randomPhotoNum}.jpg` 
+        : `https://randomuser.me/api/portraits/women/${randomPhotoNum}.jpg`;
+
       const learnerUser = await prisma.user.create({
         data: {
           firstName: learnerName.firstName,
@@ -108,6 +115,7 @@ async function seedGrade7() {
           hasPsaBirthCertificate: true,
           birthCertificateType: "PSA_BIRTH_CERTIFICATE",
           previousGenAve: 75 + ((learnerNameIndex * 3) % 25) + ((learnerNameIndex % 10) / 10),
+          studentPhoto,
         }
       });
 

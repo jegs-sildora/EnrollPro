@@ -18,7 +18,7 @@ export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
       <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden">
         <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
           <FileBadge2 className="h-4 w-4 text-primary" />
-          Historical Final Averages
+          Historical Academic Record
         </div>
         <div className="text-base leading-tight">
           {student.historicalGrades && student.historicalGrades.length > 0 ? (
@@ -53,8 +53,8 @@ export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
               </tbody>
             </table>
           ) : (
-            <p className="text-muted-foreground text-center font-extrabold py-6">
-              No historical grades available.
+            <p className="text-foreground text-center font-extrabold py-6">
+              No historical academic records available.
             </p>
           )}
         </div>

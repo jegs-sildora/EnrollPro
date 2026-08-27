@@ -932,7 +932,7 @@ export default function Students() {
               <div className="flex min-w-0 items-center gap-3 py-3 pl-2">
                 <UserPhoto
                   photo={row.original.studentPhoto}
-                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0"
+                  containerClassName="w-9 h-9 rounded-full shadow-sm border shrink-0 border-2 border-primary border-solid"
                   className="w-full h-full object-cover"
                   alt={row.original.fullName}
                   fallbackIcon={
