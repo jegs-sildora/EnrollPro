@@ -96,7 +96,10 @@ export default function StudentProfile() {
     );
   }
 
-  const needsRemedial = loadedStudent?.enrollment?.eosyStatus === "CONDITIONALLY_PROMOTED";
+  const needsRemedial = 
+    loadedStudent?.isRemedialRequired || 
+    (loadedStudent?.academicDeficiencies && loadedStudent.academicDeficiencies.length > 0) || 
+    (loadedStudent?.remedialClasses && loadedStudent.remedialClasses.length > 0);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
@@ -160,7 +163,7 @@ export default function StudentProfile() {
                 />
               )}
               <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "remedial" ? "text-white" : "text-amber-600")}>
-                Remedial Subjects
+                Back Subjects
               </span>
             </TabsTrigger>
           )}

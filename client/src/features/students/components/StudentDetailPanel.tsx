@@ -155,6 +155,10 @@ export interface StudentDetail {
   isBalikAral?: boolean;
   motherTongue?: string | null;
   religion?: string | null;
+  academicHistory?: any[];
+  isRemedialRequired?: boolean;
+  academicDeficiencies?: any[];
+  remedialClasses?: any[];
   portalStatus?: string;
   historicalGrades?: {
     gradeLevel: string;
@@ -171,7 +175,7 @@ interface Props {
   onRefreshData?: () => void;
   onTransferOut?: (payload: StudentTransferOutPayload) => void;
   onDropout?: (payload: StudentDropoutPayload) => void;
-  onExpand?: () => void;
+  onExpand?: (identifier?: string | number) => void;
   onStudentLoaded?: (student: any) => void;
   canEditProfile?: boolean;
   showHeader?: boolean;
@@ -875,7 +879,7 @@ export function StudentDetailPanel({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={onExpand}
+                    onClick={() => onExpand(student?.lrn || student?.id)}
                     className="absolute right-18 top-3 rounded-full p-2 text-primary-foreground hover:bg-primary-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
                   >
                     <Maximize2 className="h-5 w-5" />
@@ -925,19 +929,26 @@ export function StudentDetailPanel({
                     .replace(/^[,\s]+|[,\s]+$/g, "") || student.fullName
                   : student.fullName}
               </h3>
-              <div className="flex items-center justify-center gap-2 mt-1 font-extrabold">
-                {isJhsCompleter ? (
-                  <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
-                    JHS Completer
-                  </Badge>
-                ) : (
-                  <Badge className="bg-emerald-600 text-white gap-1 px-3 py-1 rounded-md uppercase  shadow-sm">
-                    Officially Enrolled
-                  </Badge>
-                )}
-                {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
-                  <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-extrabold">
-                    Late Enrollee
+              <div className="flex flex-col items-center justify-center gap-2 mt-1">
+                <div className="flex items-center justify-center gap-2 font-extrabold">
+                  {isJhsCompleter ? (
+                    <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
+                      JHS Completer
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-emerald-600 text-white gap-1 px-3 py-1 rounded-md uppercase  shadow-sm">
+                      Officially Enrolled
+                    </Badge>
+                  )}
+                  {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
+                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-extrabold">
+                      Late Enrollee
+                    </Badge>
+                  )}
+                </div>
+                {(student.isRemedialRequired || (student.academicDeficiencies && student.academicDeficiencies.length > 0) || (student.remedialClasses && student.remedialClasses.length > 0)) && (
+                  <Badge className="bg-amber-500 text-white hover:bg-amber-600 gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-extrabold">
+                    WITH BACK SUBJECTS
                   </Badge>
                 )}
               </div>

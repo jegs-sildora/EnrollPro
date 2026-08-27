@@ -26,7 +26,26 @@ import {
 import { validate } from "../../middleware/validate.js";
 import { updateStudentSchema, healthRecordSchema } from "@enrollpro/shared";
 
+import { prisma } from "../../lib/prisma.js";
+
 const router: Router = Router();
+
+router.param("id", async (req, res, next, id) => {
+  if (id && id.length === 12 && /^\d+$/.test(id)) {
+    try {
+      const learner = await prisma.learner.findUnique({
+        where: { lrn: id },
+        select: { id: true }
+      });
+      if (learner) {
+        req.params.id = learner.id.toString();
+      }
+    } catch (e) {
+      return next(e);
+    }
+  }
+  next();
+});
 
 // All routes require authentication
 router.use(authenticate);

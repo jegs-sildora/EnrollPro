@@ -595,9 +595,17 @@ export default function Students() {
     }
   }, [queryClient, ayId]);
 
-  const handleViewDetails = useCallback(async (studentId: number) => {
-    setSelectedStudentId(studentId);
-  }, []);
+  const handleViewDetails = useCallback(
+    (identifier: string | number) => {
+      // If we use string for LRN, we might need to change selectedStudentId type 
+      // or resolve it. But typically selectedStudentId is number. 
+      // If selectedStudentId is number, we should pass student.id here instead of LRN.
+      // Wait, handleViewDetails is used to open the Quick View Modal which uses StudentDetailPanel!
+      // StudentDetailPanel accepts id as a number. So let's keep handleViewDetails receiving id.
+      setSelectedStudentId(Number(identifier));
+    },
+    [],
+  );
 
   const renderLearnerStatus = (student: Student) => {
     let status = student.learnerStatus || "ACTIVE";
@@ -641,8 +649,8 @@ export default function Students() {
   };
 
   const handleOpenProfilePage = useCallback(
-    (studentId: number) => {
-      navigate(`/students/${studentId}`);
+    (identifier: string | number) => {
+      navigate(`/students/${identifier}`);
     },
     [navigate],
   );
@@ -1098,7 +1106,7 @@ export default function Students() {
                 className="h-9 items-center justify-center rounded-lg border bg-primary/5 px-4 text-sm text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewDetails(row.original.id);
+                  handleViewDetails(row.original.lrn || row.original.id);
                 }}
               >
                 <Eye className="w-4 h-4 mr-2" />
@@ -1407,7 +1415,7 @@ export default function Students() {
                         variant="secondary"
                         size="sm"
                         className="h-9 flex-1 font-extrabold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                        onClick={() => handleViewDetails(student.id)}>
+                        onClick={() => handleViewDetails(student.lrn || student.id)}>
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View
                       </Button>
@@ -1426,7 +1434,7 @@ export default function Students() {
                           className="w-56 font-extrabold">
                           <DropdownMenuItem
                             onClick={() =>
-                              handleOpenProfilePage(student.id)
+                              handleOpenProfilePage(student.lrn || student.id)
                             }
                             className="cursor-pointer">
                             <Eye className="mr-2 h-4 w-4" />
@@ -1673,7 +1681,7 @@ export default function Students() {
                 onRefreshData={refreshTables}
                 onTransferOut={handlePanelTransferOut}
                 onDropout={handlePanelDropout}
-                onExpand={() => navigate(`/students/${retainedStudentId}`)}
+                onExpand={(identifier) => navigate(`/students/${identifier || retainedStudentId}`)}
                 canEditProfile={false}
               />
             </div>

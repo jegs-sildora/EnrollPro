@@ -505,6 +505,21 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         completedAt: h.createdAt
       }));
 
+      // Compute remedial requirements from the most recent history
+      const latestHistory = histories.length > 0 ? histories[histories.length - 1] : null;
+      const hasDeficiency = latestHistory?.eosyStatus === "CONDITIONALLY_PROMOTED" || !!latestHistory?.academicDeficiencyNote;
+      const academicDeficiencies = hasDeficiency && latestHistory?.academicDeficiencyNote 
+        ? latestHistory.academicDeficiencyNote.split(',').map((subj, index) => ({
+            id: index + 1,
+            subject: subj.trim(),
+            grade: 74, // Mock grade as it's not stored in the note
+            status: "PENDING_ENROLLMENT",
+            teacherId: ""
+          }))
+        : [];
+      
+      const computedIsRemedialRequired = applicant.isRemedialRequired || hasDeficiency;
+
       const activeAdviser =
         historicalAdviser ??
         applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher ??
@@ -584,6 +599,9 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         isBalikAral: applicant.learner?.isBalikAral,
         motherTongue: applicant.learner?.motherTongue,
         trackingNumber: applicant.trackingNumber,
+        isRemedialRequired: computedIsRemedialRequired,
+        academicDeficiencies: academicDeficiencies,
+        academicDeficiencyNote: (applicant as any).academicDeficiencyNote || latestHistory?.academicDeficiencyNote || null,
         status: applicant.status,
         applicantType: applicant.applicantType,
         rejectionReason: applicant.rejectionReason,
