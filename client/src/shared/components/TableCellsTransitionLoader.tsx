@@ -100,7 +100,7 @@ export function TableCellsTransitionLoader({
         </div>
 
         <h2 className="text-lg font-extrabold text-foreground">
-          Syncing SMART EOSY grades
+          Syncing EOSY Grades
         </h2>
         <p className="mt-1 text-sm font-bold text-foreground">
           {currentSection

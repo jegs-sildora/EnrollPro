@@ -1549,7 +1549,7 @@ export default function EosyUpdating() {
                             {syncingSmart ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Syncing SMART outcomes</span>
+                                <span>Syncing EOSY Grades</span>
                               </>
                             ) : (
                               <>
