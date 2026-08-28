@@ -17,6 +17,7 @@ import {
   markTransferredOut,
   togglePortalAccess,
   resetPortalPassword,
+  enrollSubjectDeficiencies,
 } from "./controllers/students.profile.controller.js";
 import {
   getHealthRecords as getStudentHealthRecords,
@@ -105,6 +106,12 @@ router.put(
 );
 
 // Portal PIN Reset
+router.post(
+  "/:id/deficiencies/enroll",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  enrollSubjectDeficiencies,
+);
+
 router.post(
   "/:id/reset-portal-pin",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),

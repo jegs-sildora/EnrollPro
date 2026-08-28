@@ -17,7 +17,7 @@ import {
   type StudentTransferOutPayload,
 } from "../components/StudentDetailPanel";
 import { Badge } from "@/shared/ui/badge";
-import { RemedialWorkspace } from "../components/tabs/RemedialWorkspace";
+import { BackSubjectWorkspace } from "../components/tabs/BackSubjectWorkspace";
 import { AcademicHistoryTab } from "../components/tabs/AcademicHistoryTab";
 
 export default function StudentProfile() {
@@ -152,18 +152,18 @@ export default function StudentProfile() {
           </TabsTrigger>
           {needsRemedial && (
             <TabsTrigger
-              value="remedial"
+              value="back_subjects"
               className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
             >
-              {activeTab === "remedial" && (
+              {activeTab === "back_subjects" && (
                 <motion.div
                   layoutId="profile-active-pill"
-                  className="absolute inset-0 bg-amber-600 shadow-sm rounded-md"
+                  className="absolute inset-0 bg-primary shadow-sm rounded-md"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "remedial" ? "text-white" : "text-amber-600")}>
-                Back Subjects
+              <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "back_subjects" ? "text-white" : "text-foreground")}>
+                Subject Deficiencies
               </span>
             </TabsTrigger>
           )}
@@ -196,10 +196,10 @@ export default function StudentProfile() {
 
         {needsRemedial && (
           <TabsContent
-            value="remedial"
+            value="back_subjects"
             className="min-h-0 flex-1 overflow-hidden rounded-md border bg-background"
           >
-            <RemedialWorkspace student={loadedStudent} />
+            <BackSubjectWorkspace student={loadedStudent} schoolYearId={schoolYearId ?? 0} onRefreshData={refreshProfile} />
           </TabsContent>
         )}
       </Tabs>

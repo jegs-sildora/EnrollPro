@@ -15,6 +15,8 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { useSidebar } from "@/shared/ui/use-sidebar";
+import { HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
 export interface UnsavedChangeSource {
   id: string;
@@ -43,6 +45,7 @@ interface UnsavedChangesBarProps {
   saveLabel?: string;
   message?: string;
   className?: string;
+  changesList?: string[];
 }
 
 const UnsavedChangesContext = createContext<UnsavedChangesContextValue | null>(
@@ -62,6 +65,7 @@ export function UnsavedChangesBar({
   saveLabel = "Save Changes",
   message = "You have unsaved changes.",
   className,
+  changesList,
 }: UnsavedChangesBarProps) {
   let sidebarState = "expanded";
   try {
@@ -78,8 +82,27 @@ export function UnsavedChangesBar({
         "fixed bottom-0 right-0 left-0 md:left-[var(--unsaved-left)] z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8 transition-[left] duration-300 ease-in-out",
         className,
       )}>
-      <span className="mr-auto hidden text-sm leading-tight text-foreground sm:inline-block sm:text-base font-extrabold">
+      <span className="mr-auto hidden items-center gap-2 text-sm leading-tight text-foreground sm:flex sm:text-base font-extrabold">
         {message}
+        {changesList && changesList.length > 0 && (
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="bg-primary text-primary-foreground max-w-sm border-primary">
+                <div className="space-y-1 p-1">
+                  <p className="font-semibold text-sm mb-2 text-primary-foreground">Unsaved Changes:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-sm text-primary-foreground">
+                    {changesList.map((change, i) => (
+                      <li key={i}>{change}</li>
+                    ))}
+                  </ul>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </span>
       <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
         <Button

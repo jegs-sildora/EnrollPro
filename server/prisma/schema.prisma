@@ -159,6 +159,7 @@ model SchoolYear {
   term3Start             DateTime?               @map("term3_start") @db.Date
   term4End               DateTime?               @map("term4_end") @db.Date
   term4Start             DateTime?               @map("term4_start") @db.Date
+  activeTerm             String?                 @map("active_term")
   enrollmentApplications EnrollmentApplication[]
   enrollmentRecords      EnrollmentRecord[]
   healthRecords          HealthRecord[]
@@ -171,6 +172,7 @@ model SchoolYear {
   teacherSchedulePeriods TeacherSchedulePeriod[]
   enrollmentHistories    EnrollmentHistory[]
   schoolFormArtifacts    SchoolFormArtifact[]
+  subjectDeficiencies    SubjectDeficiency[]
 
   @@map("school_years")
 }
@@ -211,6 +213,7 @@ model Section {
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
   enrollmentHistories EnrollmentHistory[]
   schoolFormArtifacts SchoolFormArtifact[]
+  subjectDeficiencies SubjectDeficiency[]
 
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
@@ -283,6 +286,7 @@ model Learner {
   enrollmentRecords            EnrollmentRecord[]
   healthRecords                HealthRecord[]
   enrollmentHistories          EnrollmentHistory[]
+  subjectDeficiencies          SubjectDeficiency[]
   user                         User?                   @relation("UserLearnerProfile", fields: [userId], references: [id])
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
@@ -831,4 +835,24 @@ model SchoolFormArtifact {
   @@map("school_form_artifacts")
 }
 
+/// Back subject assignments linking a learner's deficiency to a physical class section
+model SubjectDeficiency {
+  id           Int      @id @default(autoincrement())
+  learnerId    Int      @map("learner_id")
+  schoolYearId Int      @map("school_year_id")
+  sectionId    Int      @map("section_id")
+  subjectName  String   @map("subject_name")
+  status       String   @default("ENROLLED")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  learner      Learner    @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  section      Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([learnerId, schoolYearId, subjectName], name: "uq_subject_deficiency_learner_sy_subj")
+  @@index([learnerId], map: "idx_subject_deficiency_learner_id")
+  @@index([schoolYearId], map: "idx_subject_deficiency_school_year_id")
+  @@index([sectionId], map: "idx_subject_deficiency_section_id")
+  @@map("subject_deficiencies")
+}

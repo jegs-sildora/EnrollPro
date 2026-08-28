@@ -7,6 +7,13 @@ export function useActiveTerm() {
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
   const [activeTermLabel, setActiveTermLabel] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setNonce(n => n + 1);
+    window.addEventListener("refetch-active-term", handler);
+    return () => window.removeEventListener("refetch-active-term", handler);
+  }, []);
 
   useEffect(() => {
     if (!activeSchoolYearId) {
@@ -42,7 +49,10 @@ export function useActiveTerm() {
         const prefix = termFormat === "QUARTERS" ? "QUARTER" : "TERM";
 
         let activeTermCode = "T1";
-        if (checkTerm(year.term1Start, year.term1End)) {
+        
+        if ((year as any).activeTerm) {
+          activeTermCode = (year as any).activeTerm;
+        } else if (checkTerm(year.term1Start, year.term1End)) {
           activeTermCode = "T1";
         } else if (checkTerm(year.term2Start, year.term2End)) {
           activeTermCode = "T2";
@@ -62,7 +72,7 @@ export function useActiveTerm() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [activeSchoolYearId]);
+  }, [activeSchoolYearId, nonce]);
 
   return { activeTerm, activeTermLabel, isLoading };
 }

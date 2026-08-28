@@ -382,7 +382,7 @@ function requiredCalendarDate(value: unknown, label: string): Date {
 
   export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, enrollOpenDate, enrollCloseDate } = req.body;
+    const { yearLabel, term1Start, term1End, term2Start, term2End, term3Start, term3End, term4Start, term4End, classOpeningDate, classEndDate, termFormat, enrollOpenDate, enrollCloseDate, activeTerm } = req.body;
 
     const year = await prisma.schoolYear.findUnique({ where: { id } });
     if (!year) {
@@ -413,6 +413,7 @@ function requiredCalendarDate(value: unknown, label: string): Date {
         ...(termFormat !== undefined ? { termFormat } : {}),
         ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? normalizeDateToUtcNoon(new Date(enrollOpenDate)) : null } : {}),
         ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? normalizeDateToUtcNoon(new Date(enrollCloseDate)) : null } : {}),
+        ...(activeTerm !== undefined ? { activeTerm } : {}),
       },
     });
 

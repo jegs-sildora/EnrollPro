@@ -508,14 +508,40 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
       // Compute remedial requirements from the most recent history
       const latestHistory = histories.length > 0 ? histories[histories.length - 1] : null;
       const hasDeficiency = latestHistory?.eosyStatus === "CONDITIONALLY_PROMOTED" || !!latestHistory?.academicDeficiencyNote;
+      
+      const existingDeficiencies = await prisma.subjectDeficiency.findMany({
+        where: {
+          learnerId: actualLearnerId,
+          schoolYearId,
+        }
+      });
+      
       const academicDeficiencies = hasDeficiency && latestHistory?.academicDeficiencyNote 
-        ? latestHistory.academicDeficiencyNote.split(',').map((subj, index) => ({
-            id: index + 1,
-            subject: subj.trim(),
-            grade: 74, // Mock grade as it's not stored in the note
-            status: "PENDING_ENROLLMENT",
-            teacherId: ""
-          }))
+        ? latestHistory.academicDeficiencyNote.split(',').map((subj, index) => {
+            const subjectName = subj.trim();
+            const gradeName = latestHistory.gradeLevel.name;
+            const gradeNum = gradeName.replace("Grade ", "");
+            
+            // Generate official subject code (e.g. MATH7, SCI7)
+            let subjectCode = subjectName.substring(0, 4).toUpperCase() + gradeNum;
+            if (subjectName.toLowerCase().includes("science")) subjectCode = "SCI" + gradeNum;
+            else if (subjectName.toLowerCase().includes("math")) subjectCode = "MATH" + gradeNum;
+            else if (subjectName.toLowerCase().includes("english")) subjectCode = "ENG" + gradeNum;
+            else if (subjectName.toLowerCase().includes("filipino")) subjectCode = "FIL" + gradeNum;
+            
+            const existingRecord = existingDeficiencies.find(d => d.subjectName === subjectName);
+            
+            return {
+              id: existingRecord?.id || index + 1,
+              subject: subjectName,
+              gradeLevel: gradeName,
+              subjectCode: subjectCode,
+              grade: 74, // Mock grade as it's not stored in the note
+              status: existingRecord ? existingRecord.status : "PENDING_ENROLLMENT",
+              sectionId: existingRecord?.sectionId ? String(existingRecord.sectionId) : undefined,
+              teacherId: ""
+            };
+          })
         : [];
       
       const computedIsRemedialRequired = applicant.isRemedialRequired || hasDeficiency;

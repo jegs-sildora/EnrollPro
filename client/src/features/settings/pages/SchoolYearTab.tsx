@@ -51,6 +51,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { HybridDatePicker } from "@/shared/components/HybridDatePicker";
 import { DualPaneDateRangePicker } from "@/shared/components/DualPaneDateRangePicker";
 import {
+  UnsavedChangesBar,
   useUnsavedChanges,
   useUnsavedChangesPrompt,
 } from "@/shared/hooks/useUnsavedChanges";
@@ -220,6 +221,7 @@ interface SYItem {
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
   termFormat: "TRIMESTER" | "QUARTERS" | null;
+  activeTerm: string | null;
   _count: {
     sections: number;
     gradeLevels: number;
@@ -290,7 +292,6 @@ export default function SchoolYearTab() {
 
   // Create state
   const [creating, setCreating] = useState(false);
-  const [updatingAlgorithm, setUpdatingAlgorithm] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
@@ -299,7 +300,6 @@ export default function SchoolYearTab() {
   const [selectedPhase, setSelectedPhase] =
     useState<SettingsState["systemPhase"]>(null);
   const [showPhaseModal, setShowPhaseModal] = useState(false);
-  const [isUpdatingPhase, setIsUpdatingPhase] = useState(false);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
@@ -367,38 +367,6 @@ export default function SchoolYearTab() {
     fetchData();
   }, []);
 
-  const handleUpdateAlgorithm = async (
-    updates: Partial<{
-      enableHomogeneousSections: boolean;
-      homogeneousSectionCount: number;
-      heterogeneousRoundRobin: boolean;
-    }>
-  ) => {
-    setUpdatingAlgorithm(true);
-    try {
-      const payload = {
-        enableHomogeneousSections,
-        homogeneousSectionCount,
-        heterogeneousRoundRobin,
-        ...updates,
-      };
-      const res = await api.patch("/settings/algorithm", payload);
-      setSettings({
-        enableHomogeneousSections: res.data.enableHomogeneousSections,
-        homogeneousSectionCount: res.data.homogeneousSectionCount,
-        heterogeneousRoundRobin: res.data.heterogeneousRoundRobin,
-      });
-      sileo.success({
-        title: "Algorithm Updated",
-        description: "Sectioning rules saved successfully.",
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setUpdatingAlgorithm(false);
-    }
-  };
-
 
   useEffect(() => {
     if (!editClassOpening) {
@@ -453,9 +421,10 @@ export default function SchoolYearTab() {
         term4End: activeYear.term4End ? activeYear.term4End.split('T')[0] : "",
         enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split('T')[0] : "",
         enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split('T')[0] : "",
+        activeTerm: activeYear.activeTerm || activeTerm || "T1",
       });
     }
-  }, [activeYear]);
+  }, [activeYear, activeTerm]);
 
   const isCalendarChanged = useMemo(() => {
     if (!activeYear) return false;
@@ -472,31 +441,151 @@ export default function SchoolYearTab() {
       localCalendarState.term4Start !== getVal(activeYear.term4Start) ||
       localCalendarState.term4End !== getVal(activeYear.term4End) ||
       localCalendarState.enrollOpenDate !== getVal(activeYear.enrollOpenDate) ||
-      localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate)
+      localCalendarState.enrollCloseDate !== getVal(activeYear.enrollCloseDate) ||
+      (localCalendarState.activeTerm !== (activeYear.activeTerm || activeTerm || "T1"))
     );
-  }, [localCalendarState, activeYear]);
+  }, [localCalendarState, activeYear, activeTerm]);
 
-  const resetCalendarSettings = useCallback(() => {
-    if (!activeYear) return;
+  const [localAlgorithmState, setLocalAlgorithmState] = useState({
+    enableHomogeneousSections: enableHomogeneousSections ?? false,
+    homogeneousSectionCount: homogeneousSectionCount ?? 5,
+    heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
+  });
 
-    setLocalCalendarState({
-      termFormat: activeYear.termFormat ?? "TRIMESTER",
-      term1Start: activeYear.term1Start ? activeYear.term1Start.split("T")[0] : "",
-      term1End: activeYear.term1End ? activeYear.term1End.split("T")[0] : "",
-      term2Start: activeYear.term2Start ? activeYear.term2Start.split("T")[0] : "",
-      term2End: activeYear.term2End ? activeYear.term2End.split("T")[0] : "",
-      term3Start: activeYear.term3Start ? activeYear.term3Start.split("T")[0] : "",
-      term3End: activeYear.term3End ? activeYear.term3End.split("T")[0] : "",
-      term4Start: activeYear.term4Start ? activeYear.term4Start.split("T")[0] : "",
-      term4End: activeYear.term4End ? activeYear.term4End.split("T")[0] : "",
-      enrollOpenDate: activeYear.enrollOpenDate
-        ? activeYear.enrollOpenDate.split("T")[0]
-        : "",
-      enrollCloseDate: activeYear.enrollCloseDate
-        ? activeYear.enrollCloseDate.split("T")[0]
-        : "",
+  useEffect(() => {
+    setLocalAlgorithmState({
+      enableHomogeneousSections: enableHomogeneousSections ?? false,
+      homogeneousSectionCount: homogeneousSectionCount ?? 5,
+      heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
     });
-  }, [activeYear]);
+  }, [enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
+
+  const isAlgorithmChanged = useMemo(() => {
+    return (
+      localAlgorithmState.enableHomogeneousSections !== (enableHomogeneousSections ?? false) ||
+      localAlgorithmState.homogeneousSectionCount !== (homogeneousSectionCount ?? 5) ||
+      localAlgorithmState.heterogeneousRoundRobin !== (heterogeneousRoundRobin ?? false)
+    );
+  }, [localAlgorithmState, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
+
+  useEffect(() => {
+    setSelectedPhase(systemPhase);
+  }, [systemPhase]);
+
+  const isPhaseChanged = !!(selectedPhase && selectedPhase !== systemPhase);
+
+  const isDirty = isCalendarChanged || isAlgorithmChanged || isPhaseChanged;
+
+  const unsavedChangesList = useMemo(() => {
+    const changes = [];
+    if (isCalendarChanged) changes.push("School Calendar & Enrollment Windows");
+    if (isAlgorithmChanged) changes.push("Automated Sectioning Configuration");
+    if (isPhaseChanged) changes.push("System Academic Phase");
+    return changes;
+  }, [isCalendarChanged, isAlgorithmChanged, isPhaseChanged]);
+
+
+  const handleDiscardChanges = useCallback(() => {
+    if (activeYear) {
+      setLocalCalendarState({
+        termFormat: activeYear.termFormat ?? "TRIMESTER",
+        term1Start: activeYear.term1Start ? activeYear.term1Start.split("T")[0] : "",
+        term1End: activeYear.term1End ? activeYear.term1End.split("T")[0] : "",
+        term2Start: activeYear.term2Start ? activeYear.term2Start.split("T")[0] : "",
+        term2End: activeYear.term2End ? activeYear.term2End.split("T")[0] : "",
+        term3Start: activeYear.term3Start ? activeYear.term3Start.split("T")[0] : "",
+        term3End: activeYear.term3End ? activeYear.term3End.split("T")[0] : "",
+        term4Start: activeYear.term4Start ? activeYear.term4Start.split("T")[0] : "",
+        term4End: activeYear.term4End ? activeYear.term4End.split("T")[0] : "",
+        enrollOpenDate: activeYear.enrollOpenDate ? activeYear.enrollOpenDate.split("T")[0] : "",
+        enrollCloseDate: activeYear.enrollCloseDate ? activeYear.enrollCloseDate.split("T")[0] : "",
+        activeTerm: activeYear.activeTerm || activeTerm || "T1",
+      });
+    }
+
+    setLocalAlgorithmState({
+      enableHomogeneousSections: enableHomogeneousSections ?? false,
+      homogeneousSectionCount: homogeneousSectionCount ?? 5,
+      heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
+    });
+
+    setSelectedPhase(systemPhase);
+  }, [activeYear, activeTerm, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin, systemPhase]);
+
+  const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
+
+  const executeSaveConfiguration = async () => {
+    if (!activeYear) return;
+    setIsSubmittingConfig(true);
+    
+    try {
+      // 1. Save Calendar Settings
+      if (isCalendarChanged) {
+        const payload: Record<string, string> = { ...localCalendarState };
+        if (payload.term1Start) {
+          payload.classOpeningDate = new Date(payload.term1Start).toISOString();
+          payload.term1Start = new Date(payload.term1Start).toISOString();
+        }
+        if (payload.term1End) payload.term1End = new Date(payload.term1End).toISOString();
+        if (payload.term2Start) payload.term2Start = new Date(payload.term2Start).toISOString();
+        if (payload.term2End) payload.term2End = new Date(payload.term2End).toISOString();
+        if (payload.term3Start) payload.term3Start = new Date(payload.term3Start).toISOString();
+        if (payload.term3End) {
+          payload.term3End = new Date(payload.term3End).toISOString();
+          if (payload.termFormat === "TRIMESTER") {
+            payload.classEndDate = payload.term3End;
+          }
+        }
+        if (payload.term4Start) payload.term4Start = new Date(payload.term4Start).toISOString();
+        if (payload.term4End) {
+          payload.term4End = new Date(payload.term4End).toISOString();
+          if (payload.termFormat === "QUARTERS") {
+            payload.classEndDate = payload.term4End;
+          }
+        }
+        if (payload.enrollOpenDate) payload.enrollOpenDate = new Date(payload.enrollOpenDate).toISOString();
+        if (payload.enrollCloseDate) payload.enrollCloseDate = new Date(payload.enrollCloseDate).toISOString();
+
+        await api.put(`/school-years/${activeYear.id}`, payload);
+        window.dispatchEvent(new Event("refetch-active-term"));
+      }
+
+      // 2. Save Algorithm Settings
+      if (isAlgorithmChanged) {
+        await api.patch("/settings/algorithm", localAlgorithmState);
+        setSettings(localAlgorithmState);
+      }
+
+      // 3. Save Phase Settings
+      if (isPhaseChanged && selectedPhase) {
+        await api.patch(`/settings/phase`, { phase: selectedPhase });
+        setSettings({ systemPhase: selectedPhase });
+      }
+
+      sileo.success({
+        title: "Configuration Saved",
+        description: "Your school year settings have been successfully updated.",
+      });
+
+      await fetchData();
+      const pubRes = await api.get("/settings/public");
+      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase, systemPhase: pubRes.data.systemPhase });
+      setShowPhaseModal(false);
+
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsSubmittingConfig(false);
+    }
+  };
+
+  const handleSaveConfigurationBtn = () => {
+    if (isPhaseChanged) {
+      setShowPhaseModal(true);
+    } else {
+      executeSaveConfiguration();
+    }
+  };
 
   const nextRolloverYearLabel = useMemo(() => {
     if (!activeYear) {
@@ -602,10 +691,10 @@ export default function SchoolYearTab() {
   });
 
   useUnsavedChanges({
-    id: "settings-school-year-calendar",
-    label: "School calendar settings",
-    isDirty: !isArchived && isCalendarChanged,
-    onDiscard: resetCalendarSettings,
+    id: "settings-school-year-configuration",
+    label: "School year configuration",
+    isDirty: !isArchived && isDirty,
+    onDiscard: handleDiscardChanges,
   });
 
   const handleClassOpeningChange = (date?: Date) => {
@@ -706,52 +795,6 @@ export default function SchoolYearTab() {
     }
 
     setShowNextForm(true);
-  };
-
-  const handleSaveCalendarSettings = async () => {
-    if (!activeYear) return;
-    setIsUpdatingTimeline(true);
-    try {
-      const payload: Record<string, string> = { ...localCalendarState };
-      // Map back to classOpeningDate and classEndDate if needed, but our backend handles termDates now.
-      // Wait, we need to ensure classOpeningDate is term1Start, and classEndDate is the last term's end date.
-      if (payload.term1Start) {
-        payload.classOpeningDate = new Date(payload.term1Start).toISOString();
-        payload.term1Start = new Date(payload.term1Start).toISOString();
-      }
-      if (payload.term1End) payload.term1End = new Date(payload.term1End).toISOString();
-      if (payload.term2Start) payload.term2Start = new Date(payload.term2Start).toISOString();
-      if (payload.term2End) payload.term2End = new Date(payload.term2End).toISOString();
-      if (payload.term3Start) payload.term3Start = new Date(payload.term3Start).toISOString();
-      if (payload.term3End) {
-        payload.term3End = new Date(payload.term3End).toISOString();
-        if (payload.termFormat === "TRIMESTER") {
-          payload.classEndDate = payload.term3End;
-        }
-      }
-      if (payload.term4Start) payload.term4Start = new Date(payload.term4Start).toISOString();
-      if (payload.term4End) {
-        payload.term4End = new Date(payload.term4End).toISOString();
-        if (payload.termFormat === "QUARTERS") {
-          payload.classEndDate = payload.term4End;
-        }
-      }
-      if (payload.enrollOpenDate) payload.enrollOpenDate = new Date(payload.enrollOpenDate).toISOString();
-      if (payload.enrollCloseDate) payload.enrollCloseDate = new Date(payload.enrollCloseDate).toISOString();
-
-      await api.put(`/school-years/${activeYear.id}`, payload);
-      sileo.success({
-        title: "Calendar Settings Saved",
-        description: "The calendar settings have been successfully updated.",
-      });
-      await fetchData();
-      const pubRes = await api.get("/settings/public");
-      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsUpdatingTimeline(false);
-    }
   };
 
   if (showSkeleton) {
@@ -895,17 +938,7 @@ export default function SchoolYearTab() {
                       })}
                     </div>
 
-                    {selectedPhase && selectedPhase !== systemPhase && (
-                      <div className="mt-6 flex justify-end">
-                        <Button
-                          onClick={() => setShowPhaseModal(true)}
-                          className="w-full sm:w-auto"
-                          disabled={isArchived || selectedPhase === systemPhase || !selectedPhase || isUpdatingPhase}
-                        >
-                          Apply Phase Change
-                        </Button>
-                      </div>
-                    )}
+
                   </div>
 
                   {/* Term Format Selection */}
@@ -963,7 +996,7 @@ export default function SchoolYearTab() {
                       { num: 3, label: localCalendarState.termFormat === "QUARTERS" ? "Quarter 3" : "Term 3", startField: "term3Start", endField: "term3End", start: localCalendarState.term3Start, end: localCalendarState.term3End },
                       ...(localCalendarState.termFormat === "QUARTERS" ? [{ num: 4, label: "Quarter 4", startField: "term4Start", endField: "term4End", start: localCalendarState.term4Start, end: localCalendarState.term4End }] : []),
                     ].map((term) => {
-                      const isActiveTerm = activeTerm === `T${term.num}`;
+                      const isActiveTerm = localCalendarState.activeTerm === `T${term.num}`;
                       return (
                       <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
                         <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase">
@@ -1017,6 +1050,22 @@ export default function SchoolYearTab() {
                             </div>
                           }
                         />
+                        {!isActiveTerm && activeYear && !isArchived && (
+                          <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
+                            <Button
+                              variant="outline"
+                              className="h-full px-6 border-primary/40  text-primary hover:text-primary shadow-sm font-extrabold uppercase tracking-wide transition-all"
+                              onClick={() => {
+                                setLocalCalendarState(prev => ({
+                                  ...prev,
+                                  activeTerm: `T${term.num}`
+                                }));
+                              }}
+                            >
+                              Set as Active {localCalendarState.termFormat === "QUARTERS" ? "Quarter" : "Term"}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )})}
                   </div>
@@ -1086,17 +1135,6 @@ export default function SchoolYearTab() {
                           </div>
                         )}
                     </div>
-
-                    {isCalendarChanged && !isArchived && (
-                      <div className="mt-6 flex justify-end">
-                        <Button
-                          onClick={handleSaveCalendarSettings}
-                          className="w-full sm:w-auto"
-                        >
-                          Save Calendar Settings
-                        </Button>
-                      </div>
-                    )}
                   </div>
 
                 </div>
@@ -1132,12 +1170,12 @@ export default function SchoolYearTab() {
                       <p className="text-base text-foreground">Group top-performing learners into dedicated sections based on General Average.</p>
                     </div>
                     <Switch
-                      checked={enableHomogeneousSections}
-                      onCheckedChange={(checked) => handleUpdateAlgorithm({ enableHomogeneousSections: checked })}
-                      disabled={updatingAlgorithm || isArchived}
+                      checked={localAlgorithmState.enableHomogeneousSections}
+                      onCheckedChange={(checked) => setLocalAlgorithmState(prev => ({ ...prev, enableHomogeneousSections: checked }))}
+                      disabled={isArchived}
                     />
                   </div>
-                  {enableHomogeneousSections && (
+                  {localAlgorithmState.enableHomogeneousSections && (
                     <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
                       <div className="max-w-xs space-y-2">
                         <Label>Number of Top BEC Sections</Label>
@@ -1146,15 +1184,14 @@ export default function SchoolYearTab() {
                           min="1"
                           placeholder="5"
                           className="h-10 py-2 px-3 font-bold"
-                          value={homogeneousSectionCount}
+                          value={localAlgorithmState.homogeneousSectionCount}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
                             if (!isNaN(val)) {
-                              setSettings({ homogeneousSectionCount: val });
+                              setLocalAlgorithmState(prev => ({ ...prev, homogeneousSectionCount: val }));
                             }
                           }}
-                          onBlur={() => handleUpdateAlgorithm({ homogeneousSectionCount })}
-                          disabled={updatingAlgorithm || isArchived}
+                          disabled={isArchived}
                         />
                       </div>
                     </div>
@@ -1168,9 +1205,9 @@ export default function SchoolYearTab() {
                       <p className="text-base text-foreground">Evenly distribute remaining learners to ensure balanced sections.</p>
                     </div>
                     <Switch
-                      checked={heterogeneousRoundRobin}
-                      onCheckedChange={(checked) => handleUpdateAlgorithm({ heterogeneousRoundRobin: checked })}
-                      disabled={updatingAlgorithm || isArchived}
+                      checked={localAlgorithmState.heterogeneousRoundRobin}
+                      onCheckedChange={(checked) => setLocalAlgorithmState(prev => ({ ...prev, heterogeneousRoundRobin: checked }))}
+                      disabled={isArchived}
                     />
                   </div>
                 </div>
@@ -1409,33 +1446,20 @@ export default function SchoolYearTab() {
                 ? "Lock System for EOSY Updating"
                 : "Confirm"
         }
-        loading={isUpdatingPhase}
-        onConfirm={async () => {
-          if (!selectedPhase) return;
-
-          setIsUpdatingPhase(true);
-
-          // Optimistic UI Update
-          const previousPhase = systemPhase;
-          setSettings({ systemPhase: selectedPhase });
-          setShowPhaseModal(false);
-
-          try {
-            await api.patch(`/settings/phase`, { phase: selectedPhase });
-            sileo.success({ title: "System phase updated", description: "The system phase has been updated successfully." });
-            // Re-fetch to ensure sync with backend, but without blocking the initial UI update
-            const pubRes = await api.get("/settings/public");
-            setSettings({ systemPhase: pubRes.data.systemPhase });
-            setSelectedPhase(null);
-          } catch (err) {
-            // Revert optimistic update
-            setSettings({ systemPhase: previousPhase });
-            toastApiError(err as never);
-          } finally {
-            setIsUpdatingPhase(false);
-          }
-        }}
+        loading={isSubmittingConfig}
+        onConfirm={executeSaveConfiguration}
       />
+      
+      {/* Global Sticky Footer */}
+      {!isArchived && isDirty && (
+        <UnsavedChangesBar
+          isSubmitting={isSubmittingConfig}
+          onDiscard={handleDiscardChanges}
+          onSave={handleSaveConfigurationBtn}
+          saveLabel="Save Configuration"
+          changesList={unsavedChangesList}
+        />
+      )}
     </fieldset>
   );
 }

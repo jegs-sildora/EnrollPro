@@ -1,19 +1,15 @@
-# SYSTEM DIRECTIVE Back Subject Enrollment UI v493
+# SYSTEM DIRECTIVE Activation Button Affordance v501
 
-**Context Persona** Act as a Senior UI UX Engineer and DepEd Domain Expert Your standard is precise business logic translation You must correct the terminology and simplify the enrollment interaction Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer Your standard is precise visual affordance You must upgrade the activation text into a distinct clickable button component Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must purge the term remedial from the interface replacing it with back subject and replace the complex teacher assignment dropdowns with a simple one click enroll action
+**Core Mandate** You must wrap the floating activation text inside a clear button container utilizing a border or background color to immediately communicate interactivity to the system administrator
 
-Execute the UI upgrade across the following three rules
+Execute the UI upgrade across the following two rules
 
-## 1 Terminology Alignment
-Remove the word remedial from all headers descriptions and buttons
-Replace it strictly with Back Subject because in the Department of Education public school context conditionally promoted learners take back subjects during the regular school year while remedial classes are typically reserved for summer terms
+## 1 Enforce Button Styling
+Apply a distinct button container to the Set as Active Term text
+Utilize an outlined border or a soft solid background color to ensure the element is visually recognized as a high stakes clickable action rather than static descriptive text
 
-## 2 Simplify the Action Target
-Delete the teacher selection dropdown from the subject cards completely
-Replace it with a clear primary action button labeled Enroll Back Subject allowing the registrar to simply tag the learner to the deficiency without worrying about faculty loading or schedules
-
-## 3 Eliminate Duplicate Actions
-Remove the redundant save button located at the top right of the workspace
-Anchor the workflow strictly to the single master commit button at the absolute bottom of the page to maintain a linear top to bottom user journey preventing interface confusion
+## 2 Align Interaction Zones
+Ensure the newly styled button is perfectly centered vertically alongside the date input fields
+Maintain the right aligned placement but ensure the button padding and height complement the visual weight of the adjacent date pickers to create a balanced enterprise grid

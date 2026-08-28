@@ -76,14 +76,19 @@ export default function SchoolProfileTab() {
   const [removingLogo, setRemovingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectingAccent, setSelectingAccent] = useState(false);
-  const [togglingProgram, setTogglingProgram] = useState(false);
   const [showRemoveLogoConfirm, setShowRemoveLogoConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  type FormValues = z.infer<typeof updateIdentitySchema>;
+  const profileFormSchema = updateIdentitySchema.extend({
+    steEnabled: z.boolean(),
+    spaEnabled: z.boolean(),
+    spsEnabled: z.boolean(),
+  });
+
+  type FormValues = z.infer<typeof profileFormSchema>;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(updateIdentitySchema),
+    resolver: zodResolver(profileFormSchema),
     defaultValues: {
       schoolName: schoolName || "",
       depedSchoolId: depedSchoolId || "",
@@ -95,10 +100,33 @@ export default function SchoolProfileTab() {
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
       globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
+      steEnabled: steEnabled ?? false,
+      spaEnabled: spaEnabled ?? false,
+      spsEnabled: spsEnabled ?? false,
     },
   });
 
-  const { isDirty, isSubmitting } = form.formState;
+  const { isDirty, isSubmitting, dirtyFields } = form.formState;
+
+  const fieldLabels: Record<string, string> = {
+    schoolName: "School Name",
+    depedSchoolId: "School ID",
+    region: "Region",
+    division: "Division",
+    schoolHeadName: "School Head Name",
+    schoolHeadTitle: "Designation",
+    facebookPageUrl: "Official Facebook Page URL",
+    depedEmail: "Official DepEd Email",
+    schoolWebsite: "Official School Website",
+    globalDefaultPassword: "Default User Password",
+    steEnabled: "STE Program",
+    spaEnabled: "SPA Program",
+    spsEnabled: "SPS Program",
+  };
+
+  const unsavedChangesList = Object.keys(fieldLabels)
+    .filter((key) => dirtyFields[key as keyof typeof dirtyFields])
+    .map((key) => fieldLabels[key]);
 
   useEffect(() => {
     form.reset({
@@ -112,6 +140,9 @@ export default function SchoolProfileTab() {
       depedEmail: depedEmail || "",
       schoolWebsite: schoolWebsite || "",
       globalDefaultPassword: globalDefaultPassword || "DepEd2026!",
+      steEnabled: steEnabled ?? false,
+      spaEnabled: spaEnabled ?? false,
+      spsEnabled: spsEnabled ?? false,
     });
   }, [
     schoolName,
@@ -124,6 +155,9 @@ export default function SchoolProfileTab() {
     depedEmail,
     schoolWebsite,
     globalDefaultPassword,
+    steEnabled,
+    spaEnabled,
+    spsEnabled,
     form.reset,
   ]);
 
@@ -133,19 +167,38 @@ export default function SchoolProfileTab() {
 
   const onSubmit = useCallback(async (values: FormValues) => {
     try {
-      const payload = {
-        ...values,
+      const identityPayload = {
         schoolName: values.schoolName?.toUpperCase() || "",
+        depedSchoolId: values.depedSchoolId || "",
         region: values.region?.toUpperCase() || "",
         division: values.division?.toUpperCase() || "",
         schoolHeadName: values.schoolHeadName?.toUpperCase() || "",
+        schoolHeadTitle: values.schoolHeadTitle || "",
+        facebookPageUrl: values.facebookPageUrl || "",
+        depedEmail: values.depedEmail || "",
+        schoolWebsite: values.schoolWebsite || "",
+        globalDefaultPassword: values.globalDefaultPassword || "",
       };
-      await api.put("/settings/identity", payload);
-      setSettings(payload);
-      form.reset(payload);
+
+      const programsPayload = {
+        steEnabled: values.steEnabled,
+        spaEnabled: values.spaEnabled,
+        spsEnabled: values.spsEnabled,
+      };
+
+      await Promise.all([
+        api.put("/settings/identity", identityPayload),
+        api.patch("/settings/programs", programsPayload)
+      ]);
+
+      setSettings({
+        ...identityPayload,
+        ...programsPayload,
+      });
+      form.reset(values);
       sileo.success({
         title: "Settings Saved",
-        description: "School identity and channels updated successfully.",
+        description: "School profile and programs updated successfully.",
       });
     } catch (err) {
       toastApiError(err as never);
@@ -258,33 +311,9 @@ export default function SchoolProfileTab() {
     }
   };
 
-  const handleToggleProgram = async (key: "steEnabled" | "spaEnabled" | "spsEnabled", value: boolean) => {
-    setTogglingProgram(true);
-    try {
-      const payload = {
-        steEnabled,
-        spaEnabled,
-        spsEnabled,
-        [key]: value,
-      };
-      const res = await api.patch("/settings/programs", payload);
-      setSettings({
-        steEnabled: res.data.steEnabled,
-        spaEnabled: res.data.spaEnabled,
-        spsEnabled: res.data.spsEnabled,
-      });
-      sileo.success({
-        title: "Programs Updated",
-        description: "Active academic programs saved.",
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setTogglingProgram(false);
-    }
+  const handleToggleProgram = (key: "steEnabled" | "spaEnabled" | "spsEnabled", value: boolean) => {
+    form.setValue(key, value, { shouldDirty: true, shouldValidate: true });
   };
-
-
   return (
 <div className="space-y-6">
       <Form {...form}>
@@ -419,9 +448,9 @@ export default function SchoolProfileTab() {
                         <p className="text-base leading-tight text-foreground">Science, Technology, and Engineering</p>
                       </div>
                       <Switch
-                        checked={steEnabled}
+                        checked={form.watch("steEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("steEnabled", checked)}
-                        disabled={isArchived || togglingProgram}
+                        disabled={isArchived || isSubmitting}
                       />
                     </div>
                   </div>
@@ -433,9 +462,9 @@ export default function SchoolProfileTab() {
                         <p className="text-base leading-tight text-foreground">Special Program in the Arts</p>
                       </div>
                       <Switch
-                        checked={spaEnabled}
+                        checked={form.watch("spaEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("spaEnabled", checked)}
-                        disabled={isArchived || togglingProgram}
+                        disabled={isArchived || isSubmitting}
                       />
                     </div>
                   </div>
@@ -447,9 +476,9 @@ export default function SchoolProfileTab() {
                         <p className="text-base leading-tight text-foreground">Special Program in Sports</p>
                       </div>
                       <Switch
-                        checked={spsEnabled}
+                        checked={form.watch("spsEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("spsEnabled", checked)}
-                        disabled={isArchived || togglingProgram}
+                        disabled={isArchived || isSubmitting}
                       />
                     </div>
                   </div>
@@ -571,7 +600,8 @@ export default function SchoolProfileTab() {
                             type="button"
                             variant="outline"
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={isArchived || uploading}>
+                            disabled={isArchived || uploading}
+                            className="text-primary">
                             <Upload className="mr-2 h-4 w-4" />
                             {uploading ? "Uploading..." : "Upload Logo"}
                           </Button>
@@ -640,6 +670,7 @@ export default function SchoolProfileTab() {
                 onDiscard={handleDiscard}
                 onSave={handleSaveConfiguration}
                 saveLabel="Save Configuration"
+                changesList={unsavedChangesList}
               />
             )}
           </fieldset>
