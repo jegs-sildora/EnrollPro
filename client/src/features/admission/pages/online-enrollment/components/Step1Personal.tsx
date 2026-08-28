@@ -461,7 +461,7 @@ export default function Step1Personal() {
                   }
                 }}
               />
-              <Label htmlFor="noMiddleName" className="text-base cursor-pointer">
+              <Label htmlFor="noMiddleName" className="text-base cursor-pointer font-bold">
                 No Middle Name.
               </Label>
             </div>

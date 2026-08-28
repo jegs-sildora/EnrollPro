@@ -402,8 +402,8 @@ export function VerificationWorkspace() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
-                <SelectItem value="REGULAR" className="leading-tight font-bold">Regular BEC</SelectItem>
-                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">Science Technology and Engineering</SelectItem>
+                <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
                 <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
                 <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
               </SelectContent>
@@ -642,9 +642,9 @@ export function VerificationWorkspace() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 gap-4">
                         <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
-                          <label className="text-sm font-bold uppercase text-foreground">Requested Curriuculum (From Online Enrollment Form)</label>
+                          <label className="text-sm font-bold uppercase text-foreground">Requested Curriculum (From Online Enrollment Form)</label>
                           <div className="h-10 px-3 py-2 bg/50 rounded-md border border-border flex items-center text-base leading-tight text-foreground font-bold">
-                            {selectedApp.applicantType.replace(/_/g, " ")}
+                            {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
                           </div>
                         </div>
                         <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">

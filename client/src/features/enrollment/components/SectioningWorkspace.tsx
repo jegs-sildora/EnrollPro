@@ -32,7 +32,13 @@ import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn } from "@/shared/lib/utils";
+import { cn, SCP_LABELS } from "@/shared/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { isAxiosError } from "axios";
 import {
@@ -1062,7 +1068,7 @@ export function SectioningWorkspace() {
                   <p className="text-base font-bold uppercase">
                     TEMPORARY SECTIONS PENDING REVIEW
                   </p>
-                  <p className="text-sm font-bold text-primary">
+                  <p className="text-sm text-primary">
                     {draftLearnerCount} learner(s) are currently assigned across{" "}
                     {
                       draftPlacement.rosters.filter(
@@ -1094,7 +1100,7 @@ export function SectioningWorkspace() {
                       <Users className="h-5 w-5 text-primary" />
                       LEARNERS READY FOR SECTIONING
                     </CardTitle>
-                    <CardDescription className="text-sm font-bold text-foreground">
+                    <CardDescription className="text-sm text-foreground">
                       Enrolled learners ready to be sectioned
                     </CardDescription>
                   </div>
@@ -1132,7 +1138,7 @@ export function SectioningWorkspace() {
                     <SelectContent>
                       <SelectItem value="all" className="leading-tight font-bold">All Programs</SelectItem>
                       <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
-                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">Science Technology and Engineering</SelectItem>
+                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">SCIENCE, TECHNOLOGY, AND ENGINEERING</SelectItem>
                       <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
                       <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
                     </SelectContent>
@@ -1368,7 +1374,7 @@ export function SectioningWorkspace() {
                         ? "TEMPORARY CLASS LISTS"
                         : "Available Sections"}
                     </CardTitle>
-                    <CardDescription className="text-foreground text-sm font-bold">
+                    <CardDescription className="text-foreground text-sm">
                       {draftPlacement
                         ? "Please review the temporary assignments before creating the official lists"
                         : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
@@ -1499,8 +1505,8 @@ export function SectioningWorkspace() {
                                     )}>
                                     {s.name}
                                   </h4>
-                                  <span className="text-sm font-bold uppercase text-foreground">
-                                    {s.adviser || "No Adviser Assigned"}
+                                  <span className="font-bold uppercase text-foreground">
+                                    Adviser: {s.adviser || "No Adviser Assigned"}
                                   </span>
                                 </div>
                                 <div className="flex flex-wrap justify-end gap-2">
@@ -1511,25 +1517,40 @@ export function SectioningWorkspace() {
                                       Over Capacity
                                     </Badge>
                                   )}
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "text-sm font-bold uppercase bg-background",
-                                      s.programType === "REGULAR"
-                                        ? s.isHomogeneous
+                                  {s.programType === "REGULAR" ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "text-sm font-bold uppercase bg-background",
+                                        s.isHomogeneous
                                           ? "text-amber-600 border-amber-600/30"
                                           : "text-foreground border-border"
-                                        : "text-primary border-primary/30",
-                                    )}>
-                                    {s.programType === "REGULAR" && s.isHomogeneous
-                                      ? "TOP BEC"
-                                      : SCP_SHORT_LABELS[s.programType] ?? s.programType}
-                                  </Badge>
+                                      )}>
+                                      {s.isHomogeneous ? "TOP BEC" : "BEC"}
+                                    </Badge>
+                                  ) : (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="cursor-help inline-block">
+                                            <Badge
+                                              variant="outline"
+                                              className="text-sm font-bold uppercase bg-background text-primary border-primary/30">
+                                              {SCP_SHORT_LABELS[s.programType] ?? s.programType}
+                                            </Badge>
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-primary text-primary-foreground border-primary">
+                                          <p className="text-sm font-bold">{SCP_LABELS[s.programType] || s.programType}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
                                 </div>
                               </div>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between text-base font-bold">
-                                  <span className="text-foreground uppercase text-sm">
+                                  <span className="text-foreground uppercase">
                                     Capacity Fill
                                   </span>
                                   <span
@@ -1885,7 +1906,7 @@ export function SectioningWorkspace() {
         title="AUTO ASSIGN TEMPORARY SECTIONS"
         description={
           <div className="space-y-4 text-left">
-            <p className="text-center font-bold">
+            <p className="text-center">
               This will create temporary class lists for the selected grade
               level. No official SF1 record will be saved yet.
             </p>
@@ -1893,7 +1914,7 @@ export function SectioningWorkspace() {
               <p className="font-bold text-foreground">
                 How the system will place learners:
               </p>
-              <ul className="list-disc space-y-2 pl-5 text-sm font-bold leading-relaxed text-foreground">
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground">
                 {(() => {
                   const availableScp = Array.from(
                     new Set(currentGradeSections.filter((s) => s.programType !== "REGULAR").map((s) => s.programType))
@@ -1933,7 +1954,7 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-sm font-bold text-primary">
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 font-bold text-primary">
               Please review the temporary class lists carefully before
               finalizing because finalization creates the official section
               records.
@@ -1955,11 +1976,11 @@ export function SectioningWorkspace() {
         title="FINALIZE OFFICIAL SECTIONS"
         description={
           <div className="space-y-4">
-            <p className="font-bold">
+            <p>
               This action will lock the assignments and update the official school records
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4 text-left">
-              <p className="text-base font-bold text-foreground">
+              <p className="text-base text-foreground text-center">
                 {draftLearnerCount} learner(s) will be officially placed in their respective classes
               </p>
               {hasDraftOverflow && (

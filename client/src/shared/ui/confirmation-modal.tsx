@@ -187,7 +187,7 @@ export function ConfirmationModal({
               onClick={() => onOpenChange(false)}
               disabled={loading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-bold ",
+                "flex-1 h-12 rounded-lg font-bold uppercase",
                 "border border-gray-200 bg-muted text-gray-700",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]",
@@ -204,7 +204,7 @@ export function ConfirmationModal({
               }}
               disabled={loading || confirmDisabled}
               className={cn(
-                "flex-1 h-12 rounded-lg font-bold",
+                "flex-1 h-12 rounded-lg font-bold uppercase",
                 "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
                 "hover:bg-[hsl(var(--primary)/0.9)]",
                 "shadow-md",
@@ -213,7 +213,7 @@ export function ConfirmationModal({
               )}>
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4  rounded-full border-2 border-current border-t-transparent" />
+                  <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent" />
                   Processing...
                 </span>
               ) : (

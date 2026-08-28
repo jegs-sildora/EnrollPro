@@ -1974,7 +1974,7 @@ export function StudentDetailPanel({
                 </div>
                 <div className="text-base leading-tight font-bold divide-y divide-border">
                   <div className="grid grid-cols-[160px_1fr] md:grid-cols-[200px_1fr] divide-x divide-border">
-                    <div className="p-3 text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted)/30)] uppercase flex items-center">Portal</div>
+                    <div className="p-3 text-foreground bg-[hsl(var(--muted)/30)] uppercase flex items-center">Portal</div>
                     <div className="p-3 uppercase flex items-center gap-2 text-foreground">
                       <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", portalActive ? "bg-emerald-500" : "bg-amber-500")} />
                       {portalActive ? "Active — Login Allowed" : "Disabled — Login Blocked"}

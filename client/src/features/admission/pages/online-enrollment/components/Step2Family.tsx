@@ -216,7 +216,7 @@ export default function Step2Family() {
           />
           <Label
             htmlFor="same-address"
-            className="text-base leading-tight font-bold cursor-pointer select-none">
+            className="text-base leading-tight cursor-pointer select-none font-bold">
             Permanent Address is same as Current Address
           </Label>
         </div>
@@ -930,18 +930,18 @@ export default function Step2Family() {
                     return (
                       <div
                         key={secondary.id}
-                        className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
+                        className="space-y-4 transition-opacity duration-0 opacity-90 hover:opacity-100 focus-within:opacity-100">
                         <div className="flex flex-col gap-1">
                           <h4 className="text-base leading-tight font-bold uppercase  text-foreground">
                             Secondary Contact (Optional)
                           </h4>
-                          <Label className="text-base font-bold uppercase text-foreground/60  flex items-center gap-2">
+                          <Label className="text-base font-bold uppercase text-foreground/80  flex items-center gap-2">
                             <secondary.icon className="w-3 h-3" />
                             {secondary.label}'s Contact Information
                           </Label>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-border bg-muted/20 shadow-sm">
+                        <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-border bg-muted/50 shadow-sm">
                           <div className="space-y-1.5">
                             <Label
                               htmlFor={contactField}

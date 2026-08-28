@@ -133,7 +133,7 @@ function SectionItem({ label, value, valueClassName }: { label: string; value: s
       </div>
       <div className={`bg-card text-base leading-tight font-bold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
         {(!value || value === "-" || value === "") ? (
-          <span className="text-foreground italic font-normal">
+          <span className="text-foreground italic font-semibold">
             Not Specified
           </span>
         ) : (
@@ -837,20 +837,29 @@ export default function LearnerDashboard() {
                                   <SectionItem label="Father's Full Name" value={data.sf1.father ? `${data.sf1.father.firstName} ${data.sf1.father.lastName}` : null} />
                                   <SectionItem label="Father's Contact Number" value={data.sf1.father?.contactNumber || null} />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                                  <SectionItem label="Guardian's Full Name" value={data.sf1.guardian ? `${data.sf1.guardian.firstName} ${data.sf1.guardian.lastName}` : null} />
-                                  <SectionItem label="Guardian's Contact Number" value={data.sf1.guardian?.contactNumber || null} />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
-                                  <SectionItem
-                                    label="Relationship to Learner"
-                                    value={data.sf1.guardian?.relationship || null}
-                                    valueClassName={!data.sf1.is4PsBeneficiary ? "md:col-span-3" : ""}
-                                  />
-                                  {data.sf1.is4PsBeneficiary && (
-                                    <SectionItem label="4Ps Household Number" value={data.sf1.householdId4Ps} />
-                                  )}
-                                </div>
+                                {data.sf1.guardian && (
+                                  <>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                      <SectionItem label="Guardian's Full Name" value={`${data.sf1.guardian.firstName} ${data.sf1.guardian.lastName}`} />
+                                      <SectionItem label="Guardian's Contact Number" value={data.sf1.guardian.contactNumber || null} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                      <SectionItem
+                                        label="Relationship to Learner"
+                                        value={data.sf1.guardian.relationship}
+                                        valueClassName={!data.sf1.is4PsBeneficiary ? "md:col-span-3" : ""}
+                                      />
+                                      {data.sf1.is4PsBeneficiary && (
+                                        <SectionItem label="4Ps Household Number" value={data.sf1.householdId4Ps} />
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                                {!data.sf1.guardian && data.sf1.is4PsBeneficiary && (
+                                  <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
+                                    <SectionItem label="4Ps Household Number" value={data.sf1.householdId4Ps} valueClassName="md:col-span-3" />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

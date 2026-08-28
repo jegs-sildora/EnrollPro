@@ -833,7 +833,7 @@ export default function EnrollmentForm({
                     }}>
                     Submit Registration
                   </Button>
-                  <p className="text-base text-foreground flex items-center gap-1.5 font-bold italic">
+                  <p className="text-base text-foreground flex items-center gap-1.5 italic">
                     <Info className="w-3.5 h-3.5" />
                     Privacy consent was recorded before this submission.
                   </p>

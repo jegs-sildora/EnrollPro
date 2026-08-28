@@ -462,7 +462,7 @@ export default function ChangePassword() {
             <CardTitle className="text-3xl font-bold ">
               {isExternalHandoff ? "Replace Default Password" : "Activate Official Account"}
             </CardTitle>
-            <CardDescription className="text-base font-bold">
+            <CardDescription className="text-base">
               {isExternalHandoff
                 ? "Your account is using the default password. Set a private password before returning to SMART, AIMS, or ATLAS."
                 : "Please replace the initial access key provided by the Registrar with your own private password."}

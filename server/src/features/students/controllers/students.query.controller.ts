@@ -271,7 +271,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           })(),
           sectionAdviserEmployeeId: applicant.enrollmentRecord?.section?.advisers?.[0]?.teacher?.employeeId || null,
           studentPhoto: applicant.learner?.studentPhoto || null,
-          portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
+          portalStatus: (!applicant.learner?.user || applicant.learner.user.isActive) ? "ACTIVE" : "LOCKED",
           schoolYear: schoolYearInfo,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
@@ -616,7 +616,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
               roles: applicant.learner.user.roles,
             }
           : null,
-        portalStatus: applicant.learner?.user?.isActive ? "ACTIVE" : "LOCKED",
+        portalStatus: (!applicant.learner?.user || applicant.learner.user.isActive) ? "ACTIVE" : "LOCKED",
         isIpCommunity: applicant.learner?.isIpCommunity,
         ipGroupName: applicant.learner?.ipGroupName,
         is4PsBeneficiary: applicant.learner?.is4PsBeneficiary,

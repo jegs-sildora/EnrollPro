@@ -80,7 +80,7 @@ export default function EnrollmentSuccess({
           <div className="text-center text-lg text-foreground  mb-6">
             Your record is now <span className="font-bold text-primary">Pending Verification</span>.
             <br /><br />
-            Please proceed to the Hinigaran National High School Registrar&apos;s Office between <strong>June 1 and June 5, 2026</strong>, and bring your physical SF9 (Report Card) along with your PSA Birth Certificate.
+            Please proceed to the Hinigaran National High School Registrar&apos;s Office between <span className="text-primary font-bold">June 1 and June 5, 2026</span>, and bring your <span className="font-bold text-primary">physical SF9 (Report Card)</span> along with your <span className="font-bold text-primary">PSA Birth Certificate</span>.
           </div>
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3 shadow-inner print:hidden mb-4">
