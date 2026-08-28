@@ -356,7 +356,7 @@ export function CurriculumDistributionPanel({
           return (
             <div key={item.programType} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-base">
-                <span className="min-w-0 truncate font-semibold">
+                <span className="min-w-0 truncate font-bold">
                   {item.label}
                 </span>
                 <span className="shrink-0">

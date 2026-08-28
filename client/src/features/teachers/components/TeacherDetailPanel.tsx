@@ -351,7 +351,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         natureOfAppointment: teacher.natureOfAppointment || "REGULAR_PERMANENT",
         fundingSource: teacher.fundingSource || "NATIONAL",
         roles: teacher.userAccount?.roles || [],
-        ancillaryRoles: teacher.ancillaryRoles || [],
+        ancillaryRoles: teacher.designation?.ancillaryRoles || teacher.ancillaryRoles || [],
         contactNumber: teacher.contactNumber || "",
         serviceStatus: teacher.serviceStatus || "ACTIVE",
         serviceEffectiveDate: formatDateInput(serviceMetadata.serviceEffectiveDate),
@@ -712,6 +712,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                             <ViewRow label="Fund Source" value={FUNDING_SOURCE_MAP[teacher.fundingSource] || teacher.fundingSource} />
                           </>
                         )}
+                        <ViewRow label="Ancillary Roles" value={teacher.designation?.ancillaryRoles?.length ? teacher.designation.ancillaryRoles.join(', ') : "—"} />
                       </div>
                     </div>
 

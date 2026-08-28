@@ -159,7 +159,7 @@ export function ConfirmationModal({
           <DialogTitle className="text-2xl font-bold ">{title}</DialogTitle>
           <div className="space-y-4">
             <DialogDescription asChild>
-              <div className="leading-relaxed text-center text-foreground font-bold">
+              <div className="leading-relaxed text-center text-foreground">
                 {description}
               </div>
             </DialogDescription>

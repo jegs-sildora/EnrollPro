@@ -518,7 +518,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-semibold;
     background: linear-gradient(135deg, #fafbfc 0%, hsl(var(--primary) / 0.03) 50%, hsl(var(--primary) / 0.06) 100%);
     font-family: var(--font-sans);
   }
@@ -577,10 +577,6 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
 }
 
 @layer utilities {
-  .font-normal {
-    @apply font-bold;
-  }
-
   .rdp-day_button[aria-selected="true"]:hover,
   [data-selected] button:hover,
   button[aria-selected="true"]:hover {

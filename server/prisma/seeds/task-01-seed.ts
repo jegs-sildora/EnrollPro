@@ -266,8 +266,7 @@ export const seedDatabase = async () => {
           minorSpecialization: "NONE",
           indigenousCommunity: "NOT_APPLICABLE",
           natureOfAppointment: "REGULAR_PERMANENT",
-          fundingSource: "NATIONAL",
-          ancillaryRoles: [ANCILLARY_ROLES_POOL[i % ANCILLARY_ROLES_POOL.length]]
+          fundingSource: "NATIONAL"
         }
       });
       teachers.push(teacher);
@@ -316,18 +315,43 @@ export const seedDatabase = async () => {
           }
         });
 
+        const roleCount = (teacherIdx % 3) + 1;
+        const generatedRoles = [];
+        for (let r = 0; r < roleCount; r++) {
+          generatedRoles.push(ANCILLARY_ROLES_POOL[(teacherIdx * 5 + r) % ANCILLARY_ROLES_POOL.length]);
+        }
+
         await prisma.teacherDesignation.create({
           data: {
             teacherId: teacher.id,
             schoolYearId: sy.id,
             isClassAdviser: true,
             advisorySectionId: section.id,
-            ancillaryRoles: [ANCILLARY_ROLES_POOL[teacherIdx % ANCILLARY_ROLES_POOL.length]]
+            ancillaryRoles: generatedRoles
           }
         });
 
         // Learners are no longer seeded here. See year-specific grade 7 seeds.
       }
+    }
+
+    while (teacherIdx < teachers.length) {
+      const teacher = teachers[teacherIdx];
+      const roleCount = (teacherIdx % 3) + 1;
+      const generatedRoles = [];
+      for (let r = 0; r < roleCount; r++) {
+        generatedRoles.push(ANCILLARY_ROLES_POOL[(teacherIdx * 5 + r) % ANCILLARY_ROLES_POOL.length]);
+      }
+
+      await prisma.teacherDesignation.create({
+        data: {
+          teacherId: teacher.id,
+          schoolYearId: sy.id,
+          isClassAdviser: false,
+          ancillaryRoles: generatedRoles
+        }
+      });
+      teacherIdx++;
     }
 
     console.log("✅ Base Seeding complete: 20 Teachers, 16 Sections.");

@@ -490,9 +490,18 @@ export async function store(req: Request, res: Response) {
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
           ...(serviceStatus ? { serviceStatus } : {}),
-          ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
         },
       });
+
+      if (ancillaryRoles !== undefined && req.schoolYearId) {
+        await tx.teacherDesignation.create({
+          data: {
+            teacherId: t.id,
+            schoolYearId: req.schoolYearId,
+            ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+          },
+        });
+      }
 
       return t;
     });
@@ -641,9 +650,27 @@ export async function update(req: Request, res: Response) {
           indigenousCommunity: normalizeOptionalUpperText(indigenousCommunity),
           ...(natureOfAppointment ? { natureOfAppointment } : {}),
           ...(fundingSource ? { fundingSource } : {}),
-          ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
         },
       });
+
+      if (ancillaryRoles !== undefined && req.schoolYearId) {
+        await tx.teacherDesignation.upsert({
+          where: {
+            uq_teacher_designations_teacher_sy: {
+              teacherId: id,
+              schoolYearId: req.schoolYearId,
+            },
+          },
+          update: {
+            ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+          },
+          create: {
+            teacherId: id,
+            schoolYearId: req.schoolYearId,
+            ancillaryRoles: Array.isArray(ancillaryRoles) ? ancillaryRoles : [],
+          },
+        });
+      }
 
       // Sync subjects
       // Backfill userId link if missing (for teachers created before the migration)

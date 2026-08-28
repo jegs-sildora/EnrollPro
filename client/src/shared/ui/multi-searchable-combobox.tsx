@@ -96,7 +96,7 @@ export function MultiSearchableCombobox({
                 <Badge
                   key={item.value}
                   variant="secondary"
-                  className="font-bold text-xs uppercase px-2 py-0.5"
+                  className="font-bold text-base uppercase px-2 py-0.5"
                 >
                   {item.label}
                   <div

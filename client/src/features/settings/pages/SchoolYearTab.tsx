@@ -9,6 +9,7 @@ import {
   School,
   Workflow,
   Archive,
+  HelpCircle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
@@ -38,6 +39,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -872,11 +879,7 @@ export default function SchoolYearTab() {
                         <CalendarIcon className="h-5 w-5" />
                       </div>
                       <div className="break-words min-w-0">
-                        {activeYear ? (
-                          <>Current School Year: {activeYear.yearLabel}</>
-                        ) : (
-                          <>No Active School Year</>
-                        )}
+                        School Year Management
                       </div>
                     </CardTitle>
                   </div>
@@ -899,7 +902,7 @@ export default function SchoolYearTab() {
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       {[
-                        { value: "OFFICIAL_ENROLLMENT", title: "OFFICIAL ENROLLMENT (BOSY)", desc: "Opens the system for regular learner intake and Beginning of School Year operations" },
+                        { value: "OFFICIAL_ENROLLMENT", title: "OFFICIAL ENROLLMENT (BOSY)", desc: "Opens the system for learner enrollment and Beginning of School Year operations" },
                         { value: "CLASSES_ONGOING", title: "CLASSES ONGOING", desc: "Closes public enrollment but permits registrars to manually encode late enrollees" },
                         { value: "EOSY_CLOSING", title: "EOSY CLOSING", desc: "Locks all enrollment actions for the End of School Year rollover" }
                       ].map(opt => {
@@ -928,7 +931,7 @@ export default function SchoolYearTab() {
                                 </span>
                               </div>
                               <div className="mt-auto flex flex-col gap-2">
-                                <span className="text-sm font-bold mb-2 break-words whitespace-normal">
+                                <span className="text-sm mb-2 break-words whitespace-normal">
                                   {opt.desc}
                                 </span>
                               </div>
@@ -985,7 +988,7 @@ export default function SchoolYearTab() {
                   {/* Term Date rows */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                      <h4 className="font-bold text-lg text-foreground uppercase tracking-wide">
                         Term Dates
                       </h4>
                     </div>
@@ -1080,10 +1083,19 @@ export default function SchoolYearTab() {
                           <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
                             Official Enrollment Period (BOSY)
                           </h4>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger type="button" className="cursor-help text-muted-foreground hover:text-foreground">
+                                <HelpCircle className="h-5 w-5" />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-primary text-primary-foreground max-w-sm">
+                                <p className="text-sm">
+                                  Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
-                        <p className="text-base font-bold text-foreground bg/50 px-3 py-1.5 rounded-md inline-block break-words whitespace-normal">
-                          Set the official dates when the system will accept incoming Grade 7, Transferees, and Returning Learners for the active school year.
-                        </p>
                       </div>
                       <span
                         className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold whitespace-nowrap rounded-full ${enrollmentPhaseStatus.color}`}>
@@ -1167,7 +1179,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Top Basic Education Curriculum (BEC) Sectioning</Label>
+                      <Label className="text-lg">Top Basic Education Curriculum (BEC) Sectioning</Label>
                       <p className="text-base text-foreground">Group top-performing learners into dedicated sections based on General Average.</p>
                     </div>
                     <Switch
@@ -1202,7 +1214,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Standard BEC Sectioning (Heterogeneous)</Label>
+                      <Label className="text-lg">Standard BEC Sectioning (Heterogeneous)</Label>
                       <p className="text-base text-foreground">Evenly distribute remaining learners to ensure balanced sections.</p>
                     </div>
                     <Switch
