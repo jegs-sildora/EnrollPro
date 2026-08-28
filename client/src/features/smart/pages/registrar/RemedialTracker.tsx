@@ -53,7 +53,7 @@ export default function RemedialTracker() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Remedial Tracker</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Remedial Tracker</h1>
           <p className="text-gray-600 mt-1">
             Learners enrolled in remedial classes — read-only view from EnrollPro. Actions must be done in EnrollPro.
           </p>
@@ -100,13 +100,13 @@ export default function RemedialTracker() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Grade / Section</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Subject(s)</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Failing Grade</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Status</TableHead>
+                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
+                    <TableHead className="font-bold text-gray-700">Sex</TableHead>
+                    <TableHead className="font-bold text-gray-700">Grade / Section</TableHead>
+                    <TableHead className="font-bold text-gray-700">Subject(s)</TableHead>
+                    <TableHead className="font-bold text-gray-700">Failing Grade</TableHead>
+                    <TableHead className="font-bold text-gray-700">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

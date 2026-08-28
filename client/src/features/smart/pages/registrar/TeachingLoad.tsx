@@ -72,12 +72,12 @@ export default function TeachingLoad() {
   const minutesToHours = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Teaching Load" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Teaching Load</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Teaching Load</h1>
           <p className="text-gray-600 mt-1 flex items-center gap-2">
             Faculty teaching assignments and subject coverage — read-only from ATLAS.
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 ">
@@ -109,7 +109,7 @@ export default function TeachingLoad() {
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-gray-900">{loadLoading ? "…" : faculty.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{loadLoading ? "…" : faculty.length}</p>
                 <p className="text-sm text-gray-500">Faculty Members</p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function TeachingLoad() {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {coverageLoading ? "…" : coverage ? (coverage.count ?? 0) - (coverage.unassignedCount ?? 0) : "—"}
                 </p>
                 <p className="text-sm text-gray-500">Subjects Assigned</p>
@@ -137,7 +137,7 @@ export default function TeachingLoad() {
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {coverageLoading ? "…" : coverage?.unassignedCount ?? "—"}
                 </p>
                 <p className="text-sm text-gray-500">Unassigned Subjects</p>
@@ -185,11 +185,11 @@ export default function TeachingLoad() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-extrabold text-gray-700">Personnel Name</TableHead>
-                    <TableHead className="font-extrabold text-gray-700 text-center">Subjects</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Weekly Load</TableHead>
-                    <TableHead className="font-extrabold text-gray-700 text-center">Load %</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Assigned Subjects</TableHead>
+                    <TableHead className="font-bold text-gray-700">Personnel Name</TableHead>
+                    <TableHead className="font-bold text-gray-700 text-center">Subjects</TableHead>
+                    <TableHead className="font-bold text-gray-700">Weekly Load</TableHead>
+                    <TableHead className="font-bold text-gray-700 text-center">Load %</TableHead>
+                    <TableHead className="font-bold text-gray-700">Assigned Subjects</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -230,7 +230,7 @@ export default function TeachingLoad() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col">
-                              <span className="font-semibold text-gray-900">
+                              <span className=" text-gray-900">
                                 {f.subjectHours != null
                                   ? `${f.subjectHours}h`
                                   : f.totalMinutesPerWeek != null
@@ -246,7 +246,7 @@ export default function TeachingLoad() {
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className={`text-sm font-extrabold ${loadPct > 100 ? 'text-red-600' : 'text-emerald-600'}`}>
+                              <span className={`text-sm font-bold ${loadPct > 100 ? 'text-red-600' : 'text-emerald-600'}`}>
                                 {loadPct}%
                               </span>
                               <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">

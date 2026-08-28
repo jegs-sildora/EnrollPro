@@ -36,8 +36,8 @@ function GuideSection({
           <Icon className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-black uppercase text-foreground">{title}</h2>
-          <p className="mt-1 text-sm font-semibold leading-relaxed text-muted-foreground">
+          <h2 className="text-lg font-bold uppercase text-foreground">{title}</h2>
+          <p className="mt-1 text-sm  leading-relaxed text-muted-foreground">
             {description}
           </p>
         </div>
@@ -47,8 +47,8 @@ function GuideSection({
         {steps.map((step, index) => (
           <li
             key={step}
-            className="flex gap-3 text-sm font-semibold leading-relaxed text-foreground">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-black text-primary">
+            className="flex gap-3 text-sm  leading-relaxed text-foreground">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-primary">
               {index + 1}
             </span>
             <span>{step}</span>
@@ -60,7 +60,7 @@ function GuideSection({
         <Button
           asChild
           variant="outline"
-          className="mt-5 w-full font-black sm:w-auto">
+          className="mt-5 w-full font-bold sm:w-auto">
           <Link to={actionTo}>
             {actionLabel}
             <ExternalLink className="ml-2 size-4" />
@@ -82,14 +82,14 @@ export default function HelpDocumentation() {
       <header className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <Badge variant="outline" className="font-black uppercase">
+            <Badge variant="outline" className="font-bold uppercase">
               EnrollPro Operations Guide
             </Badge>
           </div>
-          <h1 className="text-2xl font-black uppercase text-foreground">
+          <h1 className="text-2xl font-bold uppercase text-foreground">
             Help & Documentation
           </h1>
-          <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-muted-foreground">
+          <p className="mt-1 max-w-3xl text-sm  leading-relaxed text-muted-foreground">
             Plain-language guidance for learner enrollment, Section Assignment,
             school forms, and school-year rollover.
           </p>

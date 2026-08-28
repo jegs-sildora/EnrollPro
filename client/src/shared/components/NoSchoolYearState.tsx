@@ -10,7 +10,7 @@ export function NoSchoolYearState() {
             <CalendarRange className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-extrabold text-xl text-foreground tracking-tight">
+            <h3 className="font-bold text-xl text-foreground tracking-tight">
               No Active School Year Selected
             </h3>
             <p className="text-base text-foreground/60 leading-relaxed px-6 ">

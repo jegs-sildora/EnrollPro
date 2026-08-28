@@ -285,7 +285,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "text-center font-extrabold text-foreground dark:text-slate-200 text-sm px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
+                        "text-center font-bold text-foreground dark:text-slate-200 text-sm px-3 sticky top-0 border-b border-slate-200 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-sm",
                         "first:pl-6 last:pr-6",
                         dense ? "h-8" : "h-11",
                         isPinned ? "z-30" : "z-20",
@@ -373,20 +373,20 @@ export function DataTable<TData, TValue>({
                   ...virtualItems.map((virtualRow) => {
                     const rowData = rows[virtualRow.index].original;
                     const isHeader = isHeaderRow?.(rowData);
-                    
+
                     if (isHeader && renderHeaderRow) {
                       const renderedHeader = renderHeaderRow(rowData, columns.length);
-                      
+
                       return (
                         <React.Fragment key={rows[virtualRow.index].id}>
-                          {React.isValidElement(renderedHeader) 
+                          {React.isValidElement(renderedHeader)
                             ? React.cloneElement(renderedHeader as React.ReactElement<{
-                                ref?: typeof rowVirtualizer.measureElement;
-                                "data-index"?: number;
-                              }>, {
-                                ref: rowVirtualizer.measureElement,
-                                "data-index": virtualRow.index 
-                              })
+                              ref?: typeof rowVirtualizer.measureElement;
+                              "data-index"?: number;
+                            }>, {
+                              ref: rowVirtualizer.measureElement,
+                              "data-index": virtualRow.index
+                            })
                             : renderedHeader}
                         </React.Fragment>
                       );
@@ -423,7 +423,7 @@ export function DataTable<TData, TValue>({
                 ]
                 : rows.map((row) => {
                   const isHeader = isHeaderRow?.(row.original);
-                  
+
                   if (isHeader && renderHeaderRow) {
                     return (
                       <React.Fragment key={row.id}>
@@ -469,7 +469,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="p-0">
                   {emptyStateContent ?? (
-                    <div className="min-h-120 flex items-center justify-center text-center font-extrabold">
+                    <div className="min-h-120 flex items-center justify-center text-center font-bold">
                       {noResultsMessage}
                     </div>
                   )}

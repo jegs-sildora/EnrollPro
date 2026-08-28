@@ -56,12 +56,12 @@ export default function FormViewer() {
   const activeTemplates = templates.filter(t => t.isActive);
 
   return (
-<div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold">DepEd Form Viewer</h1>
+            <h1 className="text-3xl font-bold">DepEd Form Viewer</h1>
             <p className="text-muted-foreground mt-1">
               View and print school forms using admin-uploaded templates
             </p>
@@ -209,7 +209,7 @@ export default function FormViewer() {
             <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Failed to load template</p>
+                <p className="">Failed to load template</p>
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>

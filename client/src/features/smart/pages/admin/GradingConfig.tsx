@@ -154,7 +154,7 @@ export default function GradingConfig() {
 
       // Add to history
       setConfigHistory(prev => [{
-        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila',  month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Updated grading weights'
       }, ...prev.slice(0, 4)]);
@@ -179,7 +179,7 @@ export default function GradingConfig() {
 
       // Add to history
       setConfigHistory(prev => [{
-        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila',  month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }),
         user: 'Admin',
         change: 'Reset all weights to DepEd default values'
       }, ...prev.slice(0, 4)]);
@@ -222,11 +222,11 @@ export default function GradingConfig() {
   }
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             Grading Configuration
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -244,7 +244,7 @@ export default function GradingConfig() {
             Reset to Default
           </Button>
           <Button
-            className="gap-2 text-white font-semibold rounded-xl shadow-lg"
+            className="gap-2 text-white  rounded-xl shadow-lg"
             style={{ backgroundColor: colors.primary }}
             onClick={handleSave}
             disabled={!hasChanges || !allValid || saving}
@@ -278,18 +278,18 @@ export default function GradingConfig() {
               <Info className="w-5 h-5" style={{ color: colors.primary }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm mb-1" style={{ color: '#111827' }}>DepEd Grading Guidelines (Revised 2026)</h3>
+              <h3 className=" text-sm mb-1" style={{ color: '#111827' }}>DepEd Grading Guidelines (Revised 2026)</h3>
               <p className="text-xs text-gray-500 mb-3">
                 Per the Revised Guidelines on Classroom Assessment (April 2026), weights are now aligned across Core, Math, and Science subjects.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="bg-muted rounded-lg px-3 py-2 border border-white/80">
                   <span className="text-xs text-gray-500  block">Core, Math &amp; Science</span>
-                  <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 50% · TA 30%</span>
+                  <span className="text-xs " style={{ color: '#111827' }}>WW 20% · PT 50% · TA 30%</span>
                 </div>
                 <div className="bg-muted rounded-lg px-3 py-2 border border-white/80">
                   <span className="text-xs text-gray-500  block">MAPEH &amp; TLE</span>
-                  <span className="text-xs font-semibold" style={{ color: '#111827' }}>WW 20% · PT 60% · TA 20%</span>
+                  <span className="text-xs " style={{ color: '#111827' }}>WW 20% · PT 60% · TA 20%</span>
                 </div>
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function GradingConfig() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm" style={{ color: '#111827' }}>{info.label}</h3>
+                    <h3 className=" text-sm" style={{ color: '#111827' }}>{info.label}</h3>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {info.subjects.map((subject) => (
                         <Badge key={subject} variant="outline" className="text-xs py-0 h-5">
@@ -355,7 +355,7 @@ export default function GradingConfig() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                   {/* Written Work */}
                   <div className="space-y-2">
-                    <Label htmlFor={`${config.id}-ww`} className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <Label htmlFor={`${config.id}-ww`} className="text-xs  text-gray-600 uppercase tracking-wide">
                       Written Work (WW)
                     </Label>
                     <div className="relative">
@@ -366,16 +366,16 @@ export default function GradingConfig() {
                         max="100"
                         value={config.writtenWorkWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "writtenWorkWeight", e.target.value)}
-                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400  text-sm">%</span>
                     </div>
                     <p className="text-xs text-gray-400">Quizzes, unit tests, essays</p>
                   </div>
 
                   {/* Performance Task */}
                   <div className="space-y-2">
-                    <Label htmlFor={`${config.id}-pt`} className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <Label htmlFor={`${config.id}-pt`} className="text-xs  text-gray-600 uppercase tracking-wide">
                       Performance Task (PT)
                     </Label>
                     <div className="relative">
@@ -386,16 +386,16 @@ export default function GradingConfig() {
                         max="100"
                         value={config.performanceTaskWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "performanceTaskWeight", e.target.value)}
-                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400  text-sm">%</span>
                     </div>
                     <p className="text-xs text-gray-400">Projects, performances, outputs</p>
                   </div>
 
                   {/* Term Assessment */}
                   <div className="space-y-2">
-                    <Label htmlFor={`${config.id}-TA`} className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <Label htmlFor={`${config.id}-TA`} className="text-xs  text-gray-600 uppercase tracking-wide">
                       Term Assessment (TA)
                     </Label>
                     <div className="relative">
@@ -406,9 +406,9 @@ export default function GradingConfig() {
                         max="100"
                         value={config.quarterlyAssessWeight}
                         onChange={(e) => handleWeightChange(config.subjectType, "quarterlyAssessWeight", e.target.value)}
-                        className="pr-9 text-xl font-extrabold border-gray-200 rounded-xl h-12"
+                        className="pr-9 text-xl font-bold border-gray-200 rounded-xl h-12"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400  text-sm">%</span>
                     </div>
                     <p className="text-xs text-gray-400">Term examination</p>
                   </div>
@@ -417,9 +417,9 @@ export default function GradingConfig() {
                 {/* Weight Distribution Bar */}
                 <div className="pt-5 border-t border-gray-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Weight Distribution</span>
+                    <span className="text-xs  text-gray-500 uppercase tracking-wide">Weight Distribution</span>
                     <span
-                      className={`text-sm font-extrabold ${!isValid ? "text-red-600" : ""}`}
+                      className={`text-sm font-bold ${!isValid ? "text-red-600" : ""}`}
                       style={isValid ? { color: colors.primary } : undefined}
                     >
                       {total}% total
@@ -465,7 +465,7 @@ export default function GradingConfig() {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3" style={{ backgroundColor: `${colors.primary}06` }}>
           <History className="w-4 h-4" style={{ color: colors.primary }} />
           <div>
-            <h3 className="font-semibold text-sm" style={{ color: '#111827' }}>Recent Configuration Changes</h3>
+            <h3 className=" text-sm" style={{ color: '#111827' }}>Recent Configuration Changes</h3>
             <p className="text-xs text-gray-500">History of grading weight updates this session</p>
           </div>
         </div>

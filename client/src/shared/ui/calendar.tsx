@@ -52,9 +52,9 @@ function Calendar({
       locale={locale}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString(locale?.code, { timeZone: 'Asia/Manila',  month: "long" }),
+          date.toLocaleString(locale?.code, { timeZone: 'Asia/Manila', month: "long" }),
         formatCaption: (date) =>
-          date.toLocaleString(locale?.code, { timeZone: 'Asia/Manila',  month: "long", year: "numeric" }),
+          date.toLocaleString(locale?.code, { timeZone: 'Asia/Manila', month: "long", year: "numeric" }),
         ...formatters,
       }}
       classNames={{
@@ -83,7 +83,7 @@ function Calendar({
           defaultClassNames.month_caption,
         ),
         dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-extrabold",
+          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-bold",
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
@@ -92,7 +92,7 @@ function Calendar({
         ),
         dropdown: cn(defaultClassNames.dropdown),
         caption_label: cn(
-          "font-extrabold select-none",
+          "font-bold select-none",
           captionLayout === "label"
             ? "text-sm"
             : "hidden",
@@ -137,7 +137,7 @@ function Calendar({
           "text-foreground aria-selected:text-foreground",
           defaultClassNames.outside,
         ),
-        dropdown_year: cn("text-sm font-extrabold px-2 cursor-default"),
+        dropdown_year: cn("text-sm font-bold px-2 cursor-default"),
         disabled: cn("text-foreground", defaultClassNames.disabled),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
@@ -190,7 +190,7 @@ function Calendar({
 
           if (isYear && !showYearSelect) {
             return (
-              <span className="px-2 text-sm font-extrabold text-foreground">
+              <span className="px-2 text-sm font-bold text-foreground">
                 {selectedOption?.label || value}
               </span>
             );
@@ -208,7 +208,7 @@ function Calendar({
               onValueChange={(value) => handleChange(value)}>
               <SelectTrigger
                 className={cn(
-                  "h-8 py-1 px-3 font-extrabold border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1 w-full relative z-10 [&>*]:pointer-events-none cursor-pointer"
+                  "h-8 py-1 px-3 font-bold border-[hsl(var(--border))] bg-background hover:bg-muted hover:text-foreground hover:border-border transition-all focus:ring-offset-1 w-full relative z-10 [&>*]:pointer-events-none cursor-pointer"
                 )}>
                 <SelectValue className="pointer-events-none">{selectedOption?.label}</SelectValue>
               </SelectTrigger>
@@ -219,7 +219,7 @@ function Calendar({
                   <SelectItem
                     key={option.value}
                     value={option.value.toString()}
-                    className="font-extrabold">
+                    className="font-bold">
                     {option.label}
                   </SelectItem>
                 ))}

@@ -51,10 +51,10 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
       <Card className="border-slate-200 bg-card shadow-sm">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-          <CardTitle className="text-base font-extrabold">
+          <CardTitle className="text-lg font-bold">
             Rollover Readiness Checklist
           </CardTitle>
-          <p className="font-semibold text-foreground text-sm">
+          <p className=" text-foreground text-sm">
             All requirements must be satisfied before transitioning to the next school year
           </p>
         </CardHeader>
@@ -66,7 +66,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">Section Finalization</p>
-                <p className="font-semibold text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
+                <p className=" text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
               </div>
             </Link>
 
@@ -76,7 +76,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">SMART Grade Synchronization</p>
-                <p className="font-semibold text-foreground text-sm">All learner outcomes must be resolved and synced</p>
+                <p className=" text-foreground text-sm">All learner outcomes must be resolved and synced</p>
               </div>
             </Link>
 
@@ -86,7 +86,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">School Form Generation</p>
-                <p className="font-semibold text-foreground text-sm">School Forms 5 and 6 must be ready for review</p>
+                <p className=" text-foreground text-sm">School Forms 5 and 6 must be ready for review</p>
               </div>
             </Link>
 
@@ -96,7 +96,7 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
               </div>
               <div>
                 <p className="font-bold text-foreground">Calendar Policy Approval</p>
-                <p className="font-semibold text-foreground text-sm">School year calendar policies must be approved</p>
+                <p className=" text-foreground text-sm">School year calendar policies must be approved</p>
               </div>
             </Link>
           </div>
@@ -105,18 +105,18 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.eosyStats.gradeLevelFinalization.map((grade) => (
-          <Card 
-            key={grade.id} 
+          <Card
+            key={grade.id}
             className="border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => navigate(`/eosy?gradeLevelId=${grade.id}&status=pending`)}
           >
             <CardContent className="flex min-h-32 flex-col justify-center gap-3 p-5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-base font-extrabold leading-tight text-foreground">{grade.name}</p>
-                <span className="text-lg font-black leading-none text-primary">{grade.percent}%</span>
+                <p className="text-lg font-bold leading-tight text-foreground">{grade.name}</p>
+                <span className="text-lg font-bold leading-none text-primary">{grade.percent}%</span>
               </div>
               <Progress value={grade.percent} className="h-2" />
-              <p className="mt-2 text-base font-semibold text-foreground">
+              <p className="mt-2 text-base  text-foreground">
                 {grade.finalized} of {grade.total} sections finalized
               </p>
             </CardContent>

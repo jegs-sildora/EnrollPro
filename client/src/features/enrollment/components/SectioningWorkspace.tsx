@@ -163,19 +163,19 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
     queryFn: () => api.get<InlineMasterlistResponse>(`/sections/${sectionId}/masterlist`).then(r => r.data),
   });
 
-  if (isLoading) return <div className="p-4 text-center text-sm font-extrabold text-muted-foreground animate-pulse mt-4 border rounded-md">Loading learners...</div>;
-  if (error || !data) return <div className="p-4 text-center text-sm font-extrabold text-destructive mt-4 border rounded-md">Failed to load learners</div>;
-  if (data.learners.length === 0) return <div className="p-4 text-center text-sm font-extrabold text-foreground mt-4 border rounded-md">No learners assigned yet.</div>;
+  if (isLoading) return <div className="p-4 text-center text-sm font-bold text-muted-foreground animate-pulse mt-4 border rounded-md">Loading learners...</div>;
+  if (error || !data) return <div className="p-4 text-center text-sm font-bold text-destructive mt-4 border rounded-md">Failed to load learners</div>;
+  if (data.learners.length === 0) return <div className="p-4 text-center text-sm font-bold text-foreground mt-4 border rounded-md">No learners assigned yet.</div>;
 
   return (
     <div className="mt-4 overflow-hidden rounded-md border bg-card cursor-default" onClick={(e) => e.stopPropagation()}>
       <table className="w-full text-left text-sm">
         <thead className="bg-muted text-foreground">
-          <tr className="font-black uppercase">
-            <th className="p-3 font-black">Learner</th>
-            <th className="p-3 text-center font-black">Sex</th>
-            <th className="p-3 text-center font-black">Gen Ave</th>
-            <th className="p-3 text-right font-black">Action</th>
+          <tr className="font-bold uppercase">
+            <th className="p-3 font-bold">Learner</th>
+            <th className="p-3 text-center font-bold">Sex</th>
+            <th className="p-3 text-center font-bold">Gen Ave</th>
+            <th className="p-3 text-right font-bold">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -183,23 +183,23 @@ function InlineSectionTable({ sectionId, onMoveLearner }: { sectionId: number, o
             <tr key={l.id} className="hover:bg-muted/50 transition-colors">
               <td className="p-3">
                 <div className="flex flex-col">
-                  <span className="font-extrabold text-foreground uppercase">
+                  <span className="font-bold text-foreground uppercase">
                     {l.lastName}, {l.firstName} {l.middleName?.charAt(0) ? `${l.middleName.charAt(0)}.` : ""}
                   </span>
-                  <span className="text-sm font-extrabold uppercase mt-0.5">
+                  <span className="text-sm font-bold uppercase mt-0.5">
                     {l.lrn || "NO LRN"}
                   </span>
                 </div>
               </td>
               <td className="p-3 text-center">
                 <Badge className={cn(
-                  "text-sm uppercase font-extrabold",
+                  "text-sm uppercase font-bold",
                   l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                 )}>
                   {l.sex}
                 </Badge>
               </td>
-              <td className="p-3 text-center font-extrabold text-foreground">
+              <td className="p-3 text-center font-bold text-foreground">
                 {l.genAve?.toFixed(2) ?? "--"}
               </td>
               <td className="p-3 text-right">
@@ -1020,7 +1020,7 @@ export function SectioningWorkspace() {
                 activeGradeLevelId !== String(g.id)
               }
               className={cn(
-                "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md",
+                "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md",
                 selectedAppIds.length > 0 &&
                 !isDraftActive &&
                 activeGradeLevelId !== String(g.id) &&
@@ -1059,7 +1059,7 @@ export function SectioningWorkspace() {
             <div className="overflow-hidden rounded-md border-2 border-primary bg-primary/5 px-4 py-3 text-primary">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-base font-extrabold uppercase">
+                  <p className="text-base font-bold uppercase">
                     TEMPORARY SECTIONS PENDING REVIEW
                   </p>
                   <p className="text-sm font-bold text-primary">
@@ -1090,18 +1090,18 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-bold uppercase tracking-wide flex items-center gap-2 text-foreground">
                       <Users className="h-5 w-5 text-primary" />
                       LEARNERS READY FOR SECTIONING
                     </CardTitle>
-                    <CardDescription className="text-sm font-extrabold text-foreground">
+                    <CardDescription className="text-sm font-bold text-foreground">
                       Enrolled learners ready to be sectioned
                     </CardDescription>
                   </div>
                   {selectedAppIds.length > 0 && (
                     <Badge
                       variant="outline"
-                      className="font-extrabold bg-background border-border">
+                      className="font-bold bg-background border-border">
                       {selectedAppIds.length} Selected
                     </Badge>
                   )}
@@ -1111,7 +1111,7 @@ export function SectioningWorkspace() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                     <Input
                       placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                      className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-extrabold uppercase"
+                      className="pl-9 h-10 border-border focus:ring-primary/20 bg-background font-bold uppercase"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -1120,7 +1120,7 @@ export function SectioningWorkspace() {
                     isFilter
                     value={filterProgram}
                     onValueChange={setFilterProgram}>
-                    <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-extrabold transition-colors">
+                    <SelectTrigger className="w-full sm:w-48 h-10 border-border bg-background leading-tight font-bold transition-colors">
                       <SelectValue placeholder="All Programs">
                         {filterProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
                           : filterProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
@@ -1130,11 +1130,11 @@ export function SectioningWorkspace() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all" className="leading-tight font-extrabold">All Programs</SelectItem>
-                      <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
-                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
-                      <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
-                      <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+                      <SelectItem value="all" className="leading-tight font-bold">All Programs</SelectItem>
+                      <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                      <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">Science Technology and Engineering</SelectItem>
+                      <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
+                      <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1175,9 +1175,9 @@ export function SectioningWorkspace() {
                           }}
                         />
                       </th>
-                      <th className="p-4 font-extrabold">Learner Detail</th>
+                      <th className="p-4 font-bold">Learner Detail</th>
                       <th
-                        className="p-4 cursor-pointer  select-none font-extrabold"
+                        className="p-4 cursor-pointer  select-none font-bold"
                         onClick={() => handleSort("genAve")}>
                         <div className="flex items-center gap-1 justify-center">
                           Final Gen Ave
@@ -1194,17 +1194,17 @@ export function SectioningWorkspace() {
                   <tbody className="divide-y divide-border text-base leading-tight bg-card text-center">
                     {filteredAndSortedPool.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="h-[400px] text-center text-muted-foreground font-semibold">
+                        <td colSpan={3} className="h-[400px] text-center text-muted-foreground ">
                           <div className="flex flex-col items-center justify-center h-full space-y-3">
                             {activeSearchQuery || filterProgram !== "all" ? (
                               <>
                                 <Search className="h-8 w-8" />
-                                <p className="text-foreground font-extrabold">No unsectioned learners match this search</p>
+                                <p className="text-foreground font-bold">No unsectioned learners match this search</p>
                               </>
                             ) : (
                               <>
                                 <CheckCircle2 className="h-8 w-8 text-primary" />
-                                <p className="text-foreground font-extrabold">All enrolled learners are sectioned</p>
+                                <p className="text-foreground font-bold">All enrolled learners are sectioned</p>
                               </>
                             )}
                           </div>
@@ -1228,7 +1228,7 @@ export function SectioningWorkspace() {
                         return groups.flatMap((group) => {
                           const headerRow = (
                             <tr key={`header-${group.title}`} className="bg-muted/50 border-y border-border">
-                              <td colSpan={3} className="py-2.5 px-4 text-center font-extrabold text-foreground uppercase tracking-wider">
+                              <td colSpan={3} className="py-2.5 px-4 text-center font-bold text-foreground uppercase tracking-wider">
                                 {group.title}
                               </td>
                             </tr>
@@ -1288,7 +1288,7 @@ export function SectioningWorkspace() {
                                       alt={`${l.firstName} ${l.lastName}`}
                                     />
                                     <div className="flex flex-col">
-                                      <span className="font-extrabold text-foreground uppercase flex items-center gap-2">
+                                      <span className="font-bold text-foreground uppercase flex items-center gap-2">
                                         {l.lastName}, {l.firstName}{" "}
                                         {l.middleName?.charAt(0)
                                           ? `${l.middleName.charAt(0)}.`
@@ -1302,12 +1302,12 @@ export function SectioningWorkspace() {
                                         )}
                                       </span>
                                       <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-sm font-extrabold uppercase text-foreground">
+                                        <span className="text-sm font-bold uppercase text-foreground">
                                           {l.lrn || "NO LRN"}
                                         </span>
                                         <Badge
                                           className={cn(
-                                            "text-sm uppercase font-extrabold",
+                                            "text-sm uppercase font-bold",
                                             l.sex === "MALE" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                                           )}>
                                           {l.sex}
@@ -1315,7 +1315,7 @@ export function SectioningWorkspace() {
                                         <Badge
                                           variant="outline"
                                           className={cn(
-                                            "text-sm uppercase font-extrabold",
+                                            "text-sm uppercase font-bold",
                                             l.programType === "LATE_ENROLLEE" && "bg-amber-100 text-amber-700 border-amber-500 border-2"
                                           )}>
                                           {SCP_SHORT_LABELS[l.programType] ??
@@ -1326,7 +1326,7 @@ export function SectioningWorkspace() {
                                         draftSectionByApplicationId.has(
                                           l.applicationId,
                                         ) && (
-                                          <span className="text-sm mt-2 font-extrabold uppercase text-primary text-left">
+                                          <span className="text-sm mt-2 font-bold uppercase text-primary text-left">
                                             Section:{" "}
                                             {draftSectionByApplicationId.get(
                                               l.applicationId,
@@ -1337,7 +1337,7 @@ export function SectioningWorkspace() {
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-4 font-extrabold text-foreground">
+                                <td className="p-4 font-bold text-foreground">
                                   {l.genAve ? (
                                     l.genAve.toFixed(2)
                                   ) : (
@@ -1362,13 +1362,13 @@ export function SectioningWorkspace() {
               <CardHeader className="border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-extrabold uppercase tracking-wide flex items-center gap-2 text-foreground">
+                    <CardTitle className="text-lg font-bold uppercase tracking-wide flex items-center gap-2 text-foreground">
                       <LayoutGrid className="h-5 w-5 text-primary" />
                       {draftPlacement
                         ? "TEMPORARY CLASS LISTS"
                         : "Available Sections"}
                     </CardTitle>
-                    <CardDescription className="text-foreground text-sm font-extrabold">
+                    <CardDescription className="text-foreground text-sm font-bold">
                       {draftPlacement
                         ? "Please review the temporary assignments before creating the official lists"
                         : `Select section to move ${selectedAppIds.length || "0"} ${selectedAppIds.length <= 1 ? "learner" : "learners"}.`}
@@ -1387,7 +1387,7 @@ export function SectioningWorkspace() {
                       isHistoricalReadOnly
                     }
                     onClick={() => setAutoAssignConfirmOpen(true)}
-                    className="font-extrabold text-base uppercase tracking-normal gap-1 rounded-md">
+                    className="font-bold text-base uppercase tracking-normal gap-1 rounded-md">
                     AUTO ASSIGN SECTIONS
                   </Button>
                 )}
@@ -1396,7 +1396,7 @@ export function SectioningWorkspace() {
                 {displayedRosters.length === 0 ? (
                   <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground">
                     <Info className="h-8 w-8" />
-                    <span className="font-extrabold text-base leading-tight">
+                    <span className="font-bold text-base leading-tight">
                       No sections defined for this grade.
                     </span>
                   </div>
@@ -1443,7 +1443,7 @@ export function SectioningWorkspace() {
                       <div
                         key={group.title}
                         className={cn("space-y-3", groupIdx > 0 && "mt-6")}>
-                        <h3 className="text-center font-extrabold text-foreground uppercase tracking-wider">
+                        <h3 className="text-center font-bold text-foreground uppercase tracking-wider">
                           {group.title}
                         </h3>
                         {group.rosters.map((roster) => {
@@ -1494,12 +1494,12 @@ export function SectioningWorkspace() {
                                 <div>
                                   <h4
                                     className={cn(
-                                      "font-extrabold text-lg uppercase transition-colors flex items-center gap-2",
+                                      "font-bold text-lg uppercase transition-colors flex items-center gap-2",
                                       isSelected ? "text-primary" : "text-foreground",
                                     )}>
                                     {s.name}
                                   </h4>
-                                  <span className="text-sm font-extrabold uppercase text-foreground">
+                                  <span className="text-sm font-bold uppercase text-foreground">
                                     {s.adviser || "No Adviser Assigned"}
                                   </span>
                                 </div>
@@ -1507,14 +1507,14 @@ export function SectioningWorkspace() {
                                   {draftPlacement && roster.isOverCapacity && (
                                     <Badge
                                       variant="destructive"
-                                      className="text-sm font-extrabold uppercase">
+                                      className="text-sm font-bold uppercase">
                                       Over Capacity
                                     </Badge>
                                   )}
                                   <Badge
                                     variant="outline"
                                     className={cn(
-                                      "text-sm font-extrabold uppercase bg-background",
+                                      "text-sm font-bold uppercase bg-background",
                                       s.programType === "REGULAR"
                                         ? s.isHomogeneous
                                           ? "text-amber-600 border-amber-600/30"
@@ -1528,14 +1528,14 @@ export function SectioningWorkspace() {
                                 </div>
                               </div>
                               <div className="space-y-2">
-                                <div className="flex items-center justify-between text-base font-extrabold">
+                                <div className="flex items-center justify-between text-base font-bold">
                                   <span className="text-foreground uppercase text-sm">
                                     Capacity Fill
                                   </span>
                                   <span
                                     className={cn(
                                       isOverCapacity
-                                        ? "text-destructive font-extrabold"
+                                        ? "text-destructive font-bold"
                                         : "text-foreground",
                                     )}>
                                     {roster.totalCount} / {s.maxCapacity}{" "}
@@ -1544,7 +1544,7 @@ export function SectioningWorkspace() {
                                     )}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm font-extrabold uppercase text-foreground">
+                                <div className="flex items-center gap-2 text-sm font-bold uppercase text-foreground">
                                   <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2">
                                     Male: {roster.genderCounts.boys}
                                   </Badge>
@@ -1581,10 +1581,10 @@ export function SectioningWorkspace() {
                                   <table className="w-full text-left text-sm">
                                     <thead className="bg-muted text-foreground">
                                       <tr className="uppercase">
-                                        <th className="p-3 font-black">Learner</th>
-                                        <th className="p-3 text-center font-black">Sex</th>
-                                        <th className="p-3 text-center font-black">Gen Ave</th>
-                                        <th className="p-3 text-right font-black">Action</th>
+                                        <th className="p-3 font-bold">Learner</th>
+                                        <th className="p-3 text-center font-bold">Sex</th>
+                                        <th className="p-3 text-center font-bold">Gen Ave</th>
+                                        <th className="p-3 text-right font-bold">Action</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
@@ -1592,7 +1592,7 @@ export function SectioningWorkspace() {
                                         <tr>
                                           <td
                                             colSpan={4}
-                                            className="p-4 text-center font-extrabold text-foreground">
+                                            className="p-4 text-center font-bold text-foreground">
                                             No drafted learners in this section.
                                           </td>
                                         </tr>
@@ -1601,7 +1601,7 @@ export function SectioningWorkspace() {
                                           <tr key={learner.applicationId}>
                                             <td className="p-3">
                                               <div className="flex flex-col">
-                                                <span className="font-extrabold uppercase text-foreground">
+                                                <span className="font-bold uppercase text-foreground">
                                                   {formatLearnerName(learner)}
                                                 </span>
                                                 <span className="font-bold uppercase text-foreground">
@@ -1614,7 +1614,7 @@ export function SectioningWorkspace() {
                                                 </span>
                                               </div>
                                             </td>
-                                            <td className="p-3 font-extrabold text-center">
+                                            <td className="p-3 font-bold text-center">
                                               <Badge
                                                 className={cn(
                                                   "uppercase",
@@ -1625,7 +1625,7 @@ export function SectioningWorkspace() {
                                                 {learner.sex}
                                               </Badge>
                                             </td>
-                                            <td className="p-3 font-extrabold text-center">
+                                            <td className="p-3 font-bold text-center">
                                               {learner.genAve?.toFixed(2) ?? "--"}
                                             </td>
                                             <td className="p-3 text-center">
@@ -1697,7 +1697,7 @@ export function SectioningWorkspace() {
                           variant="outline"
                           onClick={discardDraft}
                           disabled={commitProcessing}
-                          className="h-12 text-base font-extrabold uppercase">
+                          className="h-12 text-base font-bold uppercase">
                           CANCEL TEMPORARY SECTIONS
                         </Button>
                         <Button
@@ -1707,7 +1707,7 @@ export function SectioningWorkspace() {
                             draftLearnerCount === 0 ||
                             isHistoricalReadOnly
                           }
-                          className="h-12 text-base font-extrabold uppercase">
+                          className="h-12 text-base font-bold uppercase">
                           FINALIZE OFFICIAL SECTIONS
                         </Button>
                       </div>
@@ -1721,7 +1721,7 @@ export function SectioningWorkspace() {
                           isHistoricalReadOnly
                         }
                         className={cn(
-                          "w-full h-12 text-base leading-tight font-extrabold uppercase transition-all shadow-none",
+                          "w-full h-12 text-base leading-tight font-bold uppercase transition-all shadow-none",
                           selectedAppIds.length > 0 && targetSectionId
                             ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                             : "bg-muted text-foreground hover:bg-muted",
@@ -1757,7 +1757,7 @@ export function SectioningWorkspace() {
           <Select
             value={moveDestinationSectionId}
             onValueChange={setMoveDestinationSectionId}>
-            <SelectTrigger className="h-11 font-extrabold">
+            <SelectTrigger className="h-11 font-bold">
               <SelectValue placeholder="Select destination section" />
             </SelectTrigger>
             <SelectContent>
@@ -1799,7 +1799,7 @@ export function SectioningWorkspace() {
           <Select
             value={moveDestinationSectionId}
             onValueChange={setMoveDestinationSectionId}>
-            <SelectTrigger className="h-11 font-extrabold">
+            <SelectTrigger className="h-11 font-bold">
               <SelectValue placeholder="Select destination section" />
             </SelectTrigger>
             <SelectContent>
@@ -1850,7 +1850,7 @@ export function SectioningWorkspace() {
           <Select
             value={swapApplicationId}
             onValueChange={setSwapApplicationId}>
-            <SelectTrigger className="h-11 font-extrabold">
+            <SelectTrigger className="h-11 font-bold">
               <SelectValue placeholder="Select learner to swap" />
             </SelectTrigger>
             <SelectContent>
@@ -1885,12 +1885,12 @@ export function SectioningWorkspace() {
         title="AUTO ASSIGN TEMPORARY SECTIONS"
         description={
           <div className="space-y-4 text-left">
-            <p className="text-center font-extrabold">
+            <p className="text-center font-bold">
               This will create temporary class lists for the selected grade
               level. No official SF1 record will be saved yet.
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4">
-              <p className="font-extrabold text-foreground">
+              <p className="font-bold text-foreground">
                 How the system will place learners:
               </p>
               <ul className="list-disc space-y-2 pl-5 text-sm font-bold leading-relaxed text-foreground">
@@ -1933,7 +1933,7 @@ export function SectioningWorkspace() {
                 </li>
               </ul>
             </div>
-            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-sm font-extrabold text-primary">
+            <p className="rounded-md border-2 border-primary bg-primary/5 p-3 text-sm font-bold text-primary">
               Please review the temporary class lists carefully before
               finalizing because finalization creates the official section
               records.
@@ -1955,11 +1955,11 @@ export function SectioningWorkspace() {
         title="FINALIZE OFFICIAL SECTIONS"
         description={
           <div className="space-y-4">
-            <p className="font-extrabold">
+            <p className="font-bold">
               This action will lock the assignments and update the official school records
             </p>
             <div className="space-y-3 rounded-md border bg-muted p-4 text-left">
-              <p className="text-base font-extrabold text-foreground">
+              <p className="text-base font-bold text-foreground">
                 {draftLearnerCount} learner(s) will be officially placed in their respective classes
               </p>
               {hasDraftOverflow && (

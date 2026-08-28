@@ -157,10 +157,10 @@ export function SectionHandoverModal({
               <RefreshCcw className="h-6 w-6" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-extrabold uppercase ">
+              <DialogTitle className="text-xl font-bold uppercase ">
                 Initiate Advisory Handover
               </DialogTitle>
-              <DialogDescription className="text-primary-foreground/80 font-extrabold text-base">
+              <DialogDescription className="text-primary-foreground/80 font-bold text-base">
                 Section: {gradeLevelName} - {sectionName}
               </DialogDescription>
             </div>
@@ -171,12 +171,12 @@ export function SectionHandoverModal({
           {/* Current Adviser Section */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-base font-extrabold uppercase  text-foreground">
+              <Label className="text-base font-bold uppercase  text-foreground">
                 Current Adviser (To be relieved)
               </Label>
               <Badge
                 variant="outline"
-                className="text-sm font-extrabold uppercase border-amber-200 bg-amber-50 text-amber-700">
+                className="text-sm font-bold uppercase border-amber-200 bg-amber-50 text-amber-700">
                 ACTIVE
               </Badge>
             </div>
@@ -185,10 +185,10 @@ export function SectionHandoverModal({
                 <User className="h-5 w-5 text-foreground" />
               </div>
               <div>
-                <p className="font-extrabold text-base uppercase leading-none">
+                <p className="font-bold text-base uppercase leading-none">
                   {currentAdviser?.name || "Unassigned"}
                 </p>
-                <p className="text-sm font-extrabold text-foreground mt-1">
+                <p className="text-sm font-bold text-foreground mt-1">
                   Load tracked until handover date
                 </p>
               </div>
@@ -199,13 +199,13 @@ export function SectionHandoverModal({
             {/* Reason Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-base font-extrabold uppercase ">
+                <Label className="text-base font-bold uppercase ">
                   Reason for Handover (Audit Required)
                 </Label>
                 <Select
                   value={handoverReason}
                   onValueChange={setHandoverReason}>
-                  <SelectTrigger className="h-11 font-extrabold">
+                  <SelectTrigger className="h-11 font-bold">
                     <SelectValue placeholder="Select reason..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -213,7 +213,7 @@ export function SectionHandoverModal({
                       <SelectItem
                         key={reason}
                         value={reason}
-                        className="font-extrabold text-base uppercase">
+                        className="font-bold text-base uppercase">
                         {reason}
                       </SelectItem>
                     ))}
@@ -228,30 +228,30 @@ export function SectionHandoverModal({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2 overflow-hidden">
-                    <Label className="text-base font-extrabold uppercase ">
+                    <Label className="text-base font-bold uppercase ">
                       Specify Reason
                     </Label>
                     <Textarea
                       placeholder="Enter detailed reason for audit trail..."
                       value={customReason}
                       onChange={(e) => setCustomReason(e.target.value)}
-                      className="min-h-[80px] font-extrabold text-base leading-tight"
+                      className="min-h-[80px] font-bold text-base leading-tight"
                     />
                   </motion.div>
                 )}
               </AnimatePresence>
 
               <div className="space-y-2">
-                <Label className="text-base font-extrabold uppercase ">
+                <Label className="text-base font-bold uppercase ">
                   Effective Handover Date
                 </Label>
                 <Input
                   type="date"
                   value={handoverDate}
                   onChange={(e) => setHandoverDate(e.target.value)}
-                  className="h-11 font-extrabold"
+                  className="h-11 font-bold"
                 />
-                <p className="text-base text-foreground font-extrabold italic leading-tight">
+                <p className="text-base text-foreground font-bold italic leading-tight">
                   The current adviser remains the signatory until this date. The
                   new adviser assumes authority the following day.
                 </p>
@@ -261,7 +261,7 @@ export function SectionHandoverModal({
             {/* New Adviser Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-base font-extrabold uppercase ">
+                <Label className="text-base font-bold uppercase ">
                   New Designated Adviser (Substitute)
                 </Label>
                 <div className="relative">
@@ -270,7 +270,7 @@ export function SectionHandoverModal({
                     placeholder="Search Teacher Directory..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-11 font-extrabold"
+                    className="pl-9 h-11 font-bold"
                   />
                 </div>
                 <div className="border rounded-xl h-[180px] overflow-y-auto bg-card divide-y">
@@ -278,17 +278,17 @@ export function SectionHandoverModal({
                     <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-4">
                       <Search className="h-10 w-10 animate-pulse text-slate-400" />
                       <div className="space-y-1">
-                        <p className="text-lg font-extrabold text-slate-500">
+                        <p className="text-lg font-bold text-slate-500">
                           Searching...
                         </p>
-                        <p className="text-base leading-tight font-extrabold text-slate-400">
+                        <p className="text-base leading-tight font-bold text-slate-400">
                           Scanning faculty records...
                         </p>
                       </div>
                     </div>
                   ) : filteredTeachers.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                      <p className="text-base font-extrabold text-foreground italic">
+                      <p className="text-base font-bold text-foreground italic">
                         {searchQuery
                           ? "No matching teachers found"
                           : "Start typing to search..."}
@@ -309,14 +309,14 @@ export function SectionHandoverModal({
                         <div>
                           <p
                             className={cn(
-                              "font-extrabold text-base uppercase",
+                              "font-bold text-base uppercase",
                               substituteTeacherId === teacher.id.toString()
                                 ? "text-primary"
                                 : "text-foreground",
                             )}>
                             {teacher.name}
                           </p>
-                          <p className="text-base font-extrabold text-foreground">
+                          <p className="text-base font-bold text-foreground">
                             ID: {teacher.employeeId || "N/A"}
                           </p>
                         </div>
@@ -337,10 +337,10 @@ export function SectionHandoverModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex gap-4">
             <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-extrabold uppercase text-amber-800  leading-none">
+              <p className="text-sm font-bold uppercase text-amber-800  leading-none">
                 Official DepEd Compliance Notice
               </p>
-              <p className="text-base font-extrabold text-amber-700 leading-relaxed">
+              <p className="text-base font-bold text-amber-700 leading-relaxed">
                 Advisory history is preserved in the ledger for legal audit.
                 Past grading periods will remain officially signed by{" "}
                 <span className="underline">
@@ -366,13 +366,13 @@ export function SectionHandoverModal({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-extrabold uppercase text-base  h-11 px-8">
+            className="font-bold uppercase text-base  h-11 px-8">
             Cancel
           </Button>
           <Button
             onClick={handleHandover}
             disabled={submitting || !substituteTeacherId || !handoverReason}
-            className="font-extrabold uppercase text-base  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            className="font-bold uppercase text-base  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 " /> Executing

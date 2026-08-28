@@ -36,7 +36,7 @@ function isFieldMatch(subjectName: string, major: string, minor: string) {
   const target = subjectName.toLowerCase();
   const m1 = (major || "").toLowerCase();
   const m2 = (minor || "").toLowerCase();
-  
+
   const mappings: Record<string, string[]> = {
     "math": ["math", "mathematics"],
     "sci": ["science", "biology", "chemistry", "physics"],
@@ -86,7 +86,7 @@ export default function ClassAssignments() {
   const [form, setForm] = useState({ teacherId: "", subjectId: "", sectionId: "" });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [selectedTeacherProfile, setSelectedTeacherProfile] = useState<any>(null);
   const [isWarningOpen, setIsWarningOpen] = useState(false);
   const [warningData, setWarningData] = useState<any>(null);
@@ -187,10 +187,10 @@ export default function ClassAssignments() {
     gl?.replace("GRADE_", "Grade ") ?? gl;
 
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold">Class Assignments</h1>
+          <h1 className="text-2xl font-bold">Class Assignments</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Teaching load — which teacher handles which subject in which section.
             Synced automatically from Atlas on teacher login.
@@ -413,7 +413,7 @@ export default function ClassAssignments() {
                     <TableCell>{row.hgMinutes} min</TableCell>
                     <TableCell>{row.advisoryRoleMinutes} min</TableCell>
                     <TableCell>{row.otherSubjectMinutes} min</TableCell>
-                    <TableCell className="font-semibold">{row.totalMinutes} min</TableCell>
+                    <TableCell className="">{row.totalMinutes} min</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

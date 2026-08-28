@@ -13,9 +13,9 @@ const DialogOverlay = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-    <DialogPrimitive.Overlay
-      ref={ref}
-      className={cn(
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
       "fixed inset-0 z-[90] bg-black/72 backdrop-blur-[1px]",
       motionClassNames.overlay,
       className,
@@ -87,7 +87,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-extrabold leading-none ", className)}
+    className={cn("text-lg font-bold leading-none ", className)}
     {...props}
   />
 ));

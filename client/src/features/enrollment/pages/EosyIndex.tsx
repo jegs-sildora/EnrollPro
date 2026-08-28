@@ -94,11 +94,11 @@ export interface EnrollmentRecord {
   nextYearCurriculum: string | null;
   transferOutDate: string | null;
   smartSyncStatus:
-    | "FINALIZED_SMART_GRADES_RECEIVED"
-    | "WAITING_FOR_SMART_FINALIZATION"
-    | "INCOMPLETE_SUBJECT_GRADES"
-    | "SMART_DATA_NEEDS_REVIEW"
-    | null;
+  | "FINALIZED_SMART_GRADES_RECEIVED"
+  | "WAITING_FOR_SMART_FINALIZATION"
+  | "INCOMPLETE_SUBJECT_GRADES"
+  | "SMART_DATA_NEEDS_REVIEW"
+  | null;
   smartSyncReason: string | null;
   smartSynchronizedAt: string | null;
   isScpDemoted?: boolean;
@@ -211,12 +211,12 @@ interface EosyExportLockState {
 
 interface SmartConnectionStatus {
   state:
-    | "DISABLED"
-    | "CONNECTING"
-    | "CONNECTED"
-    | "UNAVAILABLE"
-    | "AUTHENTICATION_FAILED"
-    | "PAUSED";
+  | "DISABLED"
+  | "CONNECTING"
+  | "CONNECTED"
+  | "UNAVAILABLE"
+  | "AUTHENTICATION_FAILED"
+  | "PAUSED";
   connectionAttempts: number;
   lastConnectedAt: string | null;
   lastEventAt: string | null;
@@ -313,7 +313,7 @@ function GeofencingPopover({
           variant="outline"
           size="sm"
           className={cn(
-            "h-8 px-2 flex gap-1 items-center font-extrabold cursor-pointer transition-colors shrink-0",
+            "h-8 px-2 flex gap-1 items-center font-bold cursor-pointer transition-colors shrink-0",
             isChanged ? "border-amber-500 bg-amber-50 text-amber-900" : "text-muted-foreground"
           )}
           disabled={disabled}
@@ -322,11 +322,11 @@ function GeofencingPopover({
           <span className="text-sm">
             {lat.toFixed(4)}, {lng.toFixed(4)}
           </span>
-          {isChanged && <span className="text-sm text-amber-600 font-black uppercase">Unsaved</span>}
+          {isChanged && <span className="text-sm text-amber-600 font-bold uppercase">Unsaved</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-4 text-center space-y-3" align="end">
-        <h4 className="text-sm font-extrabold uppercase text-foreground leading-none border-b pb-2">
+        <h4 className="text-sm font-bold uppercase text-foreground leading-none border-b pb-2">
           Residency Geofence Coordinates
         </h4>
         <p className="text-sm text-muted-foreground leading-normal">
@@ -340,7 +340,7 @@ function GeofencingPopover({
         >
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
             <circle cx="120" cy="90" r="50" fill="rgba(14, 165, 233, 0.05)" stroke="rgba(14, 165, 233, 0.3)" strokeDasharray="3 3" strokeWidth="1.5" />
-            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-sm font-extrabold font-sans uppercase">School Geofence Radius (1km)</text>
+            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-sm font-bold font-sans uppercase">School Geofence Radius (1km)</text>
             <line x1="120" y1="0" x2="120" y2="180" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
             <line x1="0" y1="90" x2="240" y2="90" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
             <text x="24" y="20" fill="#64748b" className="text-sm font-bold">Brgy. San Jose</text>
@@ -361,8 +361,8 @@ function GeofencingPopover({
         </div>
 
         <div className="bg-slate-50 border p-2 rounded text-sm font-mono flex flex-col items-center">
-          <span className="font-extrabold text-foreground">Lat: {lat.toFixed(6)}° N</span>
-          <span className="font-extrabold text-foreground">Lng: {lng.toFixed(6)}° E</span>
+          <span className="font-bold text-foreground">Lat: {lat.toFixed(6)}° N</span>
+          <span className="font-bold text-foreground">Lng: {lng.toFixed(6)}° E</span>
         </div>
       </PopoverContent>
     </Popover>
@@ -1138,7 +1138,7 @@ export default function EosyUpdating() {
                   className="w-full h-full object-cover"
                   alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                   fallbackIcon={
-                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white  text-sm bg-primary">
                       {initials}
                     </div>
                   }
@@ -1149,29 +1149,29 @@ export default function EosyUpdating() {
                       value={currentLastName || ""}
                       onChange={(e) => handleFieldChange(recordId, "lastName", e.target.value)}
                       disabled={isCommitting}
-                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      className={cn("h-8 text-sm font-bold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
                       placeholder="Last Name"
                     />
                     <Input
                       value={currentFirstName || ""}
                       onChange={(e) => handleFieldChange(recordId, "firstName", e.target.value)}
                       disabled={isCommitting}
-                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      className={cn("h-8 text-sm font-bold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
                       placeholder="First Name"
                     />
-                    {isNameChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                    {isNameChanged && <span className="text-sm text-amber-600 font-bold shrink-0">Unsaved</span>}
                   </div>
                   <div className="flex gap-2 items-center flex-wrap">
                     <div className="flex-1 flex gap-1 items-center">
-                      <span className="text-sm font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
+                      <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">LRN:</span>
                       <Input
                         value={currentLrn || ""}
                         onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
                         disabled={isCommitting}
-                        className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                        className={cn("h-8 text-sm font-bold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
                         placeholder="12-digit LRN"
                       />
-                      {isLrnChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
+                      {isLrnChanged && <span className="text-sm text-amber-600 font-bold shrink-0">Unsaved</span>}
                     </div>
 
                     <GeofencingPopover
@@ -1200,17 +1200,17 @@ export default function EosyUpdating() {
                 className="w-full h-full object-cover"
                 alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                 fallbackIcon={
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white  text-sm bg-primary">
                     {initials}
                   </div>
                 }
               />
               <div className="flex flex-col text-left leading-tight text-sm sm:text-base min-w-0">
-                <span className="font-extrabold uppercase truncate">
+                <span className="font-bold uppercase truncate">
                   {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                  <span className="text-base text-foreground font-extrabold uppercase">
+                  <span className="text-base text-foreground font-bold uppercase">
                     LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                   </span>
                   {row.original.nextYearCurriculum === "REGULAR" &&
@@ -1244,7 +1244,7 @@ export default function EosyUpdating() {
                   onValueChange={(val) => handleFieldChange(recordId, "sectionId", Number(val))}
                   disabled={isCommitting}
                 >
-                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-36", isSectionChanged && "border-amber-500 focus:ring-amber-500")}>
+                  <SelectTrigger className={cn("h-8 text-sm font-bold w-36", isSectionChanged && "border-amber-500 focus:ring-amber-500")}>
                     <SelectValue placeholder="Select Section" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1253,7 +1253,7 @@ export default function EosyUpdating() {
                     ))}
                   </SelectContent>
                 </Select>
-                {isSectionChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
+                {isSectionChanged && <span className="text-sm text-amber-600 font-bold">Unsaved</span>}
               </div>
             );
           }
@@ -1263,7 +1263,7 @@ export default function EosyUpdating() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex justify-center w-full">
-                    <span className="text-base font-extrabold uppercase cursor-help">{row.original.section?.name || "--"}</span>
+                    <span className="text-base font-bold uppercase cursor-help">{row.original.section?.name || "--"}</span>
                   </div>
                 </TooltipTrigger>
                 {row.original.section?.advisers?.[0]?.teacher && (
@@ -1290,7 +1290,7 @@ export default function EosyUpdating() {
 
           if (ave === null || ave === undefined) {
             return (
-              <span className="font-extrabold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
+              <span className="font-bold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
                 --
               </span>
             );
@@ -1300,7 +1300,7 @@ export default function EosyUpdating() {
           return (
             <div className="flex justify-center items-center gap-1 w-full">
               <span className={cn("text-base sm:text-base leading-tight tabular-nums block text-center",
-                isFailing ? "text-red-600 font-extrabold" : "text-gray-900 font-extrabold"
+                isFailing ? "text-red-600 font-bold" : "text-gray-900 font-bold"
               )}>
                 {ave.toFixed(2)}
               </span>
@@ -1345,7 +1345,7 @@ export default function EosyUpdating() {
                           ? "border-green-200 bg-green-50 text-green-700"
                           : "border-red-200 bg-red-50 text-red-700",
                     )}>
-                      <span className="text-sm font-extrabold uppercase">{displayLabel}</span>
+                      <span className="text-sm font-bold uppercase">{displayLabel}</span>
                       {r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED" && !isDeparture && (
                         <span className="text-sm font-bold normal-case opacity-80">{syncLabel}</span>
                       )}
@@ -1439,7 +1439,7 @@ export default function EosyUpdating() {
                   value={String(gl.id)}
                   disabled={syncingSmart}
                   className={cn(
-                    "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+                    "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
                   )}
                 >
                   {activeTab === String(gl.id) && (
@@ -1449,7 +1449,7 @@ export default function EosyUpdating() {
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                  <span className={cn("relative z-20 text-base font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
                     {gl.name.replace(/grade\s*/i, "Grade ")}
                   </span>
                 </TabsTrigger>
@@ -1463,7 +1463,7 @@ export default function EosyUpdating() {
                 trigger={
                   <Button
                     size="lg"
-                    className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
+                    className="bg-primary text-primary-foreground font-bold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
                   >
                     Review Rollover Readiness
                   </Button>
@@ -1485,7 +1485,7 @@ export default function EosyUpdating() {
                 >
                   {isScopeFinalized && (
                     <div className="flex items-center justify-between w-full bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 shrink-0">
-                      <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
+                      <span className="text-base leading-tight font-bold text-amber-900 uppercase tracking-widest">
                         EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER CHANGES ALLOWED.
                       </span>
                       {isSystemAdmin && (
@@ -1493,7 +1493,7 @@ export default function EosyUpdating() {
                           variant="outline"
                           size="sm"
                           onClick={() => setUnlockModalOpen(true)}
-                          className="font-extrabold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
+                          className="font-bold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
                         >
                           <Unlock className="w-3 h-3 mr-1.5" />
                           Override Lock
@@ -1513,7 +1513,7 @@ export default function EosyUpdating() {
                               placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
+                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-bold"
                             />
                           </div>
                         </div>
@@ -1524,16 +1524,16 @@ export default function EosyUpdating() {
                             value={sectionFilter}
                             onValueChange={setSectionFilter}
                           >
-                            <SelectTrigger className="w-44 bg-background border-border font-extrabold">
+                            <SelectTrigger className="w-44 bg-background border-border font-bold">
                               <SelectValue placeholder="Filter by Section / Adviser" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
+                              <SelectItem value="ALL" className="font-bold cursor-pointer">All Sections</SelectItem>
                               {sectionGroups.map(([groupName, secs]) => (
                                 <SelectGroup key={groupName}>
                                   <SelectLabel className="font-bold text-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
                                   {secs.map(sec => (
-                                    <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
+                                    <SelectItem key={sec} value={sec} className="font-bold pl-6">{sec}</SelectItem>
                                   ))}
                                 </SelectGroup>
                               ))}
@@ -1544,7 +1544,7 @@ export default function EosyUpdating() {
                             variant="outline"
                             disabled={syncingSmart || isScopeFinalized}
                             onClick={() => void handleSyncSmartGrades()}
-                            className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 shrink-0"
+                            className="font-bold border-border hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 shrink-0"
                           >
                             {syncingSmart ? (
                               <>
@@ -1563,7 +1563,7 @@ export default function EosyUpdating() {
                             <Button
                               onClick={() => void handleCommitChanges()}
                               disabled={isCommitting}
-                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-4 flex items-center gap-1.5 shadow-md shrink-0"
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 flex items-center gap-1.5 shadow-md shrink-0"
                             >
                               {isCommitting ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1580,7 +1580,7 @@ export default function EosyUpdating() {
                                 <Button
                                   variant="outline"
                                   disabled={recordingForms}
-                                  className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground uppercase"
+                                  className="font-bold border-border hover:bg-primary hover:text-primary-foreground uppercase"
                                 >
                                   {recordingForms ? "Exporting..." : (
                                     <>
@@ -1591,7 +1591,7 @@ export default function EosyUpdating() {
                                   )}
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 font-extrabold">
+                              <DropdownMenuContent align="end" className="w-48 font-bold">
                                 <DropdownMenuItem onClick={() => void recordSf5ForScope()} className="cursor-pointer">
                                   Export Official SF5
                                 </DropdownMenuItem>
@@ -1608,7 +1608,7 @@ export default function EosyUpdating() {
                           {/* Status Indicators */}
                           <div className="flex items-center gap-3">
                             {pendingCount > 0 && !isScopeFinalized && (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-bold shadow-sm border border-border">
                                 {pendingCount} Waiting for Finalization
                               </div>
                             )}
@@ -1617,13 +1617,13 @@ export default function EosyUpdating() {
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-base font-bold cursor-help transition-colors hover:bg-destructive/20">
                                       <AlertCircle className="w-3.5 h-3.5" />
                                       {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
-                                    <p className="font-extrabold mb-2 flex items-center gap-2">
+                                    <p className="font-bold mb-2 flex items-center gap-2">
                                       <AlertCircle className="w-4 h-4" />
                                       Pending Requirements
                                     </p>
@@ -1642,7 +1642,7 @@ export default function EosyUpdating() {
                             <Button
                               onClick={() => setFinalizeModalOpen(true)}
                               size="lg"
-                              className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
+                              className="font-bold shadow-md transition-all bg-primary text-primary-foreground uppercase"
                             >
                               Finalize {targetScopeName}
                             </Button>
@@ -1654,7 +1654,7 @@ export default function EosyUpdating() {
                               disabled={unlockLoading}
                               size="lg"
                               variant="outline"
-                              className="font-extrabold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
+                              className="font-bold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
                             >
                               Unlock Section Roster
                             </Button>
@@ -1734,7 +1734,7 @@ export default function EosyUpdating() {
             </AnimatePresence>
           ) : !isInitialLoad && gradeLevels.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-muted/30 border border-dashed rounded-lg mt-4">
-              <p className="text-muted-foreground font-extrabold text-lg">No sections found for this school year.</p>
+              <p className="text-muted-foreground font-bold text-lg">No sections found for this school year.</p>
             </div>
           ) : null}
         </Tabs>
@@ -1747,14 +1747,14 @@ export default function EosyUpdating() {
             <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <DialogTitle className="text-center text-xl font-extrabold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
+            <DialogTitle className="text-center text-xl font-bold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
             <DialogDescription className="text-center pt-2 font-bold text-md">
               {activeGradeName.includes("10") ? (
                 `Are you sure you want to finalize ${descriptionTarget}? This will officially close the school year and generate their Junior High School completion records.`
               ) : (
                 <>
                   Are you sure you want to finalize {descriptionTarget}? This will officially close the school year and determine their promotion to{' '}
-                  <span className="font-extrabold">{getNextGradeName(activeGradeName)}</span>.
+                  <span className="font-bold">{getNextGradeName(activeGradeName)}</span>.
                 </>
               )}
             </DialogDescription>
@@ -1765,7 +1765,7 @@ export default function EosyUpdating() {
               <li>The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</li>
               <li>This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</li>
             </ul>
-            <p className="font-extrabold text-[hsl(var(--primary))] underline mt-5 text-center">This action is final and cannot be undone.</p>
+            <p className="font-bold text-[hsl(var(--primary))] underline mt-5 text-center">This action is final and cannot be undone.</p>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
             <Button
@@ -1773,7 +1773,7 @@ export default function EosyUpdating() {
               onClick={() => setFinalizeModalOpen(false)}
               disabled={finalizeLoading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "flex-1 h-12 rounded-lg font-bold text-md",
                 "border border-gray-200 bg-muted text-foreground",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]"
@@ -1786,7 +1786,7 @@ export default function EosyUpdating() {
               onClick={handleFinalizeGrade}
               disabled={finalizeLoading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-extrabold text-md",
+                "flex-1 h-12 rounded-lg font-bold text-md",
                 "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
                 "hover:bg-[hsl(var(--primary)/0.9)]",
                 "shadow-md",
@@ -1818,12 +1818,12 @@ export default function EosyUpdating() {
         <DialogContent className="w-full max-w-3xl p-0 overflow-hidden bg-muted border border-gray-300 shadow-2xl">
           <DialogHeader className="p-4 border-b bg-gray-50 flex flex-row items-center justify-between">
             <div>
-              <DialogTitle className="text-lg font-extrabold">School Form 5 (SF5) Preview</DialogTitle>
+              <DialogTitle className="text-lg font-bold">School Form 5 (SF5) Preview</DialogTitle>
               <DialogDescription asChild>
                 <span>Document generated with unresolved SMART outcomes</span>
               </DialogDescription>
             </div>
-            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-extrabold border border-red-200">
+            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold border border-red-200">
               UNFINALIZED
             </div>
           </DialogHeader>
@@ -1833,19 +1833,19 @@ export default function EosyUpdating() {
 
               {/* WATERMARK OVERLAY */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-hidden">
-                <div className="transform -rotate-45 text-[6rem] font-extrabold text-red-600/10 whitespace-nowrap select-none">
+                <div className="transform -rotate-45 text-[6rem] font-bold text-red-600/10 whitespace-nowrap select-none">
                   DRAFT COPY
                 </div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 mt-48 overflow-hidden">
-                <div className="transform -rotate-45 text-[2rem] font-extrabold text-red-600/10 whitespace-nowrap select-none">
+                <div className="transform -rotate-45 text-[2rem] font-bold text-red-600/10 whitespace-nowrap select-none">
                   PENDING ACADEMIC CLEARANCE
                 </div>
               </div>
 
               {/* Fake Document Content */}
               <div>
-                <h2 className="text-2xl font-serif text-center font-extrabold mb-8">School Form 5 (SF5)</h2>
+                <h2 className="text-2xl font-serif text-center font-bold mb-8">School Form 5 (SF5)</h2>
                 <div className="space-y-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                   <div className="h-4 bg-gray-200 rounded w-full"></div>
@@ -1859,15 +1859,15 @@ export default function EosyUpdating() {
               <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
                 <div className="text-center w-1/3">
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-sm font-extrabold">Class Adviser</p>
+                  <p className="text-sm font-bold">Class Adviser</p>
                 </div>
                 <div className="text-center w-1/3 relative">
                   {/* Blocked Signature Field */}
                   <div className="absolute inset-0 bg-red-100/80 backdrop-blur-sm flex items-center justify-center border-2 border-red-500 border-dashed z-40">
-                    <span className="text-red-700 font-extrabold text-sm uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
+                    <span className="text-red-700 font-bold text-sm uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
                   </div>
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-sm font-extrabold">Official Registrar Signature</p>
+                  <p className="text-sm font-bold">Official Registrar Signature</p>
                 </div>
               </div>
             </div>
@@ -1876,7 +1876,7 @@ export default function EosyUpdating() {
             <span className="text-sm text-gray-500 italic">This copy cannot be officially distributed.</span>
             <div className="space-x-2">
               <Button variant="outline" onClick={() => setSf5WatermarkOpen(false)}>Close Preview</Button>
-              <Button onClick={() => setSf5WatermarkOpen(false)} className="bg-primary hover:bg-primary/90 text-white font-extrabold">
+              <Button onClick={() => setSf5WatermarkOpen(false)} className="bg-primary hover:bg-primary/90 text-white font-bold">
                 Download Draft PDF
               </Button>
             </div>

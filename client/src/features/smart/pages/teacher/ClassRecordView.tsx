@@ -839,7 +839,7 @@ export default function ClassRecordView() {
           <div className="w-20 h-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
             <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
           </div>
-          <p className="text-slate-500 font-extrabold text-xs uppercase tracking-widest">Fetching Class Records...</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Fetching Class Records...</p>
         </div>
       </div>
     );
@@ -858,12 +858,12 @@ export default function ClassRecordView() {
   const stickyOffset = assessmentDetailsTop + assessmentPanelOffset;
 
   return (
-<div className="space-y-8 animate-fade-in w-full px-6 pb-12">
+    <div className="space-y-8 animate-fade-in w-full px-6 pb-12">
       {/* Toast Messages */}
       {(error || success) && (
         <div className={`fixed top-20 right-6 z-[100] flex items-center gap-4 px-6 py-4 rounded-[1.5rem] shadow-2xl border-0 animate-slide-in-right ${error ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"}`}>
           {error ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-          <span className="text-sm font-extrabold uppercase tracking-widest">{error || success}</span>
+          <span className="text-sm font-bold uppercase tracking-widest">{error || success}</span>
           <button onClick={() => { setError(''); setSuccess(''); }} className="ml-4 p-1 hover:bg-muted/20 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
         </div>
       )}

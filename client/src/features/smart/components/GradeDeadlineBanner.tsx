@@ -60,17 +60,17 @@ function OverdueBanner({
 
         {/* Labels */}
         <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-red-600 whitespace-nowrap">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600 whitespace-nowrap">
             ⛔ Overdue — Grades Not Submitted
           </span>
-          <span className="px-2 py-0.5 rounded-lg bg-red-100 text-red-700 text-[9px] font-extrabold uppercase tracking-widest whitespace-nowrap">
+          <span className="px-2 py-0.5 rounded-lg bg-red-100 text-red-700 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
             {daysOverdue} {daysOverdue === 1 ? "day" : "days"} overdue
           </span>
           <span className="text-xs text-slate-500  hidden sm:inline">
             {termLabel}
             {termEndDate && ` · was due ${formatDeadlineDate(termEndDate)}`}
             {" · "}
-            <span className="font-extrabold text-red-600">
+            <span className="font-bold text-red-600">
               {incompleteCount} {incompleteCount === 1 ? "subject" : "subjects"} missing
             </span>
           </span>
@@ -80,7 +80,7 @@ function OverdueBanner({
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 text-white shadow-sm">
             <PhoneCall className="w-3.5 h-3.5" />
-            <span className="text-[9px] font-extrabold uppercase tracking-widest">Contact Admin</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Contact Admin</span>
           </div>
           <div className="w-8 h-8 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-400 group-hover:bg-red-100 transition-colors">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -98,15 +98,15 @@ function OverdueBanner({
             </p>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 text-white">
               <PhoneCall className="w-3 h-3" />
-              <span className="text-[9px] font-extrabold uppercase tracking-widest">Contact Admin</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest">Contact Admin</span>
             </div>
           </div>
 
           {/* Table header */}
           <div className="bg-red-50/60 px-5 py-2.5 grid grid-cols-3 gap-4">
-            <span className="text-[9px] font-extrabold uppercase tracking-widest text-red-400">Subject</span>
-            <span className="text-[9px] font-extrabold uppercase tracking-widest text-red-400">Section</span>
-            <span className="text-[9px] font-extrabold uppercase tracking-widest text-red-400 text-right">Progress</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-red-400">Subject</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-red-400">Section</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-red-400 text-right">Progress</span>
           </div>
 
           {/* Rows — capped height with scroll if many */}
@@ -117,13 +117,13 @@ function OverdueBanner({
                 : 0;
               return (
                 <div key={idx} className="px-5 py-3 grid grid-cols-3 gap-4 items-center hover:bg-red-50/40 transition-colors">
-                  <p className="text-sm font-extrabold text-slate-900 truncate">{cls.subjectName}</p>
+                  <p className="text-sm font-bold text-slate-900 truncate">{cls.subjectName}</p>
                   <p className="text-xs  text-slate-500 truncate">{cls.sectionName}</p>
                   <div className="flex items-center justify-end gap-2">
                     <div className="flex-1 max-w-[70px] h-1.5 bg-red-100 rounded-full overflow-hidden">
                       <div className="h-full bg-red-400 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="text-[10px] font-extrabold text-red-600 whitespace-nowrap tabular-nums">
+                    <span className="text-[10px] font-bold text-red-600 whitespace-nowrap tabular-nums">
                       {cls.gradedCount}/{cls.totalStudents}
                     </span>
                   </div>
@@ -142,7 +142,7 @@ function OverdueBanner({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 px-4 rounded-xl border-red-200 text-red-600 hover:bg-red-600 hover:text-white font-extrabold text-[9px] tracking-widest uppercase transition-all"
+                  className="h-8 px-4 rounded-xl border-red-200 text-red-600 hover:bg-red-600 hover:text-white font-bold text-[9px] tracking-widest uppercase transition-all"
                 >
                   <BookOpen className="w-3.5 h-3.5 mr-1.5" />
                   Open Records
@@ -222,10 +222,10 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-600 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600 mb-1">
               Grade Submission Reminder
             </p>
-            <p className="text-sm font-extrabold text-slate-900 leading-snug">
+            <p className="text-sm font-bold text-slate-900 leading-snug">
               {termLabel} grade submission deadline is in{" "}
               <span className="text-amber-600">
                 {daysRemaining} {daysRemaining === 1 ? "day" : "days"}
@@ -242,7 +242,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
               <Link to="/teacher/classes">
                 <Button
                   size="sm"
-                  className="h-10 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[10px] tracking-widest uppercase border-0 shadow-lg shadow-amber-200 transition-all active:scale-95"
+                  className="h-10 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] tracking-widest uppercase border-0 shadow-lg shadow-amber-200 transition-all active:scale-95"
                 >
                   <BookOpen className="w-3.5 h-3.5 mr-2" />
                   Submit Grades
@@ -275,10 +275,10 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-600 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600 mb-1">
               ⚠ Urgent — Grade Submission
             </p>
-            <p className="text-sm font-extrabold text-slate-900 leading-snug">
+            <p className="text-sm font-bold text-slate-900 leading-snug">
               Only{" "}
               <span className="text-orange-600">
                 {daysRemaining} {daysRemaining === 1 ? "day" : "days"} remaining
@@ -296,7 +296,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
               <Link to="/teacher/classes">
                 <Button
                   size="sm"
-                  className="h-11 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-[10px] tracking-widest uppercase border-0 shadow-xl shadow-orange-200 transition-all active:scale-95 group"
+                  className="h-11 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-[10px] tracking-widest uppercase border-0 shadow-xl shadow-orange-200 transition-all active:scale-95 group"
                 >
                   Submit Now
                   <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -325,15 +325,15 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-rose-200 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-rose-200 mb-1">
               🚨 Final Warning — Grade Deadline
             </p>
-            <p className="text-base font-extrabold text-white leading-snug">
+            <p className="text-base font-bold text-white leading-snug">
               {isToday
                 ? `${termLabel} grade submission is DUE TODAY!`
                 : `${termLabel} grade submission is due TOMORROW${termEndDate ? ` (${formatDeadlineDate(termEndDate)})` : ""}!`}
             </p>
-            <p className="text-sm text-rose-200 font-semibold mt-1">
+            <p className="text-sm text-rose-200  mt-1">
               {incompleteCount} {incompleteCount === 1 ? "class" : "classes"} with incomplete grades. This is your last chance to submit!
             </p>
           </div>
@@ -343,7 +343,7 @@ export function GradeDeadlineBanner({ deadline, hideLink = false }: GradeDeadlin
               <Link to="/teacher/classes">
                 <Button
                   size="sm"
-                  className="h-12 px-7 rounded-2xl bg-muted text-rose-600 hover:bg-rose-50 font-extrabold text-[10px] tracking-widest uppercase border-0 shadow-2xl shadow-rose-800/30 transition-all active:scale-95 group"
+                  className="h-12 px-7 rounded-2xl bg-muted text-rose-600 hover:bg-rose-50 font-bold text-[10px] tracking-widest uppercase border-0 shadow-2xl shadow-rose-800/30 transition-all active:scale-95 group"
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   GO TO CLASS RECORDS

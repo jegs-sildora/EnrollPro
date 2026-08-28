@@ -265,7 +265,7 @@ CardHeader:
   border-b border-zinc-100
 
 CardTitle:
-  font-heading text-base leading-snug font-semibold tracking-tight text-zinc-900
+  font-heading text-base leading-snug  tracking-tight text-zinc-900
 
 CardDescription:
   font-mono text-xs tracking-wider font-medium text-zinc-400 uppercase
@@ -332,7 +332,7 @@ TableHeader:
   [&_tr]:border-b
 
 TableHead:
-  h-11 px-4 py-3 text-left align-middle font-semibold text-xs uppercase tracking-wider text-zinc-500 whitespace-nowrap
+  h-11 px-4 py-3 text-left align-middle  text-xs uppercase tracking-wider text-zinc-500 whitespace-nowrap
 
 TableRow:
   border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted
@@ -749,8 +749,8 @@ style={{ backgroundColor: colors.primary }}
 | **Card** | `rounded-xl bg-white border border-zinc-200/80 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.06),0_10px_22px_-6px_rgba(0,0,0,0.04)]` |
 | **Card header** | `px-6 py-4 bg-zinc-50/60 border-b border-zinc-100 rounded-t-xl` |
 | **Card content** | `px-6 py-5` |
-| **Card title** | `font-heading text-base font-semibold tracking-tight text-zinc-900` |
-| **Table head** | `h-11 px-4 py-3 font-semibold text-xs uppercase tracking-wider text-zinc-500` |
+| **Card title** | `font-heading text-base  tracking-tight text-zinc-900` |
+| **Table head** | `h-11 px-4 py-3  text-xs uppercase tracking-wider text-zinc-500` |
 | **Table cell** | `px-4 py-3 text-sm` |
 | **Table row hover** | `hover:bg-muted/50` or `hover:bg-[rgba(16,185,129,0.03)]` |
 | **Button (default)** | `h-8 px-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium` |

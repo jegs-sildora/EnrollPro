@@ -78,7 +78,7 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
     <Dialog open={!!record} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="w-full max-w-3xl border-amber-200 bg-amber-50">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-amber-800 uppercase font-extrabold text-xl">
+          <DialogTitle className="flex items-center gap-2 text-amber-800 uppercase font-bold text-xl">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
             Record Learner Status
           </DialogTitle>
@@ -89,7 +89,7 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
 
         <div className="space-y-4 my-4 bg-muted p-4 rounded-md border border-amber-100 shadow-sm">
           <div className="space-y-1">
-            <Label className="font-extrabold text-amber-900">Learner</Label>
+            <Label className="font-bold text-amber-900">Learner</Label>
             <p className="text-base font-medium">
               {record?.enrollmentApplication.learner.lastName},{" "}
               {record?.enrollmentApplication.learner.firstName}
@@ -97,9 +97,9 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-extrabold text-amber-900">EOSY Status</Label>
+            <Label className="font-bold text-amber-900">EOSY Status</Label>
             <Select value={eosyStatus} onValueChange={(val) => setEosyStatus(val as EosyStatus)}>
-              <SelectTrigger className="font-extrabold">
+              <SelectTrigger className="font-bold">
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
@@ -111,7 +111,7 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
 
           {eosyStatus === "DROPPED_OUT" && (
             <div className="space-y-1.5">
-              <Label className="font-extrabold text-amber-900">Drop Out Reason</Label>
+              <Label className="font-bold text-amber-900">Drop Out Reason</Label>
               <Input
                 value={dropOutReason}
                 onChange={(e) => setDropOutReason(e.target.value)}
@@ -122,7 +122,7 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
 
           {eosyStatus === "TRANSFERRED_OUT" && (
             <div className="space-y-1.5">
-              <Label className="font-extrabold text-amber-900">Transfer Out Date</Label>
+              <Label className="font-bold text-amber-900">Transfer Out Date</Label>
               <Input
                 type="date"
                 value={transferOutDate}
@@ -133,10 +133,10 @@ export function EosyOverrideModal({ record, historicalOverride, onClose, onSucce
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading} className="font-extrabold border-amber-300 text-amber-800 hover:bg-amber-100">
+          <Button variant="outline" onClick={onClose} disabled={loading} className="font-bold border-amber-300 text-amber-800 hover:bg-amber-100">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={loading || !eosyStatus} className="font-extrabold bg-amber-600 hover:bg-amber-700 text-white shadow-md">
+          <Button onClick={handleSubmit} disabled={loading || !eosyStatus} className="font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md">
             {loading ? "Saving..." : "Confirm Correction"}
           </Button>
         </DialogFooter>

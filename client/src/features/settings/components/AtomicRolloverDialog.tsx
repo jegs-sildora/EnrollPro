@@ -158,7 +158,7 @@ export function AtomicRolloverDialog({
       )}
       {!readinessLoading && readiness && !readiness.ready && (
         <div className="mt-4 w-full rounded-lg border border-amber-300 bg-amber-50 p-4 text-left flex flex-col max-h-[40vh]">
-          <p className="text-sm font-extrabold text-amber-900 shrink-0">
+          <p className="text-sm font-bold text-amber-900 shrink-0">
             Complete these requirements before rollover:
           </p>
           <div className="overflow-y-auto mt-2 pr-2 custom-scrollbar">
@@ -177,12 +177,12 @@ export function AtomicRolloverDialog({
         </div>
       )}
       <div className="flex items-center space-x-3 mt-6 mb-2">
-        <Checkbox 
-          id="rollover-consent" 
-          checked={consentChecked} 
-          onCheckedChange={(checked) => setConsentChecked(checked === true)} 
+        <Checkbox
+          id="rollover-consent"
+          checked={consentChecked}
+          onCheckedChange={(checked) => setConsentChecked(checked === true)}
         />
-        <Label htmlFor="rollover-consent" className="text-base font-extrabold cursor-pointer text-foreground text-left">
+        <Label htmlFor="rollover-consent" className="text-base font-bold cursor-pointer text-foreground text-left">
           I understand this action is permanent and will archive the current school year.
         </Label>
       </div>
@@ -201,7 +201,7 @@ export function AtomicRolloverDialog({
           },
         })
       ) : (
-        <Button disabled={disabled} className="text-sm font-extrabold" onClick={() => setOpen(true)}>
+        <Button disabled={disabled} className="text-sm font-bold" onClick={() => setOpen(true)}>
           <Settings2 className="h-4 w-4 mr-2" />
           Prepare New School Year
         </Button>

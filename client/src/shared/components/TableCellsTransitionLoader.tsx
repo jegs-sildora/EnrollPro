@@ -99,7 +99,7 @@ export function TableCellsTransitionLoader({
           ))}
         </div>
 
-        <h2 className="text-lg font-extrabold text-foreground">
+        <h2 className="text-lg font-bold text-foreground">
           Syncing EOSY Grades
         </h2>
         <p className="mt-1 text-sm font-bold text-foreground">
@@ -119,7 +119,7 @@ export function TableCellsTransitionLoader({
           {processedSections} of {totalSections} sections processed
         </p>
         {failedSections > 0 && (
-          <p className="mt-2 text-sm font-semibold text-destructive">
+          <p className="mt-2 text-sm  text-destructive">
             {failedSections} section(s) need review.
           </p>
         )}

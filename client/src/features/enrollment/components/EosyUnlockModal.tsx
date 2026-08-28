@@ -19,7 +19,7 @@ export function EosyUnlockModal({ open, onOpenChange, onConfirm, loading, target
       icon={Unlock}
       description={
         <span>
-          You are about to unlock the finalized End of School Year records for <span className="font-extrabold">{targetName}</span>. 
+          You are about to unlock the finalized End of School Year records for <span className="font-bold">{targetName}</span>.
           This action allows class advisers to modify grades and regenerate School Form 5.
         </span>
       }

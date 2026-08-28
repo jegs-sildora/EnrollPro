@@ -22,11 +22,11 @@ interface SectionProps {
 function DataSection({ title, icon, children }: SectionProps) {
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-      <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+      <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
         {icon && <span className="text-primary">{icon}</span>}
         <span className="uppercase">{title}</span>
       </div>
-      <div className="text-base leading-tight font-extrabold divide-y divide-border border-b-0">
+      <div className="text-base leading-tight font-bold divide-y divide-border border-b-0">
         {children}
       </div>
     </div>
@@ -62,7 +62,7 @@ function DataItem({
       <div
         className={cn(
           "p-3 flex items-center",
-          !valid ? "text-gray-300 font-extrabold" : "uppercase"
+          !valid ? "text-gray-300 font-bold" : "uppercase"
         )}>
         {valid ? String(value) : "—"}
       </div>
@@ -264,14 +264,14 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
             <>
               <span className="uppercase">{c.fullName}</span>
               {c.details && (
-                <span className="text-base font-extrabold text-foreground">
+                <span className="text-base font-bold text-foreground">
                   {c.details}
                   {c.relationship && ` (${c.relationship})`}
                 </span>
               )}
             </>
           ) : (
-            <span className="text-gray-300 font-extrabold">—</span>
+            <span className="text-gray-300 font-bold">—</span>
           )}
         </div>
       </div>

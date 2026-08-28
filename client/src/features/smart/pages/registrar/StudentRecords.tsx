@@ -121,9 +121,9 @@ const FormStatusCard = ({ label, title, status, description }: {
         <Badge variant="outline" className={`${config.color} ${config.border} bg-muted px-1.5 text-[10px]`}>{label}</Badge>
         <Icon className={`w-4 h-4 ${config.color} ${status === 'dev' ? 'animate-spin-slow' : ''}`} />
       </div>
-      <p className="font-extrabold text-gray-900 text-[11px] truncate leading-tight" title={title}>{title}</p>
+      <p className="font-bold text-gray-900 text-[11px] truncate leading-tight" title={title}>{title}</p>
       <div className="mt-1">
-        <span className={`text-[9px] font-extrabold uppercase tracking-wider ${config.color}`}>{config.text}</span>
+        <span className={`text-[9px] font-bold uppercase tracking-wider ${config.color}`}>{config.text}</span>
       </div>
     </div>
   );
@@ -315,7 +315,7 @@ export default function StudentRecords() {
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
           <Users className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Student Records</h2>
+        <h2 className="text-xl  text-gray-900 mb-2">Unable to Load Student Records</h2>
         <p className="text-gray-600 mb-4">{error}</p>
         <Button onClick={() => window.location.reload()} variant="outline">
           Try Again
@@ -337,7 +337,7 @@ export default function StudentRecords() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             Student Records
           </h1>
           <p className="text-gray-600 mt-1">
@@ -361,19 +361,19 @@ export default function StudentRecords() {
             <p className="text-sm  text-gray-600">Total Students</p>
             <HelpTooltip content="Total number of enrolled students matching current filters" />
           </div>
-          <p className="text-2xl font-extrabold text-gray-900 mt-1">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
         </div>
         <div className="p-4 rounded-xl bg-sky-50 border border-sky-100">
           <p className="text-sm  text-gray-600">Male</p>
-          <p className="text-2xl font-extrabold text-gray-900 mt-1">{stats.male}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.male}</p>
         </div>
         <div className="p-4 rounded-xl bg-pink-50 border border-pink-100">
           <p className="text-sm  text-gray-600">Female</p>
-          <p className="text-2xl font-extrabold text-gray-900 mt-1">{stats.female}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.female}</p>
         </div>
         <div className="p-4 rounded-xl border" style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}20` }}>
           <p className="text-sm  text-gray-600">Sections</p>
-          <p className="text-2xl font-extrabold text-gray-900 mt-1">{stats.sections}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.sections}</p>
         </div>
       </div>
 
@@ -386,7 +386,7 @@ export default function StudentRecords() {
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-lg font-extrabold text-gray-900">All Students</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900">All Students</CardTitle>
                 <CardDescription className="text-gray-500 text-sm">{filteredStudents.length} students found</CardDescription>
               </div>
             </div>
@@ -474,13 +474,13 @@ export default function StudentRecords() {
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold"
+                              className="w-10 h-10 rounded-lg flex items-center justify-center text-white "
                               style={{ backgroundColor: colors.primary }}
                             >
                               {student.lastName.charAt(0)}
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900">
+                              <p className=" text-gray-900">
                                 {student.lastName}, {student.firstName}
                               </p>
                               <p className="text-xs text-gray-500 font-mono">{student.lrn}</p>
@@ -522,13 +522,13 @@ export default function StudentRecords() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted border-b border-slate-100 hover:bg-muted">
-                      <TableHead className="font-extrabold text-slate-800 py-4">LRN</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4">Student Name</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4">Gender</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4">Grade Level</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4">Section</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4">Status</TableHead>
-                      <TableHead className="font-extrabold text-slate-800 py-4 text-right">Actions</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">LRN</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">Student Name</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">Gender</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">Grade Level</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">Section</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4">Status</TableHead>
+                      <TableHead className="font-bold text-slate-800 py-4 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -549,13 +549,13 @@ export default function StudentRecords() {
                             <TableCell className="py-4">
                               <div className="flex items-center gap-3">
                                 <div
-                                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm"
+                                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white  text-sm shadow-sm"
                                   style={{ backgroundColor: colors.primary }}
                                 >
                                   {student.lastName.charAt(0)}
                                 </div>
                                 <div>
-                                  <p className="font-extrabold text-slate-900">
+                                  <p className="font-bold text-slate-900">
                                     {student.lastName}, {student.firstName} {student.middleName || ""} {student.suffix || ""}
                                   </p>
                                 </div>
@@ -610,7 +610,7 @@ export default function StudentRecords() {
           {/* Pagination */}
           {!loading && filteredStudents.length > 0 && (
             <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between bg-gray-50/30">
-              <div className="flex items-center gap-4 text-sm font-semibold text-slate-800">
+              <div className="flex items-center gap-4 text-sm  text-slate-800">
                 <span>
                   Showing {filteredStudents.length === 0 ? 0 : (currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, filteredStudents.length)} of {filteredStudents.length} Learners
                 </span>
@@ -656,7 +656,7 @@ export default function StudentRecords() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-extrabold shadow-sm"
+                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-bold shadow-sm"
                 >
                   {currentPage}
                 </Button>
@@ -700,32 +700,32 @@ export default function StudentRecords() {
               {/* Student Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 rounded-xl border-2 border-blue-200 shadow-sm">
-                  <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider mb-1">LRN</p>
-                  <p className="font-mono font-extrabold text-gray-900 text-sm break-all">{selectedStudent.lrn}</p>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">LRN</p>
+                  <p className="font-mono font-bold text-gray-900 text-sm break-all">{selectedStudent.lrn}</p>
                 </div>
                 <div className="p-4 rounded-xl border-2 shadow-sm" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}30` }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider mb-1" style={{ color: colors.primary }}>Name</p>
-                  <p className="font-extrabold text-gray-900 text-sm leading-tight truncate" title={`${selectedStudent.lastName}, ${selectedStudent.firstName}`}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: colors.primary }}>Name</p>
+                  <p className="font-bold text-gray-900 text-sm leading-tight truncate" title={`${selectedStudent.lastName}, ${selectedStudent.firstName}`}>
                     {selectedStudent.lastName}, {selectedStudent.firstName}
                   </p>
                 </div>
                 <div className="p-4 rounded-xl border-2 shadow-sm" style={{ backgroundColor: `${colors.secondary}08`, borderColor: `${colors.secondary}30` }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider mb-1" style={{ color: colors.secondary }}>Gender</p>
-                  <p className="font-extrabold text-gray-900 text-sm">{selectedStudent.gender || "-"}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: colors.secondary }}>Gender</p>
+                  <p className="font-bold text-gray-900 text-sm">{selectedStudent.gender || "-"}</p>
                 </div>
                 <div className="p-4 rounded-xl border-2 shadow-sm" style={{ backgroundColor: `${colors.accent}08`, borderColor: `${colors.accent}30` }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider mb-1" style={{ color: colors.accent }}>Birth Date</p>
-                  <p className="font-extrabold text-gray-900 text-xs">{formatDate(selectedStudent.birthDate)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: colors.accent }}>Birth Date</p>
+                  <p className="font-bold text-gray-900 text-xs">{formatDate(selectedStudent.birthDate)}</p>
                 </div>
                 <div className="p-4 rounded-xl border-2 shadow-sm bg-gray-50 border-gray-200">
-                  <p className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">Guardian</p>
-                  <p className={`font-extrabold text-sm ${!selectedStudent.guardianName ? 'text-red-400 italic font-normal' : 'text-gray-900'}`}>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Guardian</p>
+                  <p className={`font-bold text-sm ${!selectedStudent.guardianName ? 'text-red-400 italic font-normal' : 'text-gray-900'}`}>
                     {selectedStudent.guardianName || "Not Set"}
                   </p>
                 </div>
                 <div className="p-4 rounded-xl border-2 shadow-sm bg-gray-50 border-gray-200">
-                  <p className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">Address</p>
-                  <p className={`font-extrabold text-xs leading-tight line-clamp-2 ${!selectedStudent.address ? 'text-red-400 italic font-normal' : 'text-gray-900'}`} title={selectedStudent.address}>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Address</p>
+                  <p className={`font-bold text-xs leading-tight line-clamp-2 ${!selectedStudent.address ? 'text-red-400 italic font-normal' : 'text-gray-900'}`} title={selectedStudent.address}>
                     {selectedStudent.address || "No address on record"}
                   </p>
                 </div>
@@ -745,10 +745,10 @@ export default function StudentRecords() {
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-pulse-subtle">
                     <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
                     <div>
-                      <h4 className="text-sm font-extrabold text-red-900">Information Needed</h4>
+                      <h4 className="text-sm font-bold text-red-900">Information Needed</h4>
                       <p className="text-xs text-red-700 mt-0.5">
                         The following fields are empty and should be synced from EnrollPro:
-                        <span className="font-extrabold ml-1">{missing.join(", ")}</span>
+                        <span className="font-bold ml-1">{missing.join(", ")}</span>
                       </p>
                     </div>
                   </div>
@@ -757,7 +757,7 @@ export default function StudentRecords() {
 
               {/* Form Compliance Checklist */}
               <div className="space-y-3">
-                <h3 className="text-xs font-extrabold text-gray-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 ml-1">
                   <FileCheck className="w-3.5 h-3.4" style={{ color: colors.primary }} />
                   School Forms Readiness
                 </h3>
@@ -837,7 +837,7 @@ export default function StudentRecords() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
                           <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                          <h3 className="font-extrabold text-gray-900 text-lg sm:text-xl">Current Year Grades (SF9)</h3>
+                          <h3 className="font-bold text-gray-900 text-lg sm:text-xl">Current Year Grades (SF9)</h3>
                         </div>
                         <Badge variant="outline" className="text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4 w-fit">S.Y. {selectedSchoolYear}</Badge>
                       </div>
@@ -845,26 +845,26 @@ export default function StudentRecords() {
                         <Table className="min-w-[400px] sm:min-w-[500px]">
                           <TableHeader>
                             <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100">
-                              <TableHead className="font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base">Subject</TableHead>
-                              <TableHead className="text-center font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T1</TableHead>
-                              <TableHead className="text-center font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T2</TableHead>
-                              <TableHead className="text-center font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T3</TableHead>
-                              <TableHead className="text-center font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">Final</TableHead>
+                              <TableHead className="font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base">Subject</TableHead>
+                              <TableHead className="text-center font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T1</TableHead>
+                              <TableHead className="text-center font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T2</TableHead>
+                              <TableHead className="text-center font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">T3</TableHead>
+                              <TableHead className="text-center font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base w-14 sm:w-20">Final</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {sf9Data.subjectGrades.map((sg: any) => (
                               <TableRow key={sg.subjectCode} className="border-b border-gray-200">
-                                <TableCell className="font-semibold text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.subjectName}</TableCell>
+                                <TableCell className=" text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.subjectName}</TableCell>
                                 <TableCell className="text-center text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.T1 ?? "-"}</TableCell>
                                 <TableCell className="text-center text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.T2 ?? "-"}</TableCell>
                                 <TableCell className="text-center text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.T3 ?? "-"}</TableCell>
-                                <TableCell className="text-center font-extrabold text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.final ?? "-"}</TableCell>
+                                <TableCell className="text-center font-bold text-gray-900 py-3 sm:py-4 text-sm sm:text-base">{sg.final ?? "-"}</TableCell>
                               </TableRow>
                             ))}
-                            <TableRow className="bg-gradient-to-r from-blue-50 to-blue-100 font-extrabold border-t-4 border-blue-300">
+                            <TableRow className="bg-gradient-to-r from-blue-50 to-blue-100 font-bold border-t-4 border-blue-300">
                               <TableCell colSpan={5} className="text-right text-gray-900 py-4 sm:py-5 text-base sm:text-lg">General Average:</TableCell>
-                              <TableCell className="text-center text-2xl sm:text-3xl text-blue-700 py-4 sm:py-5 font-extrabold">{sf9Data.generalAverage?.toFixed(2) ?? "-"}</TableCell>
+                              <TableCell className="text-center text-2xl sm:text-3xl text-blue-700 py-4 sm:py-5 font-bold">{sf9Data.generalAverage?.toFixed(2) ?? "-"}</TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
@@ -877,19 +877,19 @@ export default function StudentRecords() {
                     <div className="bg-muted border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-md">
                       <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                         <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: colors.primary }} />
-                        <h3 className="font-extrabold text-gray-900 text-lg sm:text-xl">Academic History (SF10)</h3>
+                        <h3 className="font-bold text-gray-900 text-lg sm:text-xl">Academic History (SF10)</h3>
                       </div>
                       <div className="space-y-4 sm:space-y-5">
                         {sf10Data.schoolRecords.map((record: any) => (
                           <div key={record.schoolYear} className="border-2 rounded-xl p-4 sm:p-6 shadow-sm" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}30` }}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-3">
-                              <h4 className="font-extrabold text-gray-900 text-base sm:text-lg">S.Y. {record.schoolYear} - Grade {record.gradeLevel.replace('GRADE_', '')}</h4>
+                              <h4 className="font-bold text-gray-900 text-base sm:text-lg">S.Y. {record.schoolYear} - Grade {record.gradeLevel.replace('GRADE_', '')}</h4>
                               <Badge variant="outline" className="bg-muted text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4 w-fit">{record.section}</Badge>
                             </div>
                             <div className="flex flex-wrap items-center gap-3 sm:gap-5">
-                              <span className="font-semibold text-gray-900 text-sm sm:text-base">GWA: <strong className="text-xl sm:text-2xl text-blue-700 ml-1">{record.generalAverage?.toFixed(2) ?? "-"}</strong></span>
-                              {record.honors && <Badge className="bg-amber-100 text-amber-800 border-2 border-amber-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm font-semibold">{record.honors}</Badge>}
-                              <Badge className={record.promotionStatus === "Promoted" ? "bg-emerald-100 text-emerald-800 border-2 border-emerald-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm font-semibold" : "bg-red-100 text-red-800 border-2 border-red-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm font-semibold"}>
+                              <span className=" text-gray-900 text-sm sm:text-base">GWA: <strong className="text-xl sm:text-2xl text-blue-700 ml-1">{record.generalAverage?.toFixed(2) ?? "-"}</strong></span>
+                              {record.honors && <Badge className="bg-amber-100 text-amber-800 border-2 border-amber-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm ">{record.honors}</Badge>}
+                              <Badge className={record.promotionStatus === "Promoted" ? "bg-emerald-100 text-emerald-800 border-2 border-emerald-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm " : "bg-red-100 text-red-800 border-2 border-red-300 py-1 px-3 sm:py-2 sm:px-4 text-xs sm:text-sm "}>
                                 {record.promotionStatus || "-"}
                               </Badge>
                             </div>

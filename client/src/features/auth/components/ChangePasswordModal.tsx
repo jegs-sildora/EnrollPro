@@ -146,14 +146,14 @@ export function ChangePasswordForm({
       {children}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-base leading-tight font-extrabold">{passwordLabel}</Label>
+          <Label htmlFor="newPassword" className="text-base leading-tight font-bold">{passwordLabel}</Label>
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               id="newPassword"
               type={showPw ? "text" : "password"}
               placeholder="••••••••••••"
-              className={`font-extrabold h-12 pl-10 pr-10 bg-muted/30 border-border rounded-xl ${newPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+              className={`font-bold h-12 pl-10 pr-10 bg-muted/30 border-border rounded-xl ${newPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
               {...register("newPassword")}
             />
             <button
@@ -168,14 +168,14 @@ export function ChangePasswordForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-base leading-tight font-extrabold">{confirmLabel}</Label>
+          <Label htmlFor="confirmPassword" className="text-base leading-tight font-bold">{confirmLabel}</Label>
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               id="confirmPassword"
               type={showPw ? "text" : "password"}
               placeholder="••••••••••••"
-              className={`font-extrabold h-12 pl-10 bg-muted/30 border-border focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl ${confirmPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
+              className={`font-bold h-12 pl-10 bg-muted/30 border-border focus-visible:ring-4 focus-visible:ring-primary/15 rounded-xl ${confirmPasswordInvalid ? "border-destructive/50 focus-visible:ring-destructive/20" : ""}`}
               {...register("confirmPassword")}
             />
           </div>
@@ -192,14 +192,14 @@ export function ChangePasswordForm({
               exit={{ opacity: 0, y: -10 }}
               className="w-full p-3 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-destructive shadow-sm">
               <AlertCircle className="size-4 shrink-0" />
-              <p className="text-base leading-tight font-extrabold">{error}</p>
+              <p className="text-base leading-tight font-bold">{error}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
         <Button
           type="submit"
-          className="w-full h-12 font-extrabold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
+          className="w-full h-12 font-bold text-base leading-tight rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/95 hover:to-accent/95 text-primary-foreground"
           disabled={loading}>
           {loading ? (
             <><Loader2 className="mr-2 h-5 w-5 " />{loadingLabel}</>
@@ -235,14 +235,14 @@ export const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-extrabold uppercase  text-foreground text-base">
+      <p className="font-bold uppercase  text-foreground text-base">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
         {rules.map((r) => (
           <li
             key={r.label}
-            className={`flex items-center gap-2 text-base leading-tight font-extrabold transition-colors ${r.pass ? "text-emerald-600" : "text-foreground"}`}>
+            className={`flex items-center gap-2 text-base leading-tight font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-foreground"}`}>
             {r.pass ? (
               <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
             ) : (
@@ -459,10 +459,10 @@ export default function ChangePassword() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
               <ShieldCheck className="h-8 w-8" />
             </div>
-            <CardTitle className="text-3xl font-extrabold ">
+            <CardTitle className="text-3xl font-bold ">
               {isExternalHandoff ? "Replace Default Password" : "Activate Official Account"}
             </CardTitle>
-            <CardDescription className="text-base font-extrabold">
+            <CardDescription className="text-base font-bold">
               {isExternalHandoff
                 ? "Your account is using the default password. Set a private password before returning to SMART, AIMS, or ATLAS."
                 : "Please replace the initial access key provided by the Registrar with your own private password."}

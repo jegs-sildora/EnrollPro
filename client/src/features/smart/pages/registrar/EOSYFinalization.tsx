@@ -149,7 +149,7 @@ export default function EOSYFinalization() {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex flex-col gap-3">
               <div>
-                <CardTitle className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
+                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                   <div className="p-2 rounded-lg text-white" style={{ backgroundColor: colors.primary }}>
                     <GraduationCap className="w-5 h-5" />
                   </div>
@@ -266,7 +266,7 @@ export default function EOSYFinalization() {
               ) : recordsError ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center px-4">
                   <AlertTriangle className="w-12 h-12 text-amber-500 mb-4" />
-                  <p className="text-gray-700 font-semibold text-lg">Unable to load records</p>
+                  <p className="text-gray-700  text-lg">Unable to load records</p>
                   <p className="text-gray-500 text-sm mt-1 max-w-sm">{recordsError}</p>
                   <Button onClick={() => void loadRecords(selectedSectionId)} variant="outline" className="mt-6 rounded-xl">Try Again</Button>
                 </div>
@@ -276,7 +276,7 @@ export default function EOSYFinalization() {
                   <div className="px-6 py-4 bg-muted border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="text-sm">
                       <span className="text-slate-500">Learner records for </span>
-                      <span className="font-extrabold text-slate-900">
+                      <span className="font-bold text-slate-900">
                         {sectionMeta?.name ?? sections.find((s) => String(s.id) === selectedSectionId)?.name ?? "Section"}
                       </span>
                       {searchTerm && (
@@ -303,13 +303,13 @@ export default function EOSYFinalization() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                          <TableHead className="font-extrabold text-gray-700 w-12 pl-6">#</TableHead>
-                          <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
-                          <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
-                          <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
-                          <TableHead className="font-extrabold text-gray-700">Final Average</TableHead>
-                          <TableHead className="font-extrabold text-gray-700">Status</TableHead>
-                          <TableHead className="font-extrabold text-gray-700 pr-6">Promoted To</TableHead>
+                          <TableHead className="font-bold text-gray-700 w-12 pl-6">#</TableHead>
+                          <TableHead className="font-bold text-gray-700">LRN</TableHead>
+                          <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
+                          <TableHead className="font-bold text-gray-700">Sex</TableHead>
+                          <TableHead className="font-bold text-gray-700">Final Average</TableHead>
+                          <TableHead className="font-bold text-gray-700">Status</TableHead>
+                          <TableHead className="font-bold text-gray-700 pr-6">Promoted To</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -336,7 +336,7 @@ export default function EOSYFinalization() {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex flex-col gap-1">
-                                    <span className="font-semibold text-gray-900">
+                                    <span className=" text-gray-900">
                                       {rec.finalAverage != null ? rec.finalAverage.toFixed(2) : "—"}
                                     </span>
                                     {rec.finalAverage != null && (
@@ -381,7 +381,7 @@ export default function EOSYFinalization() {
           ) : (
             <div className="flex flex-col items-center justify-center py-40 text-center px-4 bg-slate-50/10 border-t border-slate-100">
               <GraduationCap className="w-16 h-16 text-slate-200 mb-6" />
-              <p className="text-slate-500 font-semibold text-xl">No Section Selected</p>
+              <p className="text-slate-500  text-xl">No Section Selected</p>
               <p className="text-slate-400 text-sm mt-2 max-w-sm">
                 Please select a section and academic year from the filters above to view the End of School Year records.
               </p>

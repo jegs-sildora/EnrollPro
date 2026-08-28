@@ -26,10 +26,10 @@ export function PhaseOngoing({ stats }: { stats: DashboardStats }) {
       {(stats.classesOngoing.hasSectionLoadDisparity || overloadedSections > 0) && (
         <Alert className="border-amber-300 bg-amber-50 text-amber-950">
           <AlertTriangle className="size-5 text-amber-700" />
-          <AlertTitle className="font-extrabold">
+          <AlertTitle className="font-bold">
             Class Section Review Required
           </AlertTitle>
-          <AlertDescription className="font-semibold">
+          <AlertDescription className="">
             {overloadedSections > 0
               ? `${overloadedSections} class section${overloadedSections === 1 ? " exceeds" : "s exceed"} the configured seat limit.`
               : "Learner counts differ by more than five within at least one grade level."}

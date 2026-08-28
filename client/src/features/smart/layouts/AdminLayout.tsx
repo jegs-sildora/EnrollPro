@@ -219,7 +219,7 @@ export default function AdminLayout() {
                 </div>
               </div>
               <div className="ml-3 transition-all duration-200 origin-left flex-shrink-0">
-                <span className="font-extrabold text-sm leading-tight tracking-tight uppercase block max-w-[160px] text-[var(--theme-primary)]">
+                <span className="font-bold text-sm leading-tight tracking-tight uppercase block max-w-[160px] text-[var(--theme-primary)]">
                   {schoolName}
                 </span>
               </div>
@@ -238,7 +238,7 @@ export default function AdminLayout() {
           {navigationGroups.map((group) => (
             <div key={group.title} className="mb-5 first:mt-2">
               {!sidebarCollapsed && (
-                <span className="px-4 mb-1 text-[0.625rem] font-extrabold text-[#0F1729]/60 uppercase tracking-normal block whitespace-nowrap">
+                <span className="px-4 mb-1 text-[0.625rem] font-bold text-[#0F1729]/60 uppercase tracking-normal block whitespace-nowrap">
                   {group.title}
                 </span>
               )}
@@ -275,7 +275,7 @@ export default function AdminLayout() {
                                 <div className="flex min-w-0 items-center gap-2">
                                   <span className="truncate whitespace-nowrap">{item.name}</span>
                                   {item.inDevelopment && (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px]  uppercase text-amber-700 whitespace-nowrap">
                                       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
                                       In Dev
                                     </span>
@@ -321,7 +321,7 @@ export default function AdminLayout() {
                               <div className="flex min-w-0 items-center gap-2">
                                 <span className="truncate whitespace-nowrap">{item.name}</span>
                                 {item.inDevelopment && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 whitespace-nowrap">
+                                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px]  uppercase text-amber-700 whitespace-nowrap">
                                     <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
                                     In Dev
                                   </span>
@@ -351,7 +351,7 @@ export default function AdminLayout() {
                                   {child.inDevelopment && (
                                     <span
                                       className={cn(
-                                        "ml-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase whitespace-nowrap",
+                                        "ml-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px]  uppercase whitespace-nowrap",
                                         isActive
                                           ? "bg-muted/20 text-white/90"
                                           : "bg-amber-100 text-amber-700"
@@ -473,7 +473,7 @@ export default function AdminLayout() {
           )}>
             <div className="w-12 h-12 flex flex-shrink-0 items-center justify-center">
               <Avatar className="w-12 h-12 border border-white shadow-sm transition-transform duration-200" style={{ transform: sidebarCollapsed ? 'scale(0.9)' : 'scale(1)' }}>
-                <AvatarFallback className="bg-slate-100 text-slate-700 font-extrabold text-xs uppercase">
+                <AvatarFallback className="bg-slate-100 text-slate-700 font-bold text-xs uppercase">
                   {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -483,8 +483,8 @@ export default function AdminLayout() {
               sidebarCollapsed ? "opacity-0 scale-90 -translate-x-4 pointer-events-none w-0 m-0" : "opacity-100 scale-100 translate-x-0 ml-3"
             )}>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-extrabold text-[#0F1729] truncate leading-none mb-1">{userDisplayName}</p>
-                <p className="text-[10px] font-extrabold text-[#0F1729]/50 truncate uppercase tracking-tight">Admin</p>
+                <p className="text-xs font-bold text-[#0F1729] truncate leading-none mb-1">{userDisplayName}</p>
+                <p className="text-[10px] font-bold text-[#0F1729]/50 truncate uppercase tracking-tight">Admin</p>
               </div>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
@@ -523,7 +523,7 @@ export default function AdminLayout() {
               {/* Page Title */}
               <div className="flex flex-col">
                 <span className="text-xs  text-slate-500 uppercase tracking-wider">Admin Portal</span>
-                <span className="text-base font-extrabold text-slate-900 -mt-1">
+                <span className="text-base font-bold text-slate-900 -mt-1">
                   {getCurrentPageTitle()}
                 </span>
               </div>
@@ -533,7 +533,7 @@ export default function AdminLayout() {
               {/* User Avatar and Name */}
               <div className="flex items-center gap-3 pl-3 border-l border-slate-100">
                 <div className="hidden sm:flex flex-col items-end mr-1">
-                  <span className="text-sm font-extrabold text-slate-900 leading-none">
+                  <span className="text-sm font-bold text-slate-900 leading-none">
                     {user.firstName || user.username}
                   </span>
                   <span className="text-[10px]  text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md mt-1">
@@ -541,7 +541,7 @@ export default function AdminLayout() {
                   </span>
                 </div>
                 <Avatar className="w-12 h-12 ring-2 ring-slate-100 ring-offset-2">
-                  <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-extrabold">
+                  <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-bold">
                     {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

@@ -109,7 +109,7 @@ export default function AdminLayout() {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="font-semibold text-white text-sm block">SMART</span>
+              <span className=" text-white text-sm block">SMART</span>
               <span className="text-[11px] text-slate-400 block">Admin Panel</span>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function AdminLayout() {
         <div className="p-3 border-t border-white/10">
           <div className="flex items-center gap-3 px-2 py-2">
             <Avatar className="w-10 h-10 border-2 border-violet-500/50">
-              <AvatarFallback className="bg-violet-600 text-white font-semibold text-sm">
+              <AvatarFallback className="bg-violet-600 text-white  text-sm">
                 {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -184,7 +184,7 @@ export default function AdminLayout() {
               </button>
               
               {/* Page Title */}
-              <h1 className="text-lg font-semibold text-slate-800">
+              <h1 className="text-lg  text-slate-800">
                 {getCurrentPageTitle()}
               </h1>
             </div>

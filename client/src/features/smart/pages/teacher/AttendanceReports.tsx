@@ -183,11 +183,11 @@ export default function AttendanceReports() {
   };
 
   return (
-<div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Attendance Reports</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Attendance Reports</h1>
           <p className="text-gray-500 mt-1">View and download attendance summaries</p>
         </div>
       </div>
@@ -280,7 +280,7 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Total Students</p>
-                <p className="text-3xl font-extrabold" style={{ color: colors.primary }}>
+                <p className="text-3xl font-bold" style={{ color: colors.primary }}>
                   {summary.length}
                 </p>
               </div>
@@ -290,7 +290,7 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Avg. Attendance</p>
-                <p className="text-3xl font-extrabold text-green-600">
+                <p className="text-3xl font-bold text-green-600">
                   {summary.length > 0
                     ? (
                       (summary.reduce((acc, s) => acc + s.present, 0) /
@@ -307,7 +307,7 @@ export default function AttendanceReports() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-500">Total Days</p>
-                <p className="text-3xl font-extrabold" style={{ color: colors.secondary }}>
+                <p className="text-3xl font-bold" style={{ color: colors.secondary }}>
                   {summary[0]?.total || 0}
                 </p>
               </div>
@@ -414,10 +414,10 @@ export default function AttendanceReports() {
                           {student.excused}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center font-semibold">{student.total}</TableCell>
+                      <TableCell className="text-center ">{student.total}</TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`font-extrabold ${parseFloat(getAttendanceRate(student.present, student.total)) >= 90
+                          className={`font-bold ${parseFloat(getAttendanceRate(student.present, student.total)) >= 90
                             ? "text-green-600"
                             : parseFloat(getAttendanceRate(student.present, student.total)) >= 75
                               ? "text-amber-600"

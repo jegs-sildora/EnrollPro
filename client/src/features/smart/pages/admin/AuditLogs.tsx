@@ -230,11 +230,11 @@ export default function AuditLogs() {
   }
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             Audit Logs
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -260,7 +260,7 @@ export default function AuditLogs() {
           <Button
             onClick={handleExport}
             disabled={exporting}
-            className="gap-2 text-white font-semibold rounded-xl shadow-lg"
+            className="gap-2 text-white  rounded-xl shadow-lg"
             style={{ backgroundColor: colors.primary }}
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -276,7 +276,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Total Logs</p>
-                <p className="text-2xl font-extrabold" style={{ color: '#111827' }}>{counts.total}</p>
+                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{counts.total}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
                 <Activity className="w-5 h-5" style={{ color: colors.primary }} />
@@ -289,7 +289,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Creates</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{counts.creates}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{counts.creates}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <Plus className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -302,7 +302,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Updates</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{counts.updates}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{counts.updates}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <Edit3 className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -315,7 +315,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Deletes</p>
-                <p className="text-2xl font-extrabold text-red-600">{counts.deletes}</p>
+                <p className="text-2xl font-bold text-red-600">{counts.deletes}</p>
               </div>
               <div className="p-2 rounded-lg bg-red-100">
                 <Trash2 className="w-5 h-5 text-red-600" />
@@ -328,7 +328,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Auth Events</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.primary }}>{counts.logins}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.primary }}>{counts.logins}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
                 <LogIn className="w-5 h-5" style={{ color: colors.primary }} />
@@ -341,7 +341,7 @@ export default function AuditLogs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Critical</p>
-                <p className="text-2xl font-extrabold text-red-600">{counts.critical}</p>
+                <p className="text-2xl font-bold text-red-600">{counts.critical}</p>
               </div>
               <div className="p-2 rounded-lg bg-red-100">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -409,13 +409,13 @@ export default function AuditLogs() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="font-extrabold text-gray-700 w-16">#</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Action</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">User</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Target</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Details</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Severity</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Timestamp</TableHead>
+                  <TableHead className="font-bold text-gray-700 w-16">#</TableHead>
+                  <TableHead className="font-bold text-gray-700">Action</TableHead>
+                  <TableHead className="font-bold text-gray-700">User</TableHead>
+                  <TableHead className="font-bold text-gray-700">Target</TableHead>
+                  <TableHead className="font-bold text-gray-700">Details</TableHead>
+                  <TableHead className="font-bold text-gray-700">Severity</TableHead>
+                  <TableHead className="font-bold text-gray-700">Timestamp</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -431,7 +431,7 @@ export default function AuditLogs() {
                 ) : (
                   logs.map((log, index) => (
                     <TableRow key={log.id} className="hover:bg-gray-50/50">
-                      <TableCell className="text-sm font-semibold text-gray-500 text-center">
+                      <TableCell className="text-sm  text-gray-500 text-center">
                         {index + 1}
                       </TableCell>
                       <TableCell>
@@ -445,7 +445,7 @@ export default function AuditLogs() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-semibold text-sm" style={{ color: '#111827' }}>{log.user}</p>
+                          <p className=" text-sm" style={{ color: '#111827' }}>{log.user}</p>
                           <p className="text-xs text-gray-500">{log.userRole}</p>
                         </div>
                       </TableCell>

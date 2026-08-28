@@ -31,7 +31,7 @@ export function PreFlightBlockerModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-extrabold text-red-700 flex items-center">
+          <DialogTitle className="text-xl font-bold text-red-700 flex items-center">
             <AlertCircle className="w-5 h-5 mr-2" /> Cannot Finalize {targetScopeName}
           </DialogTitle>
           <DialogDescription className="text-foreground pt-2">
@@ -42,7 +42,7 @@ export function PreFlightBlockerModal({
         <div className="flex flex-col gap-4 py-4">
           {hasUnlockedClasses && (
             <div className="bg-amber-50 border border-amber-200 rounded p-3">
-              <div className="flex items-start text-amber-900 font-semibold text-base leading-tight">
+              <div className="flex items-start text-amber-900  text-base leading-tight">
                 <span className="mr-2">⚠️</span>
                 <span>{unlockedClassesCount} Sections pending School Form 5 (SF5) submission.</span>
               </div>
@@ -54,7 +54,7 @@ export function PreFlightBlockerModal({
 
           {hasIrregularBlockers && (
             <div className="bg-amber-50 border border-amber-200 rounded p-3">
-              <div className="flex items-start text-amber-900 font-semibold text-base leading-tight">
+              <div className="flex items-start text-amber-900  text-base leading-tight">
                 <span className="mr-2">⚠️</span>
                 <span>{irregularBlockerCount} Learners require End-of-School-Year (EOSY) Class grades.</span>
               </div>
@@ -66,7 +66,7 @@ export function PreFlightBlockerModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto font-extrabold">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto font-bold">
             Close & Review
           </Button>
         </DialogFooter>

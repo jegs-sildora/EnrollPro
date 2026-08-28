@@ -61,7 +61,7 @@ export default function Settings() {
         <TabsList className="w-full flex flex-col sm:flex-row h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
           <TabsTrigger
             value="profile"
-            className="w-full sm:flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
+            className="w-full sm:flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
             {activeTab === "profile" && (
               <motion.div
                 layoutId="settings-active-pill"
@@ -73,7 +73,7 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger
             value="school-year"
-            className="w-full sm:flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
+            className="w-full sm:flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg py-2">
             {activeTab === "school-year" && (
               <motion.div
                 layoutId="settings-active-pill"

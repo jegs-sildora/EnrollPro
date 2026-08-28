@@ -85,7 +85,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   // Render concurrency lock warning banner
   if (isLockedByOther) {
     return (
-      <div className="flex items-center gap-3 border-b px-4 py-2 text-sm font-extrabold bg-rose-50 border-rose-200 text-rose-950">
+      <div className="flex items-center gap-3 border-b px-4 py-2 text-sm font-bold bg-rose-50 border-rose-200 text-rose-950">
         <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-rose-600" />
         <span className="flex-1 min-w-0 truncate">
           S.Y. {viewingSchoolYearLabel || "2026-2027"} is currently undergoing active correction by {activeCorrection.userName}. Records are temporarily locked.
@@ -93,7 +93,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-sm font-extrabold hover:bg-background text-rose-900"
+          className="h-7 px-2 text-sm font-bold hover:bg-background text-rose-900"
           onClick={handleSwitchToActive}
         >
           Switch to Active Year
@@ -111,7 +111,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b px-4 py-2 text-sm font-extrabold transition-colors duration-200",
+        "flex items-center gap-3 border-b px-4 py-2 text-sm font-bold transition-colors duration-200",
         hasOverride
           ? "bg-amber-50 border-amber-200 text-amber-900"
           : "bg-muted border-border text-foreground",
@@ -124,7 +124,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
       {hasOverride && (
         <Badge
           variant="outline"
-          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-sm font-extrabold uppercase"
+          className="shrink-0 border-amber-400 bg-amber-100 text-amber-800 text-sm font-bold uppercase"
         >
           <ShieldAlert className="h-3 w-3 mr-1 animate-pulse" />
           Correction Override Active
@@ -136,7 +136,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-sm font-extrabold hover:bg-background"
+            className="h-7 px-2 text-sm font-bold hover:bg-background"
             onClick={onOpenCorrectionModal}
           >
             <ShieldAlert className="h-3 w-3 mr-1" />
@@ -148,7 +148,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
           <Button
             variant="default"
             size="sm"
-            className="h-7 px-3 text-sm font-extrabold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+            className="h-7 px-3 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
             onClick={handleRelock}
           >
             <X className="h-3 w-3 mr-1" />
@@ -159,7 +159,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-sm font-extrabold hover:bg-background"
+          className="h-7 px-2 text-sm font-bold hover:bg-background"
           onClick={handleSwitchToActive}
         >
           Switch to Active Year

@@ -31,20 +31,20 @@ export function EcrGenerationDialog({ open, percentage, progress }: EcrGeneratio
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-extrabold" style={{ color: "var(--theme-primary)" }}>
+              <span className="text-2xl font-bold" style={{ color: "var(--theme-primary)" }}>
                 {percentage}%
               </span>
             </div>
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900 mb-2">Generating Workbook</h3>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">Generating Workbook</h3>
           <p className="text-slate-500  text-sm mb-8 px-4">{progress}</p>
           <div className="bg-slate-50 rounded-3xl p-6 text-left border border-slate-100 flex items-start gap-5">
             <div className="p-3 rounded-2xl bg-muted shadow-sm">
               <FileSpreadsheet className="w-6 h-6 text-emerald-500" />
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">System Message</p>
-              <p className="text-xs font-extrabold text-slate-700 leading-relaxed">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Message</p>
+              <p className="text-xs font-bold text-slate-700 leading-relaxed">
                 Your Electronic Class Record is being auto-filled with student data. It will download automatically.
               </p>
             </div>

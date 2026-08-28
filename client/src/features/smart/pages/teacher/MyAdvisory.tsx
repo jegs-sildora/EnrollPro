@@ -120,11 +120,11 @@ export default function MyAdvisory() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-rose-50 flex items-center justify-center">
             <UserCircle className="w-10 h-10 text-rose-500" />
           </div>
-          <h3 className="font-extrabold text-slate-900 text-2xl mb-2">Access Denied</h3>
+          <h3 className="font-bold text-slate-900 text-2xl mb-2">Access Denied</h3>
           <p className="text-slate-500 mb-8 text-sm leading-relaxed">{error}</p>
           <Button
             onClick={() => window.location.reload()}
-            className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold transition-all"
+            className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold transition-all"
           >
             Try to Reconnect
           </Button>
@@ -140,7 +140,7 @@ export default function MyAdvisory() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-300">
             <ClipboardList className="w-10 h-10" />
           </div>
-          <h3 className="font-extrabold text-slate-900 text-2xl mb-3">No Advisory Assigned</h3>
+          <h3 className="font-bold text-slate-900 text-2xl mb-3">No Advisory Assigned</h3>
           <p className="text-slate-500 mb-8 text-sm leading-relaxed">
             You are not currently designated as an adviser for any section. Please contact the registrar or system administrator for assignment.
           </p>
@@ -148,7 +148,7 @@ export default function MyAdvisory() {
             <Button
               onClick={handleSync}
               disabled={syncing}
-              className="w-full h-12 rounded-2xl font-extrabold transition-all"
+              className="w-full h-12 rounded-2xl font-bold transition-all"
               style={{ backgroundColor: syncing ? undefined : colors.primary }}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
@@ -156,7 +156,7 @@ export default function MyAdvisory() {
             </Button>
             {syncMessage && <p className="text-xs text-slate-500 text-center">{syncMessage}</p>}
             <Link to="/teacher" className="w-full">
-              <Button variant="outline" className="w-full h-12 rounded-2xl border-slate-200 text-slate-600 font-extrabold hover:bg-slate-50 transition-all">
+              <Button variant="outline" className="w-full h-12 rounded-2xl border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all">
                 Return to Dashboard
               </Button>
             </Link>
@@ -222,7 +222,7 @@ export default function MyAdvisory() {
               <div className="flex items-center gap-3 mb-1.5">
                 <Badge
                   variant="secondary"
-                  className="text-[10px] font-extrabold uppercase tracking-widest px-3 border"
+                  className="text-[10px] font-bold uppercase tracking-widest px-3 border"
                   style={{
                     backgroundColor: `${colors.primary}10`,
                     color: colors.primary,
@@ -232,12 +232,12 @@ export default function MyAdvisory() {
                   Class Adviser
                 </Badge>
                 <div className="h-4 w-px bg-slate-200" />
-                <span className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">S.Y. {data.section?.schoolYear}</span>
+                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">S.Y. {data.section?.schoolYear}</span>
               </div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
                 {gradeLevelLabels[data.section?.gradeLevel || ""] || data.section?.gradeLevel} &mdash; {data.section?.name}
               </h1>
-              <p className="text-slate-400 text-xs font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 {data.stats?.totalStudents || 0} Learners Managed
               </p>
@@ -248,15 +248,15 @@ export default function MyAdvisory() {
             <div className="flex items-center gap-4 bg-slate-50/80 backdrop-blur-sm px-6 py-4 rounded-[2rem] border border-slate-100 shadow-sm">
               <Avatar className="w-12 h-12 border-2 border-white shadow-md">
                 <AvatarFallback
-                  className="text-white font-extrabold text-lg"
+                  className="text-white font-bold text-lg"
                   style={{ backgroundColor: colors.primary }}
                 >
                   {data.teacher.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Assigned Teacher</p>
-                <p className="text-base font-extrabold text-slate-800 tracking-tight">{data.teacher.name}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Assigned Teacher</p>
+                <p className="text-base font-bold text-slate-800 tracking-tight">{data.teacher.name}</p>
               </div>
             </div>
             <Button
@@ -264,7 +264,7 @@ export default function MyAdvisory() {
               size="sm"
               onClick={handleSync}
               disabled={syncing}
-              className="h-10 px-5 rounded-2xl border-slate-200 text-slate-600 font-extrabold text-[10px] uppercase tracking-widest transition-all group/sync"
+              className="h-10 px-5 rounded-2xl border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest transition-all group/sync"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-2 ${syncing ? 'animate-spin' : ''} group-hover/sync:text-primary`} />
               <span className="group-hover/sync:text-slate-900">{syncing ? 'SYNCING...' : 'SYNC FROM ENROLLPRO'}</span>
@@ -278,7 +278,7 @@ export default function MyAdvisory() {
               `}} />
             </Button>
             {syncMessage && (
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">{syncMessage}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{syncMessage}</p>
             )}
           </div>
         </div>
@@ -307,8 +307,8 @@ export default function MyAdvisory() {
                 <stat.icon className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className="text-2xl font-extrabold text-slate-900 leading-none">{stat.value}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-slate-900 leading-none">{stat.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -319,14 +319,14 @@ export default function MyAdvisory() {
       <Card className="border-0 shadow-2xl shadow-slate-200/40 bg-muted rounded-[2.5rem] overflow-hidden">
         <CardHeader className="border-b border-slate-50 p-8 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight uppercase">Student Directory</h2>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight uppercase">Student Directory</h2>
             <div className="h-6 w-px bg-slate-100 hidden sm:block" />
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSeparateByGender(!separateByGender)}
               className={cn(
-                "h-9 px-4 rounded-xl text-[10px] font-extrabold uppercase tracking-[0.1em] transition-all border",
+                "h-9 px-4 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all border",
                 separateByGender ? "bg-slate-900 text-white border-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50 border-slate-100"
               )}
             >
@@ -355,7 +355,7 @@ export default function MyAdvisory() {
               placeholder="SEARCH LRN, FIRST NAME, LAST NAME... or LRN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-14 h-12 text-xs font-extrabold bg-slate-50 border-0 rounded-2xl transition-all placeholder:text-slate-400"
+              className="pl-14 h-12 text-xs font-bold bg-slate-50 border-0 rounded-2xl transition-all placeholder:text-slate-400"
               style={{
                 // focus ring color
                 outlineColor: `${colors.primary}20`
@@ -368,33 +368,33 @@ export default function MyAdvisory() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/50 hover:bg-transparent border-0">
-                  <TableHead className="w-16 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-8">#</TableHead>
-                  <TableHead className="w-40 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Learner Reference (LRN)</TableHead>
-                  <TableHead className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Full Legal Name</TableHead>
-                  {!separateByGender && <TableHead className="text-center w-32 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Gender</TableHead>}
-                  <TableHead className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Parent / Guardian</TableHead>
-                  <TableHead className="w-32 text-right pr-8 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Actions</TableHead>
+                  <TableHead className="w-16 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest px-8">#</TableHead>
+                  <TableHead className="w-40 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Learner Reference (LRN)</TableHead>
+                  <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Full Legal Name</TableHead>
+                  {!separateByGender && <TableHead className="text-center w-32 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gender</TableHead>}
+                  <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Parent / Guardian</TableHead>
+                  <TableHead className="w-32 text-right pr-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(() => {
                   const renderRow = (student: any, idx: number) => (
                     <TableRow key={student.id} className="hover:bg-slate-50/50 transition-all border-slate-50 group">
-                      <TableCell className="text-center text-slate-300 font-extrabold text-[10px] px-8">{idx + 1}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-400 font-extrabold tracking-tighter group-hover:text-slate-900 transition-colors">{student.lrn}</TableCell>
+                      <TableCell className="text-center text-slate-300 font-bold text-[10px] px-8">{idx + 1}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-400 font-bold tracking-tighter group-hover:text-slate-900 transition-colors">{student.lrn}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-4">
                           <Avatar className="w-12 h-12 border-2 border-white shadow-sm ring-1 ring-slate-100">
                             <AvatarFallback className={cn(
-                              "text-white font-extrabold text-xs",
+                              "text-white font-bold text-xs",
                               student.gender?.toLowerCase() === "male" ? "bg-blue-500" : "bg-pink-500"
                             )}>
                               {student.lastName.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-extrabold text-slate-900 text-sm tracking-tight">{student.lastName}, {student.firstName}</p>
-                            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">{student.middleName || ""}</p>
+                            <p className="font-bold text-slate-900 text-sm tracking-tight">{student.lastName}, {student.firstName}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{student.middleName || ""}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -403,7 +403,7 @@ export default function MyAdvisory() {
                           <Badge
                             variant="secondary"
                             className={cn(
-                              "text-[9px] font-extrabold uppercase px-3 h-6 rounded-lg",
+                              "text-[9px] font-bold uppercase px-3 h-6 rounded-lg",
                               student.gender?.toLowerCase() === "male" ? "bg-blue-600/10 text-blue-600 border-blue-600 border-2" : "bg-pink-600/10 text-pink-600 border-pink-600 border-2"
                             )}
                           >
@@ -411,7 +411,7 @@ export default function MyAdvisory() {
                           </Badge>
                         </TableCell>
                       )}
-                      <TableCell className="text-xs text-slate-500 font-extrabold italic">
+                      <TableCell className="text-xs text-slate-500 font-bold italic">
                         {student.guardianName || <span className="text-slate-200">UNSPECIFIED</span>}
                       </TableCell>
                       <TableCell className="text-right pr-8">
@@ -419,7 +419,7 @@ export default function MyAdvisory() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-10 px-4 rounded-xl text-slate-400 font-extrabold text-[10px] tracking-widest uppercase transition-all group/profile"
+                            className="h-10 px-4 rounded-xl text-slate-400 font-bold text-[10px] tracking-widest uppercase transition-all group/profile"
                           >
                             <span className="group-hover/profile:text-primary">PROFILE</span>
                             <ChevronRight className="w-4 h-4 ml-2 group-hover/profile:translate-x-1 transition-transform" />
@@ -443,7 +443,7 @@ export default function MyAdvisory() {
                           <>
                             <TableRow className="bg-blue-50/20 hover:bg-blue-50/20 border-y border-blue-100/30">
                               <TableCell colSpan={6} className="py-3 px-8">
-                                <span className="text-[11px] font-extrabold text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-blue-500" />
                                   MALE STUDENTS ({maleStudents.length})
                                 </span>
@@ -456,7 +456,7 @@ export default function MyAdvisory() {
                           <>
                             <TableRow className="bg-pink-50/20 hover:bg-pink-50/20 border-y border-pink-100/30">
                               <TableCell colSpan={6} className="py-3 px-8">
-                                <span className="text-[11px] font-extrabold text-pink-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-pink-600 uppercase tracking-[0.2em] flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-pink-500" />
                                   FEMALE STUDENTS ({femaleStudents.length})
                                 </span>
@@ -476,7 +476,7 @@ export default function MyAdvisory() {
                           <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
                             <Search className="w-8 h-8 text-slate-200" />
                           </div>
-                          <p className="text-slate-400 font-extrabold text-xs uppercase tracking-widest">
+                          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
                             {searchQuery ? "No matching records found" : "No enrolled students yet"}
                           </p>
                           {!searchQuery && (

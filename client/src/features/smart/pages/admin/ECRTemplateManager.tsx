@@ -390,7 +390,8 @@ export default function ECRTemplateManager() {
   };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      timeZone: 'Asia/Manila',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -400,11 +401,11 @@ export default function ECRTemplateManager() {
   };
 
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">ECR Template Manager</h1>
+          <h1 className="text-3xl font-bold text-slate-900">ECR Template Manager</h1>
           <p className="text-sm text-slate-600 mt-1">
             Manage Electronic Class Record templates for teachers
           </p>
@@ -422,7 +423,7 @@ export default function ECRTemplateManager() {
             <BookOpen className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-extrabold text-blue-900 mb-2">What are ECR Templates?</h3>
+            <h3 className="text-lg font-bold text-blue-900 mb-2">What are ECR Templates?</h3>
             <p className="text-sm text-blue-800 mb-3">
               Electronic Class Record (ECR) templates are Excel files that automatically fill in student names,
               grades, sections, and other class information for teachers. This saves time and ensures consistency
@@ -430,15 +431,15 @@ export default function ECRTemplateManager() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
-                <p className="text-xs font-semibold text-blue-900 mb-1">✓ Time Saver</p>
+                <p className="text-xs  text-blue-900 mb-1">✓ Time Saver</p>
                 <p className="text-xs text-blue-700">Teachers don't manually type student names</p>
               </div>
               <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
-                <p className="text-xs font-semibold text-blue-900 mb-1">✓ Standardized</p>
+                <p className="text-xs  text-blue-900 mb-1">✓ Standardized</p>
                 <p className="text-xs text-blue-700">All teachers use the same format</p>
               </div>
               <div className="bg-muted/60 rounded-lg p-3 border border-blue-100">
-                <p className="text-xs font-semibold text-blue-900 mb-1">✓ Auto-Fill</p>
+                <p className="text-xs  text-blue-900 mb-1">✓ Auto-Fill</p>
                 <p className="text-xs text-blue-700">Student data pre-populated automatically</p>
               </div>
             </div>
@@ -480,13 +481,13 @@ export default function ECRTemplateManager() {
           <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Could not load ECR templates</p>
+              <p className="">Could not load ECR templates</p>
               <p>{loadError}</p>
             </div>
           </div>
         )}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg  text-slate-900">
             ECR Templates ({filteredTemplates.length})
           </h2>
         </div>
@@ -756,7 +757,7 @@ export default function ECRTemplateManager() {
                 {bulkUploadItems.length > 0 && (
                   <Card className="p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-slate-900">
+                      <h4 className="text-sm  text-slate-900">
                         Templates to Upload ({bulkUploadItems.length})
                       </h4>
                       <p className="text-xs text-slate-500">
@@ -836,7 +837,7 @@ export default function ECRTemplateManager() {
 
             {/* Placeholders Info */}
             <Card className="p-3 bg-blue-50 border-blue-200">
-              <p className="text-xs font-semibold text-blue-900 mb-2">Available Placeholders:</p>
+              <p className="text-xs  text-blue-900 mb-2">Available Placeholders:</p>
               <div className="grid grid-cols-2 gap-1 text-xs text-blue-800">
                 <div><code className="bg-muted px-1 rounded">{'{{SCHOOL_NAME}}'}</code></div>
                 <div><code className="bg-muted px-1 rounded">{'{{TEACHER_NAME}}'}</code></div>
@@ -908,7 +909,7 @@ export default function ECRTemplateManager() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-slate-500 text-xs mb-1">Subject</p>
-                  <p className="font-semibold text-slate-900">{selectedTemplate.subjectName}</p>
+                  <p className=" text-slate-900">{selectedTemplate.subjectName}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs mb-1">Subject Type</p>

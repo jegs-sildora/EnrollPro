@@ -96,7 +96,7 @@ export function MultiSearchableCombobox({
                 <Badge
                   key={item.value}
                   variant="secondary"
-                  className="font-extrabold text-xs uppercase px-2 py-0.5"
+                  className="font-bold text-xs uppercase px-2 py-0.5"
                 >
                   {item.label}
                   <div
@@ -116,7 +116,7 @@ export function MultiSearchableCombobox({
                 </Badge>
               ))
             ) : (
-              <span className="text-muted-foreground uppercase font-extrabold truncate">
+              <span className="text-muted-foreground uppercase font-bold truncate">
                 {placeholder}
               </span>
             )}
@@ -138,14 +138,14 @@ export function MultiSearchableCombobox({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-0 shadow-none focus-visible:ring-2 p-0 text-base font-extrabold uppercase pl-2 ring-2 ring-primary"
+            className="h-8 border-0 shadow-none focus-visible:ring-2 p-0 text-base font-bold uppercase pl-2 ring-2 ring-primary"
             autoFocus
           />
         </div>
 
         <ul className="max-h-60 overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <li className="px-3 py-4 text-base text-foreground text-center font-extrabold uppercase">
+            <li className="px-3 py-4 text-base text-foreground text-center font-bold uppercase">
               {emptyText}
             </li>
           ) : (
@@ -155,7 +155,7 @@ export function MultiSearchableCombobox({
                   type="button"
                   onClick={() => handleSelect(item)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-base font-extrabold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-2 text-base font-bold uppercase text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                     value.includes(item.value) && "bg-accent text-accent-foreground"
                   )}
                 >

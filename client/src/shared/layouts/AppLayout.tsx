@@ -141,11 +141,11 @@ function UserNav() {
             size="lg"
             tooltip="Account menu"
             className="h-14 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               {initials}
             </div>
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-black uppercase">{displayName}</span>
+              <span className="truncate font-bold uppercase">{displayName}</span>
               <span className="truncate text-sm font-bold text-sidebar-foreground">
                 {roleLabel}
               </span>
@@ -161,11 +161,11 @@ function UserNav() {
           forceMount>
           <DropdownMenuLabel className="px-3 py-3 font-normal">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
                 {initials}
               </div>
               <div className="grid min-w-0 flex-1 gap-1 text-left">
-                <p className="truncate text-sm font-black uppercase leading-none">
+                <p className="truncate text-sm font-bold uppercase leading-none">
                   {displayName}
                 </p>
                 <p className="truncate text-sm font-bold leading-tight text-foreground">
@@ -286,7 +286,7 @@ function SYSwitcher() {
     return (
       <span
         className={cn(
-          "inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm ",
+          "inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm ",
           badge.className,
         )}>
         {badge.label}
@@ -318,7 +318,7 @@ function SYSwitcher() {
               className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-muted border border-gray-300 shadow-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setOpen(!open)}>
               <Calendar className="text-foreground w-4 h-4" />
-              <span className="text-sm sm:text-sm text-foreground whitespace-nowrap font-extrabold">
+              <span className="text-sm sm:text-sm text-foreground whitespace-nowrap font-bold">
                 {currentLabel}
               </span>
               <div className="hidden md:block">
@@ -500,8 +500,8 @@ const NavItem = memo(function NavItem({
         <Link to={to} onClick={handleNavigationClick}>
           <Icon className="size-4 shrink-0" />
           <div className="flex flex-col items-start justify-center overflow-hidden w-full">
-            <span className={cn("truncate w-full text-left leading-tight font-bold", isActive && "font-bold")}>{label}</span>
-            {subtext && <span className="text-sm font-semibold truncate w-full text-left leading-tight">{subtext}</span>}
+            <span className={cn("truncate w-full text-left leading-tight font-semibold", isActive && "font-bold")}>{label}</span>
+            {subtext && <span className="text-sm  truncate w-full text-left leading-tight">{subtext}</span>}
           </div>
         </Link>
       </SidebarMenuButton>
@@ -544,7 +544,7 @@ function AppSidebar() {
               )}
               <div className="grid flex-1 text-left leading-tight overflow-hidden transition-all duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:m-0">
                 {schoolName ? (
-                  <span className="font-black leading-[1.1] uppercase text-primary block text-wrap">
+                  <span className="font-bold leading-[1.1] uppercase text-primary block text-wrap">
                     {schoolName}
                   </span>
                 ) : (
@@ -910,7 +910,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             className="mr-2 h-4!"
           />
           {title && (
-            <h1 className="text-sm sm:text-base md:text-xl font-black text-foreground tracking-tight leading-none truncate max-w-[120px] sm:max-w-[240px] md:max-w-none mr-2 sm:mr-4 uppercase">
+            <h1 className="text-sm sm:text-base md:text-xl font-bold text-foreground tracking-tight leading-none truncate max-w-[120px] sm:max-w-[240px] md:max-w-none mr-2 sm:mr-4 uppercase">
               {title}
             </h1>
           )}
@@ -976,7 +976,7 @@ function ActiveTermBadge() {
   return (
     <Badge
       variant="outline"
-      className="hidden sm:inline-flex uppercase text-green-700 border-green-300 bg-green-50 font-extrabold tracking-widest px-2.5 py-0.5"
+      className="hidden sm:inline-flex uppercase text-green-700 border-green-300 bg-green-50 font-bold tracking-widest px-2.5 py-0.5"
     >
       {activeTermLabel}
     </Badge>

@@ -73,7 +73,7 @@ export default function RegistrarLoginPage() {
   };
 
   return (
-<div
+    <div
       className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-[#f8fafc] via-primary/8 to-accent/6"
       style={{
         '--primary': 'var(--theme-primary)',
@@ -160,21 +160,21 @@ export default function RegistrarLoginPage() {
           <div className="flex items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-4xl font-extrabold tracking-tight text-white">{acronym}</h1>
-                <span className="px-2 py-0.5 text-xs font-extrabold rounded bg-emerald-500 text-white shadow-sm">REGISTRAR</span>
+                <h1 className="text-4xl font-bold tracking-tight text-white">{acronym}</h1>
+                <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500 text-white shadow-sm">REGISTRAR</span>
               </div>
-              <p className="text-white text-sm font-extrabold max-w-md">Registrar's Portal</p>
+              <p className="text-white text-sm font-bold max-w-md">Registrar's Portal</p>
             </div>
           </div>
 
           {/* School Name + Details */}
           <div className="space-y-3 mb-6">
-            <h2 className="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-white">
+            <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight text-white">
               {schoolName}
             </h2>
-            <p className="text-white text-sm font-extrabold">Junior High School (Grades 7-10)</p>
+            <p className="text-white text-sm font-bold">Junior High School (Grades 7-10)</p>
             <div className="flex flex-col gap-1.5 mt-3">
-              <p className="text-white text-sm font-extrabold">
+              <p className="text-white text-sm font-bold">
                 DepEd Public School Student Management and Records Tracking Portal
               </p>
             </div>
@@ -196,8 +196,8 @@ export default function RegistrarLoginPage() {
                   <feature.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-white">{feature.title}</h3>
-                  <p className="text-white text-sm font-semibold">{feature.desc}</p>
+                  <h3 className="font-bold text-white">{feature.title}</h3>
+                  <p className="text-white text-sm ">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -306,8 +306,8 @@ export default function RegistrarLoginPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-extrabold text-gray-900">{acronym}</span>
-                <span className="px-2 py-0.5 text-xs font-extrabold rounded bg-emerald-500 text-white">REGISTRAR</span>
+                <span className="text-xl font-bold text-gray-900">{acronym}</span>
+                <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500 text-white">REGISTRAR</span>
               </div>
               <p className="text-xs text-gray-500">{schoolName}</p>
             </div>
@@ -332,11 +332,11 @@ export default function RegistrarLoginPage() {
                   <Sparkles className="w-5 h-5 text-white" />
                 )}
               </div>
-              <CardTitle className="text-xl font-extrabold text-gray-900 pt-2">
+              <CardTitle className="text-xl font-bold text-gray-900 pt-2">
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm">
-                Sign in to your Registrar account to manage <span className="font-semibold text-primary">{acronym}</span>
+                Sign in to your Registrar account to manage <span className=" text-primary">{acronym}</span>
               </CardDescription>
             </CardHeader>
 
@@ -347,7 +347,7 @@ export default function RegistrarLoginPage() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-sm font-extrabold text-red-700">{error}</span>
+                  <span className="text-sm font-bold text-red-700">{error}</span>
                 </div>
               )}
 
@@ -358,7 +358,7 @@ export default function RegistrarLoginPage() {
                     <CheckCircle className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-primary">Access granted!</p>
+                    <p className="text-sm  text-primary">Access granted!</p>
                     <p className="text-xs text-gray-500">Loading registrar tools...</p>
                   </div>
                 </div>
@@ -367,7 +367,7 @@ export default function RegistrarLoginPage() {
               <form onSubmit={handleSubmit} className="space-y-3">
                 {/* Employee ID Field */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-gray-800 font-semibold text-sm pl-1">
+                  <Label htmlFor="email" className="text-gray-800  text-sm pl-1">
                     Employee ID or Email
                   </Label>
                   <div className="relative group">
@@ -385,7 +385,7 @@ export default function RegistrarLoginPage() {
                         setEmail(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold"
+                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
                       autoComplete="username"
                       required
                     />
@@ -394,7 +394,7 @@ export default function RegistrarLoginPage() {
 
                 {/* Password Field */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-gray-800 font-semibold text-sm pl-1">
+                  <Label htmlFor="password" className="text-gray-800  text-sm pl-1">
                     Password
                   </Label>
                   <div className="relative group">
@@ -412,7 +412,7 @@ export default function RegistrarLoginPage() {
                         setPassword(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-extrabold"
+                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
                       autoComplete="current-password"
                       required
                     />
@@ -441,9 +441,9 @@ export default function RegistrarLoginPage() {
                         </svg>
                       </div>
                     </div>
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-extrabold text-sm select-none">Remember me</span>
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-sm select-none">Remember me</span>
                   </label>
-                  <a href="#" className="font-semibold text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
+                  <a href="#" className=" text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
                     Forgot password?
                   </a>
                 </div>
@@ -452,7 +452,7 @@ export default function RegistrarLoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-semibold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-0 disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="w-full h-11  text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-0 disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-3">

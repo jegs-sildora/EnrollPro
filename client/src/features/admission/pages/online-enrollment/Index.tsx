@@ -73,7 +73,7 @@ export default function Apply() {
   };
 
   return (
-<GuestLayout>
+    <GuestLayout>
       <div
         className={cn(
           "relative min-h-screen flex flex-col",
@@ -185,12 +185,12 @@ export default function Apply() {
                       alt={schoolName}
                     />
                   ) : (
-                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-extrabold text-primary">
+                    <div className="h-24 w-24 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-4xl font-bold text-primary">
                       {schoolName?.charAt(0)}
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-foreground">
+                    <h2 className="text-2xl sm:text-3xl font-bold uppercase text-foreground">
                       {schoolName}
                     </h2>
 
@@ -199,7 +199,7 @@ export default function Apply() {
                   {isClassesOngoing ? (
                     <div className="space-y-4 max-w-xl mx-auto">
                       <div className="space-y-2">
-                        <h3 className="text-2xl font-extrabold text-foreground mt-6">
+                        <h3 className="text-2xl font-bold text-foreground mt-6">
                           Online Enrollment for S.Y. {activeSchoolYearLabel} is Closed
                         </h3>
                         <p className="text-base text-foreground mt-3 leading-relaxed max-w-lg mx-auto text-center font-bold">
@@ -208,7 +208,7 @@ export default function Apply() {
                       </div>
 
                       <div className="mt-6 max-w-lg mx-auto rounded-md border border-primary/20 bg-primary/5 p-5 text-left shadow-sm">
-                        <h3 className="mb-2 font-extrabold uppercase text-primary">Late Walk-In Enrollment</h3>
+                        <h3 className="mb-2 font-bold uppercase text-primary">Late Walk-In Enrollment</h3>
                         <p className="mb-4 leading-relaxed text-foreground font-bold">
                           Please visit the School Registrar during office hours to check if there are still open sections for late enrollees.
                         </p>
@@ -220,14 +220,14 @@ export default function Apply() {
                       </div>
 
                       <div className="pt-6 border-t border-slate-200 space-y-4 flex flex-col">
-                        <p className="text-base font-extrabold text-foreground text-center">
+                        <p className="text-base font-bold text-foreground text-center">
                           For school announcements, follow our official page:
                         </p>
                         <a
                           href={facebookPageUrl || "https://www.facebook.com"}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                           <svg
                             className="w-5 h-5 fill-current"
                             viewBox="0 0 24 24">
@@ -239,7 +239,7 @@ export default function Apply() {
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-lg mx-auto">
-                      <h3 className="text-xl sm:text-2xl font-extrabold text-foreground">
+                      <h3 className="text-xl sm:text-2xl font-bold text-foreground">
                         S.Y. {activeSchoolYearLabel || "Admissions"} Portal is
                         Currently Closed
                       </h3>
@@ -252,9 +252,9 @@ export default function Apply() {
                       <div className="pt-6 border-t border-border/50 space-y-4 flex flex-col">
                         <p className={cn(
                           "leading-relaxed text-center",
-                          facebookPageUrl 
-                            ? "text-base font-extrabold text-foreground uppercase"
-                            : "text-base leading-tight text-foreground font-extrabold"
+                          facebookPageUrl
+                            ? "text-base font-bold text-foreground uppercase"
+                            : "text-base leading-tight text-foreground font-bold"
                         )}>
                           {facebookPageUrl
                             ? "Please stay tuned to our official school social media pages for announcements regarding the next registration schedule."
@@ -264,7 +264,7 @@ export default function Apply() {
                           href={facebookPageUrl || "https://www.facebook.com"}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-extrabold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold uppercase  text-base transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                           <svg
                             className="w-5 h-5 fill-current"
                             viewBox="0 0 24 24">

@@ -49,7 +49,8 @@ function getMasteryLevel(grade: number | null): { label: string; color: string; 
 // Format date helper
 function formatDate(dateString?: string): string {
   if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString("en-PH", { timeZone: 'Asia/Manila', 
+  return new Date(dateString).toLocaleDateString("en-PH", {
+    timeZone: 'Asia/Manila',
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -110,7 +111,7 @@ export default function StudentGradeProfilePage() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center shadow-lg">
             <span className="text-4xl">😕</span>
           </div>
-          <h3 className="font-semibold text-gray-900 text-lg mb-2">Something went wrong</h3>
+          <h3 className=" text-gray-900 text-lg mb-2">Something went wrong</h3>
           <p className="text-gray-500 mb-6">{error || "Failed to load student data"}</p>
           <Link to="/teacher/advisory">
             <Button variant="outline" className="rounded-xl">
@@ -127,7 +128,7 @@ export default function StudentGradeProfilePage() {
   const fullName = `${student.lastName}, ${student.firstName} ${student.middleName ? `${student.middleName.charAt(0)}.` : ""} ${student.suffix || ""}`.trim();
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header with Back Button */}
       <div className="flex items-center gap-4">
         <Link to="/teacher/advisory">
@@ -136,7 +137,7 @@ export default function StudentGradeProfilePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: '#111827' }}>Student Grade Profile</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Student Grade Profile</h1>
           <p style={{ color: '#4b5563' }}>Complete academic record</p>
         </div>
       </div>
@@ -148,13 +149,13 @@ export default function StudentGradeProfilePage() {
           <CardHeader className="border-b border-gray-100 px-6 py-5" style={{ backgroundColor: `${colors.primary}08` }}>
             <div className="flex items-center gap-4">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold shadow-lg"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
                 style={{ backgroundColor: colors.primary }}
               >
                 {student.lastName.charAt(0)}
               </div>
               <div>
-                <CardTitle className="text-xl font-extrabold text-gray-900">{fullName}</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-900">{fullName}</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
                     LRN: {student.lrn}
@@ -178,7 +179,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Grade & Section</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className=" text-gray-900">
                       {gradeLevelLabels[enrollment.gradeLevel] || enrollment.gradeLevel} - {enrollment.sectionName}
                     </p>
                   </div>
@@ -190,7 +191,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">School Year</p>
-                    <p className="font-semibold text-gray-900">{enrollment.schoolYear}</p>
+                    <p className=" text-gray-900">{enrollment.schoolYear}</p>
                   </div>
                 </div>
 
@@ -200,7 +201,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Birth Date</p>
-                    <p className="font-semibold text-gray-900">{formatDate(student.birthDate)}</p>
+                    <p className=" text-gray-900">{formatDate(student.birthDate)}</p>
                   </div>
                 </div>
               </div>
@@ -212,7 +213,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Address</p>
-                    <p className="font-semibold text-gray-900">{student.address || "N/A"}</p>
+                    <p className=" text-gray-900">{student.address || "N/A"}</p>
                   </div>
                 </div>
 
@@ -222,7 +223,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Guardian</p>
-                    <p className="font-semibold text-gray-900">{student.guardianName || "N/A"}</p>
+                    <p className=" text-gray-900">{student.guardianName || "N/A"}</p>
                   </div>
                 </div>
 
@@ -232,7 +233,7 @@ export default function StudentGradeProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Contact Number</p>
-                    <p className="font-semibold text-gray-900">{student.guardianContact || "N/A"}</p>
+                    <p className=" text-gray-900">{student.guardianContact || "N/A"}</p>
                   </div>
                 </div>
               </div>
@@ -247,13 +248,13 @@ export default function StudentGradeProfilePage() {
               <div className="p-2.5 rounded-xl bg-muted/20 backdrop-blur-sm">
                 <Award className="w-5 h-5" />
               </div>
-              <h3 className="font-extrabold text-lg">Academic Summary</h3>
+              <h3 className="font-bold text-lg">Academic Summary</h3>
             </div>
 
             <div className="space-y-4 flex-1">
               <div className="p-4 rounded-xl bg-muted/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">General Average</p>
-                <p className="text-4xl font-extrabold">
+                <p className="text-4xl font-bold">
                   {summary.generalAverage !== null ? summary.generalAverage.toFixed(2) : "N/A"}
                 </p>
                 {summary.generalAverage !== null && (
@@ -267,7 +268,7 @@ export default function StudentGradeProfilePage() {
                 <div className="p-4 rounded-xl backdrop-blur-sm border" style={{ backgroundColor: `${colors.accent}30`, borderColor: `${colors.accent}40` }}>
                   <div className="flex items-center gap-2">
                     <Medal className="w-5 h-5" style={{ color: colors.accent }} />
-                    <p className="font-extrabold text-white">{summary.honors}</p>
+                    <p className="font-bold text-white">{summary.honors}</p>
                   </div>
                 </div>
               )}
@@ -287,7 +288,7 @@ export default function StudentGradeProfilePage() {
 
               <div className="p-4 rounded-xl bg-muted/10 backdrop-blur-sm">
                 <p className="text-white/70 text-sm mb-1">Progress</p>
-                <p className="text-lg font-semibold">
+                <p className="text-lg ">
                   {summary.completedSubjects} / {summary.totalSubjects} Subjects Graded
                 </p>
               </div>
@@ -308,7 +309,7 @@ export default function StudentGradeProfilePage() {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-lg font-extrabold text-gray-900">Subject Grades</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900">Subject Grades</CardTitle>
                 <CardDescription className="text-gray-500 text-sm">
                   Term grades and final rating per subject
                 </CardDescription>
@@ -324,12 +325,12 @@ export default function StudentGradeProfilePage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="font-extrabold text-gray-700 min-w-[200px]">Subject</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-center">T1</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-center">T2</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-center">T3</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-center" style={{ backgroundColor: `${colors.primary}08` }}>Final Grade</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-center">Remarks</TableHead>
+                  <TableHead className="font-bold text-gray-700 min-w-[200px]">Subject</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-center">T1</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-center">T2</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-center">T3</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-center" style={{ backgroundColor: `${colors.primary}08` }}>Final Grade</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-center">Remarks</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -337,7 +338,7 @@ export default function StudentGradeProfilePage() {
                   <TableRow key={subject.subjectId} className="hover:bg-gray-50/50">
                     <TableCell>
                       <div>
-                        <p className="font-semibold text-gray-900">{subject.subjectName}</p>
+                        <p className=" text-gray-900">{subject.subjectName}</p>
                         <p className="text-xs text-gray-500">{subject.teacher}</p>
                       </div>
                     </TableCell>
@@ -348,7 +349,7 @@ export default function StudentGradeProfilePage() {
                       return (
                         <TableCell key={term} className="text-center">
                           {grade !== null && grade !== undefined ? (
-                            <span className={`font-semibold ${grade >= 75 ? "text-gray-900" : "text-red-600"}`}>
+                            <span className={` ${grade >= 75 ? "text-gray-900" : "text-red-600"}`}>
                               {grade}
                             </span>
                           ) : isHG && descriptor ? (
@@ -363,7 +364,7 @@ export default function StudentGradeProfilePage() {
                     })}
                     <TableCell className="text-center" style={{ backgroundColor: `${colors.primary}06` }}>
                       {subject.finalGrade !== null ? (
-                        <span className={`text-lg font-extrabold ${subject.finalGrade >= 75 ? "" : "text-red-600"}`} style={subject.finalGrade >= 75 ? { color: colors.primary } : undefined}>
+                        <span className={`text-lg font-bold ${subject.finalGrade >= 75 ? "" : "text-red-600"}`} style={subject.finalGrade >= 75 ? { color: colors.primary } : undefined}>
                           {subject.finalGrade}
                         </span>
                       ) : (
@@ -399,11 +400,11 @@ export default function StudentGradeProfilePage() {
 
                 {/* General Average Row */}
                 <TableRow className="border-t-2" style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }}>
-                  <TableCell colSpan={5} className="font-extrabold text-right pr-8" style={{ color: colors.primary }}>
+                  <TableCell colSpan={5} className="font-bold text-right pr-8" style={{ color: colors.primary }}>
                     General Average:
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-2xl font-extrabold" style={{ color: colors.primary }}>
+                    <span className="text-2xl font-bold" style={{ color: colors.primary }}>
                       {summary.generalAverage !== null ? summary.generalAverage.toFixed(2) : "N/A"}
                     </span>
                   </TableCell>
@@ -429,7 +430,7 @@ export default function StudentGradeProfilePage() {
       {/* DepEd Grading Legend */}
       <Card className="border-0 shadow-lg shadow-gray-200/50 bg-muted overflow-hidden rounded-2xl p-0">
         <CardHeader className="border-b border-gray-100 px-6 py-4">
-          <CardTitle className="text-sm font-extrabold text-gray-700">DepEd Grading Scale</CardTitle>
+          <CardTitle className="text-sm font-bold text-gray-700">DepEd Grading Scale</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -443,14 +444,14 @@ export default function StudentGradeProfilePage() {
               <div key={level.label} className={`p-3 rounded-xl border ${level.color || ''}`}
                 style={!level.color ? { backgroundColor: `${colors.primary}${level.opacity}`, color: colors.primary, borderColor: `${colors.primary}30` } : undefined}
               >
-                <p className="font-semibold text-sm">{level.label}</p>
+                <p className=" text-sm">{level.label}</p>
                 <p className="text-xs opacity-80">{level.range}</p>
               </div>
             ))}
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <h4 className="font-extrabold text-gray-700 text-sm mb-3">Academic Honors (Based on General Average):</h4>
+            <h4 className="font-bold text-gray-700 text-sm mb-3">Academic Honors (Based on General Average):</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: "With Highest Honors", range: "98-100", icon: "🏆" },
@@ -460,7 +461,7 @@ export default function StudentGradeProfilePage() {
                 <div key={honor.label} className="flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}25` }}>
                   <span className="text-2xl">{honor.icon}</span>
                   <div>
-                    <p className="font-semibold text-sm" style={{ color: colors.primary }}>{honor.label}</p>
+                    <p className=" text-sm" style={{ color: colors.primary }}>{honor.label}</p>
                     <p className="text-xs" style={{ color: `${colors.primary}aa` }}>{honor.range}</p>
                   </div>
                 </div>

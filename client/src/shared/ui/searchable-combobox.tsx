@@ -77,7 +77,7 @@ export function SearchableCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed font-extrabold transition-colors duration-200",
+            "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed font-bold transition-colors duration-200",
             !value && "text-foreground",
             error && "border-destructive focus-visible:ring-destructive",
             className
@@ -103,7 +103,7 @@ export function SearchableCombobox({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-0 shadow-none focus-visible:ring-2 p-0 text-base font-extrabold uppercase pl-2 ring-2 ring-primary"
+            className="h-8 border-0 shadow-none focus-visible:ring-2 p-0 text-base font-bold uppercase pl-2 ring-2 ring-primary"
             autoFocus
           />
         </div>
@@ -120,7 +120,7 @@ export function SearchableCombobox({
                   type="button"
                   onClick={() => handleSelect(item)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-base font-extrabold text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-2 text-base font-bold text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                     item.value === value && "bg-accent text-accent-foreground"
                   )}
                 >

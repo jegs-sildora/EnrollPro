@@ -99,21 +99,21 @@ export function SchoolYearTransitionLoader({ targetLabel }: SchoolYearTransition
         </div>
 
         {/* Text Details */}
-        <h1 className="text-2xl font-black tracking-tight text-foreground mb-2">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">
           Switching School Year
         </h1>
-        
-        <p className="font-extrabold text-foreground mb-8">
+
+        <p className="font-bold text-foreground mb-8">
           {targetLabel ? (
             <>
-              Preparing workspace for <span className="text-foreground font-extrabold">S.Y. {targetLabel}</span>...
+              Preparing workspace for <span className="text-foreground font-bold">S.Y. {targetLabel}</span>...
             </>
           ) : (
             "Initializing school year configuration..."
           )}
         </p>
 
-        
+
       </div>
     </motion.div>
   );

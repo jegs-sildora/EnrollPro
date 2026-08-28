@@ -113,10 +113,10 @@ export default function SystemHealth() {
   }
 
   return (
-<div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">System Health</h1>
+          <h1 className="text-2xl font-bold text-slate-900">System Health</h1>
           <p className="text-sm text-slate-600">Live pulse of SMART, EnrollPro, Atlas, and AIMS.</p>
         </div>
 
@@ -152,56 +152,56 @@ export default function SystemHealth() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Overall</p>
+                <p className="text-xs  text-slate-500 uppercase tracking-wide">Overall</p>
                 {health.status === "HEALTHY" ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 ) : (
                   <ShieldAlert className="w-5 h-5 text-amber-600" />
                 )}
               </div>
-              <p className="mt-2 text-xl font-extrabold text-slate-900">{health.status}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{health.status}</p>
               <p className="text-xs text-slate-500 mt-1">Response: {formatDuration(health.responseTimeMs)}</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Node Uptime</p>
+                <p className="text-xs  text-slate-500 uppercase tracking-wide">Node Uptime</p>
                 <Server className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-extrabold text-slate-900">{formatUptime(health.local.uptimeSeconds)}</p>
-              <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{formatUptime(health.local.uptimeSeconds)}</p>
+              <p className="text-xs text-slate-500 mt-1">Last check: {new Date(health.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Manila', timeZone: 'Asia/Manila' })}</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Database</p>
+                <p className="text-xs  text-slate-500 uppercase tracking-wide">Database</p>
                 <Database className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-extrabold text-slate-900">{health.local.database.online ? "ONLINE" : "OFFLINE"}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{health.local.database.online ? "ONLINE" : "OFFLINE"}</p>
               <p className="text-xs text-slate-500 mt-1">Latency: {health.local.database.latencyMs} ms</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-muted p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Heap Used</p>
+                <p className="text-xs  text-slate-500 uppercase tracking-wide">Heap Used</p>
                 <Clock3 className="w-5 h-5 text-slate-600" />
               </div>
-              <p className="mt-2 text-xl font-extrabold text-slate-900">{formatBytes(health.local.memory.heapUsed)}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{formatBytes(health.local.memory.heapUsed)}</p>
               <p className="text-xs text-slate-500 mt-1">RSS: {formatBytes(health.local.memory.rss)}</p>
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-muted p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">External Services</h2>
+            <h2 className="text-sm  text-slate-800 mb-3">External Services</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {externalServices.map((service) => (
                 <div key={service.name} className="rounded-lg border border-slate-200 p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full ${serviceDotColor(service)}`} />
-                      <span className="font-semibold text-slate-900 text-sm">{service.name}</span>
+                      <span className=" text-slate-900 text-sm">{service.name}</span>
                     </div>
-                    <span className={`text-xs font-semibold border rounded-full px-2 py-0.5 ${serviceBadgeColor(service)}`}>
+                    <span className={`text-xs  border rounded-full px-2 py-0.5 ${serviceBadgeColor(service)}`}>
                       {service.status}
                     </span>
                   </div>
@@ -216,25 +216,25 @@ export default function SystemHealth() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-muted p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2">Sync Circuit Breaker</h2>
+            <h2 className="text-sm  text-slate-800 mb-2">Sync Circuit Breaker</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">State</p>
-                <p className={`mt-1 font-extrabold ${health.sync.circuitBreaker.open ? "text-rose-700" : "text-emerald-700"}`}>
+                <p className={`mt-1 font-bold ${health.sync.circuitBreaker.open ? "text-rose-700" : "text-emerald-700"}`}>
                   {health.sync.circuitBreaker.open ? "OPEN" : "CLOSED"}
                 </p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Consecutive Failures</p>
-                <p className="mt-1 font-extrabold text-slate-900">{health.sync.circuitBreaker.consecutiveCriticalFailures}</p>
+                <p className="mt-1 font-bold text-slate-900">{health.sync.circuitBreaker.consecutiveCriticalFailures}</p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Threshold</p>
-                <p className="mt-1 font-extrabold text-slate-900">{health.sync.circuitBreaker.failureThreshold}</p>
+                <p className="mt-1 font-bold text-slate-900">{health.sync.circuitBreaker.failureThreshold}</p>
               </div>
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs text-slate-500 uppercase">Cooldown</p>
-                <p className="mt-1 font-extrabold text-slate-900">{Math.round(health.sync.circuitBreaker.cooldownMs / 1000)} s</p>
+                <p className="mt-1 font-bold text-slate-900">{Math.round(health.sync.circuitBreaker.cooldownMs / 1000)} s</p>
               </div>
             </div>
             {health.sync.circuitBreaker.reason && (
@@ -243,7 +243,7 @@ export default function SystemHealth() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-muted p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Recent Sync History</h2>
+            <h2 className="text-sm  text-slate-800 mb-3">Recent Sync History</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
@@ -271,10 +271,10 @@ export default function SystemHealth() {
 
                       return (
                         <tr key={item.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-4 text-slate-700">{new Date(item.startedAt).toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}</td>
+                          <td className="py-2 pr-4 text-slate-700">{new Date(item.startedAt).toLocaleString('en-US', { timeZone: 'Asia/Manila', timeZone: 'Asia/Manila' })}</td>
                           <td className="py-2 pr-4 text-slate-700">{item.source}</td>
                           <td className="py-2 pr-4">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>{item.status}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs  ${statusClass}`}>{item.status}</span>
                           </td>
                           <td className="py-2 pr-4 text-slate-700">{formatDuration(item.durationMs)}</td>
                           <td className="py-2 pr-4 text-slate-600 max-w-[380px] truncate" title={item.error || ""}>

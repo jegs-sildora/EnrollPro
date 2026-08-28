@@ -54,7 +54,7 @@ const SUMMARY_ITEMS = [
   },
   {
     key: "activeFaculty" as const,
-    label: "Active Faculty and Staff",
+    label: "Active Personnel",
     helper: "Personnel currently in active service",
     icon: Presentation,
     route: "/teachers",
@@ -68,7 +68,7 @@ const SUMMARY_ITEMS = [
   },
   {
     key: "pendingSystemValidations" as const,
-    label: "Learner Records for Review",
+    label: "Records for Review",
     helper: "Learners counted once even with several concerns",
     icon: ShieldCheck,
     route: "/learner-enrollment",
@@ -96,7 +96,7 @@ export function DashboardSummaryRibbon({
             <CardContent className="flex min-h-24 items-center gap-4 p-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-base font-extrabold leading-tight text-foreground">
+                  <p className="text-lg font-bold leading-tight text-foreground mb-2">
                     {item.label}
                   </p>
                   <TooltipProvider>
@@ -113,7 +113,7 @@ export function DashboardSummaryRibbon({
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="mt-1 text-3xl font-black leading-none text-primary">
+                <p className="mt-1 text-3xl font-bold leading-none text-primary">
                   <AnimatedNumber value={summary[item.key]} />
                 </p>
               </div>
@@ -161,7 +161,7 @@ export function DashboardActionToolbar({
     >
       <div className="flex-1 min-w-0 lg:pr-2">
         <div className="flex items-center gap-2">
-          <p className="text-base font-extrabold text-foreground">
+          <p className="text-lg font-bold text-foreground">
             Quick Actions
           </p>
           <TooltipProvider>
@@ -261,7 +261,7 @@ export function OperationalQueueCard({
     >
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-base font-extrabold">{title}</CardTitle>
+          <CardTitle className="text-lg font-bold">{title}</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -281,7 +281,7 @@ export function OperationalQueueCard({
       <CardContent className="flex flex-1 flex-col pt-1">
         <p
           className={cn(
-            "text-4xl font-black",
+            "text-4xl font-bold",
             isClear ? "text-foreground" : warning ? "text-destructive" : "text-primary",
           )}
         >
@@ -290,7 +290,7 @@ export function OperationalQueueCard({
         <div className="mt-5 flex flex-1 flex-col justify-end gap-3 border-t border-slate-100 pt-4">
           <p
             className={cn(
-              "flex min-h-5 items-center gap-2 text-base font-bold",
+              "flex min-h-5 items-center gap-2 text-base font-semibold",
               isClear ? "text-emerald-700" : "text-foreground",
             )}
           >
@@ -333,7 +333,7 @@ export function CurriculumDistributionPanel({
   return (
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-base font-extrabold">
+        <CardTitle className="text-lg font-bold">
           Learners by Curriculum Program
         </CardTitle>
         <TooltipProvider>
@@ -356,15 +356,11 @@ export function CurriculumDistributionPanel({
           return (
             <div key={item.programType} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-base">
-                <span className="min-w-0 truncate font-bold">
-                  {/* @ts-expect-error - Expected acronym might not be present */}
-                  {item.acronym && <span className="font-extrabold">{item.acronym}</span>}
-                  {/* @ts-expect-error - Expected acronym might not be present */}
-                  {item.acronym && <span className="mx-1">|</span>}
+                <span className="min-w-0 truncate font-semibold">
                   {item.label}
                 </span>
                 <span className="shrink-0">
-                  <span className="font-extrabold text-primary">{item.count} Learners</span>
+                  <span className="font-bold text-primary">{item.count} Learners</span>
                   {item.count > 0 && <span className="text-foreground ml-1">({percentage}%)</span>}
                 </span>
               </div>
@@ -385,7 +381,7 @@ export function IntakePipelinePanel({
   return (
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-base font-extrabold">
+        <CardTitle className="text-lg font-bold">
           Enrollment Records by Grade
         </CardTitle>
         <TooltipProvider>
@@ -407,18 +403,18 @@ export function IntakePipelinePanel({
           <table className="w-full min-w-0 text-base">
             <thead>
               <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
-                <th className="py-2 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
-                <th className="px-1 py-2 text-center font-extrabold leading-tight">Continuing or Promoted</th>
-                <th className="px-1 py-2 text-center font-extrabold leading-tight">New Entrants</th>
-                <th className="px-1 py-2 text-center font-extrabold">Transferees</th>
-                <th className="px-1 py-2 text-center font-extrabold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
-                <th className="pl-1 py-2 text-center font-extrabold">Total</th>
+                <th className="py-2 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">Continuing or Promoted</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">New Entrants</th>
+                <th className="px-1 py-2 text-center font-bold">Transferees</th>
+                <th className="px-1 py-2 text-center font-bold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
+                <th className="pl-1 py-2 text-center font-bold">Total</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                  <td className="py-3 px-1 font-extrabold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
+                  <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
                     <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
                       {row.gradeLevelName}
                     </span>
@@ -427,7 +423,7 @@ export function IntakePipelinePanel({
                   <td className="px-1 py-3 text-center font-bold">{row.newEntrants}</td>
                   <td className="px-1 py-3 text-center font-bold">{row.transferee}</td>
                   <td className="px-1 py-3 text-center font-bold">{row.returningLearners}</td>
-                  <td className="pl-1 py-3 text-center font-black text-primary">
+                  <td className="pl-1 py-3 text-center font-bold text-primary">
                     {row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners}
                   </td>
                 </tr>
@@ -479,7 +475,7 @@ export function SectionSaturationPanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-base font-extrabold">
+          <CardTitle className="text-lg font-bold">
             Class Section Capacity
           </CardTitle>
           <TooltipProvider>
@@ -514,32 +510,32 @@ export function SectionSaturationPanel({
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="truncate text-base font-extrabold">
+                        <p className="truncate text-base font-bold">
                           {section.gradeLevelName} - {section.name}
                         </p>
                         <Tooltip>
                           <TooltipTrigger>
                             <Badge
                               variant="outline"
-                              className="text-sm font-extrabold uppercase bg-background text-primary border-primary/30"
+                              className="text-sm font-bold uppercase bg-background text-primary border-primary/30"
                             >
                               {SCP_SHORT_LABELS[section.programType] ?? section.programType}
                             </Badge>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="font-semibold text-sm">
+                            <p className=" text-sm">
                               {PROGRAM_FULL_LABELS[section.programType] ?? section.programType}
                             </p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <p className="text-base font-semibold text-foreground">
+                      <p className="text-base  text-foreground">
                         {section.enrolled} of {section.capacity} learners
                       </p>
                     </div>
                     <span
                       className={cn(
-                        "shrink-0 text-base font-black",
+                        "shrink-0 text-base font-bold",
                         section.isOverCapacity ? "text-red-700" : "text-foreground",
                       )}
                     >
@@ -589,7 +585,7 @@ export function Sf1CompliancePanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-base font-extrabold">
+          <CardTitle className="text-lg font-bold">
             SF1 Learner Information Check
           </CardTitle>
           <TooltipProvider>
@@ -608,7 +604,7 @@ export function Sf1CompliancePanel({
         </div>
         <span
           className={cn(
-            "rounded-md px-2.5 py-1 text-base font-extrabold",
+            "rounded-md px-2.5 py-1 text-base font-bold",
             isComplete
               ? "bg-emerald-50 text-emerald-700"
               : "bg-amber-50 text-amber-800",
@@ -627,7 +623,7 @@ export function Sf1CompliancePanel({
               <span className="font-bold text-foreground">{label}</span>
               <span
                 className={cn(
-                  "font-black text-2xl",
+                  "font-bold text-2xl",
                   value > 0 ? "text-destructive" : "text-primary",
                 )}
               >
@@ -661,7 +657,7 @@ export function ActiveTallyPanel({
   return (
     <Card className="group border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-base font-extrabold">
+        <CardTitle className="text-lg font-bold">
           Current Enrollment Count
         </CardTitle>
         <TooltipProvider>
@@ -683,18 +679,18 @@ export function ActiveTallyPanel({
           {formula.map(([label, value, operator], index) => (
             <div key={label} className="relative rounded-md border border-slate-200 p-4">
               {index > 0 && (
-                <span className="absolute -left-3 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-base font-black sm:flex">
+                <span className="absolute -left-3 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-base font-bold sm:flex">
                   {operator}
                 </span>
               )}
               <p className="text-base font-bold text-foreground">{label}</p>
-              <p className="mt-2 text-3xl font-black text-foreground">{value}</p>
+              <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
             </div>
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between rounded-md bg-primary px-5 py-4 text-primary-foreground">
-          <span className="font-extrabold">Current Active Learner Tally</span>
-          <span className="text-3xl font-black">{tally.activeTotal}</span>
+          <span className="font-bold">Current Active Learner Tally</span>
+          <span className="text-3xl font-bold">{tally.activeTotal}</span>
         </div>
       </CardContent>
     </Card>

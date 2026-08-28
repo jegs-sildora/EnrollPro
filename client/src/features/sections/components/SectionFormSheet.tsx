@@ -70,14 +70,14 @@ export const SectionFormSheet = memo(function SectionFormSheet({
         {/* Sticky Header with Accent */}
         <div className="bg-primary px-6 py-5 relative shrink-0 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="size-14 rounded-2xl bg-primary-foreground/10 flex items-center justify-center font-extrabold text-primary-foreground text-xl uppercase border border-primary-foreground/20 shadow-md">
+            <div className="size-14 rounded-2xl bg-primary-foreground/10 flex items-center justify-center font-bold text-primary-foreground text-xl uppercase border border-primary-foreground/20 shadow-md">
               {initials}
             </div>
             <div className="space-y-0.5">
-              <SheetTitle className="text-base font-extrabold text-primary-foreground uppercase leading-none">
+              <SheetTitle className="text-base font-bold text-primary-foreground uppercase leading-none">
                 {title}
               </SheetTitle>
-              <SheetDescription className="text-base font-extrabold text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
+              <SheetDescription className="text-base font-bold text-primary-foreground/80 uppercase tracking-wide flex items-center gap-1.5 mt-1.5">
                 <Library className="size-3" />
                 {description}
               </SheetDescription>
@@ -90,7 +90,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
             <div className="space-y-4">
               {/* 1. SECTION IDENTITY */}
               <div className="bg-card border border-border rounded-xl shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground border-b border-border">
+                <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-primary" />
                     1. Section Identity
@@ -100,24 +100,24 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   <div className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label className="font-extrabold text-base uppercase">
+                        <Label className="font-bold text-base uppercase">
                           Grade Level
                         </Label>
                         <Input
                           value={gradeLevelName || "N/A"}
                           readOnly
-                          className="font-extrabold bg-muted/50"
+                          className="font-bold bg-muted/50"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-extrabold text-base uppercase">Curriculum Program</Label>
+                        <Label className="font-bold text-base uppercase">Curriculum Program</Label>
                         <Select
                           value={formData.curriculumProgram}
                           onValueChange={(value) =>
                             onFieldChange("curriculumProgram", value)
                           }>
-                          <SelectTrigger className="font-extrabold">
+                          <SelectTrigger className="font-bold">
                             <SelectValue placeholder="Select Program" />
                           </SelectTrigger>
                           <SelectContent>
@@ -125,7 +125,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                               <SelectItem
                                 key={option.value}
                                 value={option.value}
-                                className="font-extrabold uppercase text-base">
+                                className="font-bold uppercase text-base">
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -135,7 +135,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-extrabold text-base uppercase">Section Name *</Label>
+                      <Label className="font-bold text-base uppercase">Section Name *</Label>
                       <Input
                         placeholder="e.g., Rizal, Mabini, Aristotle"
                         value={formData.name}
@@ -150,7 +150,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                           );
                           onFieldChange("name", titleCased);
                         }}
-                        className="font-extrabold text-base placeholder:text-foreground/30"
+                        className="font-bold text-base placeholder:text-foreground/30"
                       />
                     </div>
                   </div>
@@ -159,7 +159,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
               {/* 2. ADVISORY & CAPACITY */}
               <div className="bg-card border border-border rounded-xl shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base tracking-wide text-foreground border-b border-border">
+                <div className="px-5 py-4 font-bold uppercase text-base tracking-wide text-foreground border-b border-border">
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
                     2. Advisory & Capacity
@@ -168,12 +168,12 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 <div className="px-5 pb-5 pt-4">
                   <div className="flex gap-4 w-full">
                     <div className="space-y-2 w-[70%]">
-                      <Label className="font-extrabold text-base uppercase">Class Adviser</Label>
+                      <Label className="font-bold text-base uppercase">Class Adviser</Label>
                       <Select
                         value={formData.adviserId}
                         onValueChange={(value) => onFieldChange("adviserId", value)}
                         disabled={loadingTeachers}>
-                        <SelectTrigger className="font-extrabold uppercase">
+                        <SelectTrigger className="font-bold uppercase">
                           <SelectValue
                             placeholder={
                               loadingTeachers
@@ -182,7 +182,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                             }
                           />
                         </SelectTrigger>
-                        <SelectContent className="font-extrabold uppercase">
+                        <SelectContent className="font-bold uppercase">
                           <SelectItem value="none">Unassigned / To Follow</SelectItem>
                           {teachers.map((t) => (
                             <SelectItem
@@ -196,7 +196,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     </div>
 
                     <div className="space-y-2 w-[30%]">
-                      <Label className="font-extrabold text-base uppercase">Max Capacity *</Label>
+                      <Label className="font-bold text-base uppercase">Max Capacity *</Label>
                       <div className="flex items-center w-full">
                         <Button
                           type="button"
@@ -220,7 +220,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                               parseInt(e.target.value) || 0,
                             )
                           }
-                          className="h-10 w-full rounded-md text-center font-extrabold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:border-transparent"
+                          className="h-10 w-full rounded-md text-center font-bold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:border-transparent"
                         />
                         <Button
                           type="button"
@@ -245,13 +245,13 @@ export const SectionFormSheet = memo(function SectionFormSheet({
               variant="outline"
               onClick={onCancel}
               disabled={submitting}
-              className="w-full sm:w-auto font-extrabold uppercase">
+              className="w-full sm:w-auto font-bold uppercase">
               Cancel
             </Button>
             <Button
               onClick={onSubmit}
               disabled={submitting || !canSubmit}
-              className="w-full sm:w-auto font-extrabold uppercase px-8">
+              className="w-full sm:w-auto font-bold uppercase px-8">
               {submitting ? (
                 submittingLabel
               ) : (

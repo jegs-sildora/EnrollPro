@@ -517,7 +517,7 @@ export default function SchoolYearTab() {
   const executeSaveConfiguration = async () => {
     if (!activeYear) return;
     setIsSubmittingConfig(true);
-    
+
     try {
       // 1. Save Calendar Settings
       if (isCalendarChanged) {
@@ -837,17 +837,17 @@ export default function SchoolYearTab() {
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
               <School className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-extrabold  mb-3 text-foreground uppercase">
+            <h3 className="text-2xl font-bold  mb-3 text-foreground uppercase">
               Active School Year Required
             </h3>
-            <p className="text-foreground font-extrabold max-w-lg mb-8 leading-relaxed">
+            <p className="text-foreground font-bold max-w-lg mb-8 leading-relaxed">
               Before the system can process official enrollment or generate
               School Form 1 masterlists, a primary school year must be
               established.
             </p>
             <Button
               size="lg"
-              className="font-extrabold shadow-md bg-[#800000] hover:bg-[#600000] text-white border-none"
+              className="font-bold shadow-md bg-[#800000] hover:bg-[#600000] text-white border-none"
               onClick={handlePrepareActivation}>
               <Plus className="mr-2 h-5 w-5" /> Configure S.Y.{" "}
               {nextRolloverYearLabel}
@@ -866,7 +866,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-3 mb-1">
                     <CardTitle
-                      className="flex items-center gap-2 text-xl font-extrabold text-foreground"
+                      className="flex items-center gap-2 text-xl font-bold text-foreground"
                     >
                       <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                         <CalendarIcon className="h-5 w-5" />
@@ -891,7 +891,7 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
                             SCHOOL YEAR PHASE STATUS
                           </h4>
                         </div>
@@ -923,12 +923,12 @@ export default function SchoolYearTab() {
                           >
                             <div className="flex h-full flex-col">
                               <div>
-                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
+                                <span className="block text-lg font-bold leading-snug uppercase break-words">
                                   {opt.title}
                                 </span>
                               </div>
                               <div className="mt-auto flex flex-col gap-2">
-                                <span className="text-sm font-extrabold mb-2 break-words whitespace-normal">
+                                <span className="text-sm font-bold mb-2 break-words whitespace-normal">
                                   {opt.desc}
                                 </span>
                               </div>
@@ -944,7 +944,7 @@ export default function SchoolYearTab() {
                   {/* Term Format Selection */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
+                      <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
                         DepEd Grading Period Configuration
                       </h4>
                     </div>
@@ -971,7 +971,7 @@ export default function SchoolYearTab() {
                           >
                             <div className="flex h-full flex-col justify-center">
                               <div>
-                                <span className="block text-lg font-extrabold leading-snug uppercase break-words">
+                                <span className="block text-lg font-bold leading-snug uppercase break-words">
                                   {opt.title}
                                 </span>
                               </div>
@@ -985,7 +985,7 @@ export default function SchoolYearTab() {
                   {/* Term Date rows */}
                   <div className="space-y-4 pt-6 border-t border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <h4 className="font-extrabold text-base text-foreground uppercase tracking-wide">
+                      <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
                         Term Dates
                       </h4>
                     </div>
@@ -998,76 +998,77 @@ export default function SchoolYearTab() {
                     ].map((term) => {
                       const isActiveTerm = localCalendarState.activeTerm === `T${term.num}`;
                       return (
-                      <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
-                        <div className="w-24 shrink-0 font-extrabold text-primary flex flex-col gap-1 uppercase">
-                          {term.label}
-                          {isActiveTerm && (
-                            <span className="inline-flex px-2 py-0.5 text-xs font-black uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
+                        <div key={term.num} className={cn("flex flex-col sm:flex-row items-center gap-4 bg/20 p-4 rounded-xl border transition-all", isActiveTerm ? "border-green-500 ring-2 ring-green-500/20" : "border-border/40")}>
+                          <div className="w-24 shrink-0 font-bold text-primary flex flex-col gap-1 uppercase">
+                            {term.label}
+                            {isActiveTerm && (
+                              <span className="inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap rounded-sm bg-green-100 text-green-800 border border-green-500 self-start ">ACTIVE</span>
+                            )}
+                          </div>
+                          <DualPaneDateRangePicker
+                            startValue={term.start || ""}
+                            endValue={term.end || ""}
+                            popoverAlign="center"
+                            onApply={(start, end) => {
+                              setLocalCalendarState(prev => ({
+                                ...prev,
+                                [term.startField]: start,
+                                [term.endField]: end,
+                              }));
+                            }}
+                            customTrigger={
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                                <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
+                                  <div className="font-bold text-foreground uppercase mb-0.5">Start Date</div>
+                                  <div className="relative w-full flex items-center">
+                                    <input
+                                      readOnly
+                                      value={term.start ? new Date(term.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
+                                      placeholder="MM/DD/YYYY"
+                                      className="border-none shadow-none p-0 h-auto font-bold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                    />
+                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
+                                      <CalendarIcon className="h-4 w-4" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-foreground font-bold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
+                                <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
+                                  <div className="font-bold text-foreground uppercase mb-0.5">End Date</div>
+                                  <div className="relative w-full flex items-center">
+                                    <input
+                                      readOnly
+                                      value={term.end ? new Date(term.end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
+                                      placeholder="MM/DD/YYYY"
+                                      className="border-none shadow-none p-0 h-auto font-bold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
+                                    />
+                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
+                                      <CalendarIcon className="h-4 w-4" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                          />
+                          {!isActiveTerm && activeYear && !isArchived && (
+                            <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
+                              <Button
+                                variant="outline"
+                                className="h-full px-6 border-primary/40  text-primary hover:text-primary shadow-sm font-bold uppercase tracking-wide transition-all"
+                                onClick={() => {
+                                  setLocalCalendarState(prev => ({
+                                    ...prev,
+                                    activeTerm: `T${term.num}`
+                                  }));
+                                }}
+                              >
+                                Set as Active {localCalendarState.termFormat === "QUARTERS" ? "Quarter" : "Term"}
+                              </Button>
+                            </div>
                           )}
                         </div>
-                        <DualPaneDateRangePicker
-                          startValue={term.start || ""}
-                          endValue={term.end || ""}
-                          popoverAlign="center"
-                          onApply={(start, end) => {
-                            setLocalCalendarState(prev => ({
-                              ...prev,
-                              [term.startField]: start,
-                              [term.endField]: end,
-                            }));
-                          }}
-                          customTrigger={
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-                              <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
-                                <div className="font-extrabold text-foreground uppercase mb-0.5">Start Date</div>
-                                <div className="relative w-full flex items-center">
-                                  <input
-                                    readOnly
-                                    value={term.start ? new Date(term.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
-                                    placeholder="MM/DD/YYYY"
-                                    className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
-                                  />
-                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
-                                    <CalendarIcon className="h-4 w-4" />
-                                  </div>
-                                </div>
-                              </div>
-                              <span className="text-foreground font-extrabold text-center sm:text-left py-1 sm:py-0 self-center sm:self-auto">to</span>
-                              <div className="w-full sm:flex-1 px-4 py-2 bg-muted rounded-lg border border-border shadow-sm relative cursor-pointer hover:bg-muted/80 transition-colors">
-                                <div className="font-extrabold text-foreground uppercase mb-0.5">End Date</div>
-                                <div className="relative w-full flex items-center">
-                                  <input
-                                    readOnly
-                                    value={term.end ? new Date(term.end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ""}
-                                    placeholder="MM/DD/YYYY"
-                                    className="border-none shadow-none p-0 h-auto font-extrabold text-base text-primary bg-transparent w-full uppercase pr-10 cursor-pointer focus:outline-none placeholder:text-muted-foreground"
-                                  />
-                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted/50 flex items-center justify-center shrink-0 text-foreground">
-                                    <CalendarIcon className="h-4 w-4" />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          }
-                        />
-                        {!isActiveTerm && activeYear && !isArchived && (
-                          <div className="shrink-0 flex items-stretch justify-end self-stretch mt-2 sm:mt-0">
-                            <Button
-                              variant="outline"
-                              className="h-full px-6 border-primary/40  text-primary hover:text-primary shadow-sm font-extrabold uppercase tracking-wide transition-all"
-                              onClick={() => {
-                                setLocalCalendarState(prev => ({
-                                  ...prev,
-                                  activeTerm: `T${term.num}`
-                                }));
-                              }}
-                            >
-                              Set as Active {localCalendarState.termFormat === "QUARTERS" ? "Quarter" : "Term"}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )})}
+                      )
+                    })}
                   </div>
 
 
@@ -1076,7 +1077,7 @@ export default function SchoolYearTab() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-lg text-foreground uppercase tracking-wide break-words">
+                          <h4 className="font-bold text-lg text-foreground uppercase tracking-wide break-words">
                             Official Enrollment Period (BOSY)
                           </h4>
                         </div>
@@ -1093,7 +1094,7 @@ export default function SchoolYearTab() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                         <div className="space-y-2 relative">
-                          <Label className="text-base font-extrabold uppercase text-foreground">
+                          <Label className="text-base font-bold uppercase text-foreground">
                             Opens On
                           </Label>
                           <HybridDatePicker
@@ -1107,7 +1108,7 @@ export default function SchoolYearTab() {
                           />
                         </div>
                         <div className="space-y-2 relative">
-                          <Label className="text-base font-extrabold uppercase text-foreground">
+                          <Label className="text-base font-bold uppercase text-foreground">
                             Closes On
                           </Label>
                           <HybridDatePicker
@@ -1127,7 +1128,7 @@ export default function SchoolYearTab() {
                       {localCalendarState.enrollOpenDate !== "" &&
                         localCalendarState.enrollCloseDate !== "" &&
                         toManilaDateToken(localCalendarState.enrollCloseDate) < toManilaDateToken(localCalendarState.enrollOpenDate) && (
-                          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-extrabold text-destructive">
+                          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-base font-bold text-destructive">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <p>
                               Please select a closing date that comes after the opening date.
@@ -1140,7 +1141,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-4">
-                  <p className="text-foreground font-extrabold max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
                     No active school year has been set for the system. Prepare a
                     draft school year below to begin.
                   </p>
@@ -1233,29 +1234,29 @@ export default function SchoolYearTab() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-center uppercase font-extrabold">School Year</TableHead>
-                        <TableHead className="text-center uppercase font-extrabold">
+                        <TableHead className="text-center uppercase font-bold">School Year</TableHead>
+                        <TableHead className="text-center uppercase font-bold">
                           Beginning of School Year (BOSY)
                         </TableHead>
-                        <TableHead className="text-center uppercase font-extrabold">
+                        <TableHead className="text-center uppercase font-bold">
                           End of School Year (EOSY)
                         </TableHead>
-                        <TableHead className="text-center uppercase font-extrabold">Status</TableHead>
+                        <TableHead className="text-center uppercase font-bold">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {archivedYears.map((year) => (
                         <TableRow key={year.id}>
-                          <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                          <TableCell className="text-center uppercase font-bold whitespace-nowrap">
                             S.Y. {year.yearLabel}
                           </TableCell>
-                          <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                          <TableCell className="text-center uppercase font-bold whitespace-nowrap">
                             {formatManilaDate(year.classOpeningDate)}
                           </TableCell>
-                          <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                          <TableCell className="text-center uppercase font-bold whitespace-nowrap">
                             {formatManilaDate(year.classEndDate)}
                           </TableCell>
-                          <TableCell className="text-center uppercase font-extrabold whitespace-nowrap">
+                          <TableCell className="text-center uppercase font-bold whitespace-nowrap">
                             <Badge
                               variant="outline"
                               className="gap-1 border-slate-300 text-slate-700 bg-slate-100">
@@ -1307,15 +1308,15 @@ export default function SchoolYearTab() {
                     id="rolloverYearLabel"
                     value={editYearLabel ? `S.Y. ${editYearLabel}` : ""}
                     readOnly
-                    className="font-extrabold bg/50 cursor-not-allowed pl-9"
+                    className="font-bold bg/50 cursor-not-allowed pl-9"
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-sm text-foreground font-extrabold">
+                <p className="text-sm text-foreground font-bold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
-                  <p className="text-sm font-extrabold text-destructive flex items-center gap-1 mt-1">
+                  <p className="text-sm font-bold text-destructive flex items-center gap-1 mt-1">
                     <AlertTriangle className="h-3 w-3" />A school year with this
                     label already exists.
                   </p>
@@ -1329,7 +1330,7 @@ export default function SchoolYearTab() {
                   timeZone={MANILA_TIME_ZONE}
                   minDate={openingMinDate}
                   maxDate={openingMaxDate}
-                  className="font-extrabold"
+                  className="font-bold"
                 />
               </div>
               <div className="space-y-2">
@@ -1340,17 +1341,17 @@ export default function SchoolYearTab() {
                   timeZone={MANILA_TIME_ZONE}
                   minDate={classEndMinDate}
                   maxDate={classEndMaxDate}
-                  className="font-extrabold"
+                  className="font-bold"
                 />
               </div>
             </div>
 
             <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 space-y-4">
-              <div className="flex items-center gap-2 text-destructive font-extrabold text-sm  uppercase">
+              <div className="flex items-center gap-2 text-destructive font-bold text-sm  uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>
-              <p className="text-base font-extrabold leading-relaxed">
+              <p className="text-base font-bold leading-relaxed">
                 Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database.
               </p>
             </div>
@@ -1358,14 +1359,14 @@ export default function SchoolYearTab() {
             <div className="flex items-center justify-end gap-2 pt-4 border-t">
               <Button
                 variant="outline"
-                className="font-extrabold"
+                className="font-bold"
                 onClick={requestCloseNextForm}>
                 Cancel
               </Button>
               <Button
                 onClick={handleActivateNext}
                 className={cn(
-                  "font-extrabold transition-all shadow-md border-none",
+                  "font-bold transition-all shadow-md border-none",
                   "bg-[#800000] hover:bg-[#600000] text-white",
                 )}
                 disabled={
@@ -1449,7 +1450,7 @@ export default function SchoolYearTab() {
         loading={isSubmittingConfig}
         onConfirm={executeSaveConfiguration}
       />
-      
+
       {/* Global Sticky Footer */}
       {!isArchived && isDirty && (
         <UnsavedChangesBar

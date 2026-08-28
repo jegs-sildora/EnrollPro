@@ -202,10 +202,10 @@ export default function TrackApplication({
     <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Card className="w-full overflow-hidden rounded-lg border-2 border-primary/5 shadow-xl">
         <CardHeader className="bg-primary p-8 text-center text-primary-foreground">
-          <CardTitle className="text-2xl font-extrabold uppercase">
+          <CardTitle className="text-2xl font-bold uppercase">
             Enrollment Application Status
           </CardTitle>
-          <CardDescription className="font-extrabold text-primary-foreground/90">
+          <CardDescription className="font-bold text-primary-foreground/90">
             Enter the tracking number issued after submitting the enrollment
             form
           </CardDescription>
@@ -215,7 +215,7 @@ export default function TrackApplication({
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-base font-extrabold uppercase"
+                className="text-base font-bold uppercase"
               >
                 Tracking Number
               </Label>
@@ -224,7 +224,7 @@ export default function TrackApplication({
                   id="trackingNumber"
                   {...register("trackingNumber")}
                   placeholder="EN-26-ABC123"
-                  className="h-14 border-2 pl-12 text-lg font-extrabold uppercase"
+                  className="h-14 border-2 pl-12 text-lg font-bold uppercase"
                   autoComplete="off"
                 />
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -233,7 +233,7 @@ export default function TrackApplication({
             </div>
             <Button
               type="submit"
-              className="h-14 w-full text-lg font-extrabold uppercase"
+              className="h-14 w-full text-lg font-bold uppercase"
               disabled={isLoading}
             >
               {isLoading ? "Checking..." : "Check Status"}
@@ -251,10 +251,10 @@ export default function TrackApplication({
               >
                 <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
                 <div>
-                  <h4 className="font-extrabold uppercase text-primary">
+                  <h4 className="font-bold uppercase text-primary">
                     Application Not Found
                   </h4>
-                  <p className="mt-1 text-base font-extrabold text-primary/80">
+                  <p className="mt-1 text-base font-bold text-primary/80">
                     {error}
                   </p>
                 </div>
@@ -277,14 +277,14 @@ export default function TrackApplication({
                 >
                   <StatusIcon className="h-10 w-10" />
                   <div>
-                    <p className="text-sm font-extrabold uppercase">
+                    <p className="text-sm font-bold uppercase">
                       Current Status
                     </p>
-                    <h3 className="mt-1 text-2xl font-extrabold uppercase">
+                    <h3 className="mt-1 text-2xl font-bold uppercase">
                       {presentation.label}
                     </h3>
                   </div>
-                  <p className="max-w-lg text-base font-semibold">
+                  <p className="max-w-lg text-base ">
                     {presentation.description}
                   </p>
                 </div>
@@ -325,7 +325,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="space-y-4 rounded-lg border bg-muted p-6">
-                  <h4 className="text-base font-extrabold uppercase">
+                  <h4 className="text-base font-bold uppercase">
                     Enrollment Progress
                   </h4>
                   <TrackingNextSteps
@@ -337,7 +337,7 @@ export default function TrackApplication({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full font-extrabold sm:w-auto"
+                    className="w-full font-bold sm:w-auto"
                     onClick={handleBackToSearch}
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -371,11 +371,11 @@ function InfoBlock({
         className,
       )}
     >
-      <p className="flex items-center justify-center gap-1.5 text-sm font-extrabold uppercase">
+      <p className="flex items-center justify-center gap-1.5 text-sm font-bold uppercase">
         <Icon className="h-4 w-4" />
         {label}
       </p>
-      <p className="font-extrabold uppercase text-primary">{value.trim()}</p>
+      <p className="font-bold uppercase text-primary">{value.trim()}</p>
     </div>
   );
 }

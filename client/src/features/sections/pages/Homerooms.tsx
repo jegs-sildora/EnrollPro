@@ -316,7 +316,7 @@ function SectionCard({
       }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-extrabold text-foreground uppercase">
+          <p className="font-bold text-foreground uppercase">
             {toTitleCase(section.name)}
           </p>
           {section.programType !== "REGULAR" && (
@@ -325,7 +325,7 @@ function SectionCard({
                 <TooltipTrigger asChild>
                   <Badge
                     variant="outline"
-                    className="mt-1 text-sm font-extrabold uppercase cursor-help">
+                    className="mt-1 text-sm font-bold uppercase cursor-help">
                     {scpTypeLabels[section.programType] ?? section.programType}
                   </Badge>
                 </TooltipTrigger>
@@ -343,7 +343,7 @@ function SectionCard({
                 <TooltipTrigger asChild>
                   <Badge
                     variant="outline"
-                    className="mt-1 text-sm font-extrabold uppercase bg-blue-50 text-blue-700 border-blue-200 cursor-help">
+                    className="mt-1 text-sm font-bold uppercase bg-blue-50 text-blue-700 border-blue-200 cursor-help">
                     Top BEC Section
                   </Badge>
                 </TooltipTrigger>
@@ -359,7 +359,7 @@ function SectionCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-sm font-extrabold"
+              className="h-8 px-2 text-sm font-bold"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
@@ -369,7 +369,7 @@ function SectionCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-sm font-extrabold text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="h-8 px-2 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
@@ -384,7 +384,7 @@ function SectionCard({
         <div className="flex items-center justify-between border-t border-border/50 pt-4">
           <div className="flex items-center gap-2 w-full">
             <div className="flex flex-col w-full min-w-0 pr-2">
-              <span className="font-extrabold uppercase text-foreground mb-0.5">
+              <span className="font-bold uppercase text-foreground mb-0.5">
                 Adviser
               </span>
               {canMutate ? (
@@ -392,10 +392,10 @@ function SectionCard({
                   <Select
                     value={selectedAdviser}
                     onValueChange={(val) => onDraftAdviserChange?.(val, initialAdviser)}>
-                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-extrabold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
+                    <SelectTrigger className={cn("h-7 px-2 py-0 border-primary hover:bg-muted bg-transparent shadow-none focus:ring-0 font-bold uppercase truncate", !section.advisingTeacher && "text-foreground")}>
                       <SelectValue placeholder="UNASSIGNED" />
                     </SelectTrigger>
-                    <SelectContent className="font-extrabold uppercase max-h-[300px]">
+                    <SelectContent className="font-bold uppercase max-h-[300px]">
                       <SelectItem value="none" className="text-foreground">UNASSIGNED</SelectItem>
                       {section.advisingTeacher && !dropdownTeachers.some(t => t.id === section.advisingTeacher!.id) && (
                         <SelectItem value={String(section.advisingTeacher.id)}>
@@ -413,7 +413,7 @@ function SectionCard({
               ) : (
                 <span
                   className={cn(
-                    "text-sm font-extrabold uppercase truncate",
+                    "text-sm font-bold uppercase truncate",
                     !section.advisingTeacher ? "text-primary italic" : "text-foreground",
                   )}>
                   {section.advisingTeacher
@@ -426,7 +426,7 @@ function SectionCard({
         </div>
 
         <div className="space-y-1.5 border-t border-border/50 pt-4">
-          <div className="flex items-center justify-between font-extrabold">
+          <div className="flex items-center justify-between font-bold">
             <span className="text-foreground uppercase">
               Enrolled
             </span>
@@ -453,7 +453,7 @@ function SectionCard({
           {hasPendingAdviserChange ? (
             <div className="flex items-center gap-2 mt-4 w-full">
               <Button
-                className="flex-1 font-extrabold"
+                className="flex-1 font-bold"
                 variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -462,7 +462,7 @@ function SectionCard({
                 Cancel
               </Button>
               <Button
-                className="flex-1 font-extrabold"
+                className="flex-1 font-bold"
                 variant="default"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -473,7 +473,7 @@ function SectionCard({
             </div>
           ) : (
             <Button
-              className="w-full mt-4 font-extrabold"
+              className="w-full mt-4 font-bold"
               variant="default"
               onClick={(e) => {
                 e.stopPropagation();
@@ -507,7 +507,7 @@ export default function Homerooms() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
-          <h3 className="text-lg font-extrabold uppercase text-foreground tracking-tight flex items-center gap-2">
+          <h3 className="text-lg font-bold uppercase text-foreground tracking-tight flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
             {categoryConfig.title}
           </h3>
@@ -549,10 +549,10 @@ export default function Homerooms() {
               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="h-5 w-5 group-hover:text-primary transition-colors" />
               </div>
-              <span className="mt-2 text-base font-extrabold uppercase">
+              <span className="mt-2 text-base font-bold uppercase">
                 Add Section
               </span>
-              <span className="max-w-xs text-center text-sm font-semibold normal-case">
+              <span className="max-w-xs text-center text-sm  normal-case">
                 {!canMutate
                   ? "Section changes are unavailable during EOSY closing."
                   : canAddCategory
@@ -1113,7 +1113,7 @@ export default function Homerooms() {
               <CalendarDays className="h-6 w-6 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="font-extrabold text-foreground">
+              <p className="font-bold text-foreground">
                 No School Year Selected
               </p>
               <p className="text-base text-foreground leading-relaxed px-4">
@@ -1167,7 +1167,7 @@ export default function Homerooms() {
               <TabsTrigger
                 key={g.gradeLevelId}
                 value={String(g.gradeLevelId)}
-                className="flex-1 min-w-32 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
+                className="flex-1 min-w-32 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg">
                 {activeGradeId === String(g.gradeLevelId) && (
                   <motion.div
                     layoutId="grade-active-pill"
@@ -1202,7 +1202,7 @@ export default function Homerooms() {
                     <Card className="border-border shadow-sm">
                       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
                         <div>
-                          <CardTitle className="text-xl font-extrabold uppercase">
+                          <CardTitle className="text-xl font-bold uppercase">
                             {g.gradeLevelName}
                           </CardTitle>
                         </div>

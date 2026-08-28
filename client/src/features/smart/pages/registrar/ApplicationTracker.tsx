@@ -119,7 +119,7 @@ export default function ApplicationTracker() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Enrollment Applications</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Enrollment Applications</h1>
           <p className="text-gray-600 mt-1">
             Enrollment application tracker — read from EnrollPro. Verification actions must be done in EnrollPro directly.
           </p>
@@ -198,12 +198,12 @@ export default function ApplicationTracker() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-extrabold text-gray-700">Applicant</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Grade Applied</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Type</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Status</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Submitted</TableHead>
+                    <TableHead className="font-bold text-gray-700">Applicant</TableHead>
+                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-bold text-gray-700">Grade Applied</TableHead>
+                    <TableHead className="font-bold text-gray-700">Type</TableHead>
+                    <TableHead className="font-bold text-gray-700">Status</TableHead>
+                    <TableHead className="font-bold text-gray-700">Submitted</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -249,7 +249,7 @@ export default function ApplicationTracker() {
           {/* Pagination */}
           {!loading && !error && meta && (
             <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between bg-gray-50/30">
-              <div className="flex items-center gap-4 text-sm font-semibold text-slate-800">
+              <div className="flex items-center gap-4 text-sm  text-slate-800">
                 <span>
                   Showing {meta.total === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, meta.total)} of {meta.total} Learners
                 </span>
@@ -294,7 +294,7 @@ export default function ApplicationTracker() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-extrabold shadow-sm"
+                  className="h-9 w-9 rounded-lg bg-[#800000] hover:bg-[#600000] text-white font-bold shadow-sm"
                 >
                   {page}
                 </Button>

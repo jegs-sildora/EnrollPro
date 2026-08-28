@@ -205,7 +205,7 @@ export default function TrackingNextSteps({
       {terminalNotice && (
         <div
           className={cn(
-            "rounded-xl border px-4 py-3 text-base leading-tight font-extrabold",
+            "rounded-xl border px-4 py-3 text-base leading-tight font-bold",
             terminalNotice.tone,
           )}>
           <div className="flex items-start gap-2">
@@ -252,7 +252,7 @@ export default function TrackingNextSteps({
               <div className="space-y-1 pb-2">
                 <p
                   className={cn(
-                    "text-base leading-tight font-extrabold uppercase ",
+                    "text-base leading-tight font-bold uppercase ",
                     step.isCompleted && "text-emerald-700",
                     step.isActive && "text-blue-700",
                     !step.isCompleted && !step.isActive && "text-foreground",

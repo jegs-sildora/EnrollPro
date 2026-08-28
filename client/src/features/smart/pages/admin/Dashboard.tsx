@@ -130,11 +130,11 @@ export default function AdminDashboard() {
   const { stats, recentLogs, systemStatus } = data;
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             Admin Dashboard
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -142,13 +142,13 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge className="border-0 font-semibold flex  items-center gap-1.5 px-3 py-1.5" style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
+          <Badge className="border-0  flex  items-center gap-1.5 px-3 py-1.5" style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
             <CheckCircle2 className="w-3.5 h-3.5" />
             System Online
           </Badge>
           <Link to="/admin/logs">
             <Button
-              className="gap-2 text-white font-semibold rounded-xl shadow-lg"
+              className="gap-2 text-white  rounded-xl shadow-lg"
               style={{ backgroundColor: colors.primary }}
             >
               <Activity className="w-4 h-4" />
@@ -181,8 +181,8 @@ export default function AdminDashboard() {
               <div className="flex items-start justify-between flex-1">
                 <div>
                   <p className="text-sm  text-gray-500 whitespace-pre-line leading-tight">{stat.label}</p>
-                  <p className="text-3xl font-extrabold mt-2" style={{ color: '#111827' }}>
-                    {stat.value.toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}
+                  <p className="text-3xl font-bold mt-2" style={{ color: '#111827' }}>
+                    {stat.value.toLocaleString('en-US', { timeZone: 'Asia/Manila', timeZone: 'Asia/Manila' })}
                   </p>
                 </div>
                 <div
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm  text-gray-500">System Uptime</p>
-                  <p className="text-xl font-extrabold" style={{ color: colors.primary }}>{systemStatus.uptime}</p>
+                  <p className="text-xl font-bold" style={{ color: colors.primary }}>{systemStatus.uptime}</p>
                 </div>
               </div>
               <CheckCircle2 className="w-6 h-6" style={{ color: colors.primary }} />
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm  text-gray-500">Today's Logins</p>
-                  <p className="text-xl font-extrabold" style={{ color: colors.accent }}>{stats.todayLogins}</p>
+                  <p className="text-xl font-bold" style={{ color: colors.accent }}>{stats.todayLogins}</p>
                 </div>
               </div>
               <ArrowUpRight className="w-5 h-5" style={{ color: colors.primary }} />
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm  text-gray-500">Total Admins</p>
-                  <p className="text-xl font-extrabold" style={{ color: colors.primary }}>{stats.totalAdmins}</p>
+                  <p className="text-xl font-bold" style={{ color: colors.primary }}>{stats.totalAdmins}</p>
                 </div>
               </div>
               <Badge className="border-0" style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>Staff</Badge>
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
                         })()}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm" style={{ color: '#111827' }}>{log.user}</span>
+                            <span className=" text-sm" style={{ color: '#111827' }}>{log.user}</span>
                             <span className="text-gray-400">•</span>
                             <span className="text-sm text-gray-600 capitalize">{log.action}d {log.target}</span>
                             {getSeverityBadge(log.severity)}
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
                         <action.icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm" style={{ color: '#111827' }}>{action.name}</h4>
+                        <h4 className=" text-sm" style={{ color: '#111827' }}>{action.name}</h4>
                         <p className="text-xs text-gray-500">{action.description}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all" />
@@ -352,28 +352,28 @@ export default function AdminDashboard() {
         <CardContent className="p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h3 className="text-2xl font-extrabold mb-2">User Distribution</h3>
+              <h3 className="text-2xl font-bold mb-2">User Distribution</h3>
               <p className="text-white/70 max-w-xl">
                 Overview of all registered users in the system by role type.
               </p>
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Teachers</span>
-                  <p className="text-xl font-extrabold">{stats.totalTeachers}</p>
+                  <p className="text-xl font-bold">{stats.totalTeachers}</p>
                 </div>
                 <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Admins</span>
-                  <p className="text-xl font-extrabold">{stats.totalAdmins}</p>
+                  <p className="text-xl font-bold">{stats.totalAdmins}</p>
                 </div>
                 <div className="bg-muted/10 rounded-xl px-4 py-2">
                   <span className="text-white/70 text-sm">Registrars</span>
-                  <p className="text-xl font-extrabold">{stats.totalRegistrars}</p>
+                  <p className="text-xl font-bold">{stats.totalRegistrars}</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Link to="/admin/users">
-                <Button className="font-semibold rounded-xl px-6" style={{ backgroundColor: 'white', color: colors.primary }}>
+                <Button className=" rounded-xl px-6" style={{ backgroundColor: 'white', color: colors.primary }}>
                   <Users className="w-4 h-4 mr-2" />
                   Manage Users
                 </Button>

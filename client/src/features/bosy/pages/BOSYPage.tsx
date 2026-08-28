@@ -416,7 +416,7 @@ export default function BOSYPage() {
         <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1 mb-4 p-1 bg-muted border border-border rounded-md relative shadow-sm">
           <TabsTrigger
             value="continuing"
-            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
+            className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "continuing" && (
               <motion.div
@@ -431,7 +431,7 @@ export default function BOSYPage() {
           </TabsTrigger>
           <TabsTrigger
             value="incoming"
-            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
+            className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md"
           >
             {activeTab === "incoming" && (
               <motion.div
@@ -466,7 +466,7 @@ export default function BOSYPage() {
                   >
                     <div>
                       {isHistoricalReadOnly && (
-                        <p className="text-base font-extrabold text-amber-600 mt-0.5">Viewing archived data — all enrollment actions are disabled.</p>
+                        <p className="text-base font-bold text-amber-600 mt-0.5">Viewing archived data — all enrollment actions are disabled.</p>
                       )}
                     </div>
                   </div>
@@ -512,7 +512,7 @@ export default function BOSYPage() {
                         )}>
                         <div className="flex h-full flex-col">
                           <div>
-                            <span className="flex items-center gap-2 text-lg font-extrabold leading-snug">
+                            <span className="flex items-center gap-2 text-lg font-bold leading-snug">
                               {label}
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
@@ -529,7 +529,7 @@ export default function BOSYPage() {
                           <div className="mt-auto flex flex-col gap-2">
                             <span
                               className={cn(
-                                "text-4xl font-extrabold leading-none tracking-tight",
+                                "text-4xl font-bold leading-none tracking-tight",
                                 isPrimaryMetric && value > 0
                                   ? "text-primary"
                                   : "text-primary",
@@ -548,7 +548,7 @@ export default function BOSYPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                           placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
-                          className="w-full h-10 pl-9 bg-muted border-gray-300 font-extrabold uppercase"
+                          className="w-full h-10 pl-9 bg-muted border-gray-300 font-bold uppercase"
                           value={queueSearch}
                           onChange={(e) => {
                             setQueueSearch(e.target.value);
@@ -580,14 +580,14 @@ export default function BOSYPage() {
                                 setRowSelection({});
                               }}
                             >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
                                 <SelectValue placeholder="All Incoming Grades" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-extrabold">All Incoming Grades</SelectItem>
-                                <SelectItem value="8" className="leading-tight font-extrabold">Grade 8</SelectItem>
-                                <SelectItem value="9" className="leading-tight font-extrabold">Grade 9</SelectItem>
-                                <SelectItem value="10" className="leading-tight font-extrabold">Grade 10</SelectItem>
+                                <SelectItem value="ALL" className="leading-tight font-bold">All Incoming Grades</SelectItem>
+                                <SelectItem value="8" className="leading-tight font-bold">Grade 8</SelectItem>
+                                <SelectItem value="9" className="leading-tight font-bold">Grade 9</SelectItem>
+                                <SelectItem value="10" className="leading-tight font-bold">Grade 10</SelectItem>
                               </SelectContent>
                             </Select>
 
@@ -600,7 +600,7 @@ export default function BOSYPage() {
                                 setRowSelection({});
                               }}
                             >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
                                 <SelectValue placeholder="All Programs">
                                   {curricularProgram === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE"
                                     : curricularProgram === "SPECIAL_PROGRAM_IN_THE_ARTS" ? "SPA"
@@ -610,11 +610,11 @@ export default function BOSYPage() {
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-extrabold">All Programs</SelectItem>
-                                <SelectItem value="REGULAR" className="leading-tight font-extrabold">Basic Education Curriculum</SelectItem>
-                                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-extrabold">Science Technology and Engineering</SelectItem>
-                                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-extrabold">Special Program in the Arts</SelectItem>
-                                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-extrabold">Special Program in Sports</SelectItem>
+                                <SelectItem value="ALL" className="leading-tight font-bold">All Programs</SelectItem>
+                                <SelectItem value="REGULAR" className="leading-tight font-bold">Basic Education Curriculum</SelectItem>
+                                <SelectItem value="SCIENCE_TECHNOLOGY_AND_ENGINEERING" className="leading-tight font-bold">Science Technology and Engineering</SelectItem>
+                                <SelectItem value="SPECIAL_PROGRAM_IN_THE_ARTS" className="leading-tight font-bold">Special Program in the Arts</SelectItem>
+                                <SelectItem value="SPECIAL_PROGRAM_IN_SPORTS" className="leading-tight font-bold">Special Program in Sports</SelectItem>
                               </SelectContent>
                             </Select>
 
@@ -626,15 +626,15 @@ export default function BOSYPage() {
                                 startTransition(() => setQueuePage(1));
                               }}
                             >
-                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-extrabold transition-colors">
+                              <SelectTrigger className="h-10 w-full sm:w-48 leading-tight font-bold transition-colors">
                                 <SelectValue placeholder="All Previous Sections" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ALL" className="leading-tight font-extrabold">All Previous Sections</SelectItem>
+                                <SelectItem value="ALL" className="leading-tight font-bold">All Previous Sections</SelectItem>
                                 {previousSections
                                   .filter((sec) => typeof sec === "string" && sec.trim() !== "")
                                   .map((sec) => (
-                                    <SelectItem key={sec} value={sec} className="leading-tight font-extrabold">
+                                    <SelectItem key={sec} value={sec} className="leading-tight font-bold">
                                       {sec}
                                     </SelectItem>
                                   ))}
@@ -701,26 +701,26 @@ export default function BOSYPage() {
                         </p>
                         {confirmSingleTarget && (
                           <div className="rounded-md border bg-muted px-4 py-3 space-y-1.5 text-left border-primary border-2">
-                            <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                            <p className="text-base leading-tight font-bold uppercase text-foreground">
                               {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
                               {confirmSingleTarget.middleName
                                 ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
                                 : ""}
                             </p>
-                            <p className="text-base text-foreground font-extrabold break-all">
+                            <p className="text-base text-foreground font-bold break-all">
                               LRN: {confirmSingleTarget.lrn ?? "No LRN"}
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
+                              className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
                               {confirmSingleTarget.gradeLevelName}
                             </Badge>
                             {confirmSingleTarget.missingDocuments.length > 0 && (
                               <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
-                                <p className="text-sm font-extrabold text-amber-900">
+                                <p className="text-sm font-bold text-amber-900">
                                   Missing school requirements
                                 </p>
-                                <p className="mt-1 text-sm font-semibold text-amber-800">
+                                <p className="mt-1 text-sm  text-amber-800">
                                   {confirmSingleTarget.missingDocuments.join(", ")}
                                 </p>
                               </div>
@@ -750,18 +750,18 @@ export default function BOSYPage() {
                         </p>
                         {transferTarget && (
                           <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
-                            <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                            <p className="text-base leading-tight font-bold uppercase text-foreground">
                               {transferTarget.lastName}, {transferTarget.firstName}
                               {transferTarget.middleName
                                 ? ` ${transferTarget.middleName.charAt(0)}.`
                                 : ""}
                             </p>
-                            <p className="text-base text-foreground font-extrabold break-all">
+                            <p className="text-base text-foreground font-bold break-all">
                               LRN: {transferTarget.lrn ?? "No LRN"}
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
+                              className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
                               {transferTarget.gradeLevelName}
                             </Badge>
                           </div>
@@ -787,18 +787,18 @@ export default function BOSYPage() {
                         </p>
                         {revokeTarget && (
                           <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5 text-left">
-                            <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                            <p className="text-base leading-tight font-bold uppercase text-foreground">
                               {revokeTarget.lastName}, {revokeTarget.firstName}
                               {revokeTarget.middleName
                                 ? ` ${revokeTarget.middleName.charAt(0)}.`
                                 : ""}
                             </p>
-                            <p className="text-base text-foreground font-extrabold break-all">
+                            <p className="text-base text-foreground font-bold break-all">
                               LRN: {revokeTarget.lrn ?? "No LRN"}
                             </p>
                             <Badge
                               variant="outline"
-                              className={cn("text-sm font-extrabold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
+                              className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
                               {revokeTarget.gradeLevelName}
                             </Badge>
                           </div>
@@ -825,7 +825,7 @@ export default function BOSYPage() {
                               const item = queueItems.find(i => i.applicationId === selectedIds[0]);
                               if (!item) return null;
                               return (
-                                <p className="text-base leading-tight font-extrabold uppercase text-foreground">
+                                <p className="text-base leading-tight font-bold uppercase text-foreground">
                                   {item.lastName}, {item.firstName}
                                   {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
                                 </p>
@@ -835,7 +835,7 @@ export default function BOSYPage() {
                         ) : selectedIds.length > 1 ? (
                           <div className="rounded-md border bg-muted/40 overflow-hidden flex flex-col text-left">
                             <div className="px-4 py-3 border-b bg-muted flex justify-center items-center">
-                              <p className="text-base leading-tight font-extrabold text-foreground">
+                              <p className="text-base leading-tight font-bold text-foreground">
                                 {selectedIds.length} Learners Selected
                               </p>
                             </div>
@@ -843,8 +843,8 @@ export default function BOSYPage() {
                               <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 border-b shadow-sm">
                                   <tr>
-                                    <th className="h-10 px-4 text-left font-extrabold text-foreground">Learner Name</th>
-                                    <th className="h-10 px-4 text-center font-extrabold text-foreground">Incoming Grade</th>
+                                    <th className="h-10 px-4 text-left font-bold text-foreground">Learner Name</th>
+                                    <th className="h-10 px-4 text-center font-bold text-foreground">Incoming Grade</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -853,14 +853,14 @@ export default function BOSYPage() {
                                     if (!item) return null;
                                     return (
                                       <tr key={id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                                        <td className="p-3 px-4 font-extrabold uppercase text-foreground">
+                                        <td className="p-3 px-4 font-bold uppercase text-foreground">
                                           {item.lastName}, {item.firstName}
                                           {item.middleName ? ` ${item.middleName.charAt(0)}.` : ""}
                                         </td>
-                                        <td className="p-3 px-4 font-extrabold text-center">
+                                        <td className="p-3 px-4 font-bold text-center">
                                           <Badge
                                             variant="outline"
-                                            className={cn(" font-extrabold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                                            className={cn(" font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
                                             {item.gradeLevelName}
                                           </Badge>
                                         </td>

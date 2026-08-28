@@ -87,7 +87,7 @@ export default function StudentProfile() {
     return (
       <div className="flex min-h-64 items-center justify-center p-6">
         <div className="space-y-4 text-center">
-          <p className="text-base font-extrabold">Invalid learner record.</p>
+          <p className="text-base font-bold">Invalid learner record.</p>
           <Button variant="outline" onClick={() => navigate("/students")}>
             Return to Learner Directory
           </Button>
@@ -96,9 +96,9 @@ export default function StudentProfile() {
     );
   }
 
-  const needsRemedial = 
-    loadedStudent?.isRemedialRequired || 
-    (loadedStudent?.academicDeficiencies && loadedStudent.academicDeficiencies.length > 0) || 
+  const needsRemedial =
+    loadedStudent?.isRemedialRequired ||
+    (loadedStudent?.academicDeficiencies && loadedStudent.academicDeficiencies.length > 0) ||
     (loadedStudent?.remedialClasses && loadedStudent.remedialClasses.length > 0);
 
   return (
@@ -122,7 +122,7 @@ export default function StudentProfile() {
         <TabsList className={cn("grid w-full h-auto gap-1 p-1 bg-muted border border-border rounded-md relative shadow-sm", needsRemedial ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}>
           <TabsTrigger
             value="record"
-            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+            className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
           >
             {activeTab === "record" && (
               <motion.div
@@ -137,7 +137,7 @@ export default function StudentProfile() {
           </TabsTrigger>
           <TabsTrigger
             value="academic"
-            className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+            className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
           >
             {activeTab === "academic" && (
               <motion.div
@@ -153,7 +153,7 @@ export default function StudentProfile() {
           {needsRemedial && (
             <TabsTrigger
               value="back_subjects"
-              className="w-full font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
+              className="w-full font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-md py-2"
             >
               {activeTab === "back_subjects" && (
                 <motion.div

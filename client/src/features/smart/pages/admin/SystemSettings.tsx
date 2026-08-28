@@ -341,11 +341,11 @@ export default function SystemSettings() {
   }
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             System Settings
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -353,7 +353,7 @@ export default function SystemSettings() {
           </p>
         </div>
         <Button
-          className="gap-2 text-white font-semibold rounded-xl shadow-lg w-fit"
+          className="gap-2 text-white  rounded-xl shadow-lg w-fit"
           style={{ backgroundColor: themeColors.primary }}
           onClick={handleSave}
           disabled={!hasChanges || saving}
@@ -387,7 +387,7 @@ export default function SystemSettings() {
                 <section.icon className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-semibold text-sm" style={{ color: '#111827' }}>{section.title}</h4>
+                <h4 className=" text-sm" style={{ color: '#111827' }}>{section.title}</h4>
                 <p className="text-xs text-gray-500">{section.description}</p>
               </div>
             </div>
@@ -411,7 +411,7 @@ export default function SystemSettings() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="schoolName" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="schoolName" className="text-sm  text-gray-700">
                 School Name
               </Label>
               <Input
@@ -422,7 +422,7 @@ export default function SystemSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="schoolId" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="schoolId" className="text-sm  text-gray-700">
                 School ID
               </Label>
               <Input
@@ -433,7 +433,7 @@ export default function SystemSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="division" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="division" className="text-sm  text-gray-700">
                 Division
               </Label>
               <Select value={settings.division} onValueChange={(val) => val && handleChange("division", val)}>
@@ -450,7 +450,7 @@ export default function SystemSettings() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="region" className="text-sm  text-gray-700">
                 Region
               </Label>
               <Select value={settings.region} onValueChange={(val) => val && handleChange("region", val)}>
@@ -504,7 +504,7 @@ export default function SystemSettings() {
                 <Link2 className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-blue-900">Connected to EnrollPro</h4>
+                <h4 className=" text-blue-900">Connected to EnrollPro</h4>
                 <p className="text-sm text-blue-700 mt-1">
                   School branding, logo, and color scheme are automatically synchronized from EnrollPro every hour. You can also sync manually anytime.
                 </p>
@@ -516,7 +516,7 @@ export default function SystemSettings() {
                 )}
                 {!syncing && settings.lastEnrollProSync && (
                   <p className="text-xs text-blue-600 mt-1.5">
-                    Last synced: {new Date(settings.lastEnrollProSync).toLocaleString('en-US', { timeZone: 'Asia/Manila',  timeZone: 'Asia/Manila' })}
+                    Last synced: {new Date(settings.lastEnrollProSync).toLocaleString('en-US', { timeZone: 'Asia/Manila', timeZone: 'Asia/Manila' })}
                   </p>
                 )}
                 {!syncing && !settings.lastEnrollProSync && (
@@ -549,7 +549,7 @@ export default function SystemSettings() {
 
           {/* School Logo (read-only) */}
           <div className="mb-8">
-            <Label className="text-sm font-semibold text-gray-700 mb-4 block">School Logo</Label>
+            <Label className="text-sm  text-gray-700 mb-4 block">School Logo</Label>
             <div className="flex items-start gap-6">
               <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden">
                 {settings.logoUrl ? (
@@ -577,7 +577,7 @@ export default function SystemSettings() {
 
           {/* Color Scheme (read-only) */}
           <div>
-            <Label className="text-sm font-semibold text-gray-700 mb-2 block">Color Scheme</Label>
+            <Label className="text-sm  text-gray-700 mb-2 block">Color Scheme</Label>
             <p className="text-sm text-gray-600 mb-4">
               Colors are automatically extracted from your school logo in EnrollPro and applied system-wide.
             </p>
@@ -609,13 +609,13 @@ export default function SystemSettings() {
             <div className="mt-6 p-4 rounded-xl bg-gray-50">
               <Label className="text-sm  text-gray-600 mb-3 block">Preview</Label>
               <div className="flex items-center gap-4">
-                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm" style={{ backgroundColor: settings.primaryColor }}>
+                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white  text-sm" style={{ backgroundColor: settings.primaryColor }}>
                   Primary
                 </div>
-                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm" style={{ backgroundColor: settings.secondaryColor }}>
+                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white  text-sm" style={{ backgroundColor: settings.secondaryColor }}>
                   Secondary
                 </div>
-                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm" style={{ backgroundColor: settings.accentColor }}>
+                <div className="flex-1 h-12 rounded-xl flex items-center justify-center text-white  text-sm" style={{ backgroundColor: settings.accentColor }}>
                   Accent
                 </div>
               </div>
@@ -641,7 +641,7 @@ export default function SystemSettings() {
           {/* Basic Academic Settings */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="space-y-2">
-              <Label htmlFor="currentSchoolYear" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="currentSchoolYear" className="text-sm  text-gray-700">
                 Academic Year
               </Label>
               <Select value={settings.currentSchoolYear || "2026-2027"} onValueChange={(val) => val && handleChange("currentSchoolYear", val)}>
@@ -657,7 +657,7 @@ export default function SystemSettings() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currentTerm" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="currentTerm" className="text-sm  text-gray-700">
                 Current Term
               </Label>
               <Select value={settings.currentTerm || "T1"} onValueChange={(val) => val && handleChange("currentTerm", val)}>
@@ -684,7 +684,7 @@ export default function SystemSettings() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <Label className="text-sm font-semibold text-gray-700">Academic Calendar</Label>
+                <Label className="text-sm  text-gray-700">Academic Calendar</Label>
                 <p className="text-xs text-gray-500 mt-1">Set the start and end dates for each term</p>
               </div>
               <div className="flex items-center gap-2">
@@ -706,8 +706,8 @@ export default function SystemSettings() {
               {/* 1st Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.primary }}>1</div>
-                  <span className="font-semibold text-gray-700">1st Term</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.primary }}>1</div>
+                  <span className=" text-gray-700">1st Term</span>
                   {settings.currentTerm === "T1" && (
                     <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
@@ -737,8 +737,8 @@ export default function SystemSettings() {
               {/* 2nd Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.secondary }}>2</div>
-                  <span className="font-semibold text-gray-700">2nd Term</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.secondary }}>2</div>
+                  <span className=" text-gray-700">2nd Term</span>
                   {settings.currentTerm === "T2" && (
                     <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
@@ -768,8 +768,8 @@ export default function SystemSettings() {
               {/* 3rd Term */}
               <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: themeColors.accent }}>3</div>
-                  <span className="font-semibold text-gray-700">3rd Term</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: themeColors.accent }}>3</div>
+                  <span className=" text-gray-700">3rd Term</span>
                   {settings.currentTerm === "T3" && (
                     <span className="ml-auto px-2 py-0.5 text-xs  rounded-full text-white" style={{ backgroundColor: themeColors.primary }}>Current</span>
                   )}
@@ -827,7 +827,7 @@ export default function SystemSettings() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="address" className="text-sm  text-gray-700">
                 Address
               </Label>
               <Input
@@ -839,7 +839,7 @@ export default function SystemSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contactNumber" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="contactNumber" className="text-sm  text-gray-700">
                 Contact Number
               </Label>
               <Input
@@ -851,7 +851,7 @@ export default function SystemSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="email" className="text-sm  text-gray-700">
                 Email
               </Label>
               <Input
@@ -883,7 +883,7 @@ export default function SystemSettings() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="sessionTimeout" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="sessionTimeout" className="text-sm  text-gray-700">
                 Session Timeout (minutes)
               </Label>
               <Select value={String(settings.sessionTimeout || 30)} onValueChange={(val) => val && handleChange("sessionTimeout", parseInt(val) as any)}>
@@ -899,7 +899,7 @@ export default function SystemSettings() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="maxLoginAttempts" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="maxLoginAttempts" className="text-sm  text-gray-700">
                 Max Login Attempts
               </Label>
               <Select value={String(settings.maxLoginAttempts || 5)} onValueChange={(val) => val && handleChange("maxLoginAttempts", parseInt(val) as any)}>
@@ -914,7 +914,7 @@ export default function SystemSettings() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="passwordMinLength" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="passwordMinLength" className="text-sm  text-gray-700">
                 Min Password Length
               </Label>
               <Select value={String(settings.passwordMinLength || 8)} onValueChange={(val) => val && handleChange("passwordMinLength", parseInt(val) as any)}>
@@ -939,7 +939,7 @@ export default function SystemSettings() {
                 <Shield className="w-5 h-5" style={{ color: themeColors.primary }} />
               </div>
               <div>
-                <p className="font-semibold text-sm" style={{ color: '#111827' }}>Database Status</p>
+                <p className=" text-sm" style={{ color: '#111827' }}>Database Status</p>
                 <p className="text-xs text-gray-500">Connected and operational</p>
               </div>
             </div>

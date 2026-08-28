@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
-import { 
+import {
   Users,
   FileDown,
   Loader2,
@@ -115,7 +115,7 @@ export default function AdvisoryClass() {
     () => [...records].filter((r) => r.enrollmentApplication.learner.sex === "MALE").sort((a, b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName)),
     [records]
   );
-  
+
   const femaleLearners = useMemo(
     () => [...records].filter((r) => r.enrollmentApplication.learner.sex === "FEMALE").sort((a, b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName)),
     [records]
@@ -123,7 +123,8 @@ export default function AdvisoryClass() {
 
   const formatDate = (d?: string | null) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-US", { timeZone: 'Asia/Manila', 
+    return new Date(d).toLocaleDateString("en-US", {
+      timeZone: 'Asia/Manila',
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -151,10 +152,10 @@ export default function AdvisoryClass() {
   const renderTable = (data: AdvisoryRecord[], title: string, sex: "MALE" | "FEMALE") => (
     <div className="flex-1 min-w-0 flex flex-col">
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className={`font-extrabold uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
+        <h3 className={`font-bold uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
           {title}
         </h3>
-        <span className="font-extrabold text-sm text-foreground uppercase">
+        <span className="font-bold text-sm text-foreground uppercase">
           Total: {data.length}
         </span>
       </div>
@@ -163,17 +164,17 @@ export default function AdvisoryClass() {
           <Table className="relative w-full">
             <TableHeader className="border-b border-border bg-transparent">
               <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="text-center font-extrabold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
-                <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
-                <TableHead className="text-center font-extrabold text-foreground h-11 w-[120px] tracking-wide">BIRTHDATE</TableHead>
-                <TableHead className="text-center font-extrabold text-foreground h-11 w-[60px] tracking-wide">AGE</TableHead>
-                <TableHead className="text-right font-extrabold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
+                <TableHead className="text-center font-bold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
+                <TableHead className="text-left font-bold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
+                <TableHead className="text-center font-bold text-foreground h-11 w-[120px] tracking-wide">BIRTHDATE</TableHead>
+                <TableHead className="text-center font-bold text-foreground h-11 w-[60px] tracking-wide">AGE</TableHead>
+                <TableHead className="text-right font-bold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y">
               {data.length === 0 ? (
                 <TableRow className="border-b-0">
-                  <TableCell colSpan={5} className="h-24 text-center text-foreground font-extrabold">
+                  <TableCell colSpan={5} className="h-24 text-center text-foreground font-bold">
                     No {title.toLowerCase()} assigned.
                   </TableCell>
                 </TableRow>
@@ -184,12 +185,12 @@ export default function AdvisoryClass() {
                   const remark = record.sf1Remarks || "";
                   return (
                     <TableRow key={record.id} className="hover:bg-muted/50 transition-colors group">
-                      <TableCell className="text-center font-extrabold text-sm text-foreground py-3">
+                      <TableCell className="text-center font-bold text-sm text-foreground py-3">
                         {idx + 1}
                       </TableCell>
                       <TableCell className="py-3 pl-4">
                         <div className="flex flex-col">
-                          <span className="font-extrabold text-sm uppercase text-foreground leading-tight">
+                          <span className="font-bold text-sm uppercase text-foreground leading-tight">
                             {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
                           </span>
                           <span className="text-sm font-bold uppercase text-foreground mt-0.5">
@@ -204,19 +205,19 @@ export default function AdvisoryClass() {
                       </TableCell>
                       <TableCell className="text-center py-3">
                         {learner.birthdate ? (
-                          <span className="text-sm font-extrabold">{formatDate(learner.birthdate)}</span>
+                          <span className="text-sm font-bold">{formatDate(learner.birthdate)}</span>
                         ) : (
                           <span className="text-sm italic text-muted-foreground">Needs Update</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center font-extrabold text-sm py-3">
+                      <TableCell className="text-center font-bold text-sm py-3">
                         {age !== null ? age : "—"}
                       </TableCell>
                       <TableCell className="text-right py-3 pr-4">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="font-extrabold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                          className="font-bold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
                           onClick={() => setSelectedStudentId(learner.id)}
                         >
                           <Eye className="w-4 h-4 lg:mr-2" />
@@ -266,20 +267,20 @@ export default function AdvisoryClass() {
   }
 
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       {/* Unified Card */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-6 py-4">
-          <div className="flex justify-end items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
+          <div className="flex justify-end items-center gap-6 text-base font-bold text-foreground tracking-wide">
             <span className="text-foreground">
               Total Seated: <span className="text-foreground">{records.length} / {section.maxCapacity || 0}</span>
             </span>
             <div className="w-px h-4 bg-border" />
-            <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+            <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
               <Mars className="h-4 w-4" /> Male: {maleLearners.length}
             </Badge>
             <div className="w-px h-4 bg-border" />
-            <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+            <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
               <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
             </Badge>
           </div>
@@ -289,14 +290,14 @@ export default function AdvisoryClass() {
 
         <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
           <div className="flex flex-col gap-2">
-            <CardTitle className="text-base sm:text-lg font-extrabold">
+            <CardTitle className="text-base sm:text-lg font-bold">
               Enrolled Learner Records
             </CardTitle>
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-base font-extrabold text-foreground whitespace-nowrap">
+              <span className="text-base font-bold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-extrabold uppercase text-foreground">
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-bold uppercase text-foreground">
                 {section.advisingTeacher ? section.advisingTeacher.name : "ASSIGNED (YOU)"}
               </span>
             </div>
@@ -306,7 +307,7 @@ export default function AdvisoryClass() {
               variant="outline"
               onClick={handleDownloadSf1}
               disabled={exportingSf1 || loading}
-              className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
+              className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-muted shadow-sm"
             >
               {exportingSf1 ? (
                 <Loader2 className="h-4 w-4 mr-2 " />
@@ -317,7 +318,7 @@ export default function AdvisoryClass() {
             </Button>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           {records.length === 0 ? (
             <div className="flex py-16 w-full items-center justify-center">
@@ -327,7 +328,7 @@ export default function AdvisoryClass() {
                     <Users className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
-                    <p className="font-extrabold text-foreground text-lg">
+                    <p className="font-bold text-foreground text-lg">
                       No Enrolled Learners
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed px-4">

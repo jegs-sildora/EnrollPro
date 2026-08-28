@@ -123,11 +123,11 @@ export default function PrintCenter() {
   };
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             Print Center
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -135,7 +135,7 @@ export default function PrintCenter() {
           </p>
         </div>
         <Button
-          className="gap-2 text-white font-semibold rounded-xl shadow-lg w-fit"
+          className="gap-2 text-white  rounded-xl shadow-lg w-fit"
           style={{ backgroundColor: colors.primary }}
         >
           <Printer className="w-4 h-4" />
@@ -150,7 +150,7 @@ export default function PrintCenter() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Total Jobs</p>
-                <p className="text-2xl font-extrabold text-gray-900">{jobCounts.total}</p>
+                <p className="text-2xl font-bold text-gray-900">{jobCounts.total}</p>
               </div>
               <div className="p-2 rounded-lg bg-gray-100">
                 <Layers className="w-5 h-5 text-gray-600" />
@@ -163,7 +163,7 @@ export default function PrintCenter() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Completed</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.primary }}>{jobCounts.completed}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.primary }}>{jobCounts.completed}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}20` }}>
                 <CheckCircle2 className="w-5 h-5" style={{ color: colors.primary }} />
@@ -176,7 +176,7 @@ export default function PrintCenter() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">In Progress</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{jobCounts.inProgress}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{jobCounts.inProgress}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}20` }}>
                 <RefreshCw className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -189,7 +189,7 @@ export default function PrintCenter() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Queued</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.accent }}>{jobCounts.queued}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.accent }}>{jobCounts.queued}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.accent}20` }}>
                 <Clock className="w-5 h-5" style={{ color: colors.accent }} />
@@ -202,7 +202,7 @@ export default function PrintCenter() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Failed</p>
-                <p className="text-2xl font-extrabold text-red-600">{jobCounts.failed}</p>
+                <p className="text-2xl font-bold text-red-600">{jobCounts.failed}</p>
               </div>
               <div className="p-2 rounded-lg bg-red-100">
                 <AlertCircle className="w-5 h-5 text-red-600" />
@@ -231,11 +231,11 @@ export default function PrintCenter() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs font-semibold">
+                      <Badge variant="outline" className="text-xs ">
                         {option.form}
                       </Badge>
                     </div>
-                    <h4 className="font-semibold text-gray-900 text-sm">{option.name}</h4>
+                    <h4 className=" text-gray-900 text-sm">{option.name}</h4>
                     <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
                   </div>
                 </div>
@@ -288,12 +288,12 @@ export default function PrintCenter() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                <TableHead className="font-semibold text-gray-600">Job ID</TableHead>
-                <TableHead className="font-semibold text-gray-600">Document</TableHead>
-                <TableHead className="font-semibold text-gray-600">Form</TableHead>
-                <TableHead className="font-semibold text-gray-600">Copies</TableHead>
-                <TableHead className="font-semibold text-gray-600">Status</TableHead>
-                <TableHead className="font-semibold text-gray-600">Created</TableHead>
+                <TableHead className=" text-gray-600">Job ID</TableHead>
+                <TableHead className=" text-gray-600">Document</TableHead>
+                <TableHead className=" text-gray-600">Form</TableHead>
+                <TableHead className=" text-gray-600">Copies</TableHead>
+                <TableHead className=" text-gray-600">Status</TableHead>
+                <TableHead className=" text-gray-600">Created</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -308,7 +308,7 @@ export default function PrintCenter() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="font-semibold">
+                    <Badge variant="outline" className="">
                       {job.documentType}
                     </Badge>
                   </TableCell>

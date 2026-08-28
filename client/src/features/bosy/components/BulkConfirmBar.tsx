@@ -33,13 +33,13 @@ export function BulkConfirmBar({
           transition={createMotionTransition(motionPreferences, "normal")}
           {...getReducedMotionProps(motionPreferences.reduceMotion)}
           className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2 border border-border">
-          <span className="text-base font-extrabold uppercase text-foreground">
+          <span className="text-base font-bold uppercase text-foreground">
             {selectedCount} selected
           </span>
           <Button
             size="sm"
             variant="default"
-            className="rounded-md font-extrabold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="rounded-md font-bold uppercase bg-emerald-600 hover:bg-emerald-700 text-white"
             disabled={loading}
             onClick={onConfirm}>
             {loading ? (

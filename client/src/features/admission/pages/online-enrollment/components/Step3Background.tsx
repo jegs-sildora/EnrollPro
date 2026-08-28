@@ -27,12 +27,12 @@ export default function Step3Background() {
         {/* IP Community */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-base leading-tight font-extrabold flex items-center gap-2">
+            <Label className="text-base leading-tight font-bold flex items-center gap-2">
               Is the learner a member of an IP cultural community? *
             </Label>
             <Badge
               variant="outline"
-              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
@@ -46,7 +46,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 No
               </span>
             </button>
@@ -59,7 +59,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 Yes
               </span>
             </button>
@@ -75,7 +75,7 @@ export default function Step3Background() {
                 <div className="pt-4 space-y-2 w-full">
                   <Label
                     htmlFor="ip-group"
-                    className="text-base font-extrabold uppercase text-foreground">
+                    className="text-base font-bold uppercase text-foreground">
                     Specify IP Group Name
                   </Label>
                   <Input
@@ -84,7 +84,7 @@ export default function Step3Background() {
                     {...register("ipGroupName")}
                     placeholder="e.g. Ati, Mangyan"
                     className={cn(
-                      "h-11 font-extrabold uppercase",
+                      "h-11 font-bold uppercase",
                       errors.ipGroupName && "border-destructive focus-visible:ring-destructive"
                     )}
                   />
@@ -98,13 +98,13 @@ export default function Step3Background() {
         {/* 4Ps Beneficiary */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-base leading-tight font-extrabold">
+            <Label className="text-base leading-tight font-bold">
               Does the learner's household currently receive benefits under the
               Pantawid Pamilyang Pilipino Program (4Ps)? *
             </Label>
             <Badge
               variant="outline"
-              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
@@ -118,7 +118,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 No
               </span>
             </button>
@@ -131,7 +131,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 Yes
               </span>
             </button>
@@ -147,7 +147,7 @@ export default function Step3Background() {
                 <div className="pt-4 space-y-2 w-full">
                   <Label
                     htmlFor="household-id"
-                    className="text-base font-extrabold uppercase text-foreground">
+                    className="text-base font-bold uppercase text-foreground">
                     4Ps Household ID Number
                   </Label>
                   <Input
@@ -156,7 +156,7 @@ export default function Step3Background() {
                     {...register("householdId4Ps")}
                     placeholder="Household ID"
                     className={cn(
-                      "h-11 font-extrabold uppercase",
+                      "h-11 font-bold uppercase",
                       errors.householdId4Ps && "border-destructive focus-visible:ring-destructive"
                     )}
                     inputMode="numeric"
@@ -179,13 +179,13 @@ export default function Step3Background() {
         {/* Balik Aral */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-base leading-tight font-extrabold">
+            <Label className="text-base leading-tight font-bold">
               Is this learner returning to school after a gap of 1 year or more?
-            (Balik-Aral) *
+              (Balik-Aral) *
             </Label>
             <Badge
               variant="outline"
-              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
@@ -202,7 +202,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 No
               </span>
             </button>
@@ -218,7 +218,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 Yes
               </span>
             </button>
@@ -229,12 +229,12 @@ export default function Step3Background() {
         {/* SNED / Disability */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-base leading-tight font-extrabold">
+            <Label className="text-base leading-tight font-bold">
               Is the learner under the Special Needs Education Program? *
             </Label>
             <Badge
               variant="outline"
-              className="text-sm uppercase border-primary/20 text-primary gap-1 font-extrabold">
+              className="text-sm uppercase border-primary/20 text-primary gap-1 font-bold">
               <Lock className="w-2.5 h-2.5" /> Confidential
             </Badge>
           </div>
@@ -253,7 +253,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 No
               </span>
             </button>
@@ -266,7 +266,7 @@ export default function Step3Background() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-extrabold text-base leading-tight ">
+              <span className="font-bold text-base leading-tight ">
                 Yes
               </span>
             </button>
@@ -281,7 +281,7 @@ export default function Step3Background() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden p-1">
                 <div className="pt-4 space-y-6">
-                  <p className="text-base font-extrabold uppercase text-foreground ">
+                  <p className="text-base font-bold uppercase text-foreground ">
                     If Yes, check only 1, either from a1 or a2
                   </p>
                   <AnimatedError error={errors.specialNeedsCategory?.message as string || errors.specialNeedsCategory as unknown as string} />
@@ -304,7 +304,7 @@ export default function Step3Background() {
                       />
                       <Label
                         htmlFor="sned-a1"
-                        className="text-base leading-tight font-extrabold cursor-pointer">
+                        className="text-base leading-tight font-bold cursor-pointer">
                         a1. With Diagnosis from Licensed Medical Specialist
                       </Label>
                     </div>
@@ -318,10 +318,10 @@ export default function Step3Background() {
                           <div className="ml-7 mt-2 p-4 border border-border/60 bg-muted/10 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3">
                             {DISABILITY_TYPES_A1.map((type) => {
                               const isChecked = watch("disabilityTypes")?.includes(type);
-                              const subOptions = type === "Special Health Problem/Chronic Disease" 
-                                ? SPECIAL_HEALTH_SUB_OPTIONS 
-                                : type === "Visual Impairment" 
-                                  ? VISUAL_IMPAIRMENT_SUB_OPTIONS 
+                              const subOptions = type === "Special Health Problem/Chronic Disease"
+                                ? SPECIAL_HEALTH_SUB_OPTIONS
+                                : type === "Visual Impairment"
+                                  ? VISUAL_IMPAIRMENT_SUB_OPTIONS
                                   : null;
 
                               return (
@@ -335,7 +335,7 @@ export default function Step3Background() {
                                         let newTypes = checked
                                           ? [...current, type]
                                           : current.filter((t) => t !== type);
-                                        
+
                                         // If unchecking, remove sub-options too
                                         if (!checked && subOptions) {
                                           newTypes = newTypes.filter(t => !subOptions.includes(t));
@@ -347,7 +347,7 @@ export default function Step3Background() {
                                     />
                                     <Label
                                       htmlFor={`disability-${type}`}
-                                      className="text-base leading-tight font-extrabold cursor-pointer">
+                                      className="text-base leading-tight font-bold cursor-pointer">
                                       {type}
                                     </Label>
                                   </div>
@@ -381,7 +381,7 @@ export default function Step3Background() {
                                             />
                                             <Label
                                               htmlFor={`disability-${subType}`}
-                                              className="text-sm leading-tight font-extrabold cursor-pointer">
+                                              className="text-sm leading-tight font-bold cursor-pointer">
                                               {subType}
                                             </Label>
                                           </div>
@@ -417,7 +417,7 @@ export default function Step3Background() {
                       />
                       <Label
                         htmlFor="sned-a2"
-                        className="text-base leading-tight font-extrabold cursor-pointer">
+                        className="text-base leading-tight font-bold cursor-pointer">
                         a2. With Manifestations
                       </Label>
                     </div>
@@ -452,7 +452,7 @@ export default function Step3Background() {
                                 />
                                 <Label
                                   htmlFor={`disability-${type}`}
-                                  className="text-base leading-tight font-extrabold cursor-pointer">
+                                  className="text-base leading-tight font-bold cursor-pointer">
                                   {type}
                                 </Label>
                               </div>
@@ -466,7 +466,7 @@ export default function Step3Background() {
 
                   {/* b. PWD ID */}
                   <div className="space-y-2">
-                    <Label className="text-base leading-tight font-extrabold">
+                    <Label className="text-base leading-tight font-bold">
                       b. Does the Learner have a PWD ID?
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
@@ -479,7 +479,7 @@ export default function Step3Background() {
                             ? "border-primary bg-primary text-primary-foreground shadow-md"
                             : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
                         )}>
-                        <span className="font-extrabold text-base leading-tight ">
+                        <span className="font-bold text-base leading-tight ">
                           No
                         </span>
                       </button>
@@ -492,7 +492,7 @@ export default function Step3Background() {
                             ? "border-primary bg-primary text-primary-foreground shadow-md"
                             : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
                         )}>
-                        <span className="font-extrabold text-base leading-tight ">
+                        <span className="font-bold text-base leading-tight ">
                           Yes
                         </span>
                       </button>

@@ -315,7 +315,7 @@ export default function SchoolProfileTab() {
     form.setValue(key, value, { shouldDirty: true, shouldValidate: true });
   };
   return (
-<div className="space-y-6">
+    <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <fieldset disabled={isArchived} className="space-y-8 group min-w-0">
@@ -520,15 +520,15 @@ export default function SchoolProfileTab() {
                       <FormItem>
                         <FormLabel>Official DepEd Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            className="font-bold" 
-                            placeholder="school.id@deped.edu.ph" 
-                            {...field} 
-                            value={field.value ?? ""} 
+                          <Input
+                            className="font-bold"
+                            placeholder="school.id@deped.edu.ph"
+                            {...field}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               const input = e.target;
                               const val = input.value;
-                              
+
                               // If field was empty and user types one char (not '@')
                               if (val.length === 1 && !field.value && val !== "@") {
                                 field.onChange(val + "@deped.edu.ph");
@@ -567,7 +567,7 @@ export default function SchoolProfileTab() {
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                   {/* Logo preview & upload */}
                   <div className="space-y-3">
-                    <h4 className="text-base leading-tight font-extrabold">Official School Logo</h4>
+                    <h4 className="text-base leading-tight font-bold">Official School Logo</h4>
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                       <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border bg">
                         {logoPreview ? (
@@ -625,7 +625,7 @@ export default function SchoolProfileTab() {
                   {/* Extracted Palette */}
                   {palette.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-base leading-tight font-extrabold">Official School Color</h4>
+                      <h4 className="text-base leading-tight font-bold">Official School Color</h4>
                       <p className="text-base leading-tight">
                         Select a color from your uploaded logo to apply to the system's buttons and menus.
                       </p>

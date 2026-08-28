@@ -66,7 +66,7 @@ export function HelpTooltip({ content, className }: HelpTooltipProps) {
       <button
         type="button"
         className={cn(
-          "inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-[10px] font-extrabold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500",
+          "inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-[10px] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500",
           className
         )}
         aria-label="Help"

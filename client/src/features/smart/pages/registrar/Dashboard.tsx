@@ -104,7 +104,7 @@ export default function RegistrarDashboardPage() {
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
           <AlertTriangle className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Dashboard</h2>
+        <h2 className="text-xl  text-gray-900 mb-2">Unable to Load Dashboard</h2>
         <p className="text-gray-600 mb-4">{error || "Unknown error"}</p>
         <Button onClick={() => void loadDashboard(false)} variant="outline">Try Again</Button>
       </div>
@@ -112,10 +112,10 @@ export default function RegistrarDashboardPage() {
   }
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Registrar Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Registrar Dashboard</h1>
           <p className="text-gray-600 mt-1">
             Real-time enrollment oversight with EnrollPro-backed student metrics.
           </p>
@@ -140,8 +140,8 @@ export default function RegistrarDashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Total Students</p>
-                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.stats.totalStudents}</p>
+                <p className="text-xs uppercase text-slate-500 ">Total Students</p>
+                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.stats.totalStudents}</p>
               </div>
               <Users className="w-7 h-7" style={{ color: colors.primary }} />
             </div>
@@ -155,8 +155,8 @@ export default function RegistrarDashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Sections</p>
-                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.stats.totalSections}</p>
+                <p className="text-xs uppercase text-slate-500 ">Sections</p>
+                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.stats.totalSections}</p>
               </div>
               <Server className="w-7 h-7 text-slate-700" />
             </div>
@@ -168,8 +168,8 @@ export default function RegistrarDashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Male / Female</p>
-                <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                <p className="text-xs uppercase text-slate-500 ">Male / Female</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {dashboard.stats.maleCount} / {dashboard.stats.femaleCount}
                 </p>
               </div>
@@ -183,8 +183,8 @@ export default function RegistrarDashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Data Issues</p>
-                <p className="text-3xl font-extrabold text-slate-900 mt-1">{dashboard.dataCompleteness.totalIssues}</p>
+                <p className="text-xs uppercase text-slate-500 ">Data Issues</p>
+                <p className="text-3xl font-bold text-slate-900 mt-1">{dashboard.dataCompleteness.totalIssues}</p>
               </div>
               <AlertTriangle className="w-7 h-7 text-amber-600" />
             </div>
@@ -220,7 +220,7 @@ export default function RegistrarDashboardPage() {
             {dashboard.sections.map((section) => (
               <div key={section.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-slate-900">{section.name}</p>
+                  <p className=" text-slate-900">{section.name}</p>
                   <Badge style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}>
                     {gradeLevelLabels[section.gradeLevel] || section.gradeLevel}
                   </Badge>

@@ -135,7 +135,7 @@ export default function Step2Family() {
     <div className="space-y-12">
 
       <div className="space-y-8">
-        <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+        <h3 className="text-base leading-tight font-bold uppercase  text-primary">
           Current Home Address
         </h3>
 
@@ -143,14 +143,14 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.houseNo"
-              className="text-base font-extrabold uppercase">
+              className="text-base font-bold uppercase">
               House No. / Street
             </Label>
             <Input
               autoComplete="off"
               id="currentAddress.houseNo"
               {...register("currentAddress.houseNo")}
-              className="h-11 font-extrabold uppercase"
+              className="h-11 font-bold uppercase"
               placeholder="e.g. 123 OR RIZAL STREET"
               onInput={(e) => {
                 (e.target as HTMLInputElement).value = (
@@ -162,14 +162,14 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="currentAddress.street"
-              className="text-base font-extrabold uppercase">
+              className="text-base font-bold uppercase">
               Sitio / Purok
             </Label>
             <Input
               autoComplete="off"
               id="currentAddress.street"
               {...register("currentAddress.street")}
-              className="h-11 font-extrabold uppercase"
+              className="h-11 font-bold uppercase"
               placeholder="e.g. RIZAL STREET"
               onInput={(e) => {
                 (e.target as HTMLInputElement).value = (
@@ -216,7 +216,7 @@ export default function Step2Family() {
           />
           <Label
             htmlFor="same-address"
-            className="text-base leading-tight font-extrabold cursor-pointer select-none">
+            className="text-base leading-tight font-bold cursor-pointer select-none">
             Permanent Address is same as Current Address
           </Label>
         </div>
@@ -229,21 +229,21 @@ export default function Step2Family() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden">
               <div className="pt-8 pb-1 space-y-6">
-                <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+                <h3 className="text-base leading-tight font-bold uppercase  text-primary">
                   Permanent Address
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.houseNo"
-                      className="text-base font-extrabold uppercase">
+                      className="text-base font-bold uppercase">
                       House No. / Street
                     </Label>
                     <Input
                       autoComplete="off"
                       id="permanentAddress.houseNo"
                       {...register("permanentAddress.houseNo")}
-                      className="h-11 font-extrabold uppercase"
+                      className="h-11 font-bold uppercase"
                       placeholder="e.g. 456"
                       onInput={(e) => {
                         (e.target as HTMLInputElement).value = (
@@ -255,14 +255,14 @@ export default function Step2Family() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="permanentAddress.street"
-                      className="text-base font-extrabold uppercase">
+                      className="text-base font-bold uppercase">
                       Sitio / Purok
                     </Label>
                     <Input
                       autoComplete="off"
                       id="permanentAddress.street"
                       {...register("permanentAddress.street")}
-                      className="h-11 font-extrabold uppercase"
+                      className="h-11 font-bold uppercase"
                       placeholder="e.g. MAGSAYSAY BLVD"
                       onInput={(e) => {
                         (e.target as HTMLInputElement).value = (
@@ -306,7 +306,7 @@ export default function Step2Family() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+            <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Mother&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -348,7 +348,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoMother"
-                className="text-base font-extrabold uppercase text-foreground cursor-pointer">
+                className="text-base font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -362,7 +362,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.lastName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 Last Name{" "}
                 {!hasNoMother && <span className="text-destructive">*</span>}
               </Label>
@@ -372,7 +372,7 @@ export default function Step2Family() {
                 {...register("mother.lastName")}
                 disabled={hasNoMother}
                 className={cn(
-                  "h-11 uppercase font-extrabold",
+                  "h-11 uppercase font-bold",
                   errors.mother?.lastName &&
                   "border-destructive focus-visible:ring-destructive",
                 )}
@@ -384,7 +384,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.lastName && (
-                <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.lastName.message}
                 </p>
@@ -394,7 +394,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.firstName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 First Name{" "}
                 {!hasNoMother && <span className="text-destructive">*</span>}
               </Label>
@@ -404,7 +404,7 @@ export default function Step2Family() {
                 {...register("mother.firstName")}
                 disabled={hasNoMother}
                 className={cn(
-                  "h-11 uppercase font-extrabold",
+                  "h-11 uppercase font-bold",
                   errors.mother?.firstName &&
                   "border-destructive focus-visible:ring-destructive",
                 )}
@@ -416,7 +416,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.firstName && (
-                <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.firstName.message}
                 </p>
@@ -426,7 +426,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="mother.middleName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 Middle Name
               </Label>
               <Input
@@ -434,7 +434,7 @@ export default function Step2Family() {
                 id="mother.middleName"
                 {...register("mother.middleName")}
                 disabled={hasNoMother}
-                className="h-11 uppercase font-extrabold"
+                className="h-11 uppercase font-bold"
                 placeholder="e.g. AQUINO or N/A"
                 onInput={(e) => {
                   (e.target as HTMLInputElement).value = (
@@ -448,7 +448,7 @@ export default function Step2Family() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+            <h3 className="text-base leading-tight font-bold uppercase  text-primary">
               Father&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -484,7 +484,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoFather"
-                className="text-base font-extrabold uppercase text-foreground cursor-pointer">
+                className="text-base font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -498,7 +498,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.lastName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 Last Name{" "}
                 {!hasNoFather && <span className="text-destructive">*</span>}
               </Label>
@@ -508,7 +508,7 @@ export default function Step2Family() {
                 {...register("father.lastName")}
                 disabled={hasNoFather}
                 className={cn(
-                  "h-11 uppercase font-extrabold",
+                  "h-11 uppercase font-bold",
                   errors.father?.lastName &&
                   "border-destructive focus-visible:ring-destructive",
                 )}
@@ -520,7 +520,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.lastName && (
-                <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.lastName.message}
                 </p>
@@ -530,7 +530,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.firstName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 First Name{" "}
                 {!hasNoFather && <span className="text-destructive">*</span>}
               </Label>
@@ -540,7 +540,7 @@ export default function Step2Family() {
                 {...register("father.firstName")}
                 disabled={hasNoFather}
                 className={cn(
-                  "h-11 uppercase font-extrabold",
+                  "h-11 uppercase font-bold",
                   errors.father?.firstName &&
                   "border-destructive focus-visible:ring-destructive",
                 )}
@@ -552,7 +552,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.firstName && (
-                <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+                <p className="text-base text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.firstName.message}
                 </p>
@@ -562,7 +562,7 @@ export default function Step2Family() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="father.middleName"
-                className="text-base font-extrabold uppercase">
+                className="text-base font-bold uppercase">
                 Middle Name
               </Label>
               <Input
@@ -570,7 +570,7 @@ export default function Step2Family() {
                 id="father.middleName"
                 {...register("father.middleName")}
                 disabled={hasNoFather}
-                className="h-11 uppercase font-extrabold"
+                className="h-11 uppercase font-bold"
                 placeholder="e.g. BAUTISTA or N/A"
                 onInput={(e) => {
                   (e.target as HTMLInputElement).value = (
@@ -586,14 +586,14 @@ export default function Step2Family() {
       <Separator className="opacity-50" />
 
       <div className="space-y-6">
-        <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+        <h3 className="text-base leading-tight font-bold uppercase  text-primary">
           Guardian Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <Label
               htmlFor="guardian.lastName"
-              className="text-base font-extrabold uppercase">
+              className="text-base font-bold uppercase">
               Last Name{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -604,7 +604,7 @@ export default function Step2Family() {
               id="guardian.lastName"
               {...register("guardian.lastName")}
               className={cn(
-                "h-11 uppercase font-extrabold",
+                "h-11 uppercase font-bold",
                 errors.guardian?.lastName &&
                 "border-destructive focus-visible:ring-destructive",
               )}
@@ -616,7 +616,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.lastName && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+              <p className="text-base text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.lastName.message}
               </p>
@@ -626,7 +626,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="guardian.firstName"
-              className="text-base font-extrabold uppercase">
+              className="text-base font-bold uppercase">
               First Name{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -637,7 +637,7 @@ export default function Step2Family() {
               id="guardian.firstName"
               {...register("guardian.firstName")}
               className={cn(
-                "h-11 uppercase font-extrabold",
+                "h-11 uppercase font-bold",
                 errors.guardian?.firstName &&
                 "border-destructive focus-visible:ring-destructive",
               )}
@@ -649,7 +649,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.firstName && (
-              <p className="text-base text-destructive font-extrabold flex items-center gap-1">
+              <p className="text-base text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.firstName.message}
               </p>
@@ -659,7 +659,7 @@ export default function Step2Family() {
           <div className="space-y-1.5">
             <Label
               htmlFor="guardianRelationship"
-              className="text-base font-extrabold uppercase">
+              className="text-base font-bold uppercase">
               Relationship to Learner{" "}
               {isGuardianRequired && (
                 <span className="text-destructive">*</span>
@@ -679,8 +679,8 @@ export default function Step2Family() {
                       isOtherRelationship
                         ? "OTHERS"
                         : GUARDIAN_RELATIONSHIP_OPTIONS.some(
-                            (o) => o.value === field.value,
-                          )
+                          (o) => o.value === field.value,
+                        )
                           ? (field.value ?? "")
                           : ""
                     }
@@ -702,9 +702,9 @@ export default function Step2Family() {
                       autoComplete="off"
                       placeholder="Please specify relationship"
                       className={cn(
-                        "h-11 font-extrabold uppercase",
+                        "h-11 font-bold uppercase",
                         errors.guardianRelationship &&
-                          "border-destructive focus-visible:ring-destructive",
+                        "border-destructive focus-visible:ring-destructive",
                       )}
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
@@ -723,237 +723,164 @@ export default function Step2Family() {
         <>
           <Separator className="opacity-50" />
 
-      <div className="space-y-4">
-        <Label className="text-base leading-tight font-extrabold uppercase  text-primary">
-          Who should we contact first?{" "}
-          <span className="text-destructive">*</span>
-        </Label>
+          <div className="space-y-4">
+            <Label className="text-base leading-tight font-bold uppercase  text-primary">
+              Who should we contact first?{" "}
+              <span className="text-destructive">*</span>
+            </Label>
 
-        <div
-          className={cn(
-            "grid grid-cols-1 gap-4",
-            activeContactsCount === 3
-              ? "md:grid-cols-3"
-              : activeContactsCount === 2
-                ? "md:grid-cols-2"
-                : "grid-cols-1",
-          )}>
-          {(
-            [
-              {
-                value: "MOTHER",
-                label: "Mother",
-                icon: Venus,
-                hide: !motherInfoFilled,
-              },
-              {
-                value: "FATHER",
-                label: "Father",
-                icon: Mars,
-                hide: !fatherInfoFilled,
-              },
-              {
-                value: "GUARDIAN",
-                label: data.guardianRelationship || "Guardian",
-                icon: User,
-                hide: !guardianInfoFilled,
-              },
-            ] as const
-          )
-            .filter((option) => !option.hide)
-            .map((option) => {
-              const firstName =
-                option.value === "MOTHER"
-                  ? data.mother?.firstName
-                  : option.value === "FATHER"
-                    ? data.father?.firstName
-                    : data.guardian?.firstName;
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4",
+                activeContactsCount === 3
+                  ? "md:grid-cols-3"
+                  : activeContactsCount === 2
+                    ? "md:grid-cols-2"
+                    : "grid-cols-1",
+              )}>
+              {(
+                [
+                  {
+                    value: "MOTHER",
+                    label: "Mother",
+                    icon: Venus,
+                    hide: !motherInfoFilled,
+                  },
+                  {
+                    value: "FATHER",
+                    label: "Father",
+                    icon: Mars,
+                    hide: !fatherInfoFilled,
+                  },
+                  {
+                    value: "GUARDIAN",
+                    label: data.guardianRelationship || "Guardian",
+                    icon: User,
+                    hide: !guardianInfoFilled,
+                  },
+                ] as const
+              )
+                .filter((option) => !option.hide)
+                .map((option) => {
+                  const firstName =
+                    option.value === "MOTHER"
+                      ? data.mother?.firstName
+                      : option.value === "FATHER"
+                        ? data.father?.firstName
+                        : data.guardian?.firstName;
 
-              const displayLabel =
-                firstName &&
-                  firstName !== "N/A" &&
-                  firstName !== "INFORMATION NOT AVAILABLE" &&
-                  firstName !== "Information not available"
-                  ? `${option.label} (${firstName})`
-                  : option.label;
+                  const displayLabel =
+                    firstName &&
+                      firstName !== "N/A" &&
+                      firstName !== "INFORMATION NOT AVAILABLE" &&
+                      firstName !== "Information not available"
+                      ? `${option.label} (${firstName})`
+                      : option.label;
 
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    setValue("primaryContact", option.value, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
-                    data.primaryContact === option.value
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border bg-muted hover:bg-muted/50",
-                  )}>
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                      data.primaryContact === option.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary",
-                    )}>
-                    <option.icon className="w-6 h-6" />
-                  </div>
-                  <span
-                    className={cn(
-                      "font-extrabold text-base leading-tight uppercase  text-center",
-                      data.primaryContact === option.value
-                        ? "text-primary"
-                        : "text-foreground",
-                    )}>
-                    {displayLabel}
-                  </span>
-                </button>
-              );
-            })}
-        </div>
-
-        <AnimatedError error={errors.primaryContact?.message as string || errors.primaryContact as unknown as string} />
-      </div>
-
-      <div className="space-y-10">
-        <div className="space-y-6">
-          <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
-            Contact Details
-          </h3>
-
-          {!data.primaryContact && (
-            <p className="text-base leading-tight text-foreground italic font-bold">
-              Select a primary contact above before entering contact details.
-            </p>
-          )}
-
-
-          <div
-            className={cn(
-              "grid grid-cols-1 gap-8 items-start",
-              [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length >= 3
-                ? "md:grid-cols-3"
-                : [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length === 2
-                  ? "md:grid-cols-2"
-                  : "md:grid-cols-1"
-            )}>
-            {data.primaryContact && (
-              <div className="space-y-4">
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-base leading-tight font-extrabold uppercase  text-primary">
-                    Primary Contact
-                  </h4>
-                  <Label className="text-base font-extrabold uppercase text-foreground  flex items-center gap-2">
-                    {data.primaryContact === "MOTHER" ? (
-                      <Venus className="w-3 h-3" />
-                    ) : data.primaryContact === "FATHER" ? (
-                      <Mars className="w-3 h-3" />
-                    ) : (
-                      <User className="w-3 h-3" />
-                    )}
-                    {data.primaryContact === "MOTHER"
-                      ? "Mother's"
-                      : data.primaryContact === "FATHER"
-                        ? "Father's"
-                        : `${data.guardianRelationship || "Guardian"}'s`}{" "}
-                    Contact Information
-                  </Label>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="contactNumber"
-                      className="text-base font-extrabold uppercase flex items-center gap-1">
-                      Contact Number <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="contactNumber"
-                      autoComplete="off"
-                      {...register("contactNumber")}
-                      placeholder="09XX-XXX-XXXX"
-                      className={cn(
-                        "h-11 font-extrabold bg-muted",
-                        errors.contactNumber &&
-                        "border-destructive focus-visible:ring-destructive",
-                      )}
-                      inputMode="tel"
-                      maxLength={13}
-                      onInput={(event) => {
-                        const input = event.target as HTMLInputElement;
-                        input.value = formatContactNumber(input.value);
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setValue("primaryContact", option.value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }}
-                    />
-                    <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
-                  </div>
-                </div>
-              </div>
-            )}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
+                        data.primaryContact === option.value
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-border bg-muted hover:bg-muted/50",
+                      )}>
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                          data.primaryContact === option.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                        )}>
+                        <option.icon className="w-6 h-6" />
+                      </div>
+                      <span
+                        className={cn(
+                          "font-bold text-base leading-tight uppercase  text-center",
+                          data.primaryContact === option.value
+                            ? "text-primary"
+                            : "text-foreground",
+                        )}>
+                        {displayLabel}
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
 
-            {(
-              [
-                {
-                  id: "mother",
-                  label: "Mother",
-                  icon: Venus,
-                  active: motherInfoFilled && data.primaryContact !== "MOTHER",
-                  path: "mother",
-                },
-                {
-                  id: "father",
-                  label: "Father",
-                  icon: Mars,
-                  active: fatherInfoFilled && data.primaryContact !== "FATHER",
-                  path: "father",
-                },
-                {
-                  id: "guardian",
-                  label: data.guardianRelationship || "Guardian",
-                  icon: User,
-                  active:
-                    guardianInfoFilled && data.primaryContact !== "GUARDIAN",
-                  path: "guardian",
-                },
-              ] as const
-            )
-              .filter((secondary) => secondary.active)
-              .map((secondary) => {
-                const contactField = `${secondary.path}.contactNumber` as
-                  | "mother.contactNumber"
-                  | "father.contactNumber"
-                  | "guardian.contactNumber";
+            <AnimatedError error={errors.primaryContact?.message as string || errors.primaryContact as unknown as string} />
+          </div>
 
-                return (
-                  <div
-                    key={secondary.id}
-                    className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
+          <div className="space-y-10">
+            <div className="space-y-6">
+              <h3 className="text-base leading-tight font-bold uppercase  text-primary">
+                Contact Details
+              </h3>
+
+              {!data.primaryContact && (
+                <p className="text-base leading-tight text-foreground italic font-bold">
+                  Select a primary contact above before entering contact details.
+                </p>
+              )}
+
+
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-8 items-start",
+                  [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length >= 3
+                    ? "md:grid-cols-3"
+                    : [motherInfoFilled, fatherInfoFilled, guardianInfoFilled].filter(Boolean).length === 2
+                      ? "md:grid-cols-2"
+                      : "md:grid-cols-1"
+                )}>
+                {data.primaryContact && (
+                  <div className="space-y-4">
                     <div className="flex flex-col gap-1">
-                      <h4 className="text-base leading-tight font-extrabold uppercase  text-foreground">
-                        Secondary Contact (Optional)
+                      <h4 className="text-base leading-tight font-bold uppercase  text-primary">
+                        Primary Contact
                       </h4>
-                      <Label className="text-base font-extrabold uppercase text-foreground/60  flex items-center gap-2">
-                        <secondary.icon className="w-3 h-3" />
-                        {secondary.label}'s Contact Information
+                      <Label className="text-base font-bold uppercase text-foreground  flex items-center gap-2">
+                        {data.primaryContact === "MOTHER" ? (
+                          <Venus className="w-3 h-3" />
+                        ) : data.primaryContact === "FATHER" ? (
+                          <Mars className="w-3 h-3" />
+                        ) : (
+                          <User className="w-3 h-3" />
+                        )}
+                        {data.primaryContact === "MOTHER"
+                          ? "Mother's"
+                          : data.primaryContact === "FATHER"
+                            ? "Father's"
+                            : `${data.guardianRelationship || "Guardian"}'s`}{" "}
+                        Contact Information
                       </Label>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-border bg-muted/20 shadow-sm">
+                    <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
                       <div className="space-y-1.5">
                         <Label
-                          htmlFor={contactField}
-                          className="text-base font-extrabold uppercase">
-                          Contact Number
+                          htmlFor="contactNumber"
+                          className="text-base font-bold uppercase flex items-center gap-1">
+                          Contact Number <span className="text-destructive">*</span>
                         </Label>
                         <Input
-                          id={contactField}
+                          id="contactNumber"
                           autoComplete="off"
-                          {...register(contactField)}
+                          {...register("contactNumber")}
                           placeholder="09XX-XXX-XXXX"
-                          className="h-11 font-extrabold bg-muted"
+                          className={cn(
+                            "h-11 font-bold bg-muted",
+                            errors.contactNumber &&
+                            "border-destructive focus-visible:ring-destructive",
+                          )}
                           inputMode="tel"
                           maxLength={13}
                           onInput={(event) => {
@@ -961,14 +888,87 @@ export default function Step2Family() {
                             input.value = formatContactNumber(input.value);
                           }}
                         />
+                        <AnimatedError error={errors.contactNumber?.message as string || errors.contactNumber as unknown as string} />
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                )}
+
+                {(
+                  [
+                    {
+                      id: "mother",
+                      label: "Mother",
+                      icon: Venus,
+                      active: motherInfoFilled && data.primaryContact !== "MOTHER",
+                      path: "mother",
+                    },
+                    {
+                      id: "father",
+                      label: "Father",
+                      icon: Mars,
+                      active: fatherInfoFilled && data.primaryContact !== "FATHER",
+                      path: "father",
+                    },
+                    {
+                      id: "guardian",
+                      label: data.guardianRelationship || "Guardian",
+                      icon: User,
+                      active:
+                        guardianInfoFilled && data.primaryContact !== "GUARDIAN",
+                      path: "guardian",
+                    },
+                  ] as const
+                )
+                  .filter((secondary) => secondary.active)
+                  .map((secondary) => {
+                    const contactField = `${secondary.path}.contactNumber` as
+                      | "mother.contactNumber"
+                      | "father.contactNumber"
+                      | "guardian.contactNumber";
+
+                    return (
+                      <div
+                        key={secondary.id}
+                        className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
+                        <div className="flex flex-col gap-1">
+                          <h4 className="text-base leading-tight font-bold uppercase  text-foreground">
+                            Secondary Contact (Optional)
+                          </h4>
+                          <Label className="text-base font-bold uppercase text-foreground/60  flex items-center gap-2">
+                            <secondary.icon className="w-3 h-3" />
+                            {secondary.label}'s Contact Information
+                          </Label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 p-5 rounded-2xl border border-border bg-muted/20 shadow-sm">
+                          <div className="space-y-1.5">
+                            <Label
+                              htmlFor={contactField}
+                              className="text-base font-bold uppercase">
+                              Contact Number
+                            </Label>
+                            <Input
+                              id={contactField}
+                              autoComplete="off"
+                              {...register(contactField)}
+                              placeholder="09XX-XXX-XXXX"
+                              className="h-11 font-bold bg-muted"
+                              inputMode="tel"
+                              maxLength={13}
+                              onInput={(event) => {
+                                const input = event.target as HTMLInputElement;
+                                input.value = formatContactNumber(input.value);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </>
       )}
     </div>

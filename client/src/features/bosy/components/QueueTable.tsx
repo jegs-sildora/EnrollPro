@@ -62,7 +62,7 @@ function statusBadge(item: BOSYQueueItem) {
   if (item.status === "PENDING_CONFIRMATION")
     return (
       <Badge
-        className="rounded-md border-amber-100 bg-amber-50 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-amber-700 hover:bg-amber-50">
+        className="rounded-md border-amber-100 bg-amber-50 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-amber-700 hover:bg-amber-50">
         Pending
       </Badge>
     );
@@ -70,7 +70,7 @@ function statusBadge(item: BOSYQueueItem) {
     return (
       <div className="flex max-w-72 flex-col items-center gap-1.5 text-center">
         <Badge
-          className="rounded-md border-amber-200 bg-amber-50 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-amber-800 hover:bg-amber-50">
+          className="rounded-md border-amber-200 bg-amber-50 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-amber-800 hover:bg-amber-50">
           Temporarily Enrolled
         </Badge>
         {item.missingDocuments.length > 0 && (
@@ -83,21 +83,21 @@ function statusBadge(item: BOSYQueueItem) {
   if (item.status === "READY_FOR_SECTIONING")
     return (
       <Badge
-        className="rounded-md border-blue-700 bg-blue-600 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-white hover:bg-blue-600">
+        className="rounded-md border-blue-700 bg-blue-600 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-white hover:bg-blue-600">
         Ready for Section Assignment
       </Badge>
     );
   if (item.status === "OFFICIALLY_ENROLLED")
     return (
       <Badge
-        className="rounded-md border-emerald-700 bg-emerald-600 px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide text-white hover:bg-emerald-600">
+        className="rounded-md border-emerald-700 bg-emerald-600 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-white hover:bg-emerald-600">
         Enrolled
       </Badge>
     );
   return (
     <Badge
       variant="outline"
-      className="rounded-md px-2.5 py-0.5 text-sm font-extrabold uppercase tracking-wide">
+      className="rounded-md px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide">
       {formatApplicationStatus(item.status)}
     </Badge>
   );
@@ -146,7 +146,7 @@ function ActionMenuButton({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem
-          className="cursor-pointer text-sm font-extrabold"
+          className="cursor-pointer text-sm font-bold"
           onSelect={onSelect}
         >
           {label}
@@ -204,7 +204,7 @@ function QueueMobileCard({
         <Button
           size="sm"
           variant="outline"
-          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
           disabled={isConfirming || isBusy}
           onClick={() => onConfirmSingle(item.applicationId)}>
           {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -221,7 +221,7 @@ function QueueMobileCard({
         <Button
           size="sm"
           variant="outline"
-          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+          className="h-11 w-full rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
           disabled={isBusy}
           onClick={() => onRevokeConfirmation(item)}>
           {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -287,12 +287,12 @@ function QueueMobileCard({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-2">
               <p
-                className="truncate text-base font-extrabold uppercase leading-tight text-foreground"
+                className="truncate text-base font-bold uppercase leading-tight text-foreground"
                 title={learnerName}>
                 {learnerName}
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={cn("rounded-md px-3 py-1 text-sm font-extrabold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
+                <Badge className={cn("rounded-md px-3 py-1 text-sm font-bold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
                   {item.gradeLevelName}
                 </Badge>
                 {statusBadge(item)}
@@ -310,14 +310,14 @@ function QueueMobileCard({
 
           <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-left">
             <div className="min-w-0">
-              <p className="text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
+              <p className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
                 Last Year Result
               </p>
               <div className="mt-1 flex flex-col items-start gap-1">
                 {item.academicStatus ? (
                   <Badge
                     className={cn(
-                      "rounded-md border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
+                      "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white",
                       item.academicStatus === "PROMOTED"
                         ? "bg-emerald-600 hover:bg-emerald-600"
                         : item.academicStatus === "CONDITIONALLY_PROMOTED"
@@ -327,7 +327,7 @@ function QueueMobileCard({
                     {formatAcademicStatusLabel(item.academicStatus)}
                   </Badge>
                 ) : (
-                  <span className="text-sm font-extrabold text-foreground">—</span>
+                  <span className="text-sm font-bold text-foreground">—</span>
                 )}
                 {genAve && item.academicStatus === "PROMOTED" ? (
                   <span className="truncate text-sm font-bold text-foreground" title={`Gen Ave: ${genAve}`}>
@@ -434,12 +434,12 @@ export function QueueTable({
               />
               <div className="flex min-w-0 flex-col text-left leading-tight">
                 <span
-                  className="truncate text-base font-extrabold uppercase leading-tight xl:whitespace-normal"
+                  className="truncate text-base font-bold uppercase leading-tight xl:whitespace-normal"
                   title={learnerName}>
                   {learnerName}
                 </span>
                 <span
-                  className="mt-1 truncate font-extrabold uppercase text-foreground xl:whitespace-normal"
+                  className="mt-1 truncate font-bold uppercase text-foreground xl:whitespace-normal"
                   title={r.lrn ?? "NO LRN"}>
                   LRN: {r.lrn ?? "NO LRN"}
                 </span>
@@ -471,13 +471,13 @@ export function QueueTable({
           const deficiencyText = row.original.priorYearDeficiencyNote;
           if (!s)
             return (
-              <div className="py-3 text-center text-base font-extrabold text-foreground">—</div>
+              <div className="py-3 text-center text-base font-bold text-foreground">—</div>
             );
           return (
             <div className="flex flex-col items-center gap-1 py-3 text-center">
               <Badge
                 className={cn(
-                  "rounded-md border-transparent px-2.5 py-0.5 font-extrabold uppercase tracking-wide text-white",
+                  "rounded-md border-transparent px-2.5 py-0.5 font-bold uppercase tracking-wide text-white",
                   s === "PROMOTED"
                     ? "bg-emerald-600 hover:bg-emerald-600"
                     : s === "CONDITIONALLY_PROMOTED"
@@ -488,12 +488,12 @@ export function QueueTable({
                 {formatAcademicStatusLabel(s)}
               </Badge>
               {genAve && (
-                <span className="max-w-full truncate text-sm font-extrabold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
+                <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground uppercase" title={`Gen Ave: ${genAve}`}>
                   Final Gen Ave: {genAve}
                 </span>
               )}
               {deficiencyText && (
-                <span className="max-w-full truncate text-sm font-extrabold leading-tight text-amber-800">
+                <span className="max-w-full truncate text-sm font-bold leading-tight text-amber-800">
                   {formatDeficiencyText(deficiencyText)}
                 </span>
               )}
@@ -530,7 +530,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                 disabled={isConfirming || isBusy}
                 onClick={() => onConfirmSingle(r.applicationId)}>
                 {isConfirming && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -555,7 +555,7 @@ export function QueueTable({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-extrabold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+                className="h-9 min-w-[150px] cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary/5 px-4 text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                 disabled={isBusy}
                 onClick={() => onRevokeConfirmation(r)}>
                 {isBusy && <Loader2 className="mr-2 h-4 w-4 " />}
@@ -623,7 +623,7 @@ export function QueueTable({
                 <div className="flex h-64 flex-col items-center justify-center space-y-4">
                   <CheckCircle2 className="h-10 w-10 animate-pulse text-slate-400" />
                   <div className="flex flex-col items-center space-y-1">
-                    <p className="text-lg font-extrabold text-slate-600">Searching...</p>
+                    <p className="text-lg font-bold text-slate-600">Searching...</p>
                     <p className="text-sm text-slate-400">Scanning DepEd records...</p>
                   </div>
                 </div>
@@ -663,7 +663,7 @@ export function QueueTable({
                   <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
-                  <p className="text-base font-extrabold text-foreground">
+                  <p className="text-base font-bold text-foreground">
                     No continuing learners match this enrollment status.
                   </p>
                   <p className="px-4 text-center text-sm">
@@ -684,7 +684,7 @@ export function QueueTable({
                   <div className="h-12 w-12 rounded-md bg-emerald-50 flex items-center justify-center mb-1">
                     <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                   </div>
-                  <p className="text-base font-extrabold text-foreground">
+                  <p className="text-base font-bold text-foreground">
                     No continuing learners match this enrollment status.
                   </p>
                   <p className="text-sm">

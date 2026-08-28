@@ -742,7 +742,7 @@ export function StudentDetailPanel({
         {showHeader && (
           <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
             <div>
-              <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
+              <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
                 <Skeleton className="h-6 w-40" />
               </SheetTitle>
               <SheetDescription
@@ -769,7 +769,7 @@ export function StudentDetailPanel({
       <div className="flex flex-col h-full overflow-hidden bg-background">
         {showHeader && (
           <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-            <SheetTitle className="text-base sm:text-lg font-extrabold  uppercase">
+            <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
               Error
             </SheetTitle>
           </div>
@@ -859,9 +859,9 @@ export function StudentDetailPanel({
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       {showHeader && (
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-extrabold relative">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-bold relative">
           <div>
-            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-extrabold  uppercase flex items-center gap-2">
+            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-bold  uppercase flex items-center gap-2">
               {isJhsCompleter ? (
                 <>
                   Alumni Record Details
@@ -896,7 +896,7 @@ export function StudentDetailPanel({
       )}
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-extrabold">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">
         {/* Summary Block */}
         <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
           <div className="flex flex-col items-center mb-6 pt-2">
@@ -907,7 +907,7 @@ export function StudentDetailPanel({
               onEnlarge={() => setIsPhotoEnlarged(true)}
               alt={student.fullName}
               fallbackIcon={
-                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl bg-primary">
+                <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl bg-primary">
                   {((f, l) => `${f}${l}`)(
                     String(student.firstName || "")
                       .trim()
@@ -922,7 +922,7 @@ export function StudentDetailPanel({
               }
             />
             <div className="text-center mt-4">
-              <h3 className="font-extrabold text-lg sm:text-xl uppercase  break-words">
+              <h3 className="font-bold text-lg sm:text-xl uppercase  break-words">
                 {isEditing
                   ? `${profileForm.lastName || ""}, ${profileForm.firstName || ""} ${profileForm.middleName ? profileForm.middleName[0] + "." : ""}`
                     .trim()
@@ -930,7 +930,7 @@ export function StudentDetailPanel({
                   : student.fullName}
               </h3>
               <div className="flex flex-col items-center justify-center gap-2 mt-1">
-                <div className="flex items-center justify-center gap-2 font-extrabold">
+                <div className="flex items-center justify-center gap-2 font-bold">
                   {isJhsCompleter ? (
                     <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
                       JHS Completer
@@ -941,13 +941,13 @@ export function StudentDetailPanel({
                     </Badge>
                   )}
                   {!isJhsCompleter && student.applicantType === "LATE_ENROLLEE" && (
-                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-extrabold">
+                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1 px-3 py-1 rounded-md uppercase  shadow-sm font-bold">
                       Late Enrollee
                     </Badge>
                   )}
                 </div>
                 {(student.isRemedialRequired || (student.academicDeficiencies && student.academicDeficiencies.length > 0) || (student.remedialClasses && student.remedialClasses.length > 0)) && (
-                  <Badge className="bg-amber-500 text-white hover:bg-amber-600 gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-extrabold">
+                  <Badge className="bg-amber-500 text-white hover:bg-amber-600 gap-1 px-3 py-1 rounded-md uppercase shadow-sm font-bold">
                     WITH BACK SUBJECTS
                   </Badge>
                 )}
@@ -956,7 +956,7 @@ export function StudentDetailPanel({
                 <div className="mt-4 flex justify-center w-full px-2">
                   <Button
                     variant="default"
-                    className="font-extrabold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
+                    className="font-bold text-sm h-10 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-md w-full max-w-sm rounded-md transition-all active:scale-[0.98]"
                     onClick={handleEditClick}>
                     <UserRoundPen className="mr-2 h-5 w-5 shrink-0" />
                     Edit Learner Data
@@ -973,7 +973,7 @@ export function StudentDetailPanel({
                   Grade Level & Section
                 </p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-base font-extrabold text-foreground">
+                  <span className="text-base font-bold text-foreground">
                     {student.gradeLevel}
                     {student.enrollment?.section && ` - ${student.enrollment.section}`}
                   </span>
@@ -982,7 +982,7 @@ export function StudentDetailPanel({
                       <TooltipTrigger asChild>
                         <Badge
                           variant="outline"
-                          className="font-extrabold px-2 py-0 rounded-md cursor-help"
+                          className="font-bold px-2 py-0 rounded-md cursor-help"
                         >
                           {getProgramBadge(student.applicantType).short}
                         </Badge>
@@ -1047,11 +1047,11 @@ export function StudentDetailPanel({
         {/* Enrollment Information Section */}
         {isJhsCompleter ? (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden border-amber-200">
-            <div className="p-3 font-extrabold text-base leading-tight bg-amber-50 text-amber-700 border-b border-amber-200 flex items-center gap-2">
+            <div className="p-3 font-bold text-base leading-tight bg-amber-50 text-amber-700 border-b border-amber-200 flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-amber-700" />
               Completion Record
             </div>
-            <div className="text-base leading-tight font-extrabold divide-y divide-amber-200">
+            <div className="text-base leading-tight font-bold divide-y divide-amber-200">
               <div className="grid grid-cols-[180px_1fr] divide-x divide-amber-200">
                 <div className="p-3 text-foreground bg-amber-50/50">School Year:</div>
                 <div className="p-3 bg-amber-50/50">{displaySchoolYear}</div>
@@ -1066,11 +1066,11 @@ export function StudentDetailPanel({
           </div>
         ) : (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-            <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+            <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-primary" />
               Enrollment Information
             </div>
-            <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-extrabold">
+            <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
               <span className="text-foreground">School Year:</span>
               <span>{student.schoolYear}</span>
               <span className="text-foreground">Enrolled At:</span>
@@ -1098,17 +1098,17 @@ export function StudentDetailPanel({
         {/* Lifecycle Outcome (if any) */}
         {student.enrollment?.eosyStatus && (
           <div className="border rounded-md mb-4 border-dashed bg-muted/30 overflow-hidden">
-            <div className="p-3 font-extrabold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
+            <div className="p-3 font-bold text-base leading-tight bg-muted/50 border-b flex items-center gap-2 text-primary">
               <BadgeAlert className="h-4 w-4" />
               Lifecycle Outcome
             </div>
             <div className="p-4 text-base leading-tight space-y-2">
-              <p className="font-extrabold text-primary uppercase">
+              <p className="font-bold text-primary uppercase">
                 {formatEosyStatus(student.enrollment.eosyStatus)}
               </p>
               {student.enrollment.transferOutDate && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.transferOutDate)}
@@ -1116,7 +1116,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutSchoolName && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     To:
                   </span>
                   {student.enrollment.transferOutSchoolName}
@@ -1124,7 +1124,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutReason && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.transferOutReason}
@@ -1132,7 +1132,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutDate && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.dropOutDate)}
@@ -1140,7 +1140,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutReason && (
                 <p className="text-base">
-                  <span className="text-foreground mr-2 font-extrabold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.dropOutReason}
@@ -1158,7 +1158,7 @@ export function StudentDetailPanel({
             id="learner-edit-form"
             onSubmit={submitProfileUpdate}
             className="space-y-6 bg-card border rounded-lg p-5 mt-4 shadow-sm">
-            <h3 className="font-extrabold text-lg text-primary flex items-center gap-2 mb-2">
+            <h3 className="font-bold text-lg text-primary flex items-center gap-2 mb-2">
               <UserRoundPen className="h-5 w-5" />
               Update Learner Profile
             </h3>
@@ -1166,7 +1166,7 @@ export function StudentDetailPanel({
             {/* Step I: Personal Information */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">
+                <h3 className="text-lg font-bold uppercase text-primary">
                   I. Personal Information
                 </h3>
               </div>
@@ -1174,7 +1174,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="firstName"
-                    className="font-extrabold text-base uppercase flex gap-1">
+                    className="font-bold text-base uppercase flex gap-1">
                     First Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -1191,14 +1191,14 @@ export function StudentDetailPanel({
                         firstName: e.target.value,
                       }))
                     }
-                    className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`font-bold text-base leading-tight bg-background uppercase ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
                   <AnimatedError error={errors.firstName} />
                 </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="lastName"
-                    className="font-extrabold text-base uppercase flex gap-1">
+                    className="font-bold text-base uppercase flex gap-1">
                     Last Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -1215,14 +1215,14 @@ export function StudentDetailPanel({
                         lastName: e.target.value,
                       }))
                     }
-                    className={`font-extrabold text-base leading-tight bg-background uppercase ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`font-bold text-base leading-tight bg-background uppercase ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
                   <AnimatedError error={errors.lastName} />
                 </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="middleName"
-                    className="font-extrabold text-base uppercase">
+                    className="font-bold text-base uppercase">
                     Middle Name
                   </Label>
                   <Input
@@ -1239,13 +1239,13 @@ export function StudentDetailPanel({
                         middleName: e.target.value,
                       }))
                     }
-                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                    className="font-bold text-base leading-tight bg-background uppercase"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="suffix"
-                    className="font-extrabold text-base uppercase">
+                    className="font-bold text-base uppercase">
                     Extension Name
                   </Label>
                   <Select
@@ -1256,7 +1256,7 @@ export function StudentDetailPanel({
                         suffix: val === "NONE" ? "" : val,
                       }))
                     }>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight">
                       <SelectValue placeholder="Select Extension" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1273,7 +1273,7 @@ export function StudentDetailPanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="birthDate"
-                    className="font-extrabold text-base uppercase flex gap-1">
+                    className="font-bold text-base uppercase flex gap-1">
                     Date of Birth <span className="text-destructive">*</span>
                   </Label>
                   <HybridDatePicker
@@ -1281,14 +1281,14 @@ export function StudentDetailPanel({
                     onChange={(val) =>
                       setProfileForm((p) => ({ ...p, birthDate: val }))
                     }
-                    className={`font-extrabold text-base leading-tight bg-background ${errors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`font-bold text-base leading-tight bg-background ${errors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
                   <AnimatedError error={errors.birthDate} />
                 </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="sex"
-                    className="font-extrabold text-base uppercase flex gap-1">
+                    className="font-bold text-base uppercase flex gap-1">
                     Sex <span className="text-destructive">*</span>
                   </Label>
                   <Select
@@ -1297,7 +1297,7 @@ export function StudentDetailPanel({
                       setProfileForm((p) => ({ ...p, sex: val }))
                     }>
                     <SelectTrigger
-                      className={`bg-background font-extrabold text-base leading-tight ${errors.sex ? "border-destructive focus-visible:ring-destructive" : ""}`}>
+                      className={`bg-background font-bold text-base leading-tight ${errors.sex ? "border-destructive focus-visible:ring-destructive" : ""}`}>
                       <SelectValue placeholder="Select Sex" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1310,14 +1310,14 @@ export function StudentDetailPanel({
               </div>
 
               <div className="pt-4 mt-4 border-t border-border/40">
-                <h4 className="text-base font-extrabold uppercase text-foreground mb-4">
+                <h4 className="text-base font-bold uppercase text-foreground mb-4">
                   Address
                 </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                   <div className="space-y-2">
                     <Label
                       htmlFor="houseNoStreet"
-                      className="font-extrabold text-base uppercase">
+                      className="font-bold text-base uppercase">
                       House No. / Street
                     </Label>
                     <Input
@@ -1335,13 +1335,13 @@ export function StudentDetailPanel({
                         }))
                       }
                       placeholder="e.g. 123 OR RIZAL STREET"
-                      className="font-extrabold text-base leading-tight bg-background uppercase"
+                      className="font-bold text-base leading-tight bg-background uppercase"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label
                       htmlFor="sitioPurok"
-                      className="font-extrabold text-base uppercase">
+                      className="font-bold text-base uppercase">
                       Sitio / Purok
                     </Label>
                     <Input
@@ -1359,7 +1359,7 @@ export function StudentDetailPanel({
                         }))
                       }
                       placeholder="e.g. PUROK 1"
-                      className="font-extrabold text-base leading-tight bg-background uppercase"
+                      className="font-bold text-base leading-tight bg-background uppercase"
                     />
                   </div>
                 </div>
@@ -1398,13 +1398,13 @@ export function StudentDetailPanel({
             {/* Step II: Family Information */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">
+                <h3 className="text-lg font-bold uppercase text-primary">
                   II. Family Information
                 </h3>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary flex gap-1">
+                <Label className="font-bold text-base uppercase text-primary flex gap-1">
                   Primary Emergency Contact{" "}
                   <span className="text-destructive">*</span>
                 </Label>
@@ -1465,7 +1465,7 @@ export function StudentDetailPanel({
                         </div>
                         <span
                           className={cn(
-                            "font-extrabold text-base leading-tight uppercase text-center",
+                            "font-bold text-base leading-tight uppercase text-center",
                             profileForm.primaryContact === option.value
                               ? "text-primary"
                               : "text-foreground",
@@ -1480,7 +1480,7 @@ export function StudentDetailPanel({
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">
+                <Label className="font-bold text-base uppercase text-primary">
                   Mother's Maiden Name
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1498,7 +1498,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="FIRST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.motherMiddleName}
@@ -1514,7 +1514,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="MIDDLE NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.motherLastName}
@@ -1530,7 +1530,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="LAST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     maxLength={11}
@@ -1548,13 +1548,13 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="CONTACT NO. (09XXXXXXXXX)"
-                    className="font-extrabold text-base leading-tight bg-background h-11"
+                    className="font-bold text-base leading-tight bg-background h-11"
                   />
                 </div>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">
+                <Label className="font-bold text-base uppercase text-primary">
                   Father's Name
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1572,7 +1572,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="FIRST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.fatherMiddleName}
@@ -1588,7 +1588,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="MIDDLE NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.fatherLastName}
@@ -1604,7 +1604,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="LAST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     maxLength={11}
@@ -1622,13 +1622,13 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="CONTACT NO. (09XXXXXXXXX)"
-                    className="font-extrabold text-base leading-tight bg-background h-11"
+                    className="font-bold text-base leading-tight bg-background h-11"
                   />
                 </div>
               </div>
 
               <div className="space-y-3 pt-3 border-t border-border/40">
-                <Label className="font-extrabold text-base uppercase text-primary">
+                <Label className="font-bold text-base uppercase text-primary">
                   Guardian's Name
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1646,7 +1646,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="FIRST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.guardianMiddleName}
@@ -1662,7 +1662,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="MIDDLE NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     value={profileForm.guardianLastName}
@@ -1678,7 +1678,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="LAST NAME"
-                    className="font-extrabold text-base leading-tight bg-background uppercase h-11"
+                    className="font-bold text-base leading-tight bg-background uppercase h-11"
                   />
                   <Input
                     maxLength={11}
@@ -1696,7 +1696,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="CONTACT NO. (09XXXXXXXXX)"
-                    className="font-extrabold text-base leading-tight bg-background h-11"
+                    className="font-bold text-base leading-tight bg-background h-11"
                   />
                 </div>
               </div>
@@ -1705,13 +1705,13 @@ export function StudentDetailPanel({
             {/* Step III: Background & Special Categories */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 border-b pb-2">
-                <h3 className="text-lg font-extrabold uppercase text-primary">
+                <h3 className="text-lg font-bold uppercase text-primary">
                   III. Background & Special Categories
                 </h3>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     IP Community
                   </Label>
                   <Select
@@ -1719,7 +1719,7 @@ export function StudentDetailPanel({
                     onValueChange={(val) =>
                       setProfileForm((p) => ({ ...p, isIpCommunity: val }))
                     }>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1743,13 +1743,13 @@ export function StudentDetailPanel({
                           }))
                         }
                         placeholder="SPECIFY IP GROUP"
-                        className="font-extrabold text-base leading-tight bg-background uppercase"
+                        className="font-bold text-base leading-tight bg-background uppercase"
                       />
                     </div>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     4Ps Beneficiary
                   </Label>
                   <Select
@@ -1757,7 +1757,7 @@ export function StudentDetailPanel({
                     onValueChange={(val) =>
                       setProfileForm((p) => ({ ...p, is4PsBeneficiary: val }))
                     }>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1767,7 +1767,7 @@ export function StudentDetailPanel({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     Balik-Aral
                   </Label>
                   <Select
@@ -1775,7 +1775,7 @@ export function StudentDetailPanel({
                     onValueChange={(val) =>
                       setProfileForm((p) => ({ ...p, isBalikAral: val }))
                     }>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1785,7 +1785,7 @@ export function StudentDetailPanel({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     Disability Type
                   </Label>
                   <Select
@@ -1793,7 +1793,7 @@ export function StudentDetailPanel({
                     onValueChange={(val) =>
                       setProfileForm((p) => ({ ...p, disabilityType: val }))
                     }>
-                    <SelectTrigger className="bg-background font-extrabold text-base leading-tight">
+                    <SelectTrigger className="bg-background font-bold text-base leading-tight">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1835,7 +1835,7 @@ export function StudentDetailPanel({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     Mother Tongue
                   </Label>
                   <Input
@@ -1852,11 +1852,11 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="e.g. HILIGAYNON"
-                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                    className="font-bold text-base leading-tight bg-background uppercase"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-extrabold text-base uppercase">
+                  <Label className="font-bold text-base uppercase">
                     Religion
                   </Label>
                   <Input
@@ -1873,7 +1873,7 @@ export function StudentDetailPanel({
                       }))
                     }
                     placeholder="e.g. ROMAN CATHOLIC"
-                    className="font-extrabold text-base leading-tight bg-background uppercase"
+                    className="font-bold text-base leading-tight bg-background uppercase"
                   />
                 </div>
               </div>
@@ -1881,7 +1881,7 @@ export function StudentDetailPanel({
             {/* V: Portal Access and Security */}
             {!isJhsCompleter && (
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 font-extrabold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
+                <div className="px-5 py-4 font-bold uppercase text-base leading-tight tracking-wide text-foreground bg-muted/5 border-b border-border flex justify-between items-center">
                   <span className="flex items-center gap-2">
                     <FileBadge2 className="h-4 w-4 text-primary" />
                     PORTAL ACCESS & SECURITY
@@ -1890,10 +1890,10 @@ export function StudentDetailPanel({
                 <div className="px-5 pb-5 pt-4 space-y-4">
                   <div className="space-y-4 border-border">
                     <div className="space-y-2">
-                      <Label className="text-base font-extrabold uppercase text-foreground">
+                      <Label className="text-base font-bold uppercase text-foreground">
                         Student Portal Access
                       </Label>
-                      <p className="text-sm font-extrabold leading-tight text-foreground">
+                      <p className="text-sm font-bold leading-tight text-foreground">
                         Toggle whether this user can sign in to the portal.
                       </p>
                       <div className="flex gap-4">
@@ -1902,7 +1902,7 @@ export function StudentDetailPanel({
                           disabled={isPortalActionSubmitting}
                           onClick={() => handleTogglePortalAccess(true)}
                           className={cn(
-                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase cursor-pointer",
                             portalActive
                               ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                               : "border-border hover:bg-muted/50 text-foreground"
@@ -1916,7 +1916,7 @@ export function StudentDetailPanel({
                           disabled={isPortalActionSubmitting}
                           onClick={() => handleTogglePortalAccess(false)}
                           className={cn(
-                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-extrabold uppercase cursor-pointer",
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight font-bold uppercase cursor-pointer",
                             !portalActive
                               ? "border-amber-500 bg-amber-50 text-amber-700"
                               : "border-border hover:bg-muted/50 text-foreground"
@@ -1929,7 +1929,7 @@ export function StudentDetailPanel({
                     </div>
 
                     <div className="space-y-2 pt-4">
-                      <Label className="text-base font-extrabold uppercase text-foreground">
+                      <Label className="text-base font-bold uppercase text-foreground">
                         Password Control
                       </Label>
                       <div className="grid grid-cols-2 gap-2">
@@ -1937,19 +1937,19 @@ export function StudentDetailPanel({
                           value={defaultPasswordInput}
                           onChange={(e) => setDefaultPasswordInput(e.target.value)}
                           placeholder="Enter default password"
-                          className="h-11 font-extrabold text-base bg-background"
+                          className="h-11 font-bold text-base bg-background"
                         />
                         <Button
                           type="button"
                           variant="secondary"
                           disabled={isPortalActionSubmitting || !defaultPasswordInput.trim()}
                           onClick={handleResetPassword}
-                          className="w-full h-11 font-extrabold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
+                          className="w-full h-11 font-bold text-base uppercase border border-border hover:bg-muted/30 shrink-0 cursor-pointer"
                         >
                           Reset to Default Password
                         </Button>
                       </div>
-                      <p className="text-sm font-extrabold leading-tight text-foreground/60">
+                      <p className="text-sm font-bold leading-tight text-foreground/60">
                         This will reset the learner's portal password to the value above and force a password change on next login.
                       </p>
                     </div>
@@ -1968,11 +1968,11 @@ export function StudentDetailPanel({
             <Classifications applicant={typedStudentShim} />
             {!isJhsCompleter && (
               <div className="border rounded-md bg-[hsl(var(--card))] overflow-hidden mb-4">
-                <div className="p-3 font-extrabold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+                <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
                   <FileBadge2 className="h-4 w-4 text-primary" />
                   PORTAL ACCESS & SECURITY
                 </div>
-                <div className="text-base leading-tight font-extrabold divide-y divide-border">
+                <div className="text-base leading-tight font-bold divide-y divide-border">
                   <div className="grid grid-cols-[160px_1fr] md:grid-cols-[200px_1fr] divide-x divide-border">
                     <div className="p-3 text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted)/30)] uppercase flex items-center">Portal</div>
                     <div className="p-3 uppercase flex items-center gap-2 text-foreground">
@@ -2004,7 +2004,7 @@ export function StudentDetailPanel({
           <div className="flex gap-2">
             <Button
               variant="default"
-              className="flex-1 font-extrabold text-base sm:text-base h-9 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+              className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
               onClick={() => sileo.success({ title: "Form Generated", description: "Form 137 SF10 generation is coming soon." })}>
               <FileBadge2 className="h-4 w-4 mr-2" />
               Generate Form 137 SF10
@@ -2018,14 +2018,14 @@ export function StudentDetailPanel({
             type="button"
             onClick={resetProfileEdits}
             disabled={isSubmitting}
-            className="font-extrabold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted">
+            className="font-bold uppercase text-base border-border px-6 cursor-pointer bg-background text-foreground hover:bg-muted">
             Cancel
           </Button>
           <Button
             type="submit"
             form="learner-edit-form"
             disabled={isSubmitting || !isProfileFormDirty}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold uppercase text-base px-6 cursor-pointer">
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase text-base px-6 cursor-pointer">
             {isSubmitting ? (
               <Loader2 className="h-4 w-4  mr-2" />
             ) : (
@@ -2043,7 +2043,7 @@ export function StudentDetailPanel({
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex-1 font-extrabold text-base sm:text-base h-9 uppercase bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm">
+                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm">
                   <FileBadge2 className="h-4 w-4 mr-2" />
                   Transferred Out
                 </Button>
@@ -2051,7 +2051,7 @@ export function StudentDetailPanel({
               <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
                 <div className="p-6 pb-2">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-extrabold text-foreground">
+                    <DialogTitle className="text-lg font-bold text-foreground">
                       Transfer Learner Record
                     </DialogTitle>
                   </DialogHeader>
@@ -2103,7 +2103,7 @@ export function StudentDetailPanel({
                   </Button>
                   <Button
                     variant="default"
-                    className="!bg-amber-600 hover:!bg-amber-700 !text-white font-extrabold px-5 py-2 shadow-sm border-none"
+                    className="!bg-amber-600 hover:!bg-amber-700 !text-white font-bold px-5 py-2 shadow-sm border-none"
                     onClick={handleTransferOutSubmit}
                     disabled={!transferOutSchoolName || !transferOutDate}>
                     Confirm Transfer
@@ -2118,7 +2118,7 @@ export function StudentDetailPanel({
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex-1 font-extrabold text-base sm:text-base h-9 uppercase bg-red-50 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-200 shadow-sm">
+                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-red-50 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-200 shadow-sm">
                   <BadgeAlert className="h-4 w-4 mr-2" />
                   Dropped Out
                 </Button>
@@ -2126,7 +2126,7 @@ export function StudentDetailPanel({
               <DialogContent aria-describedby={undefined} className="w-full max-w-3xl p-0 overflow-hidden">
                 <div className="p-6 pb-2">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-extrabold text-red-700">
+                    <DialogTitle className="text-lg font-bold text-red-700">
                       Process Learner Drop Out
                     </DialogTitle>
                   </DialogHeader>
@@ -2197,7 +2197,7 @@ export function StudentDetailPanel({
                   </Button>
                   <Button
                     variant="default"
-                    className="!bg-red-600 hover:!bg-red-700 !text-white font-extrabold px-5 py-2 shadow-sm border-none"
+                    className="!bg-red-600 hover:!bg-red-700 !text-white font-bold px-5 py-2 shadow-sm border-none"
                     onClick={handleDropoutSubmit}
                     disabled={!dropoutDate || !dropoutReasonCode}>
                     Finalize Drop Out

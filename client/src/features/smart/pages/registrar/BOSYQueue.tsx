@@ -123,7 +123,7 @@ export default function BOSYQueue() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">BOSY Queue</h1>
+          <h1 className="text-3xl font-bold text-gray-900">BOSY Queue</h1>
           <p className="text-gray-600 mt-1">
             Beginning of School Year — learner return confirmation tracking. Read-only from EnrollPro.
           </p>
@@ -207,16 +207,16 @@ export default function BOSYQueue() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Prior Grade</TableHead>
-                    <TableHead className="font-extrabold text-gray-700">Prior Section</TableHead>
+                    <TableHead className="font-bold text-gray-700">LRN</TableHead>
+                    <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
+                    <TableHead className="font-bold text-gray-700">Sex</TableHead>
+                    <TableHead className="font-bold text-gray-700">Prior Grade</TableHead>
+                    <TableHead className="font-bold text-gray-700">Prior Section</TableHead>
                     {tab === "expected" && (
-                      <TableHead className="font-extrabold text-gray-700">Final Avg</TableHead>
+                      <TableHead className="font-bold text-gray-700">Final Avg</TableHead>
                     )}
                     {tab === "pending" && (
-                      <TableHead className="font-extrabold text-gray-700">Status</TableHead>
+                      <TableHead className="font-bold text-gray-700">Status</TableHead>
                     )}
                   </TableRow>
                 </TableHeader>
@@ -243,7 +243,7 @@ export default function BOSYQueue() {
                         <TableCell>{item.gradeLevelName || "—"}</TableCell>
                         <TableCell>{item.priorSectionName || "—"}</TableCell>
                         {tab === "expected" && (
-                          <TableCell className="font-semibold text-slate-700">
+                          <TableCell className=" text-slate-700">
                             {item.finalAverage != null ? item.finalAverage.toFixed(1) : "—"}
                           </TableCell>
                         )}
@@ -265,7 +265,7 @@ export default function BOSYQueue() {
           {/* Pagination Footer */}
           {!loading && !error && meta && (
             <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between bg-gray-50/30">
-              <div className="flex items-center gap-4 text-sm font-semibold text-slate-800">
+              <div className="flex items-center gap-4 text-sm  text-slate-800">
                 <span>
                   Showing {meta.total === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, meta.total)} of {meta.total} Learners
                 </span>
@@ -310,7 +310,7 @@ export default function BOSYQueue() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-9 min-w-[36px] px-2 rounded-lg font-extrabold shadow-sm"
+                  className="h-9 min-w-[36px] px-2 rounded-lg font-bold shadow-sm"
                   style={{ backgroundColor: colors.primary }}
                 >
                   {page}

@@ -333,7 +333,7 @@ export default function EnrollmentForm({
     }
 
     let target = document.getElementsByName(issue.fieldPath).item(0);
-    
+
     if (!target) {
       target = document.getElementById(issue.fieldPath) as HTMLElement;
     }
@@ -526,7 +526,7 @@ export default function EnrollmentForm({
   };
 
   return (
-<div className="max-w-6xl mx-auto p-4 md:p-0">
+    <div className="max-w-6xl mx-auto p-4 md:p-0">
       {onBack && (
         <Button
           onClick={() => {
@@ -535,7 +535,7 @@ export default function EnrollmentForm({
               onBack();
             });
           }}
-          className="mb-6 group font-extrabold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
+          className="mb-6 group font-bold uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6">
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Selection
         </Button>
@@ -661,13 +661,13 @@ export default function EnrollmentForm({
                     } catch (error: unknown) {
                       const responseMessage =
                         typeof error === "object" &&
-                        error !== null &&
-                        "response" in error
+                          error !== null &&
+                          "response" in error
                           ? (
-                              error as {
-                                response?: { data?: { message?: string } };
-                              }
-                            ).response?.data?.message
+                            error as {
+                              response?: { data?: { message?: string } };
+                            }
+                          ).response?.data?.message
                           : undefined;
                       setSubmitError(
                         responseMessage || "Failed to update application.",
@@ -688,7 +688,7 @@ export default function EnrollmentForm({
         <CardContent className="p-6 md:p-10">
           <div className="mb-8 pb-6 border-b border-border/50 flex flex-row justify-between items-start">
             <div>
-              <h2 className="text-xl font-extrabold  text-foreground leading-tight">
+              <h2 className="text-xl font-bold  text-foreground leading-tight">
                 Learner Enrollment Form
               </h2>
               <p className="text-base leading-tight text-foreground mt-0.5 font-bold">
@@ -696,7 +696,7 @@ export default function EnrollmentForm({
               </p>
             </div>
             {isDirty && (
-              <div className="text-sm font-semibold text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
+              <div className="text-sm  text-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/50">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -707,7 +707,7 @@ export default function EnrollmentForm({
           </div>
 
           {submitError && (
-            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-extrabold">
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-base leading-tight font-bold">
               {submitError}
             </div>
           )}
@@ -717,46 +717,46 @@ export default function EnrollmentForm({
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-extrabold uppercase text-primary">I. Personal Information</h3>
+                  <h3 className="text-lg font-bold uppercase text-primary">I. Personal Information</h3>
                 </div>
                 <Step1Personal />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-extrabold uppercase text-primary">II. Family Information</h3>
+                  <h3 className="text-lg font-bold uppercase text-primary">II. Family Information</h3>
                 </div>
                 <Step2Family />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-extrabold uppercase text-primary">III. Background & Special Categories</h3>
+                  <h3 className="text-lg font-bold uppercase text-primary">III. Background & Special Categories</h3>
                 </div>
                 <Step3Background />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-extrabold uppercase text-primary">IV. Enrollment Preferences</h3>
+                  <h3 className="text-lg font-bold uppercase text-primary">IV. Enrollment Preferences</h3>
                 </div>
                 <Step5Enrollment />
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-2 border-b pb-2">
-                  <h3 className="text-lg font-extrabold uppercase text-primary">V. Previous School</h3>
+                  <h3 className="text-lg font-bold uppercase text-primary">V. Previous School</h3>
                 </div>
                 <Step4PreviousSchool />
               </div>
 
               {validationIssues.length > 0 && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
-                  <div className="flex items-center gap-2 text-destructive font-extrabold text-base leading-tight">
+                  <div className="flex items-center gap-2 text-destructive font-bold text-base leading-tight">
                     <AlertCircle className="w-4 h-4" />
                     Please review and complete the following fields to proceed:
                   </div>
-                  <ul className="list-disc pl-6 text-base font-extrabold text-destructive space-y-1">
+                  <ul className="list-disc pl-6 text-base font-bold text-destructive space-y-1">
                     {validationIssues.map((issue, index) => (
                       <li key={`${issue.fieldPath}-${index}`}>
                         <a
@@ -780,7 +780,7 @@ export default function EnrollmentForm({
                 <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
                   <div className="flex items-center gap-2 mb-2">
                     <ShieldCheck className="w-5 h-5 text-primary" />
-                    <h3 className="text-base leading-tight font-extrabold uppercase  text-primary">
+                    <h3 className="text-base leading-tight font-bold uppercase  text-primary">
                       Accuracy Certification
                     </h3>
                   </div>
@@ -800,7 +800,7 @@ export default function EnrollmentForm({
                             />
                             <Label
                               htmlFor="certify-check"
-                              className="text-base font-extrabold leading-relaxed cursor-pointer select-none space-y-3 block">
+                              className="text-base font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
                               <p>
                                 I certify that all information in this enrollment form
                                 is true, correct, and complete to the best of my
@@ -810,7 +810,7 @@ export default function EnrollmentForm({
                             </Label>
                           </div>
                           {errors.isCertifiedTrue?.message && (
-                            <p className="text-sm text-destructive font-extrabold pl-14">
+                            <p className="text-sm text-destructive font-bold pl-14">
                               {errors.isCertifiedTrue.message}
                             </p>
                           )}
@@ -823,7 +823,7 @@ export default function EnrollmentForm({
                 <div className="flex flex-col items-center gap-4">
                   <Button
                     type="button"
-                    className="w-full h-14 text-lg font-extrabold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
                     disabled={isSubmitting}
                     onClick={async () => {
                       const isValid = await trigger();
@@ -833,7 +833,7 @@ export default function EnrollmentForm({
                     }}>
                     Submit Registration
                   </Button>
-                  <p className="text-base text-foreground flex items-center gap-1.5 font-extrabold italic">
+                  <p className="text-base text-foreground flex items-center gap-1.5 font-bold italic">
                     <Info className="w-3.5 h-3.5" />
                     Privacy consent was recorded before this submission.
                   </p>

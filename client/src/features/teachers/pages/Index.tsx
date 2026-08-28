@@ -610,13 +610,13 @@ export default function Teachers() {
                   className="w-full h-full object-cover"
                   alt={formatTeacherName(row.original)}
                   fallbackIcon={
-                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold  bg-primary">
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white   bg-primary">
                       {initials}
                     </div>
                   }
                 />
                 <div className="flex min-w-0 flex-col text-left">
-                  <span className="break-words text-base font-extrabold uppercase leading-tight">
+                  <span className="break-words text-base font-bold uppercase leading-tight">
                     {formatTeacherName(row.original)}
                   </span>
                   <span className="font-bold text-foreground mt-1 uppercase">
@@ -649,7 +649,7 @@ export default function Teachers() {
             if (roles.length === 0) {
               return (
                 <div className="flex w-full justify-center py-3">
-                  <span className="font-extrabold text-base leading-tight text-center uppercase text-gray-400">
+                  <span className="font-bold text-base leading-tight text-center uppercase text-gray-400">
                     —
                   </span>
                 </div>
@@ -661,7 +661,7 @@ export default function Teachers() {
                   <Badge
                     key={role}
                     variant="outline"
-                    className="font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider bg-indigo-50 text-indigo-700 border-indigo-800"
+                    className="font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider bg-indigo-50 text-indigo-700 border-indigo-800"
                   >
                     {role.replace(/_/g, " ")}
                   </Badge>
@@ -691,7 +691,7 @@ export default function Teachers() {
               const display = DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === dept)?.label || dept || "—";
               return (
                 <div className="flex w-full justify-center py-3">
-                  <span className="font-extrabold text-base leading-tight text-center uppercase">
+                  <span className="font-bold text-base leading-tight text-center uppercase">
                     {display}
                   </span>
                 </div>
@@ -718,7 +718,7 @@ export default function Teachers() {
               if (!adv) {
                 return (
                   <div className="flex w-full justify-center py-3">
-                    <span className="font-extrabold text-base leading-tight text-center uppercase">
+                    <span className="font-bold text-base leading-tight text-center uppercase">
                       —
                     </span>
                   </div>
@@ -730,13 +730,13 @@ export default function Teachers() {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "font-extrabold px-2.5 py-0.5 rounded-md uppercase",
+                      "font-bold px-2.5 py-0.5 rounded-md uppercase",
                       getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
                     )}
                   >
                     {adv.gradeLevelName || "Grade"}
                   </Badge>
-                  <span className="font-extrabold text-sm leading-tight text-center uppercase">
+                  <span className="font-bold text-sm leading-tight text-center uppercase">
                     {adv.name}
                   </span>
                 </div>
@@ -771,7 +771,7 @@ export default function Teachers() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "font-extrabold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
+                    "font-bold  px-2.5 py-0.5 rounded-md uppercase tracking-wider",
                     isEnrolled
                       ? "bg-emerald-50 text-emerald-700 border-emerald-800"
                       : isLeave
@@ -802,7 +802,7 @@ export default function Teachers() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-extrabold cursor-pointer"
+                className="h-9 items-center justify-center rounded-md border bg-primary/5 px-4  text-primary transition-all border-2 border-primary hover:bg-primary hover:text-primary-foreground font-bold cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setViewingTeacher(row.original);
@@ -831,7 +831,7 @@ export default function Teachers() {
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              className="w-full h-10 pl-9 bg-muted text-base border-gray-300 uppercase font-extrabold"
+              className="w-full h-10 pl-9 bg-muted text-base border-gray-300 uppercase font-bold"
               aria-label="Search faculty and staff"
               placeholder="Search name, Employee ID, mobile number, subject area, ..."
               value={activeFilter}
@@ -840,7 +840,7 @@ export default function Teachers() {
           </div>
         </div>
 
-        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-extrabold shrink-0">
+        <div className="flex flex-row flex-wrap items-center justify-start xl:justify-end gap-3 w-full xl:w-auto font-bold shrink-0">
           <div className="w-full sm:w-48">
             <Select
               isFilter
@@ -851,7 +851,7 @@ export default function Teachers() {
               <SelectTrigger className="h-10 bg-muted">
                 <SelectValue placeholder="Personnel Type" />
               </SelectTrigger>
-              <SelectContent className="font-extrabold">
+              <SelectContent className="font-bold">
                 <SelectItem value="all">All Personnel Types</SelectItem>
                 <SelectItem value="TEACHING">Teaching Personnel</SelectItem>
                 <SelectItem value="NON_TEACHING">Non-Teaching Personnel</SelectItem>
@@ -866,7 +866,7 @@ export default function Teachers() {
               <SelectTrigger className="h-10 bg-muted">
                 <SelectValue placeholder="Plantilla / Designation" />
               </SelectTrigger>
-              <SelectContent className="font-extrabold">
+              <SelectContent className="font-bold">
                 <SelectItem value="all">All Designations</SelectItem>
                 {availableDesignationFilters.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
@@ -885,10 +885,10 @@ export default function Teachers() {
                 <SelectValue placeholder="Subject" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="font-extrabold">All Subjects</SelectItem>
+                <SelectItem value="all" className="font-bold">All Subjects</SelectItem>
                 {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
                   <SelectItem
-                    className=" font-extrabold"
+                    className=" font-bold"
                     key={opt.value}
                     value={opt.value}>
                     {opt.label}
@@ -1001,14 +1001,14 @@ export default function Teachers() {
                   isSf7ExportLoading ||
                   isSf7CommitLoading
                 }
-                className="h-9 font-extrabold uppercase tracking-wide rounded-sm shadow-none border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                className="h-9 font-bold uppercase tracking-wide rounded-sm shadow-none border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               >
                 <FileSpreadsheetIcon className="w-4 h-4 mr-2 shrink-0" />
                 <span className="truncate">SF7 Actions</span>
                 <ChevronDownIcon className="w-4 h-4 ml-2 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 font-extrabold">
+            <DropdownMenuContent align="end" className="w-64 font-bold">
               <DropdownMenuItem
                 disabled={isSf7PreviewLoading}
                 onSelect={(event) => {
@@ -1047,7 +1047,7 @@ export default function Teachers() {
               setViewingTeacher(null);
               setIsPanelOpen(true);
             }}
-            className="h-9 font-extrabold uppercase tracking-wide rounded-sm shadow-none"
+            className="h-9 font-bold uppercase tracking-wide rounded-sm shadow-none"
           >
             <UserPlusIcon className="w-4 h-4 mr-2 shrink-0" />
             <span className="truncate">Add Personnel</span>
@@ -1077,7 +1077,7 @@ export default function Teachers() {
                     key={m.key}
                     onClick={() => setActiveMetric(m.key)}
                     className={cn(
-                      "relative flex items-center justify-between px-4 py-2 md:py-0 h-10 md:h-full transition-colors uppercase font-extrabold z-10",
+                      "relative flex items-center justify-between px-4 py-2 md:py-0 h-10 md:h-full transition-colors uppercase font-bold z-10",
                       isActive
                         ? "text-primary-foreground bg-primary"
                         : "text-foreground hover:bg-gray-50"
@@ -1176,40 +1176,40 @@ export default function Teachers() {
 
           {sf7Preview ? (
             <div className="space-y-4">
-              <div className="rounded-md border bg-muted/40 p-3 text-sm font-extrabold text-foreground">
+              <div className="rounded-md border bg-muted/40 p-3 text-sm font-bold text-foreground">
                 File: {sf7PreviewFileName ?? "Selected SF7 roster"}
               </div>
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Rows Found</p>
-                  <p className="text-2xl font-extrabold">{sf7Preview.summary.totalRows}</p>
+                  <p className="text-sm font-bold uppercase text-muted-foreground">Rows Found</p>
+                  <p className="text-2xl font-bold">{sf7Preview.summary.totalRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Matched</p>
-                  <p className="text-2xl font-extrabold text-emerald-700">{sf7Preview.summary.matchedRows}</p>
+                  <p className="text-sm font-bold uppercase text-muted-foreground">Matched</p>
+                  <p className="text-2xl font-bold text-emerald-700">{sf7Preview.summary.matchedRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-sm font-extrabold uppercase text-muted-foreground">No Employee No.</p>
-                  <p className="text-2xl font-extrabold text-amber-700">{sf7Preview.summary.missingEmployeeIdRows}</p>
+                  <p className="text-sm font-bold uppercase text-muted-foreground">No Employee No.</p>
+                  <p className="text-2xl font-bold text-amber-700">{sf7Preview.summary.missingEmployeeIdRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-sm font-extrabold uppercase text-muted-foreground">No Match</p>
-                  <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.noMatchRows}</p>
+                  <p className="text-sm font-bold uppercase text-muted-foreground">No Match</p>
+                  <p className="text-2xl font-bold text-red-700">{sf7Preview.summary.noMatchRows}</p>
                 </div>
                 <div className="rounded-md border bg-card p-3">
-                  <p className="text-sm font-extrabold uppercase text-muted-foreground">Flags</p>
-                  <p className="text-2xl font-extrabold text-red-700">{sf7Preview.summary.issueCount}</p>
+                  <p className="text-sm font-bold uppercase text-muted-foreground">Flags</p>
+                  <p className="text-2xl font-bold text-red-700">{sf7Preview.summary.issueCount}</p>
                 </div>
               </div>
 
               <div className="overflow-hidden rounded-md border">
-                <div className="border-b bg-muted/50 px-3 py-2 text-sm font-extrabold uppercase">
+                <div className="border-b bg-muted/50 px-3 py-2 text-sm font-bold uppercase">
                   Preflight Data Grid
                 </div>
                 <div className="max-h-80 overflow-auto">
                   <table className="w-full min-w-[760px] text-sm">
-                    <thead className="sticky top-0 bg-muted text-left text-sm font-extrabold uppercase text-muted-foreground">
+                    <thead className="sticky top-0 bg-muted text-left text-sm font-bold uppercase text-muted-foreground">
                       <tr>
                         <th className="px-3 py-2">Row</th>
                         <th className="px-3 py-2">Employee No.</th>
@@ -1221,13 +1221,13 @@ export default function Teachers() {
                     <tbody className="divide-y">
                       {(sf7RowsNeedingReview.length > 0 ? sf7RowsNeedingReview : sf7Preview.rows.slice(0, 20)).map((row) => (
                         <tr key={`${row.rowNumber}-${row.employeeId ?? "none"}`}>
-                          <td className="px-3 py-2 font-extrabold">{row.rowNumber}</td>
+                          <td className="px-3 py-2 font-bold">{row.rowNumber}</td>
                           <td className="px-3 py-2 font-bold">{row.employeeId ?? "Missing"}</td>
-                          <td className="px-3 py-2 font-extrabold">{row.fullName ?? "Name not readable"}</td>
+                          <td className="px-3 py-2 font-bold">{row.fullName ?? "Name not readable"}</td>
                           <td className="px-3 py-2">
                             <Badge
                               variant={row.matchStatus === "MATCHED" ? "default" : "destructive"}
-                              className="font-extrabold uppercase"
+                              className="font-bold uppercase"
                             >
                               {formatSf7MatchStatus(row.matchStatus)}
                             </Badge>
@@ -1248,7 +1248,7 @@ export default function Teachers() {
               </div>
             </div>
           ) : (
-            <div className="rounded-md border border-dashed p-6 text-center text-sm font-extrabold text-muted-foreground">
+            <div className="rounded-md border border-dashed p-6 text-center text-sm font-bold text-muted-foreground">
               Waiting for SF7 roster preview.
             </div>
           )}
@@ -1259,7 +1259,7 @@ export default function Teachers() {
               variant="outline"
               disabled={isSf7CommitLoading}
               onClick={() => setSf7PreviewOpen(false)}
-              className="font-extrabold"
+              className="font-bold"
             >
               Review Later
             </Button>
@@ -1267,7 +1267,7 @@ export default function Teachers() {
               type="button"
               disabled={!sf7Preview || sf7Preview.summary.matchedRows === 0 || isSf7CommitLoading}
               onClick={handleCommitSf7Preview}
-              className="font-extrabold"
+              className="font-bold"
             >
               {isSf7CommitLoading ? "Importing..." : "Commit Valid Records"}
             </Button>

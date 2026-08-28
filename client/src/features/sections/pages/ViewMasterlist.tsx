@@ -418,10 +418,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
   const renderTable = (data: LearnerRecord[], title: string, sex: "MALE" | "FEMALE") => (
     <div className="flex-1 min-w-0 flex flex-col">
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className={`font-extrabold text-base uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
+        <h3 className={`font-bold text-base uppercase tracking-widest ${sex === "MALE" ? "text-blue-700" : "text-pink-700"}`}>
           {title}
         </h3>
-        <span className="font-extrabold text-base text-foreground uppercase">
+        <span className="font-bold text-base text-foreground uppercase">
           Total: {data.length}
         </span>
       </div>
@@ -430,15 +430,15 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
           <Table className="relative w-full">
             <TableHeader className="border-b border-border bg-transparent">
               <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="text-center font-extrabold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
-                <TableHead className="text-left font-extrabold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
-                <TableHead className="text-right font-extrabold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
+                <TableHead className="text-center font-bold text-foreground h-11 w-[40px] tracking-wide">#</TableHead>
+                <TableHead className="text-left font-bold text-foreground h-11 min-w-[200px] tracking-wide pl-4">LEARNER</TableHead>
+                <TableHead className="text-right font-bold text-foreground h-11 w-[120px] pr-4">ACTION</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y">
               {data.length === 0 ? (
                 <TableRow className="border-b-0">
-                  <TableCell colSpan={3} className="h-24 text-center text-foreground font-extrabold">
+                  <TableCell colSpan={3} className="h-24 text-center text-foreground font-bold">
                     No {title.toLowerCase()} assigned.
                   </TableCell>
                 </TableRow>
@@ -447,12 +447,12 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                   const age = calculateAgeAsOfJuneFirst(learner.birthdate);
                   return (
                     <TableRow key={learner.id} className="hover:bg-muted/50 transition-colors group">
-                      <TableCell className="text-center font-extrabold text-sm text-foreground py-3">
+                      <TableCell className="text-center font-bold text-sm text-foreground py-3">
                         {idx + 1}
                       </TableCell>
                       <TableCell className="py-3 pl-4">
                         <div className="flex flex-col">
-                          <span className="font-extrabold text-sm uppercase text-foreground leading-tight">
+                          <span className="font-bold text-sm uppercase text-foreground leading-tight">
                             {learner.lastName}, {learner.firstName} {learner.middleName ? learner.middleName[0] + "." : ""}
                           </span>
                           <span className="text-sm font-bold uppercase text-foreground mt-0.5">
@@ -465,7 +465,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                           <Button
                             variant="default"
                             size="sm"
-                            className="font-extrabold uppercase"
+                            className="font-bold uppercase"
                             disabled={unassignProcessingId === learner.enrollmentApplicationId}
                             onClick={() => handleUnassign(learner.enrollmentApplicationId)}
                           >
@@ -479,7 +479,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                           <Button
                             variant="outline"
                             size="sm"
-                            className="font-extrabold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                            className="font-bold uppercase text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all"
                             onClick={() => setSelectedStudentId(learner.id)}
                           >
                             <Eye className="w-4 h-4 mr-2" />
@@ -529,14 +529,14 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         {onBack ? (
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-foreground transition-colors"
           >
             ← Back to Section Workspace
           </button>
         ) : (
           <Link
             to="/sections"
-            className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-foreground transition-colors"
           >
             ← Back to Class Sections Lobby
           </Link>
@@ -547,24 +547,24 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
         <CardHeader className="px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-base font-extrabold text-foreground whitespace-nowrap">
+              <span className="text-base font-bold text-foreground whitespace-nowrap">
                 Class Adviser:
               </span>
-              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-extrabold uppercase text-foreground">
+              <span className="inline-flex items-center h-9 px-3 bg-muted/40 border border-border/60 rounded-md text-base font-bold uppercase text-foreground">
                 {section?.advisingTeacher ? section.advisingTeacher.name : "UNASSIGNED"}
               </span>
             </div>
 
-            <div className="flex items-center gap-6 text-base font-extrabold text-foreground tracking-wide">
+            <div className="flex items-center gap-6 text-base font-bold text-foreground tracking-wide">
               <span className="text-foreground">
                 Total Seated: <span className="text-foreground">{masterlist.length} / {section?.maxCapacity || 0}</span>
               </span>
               <div className="w-px h-4 bg-border" />
-              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+              <Badge className="bg-blue-600/10 text-blue-600 border-blue-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
                 <Mars className="h-4 w-4" /> Male: {maleLearners.length}
               </Badge>
               <div className="w-px h-4 bg-border" />
-              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-extrabold shadow-sm">
+              <Badge className="bg-pink-600/10 text-pink-600 border-pink-600 border-2 flex items-center gap-1.5 uppercase font-bold shadow-sm">
                 <Venus className="h-4 w-4" /> Female: {femaleLearners.length}
               </Badge>
             </div>
@@ -575,7 +575,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
 
         <CardHeader className="px-3 sm:px-6 pb-2 pt-6 flex flex-col md:flex-row md:items-start justify-between border-b border-border gap-4">
           <div>
-            <CardTitle className="text-base sm:text-lg font-extrabold">
+            <CardTitle className="text-base sm:text-lg font-bold">
               Enrolled Learner Records
             </CardTitle>
           </div>
@@ -589,7 +589,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                         variant="default"
                         disabled={loading || (masterlist.length >= (section?.maxCapacity || 0))}
                         onClick={() => setShowDrawer(true)}
-                        className="h-9 font-extrabold text-sm bg-primary text-primary-foreground border-none"
+                        className="h-9 font-bold text-sm bg-primary text-primary-foreground border-none"
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
                         Add Learner to Masterlist
@@ -597,7 +597,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                     </span>
                   </TooltipTrigger>
                   {(masterlist.length >= (section?.maxCapacity || 0)) && (
-                    <TooltipContent className="bg-slate-900 text-white border-none text-sm font-extrabold p-3 shadow-xl">
+                    <TooltipContent className="bg-slate-900 text-white border-none text-sm font-bold p-3 shadow-xl">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400" />
                         Maximum capacity reached.
@@ -613,14 +613,14 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                 <Button
                   variant="outline"
                   disabled={exportingSf1 || previewingSf1 || downloadingSf1Template || loading}
-                  className="h-9 font-extrabold text-sm border-border text-foreground bg-background hover:bg-primary hover:text-primary-foreground shadow-sm"
+                  className="h-9 font-bold text-sm border-border text-foreground bg-background hover:bg-primary hover:text-primary-foreground shadow-sm"
                 >
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   SF1 Roster
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 font-extrabold">
+              <DropdownMenuContent align="end" className="w-60 font-bold">
                 {systemPhase !== "EOSY_CLOSING" && (
                   <DropdownMenuItem
                     disabled={isHistoricalReadOnly || previewingSf1 || loading}
@@ -667,7 +667,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                     <Users className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
-                    <p className="font-extrabold text-foreground text-lg">
+                    <p className="font-bold text-foreground text-lg">
                       No Enrolled Learners
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed px-4">
@@ -707,10 +707,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
             <div className="space-y-4">
               <div className="rounded-md border border-border bg-muted/20 p-4">
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm font-extrabold uppercase text-muted-foreground">
+                  <span className="text-sm font-bold uppercase text-muted-foreground">
                     Uploaded File
                   </span>
-                  <span className="text-sm font-extrabold text-foreground break-all">
+                  <span className="text-sm font-bold text-foreground break-all">
                     {sf1PreviewFileName || "SF1 roster file"}
                   </span>
                 </div>
@@ -731,10 +731,10 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                   },
                 ].map((item) => (
                   <div key={item.label} className="rounded-md border border-border bg-card p-3">
-                    <div className="text-sm font-extrabold uppercase text-muted-foreground">
+                    <div className="text-sm font-bold uppercase text-muted-foreground">
                       {item.label}
                     </div>
-                    <div className="mt-1 text-lg font-extrabold text-foreground">
+                    <div className="mt-1 text-lg font-bold text-foreground">
                       {item.value}
                     </div>
                   </div>
@@ -745,12 +745,12 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted z-10">
                     <TableRow>
-                      <TableHead className="w-16 font-extrabold">Row</TableHead>
-                      <TableHead className="font-extrabold">Learner</TableHead>
-                      <TableHead className="w-32 font-extrabold">LRN</TableHead>
-                      <TableHead className="w-24 font-extrabold">Sex</TableHead>
-                      <TableHead className="w-44 font-extrabold">Status</TableHead>
-                      <TableHead className="font-extrabold">Action Needed</TableHead>
+                      <TableHead className="w-16 font-bold">Row</TableHead>
+                      <TableHead className="font-bold">Learner</TableHead>
+                      <TableHead className="w-32 font-bold">LRN</TableHead>
+                      <TableHead className="w-24 font-bold">Sex</TableHead>
+                      <TableHead className="w-44 font-bold">Status</TableHead>
+                      <TableHead className="font-bold">Action Needed</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -763,7 +763,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                           <TableRow key={`${group}-header`} className="bg-background hover:bg-background">
                             <TableCell
                               colSpan={6}
-                              className={`font-extrabold uppercase tracking-widest ${group === "MALE" ? "text-blue-700" : "text-pink-700"
+                              className={`font-bold uppercase tracking-widest ${group === "MALE" ? "text-blue-700" : "text-pink-700"
                                 }`}
                             >
                               {group === "MALE" ? "Male Learners" : "Female Learners"}
@@ -775,7 +775,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                                 {row.rowNumber}
                               </TableCell>
                               <TableCell>
-                                <div className="font-extrabold uppercase text-foreground">
+                                <div className="font-bold uppercase text-foreground">
                                   {getSf1RowName(row) || "Name not readable"}
                                 </div>
                                 {row.existingSectionName && (
@@ -788,7 +788,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                               <TableCell>
                                 <Badge
                                   variant="outline"
-                                  className={`font-extrabold ${row.sex === "MALE"
+                                  className={`font-bold ${row.sex === "MALE"
                                     ? "border-blue-600 text-blue-700"
                                     : row.sex === "FEMALE"
                                       ? "border-pink-600 text-pink-700"
@@ -801,7 +801,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
                               <TableCell>
                                 <Badge
                                   variant={row.matchStatus === "BLOCKED" ? "destructive" : "outline"}
-                                  className="font-extrabold"
+                                  className="font-bold"
                                 >
                                   {getSf1StatusLabel(row)}
                                 </Badge>
@@ -833,7 +833,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               variant="outline"
               disabled={committingSf1}
               onClick={() => setSf1PreviewOpen(false)}
-              className="font-extrabold"
+              className="font-bold"
             >
               Review Later
             </Button>
@@ -843,7 +843,7 @@ export default function ViewMasterlist({ sectionId: propSectionId, onBack, mode 
               onClick={() => {
                 void handleCommitSf1Preview();
               }}
-              className="font-extrabold"
+              className="font-bold"
             >
               {committingSf1 ? "Committing..." : "Commit Valid Records"}
             </Button>

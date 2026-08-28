@@ -72,7 +72,7 @@ export default function Step1Personal() {
     getValues,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
-  
+
   const [isOtherMotherTongue, setIsOtherMotherTongue] = useState(() => {
     const val = getValues("motherTongue");
     return !!val && !MOTHER_TONGUE_OPTIONS.some((o) => o.value === val && o.value !== "Others");
@@ -259,10 +259,10 @@ export default function Step1Personal() {
       <div className="p-6 border rounded-2xl space-y-4 bg-muted/20 border-border">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="text-base leading-tight font-extrabold uppercase text-foreground">
+            <h3 className="text-base leading-tight font-bold uppercase text-foreground">
               Learner Reference Number (LRN)
             </h3>
-            <p className="text-base text-foreground font-extrabold">
+            <p className="text-base text-foreground font-bold">
               Enter learner's 12-digit LRN to continue enrollment.
             </p>
           </div>
@@ -290,7 +290,7 @@ export default function Step1Personal() {
             maxLength={12}
             disabled={hasNoLrn || isValidatingLrn}
             className={cn(
-              "h-14 text-lg pl-12 font-extrabold text-center border-2 tracking-widest",
+              "h-14 text-lg pl-12 font-bold text-center border-2 tracking-widest",
               hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",
               errors.lrn || duplicateDetected
                 ? "border-destructive"
@@ -306,12 +306,12 @@ export default function Step1Personal() {
         </div>
 
         {duplicateDetected && (
-          <div className="bg-destructive/10 text-destructive text-sm font-extrabold p-3 rounded-lg flex items-center gap-2 justify-center">
+          <div className="bg-destructive/10 text-destructive text-sm font-bold p-3 rounded-lg flex items-center gap-2 justify-center">
             This LRN already exists in our database. Enrollment application is a duplicate.
           </div>
         )}
 
-        <p className="text-base font-extrabold text-foreground">
+        <p className="text-base font-bold text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
@@ -341,7 +341,7 @@ export default function Step1Personal() {
             />
             <Label
               htmlFor="hasNoLrn"
-              className="text-base font-extrabold cursor-pointer">
+              className="text-base font-bold cursor-pointer">
               Learner has no LRN yet.
             </Label>
           </div>
@@ -354,7 +354,7 @@ export default function Step1Personal() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
-          <Label className="text-base leading-tight font-extrabold self-start md:self-center">
+          <Label className="text-base leading-tight font-bold self-start md:self-center">
             Learner's Photo
           </Label>
           <div className="relative group">
@@ -369,7 +369,7 @@ export default function Step1Personal() {
               fallbackIcon={
                 <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
-                  <span className="text-[0.625rem] uppercase font-extrabold ">
+                  <span className="text-[0.625rem] uppercase font-bold ">
                     Upload Photo
                   </span>
                 </div>
@@ -398,7 +398,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="lastName"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -407,7 +407,7 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. DELA CRUZ"
               className={cn(
-                "h-11 uppercase font-extrabold",
+                "h-11 uppercase font-bold",
                 errors.lastName &&
                 "border-destructive focus-visible:ring-destructive",
               )}
@@ -418,7 +418,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="firstName"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -427,7 +427,7 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. JUAN"
               className={cn(
-                "h-11 uppercase font-extrabold",
+                "h-11 uppercase font-bold",
                 errors.firstName &&
                 "border-destructive focus-visible:ring-destructive",
               )}
@@ -438,7 +438,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="middleName"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Middle Name
             </Label>
             <Input
@@ -447,7 +447,7 @@ export default function Step1Personal() {
               autoComplete="off"
               disabled={hasNoMiddleName}
               placeholder="e.g. BAUTISTA"
-              className={cn("h-11 uppercase font-extrabold", hasNoMiddleName && "bg-muted cursor-not-allowed opacity-50")}
+              className={cn("h-11 uppercase font-bold", hasNoMiddleName && "bg-muted cursor-not-allowed opacity-50")}
             />
             <div className="flex items-center gap-2 mt-1">
               <Checkbox
@@ -470,13 +470,13 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="extensionName"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Suffix (Extension)
             </Label>
             <Select
               onValueChange={(val) => setValue("extensionName", val === "NONE" ? "" : val, { shouldValidate: true, shouldDirty: true })}
               value={watch("extensionName") || "NONE"}>
-              <SelectTrigger className="h-11 font-extrabold">
+              <SelectTrigger className="h-11 font-bold">
                 <SelectValue placeholder="Select Suffix" />
               </SelectTrigger>
               <SelectContent>
@@ -497,7 +497,7 @@ export default function Step1Personal() {
       {/* ─── DOB, Age, Sex Row ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         <div className="space-y-1.5">
-          <Label className="text-base leading-tight font-extrabold">
+          <Label className="text-base leading-tight font-bold">
             Date of Birth <span className="text-destructive">*</span>
           </Label>
           <Controller
@@ -516,7 +516,7 @@ export default function Step1Personal() {
                     handleDateTyping(e.target.value, field.onChange)
                   }
                   className={cn(
-                    "h-11 font-extrabold pr-12",
+                    "h-11 font-bold pr-12",
                     errors.birthdate &&
                     "border-destructive focus-visible:ring-destructive",
                   )}
@@ -579,7 +579,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="age"
-            className="text-base leading-tight font-extrabold">
+            className="text-base leading-tight font-bold">
             Age <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -587,13 +587,13 @@ export default function Step1Personal() {
             {...register("age", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
             autoComplete="off"
             disabled
-            className="h-11 font-extrabold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+            className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
             placeholder="Auto-calculated"
           />
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base leading-tight font-extrabold">
+          <Label className="text-base leading-tight font-bold">
             Sex <span className="text-destructive">*</span>
           </Label>
           <div id="sex" className="flex gap-4 pt-1">
@@ -615,7 +615,7 @@ export default function Step1Personal() {
                 className={cn(
                   "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-base leading-tight uppercase",
                   watch("sex") === sexOption.value
-                    ? "border-primary bg-primary/5 font-extrabold"
+                    ? "border-primary bg-primary/5 font-bold"
                     : errors.sex
                       ? "border-destructive hover:bg-destructive/10"
                       : "border-border hover:bg-muted/50",
@@ -628,10 +628,10 @@ export default function Step1Personal() {
                       : "text-foreground",
                   )}
                 />
-                <span className={cn("font-extrabold", 
-                watch("sex") === sexOption.value
-                      ? "text-primary"
-                      : "text-foreground",)} 
+                <span className={cn("font-bold",
+                  watch("sex") === sexOption.value
+                    ? "text-primary"
+                    : "text-foreground",)}
                 >{sexOption.label}</span>
               </button>
             ))}
@@ -644,7 +644,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="placeOfBirth"
-            className="text-base leading-tight font-extrabold">
+            className="text-base leading-tight font-bold">
             Place of Birth <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -653,7 +653,7 @@ export default function Step1Personal() {
             autoComplete="off"
             placeholder="City/Municipality, Province"
             className={cn(
-              "h-11 font-extrabold uppercase",
+              "h-11 font-bold uppercase",
               errors.placeOfBirth && "border-destructive",
             )}
           />
@@ -663,7 +663,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="motherTongue"
-            className="text-base leading-tight font-extrabold">
+            className="text-base leading-tight font-bold">
             Mother Tongue <span className="text-destructive">*</span>
           </Label>
           <div className={cn("grid gap-2", isOtherMotherTongue ? "grid-cols-2" : "grid-cols-1")}>
@@ -700,7 +700,7 @@ export default function Step1Personal() {
                 {...register("motherTongue")}
                 autoComplete="off"
                 placeholder="Please specify mother tongue"
-                className="h-11 font-extrabold uppercase"
+                className="h-11 font-bold uppercase"
                 autoFocus
               />
             )}
@@ -714,7 +714,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="religion"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Religion <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -723,7 +723,7 @@ export default function Step1Personal() {
               autoComplete="off"
               placeholder="e.g. Roman Catholic, Iglesia ni Cristo, Islam"
               className={cn(
-                "h-11 font-extrabold uppercase",
+                "h-11 font-bold uppercase",
                 errors.religion && "border-destructive focus-visible:ring-destructive",
               )}
             />
@@ -733,7 +733,7 @@ export default function Step1Personal() {
           <div className="space-y-2">
             <Label
               htmlFor="psaBirthCertNumber"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               PSA Birth Certificate Number
             </Label>
             <Input
@@ -749,7 +749,7 @@ export default function Step1Personal() {
               }}
               autoComplete="off"
               placeholder="PSA BC Number"
-              className="h-11 font-extrabold uppercase"
+              className="h-11 font-bold uppercase"
             />
           </div>
         </div>
@@ -761,7 +761,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="intakeHeightCm"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Height (in cm) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -776,11 +776,11 @@ export default function Step1Personal() {
                 }
                 e.currentTarget.value = val;
               }}
-                {...register("intakeHeightCm", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
+              {...register("intakeHeightCm", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
               autoComplete="off"
               placeholder="e.g. 150"
               className={cn(
-                "h-11 font-extrabold",
+                "h-11 font-bold",
                 errors.intakeHeightCm && "border-destructive",
               )}
             />
@@ -790,7 +790,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="intakeWeightKg"
-              className="text-base leading-tight font-extrabold">
+              className="text-base leading-tight font-bold">
               Weight (in kg) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -805,11 +805,11 @@ export default function Step1Personal() {
                 }
                 e.currentTarget.value = val;
               }}
-                {...register("intakeWeightKg", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
+              {...register("intakeWeightKg", { setValueAs: (v: string | number) => (v === "" || Number.isNaN(Number(v))) ? undefined : Number(v) })}
               autoComplete="off"
               placeholder="e.g. 45"
               className={cn(
-                "h-11 font-extrabold",
+                "h-11 font-bold",
                 errors.intakeWeightKg && "border-destructive",
               )}
             />
@@ -817,7 +817,7 @@ export default function Step1Personal() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-base leading-tight font-extrabold">
+            <Label className="text-base leading-tight font-bold">
               Body Mass Index (BMI)
             </Label>
             <Input
@@ -826,7 +826,7 @@ export default function Step1Personal() {
               readOnly
               disabled
               placeholder="Auto-calculated"
-              className="h-11 font-extrabold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
+              className="h-11 font-bold cursor-not-allowed disabled:opacity-100 disabled:bg-muted"
             />
           </div>
         </div>

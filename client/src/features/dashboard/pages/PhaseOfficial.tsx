@@ -39,10 +39,10 @@ function HistoricalSummary({ stats }: { stats: DashboardStats }) {
       {items.map((item) => (
         <Card key={item.title} className="border-slate-200 bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-extrabold">{item.title}</CardTitle>
+            <CardTitle className="text-lg font-bold">{item.title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-black text-primary">{item.value}</p>
+            <p className="text-4xl font-bold text-primary">{item.value}</p>
             <p className="mt-3 text-base font-bold text-foreground">
               {item.detail}
             </p>
@@ -84,7 +84,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
       {stats.classroomDeficitDetected && (
         <Alert className="border-red-200 bg-red-50 text-red-900">
           <AlertTriangle className="size-5 text-red-700" />
-          <AlertTitle className="font-extrabold">
+          <AlertTitle className="font-bold">
             Not Enough Section Capacity
           </AlertTitle>
           <AlertDescription className="font-bold">

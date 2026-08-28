@@ -82,7 +82,7 @@ export function UnsavedChangesBar({
         "fixed bottom-0 right-0 left-0 md:left-[var(--unsaved-left)] z-50 animate-in slide-in-from-bottom-6 border-t border-border bg-card p-3 sm:p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-4 sm:px-6 md:px-8 transition-[left] duration-300 ease-in-out",
         className,
       )}>
-      <span className="mr-auto hidden items-center gap-2 text-sm leading-tight text-foreground sm:flex sm:text-base font-extrabold">
+      <span className="mr-auto hidden items-center gap-2 text-sm leading-tight text-foreground sm:flex sm:text-base font-bold">
         {message}
         {changesList && changesList.length > 0 && (
           <TooltipProvider>
@@ -92,7 +92,7 @@ export function UnsavedChangesBar({
               </TooltipTrigger>
               <TooltipContent className="bg-primary text-primary-foreground max-w-sm border-primary">
                 <div className="space-y-1 p-1">
-                  <p className="font-semibold text-sm mb-2 text-primary-foreground">Unsaved Changes:</p>
+                  <p className=" text-sm mb-2 text-primary-foreground">Unsaved Changes:</p>
                   <ul className="list-disc pl-4 space-y-1 text-sm text-primary-foreground">
                     {changesList.map((change, i) => (
                       <li key={i}>{change}</li>

@@ -99,10 +99,10 @@ export function EosySf9GradeTable({
   return (
     <div className="bg-muted/20 px-5 py-4 sm:px-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-base font-extrabold uppercase text-foreground">
+        <p className="text-base font-bold uppercase text-foreground">
           School Form 9 (SF9) Grades
         </p>
-        <span className="rounded-md border border-border bg-card px-3 py-1 text-sm font-extrabold text-foreground">
+        <span className="rounded-md border border-border bg-card px-3 py-1 text-sm font-bold text-foreground">
           S.Y. {schoolYearLabel}
         </span>
       </div>
@@ -112,22 +112,22 @@ export function EosySf9GradeTable({
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead className="bg-muted text-foreground uppercase">
               <tr>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-extrabold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
                   Learning Areas
                 </th>
-                <th colSpan={3} className="border border-border px-4 py-2 text-center font-extrabold">
+                <th colSpan={3} className="border border-border px-4 py-2 text-center font-bold">
                   Term
                 </th>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-extrabold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
                   Final Grading
                 </th>
-                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-extrabold align-middle">
+                <th rowSpan={2} className="border border-border px-4 py-2 text-center font-bold align-middle">
                   Remarks
                 </th>
               </tr>
               <tr>
                 {[1, 2, 3].map((term) => (
-                  <th key={term} className="border border-border px-4 py-2 text-center font-extrabold">
+                  <th key={term} className="border border-border px-4 py-2 text-center font-bold">
                     {term}
                   </th>
                 ))}
@@ -138,22 +138,22 @@ export function EosySf9GradeTable({
                 const remarks = subject.remarks ?? "--";
                 return (
                   <tr key={subject.name} className="bg-card">
-                    <td className="border border-border px-4 py-3 text-center font-extrabold text-foreground">
+                    <td className="border border-border px-4 py-3 text-center font-bold text-foreground">
                       {subject.name}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-extrabold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
                       {formatGrade(subject.T1)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-extrabold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
                       {formatGrade(subject.T2)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-extrabold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
                       {formatGrade(subject.T3)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-extrabold tabular-nums">
+                    <td className="border border-border px-4 py-3 text-center font-bold tabular-nums">
                       {formatGrade(subject.Final)}
                     </td>
-                    <td className="border border-border px-4 py-3 text-center font-extrabold uppercase">
+                    <td className="border border-border px-4 py-3 text-center font-bold uppercase">
                       {remarks}
                     </td>
                   </tr>
@@ -162,13 +162,13 @@ export function EosySf9GradeTable({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} className="border border-border bg-muted px-4 py-3 text-right text-base font-extrabold uppercase">
+                <td colSpan={4} className="border border-border bg-muted px-4 py-3 text-right text-base font-bold uppercase">
                   General Average:
                 </td>
-                <td className="border border-border bg-card px-4 py-3 text-center text-base font-extrabold tabular-nums">
+                <td className="border border-border bg-card px-4 py-3 text-center text-base font-bold tabular-nums">
                   {displayedAverage === null ? "--" : displayedAverage.toFixed(2)}
                 </td>
-                <td className="border border-border bg-card px-4 py-3 text-center text-sm font-extrabold text-primary">
+                <td className="border border-border bg-card px-4 py-3 text-center text-sm font-bold text-primary">
                   {getAcademicStanding(displayedAverage)}
                 </td>
               </tr>

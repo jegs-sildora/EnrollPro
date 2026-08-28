@@ -22,7 +22,7 @@ function Button({
 			data-slot='button'
 			data-variant={variant}
 			data-size={size}
-			className={cn(buttonVariants({ variant, size }), 'text-base font-extrabold', className)}
+			className={cn(buttonVariants({ variant, size }), 'text-base font-bold', className)}
 			{...props}
 		/>
 	);

@@ -471,7 +471,8 @@ export default function TemplateManager() {
   };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      timeZone: 'Asia/Manila',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -481,11 +482,11 @@ export default function TemplateManager() {
   };
 
   return (
-<div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
       {/* Header Section */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold">Excel Template Manager</h1>
+          <h1 className="text-3xl font-bold">Excel Template Manager</h1>
           <p className="text-muted-foreground mt-1">
             Upload, review, and maintain DepEd School Form templates
           </p>
@@ -497,7 +498,7 @@ export default function TemplateManager() {
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="space-y-2">
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Why Use Templates?</h3>
+            <h3 className=" text-blue-900 dark:text-blue-100">Why Use Templates?</h3>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1.5">
               <li>• <strong>Automatic Form Filling:</strong> Upload your Excel format once, and the system fills it with student data automatically</li>
               <li>• <strong>No Programming Needed:</strong> Change your form layout anytime by uploading a new template—no code required</li>
@@ -512,15 +513,15 @@ export default function TemplateManager() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-5 hover:shadow-md transition-shadow">
           <p className="text-xs  text-muted-foreground uppercase tracking-wide">Total Templates</p>
-          <p className="text-3xl font-extrabold mt-2">{templates.length}</p>
+          <p className="text-3xl font-bold mt-2">{templates.length}</p>
         </Card>
         <Card className="p-5 hover:shadow-md transition-shadow">
           <p className="text-xs  text-muted-foreground uppercase tracking-wide">Active</p>
-          <p className="text-3xl font-extrabold text-green-600 mt-2">{templates.filter((t) => t.isActive).length}</p>
+          <p className="text-3xl font-bold text-green-600 mt-2">{templates.filter((t) => t.isActive).length}</p>
         </Card>
         <Card className="p-5 hover:shadow-md transition-shadow">
           <p className="text-xs  text-muted-foreground uppercase tracking-wide">Filtered Results</p>
-          <p className="text-3xl font-extrabold mt-2">{filteredTemplates.length}</p>
+          <p className="text-3xl font-bold mt-2">{filteredTemplates.length}</p>
         </Card>
       </div>
 
@@ -601,7 +602,7 @@ export default function TemplateManager() {
           <div className="m-4 flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-semibold">Could not load templates</p>
+              <p className="">Could not load templates</p>
               <p>{loadError}</p>
             </div>
           </div>
@@ -766,7 +767,7 @@ export default function TemplateManager() {
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold mb-1">Upload Failed</p>
+                  <p className="text-sm  mb-1">Upload Failed</p>
                   <p className="text-sm whitespace-pre-line">{uploadError}</p>
                 </div>
               </div>
@@ -775,12 +776,12 @@ export default function TemplateManager() {
             {uploadSuccess && (
               <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
                 <CheckCircle2 className="w-5 h-5" />
-                <p className="text-sm font-semibold">{uploadSuccess}</p>
+                <p className="text-sm ">{uploadSuccess}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="formType" className="text-sm font-semibold">Form Type *</Label>
+              <Label htmlFor="formType" className="text-sm ">Form Type *</Label>
               <select
                 id="formType"
                 value={uploadFormType}
@@ -821,7 +822,7 @@ export default function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="formName" className="text-sm font-semibold">Template Name *</Label>
+              <Label htmlFor="formName" className="text-sm ">Template Name *</Label>
               <Input
                 id="formName"
                 value={uploadFormName}
@@ -832,7 +833,7 @@ export default function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-semibold">Description (Optional)</Label>
+              <Label htmlFor="description" className="text-sm ">Description (Optional)</Label>
               <Input
                 id="description"
                 value={uploadDescription}
@@ -843,7 +844,7 @@ export default function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="instructions" className="text-sm font-semibold">Usage Instructions (Optional)</Label>
+              <Label htmlFor="instructions" className="text-sm ">Usage Instructions (Optional)</Label>
               <textarea
                 id="instructions"
                 value={uploadInstructions}
@@ -855,7 +856,7 @@ export default function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="file" className="text-sm font-semibold">Excel File *</Label>
+              <Label htmlFor="file" className="text-sm ">Excel File *</Label>
               <Input
                 id="file"
                 type="file"
@@ -895,12 +896,12 @@ export default function TemplateManager() {
           {selectedTemplate && (
             <div className="space-y-4 py-4">
               <div>
-                <Label className="text-sm font-semibold">Description</Label>
+                <Label className="text-sm ">Description</Label>
                 <p className="text-sm mt-1">{selectedTemplate.description || 'No description provided'}</p>
               </div>
 
               <div>
-                <Label className="text-sm font-semibold">File Information</Label>
+                <Label className="text-sm ">File Information</Label>
                 <div className="mt-1 text-sm space-y-1">
                   <p>• File: {selectedTemplate.fileName}</p>
                   <p>• Size: {formatFileSize(selectedTemplate.fileSize)}</p>
@@ -913,7 +914,7 @@ export default function TemplateManager() {
 
               {selectedTemplate.placeholders && selectedTemplate.placeholders.length > 0 && (
                 <div>
-                  <Label className="text-sm font-semibold">Available Placeholders</Label>
+                  <Label className="text-sm ">Available Placeholders</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedTemplate.placeholders.map((placeholder) => (
                       <code key={placeholder} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
@@ -926,7 +927,7 @@ export default function TemplateManager() {
 
               {selectedTemplate.instructions && (
                 <div>
-                  <Label className="text-sm font-semibold">Instructions</Label>
+                  <Label className="text-sm ">Instructions</Label>
                   <p className="text-sm mt-1 whitespace-pre-wrap">{selectedTemplate.instructions}</p>
                 </div>
               )}
@@ -963,7 +964,7 @@ export default function TemplateManager() {
               <div className="flex items-start gap-3 p-4 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold">Failed to load preview</p>
+                  <p className="">Failed to load preview</p>
                   <p className="mt-1">{previewError}</p>
                 </div>
               </div>
@@ -976,9 +977,9 @@ export default function TemplateManager() {
                   <Card className="p-3 bg-blue-50 border-blue-200">
                     <div className="flex items-start justify-between gap-3">
                       <div className="text-sm space-y-1 flex-1">
-                        <p><span className="font-semibold">Template:</span> {styledPreviewData?.formName || previewData?.formName}</p>
-                        <p><span className="font-semibold">Form Type:</span> {styledPreviewData?.formType || previewData?.formType}</p>
-                        <p><span className="font-semibold">File:</span> {styledPreviewData?.fileName || previewData?.fileName}</p>
+                        <p><span className="">Template:</span> {styledPreviewData?.formName || previewData?.formName}</p>
+                        <p><span className="">Form Type:</span> {styledPreviewData?.formType || previewData?.formType}</p>
+                        <p><span className="">File:</span> {styledPreviewData?.fileName || previewData?.fileName}</p>
                       </div>
                       <Button size="sm" onClick={handleOpenExactWorkbook} variant="outline">
                         <Download className="w-4 h-4 mr-2" />
@@ -1045,7 +1046,7 @@ export default function TemplateManager() {
                   {((viewMode === 'styled' && styledPreviewData?.parsedStructure.sheets.length > 1) ||
                     (viewMode === 'simple' && previewData?.sheets.length > 1)) && (
                       <div className="space-y-2">
-                        <Label htmlFor="previewSheet" className="text-sm font-semibold">Worksheet</Label>
+                        <Label htmlFor="previewSheet" className="text-sm ">Worksheet</Label>
                         <select
                           id="previewSheet"
                           value={selectedPreviewSheet}

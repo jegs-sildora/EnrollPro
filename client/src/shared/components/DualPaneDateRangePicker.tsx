@@ -32,7 +32,7 @@ export function DualPaneDateRangePicker({
   popoverAlign = "start",
 }: DualPaneDateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
-  
+
   const [range, setRange] = React.useState<DateRange | undefined>(() => {
     return {
       from: startValue ? new Date(startValue) : undefined,
@@ -43,7 +43,7 @@ export function DualPaneDateRangePicker({
   const [leftMonth, setLeftMonth] = React.useState<Date>(() => {
     return startValue ? new Date(startValue) : new Date();
   });
-  
+
   const [rightMonth, setRightMonth] = React.useState<Date>(() => {
     const start = startValue ? new Date(startValue) : new Date();
     if (endValue) {
@@ -67,10 +67,10 @@ export function DualPaneDateRangePicker({
         from: startValue ? new Date(startValue) : undefined,
         to: endValue ? new Date(endValue) : undefined,
       });
-      
+
       const newLeft = startValue ? new Date(startValue) : new Date();
       setLeftMonth(newLeft);
-      
+
       if (endValue) {
         const newRight = new Date(endValue);
         if (newLeft.getFullYear() === newRight.getFullYear() && newLeft.getMonth() === newRight.getMonth()) {
@@ -124,34 +124,34 @@ export function DualPaneDateRangePicker({
             id="date"
             variant="outline"
             className={cn(
-            "w-full sm:w-[300px] justify-between font-extrabold shadow-sm bg-background hover:bg-muted transition-all text-foreground px-3 py-5 rounded-md",
-            !range?.from && "text-muted-foreground",
-            className
-          )}
-        >
-          <div className="flex-1 flex items-center justify-center">
-            {range?.from ? (
-              range.to ? (
-                <>
-                  <span className="text-foreground">{format(range.from, "MMM d, yyyy")}</span>
-                  <span className="mx-3 text-muted-foreground font-normal">&rarr;</span>
-                  <span className="text-primary">{format(range.to, "MMM d, yyyy")}</span>
-                </>
-              ) : (
-                <span className="text-foreground">{format(range.from, "MMM d, yyyy")}</span>
-              )
-            ) : (
-              <span>{placeholder}</span>
+              "w-full sm:w-[300px] justify-between font-bold shadow-sm bg-background hover:bg-muted transition-all text-foreground px-3 py-5 rounded-md",
+              !range?.from && "text-muted-foreground",
+              className
             )}
-          </div>
-          <div className="pl-3 py-1 border-l border-border ml-2 flex items-center justify-center h-full">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </Button>
+          >
+            <div className="flex-1 flex items-center justify-center">
+              {range?.from ? (
+                range.to ? (
+                  <>
+                    <span className="text-foreground">{format(range.from, "MMM d, yyyy")}</span>
+                    <span className="mx-3 text-muted-foreground font-normal">&rarr;</span>
+                    <span className="text-primary">{format(range.to, "MMM d, yyyy")}</span>
+                  </>
+                ) : (
+                  <span className="text-foreground">{format(range.from, "MMM d, yyyy")}</span>
+                )
+              ) : (
+                <span>{placeholder}</span>
+              )}
+            </div>
+            <div className="pl-3 py-1 border-l border-border ml-2 flex items-center justify-center h-full">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </Button>
         )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-background rounded-lg shadow-lg" align={popoverAlign}>
-        <div 
+        <div
           className={cn(
             "p-3",
             "[&_[data-range-start=true]]:!bg-primary [&_[data-range-start=true]]:!text-primary-foreground [&_[data-range-start=true]]:!rounded-full",
@@ -197,14 +197,14 @@ export function DualPaneDateRangePicker({
                 to: endValue ? new Date(endValue) : undefined,
               });
             }}
-            className="font-extrabold"
+            className="font-bold"
           >
             Cancel
           </Button>
           <Button
             onClick={handleApply}
             disabled={!range?.from || !range?.to}
-            className="font-extrabold"
+            className="font-bold"
           >
             Apply Range
           </Button>

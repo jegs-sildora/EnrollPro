@@ -34,7 +34,7 @@ function DashboardPhaseBanner({
   if (isArchived) {
     return (
       <div className="rounded-md border border-slate-200 bg-card px-4 py-3 shadow-sm">
-        <p className="text-base font-extrabold text-foreground">
+        <p className="text-lg font-bold text-foreground">
           Archived School Year Summary
         </p>
         <p className="text-base font-bold text-foreground">
@@ -48,10 +48,10 @@ function DashboardPhaseBanner({
     return (
       <div className="bg-card">
         <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 shadow-sm">
-          <p className="text-base font-extrabold text-primary">
+          <p className="text-lg font-bold text-primary">
             Enrollment Operations for S.Y. {ayLabel}
           </p>
-          <p className="text-base font-bold text-foreground">
+          <p className="text-base font-semibold text-foreground">
             Process learner applications, verify school requirements, and complete section assignment.
           </p>
         </div>
@@ -62,10 +62,10 @@ function DashboardPhaseBanner({
   if (phase === "EOSY_CLOSING") {
     return (
       <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3 shadow-sm">
-        <p className="text-base font-extrabold text-foreground">
+        <p className="text-lg font-bold text-foreground">
           EOSY Closing for S.Y. {ayLabel}
         </p>
-        <p className="text-base font-semibold text-foreground">
+        <p className="text-base  text-foreground">
           Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
         </p>
       </div>

@@ -91,12 +91,12 @@ export default function SectionMasterlistViewer() {
   const selectedSection = sections.find((s) => String(s.id) === selectedSectionId);
 
   return (
-<div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <Breadcrumb items={[{ label: "Dashboard", href: "/registrar" }, { label: "Section Masterlist" }]} />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Section Masterlist Viewer</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Section Masterlist Viewer</h1>
           <p className="text-gray-600 mt-1">
             View the official learner list for any section from EnrollPro — read-only.
           </p>
@@ -187,11 +187,11 @@ export default function SectionMasterlistViewer() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50/80">
-                      <TableHead className="font-extrabold text-gray-700 w-8">#</TableHead>
-                      <TableHead className="font-extrabold text-gray-700">LRN</TableHead>
-                      <TableHead className="font-extrabold text-gray-700">Learner Name</TableHead>
-                      <TableHead className="font-extrabold text-gray-700">Sex</TableHead>
-                      <TableHead className="font-extrabold text-gray-700">Mother Tongue</TableHead>
+                      <TableHead className="font-bold text-gray-700 w-8">#</TableHead>
+                      <TableHead className="font-bold text-gray-700">LRN</TableHead>
+                      <TableHead className="font-bold text-gray-700">Learner Name</TableHead>
+                      <TableHead className="font-bold text-gray-700">Sex</TableHead>
+                      <TableHead className="font-bold text-gray-700">Mother Tongue</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

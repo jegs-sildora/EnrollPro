@@ -258,7 +258,7 @@ export function getAcademicDesignationColorClasses(
     return "bg-emerald-600 text-white border-emerald-700 shadow-sm";
   }
   if (d.includes("DEPARTMENT HEAD")) {
-    return "bg-amber-500 text-slate-900 border-amber-600 shadow-sm font-extrabold";
+    return "bg-amber-500 text-slate-900 border-amber-600 shadow-sm font-bold";
   }
   if (d.includes("SUBJECT TEACHER")) {
     return "bg-slate-100 text-slate-600 border-slate-200";
@@ -280,11 +280,11 @@ export function getLearnerStatusColorClasses(
 
   switch (s) {
     case "ACTIVE":
-      return "bg-emerald-600 text-white font-extrabold shadow-sm border-none";
+      return "bg-emerald-600 text-white font-bold shadow-sm border-none";
     case "JHS_COMPLETER":
-      return "bg-primary text-primary-foreground font-extrabold shadow-sm border-none";
+      return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
     case "DROPPED":
-      return "bg-red-800 text-white font-extrabold shadow-sm border-none";
+      return "bg-red-800 text-white font-bold shadow-sm border-none";
     case "TRANSFERRED_OUT":
       return "bg-slate-100 text-slate-600 border-slate-300";
     default:

@@ -131,7 +131,7 @@ function SectionItem({ label, value, valueClassName }: { label: string; value: s
       <div className="bg-muted text-foreground font-bold text-base uppercase px-4 py-2 border-r border-border flex items-center">
         {label}
       </div>
-      <div className={`bg-card text-base leading-tight font-extrabold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
+      <div className={`bg-card text-base leading-tight font-bold text-foreground px-4 py-2 border-r border-border last:border-0 flex items-center ${valueClassName || ''}`}>
         {(!value || value === "-" || value === "") ? (
           <span className="text-foreground italic font-normal">
             Not Specified
@@ -290,7 +290,7 @@ function AcademicHistoryAccordion({
           }`}
       >
         <div className="flex items-center gap-2">
-          <span className="text-base leading-tight font-extrabold text-foreground uppercase">
+          <span className="text-base leading-tight font-bold text-foreground uppercase">
             {history.grade_level} &bull; S.Y. {history.school_year}
           </span>
         </div>
@@ -343,17 +343,17 @@ function AcademicHistoryAccordion({
 
                       return (
                         <tr key={subject} className="bg-card hover:bg-muted/50 transition-colors">
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{subject}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term1}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term2}</td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term3}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{subject}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term1}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term2}</td>
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term3}</td>
                           {!isTrimester && (
-                            <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">{term4}</td>
+                            <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">{term4}</td>
                           )}
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">
                             {finalRating}
                           </td>
-                          <td className="border border-border px-4 py-3 text-center text-foreground font-extrabold uppercase">
+                          <td className="border border-border px-4 py-3 text-center text-foreground font-bold uppercase">
                             {remarks}
                           </td>
                         </tr>
@@ -363,10 +363,10 @@ function AcademicHistoryAccordion({
                   <tfoot className="border border-border text-lg">
                     <tr>
                       <td colSpan={isTrimester ? 4 : 5} className="text-right pr-4 font-bold uppercase bg-muted border border-border text-foreground uppercase">General Average:</td>
-                      <td className="text-center font-extrabold bg-card border border-border text-lg text-foreground">
+                      <td className="text-center font-bold bg-card border border-border text-lg text-foreground">
                         {formatVal(history.general_average)}
                       </td>
-                      <td className="bg-card border border-border text-center text-base text-primary font-extrabold">
+                      <td className="bg-card border border-border text-center text-base text-primary font-bold">
                         {getAcademicHonors(history.general_average)}
                       </td>
                     </tr>
@@ -472,12 +472,12 @@ export default function LearnerDashboard() {
                 <SheetContent side="left" className="w-[85vw] sm:max-w-[380px] p-6 overflow-y-auto bg-[hsl(var(--background))] border-r border-border flex flex-col justify-between" aria-describedby="mobile-nav-description">
                   <div>
                     <SheetHeader className="pb-4 border-b border-border text-left">
-                      <SheetTitle className="text-xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                      <SheetTitle className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
                         {data.schoolLogoUrl ? (
                           <img src={data.schoolLogoUrl} alt="School Seal" className="h-7 w-7 object-contain shrink-0" />
                         ) : (
                           <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                            <span className="text-sm font-extrabold text-primary-foreground">
+                            <span className="text-sm font-bold text-primary-foreground">
                               {data.schoolAcronym?.slice(0, 2) || "EP"}
                             </span>
                           </div>
@@ -494,7 +494,7 @@ export default function LearnerDashboard() {
                       <div className="flex flex-col gap-1 mt-1">
                         <Button
                           variant="ghost"
-                          className="w-full justify-start font-extrabold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
+                          className="w-full justify-start font-bold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
                           onClick={() => handleNavClick("sf9", "dashboard-overview")}
                         >
                           <DashboardIcon className="h-5 w-5 text-primary shrink-0" />
@@ -502,7 +502,7 @@ export default function LearnerDashboard() {
                         </Button>
                         <Button
                           variant="ghost"
-                          className="w-full justify-start font-extrabold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
+                          className="w-full justify-start font-bold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
                           onClick={() => handleNavClick("sf9", "sf9-section")}
                         >
                           <BookOpen className="h-5 w-5 text-primary shrink-0" />
@@ -510,7 +510,7 @@ export default function LearnerDashboard() {
                         </Button>
                         <Button
                           variant="ghost"
-                          className="w-full justify-start font-extrabold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
+                          className="w-full justify-start font-bold text-base h-11 px-3 gap-3 text-foreground hover:bg-muted/60"
                           onClick={() => handleNavClick("sf1", "sf1-section")}
                         >
                           <User className="h-5 w-5 text-primary shrink-0" />
@@ -518,7 +518,7 @@ export default function LearnerDashboard() {
                         </Button>
                         <Button
                           variant="ghost"
-                          className="w-full justify-start font-extrabold text-base h-11 px-3 gap-3 text-primary hover:bg-primary/10 hover:text-primary"
+                          className="w-full justify-start font-bold text-base h-11 px-3 gap-3 text-primary hover:bg-primary/10 hover:text-primary"
                           onClick={() => setShowLogoutConfirm(true)}
                         >
                           <LogOut className="h-4 w-4" />
@@ -532,26 +532,26 @@ export default function LearnerDashboard() {
                         {data.sf1.studentPhoto ? (
                           <img src={data.sf1.studentPhoto} alt="Learner Photo" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-4xl font-extrabold text-primary-foreground tracking-tighter uppercase">
+                          <span className="text-4xl font-bold text-primary-foreground tracking-tighter uppercase">
                             {data.identity.firstName.charAt(0)}{data.identity.lastName.charAt(0)}
                           </span>
                         )}
                       </div>
 
-                      <h2 className="text-xl font-extrabold text-foreground uppercase text-center leading-tight">
+                      <h2 className="text-xl font-bold text-foreground uppercase text-center leading-tight">
                         {data.identity.firstName} {data.identity.middleName}  {data.identity.lastName}
                       </h2>
-                      <p className="text-base leading-tight font-extrabold text-foreground text-center mt-1">
+                      <p className="text-base leading-tight font-bold text-foreground text-center mt-1">
                         LRN: {data.identity.lrn}
                       </p>
 
                       <hr className="w-full border-t border-border/60 my-4" />
 
                       <div className="flex flex-col items-center text-center w-full space-y-1 uppercase">
-                        <p className="text-lg font-extrabold text-primary">
+                        <p className="text-lg font-bold text-primary">
                           {data.enrollment.gradeLevel || "Not Enrolled"} - {data.enrollment.section || "Unsectioned"}
                         </p>
-                        <p className="text-base font-extrabold text-foreground">
+                        <p className="text-base font-bold text-foreground">
                           {data.enrollment.curriculumProgram
                             ? (SCP_LABELS[data.enrollment.curriculumProgram] || data.enrollment.curriculumProgram)
                             : "Basic Education Curriculum"}
@@ -561,10 +561,10 @@ export default function LearnerDashboard() {
                   </div>
 
                   <div className="w-full pt-4 border-t border-border/50 flex flex-col items-center text-center mt-auto">
-                    <span className="font-extrabold text-sm uppercase text-foreground">
+                    <span className="font-bold text-sm uppercase text-foreground">
                       Official Class Adviser
                     </span>
-                    <p className="text-lg font-extrabold text-foreground mt-1 uppercase">
+                    <p className="text-lg font-bold text-foreground mt-1 uppercase">
                       {data.enrollment.advisingTeacher || "To Be Assigned"}
                     </p>
                   </div>
@@ -575,12 +575,12 @@ export default function LearnerDashboard() {
               <img src={data.schoolLogoUrl} alt="School Seal" className="h-8 w-8 object-contain" />
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-base font-extrabold text-primary-foreground">
+                <span className="text-base font-bold text-primary-foreground">
                   {data?.schoolAcronym?.slice(0, 2) || "HN"}
                 </span>
               </div>
             )}
-            <span className="font-extrabold text-xl text-foreground tracking-tight">
+            <span className="font-bold text-xl text-foreground tracking-tight">
               {data?.schoolAcronym || "HNHS"} Learner Information System
             </span>
           </div>
@@ -621,9 +621,9 @@ export default function LearnerDashboard() {
           <div className="flex-1 w-full p-4 sm:p-6 flex flex-col items-center justify-center min-h-[50vh]">
             <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-xl max-w-md text-center">
               <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-lg font-extrabold text-foreground mb-2">Dashboard Error</h2>
+              <h2 className="text-lg font-bold text-foreground mb-2">Dashboard Error</h2>
               <p className="text-muted-foreground text-sm leading-relaxed mb-6">{error}</p>
-              <Button onClick={() => window.location.reload()} variant="outline" className="font-extrabold w-full">
+              <Button onClick={() => window.location.reload()} variant="outline" className="font-bold w-full">
                 Refresh Page
               </Button>
             </div>
@@ -637,26 +637,26 @@ export default function LearnerDashboard() {
                   {data.sf1.studentPhoto ? (
                     <img src={data.sf1.studentPhoto} alt="Learner Photo" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-5xl font-extrabold text-primary-foreground tracking-tighter uppercase">
+                    <span className="text-5xl font-bold text-primary-foreground tracking-tighter uppercase">
                       {data.identity.firstName.charAt(0)}{data.identity.lastName.charAt(0)}
                     </span>
                   )}
                 </div>
 
-                <h2 className="text-2xl font-extrabold text-foreground uppercase text-center leading-tight">
+                <h2 className="text-2xl font-bold text-foreground uppercase text-center leading-tight">
                   {data.identity.firstName} {data.identity.middleName}  {data.identity.lastName}
                 </h2>
-                <p className="text-xl leading-tight font-extrabold text-foreground text-center mt-1">
+                <p className="text-xl leading-tight font-bold text-foreground text-center mt-1">
                   LRN: {data.identity.lrn}
                 </p>
 
                 <hr className="w-full border-t border-border/60 my-6" />
 
                 <div className="flex flex-col items-center text-center w-full space-y-1 uppercase">
-                  <p className="text-xl font-extrabold text-primary">
+                  <p className="text-xl font-bold text-primary">
                     {data.enrollment.gradeLevel || "Not Enrolled"} - {data.enrollment.section || "Unsectioned"}
                   </p>
-                  <p className="text-xl font-extrabold text-foreground">
+                  <p className="text-xl font-bold text-foreground">
                     {data.enrollment.curriculumProgram
                       ? (SCP_LABELS[data.enrollment.curriculumProgram] || data.enrollment.curriculumProgram)
                       : "Basic Education Curriculum"}
@@ -665,10 +665,10 @@ export default function LearnerDashboard() {
               </div>
 
               <div className="w-full mt-8 pt-4 border-t border-border/50 flex flex-col items-center text-center">
-                <span className="font-extrabold uppercase text-foreground">
+                <span className="font-bold uppercase text-foreground">
                   Official Class Adviser
                 </span>
-                <p className="text-xl font-extrabold text-foreground mt-1 uppercase">
+                <p className="text-xl font-bold text-foreground mt-1 uppercase">
                   {data.enrollment.advisingTeacher || "To Be Assigned"}
                 </p>
               </div>
@@ -677,14 +677,14 @@ export default function LearnerDashboard() {
             {/* Right Pane (Flat Document Canvas) */}
             <main className="w-full md:w-[60%] lg:w-[70%] flex-1 h-full overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-12">
               <div id="dashboard-overview" className="mb-6 mt-4">
-                <h1 className="text-3xl font-extrabold text-foreground">Learner Profile</h1>
+                <h1 className="text-3xl font-bold text-foreground">Learner Profile</h1>
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="w-full flex flex-wrap sm:flex-nowrap h-auto gap-1 mb-6 p-1 bg-muted border border-border rounded-xl relative shadow-sm">
                   <TabsTrigger
                     value="sf9"
-                    className="flex-1 min-w-25 py-3 px-3 text-sm sm:text-base font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+                    className="flex-1 min-w-25 py-3 px-3 text-sm sm:text-base font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
                   >
                     {activeTab === "sf9" && (
                       <motion.div
@@ -700,7 +700,7 @@ export default function LearnerDashboard() {
                   </TabsTrigger>
                   <TabsTrigger
                     value="sf1"
-                    className="flex-1 min-w-25 py-3 px-3 text-sm sm:text-base font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+                    className="flex-1 min-w-25 py-3 px-3 text-sm sm:text-base font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
                   >
                     {activeTab === "sf1" && (
                       <motion.div
@@ -733,7 +733,7 @@ export default function LearnerDashboard() {
                             <div className="mb-8 mt-0 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                               <div className="flex items-center gap-3">
                                 <div>
-                                  <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
+                                  <h3 className="text-2xl font-bold text-gray-900 uppercase dark:text-foreground">
                                     Official School Form 9 (SF9) - Historical Academic Records
                                   </h3>
                                 </div>
@@ -774,7 +774,7 @@ export default function LearnerDashboard() {
                         <div id="sf1-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
                           <div className="bg-transparent pb-0 print:bg-transparent">
                             <div className="mb-8 mt-0 flex items-center gap-3">
-                              <h3 className="text-2xl font-extrabold text-gray-900 uppercase dark:text-foreground">
+                              <h3 className="text-2xl font-bold text-gray-900 uppercase dark:text-foreground">
                                 Official Learner Profile
                               </h3>
                             </div>
@@ -782,7 +782,7 @@ export default function LearnerDashboard() {
                           <div className="space-y-4">
                             {/* Sub-Section 1: Learner Demographics */}
                             <div className="mb-8">
-                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
+                              <h3 className="text-lg font-bold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">I. LEARNER IDENTITY</h3>
                               <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
                                 <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                                   <SectionItem label="Sex" value={data.sf1.sex === "MALE" ? "Male" : "Female"} />
@@ -805,7 +805,7 @@ export default function LearnerDashboard() {
 
                             {/* Sub-Section 2: Address & Contact Details */}
                             <div className="mb-8">
-                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY</h3>
+                              <h3 className="text-lg font-bold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">II. CURRENT RESIDENCY</h3>
                               <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
                                 <div className="grid grid-cols-1 md:grid-cols-2 border-b border-border last:border-0">
                                   <SectionItem label="Permanent Home Address" value={
@@ -827,7 +827,7 @@ export default function LearnerDashboard() {
 
                             {/* Sub-Section 3: Parent & Guardian Information */}
                             <div className="mb-8">
-                              <h3 className="text-lg font-extrabold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">III. PARENT/GUARDIAN BACKGROUND</h3>
+                              <h3 className="text-lg font-bold text-foreground border-b-2 border-primary pb-2 mb-4 mt-8 uppercase">III. PARENT/GUARDIAN BACKGROUND</h3>
                               <div className="border border-border rounded-sm overflow-hidden overflow-x-auto flex flex-col">
                                 <div className="grid grid-cols-1 md:grid-cols-4 border-b border-border last:border-0">
                                   <SectionItem label="Mother's Full Maiden Name" value={data.sf1.mother ? `${data.sf1.mother.firstName} ${data.sf1.mother.lastName}` : null} />

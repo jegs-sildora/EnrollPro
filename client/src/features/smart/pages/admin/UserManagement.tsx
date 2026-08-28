@@ -270,11 +270,11 @@ export default function UserManagement() {
   }
 
   return (
-<div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
             User Management
           </h1>
           <p style={{ color: '#6b7280' }} className="mt-1">
@@ -290,7 +290,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Total Users</p>
-                <p className="text-2xl font-extrabold" style={{ color: '#111827' }}>{userCounts.total}</p>
+                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{userCounts.total}</p>
               </div>
               <div className="p-2 rounded-lg bg-gray-100">
                 <Users className="w-5 h-5 text-gray-600" />
@@ -303,7 +303,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Admins</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.primary }}>{userCounts.admin}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.primary }}>{userCounts.admin}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.primary}15` }}>
                 <Shield className="w-5 h-5" style={{ color: colors.primary }} />
@@ -316,7 +316,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Teachers</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{userCounts.teacher}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{userCounts.teacher}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <UserCheck className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -329,7 +329,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Registrars</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.accent }}>{userCounts.registrar}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.accent }}>{userCounts.registrar}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.accent}15` }}>
                 <ClipboardList className="w-5 h-5" style={{ color: colors.accent }} />
@@ -342,7 +342,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs  text-gray-500">Active</p>
-                <p className="text-2xl font-extrabold" style={{ color: colors.secondary }}>{userCounts.active}</p>
+                <p className="text-2xl font-bold" style={{ color: colors.secondary }}>{userCounts.active}</p>
               </div>
               <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.secondary}15` }}>
                 <CheckCircle2 className="w-5 h-5" style={{ color: colors.secondary }} />
@@ -403,12 +403,12 @@ export default function UserManagement() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="font-extrabold text-gray-700">User</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Employee ID</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Role</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Status</TableHead>
-                  <TableHead className="font-extrabold text-gray-700">Last Active</TableHead>
-                  <TableHead className="font-extrabold text-gray-700 text-right">Actions</TableHead>
+                  <TableHead className="font-bold text-gray-700">User</TableHead>
+                  <TableHead className="font-bold text-gray-700">Employee ID</TableHead>
+                  <TableHead className="font-bold text-gray-700">Role</TableHead>
+                  <TableHead className="font-bold text-gray-700">Status</TableHead>
+                  <TableHead className="font-bold text-gray-700">Last Active</TableHead>
+                  <TableHead className="font-bold text-gray-700 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -427,12 +427,12 @@ export default function UserManagement() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className={`h-10 w-10 ring-2 ring-offset-2 ring-gray-200`}>
-                            <AvatarFallback className="text-white font-semibold" style={{ backgroundColor: colors.primary }}>
+                            <AvatarFallback className="text-white " style={{ backgroundColor: colors.primary }}>
                               {(user.firstName?.[0] || "U")}{(user.lastName?.[0] || "")}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-semibold" style={{ color: '#111827' }}>
+                            <p className="" style={{ color: '#111827' }}>
                               {user.firstName || ""} {user.lastName || ""}
                             </p>
                             {user.email && (
@@ -476,7 +476,7 @@ export default function UserManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 rounded-lg gap-1.5 px-3 font-semibold hover:bg-slate-100 transition-colors"
+                          className="h-8 rounded-lg gap-1.5 px-3  hover:bg-slate-100 transition-colors"
                           onClick={() => openViewDialog(user)}
                         >
                           <Eye className="w-4 h-4 text-slate-500" />
@@ -749,12 +749,12 @@ export default function UserManagement() {
             <div className="space-y-4 py-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="text-white text-xl font-semibold" style={{ backgroundColor: colors.primary }}>
+                  <AvatarFallback className="text-white text-xl " style={{ backgroundColor: colors.primary }}>
                     {(selectedUser.firstName?.[0] || "U")}{(selectedUser.lastName?.[0] || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-extrabold" style={{ color: '#111827' }}>
+                  <h3 className="text-xl font-bold" style={{ color: '#111827' }}>
                     {selectedUser.firstName} {selectedUser.lastName}
                   </h3>
                   <Badge className="border-0 mt-1" style={{ backgroundColor: `${colors.primary}${roleOpacity[selectedUser.role] || '18'}`, color: colors.primary }}>
@@ -817,12 +817,12 @@ export default function UserManagement() {
             <div className="py-4">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback className="text-white font-semibold" style={{ backgroundColor: colors.primary }}>
+                  <AvatarFallback className="text-white " style={{ backgroundColor: colors.primary }}>
                     {(selectedUser.firstName?.[0] || "U")}{(selectedUser.lastName?.[0] || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{selectedUser.firstName} {selectedUser.lastName}</p>
+                  <p className="">{selectedUser.firstName} {selectedUser.lastName}</p>
                   <p className="text-sm text-gray-500">@{selectedUser.username}</p>
                 </div>
               </div>

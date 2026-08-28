@@ -1,23 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+
 
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
-  th {
-    font-weight: 900 !important; /* Tailwind font-black */
-  }
+  /* other base styles */
 }
-div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus-visible, > button:focus, > button:focus-visible, > [role="combobox"]:focus, > [role="combobox"][aria-expanded="true"]) > .animated-error {
+
+div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus-visible, > button:focus, > button:focus-visible, > [role="combobox"]:focus, > [role="combobox"][aria-expanded="true"])>.animated-error {
   opacity: 0 !important;
   pointer-events: none;
 }
 
 @theme {
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: Poppins, ui-sans-serif, system-ui, sans-serif;
 
   --animate-modal-in: modal-in var(--motion-duration-normal) var(--motion-ease-smooth) forwards;
   --animate-modal-out: modal-out var(--motion-duration-fast) var(--motion-ease-sharp) forwards;
@@ -42,8 +41,15 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --animate-focus-fade: focus-fade 1.5s ease-out forwards;
 
   @keyframes focus-fade {
-    0%, 66% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)); }
-    100% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px transparent; }
+
+    0%,
+    66% {
+      box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    }
+
+    100% {
+      box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px transparent;
+    }
   }
 
   @keyframes modal-in {
@@ -51,6 +57,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
       opacity: 0;
       transform: translate(-50%, -48%) scale(0.9);
     }
+
     to {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
@@ -62,6 +69,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
     }
+
     to {
       opacity: 0;
       transform: translate(-50%, -48%) scale(0.9);
@@ -69,42 +77,90 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   }
 
   @keyframes sheet-in-right {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
+    from {
+      transform: translateX(100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
   }
+
   @keyframes sheet-out-right {
-    from { transform: translateX(0); }
-    to { transform: translateX(100%); }
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
   }
+
   @keyframes sheet-in-left {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
   }
+
   @keyframes sheet-out-left {
-    from { transform: translateX(0); }
-    to { transform: translateX(-100%); }
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-100%);
+    }
   }
+
   @keyframes sheet-in-top {
-    from { transform: translateY(-100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(-100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
   }
+
   @keyframes sheet-out-top {
-    from { transform: translateY(0); }
-    to { transform: translateY(-100%); }
+    from {
+      transform: translateY(0);
+    }
+
+    to {
+      transform: translateY(-100%);
+    }
   }
+
   @keyframes sheet-in-bottom {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
   }
+
   @keyframes sheet-out-bottom {
-    from { transform: translateY(0); }
-    to { transform: translateY(100%); }
+    from {
+      transform: translateY(0);
+    }
+
+    to {
+      transform: translateY(100%);
+    }
   }
 
   @keyframes fade-in {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -114,54 +170,68 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     from {
       opacity: 1;
     }
+
     to {
       opacity: 0;
     }
   }
 
   @keyframes slide-up {
-    from { 
+    from {
       opacity: 0;
       transform: translateY(20px);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: translateY(0);
     }
   }
 
   @keyframes slide-in-right {
-    from { 
+    from {
       opacity: 0;
       transform: translateX(20px);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: translateX(0);
     }
   }
 
   @keyframes scale-in {
-    from { 
+    from {
       opacity: 0;
       transform: scale(0.95);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: scale(1);
     }
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-8px);
+    }
   }
 
   @keyframes pulse-glow {
-    0%, 100% { 
+
+    0%,
+    100% {
       box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
     }
-    50% { 
+
+    50% {
       box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
     }
   }
@@ -170,15 +240,24 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     from {
       background-position: 200% 0;
     }
+
     to {
       background-position: -200% 0;
     }
   }
 
   @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 }
 
@@ -240,7 +319,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --accent-bg: rgba(16, 185, 129, 0.08);
   --accent-border: rgba(16, 185, 129, 0.4);
   --social-bg: rgba(241, 245, 249, 0.8);
-  
+
   /* Premium shadow system */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -249,7 +328,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.15);
-  
+
   /* Emerald accent shadows */
   --shadow-emerald: 0 10px 30px -5px rgba(16, 185, 129, 0.25);
   --shadow-emerald-sm: 0 4px 14px -3px rgba(16, 185, 129, 0.2);
@@ -280,7 +359,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --primary: 355 45% 48%;
   --primary-foreground: 0 0% 100%;
   --ring: 212.7 26.8% 83.9%;
-  
+
   --sidebar-background: 222 19% 14%;
   --sidebar-foreground: 210 40% 98%;
   --sidebar-primary: 355 45% 48%;
@@ -329,7 +408,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: Poppins, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -411,6 +490,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --sileo-state-info: rgba(255, 255, 255, 1);
   --sileo-state-action: rgba(255, 255, 255, 1);
 }
+
 [data-sileo-viewport][data-theme="light"] [data-sileo-title],
 [data-sileo-viewport][data-theme="light"] [data-sileo-badge],
 [data-sileo-viewport][data-theme="light"] [data-sileo-description] {
@@ -425,6 +505,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   --sileo-state-info: rgba(0, 0, 0, 1);
   --sileo-state-action: rgba(0, 0, 0, 1);
 }
+
 [data-sileo-viewport][data-theme="dark"] [data-sileo-title],
 [data-sileo-viewport][data-theme="dark"] [data-sileo-badge],
 [data-sileo-viewport][data-theme="dark"] [data-sileo-description] {
@@ -435,38 +516,51 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground font-semibold;
+    @apply bg-background text-foreground;
     background: linear-gradient(135deg, #fafbfc 0%, hsl(var(--primary) / 0.03) 50%, hsl(var(--primary) / 0.06) 100%);
     font-family: var(--font-sans);
   }
+
   .dark body {
     background: linear-gradient(135deg, #0f172a 0%, hsl(var(--primary) / 0.08) 50%, hsl(var(--primary) / 0.04) 100%);
   }
+
   html {
     @apply font-sans;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.25;
   }
+
   h1 {
     font-size: clamp(1.875rem, 4vw, 2.5rem);
     font-weight: 700;
   }
+
   h2 {
     font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   }
+
   h3 {
     font-size: clamp(1.125rem, 2vw, 1.25rem);
   }
+
   p {
     margin: 0;
     line-height: 1.7;
   }
+
   code,
   .counter {
     font-family: ui-monospace, 'SF Mono', Consolas, monospace;
@@ -475,6 +569,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     color: var(--text-h);
     font-size: 0.875em;
   }
+
   code {
     padding: 0.25em 0.5em;
     background: var(--code-bg);
@@ -543,18 +638,23 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   .animate-fade-in {
     animation: var(--animate-fade-in);
   }
+
   .animate-slide-up {
     animation: var(--animate-slide-up);
   }
+
   .animate-slide-in-right {
     animation: var(--animate-slide-in-right);
   }
+
   .animate-scale-in {
     animation: var(--animate-scale-in);
   }
+
   .animate-float {
     animation: float 4s ease-in-out infinite;
   }
+
   .animate-gradient {
     background-size: 200% 200%;
     animation: gradient-shift 8s ease infinite;
@@ -612,6 +712,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.4);
   }
+
   .glass-dark {
     background: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(12px);
@@ -623,6 +724,7 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
   .card-hover {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .card-hover:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
@@ -649,11 +751,11 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   .print-hide {
     display: none !important;
   }
-  
+
   .print-form {
     box-shadow: none !important;
     border: 2px solid #000 !important;
@@ -661,22 +763,22 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     padding: 0.5in !important;
     max-width: 100% !important;
   }
-  
+
   .print-form * {
     color: black !important;
     background: white !important;
   }
-  
+
   .print-form table {
     border-collapse: collapse !important;
   }
-  
+
   .print-form table td,
   .print-form table th {
     border: 1px solid #000 !important;
     padding: 4px !important;
   }
-  
+
   .print-form .bg-gray-200,
   .print-form .bg-gray-100,
   .print-form .bg-gray-50 {
@@ -684,12 +786,12 @@ div:has(> input:focus, > input:focus-visible, > textarea:focus, > textarea:focus
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   .page-break-inside-avoid {
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  
+
   @page {
     size: legal;
     margin: 0;

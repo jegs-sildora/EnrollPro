@@ -88,7 +88,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="lastSchoolName"
-              className="text-base leading-tight font-extrabold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               Last School Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -97,7 +97,7 @@ export default function Step4PreviousSchool() {
               {...register("lastSchoolName")}
               placeholder="e.g. Apolinario Mabini Elementary School"
               className={cn(
-                "h-11 font-extrabold uppercase",
+                "h-11 font-bold uppercase",
                 errors.lastSchoolName &&
                 "border-destructive focus-visible:ring-destructive",
               )}
@@ -112,7 +112,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="lastSchoolId"
-              className="text-base leading-tight font-extrabold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               School ID (Optional)
             </Label>
             <Input
@@ -120,7 +120,7 @@ export default function Step4PreviousSchool() {
               id="lastSchoolId"
               {...register("lastSchoolId")}
               placeholder="6-digit DepEd ID"
-              className="h-11 font-extrabold uppercase"
+              className="h-11 font-bold uppercase"
               maxLength={6}
               inputMode="numeric"
               onInput={(e) => {
@@ -136,7 +136,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="lastGradeCompleted"
-              className="text-base leading-tight font-extrabold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               {isAls ? "ALS Qualification" : "Last Grade Completed"}{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -148,7 +148,7 @@ export default function Step4PreviousSchool() {
                 autoComplete="off"
                 readOnly
                 value="A&E Test Passer"
-                className="h-11 font-extrabold bg-muted text-foreground cursor-not-allowed"
+                className="h-11 font-bold bg-muted text-foreground cursor-not-allowed"
               />
             )}
 
@@ -158,7 +158,7 @@ export default function Step4PreviousSchool() {
                 <SelectTrigger
                   id="lastGradeCompleted"
                   className={cn(
-                    "h-11 font-extrabold text-foreground pointer-events-none uppercase",
+                    "h-11 font-bold text-foreground pointer-events-none uppercase",
                     errors.lastGradeCompleted &&
                     "border-destructive focus-visible:ring-destructive",
                   )}>
@@ -169,7 +169,7 @@ export default function Step4PreviousSchool() {
                     <SelectItem
                       key={g}
                       value={g}
-                      className="font-extrabold">
+                      className="font-bold">
                       {g}
                     </SelectItem>
                   ))}
@@ -190,7 +190,7 @@ export default function Step4PreviousSchool() {
                 <SelectTrigger
                   id="lastGradeCompleted"
                   className={cn(
-                    "h-11 font-extrabold",
+                    "h-11 font-bold",
                     errors.lastGradeCompleted &&
                     "border-destructive focus-visible:ring-destructive",
                   )}>
@@ -201,7 +201,7 @@ export default function Step4PreviousSchool() {
                     <SelectItem
                       key={g}
                       value={g}
-                      className="font-extrabold">
+                      className="font-bold">
                       {g}
                     </SelectItem>
                   ))}
@@ -215,7 +215,7 @@ export default function Step4PreviousSchool() {
           <div className="space-y-2">
             <Label
               htmlFor="schoolYearLastAttended"
-              className="text-base leading-tight font-extrabold text-foreground">
+              className="text-base leading-tight font-bold text-foreground">
               School Year Last Attended{" "}
               <span className="text-destructive">*</span>
             </Label>
@@ -225,7 +225,7 @@ export default function Step4PreviousSchool() {
               <SelectTrigger
                 id="schoolYearLastAttended"
                 className={cn(
-                  "h-11 font-extrabold",
+                  "h-11 font-bold",
                   errors.schoolYearLastAttended &&
                   "border-destructive focus-visible:ring-destructive",
                 )}>
@@ -236,7 +236,7 @@ export default function Step4PreviousSchool() {
                   <SelectItem
                     key={sy}
                     value={sy}
-                    className="font-extrabold">
+                    className="font-bold">
                     {sy}
                   </SelectItem>
                 ))}
@@ -246,7 +246,7 @@ export default function Step4PreviousSchool() {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base leading-tight font-extrabold text-foreground">
+          <Label className="text-base leading-tight font-bold text-foreground">
             School Type <span className="text-destructive">*</span>
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -261,7 +261,7 @@ export default function Step4PreviousSchool() {
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
-                <span className="font-extrabold text-base leading-tight ">
+                <span className="font-bold text-base leading-tight ">
                   {lt.label}
                 </span>
               </button>
@@ -272,7 +272,7 @@ export default function Step4PreviousSchool() {
         <div className="space-y-2 pt-2">
           <Label
             htmlFor="lastSchoolAddress"
-            className="text-base leading-tight font-extrabold text-foreground">
+            className="text-base leading-tight font-bold text-foreground">
             School Address / Division (Optional)
           </Label>
           <Input
@@ -280,7 +280,7 @@ export default function Step4PreviousSchool() {
             id="lastSchoolAddress"
             {...register("lastSchoolAddress")}
             placeholder="City/Municipality, Province"
-            className="h-11 font-extrabold uppercase"
+            className="h-11 font-bold uppercase"
           />
         </div>
       </div>
