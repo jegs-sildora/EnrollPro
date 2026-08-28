@@ -178,6 +178,25 @@ async function main(): Promise<void> {
       continue;
     }
 
+    if (!parsedResponse.ready) {
+      issues.push({
+        section: section.name,
+        gradeLevel: section.gradeLevel.name,
+        learner: null,
+        code: "SMART_NOT_READY",
+        message: "SMART has not yet finalized this section.",
+      });
+      sectionAudits.push({
+        section: section.name,
+        gradeLevel: section.gradeLevel.name,
+        localLearners: section.enrollmentRecords.length,
+        smartLearners: 0,
+        subjects: [],
+        issueCount: issues.length - sectionIssueStart,
+      });
+      continue;
+    }
+
     if (parsedResponse.schoolYear !== setting.activeSchoolYear.yearLabel) {
       issues.push({
         section: section.name,

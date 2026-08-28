@@ -487,6 +487,19 @@ async function syncFinalSmartSectionOutcomesInternal(
     );
   }
 
+  if (!parsed.data.ready) {
+    return {
+      syncedCount: 0,
+      unresolvedOutcomes: [],
+      unmatchedSmartLrns: [],
+      missingSmartLrns: [],
+      schoolYearId: section.schoolYearId,
+      sectionId: section.id,
+      sectionName: section.name,
+      learnerIds: [],
+    };
+  }
+
   if (
     parsed.data.schoolYear !== section.schoolYear.yearLabel
   ) {

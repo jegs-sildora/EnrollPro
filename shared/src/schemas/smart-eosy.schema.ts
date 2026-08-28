@@ -57,25 +57,32 @@ export const smartEosyLearnerOutcomeSchema = z.object({
     .transform((value) => (value === undefined ? undefined : String(value))),
 });
 
-export const smartEosySectionResponseSchema = z.object({
-  success: z.literal(true),
-  ready: z.literal(true),
-  sectionId: z.union([z.string(), z.number()]).optional(),
-  sectionName: z.string().trim().min(1, "SMART section name is required"),
-  gradeLevel: smartGradeLevelSchema,
-  schoolYear: z.string().regex(/^\d{4}-\d{4}$/, "SMART school year is invalid"),
-  program: z.string().trim().optional(),
-  adviser: z.string().trim().nullable().optional(),
-  outcomesSynced: z.number().int().nonnegative(),
-  outcomes: z.array(smartEosyLearnerOutcomeSchema),
-  students: z.array(smartEosyLearnerOutcomeSchema).optional(),
-  data: z
-    .object({
-      students: z.array(smartEosyLearnerOutcomeSchema).optional(),
-      outcomes: z.array(smartEosyLearnerOutcomeSchema).optional(),
-    })
-    .optional(),
-});
+export const smartEosySectionResponseSchema = z.discriminatedUnion("ready", [
+  z.object({
+    success: z.literal(true),
+    ready: z.literal(true),
+    sectionId: z.union([z.string(), z.number()]).optional(),
+    sectionName: z.string().trim().min(1, "SMART section name is required"),
+    gradeLevel: smartGradeLevelSchema,
+    schoolYear: z.string().regex(/^\d{4}-\d{4}$/, "SMART school year is invalid"),
+    program: z.string().trim().optional(),
+    adviser: z.string().trim().nullable().optional(),
+    outcomesSynced: z.number().int().nonnegative(),
+    outcomes: z.array(smartEosyLearnerOutcomeSchema),
+    students: z.array(smartEosyLearnerOutcomeSchema).optional(),
+    data: z
+      .object({
+        students: z.array(smartEosyLearnerOutcomeSchema).optional(),
+        outcomes: z.array(smartEosyLearnerOutcomeSchema).optional(),
+      })
+      .optional(),
+  }),
+  z.object({
+    success: z.boolean().optional(),
+    ready: z.literal(false),
+    message: z.string().optional(),
+  })
+]);
 
 const smartSchoolYearLabelSchema = z
   .string()
