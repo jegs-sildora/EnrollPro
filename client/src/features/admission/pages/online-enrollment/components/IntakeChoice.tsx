@@ -44,7 +44,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <CardTitle className="text-2xl font-bold">
               Incoming Grade 7, Transferees & Returning (Balik-Aral)
             </CardTitle>
-            <CardDescription className="text-foreground font-bold leading-relaxed">
+            <CardDescription className="text-foreground leading-relaxed">
               For new entrants or learners resuming their studies after
               a gap year.
             </CardDescription>
@@ -52,7 +52,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-                <div className="flex items-center gap-2 text-base font-bold uppercase text-emerald-600/70">
+                <div className="flex items-center gap-2 text-base font-bold uppercase text-emerald-600">
                   <ClipboardList className="h-3 w-3" />
                   Instructions:
                 </div>
@@ -99,14 +99,14 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <CardTitle className="text-2xl font-bold">
               Continuing Learners (Grades 8–10)
             </CardTitle>
-            <CardDescription className="text-foreground font-bold leading-relaxed">
+            <CardDescription className="text-foreground leading-relaxed">
               For existing students moving up to the next grade level.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-                <div className="flex items-center gap-2 text-base font-bold uppercase text-emerald-600/70">
+                <div className="flex items-center gap-2 text-base font-bold uppercase text-emerald-600">
                   <ClipboardList className="h-3 w-3" />
                   Instructions:
                 </div>

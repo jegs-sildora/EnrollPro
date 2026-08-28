@@ -262,7 +262,7 @@ export default function Step1Personal() {
             <h3 className="text-base leading-tight font-bold uppercase text-foreground">
               Learner Reference Number (LRN)
             </h3>
-            <p className="text-base text-foreground font-bold">
+            <p className="text-base text-foreground">
               Enter learner's 12-digit LRN to continue enrollment.
             </p>
           </div>
@@ -311,7 +311,7 @@ export default function Step1Personal() {
           </div>
         )}
 
-        <p className="text-base font-bold text-foreground">
+        <p className="text-base text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn

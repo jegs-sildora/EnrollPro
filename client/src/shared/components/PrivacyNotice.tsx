@@ -57,8 +57,8 @@ export default function PrivacyNotice({
               className="max-h-160 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
               {/* Header Section */}
               <section>
-                <h3 className="font-bold text-foreground mb-1 text-base uppercase">
-                  {schoolName} - DATA PRIVACY NOTICE (BEEF)
+                <h3 className="font-bold text-foreground mb-1 uppercase">
+                  {schoolName} - DATA PRIVACY NOTICE
                 </h3>
                 <p className="text-foreground text-base mb-2">
                   The Department of Education (DepEd) and {schoolName}{" "}
@@ -107,12 +107,12 @@ export default function PrivacyNotice({
                 </h4>
                 <div className="space-y-3 text-base text-foreground">
                   <p>
-                    <strong>Personal Information:</strong> Full name, birthdate,
+                    <span className="font-bold">Personal Information:</span> Full name, birthdate,
                     sex at birth, address, LRN, and PSA Birth Certificate
                     number.
                   </p>
                   <p>
-                    <strong>Sensitive Information:</strong>{" "}
+                    <span className="font-bold">Sensitive Information:</span>{" "}
                     Academic grades, behavioral records, health information,
                     and family background.
                   </p>
@@ -183,7 +183,7 @@ export default function PrivacyNotice({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-base font-bold leading-relaxed cursor-pointer select-none">
+              className="text-base leading-relaxed cursor-pointer select-none">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}

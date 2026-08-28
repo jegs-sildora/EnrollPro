@@ -691,7 +691,7 @@ export default function EnrollmentForm({
               <h2 className="text-xl font-bold  text-foreground leading-tight">
                 Learner Enrollment Form
               </h2>
-              <p className="text-base leading-tight text-foreground mt-0.5 font-bold">
+              <p className="text-base leading-tight text-foreground mt-0.5">
                 Please complete all required fields below.
               </p>
             </div>
