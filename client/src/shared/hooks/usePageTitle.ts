@@ -28,13 +28,13 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
     "/section-assignment": "Section Assignment",
     "/section-assignment/walk-in": "Learner Enrollment",
     "/eosy": "EOSY Updating",
-    "/students": "Learner Directory",
+    "/learners": "Learner Directory",
     "/sections": "Class Sections",
     "/audit-logs": "System Activity Logs",
     "/my-activity": "My Activity Log",
     "/help": "Help & Documentation",
     "/settings": "System Configuration",
-    "/teachers": "Personnel Directory",
+    "/personnel": "Personnel Directory",
     "/admin/system": "System Health",
     "/smart": "SMART",
     "/section-assignment/requirements": "Documentary Requirements",
@@ -44,8 +44,8 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
   if (exact[pathname]) return exact[pathname];
 
   // Prefix matches for dynamic segments
-  if (pathname.startsWith("/students/")) return "Learner Profile";
-  if (pathname.startsWith("/teachers/")) return "Teacher Profile";
+  if (pathname.startsWith("/learner/")) return "Learner Profile";
+  if (pathname.startsWith("/personnel/")) return "Teacher Profile";
   if (pathname.startsWith("/applications/")) return "Application Detail";
   if (pathname.startsWith("/settings/")) return "Settings";
   if (pathname.startsWith("/admin/")) return "Administration";

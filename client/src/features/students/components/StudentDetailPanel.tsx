@@ -256,8 +256,8 @@ export function StudentDetailPanel({
     onTransferOut?.({
       student,
       transferDate: transferOutDate,
-      destinationSchool: transferOutSchoolName,
-      reasonNote: transferOutReason,
+      destinationSchool: transferOutSchoolName.toUpperCase(),
+      reasonNote: transferOutReason.toUpperCase(),
     });
     setShowTransferOutDialog(false);
   };
@@ -269,7 +269,7 @@ export function StudentDetailPanel({
       student,
       dropOutDate: dropoutDate,
       reasonCode: dropoutReasonCode,
-      interventionNotes: dropoutInterventionNotes,
+      interventionNotes: dropoutInterventionNotes.toUpperCase(),
     });
     setShowDropoutDialog(false);
   };
@@ -606,9 +606,9 @@ export function StudentDetailPanel({
               student.guardianInfo?.contactNumber
               ? "GUARDIAN"
               : "MOTHER",
-      motherContactNumber: student.motherName?.contactNumber || "",
-      fatherContactNumber: student.fatherName?.contactNumber || "",
-      guardianContactNumber: student.guardianInfo?.contactNumber || "",
+      motherContactNumber: (student.motherName?.contactNumber || "").replace(/\D/g, ""),
+      fatherContactNumber: (student.fatherName?.contactNumber || "").replace(/\D/g, ""),
+      guardianContactNumber: (student.guardianInfo?.contactNumber || "").replace(/\D/g, ""),
     });
     setErrors({});
     setIsEditing(true);
@@ -631,10 +631,12 @@ export function StudentDetailPanel({
           ? profileForm.fatherContactNumber
           : profileForm.guardianContactNumber;
 
-    if (!selectedContactNo.trim()) {
+    const strippedContactNo = selectedContactNo.replace(/\D/g, "");
+
+    if (!strippedContactNo) {
       newErrors.contactNumber =
         "Primary Contact No. is required for the selected Emergency Contact.";
-    } else if (selectedContactNo.trim().length !== 11) {
+    } else if (strippedContactNo.length !== 11) {
       newErrors.contactNumber = "Contact No. must be exactly 11 digits.";
     }
 
@@ -687,13 +689,13 @@ export function StudentDetailPanel({
         religion: profileForm.religion.trim() || null,
         primaryContact: profileForm.primaryContact,
         currentAddress: {
-          region: profileForm.region.trim().toUpperCase() || null,
-          barangay: profileForm.barangay.trim().toUpperCase() || null,
-          province: profileForm.province.trim().toUpperCase() || null,
+          region: profileForm.region.trim().toUpperCase() || undefined,
+          barangay: profileForm.barangay.trim().toUpperCase() || undefined,
+          province: profileForm.province.trim().toUpperCase() || undefined,
           cityMunicipality:
-            profileForm.cityMunicipality.trim().toUpperCase() || null,
-          sitio: profileForm.sitioPurok.trim().toUpperCase() || null,
-          houseNoStreet: profileForm.houseNoStreet.trim().toUpperCase() || null,
+            profileForm.cityMunicipality.trim().toUpperCase() || undefined,
+          sitio: profileForm.sitioPurok.trim().toUpperCase() || undefined,
+          houseNoStreet: profileForm.houseNoStreet.trim().toUpperCase() || undefined,
         },
       };
 
@@ -1107,30 +1109,38 @@ export function StudentDetailPanel({
           </div>
         ) : (
           <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
-            <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2">
+            <div className="p-3 font-bold text-base leading-tight bg-[hsl(var(--muted)/50)] border-b flex items-center gap-2 uppercase">
               <GraduationCap className="h-4 w-4 text-primary" />
               Enrollment Information
             </div>
-            <div className="p-4 text-base leading-tight grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
-              <span className="text-foreground">School Year:</span>
-              <span>{student.schoolYear}</span>
-              <span className="text-foreground">Enrolled At:</span>
-              <span>
-                {student.enrollment?.enrolledAt
-                  ? formatDate(student.enrollment.enrolledAt)
-                  : "N/A"}
-              </span>
-              <span className="text-foreground">Enrolled By:</span>
-              <span className="uppercase">
-                {student.enrollment?.enrolledBy || "N/A"}
-              </span>
+            <div className="text-base leading-tight font-bold divide-y divide-border border-b-0">
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                <div className="p-3 text-foreground bg-muted/30">School Year:</div>
+                <div className="p-3 flex items-center uppercase">
+                  {student.schoolYear}
+                </div>
+              </div>
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                <div className="p-3 text-foreground bg-muted/30">Enrolled At:</div>
+                <div className="p-3 flex items-center uppercase">
+                  {student.enrollment?.enrolledAt
+                    ? formatDate(student.enrollment.enrolledAt)
+                    : "N/A"}
+                </div>
+              </div>
+              <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                <div className="p-3 text-foreground bg-muted/30">Enrolled By:</div>
+                <div className="p-3 flex items-center uppercase">
+                  {student.enrollment?.enrolledBy || "N/A"}
+                </div>
+              </div>
               {student.enrollment?.advisingTeacher && (
-                <>
-                  <span className="text-foreground">Advising Teacher:</span>
-                  <span className="uppercase">
+                <div className="grid grid-cols-[180px_1fr] divide-x divide-border">
+                  <div className="p-3 text-foreground bg-muted/30">Advising Teacher:</div>
+                  <div className="p-3 flex items-center uppercase">
                     {student.enrollment.advisingTeacher}
-                  </span>
-                </>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -2075,7 +2085,7 @@ export function StudentDetailPanel({
             Save Changes
           </Button>
         </div>
-      ) : canEditProfile ? (
+      ) : canEditProfile && student.enrollment?.eosyStatus !== "DROPPED_OUT" && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" ? (
         <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
           <div className="flex gap-2">
             <Dialog
@@ -2104,7 +2114,7 @@ export function StudentDetailPanel({
                     </DialogTitle>
                   </DialogHeader>
                 </div>
-                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6 mb-6">
+                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md mx-6">
                   This will permanently remove the learner from the active
                   homeroom masterlist.
                 </div>
@@ -2118,7 +2128,7 @@ export function StudentDetailPanel({
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
                       placeholder="e.g., Bacolod City National High School"
                       value={transferOutSchoolName}
-                      onChange={(e) => setTransferOutSchoolName(e.target.value)}
+                      onChange={(e) => setTransferOutSchoolName(e.target.value.toUpperCase())}
                     />
                   </div>
                   <div className="space-y-2">
@@ -2138,7 +2148,7 @@ export function StudentDetailPanel({
                       className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
                       placeholder="Optional reason"
                       value={transferOutReason}
-                      onChange={(e) => setTransferOutReason(e.target.value)}
+                      onChange={(e) => setTransferOutReason(e.target.value.toUpperCase())}
                     />
                   </div>
                 </div>
@@ -2204,7 +2214,7 @@ export function StudentDetailPanel({
                     <Select
                       value={dropoutReasonCode}
                       onValueChange={setDropoutReasonCode}>
-                      <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none">
+                      <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -2227,11 +2237,11 @@ export function StudentDetailPanel({
                   <div className="space-y-2">
                     <Label>Intervention Notes (Optional)</Label>
                     <Textarea
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground font-bold"
                       placeholder="Brief details on home visitations/counseling done"
                       value={dropoutInterventionNotes}
                       onChange={(e) =>
-                        setDropoutInterventionNotes(e.target.value)
+                        setDropoutInterventionNotes(e.target.value.toUpperCase())
                       }
                     />
                   </div>
@@ -2245,7 +2255,7 @@ export function StudentDetailPanel({
                   </Button>
                   <Button
                     variant="default"
-                    className="!bg-red-600 hover:!bg-red-700 !text-white font-bold px-5 py-2 shadow-sm border-none"
+                    className="!text-primary-foreground font-bold px-5 py-2 shadow-sm border-none"
                     onClick={handleDropoutSubmit}
                     disabled={!dropoutDate || !dropoutReasonCode}>
                     Finalize Drop Out
@@ -2255,7 +2265,7 @@ export function StudentDetailPanel({
             </Dialog>
           </div>
         </div>
-      ) : (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
+      ) : canEditProfile && (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
         <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
           <div className="flex gap-2">
             <Dialog
@@ -2267,24 +2277,23 @@ export function StudentDetailPanel({
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-blue-50 text-blue-700 hover:text-blue-800 hover:bg-blue-100 border-blue-200 shadow-sm">
+                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm">
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Reactivate Learner
                 </Button>
               </DialogTrigger>
               <DialogContent aria-describedby={undefined} className="w-full max-w-2xl p-0 overflow-hidden">
-                <DialogHeader className="px-6 py-4 bg-blue-50 border-b border-blue-100">
-                  <DialogTitle className="text-blue-800 text-lg flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
+                <DialogHeader className="px-6 py-4 bg-primary border-b border-primary">
+                  <DialogTitle className="text-primary-foreground text-lg flex items-center gap-2">
                     Reactivate Learner
                   </DialogTitle>
                 </DialogHeader>
                 <div className="p-6 space-y-6">
-                  <div className="text-sm text-gray-700">
-                    You are about to restore <strong>{student.firstName} {student.lastName}</strong> to the Active Masterlist under <strong>{student.gradeLevel || "N/A"} - {student.enrollment?.section || "N/A"}</strong>. Please specify the reason for this status change for the official audit logs.
+                  <div className="text-foreground">
+                    You are about to restore <span className="font-bold">{student.firstName} {student.lastName}</span> to the Active Masterlist under <span className="font-bold">{student.gradeLevel || "N/A"} - {student.enrollment?.section || "N/A"}</span>. Please specify the reason for this status change for the official audit logs.
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">Reason for Reactivation <span className="text-red-500">*</span></Label>
+                    <Label className="font-bold uppercase text-foreground">Reason for Reactivation <span className="text-red-500">*</span></Label>
                     <Select value={reactivateReason} onValueChange={setReactivateReason}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a reason..." />
@@ -2303,7 +2312,7 @@ export function StudentDetailPanel({
                 </div>
                 <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
                   <Button className="bg-muted text-gray-700" variant="outline" onClick={() => setShowReactivateDialog(false)} disabled={isReactivating}>Cancel</Button>
-                  <Button variant="default" className="!bg-blue-600 hover:!bg-blue-700 !text-white font-bold px-5 py-2 shadow-sm border-none" onClick={handleReactivateSubmit} disabled={!reactivateReason || isReactivating}>
+                  <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-5 py-2 shadow-sm border-none" onClick={handleReactivateSubmit} disabled={!reactivateReason || isReactivating}>
                     {isReactivating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                     Confirm Reactivation
                   </Button>

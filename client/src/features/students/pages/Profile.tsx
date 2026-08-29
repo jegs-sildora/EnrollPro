@@ -88,7 +88,7 @@ export default function StudentProfile() {
       <div className="flex min-h-64 items-center justify-center p-6">
         <div className="space-y-4 text-center">
           <p className="text-base font-bold">Invalid learner record.</p>
-          <Button variant="outline" onClick={() => navigate("/students")}>
+          <Button variant="outline" onClick={() => navigate("/learners")}>
             Return to Learner Directory
           </Button>
         </div>
@@ -107,7 +107,7 @@ export default function StudentProfile() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => navigate("/students")}
+          onClick={() => navigate("/learners")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Learner Directory
@@ -177,7 +177,7 @@ export default function StudentProfile() {
             key={`${learnerId}-${schoolYearId ?? "active"}-${refreshVersion}`}
             id={learnerId}
             schoolYearId={schoolYearId}
-            onClose={() => navigate("/students")}
+            onClose={() => navigate("/learners")}
             onRefreshData={refreshProfile}
             onTransferOut={handleTransferOut}
             onDropout={handleDropout}

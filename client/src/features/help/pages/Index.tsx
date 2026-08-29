@@ -154,7 +154,7 @@ export default function HelpDocumentation() {
           actionLabel={
             canManagePersonnel ? "Open Personnel Directory" : undefined
           }
-          actionTo={canManagePersonnel ? "/teachers" : undefined}
+          actionTo={canManagePersonnel ? "/personnel" : undefined}
         />
       </div>
     </div>

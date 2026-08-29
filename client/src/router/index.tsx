@@ -46,8 +46,8 @@ import { smartRoutes } from "@/features/smart/routes";
 function getFallbackVariant(pathname: string): SkeletonPageVariant {
   if (pathname === "/dashboard") return "dashboard";
   if (
-    pathname === "/students" ||
-    pathname === "/teachers" ||
+    pathname === "/learners" ||
+    pathname === "/personnel" ||
     pathname === "/audit-logs" ||
     pathname.includes("masterlist") ||
     pathname.includes("eosy")
@@ -178,11 +178,11 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(BOSYPage),
               },
               {
-                path: "/students",
+                path: "/learners",
                 element: renderLazyPage(Students),
               },
               {
-                path: "/students/:id",
+                path: "/learner/:id",
                 element: renderLazyPage(Profile),
               },
               {
@@ -198,7 +198,7 @@ export const router = createBrowserRouter([
                 element: renderLazyPage(Settings),
               },
               {
-                path: "/teachers",
+                path: "/personnel",
                 element: renderLazyPage(Teachers),
               },
               {

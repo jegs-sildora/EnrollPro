@@ -617,14 +617,14 @@ function AppSidebar() {
 
                   <NavDivider label="School Records" />
                   <NavItem
-                    to="/students"
+                    to="/learners"
                     icon={Users}
                     label="Learner Directory"
                     pathname={pathname}
                   />
                   {isAdmin && (
                     <NavItem
-                      to="/teachers"
+                      to="/personnel"
                       icon={Presentation}
                       label="Personnel Directory"
                       pathname={pathname}
@@ -697,7 +697,7 @@ function AppSidebar() {
                     pathname={pathname}
                   />
                   <NavItem
-                    to="/students"
+                    to="/learners"
                     icon={BookOpen}
                     label="Learner Directory"
                     pathname={pathname}

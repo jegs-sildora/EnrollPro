@@ -136,7 +136,7 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         />
         <Sf1CompliancePanel
           compliance={stats.sf1Compliance}
-          onReview={() => navigate("/students")}
+          onReview={() => navigate("/learners")}
         />
       </section>
 

@@ -50,14 +50,14 @@ const SUMMARY_ITEMS = [
     label: "Total Enrolled Learners",
     helper: "Officially enrolled learners assigned to a valid class section",
     icon: GraduationCap,
-    route: "/students",
+    route: "/learners",
   },
   {
     key: "activeFaculty" as const,
     label: "Active Personnel",
     helper: "Personnel currently in active service",
     icon: Presentation,
-    route: "/teachers",
+    route: "/personnel",
   },
   {
     key: "enrolledSections" as const,

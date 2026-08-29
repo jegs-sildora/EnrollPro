@@ -104,6 +104,7 @@ const resolveApplicationId = async (
         });
 
         if (currentAddress) {
+          const { region: _currRegion, ...currentAddrPayload } = currentAddress as any;
           await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
@@ -111,16 +112,17 @@ const resolveApplicationId = async (
                 addressType: "CURRENT",
               },
             },
-            update: currentAddress,
+            update: currentAddrPayload,
             create: {
               enrollmentId: applicationId,
               addressType: "CURRENT",
-              ...currentAddress,
+              ...currentAddrPayload,
             },
           });
         }
 
         if (permanentAddress) {
+          const { region: _permRegion, ...permAddrPayload } = permanentAddress as any;
           await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
@@ -128,11 +130,11 @@ const resolveApplicationId = async (
                 addressType: "PERMANENT",
               },
             },
-            update: permanentAddress,
+            update: permAddrPayload,
             create: {
               enrollmentId: applicationId,
               addressType: "PERMANENT",
-              ...permanentAddress,
+              ...permAddrPayload,
             },
           });
         }
