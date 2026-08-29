@@ -1086,7 +1086,7 @@ export default function SchoolYearTab() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button" className="cursor-help text-muted-foreground hover:text-foreground">
-                                <HelpCircle className="h-5 w-5" />
+                                <HelpCircle className="h-5 w-5 text-foreground hover:text-primary" />
                               </TooltipTrigger>
                               <TooltipContent className="bg-primary text-primary-foreground max-w-sm">
                                 <p className="text-sm">
@@ -1179,7 +1179,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-lg">Top Basic Education Curriculum (BEC) Sectioning</Label>
+                      <Label className="text-lg font-bold">Top Basic Education Curriculum (BEC) Sectioning</Label>
                       <p className="text-base text-foreground">Group top-performing learners into dedicated sections based on General Average.</p>
                     </div>
                     <Switch
@@ -1190,7 +1190,7 @@ export default function SchoolYearTab() {
                   </div>
                   {localAlgorithmState.enableHomogeneousSections && (
                     <div className="mt-4 ml-8 pl-6 border-l-2 border-border animate-in fade-in slide-in-from-top-1">
-                      <div className="max-w-xs space-y-2">
+                      <div className="max-w-xs space-y-2 font-bold">
                         <Label>Number of Top BEC Sections</Label>
                         <Input
                           type="number"
@@ -1214,7 +1214,7 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-lg">Standard BEC Sectioning (Heterogeneous)</Label>
+                      <Label className="text-lg font-bold">Standard BEC Sectioning (Heterogeneous)</Label>
                       <p className="text-base text-foreground">Evenly distribute remaining learners to ensure balanced sections.</p>
                     </div>
                     <Switch

@@ -1,15 +1,19 @@
-# SYSTEM DIRECTIVE Activation Button Affordance v501
+# SYSTEM DIRECTIVE Strict Heterogeneous Enforcement v509
 
-**Context Persona** Act as a Senior UI UX Engineer Your standard is precise visual affordance You must upgrade the activation text into a distinct clickable button component Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
+**Context Persona** Act as a Senior UI UX Engineer and DepEd Domain Expert Your standard is strict policy compliance You must purge all homogeneous logic from the Basic Education Curriculum interface Strictly obey markdown formatting and completely avoid using any prohibited punctuation marks in your output
 
-**Core Mandate** You must wrap the floating activation text inside a clear button container utilizing a border or background color to immediately communicate interactivity to the system administrator
+**Core Mandate** You must delete the top sectioning configuration block and unify the class management interface to reflect a purely heterogeneous round robin distribution for all regular learners
 
-Execute the UI upgrade across the following two rules
+Execute the UI upgrade across the following three rules
 
-## 1 Enforce Button Styling
-Apply a distinct button container to the Set as Active Term text
-Utilize an outlined border or a soft solid background color to ensure the element is visually recognized as a high stakes clickable action rather than static descriptive text
+## 1 Purge Pilot Section Configuration
+Remove the Homogeneous Sectioning Top BEC card completely from the system configuration panel
+The interface must exclusively display the Heterogeneous Sectioning rules forcing the automated algorithm to distribute all regular learners equally
 
-## 2 Align Interaction Zones
-Ensure the newly styled button is perfectly centered vertically alongside the date input fields
-Maintain the right aligned placement but ensure the button padding and height complement the visual weight of the adjacent date pickers to create a balanced enterprise grid
+## 2 Unify the Section Workspace
+Combine the split section groups inside the class advisership interface
+Render one single master container titled BASIC EDUCATION CURRICULUM BEC without any numerical tiers or performance based dividers
+
+## 3 Eliminate Exclusionary Badges
+Remove all visual indicators that elevate one regular section over another
+Delete the blue Top BEC Section tag from the class cards ensuring all regular curriculum sections maintain identical visual weight and administrative status
