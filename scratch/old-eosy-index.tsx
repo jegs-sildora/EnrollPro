@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PreFlightBlockerModal } from "@/features/enrollment/components/PreFlightBlockerModal";
 import { EosyOverrideModal } from "@/features/enrollment/components/EosyOverrideModal";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { AtomicRolloverDialog } from "@/features/settings/components/AtomicRolloverDialog";
 import { EosyUnlockModal } from "@/features/enrollment/components/EosyUnlockModal";
 import { getBOSYReadiness } from "@/features/bosy/api/bosy.api";
@@ -43,7 +44,7 @@ import {
   Save,
   ChevronDown,
   FileText,
-  MoreHorizontal,
+  HelpCircle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import axios from "axios";
@@ -52,7 +53,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useHeaderStore } from "@/store/header.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
@@ -93,14 +94,6 @@ export interface EnrollmentRecord {
   finalAverage: number | null;
   nextYearCurriculum: string | null;
   transferOutDate: string | null;
-  smartSyncStatus:
-  | "FINALIZED_SMART_GRADES_RECEIVED"
-  | "WAITING_FOR_SMART_FINALIZATION"
-  | "INCOMPLETE_SUBJECT_GRADES"
-  | "SMART_DATA_NEEDS_REVIEW"
-  | null;
-  smartSyncReason: string | null;
-  smartSynchronizedAt: string | null;
   isScpDemoted?: boolean;
   scpViolations?: Array<{
     subject: string;
@@ -209,19 +202,6 @@ interface EosyExportLockState {
   lockReason: string | null;
 }
 
-interface SmartConnectionStatus {
-  state:
-  | "DISABLED"
-  | "CONNECTING"
-  | "CONNECTED"
-  | "UNAVAILABLE"
-  | "AUTHENTICATION_FAILED"
-  | "PAUSED";
-  connectionAttempts: number;
-  lastConnectedAt: string | null;
-  lastEventAt: string | null;
-}
-
 const formatStatusLabel = (status: EosyStatus | string | null, isGrade10: boolean = false) => {
   const normalized = status ?? "PROMOTED";
 
@@ -313,7 +293,7 @@ function GeofencingPopover({
           variant="outline"
           size="sm"
           className={cn(
-            "h-8 px-2 flex gap-1 items-center font-bold cursor-pointer transition-colors shrink-0",
+            "h-8 px-2 flex gap-1 items-center font-extrabold cursor-pointer transition-colors shrink-0",
             isChanged ? "border-amber-500 bg-amber-50 text-amber-900" : "text-muted-foreground"
           )}
           disabled={disabled}
@@ -322,11 +302,11 @@ function GeofencingPopover({
           <span className="text-sm">
             {lat.toFixed(4)}, {lng.toFixed(4)}
           </span>
-          {isChanged && <span className="text-sm text-amber-600 font-bold uppercase">Unsaved</span>}
+          {isChanged && <span className="text-sm text-amber-600 font-black uppercase">Unsaved</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-4 text-center space-y-3" align="end">
-        <h4 className="text-sm font-bold uppercase text-foreground leading-none border-b pb-2">
+        <h4 className="text-sm font-extrabold uppercase text-foreground leading-none border-b pb-2">
           Residency Geofence Coordinates
         </h4>
         <p className="text-sm text-muted-foreground leading-normal">
@@ -340,7 +320,7 @@ function GeofencingPopover({
         >
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
             <circle cx="120" cy="90" r="50" fill="rgba(14, 165, 233, 0.05)" stroke="rgba(14, 165, 233, 0.3)" strokeDasharray="3 3" strokeWidth="1.5" />
-            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-sm font-bold font-sans uppercase">School Geofence Radius (1km)</text>
+            <text x="120" y="32" textAnchor="middle" fill="#0284c7" className="text-sm font-extrabold font-sans uppercase">School Geofence Radius (1km)</text>
             <line x1="120" y1="0" x2="120" y2="180" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
             <line x1="0" y1="90" x2="240" y2="90" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
             <text x="24" y="20" fill="#64748b" className="text-sm font-bold">Brgy. San Jose</text>
@@ -361,8 +341,8 @@ function GeofencingPopover({
         </div>
 
         <div className="bg-slate-50 border p-2 rounded text-sm font-mono flex flex-col items-center">
-          <span className="font-bold text-foreground">Lat: {lat.toFixed(6)}° N</span>
-          <span className="font-bold text-foreground">Lng: {lng.toFixed(6)}° E</span>
+          <span className="font-extrabold text-foreground">Lat: {lat.toFixed(6)}° N</span>
+          <span className="font-extrabold text-foreground">Lng: {lng.toFixed(6)}° E</span>
         </div>
       </PopoverContent>
     </Popover>
@@ -391,6 +371,8 @@ export default function EosyUpdating() {
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [batchActionStatus, setBatchActionStatus] = useState<EosyStatus | "">("");
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -410,6 +392,9 @@ export default function EosyUpdating() {
     firstName?: string;
     lastName?: string;
     sectionId?: number;
+    finalAverage?: number | null;
+    eosyStatus?: EosyStatus;
+    academicDeficiencyNote?: string | null;
     latitude?: number;
     longitude?: number;
   }>>({});
@@ -439,18 +424,6 @@ export default function EosyUpdating() {
       return (res.data.records || []) as EnrollmentRecord[];
     },
     enabled: Boolean(ayId && activeTab),
-  });
-
-  const smartConnectionQuery = useQuery({
-    queryKey: ["integration", "smart-status"],
-    queryFn: async () => {
-      const response = await api.get<SmartConnectionStatus>("/integration/smart/status");
-      return response.data;
-    },
-    enabled: !isHistoricalReadOnly,
-    refetchInterval: 15_000,
-    staleTime: 5_000,
-    retry: false,
   });
 
   const loadingRecords = isInitialLoad || (Boolean(ayId && activeTab) && (recordsQuery.isPending || recordsQuery.isFetching));
@@ -517,6 +490,21 @@ export default function EosyUpdating() {
           hasInvalidField = true;
         }
 
+        // General average validation (60-100)
+        if ("finalAverage" in changes && changes.finalAverage !== original.finalAverage) {
+          const avg = changes.finalAverage;
+          if (avg !== null && avg !== undefined && (avg < 60 || avg > 100)) {
+            hasInvalidField = true;
+          }
+        }
+
+        // DepEd Status Logic: General Average < 75 cannot be PROMOTED
+        const resolvedStatus = "eosyStatus" in changes ? changes.eosyStatus : original.eosyStatus;
+        const resolvedAvg = "finalAverage" in changes ? changes.finalAverage : original.finalAverage;
+        if (resolvedStatus === "PROMOTED" && resolvedAvg !== null && resolvedAvg !== undefined && resolvedAvg < 75) {
+          hasInvalidField = true;
+        }
+
         if (hasInvalidField) {
           revertedRecords.push(recordId);
         } else {
@@ -527,7 +515,7 @@ export default function EosyUpdating() {
       if (revertedRecords.length > 0) {
         sileo.warning({
           title: "Validation Reverted",
-          description: `${revertedRecords.length} record(s) failed learner identity validation and were reverted.`,
+          description: `${revertedRecords.length} record(s) failed validation (invalid LRN, empty name, average out of 60-100, or average below 75 while Promoted) and were reverted.`,
         });
       }
 
@@ -547,6 +535,9 @@ export default function EosyUpdating() {
             if (!update) return r;
             return {
               ...r,
+              finalAverage: update.finalAverage !== undefined ? update.finalAverage : r.finalAverage,
+              eosyStatus: update.eosyStatus !== undefined ? update.eosyStatus : r.eosyStatus,
+              academicDeficiencyNote: update.academicDeficiencyNote !== undefined ? update.academicDeficiencyNote : r.academicDeficiencyNote,
               enrollmentApplication: {
                 ...r.enrollmentApplication,
                 learner: {
@@ -649,6 +640,7 @@ export default function EosyUpdating() {
   const fetchGradeRecords = useCallback(async (gradeLevelId: string, silent = false) => {
     if (!gradeLevelId || !ayId) return;
     if (!silent) {
+      setRowSelection({});
       setSectionFilter("ALL");
     }
     if (gradeLevelId !== activeTab) {
@@ -746,7 +738,6 @@ export default function EosyUpdating() {
       await queryClient.invalidateQueries({ queryKey: ["eosy", "grade-records", ayId] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-records"] });
       await queryClient.invalidateQueries({ queryKey: ["eosy-sections"] });
-      await queryClient.invalidateQueries({ queryKey: ["integration", "smart-status"] });
       await fetchSectionsAndGrades();
       await fetchExportLockState();
       if (activeTab) {
@@ -819,6 +810,52 @@ export default function EosyUpdating() {
     onRefresh: refreshEosyWorkspace,
   });
 
+  const handleBatchUpdate = async () => {
+    if (!batchActionStatus) return;
+
+    const selectedIndexes = Object.keys(rowSelection).map(Number);
+    const selectedRecords = selectedIndexes.map((idx) => filteredRecords[idx]).filter(Boolean);
+
+    if (selectedRecords.length === 0) {
+      sileo.error({ title: "No Selection", description: "Please select at least one learner." });
+      return;
+    }
+
+    const editableRecords = selectedRecords.filter(r => !r.section.isEosyFinalized);
+    if (editableRecords.length === 0) {
+      sileo.error({ title: "Action Aborted", description: "All selected learners belong to finalized sections." });
+      return;
+    }
+
+    let targetRecords = editableRecords;
+    let skippedCount = selectedRecords.length - editableRecords.length;
+
+    if (batchActionStatus === "PROMOTED") {
+      targetRecords = editableRecords.filter((r) => {
+        const unsaved = unsavedChanges[r.id] || {};
+        const ave = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+        return ave && ave >= 75;
+      });
+      skippedCount += editableRecords.length - targetRecords.length;
+    }
+
+    if (targetRecords.length === 0) {
+      sileo.error({ title: "Action Aborted", description: "None of the selected learners meet the criteria for this status (e.g. >= 75 for Promoted)." });
+      return;
+    }
+
+    targetRecords.forEach(r => {
+      handleFieldChange(r.id, "eosyStatus", batchActionStatus as EosyStatus);
+    });
+
+    sileo.info({
+      title: "Status Staged for Selected",
+      description: `Staged ${batchActionStatus} for ${targetRecords.length} learner(s).${skippedCount > 0 ? ` ${skippedCount} skipped.` : ""} Click 'Save Changes' to commit to database.`,
+    });
+    setRowSelection({});
+    setBatchActionStatus("");
+  };
+
   const handleFinalizeGrade = async () => {
     setFinalizeLoading(true);
     try {
@@ -881,6 +918,9 @@ export default function EosyUpdating() {
   };
 
   const isSchoolYearFinalized = exportLock?.schoolYearFinalized ?? false;
+
+  const isAllFinalized = exportLock?.canFinalizeSchoolYear === true;
+
 
   const recordSf5ForScope = async () => {
     const sections = allSections.filter(
@@ -1025,22 +1065,20 @@ export default function EosyUpdating() {
 
   const pendingCount = useMemo(() => {
     return filteredRecords.filter(r => {
-      if (r.eosyStatus === "TRANSFERRED_OUT" || r.eosyStatus === "DROPPED_OUT") {
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+
+      if (effectiveStatus === "TRANSFERRED_OUT" || effectiveStatus === "DROPPED_OUT") {
         return false;
       }
-      return r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
+      return effectiveAve === null || effectiveAve === undefined || !effectiveStatus;
     }).length;
-  }, [filteredRecords]);
+  }, [filteredRecords, unsavedChanges]);
 
-  const latestSmartSyncAt = useMemo(() => {
-    const timestamps = records
-      .map((record) => record.smartSynchronizedAt)
-      .filter((value): value is string => Boolean(value))
-      .map((value) => new Date(value).getTime())
-      .filter(Number.isFinite);
-    if (timestamps.length === 0) return null;
-    return new Date(Math.max(...timestamps));
-  }, [records]);
+  const scopeRecords = useMemo(() => {
+    return sectionFilter === "ALL" ? records : records.filter(r => r.section?.name === sectionFilter);
+  }, [records, sectionFilter]);
 
   const scopeSections = useMemo(() => {
     return allSections.filter(s =>
@@ -1054,25 +1092,29 @@ export default function EosyUpdating() {
   const pendingClassesList = useMemo(() => {
     const sets = new Set<string>();
     filteredRecords.forEach((r) => {
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+
       if (
-        r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED" &&
-        r.eosyStatus !== "TRANSFERRED_OUT" &&
-        r.eosyStatus !== "DROPPED_OUT" &&
+        (effectiveAve === null || effectiveAve === undefined) &&
+        effectiveStatus !== "TRANSFERRED_OUT" &&
+        effectiveStatus !== "DROPPED_OUT" &&
         r.section?.name
       ) {
         sets.add(r.section.name);
       }
     });
     return Array.from(sets);
-  }, [filteredRecords]);
+  }, [filteredRecords, unsavedChanges]);
 
   const pendingIrregularCount = useMemo(() => {
     return filteredRecords.filter((r) => {
-      return r.eosyStatus !== "DROPPED_OUT"
-        && r.eosyStatus !== "TRANSFERRED_OUT"
-        && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
+      const unsaved = unsavedChanges[r.id] || {};
+      const effectiveStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+      return !effectiveStatus;
     }).length;
-  }, [filteredRecords]);
+  }, [filteredRecords, unsavedChanges]);
 
   const scopedUnlockedClassesCount = pendingClassesList.length;
   const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
@@ -1138,7 +1180,7 @@ export default function EosyUpdating() {
                   className="w-full h-full object-cover"
                   alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                   fallbackIcon={
-                    <div className="w-full h-full rounded-full flex items-center justify-center text-white  text-sm bg-primary">
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
                       {initials}
                     </div>
                   }
@@ -1149,29 +1191,29 @@ export default function EosyUpdating() {
                       value={currentLastName || ""}
                       onChange={(e) => handleFieldChange(recordId, "lastName", e.target.value)}
                       disabled={isCommitting}
-                      className={cn("h-8 text-sm font-bold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
                       placeholder="Last Name"
                     />
                     <Input
                       value={currentFirstName || ""}
                       onChange={(e) => handleFieldChange(recordId, "firstName", e.target.value)}
                       disabled={isCommitting}
-                      className={cn("h-8 text-sm font-bold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                      className={cn("h-8 text-sm font-extrabold uppercase w-32", isNameChanged && "border-amber-500 focus-visible:ring-amber-500")}
                       placeholder="First Name"
                     />
-                    {isNameChanged && <span className="text-sm text-amber-600 font-bold shrink-0">Unsaved</span>}
+                    {isNameChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
                   </div>
                   <div className="flex gap-2 items-center flex-wrap">
                     <div className="flex-1 flex gap-1 items-center">
-                      <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">LRN:</span>
+                      <span className="text-sm font-extrabold text-muted-foreground whitespace-nowrap">LRN:</span>
                       <Input
                         value={currentLrn || ""}
                         onChange={(e) => handleFieldChange(recordId, "lrn", e.target.value)}
                         disabled={isCommitting}
-                        className={cn("h-8 text-sm font-bold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
+                        className={cn("h-8 text-sm font-extrabold w-36", isLrnChanged && "border-amber-500 focus-visible:ring-amber-500")}
                         placeholder="12-digit LRN"
                       />
-                      {isLrnChanged && <span className="text-sm text-amber-600 font-bold shrink-0">Unsaved</span>}
+                      {isLrnChanged && <span className="text-sm text-amber-600 font-extrabold shrink-0">Unsaved</span>}
                     </div>
 
                     <GeofencingPopover
@@ -1200,17 +1242,17 @@ export default function EosyUpdating() {
                 className="w-full h-full object-cover"
                 alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                 fallbackIcon={
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-white  text-sm bg-primary">
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-semibold text-sm bg-primary">
                     {initials}
                   </div>
                 }
               />
               <div className="flex flex-col text-left leading-tight text-sm sm:text-base min-w-0">
-                <span className="font-bold uppercase truncate">
+                <span className="font-extrabold uppercase truncate">
                   {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                  <span className="text-base text-foreground font-bold uppercase">
+                  <span className="text-base text-foreground font-extrabold uppercase">
                     LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                   </span>
                   {row.original.nextYearCurriculum === "REGULAR" &&
@@ -1244,7 +1286,7 @@ export default function EosyUpdating() {
                   onValueChange={(val) => handleFieldChange(recordId, "sectionId", Number(val))}
                   disabled={isCommitting}
                 >
-                  <SelectTrigger className={cn("h-8 text-sm font-bold w-36", isSectionChanged && "border-amber-500 focus:ring-amber-500")}>
+                  <SelectTrigger className={cn("h-8 text-sm font-extrabold w-36", isSectionChanged && "border-amber-500 focus:ring-amber-500")}>
                     <SelectValue placeholder="Select Section" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1253,7 +1295,7 @@ export default function EosyUpdating() {
                     ))}
                   </SelectContent>
                 </Select>
-                {isSectionChanged && <span className="text-sm text-amber-600 font-bold">Unsaved</span>}
+                {isSectionChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
               </div>
             );
           }
@@ -1263,7 +1305,7 @@ export default function EosyUpdating() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex justify-center w-full">
-                    <span className="text-base font-bold uppercase cursor-help">{row.original.section?.name || "--"}</span>
+                    <span className="text-base font-extrabold uppercase cursor-help">{row.original.section?.name || "--"}</span>
                   </div>
                 </TooltipTrigger>
                 {row.original.section?.advisers?.[0]?.teacher && (
@@ -1284,13 +1326,11 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="FINAL GEN AVE" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const ave = r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-            ? r.finalAverage
-            : null;
+          const ave = r.finalAverage;
 
           if (ave === null || ave === undefined) {
             return (
-              <span className="font-bold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
+              <span className="font-extrabold text-base sm:text-base leading-tight block text-center text-muted-foreground opacity-60">
                 --
               </span>
             );
@@ -1300,7 +1340,7 @@ export default function EosyUpdating() {
           return (
             <div className="flex justify-center items-center gap-1 w-full">
               <span className={cn("text-base sm:text-base leading-tight tabular-nums block text-center",
-                isFailing ? "text-red-600 font-bold" : "text-gray-900 font-bold"
+                isFailing ? "text-red-600 font-extrabold" : "text-gray-900 font-extrabold"
               )}>
                 {ave.toFixed(2)}
               </span>
@@ -1316,50 +1356,70 @@ export default function EosyUpdating() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="EOSY STATUS" className="justify-center" />,
         cell: ({ row }) => {
           const r = row.original;
-          const resolvedStatus: string = r.eosyStatus ?? "ACTION_REQUIRED";
+          const recordId = r.id;
+          const isScpDemoted = !activeGradeName.includes("10") && (r.isScpDemoted || !!r.scpViolations);
+          const scpViolations = r.scpViolations;
+
+          const unsaved = unsavedChanges[recordId] || {};
+          const currentStatus = "eosyStatus" in unsaved ? unsaved.eosyStatus : r.eosyStatus;
+          const isStatusChanged = "eosyStatus" in unsaved && unsaved.eosyStatus !== r.eosyStatus;
+          const currentDeficiencyNote = "academicDeficiencyNote" in unsaved
+            ? unsaved.academicDeficiencyNote
+            : r.academicDeficiencyNote;
+
+          const isScp = Boolean(r.section?.programType && r.section.programType !== "REGULAR");
+          const currentAve = "finalAverage" in unsaved ? unsaved.finalAverage : r.finalAverage;
+          const isScpDemotedGrades = !activeGradeName.includes("10") && isScp && currentAve !== null && currentAve !== undefined && currentAve >= 75 && currentAve < 85;
+
+          const resolvedStatus: string = currentStatus ?? "ACTION_REQUIRED";
           const isGrade10 = activeGradeName.includes("10");
           const statusLabel = formatStatusLabel(resolvedStatus as string, isGrade10);
-          const isDeparture = resolvedStatus === "DROPPED_OUT" || resolvedStatus === "TRANSFERRED_OUT";
-          const syncLabel = r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-            ? "Finalized SMART Grades Received"
-            : r.smartSyncStatus === "INCOMPLETE_SUBJECT_GRADES"
-              ? "Incomplete Subject Grades"
-              : r.smartSyncStatus === "SMART_DATA_NEEDS_REVIEW"
-                ? "SMART Data Needs Review"
-                : "Waiting for Finalization";
-          const displayLabel = isDeparture ? statusLabel : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-            ? (r.isScpDemoted && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel)
-            : syncLabel;
-          const canRecordDeparture = !r.section.isEosyFinalized && !isScopeFinalized && !isHistoricalReadOnly;
+          const isSectionFinalized = r.section.isEosyFinalized;
 
-          const currentAve = r.finalAverage;
-          const isScpDemoted = r.isScpDemoted;
-          const currentDeficiencyNote = r.academicDeficiencyNote;
+          const renderStatusContent = () => (
+            <div
+              className={cn(
+                "inline-flex items-center justify-center w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold text-center whitespace-nowrap rounded-md border transition-colors",
+                (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
+                  ? "text-amber-700 bg-amber-50 border-amber-200"
+                  : resolvedStatus === "ACTION_REQUIRED"
+                    ? "text-red-700 bg-red-50 border-red-200"
+                    : !resolvedStatus || resolvedStatus === "PROMOTED"
+                      ? "text-green-700 bg-green-50 border-green-200"
+                      : "text-amber-700 bg-amber-50 border-amber-200"
+              )}>
+              <span>{(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED (TO BEC)" : statusLabel}</span>
+            </div>
+          );
 
-          const renderTooltip = (trigger: React.ReactNode) => {
-            return (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {trigger}
-                  </TooltipTrigger>
-                  <TooltipContent collisionPadding={24} className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-100 text-left mr-6">
-                    <h4 className="text-base font-extrabold uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
-                      BEC Lateral Transfer
-                    </h4>
-                    <p className="text-base leading-snug">
-                      Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
-                    </p>
-                    <ul className="list-disc pl-6 font-extrabold space-y-1 mt-2">
-                      {r.scpViolations?.map((v, i) => (
-                        <li key={i}>{v.subject} ({v.actualGrade})</li>
-                      ))}
-                    </ul>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          };
+          const renderTooltip = (trigger: React.ReactNode) => (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {trigger}
+                </TooltipTrigger>
+                <TooltipContent collisionPadding={24} className="bg-amber-50 border border-amber-300 text-amber-900 shadow-lg rounded-md p-4 w-120 text-left mr-6">
+                  <h4 className="text-base font-extrabold uppercase tracking-wide text-amber-800 border-b border-amber-200 pb-2 mb-2">
+                    SPECIAL PROGRAM TRANSFER ALERT
+                  </h4>
+                  <p className="text-base  leading-snug">
+                    Learner will be laterally transferred to the Basic Education Curriculum (BEC) next school year due to the following grade deficiency:
+                  </p>
+                  {scpViolations && scpViolations.length > 0 && (
+                    <div className="mt-3 bg-amber-100/50 rounded p-2 text-base leading-tight border border-amber-200/50">
+                      <ul className="list-disc pl-5 space-y-1">
+                        {Array.from(new Map(scpViolations.map((v) => [v.subject, v])).values()).map((v, i) => (
+                          <li key={i}>
+                            <span className="font-bold text-amber-900">{v.subject}</span> - Final Rating: <span className="text-red-700 font-extrabold">{v.actualGrade}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
 
           const renderRetainedTooltip = (trigger: React.ReactNode) => {
             const isFailingAve = currentAve !== null && currentAve !== undefined && currentAve < 75;
@@ -1384,7 +1444,7 @@ export default function EosyUpdating() {
           };
 
           const renderGeneralTooltip = (trigger: React.ReactNode) => {
-            if (isScpDemoted && resolvedStatus === "PROMOTED") {
+            if ((isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED") {
               return renderTooltip(trigger);
             }
             if (resolvedStatus === "RETAINED") {
@@ -1450,65 +1510,114 @@ export default function EosyUpdating() {
                     <h4 className={cn("text-base font-extrabold uppercase tracking-wide border-b pb-2 mb-2", titleColorClass)}>
                       {title}
                     </h4>
-                    <div className="text-base leading-snug">
+                    <p className="text-base leading-snug">
                       {description}
-                    </div>
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             );
           };
 
-          const statusBadge = (
-            <div className={cn(
-              "flex min-w-[220px] flex-col items-start rounded-md border px-3 py-2 text-left",
-              isDeparture || resolvedStatus === "CONDITIONALLY_PROMOTED" || resolvedStatus === "RETAINED"
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED"
-                  ? "border-green-200 bg-green-50 text-green-700"
-                  : "border-red-200 bg-red-50 text-red-700",
-            )}>
-              <span className="text-sm font-bold uppercase cursor-help">{displayLabel}</span>
-            </div>
-          );
+          if (hasOverride) {
+            return (
+              <div className="flex flex-col gap-1 items-center justify-center w-full">
+                <Select
+                  value={resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
+                  onValueChange={(val) => handleFieldChange(recordId, "eosyStatus", val as EosyStatus)}
+                  disabled={isCommitting}
+                >
+                  {renderGeneralTooltip(
+                    <SelectTrigger className={cn("h-8 text-sm font-extrabold w-full min-w-[220px] [&>svg]:hidden", isStatusChanged && "border-amber-500 focus:ring-amber-500", resolvedStatus === "ACTION_REQUIRED" && "border-red-500 text-red-700 bg-red-50")}>
+                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
+                    </SelectTrigger>
+                  )}
+                  <SelectContent>
+                    <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                    <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                    <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                    <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                    <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {isStatusChanged && <span className="text-sm text-amber-600 font-extrabold">Unsaved</span>}
+              </div>
+            );
+          }
+
+          if (isSectionFinalized || isScopeFinalized) {
+            return (
+              <div className="flex flex-col items-start justify-center gap-1 w-full">
+                {renderGeneralTooltip(renderStatusContent())}
+                {resolvedStatus === "CONDITIONALLY_PROMOTED" && currentDeficiencyNote && (
+                  <div className="max-w-[220px] text-sm font-bold text-amber-800 mt-1 flex items-center justify-center gap-1.5">
+                    <span>{currentDeficiencyNote.split(',').length > 1 ? "Deficiencies" : "Deficiency"}</span>
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 cursor-help text-amber-700/60 hover:text-amber-800 transition-colors shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent collisionPadding={24} className="max-w-[250px] p-3 text-sm text-left font-bold font-sans bg-amber-50 text-amber-900 border border-amber-200">
+                          <span className="block mb-1">Learner has academic deficiencies. {currentDeficiencyNote.split(',').length > 1 ? "Deficiencies:" : "Deficiency:"}</span>
+                          <ul className="list-disc pl-6 font-extrabold space-y-1">
+                            {currentDeficiencyNote.split(',').map((def, i) => (
+                              <li key={i}>{def.trim()}</li>
+                            ))}
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
+              </div>
+            );
+          }
 
           return (
-            <div className="flex w-full items-center justify-center gap-2">
-              {r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED" && !isDeparture ? (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      {statusBadge}
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm text-sm font-bold flex flex-col gap-1">
-                      <span>{r.smartSyncReason ?? syncLabel}</span>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                renderGeneralTooltip(statusBadge)
-              )}
-
-              {canRecordDeparture && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 shrink-0"
-                      aria-label={`Learner status actions for ${r.enrollmentApplication.learner.firstName} ${r.enrollmentApplication.learner.lastName}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
-                    <DropdownMenuItem onSelect={() => setOverrideRecord(r)}>
-                      Record Dropped Out or Transferred Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            <div className="flex flex-col items-center justify-center gap-1.5 w-full">
+              <Select
+                value={(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? "PROMOTED_TO_BEC" : resolvedStatus === "ACTION_REQUIRED" ? "" : resolvedStatus}
+                onValueChange={(val) => {
+                  if (val === "PROMOTED_TO_BEC") {
+                    handleFieldChange(r.id, "eosyStatus", "PROMOTED");
+                  } else {
+                    handleFieldChange(r.id, "eosyStatus", val as EosyStatus);
+                    if (val !== "CONDITIONALLY_PROMOTED") {
+                      handleFieldChange(r.id, "academicDeficiencyNote", null);
+                    }
+                  }
+                }}
+                disabled={isSectionFinalized || isScpDemotedGrades}>
+                {renderGeneralTooltip(
+                  <SelectTrigger
+                    className={cn(
+                      "inline-flex items-center justify-between w-full min-w-[220px] px-3 py-1.5 text-sm font-extrabold whitespace-nowrap rounded-md border disabled:opacity-100 [&>svg]:hidden cursor-help",
+                      isStatusChanged && "border-amber-500 focus:ring-amber-500",
+                      (isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED"
+                        ? "text-amber-700 bg-amber-50 border-amber-200"
+                        : resolvedStatus === "ACTION_REQUIRED"
+                          ? "text-red-700 bg-red-50 border-red-200"
+                          : !resolvedStatus || resolvedStatus === "PROMOTED"
+                            ? "text-green-700 bg-green-50 border-green-200"
+                            : "text-amber-700 bg-amber-50 border-amber-200"
+                    )}>
+                    {(isScpDemoted || isScpDemotedGrades) && resolvedStatus === "PROMOTED" ? (
+                      <span className="flex-1 text-left">PROMOTED (TO BEC)</span>
+                    ) : (
+                      <SelectValue placeholder={resolvedStatus === "ACTION_REQUIRED" ? "ACTION REQUIRED" : ""} />
+                    )}
+                  </SelectTrigger>
+                )}
+                <SelectContent className="font-extrabold">
+                  <SelectItem value="PROMOTED">{formatStatusLabel("PROMOTED", isGrade10)}</SelectItem>
+                  <SelectItem value="RETAINED">{formatStatusLabel("RETAINED", isGrade10)}</SelectItem>
+                  <SelectItem value="CONDITIONALLY_PROMOTED">{formatStatusLabel("CONDITIONALLY_PROMOTED", isGrade10)}</SelectItem>
+                  <SelectItem value="TRANSFERRED_OUT">{formatStatusLabel("TRANSFERRED_OUT", isGrade10)}</SelectItem>
+                  <SelectItem value="DROPPED_OUT">{formatStatusLabel("DROPPED_OUT", isGrade10)}</SelectItem>
+                </SelectContent>
+              </Select>
+              {isStatusChanged && (
+                <span className="text-sm text-amber-600 font-extrabold uppercase tracking-wider">Unsaved</span>
               )}
             </div>
           );
@@ -1516,7 +1625,7 @@ export default function EosyUpdating() {
         meta: { className: "w-[240px] text-center" }
       },
     ],
-    [isScopeFinalized, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange, activeGradeName, isHistoricalReadOnly],
+    [isScopeFinalized, hasOverride, unsavedChanges, allSections, activeTab, isCommitting, handleFieldChange, activeGradeName],
   );
 
   const columns = useMemo(() => {
@@ -1566,7 +1675,7 @@ export default function EosyUpdating() {
                   value={String(gl.id)}
                   disabled={syncingSmart}
                   className={cn(
-                    "flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
+                    "flex-1 min-w-25 font-extrabold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-lg"
                   )}
                 >
                   {activeTab === String(gl.id) && (
@@ -1576,7 +1685,7 @@ export default function EosyUpdating() {
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <span className={cn("relative z-20 text-base font-bold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
+                  <span className={cn("relative z-20 text-base font-extrabold uppercase", activeTab === String(gl.id) ? "text-primary-foreground" : "text-foreground")}>
                     {gl.name.replace(/grade\s*/i, "Grade ")}
                   </span>
                 </TabsTrigger>
@@ -1590,7 +1699,7 @@ export default function EosyUpdating() {
                 trigger={
                   <Button
                     size="lg"
-                    className="bg-primary text-primary-foreground font-bold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
+                    className="bg-primary text-primary-foreground font-extrabold shadow-sm px-8 py-3 h-auto whitespace-nowrap shrink-0 rounded-xl uppercase"
                   >
                     Review Rollover Readiness
                   </Button>
@@ -1612,7 +1721,7 @@ export default function EosyUpdating() {
                 >
                   {isScopeFinalized && (
                     <div className="flex items-center justify-between w-full bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 shrink-0">
-                      <span className="text-base leading-tight font-bold text-amber-900 uppercase tracking-widest">
+                      <span className="text-base leading-tight font-extrabold text-amber-900 uppercase tracking-widest">
                         EOSY FINALIZED: OFFICIAL RECORDS LOCKED. NO FURTHER CHANGES ALLOWED.
                       </span>
                       {isSystemAdmin && (
@@ -1620,7 +1729,7 @@ export default function EosyUpdating() {
                           variant="outline"
                           size="sm"
                           onClick={() => setUnlockModalOpen(true)}
-                          className="font-bold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
+                          className="font-extrabold text-amber-800 border-amber-300 hover:bg-amber-100/80 uppercase text-xs tracking-wider shadow-sm shrink-0"
                         >
                           <Unlock className="w-3 h-3 mr-1.5" />
                           Override Lock
@@ -1640,7 +1749,7 @@ export default function EosyUpdating() {
                               placeholder="SEARCH LRN, FIRST NAME, LAST NAME..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-bold"
+                              className="pl-9 pr-4 bg-muted/50 focus:bg-muted transition-colors h-10 w-full font-extrabold"
                             />
                           </div>
                         </div>
@@ -1651,16 +1760,16 @@ export default function EosyUpdating() {
                             value={sectionFilter}
                             onValueChange={setSectionFilter}
                           >
-                            <SelectTrigger className="w-44 bg-background border-border font-bold">
+                            <SelectTrigger className="w-44 bg-background border-border font-extrabold">
                               <SelectValue placeholder="Filter by Section / Adviser" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="ALL" className="font-bold cursor-pointer">All Sections</SelectItem>
+                              <SelectItem value="ALL" className="font-extrabold cursor-pointer">All Sections</SelectItem>
                               {sectionGroups.map(([groupName, secs]) => (
                                 <SelectGroup key={groupName}>
                                   <SelectLabel className="font-bold text-foreground uppercase text-sm tracking-wider bg-muted/30 py-1.5 px-2">{groupName}</SelectLabel>
                                   {secs.map(sec => (
-                                    <SelectItem key={sec} value={sec} className="font-bold pl-6">{sec}</SelectItem>
+                                    <SelectItem key={sec} value={sec} className="font-extrabold pl-6">{sec}</SelectItem>
                                   ))}
                                 </SelectGroup>
                               ))}
@@ -1671,12 +1780,12 @@ export default function EosyUpdating() {
                             variant="outline"
                             disabled={syncingSmart || isScopeFinalized}
                             onClick={() => void handleSyncSmartGrades()}
-                            className="font-bold border-border hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 shrink-0"
+                            className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 shrink-0"
                           >
                             {syncingSmart ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Syncing EOSY Grades</span>
+                                <span>Syncing SMART...</span>
                               </>
                             ) : (
                               <>
@@ -1690,7 +1799,7 @@ export default function EosyUpdating() {
                             <Button
                               onClick={() => void handleCommitChanges()}
                               disabled={isCommitting}
-                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 flex items-center gap-1.5 shadow-md shrink-0"
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-4 flex items-center gap-1.5 shadow-md shrink-0"
                             >
                               {isCommitting ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1707,7 +1816,7 @@ export default function EosyUpdating() {
                                 <Button
                                   variant="outline"
                                   disabled={recordingForms}
-                                  className="font-bold border-border hover:bg-primary hover:text-primary-foreground uppercase"
+                                  className="font-extrabold border-border hover:bg-primary hover:text-primary-foreground uppercase"
                                 >
                                   {recordingForms ? "Exporting..." : (
                                     <>
@@ -1718,7 +1827,7 @@ export default function EosyUpdating() {
                                   )}
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 font-bold">
+                              <DropdownMenuContent align="end" className="w-48 font-extrabold">
                                 <DropdownMenuItem onClick={() => void recordSf5ForScope()} className="cursor-pointer">
                                   Export Official SF5
                                 </DropdownMenuItem>
@@ -1727,6 +1836,35 @@ export default function EosyUpdating() {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
+                          ) : Object.keys(rowSelection).length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Select
+                                value={batchActionStatus}
+                                onValueChange={(val) => setBatchActionStatus(val as EosyStatus)}
+                                disabled={Object.keys(rowSelection).length === 0}
+                              >
+                                <SelectTrigger className="w-48 bg-background border-border font-extrabold">
+                                  <SelectValue placeholder="Select New Status..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="TRANSFERRED_OUT">TRANSFERRED OUT</SelectItem>
+                                  <SelectItem value="DROPPED_OUT">DROPPED OUT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                onClick={handleBatchUpdate}
+                                disabled={!batchActionStatus || Object.keys(rowSelection).length === 0}
+                                variant={batchActionStatus ? "default" : "outline"}
+                                className={cn(
+                                  "transition-all font-extrabold px-6",
+                                  batchActionStatus && Object.keys(rowSelection).length > 0
+                                    ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+                                    : "text-muted-foreground border-border bg-muted/30 cursor-not-allowed"
+                                )}
+                              >
+                                Apply to Selected
+                              </Button>
+                            </div>
                           ) : null}
                         </div>
 
@@ -1735,8 +1873,8 @@ export default function EosyUpdating() {
                           {/* Status Indicators */}
                           <div className="flex items-center gap-3">
                             {pendingCount > 0 && !isScopeFinalized && (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-bold shadow-sm border border-border">
-                                {pendingCount} Waiting for Finalization
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-base font-extrabold shadow-sm border border-border">
+                                {pendingCount} Pending Submissions
                               </div>
                             )}
 
@@ -1744,19 +1882,19 @@ export default function EosyUpdating() {
                               <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-base font-bold cursor-help transition-colors hover:bg-destructive/20">
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-base font-extrabold cursor-help transition-colors hover:bg-destructive/20">
                                       <AlertCircle className="w-3.5 h-3.5" />
                                       {blockersCount} {blockersCount === 1 ? "Blocker" : "Blockers"} Detected
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
-                                    <p className="font-bold mb-2 flex items-center gap-2">
+                                    <p className="font-extrabold mb-2 flex items-center gap-2">
                                       <AlertCircle className="w-4 h-4" />
                                       Pending Requirements
                                     </p>
                                     <div className="space-y-1.5 text-destructive-foreground/90">
-                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} section(s) still have learners waiting for finalized SMART grades.</p>}
-                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learner(s) have incomplete or unverified SMART outcomes.</p>}
+                                      {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} sections missing School Form 5 (SF5).</p>}
+                                      {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learners require encoded EOSY (Summer) classes.</p>}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1769,7 +1907,7 @@ export default function EosyUpdating() {
                             <Button
                               onClick={() => setFinalizeModalOpen(true)}
                               size="lg"
-                              className="font-bold shadow-md transition-all bg-primary text-primary-foreground uppercase"
+                              className="font-extrabold shadow-md transition-all bg-primary text-primary-foreground uppercase"
                             >
                               Finalize {targetScopeName}
                             </Button>
@@ -1781,7 +1919,7 @@ export default function EosyUpdating() {
                               disabled={unlockLoading}
                               size="lg"
                               variant="outline"
-                              className="font-bold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
+                              className="font-extrabold shadow-md transition-all uppercase border-primary text-primary hover:text-primary"
                             >
                               Unlock Section Roster
                             </Button>
@@ -1811,6 +1949,8 @@ export default function EosyUpdating() {
                             </AnimatePresence>
                           )}
                           disableScrolling={syncingSmart && !!smartSyncProgress}
+                          rowSelection={rowSelection}
+                          onRowSelectionChange={setRowSelection}
                           virtualize={false}
                           onRowClick={(row) => {
                             if (syncingSmart) return;
@@ -1844,6 +1984,7 @@ export default function EosyUpdating() {
                                       <EosySf9GradeTable
                                         reportedGrades={row.enrollmentApplication.reportedGrades}
                                         finalAverage={row.finalAverage}
+                                        gradeLevelName={activeGradeName}
                                         schoolYearLabel={exportLock?.schoolYearLabel ?? activeSchoolYearLabel ?? "Selected School Year"}
                                       />
                                     </motion.div>
@@ -1861,7 +2002,7 @@ export default function EosyUpdating() {
             </AnimatePresence>
           ) : !isInitialLoad && gradeLevels.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-muted/30 border border-dashed rounded-lg mt-4">
-              <p className="text-muted-foreground font-bold text-lg">No sections found for this school year.</p>
+              <p className="text-muted-foreground font-extrabold text-lg">No sections found for this school year.</p>
             </div>
           ) : null}
         </Tabs>
@@ -1874,25 +2015,25 @@ export default function EosyUpdating() {
             <div className="mx-auto w-14 h-14 rounded-full bg-[hsl(var(--primary))] ring-[6px] ring-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-5 text-[hsl(var(--primary-foreground))]">
               <AlertTriangle className="h-6 w-6" strokeWidth={2.5} />
             </div>
-            <DialogTitle className="text-center text-xl font-bold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
+            <DialogTitle className="text-center text-xl font-extrabold">Lock {targetScopeName} End of School Year (EOSY)?</DialogTitle>
             <DialogDescription className="text-center pt-2 font-bold text-md">
               {activeGradeName.includes("10") ? (
                 `Are you sure you want to finalize ${descriptionTarget}? This will officially close the school year and generate their Junior High School completion records.`
               ) : (
                 <>
                   Are you sure you want to finalize {descriptionTarget}? This will officially close the school year and determine their promotion to{' '}
-                  <span className="font-bold">{getNextGradeName(activeGradeName)}</span>.
+                  <span className="font-extrabold">{getNextGradeName(activeGradeName)}</span>.
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="bg-[hsl(var(--primary)/0.05)] p-4 rounded-md text-md text-foreground my-2 border border-[hsl(var(--primary)/0.2)] font-bold">
             <ul className="list-disc pl-5 space-y-2">
-              <li>Finalized SMART grades and EOSY outcomes will be locked for this reporting period.</li>
+              <li>Final grades and EOSY statuses (Promoted, Retained, Irregular) will be permanently saved.</li>
               <li>The School Form 5 (SF5) for {descriptionTarget} will be locked until an authorized registrar reopens the section for a newer SMART result.</li>
               <li>This data will be permanently written to the learners' Permanent Academic Record (SF10 / Form 137).</li>
             </ul>
-            <p className="font-bold text-[hsl(var(--primary))] underline mt-5 text-center">This action is final and cannot be undone.</p>
+            <p className="font-extrabold text-[hsl(var(--primary))] underline mt-5 text-center">This action is final and cannot be undone.</p>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-7 sm:justify-center">
             <Button
@@ -1900,7 +2041,7 @@ export default function EosyUpdating() {
               onClick={() => setFinalizeModalOpen(false)}
               disabled={finalizeLoading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-bold text-md",
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
                 "border border-gray-200 bg-muted text-foreground",
                 "hover:bg-gray-50 active:bg-gray-100",
                 "transition-all duration-150 active:scale-[0.97]"
@@ -1913,7 +2054,7 @@ export default function EosyUpdating() {
               onClick={handleFinalizeGrade}
               disabled={finalizeLoading}
               className={cn(
-                "flex-1 h-12 rounded-lg font-bold text-md",
+                "flex-1 h-12 rounded-lg font-extrabold text-md",
                 "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
                 "hover:bg-[hsl(var(--primary)/0.9)]",
                 "shadow-md",
@@ -1945,12 +2086,12 @@ export default function EosyUpdating() {
         <DialogContent className="w-full max-w-3xl p-0 overflow-hidden bg-muted border border-gray-300 shadow-2xl">
           <DialogHeader className="p-4 border-b bg-gray-50 flex flex-row items-center justify-between">
             <div>
-              <DialogTitle className="text-lg font-bold">School Form 5 (SF5) Preview</DialogTitle>
+              <DialogTitle className="text-lg font-extrabold">School Form 5 (SF5) Preview</DialogTitle>
               <DialogDescription asChild>
                 <span>Document generated with unresolved SMART outcomes</span>
               </DialogDescription>
             </div>
-            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold border border-red-200">
+            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-extrabold border border-red-200">
               UNFINALIZED
             </div>
           </DialogHeader>
@@ -1960,19 +2101,19 @@ export default function EosyUpdating() {
 
               {/* WATERMARK OVERLAY */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-hidden">
-                <div className="transform -rotate-45 text-[6rem] font-bold text-red-600/10 whitespace-nowrap select-none">
+                <div className="transform -rotate-45 text-[6rem] font-extrabold text-red-600/10 whitespace-nowrap select-none">
                   DRAFT COPY
                 </div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 mt-48 overflow-hidden">
-                <div className="transform -rotate-45 text-[2rem] font-bold text-red-600/10 whitespace-nowrap select-none">
+                <div className="transform -rotate-45 text-[2rem] font-extrabold text-red-600/10 whitespace-nowrap select-none">
                   PENDING ACADEMIC CLEARANCE
                 </div>
               </div>
 
               {/* Fake Document Content */}
               <div>
-                <h2 className="text-2xl font-serif text-center font-bold mb-8">School Form 5 (SF5)</h2>
+                <h2 className="text-2xl font-serif text-center font-extrabold mb-8">School Form 5 (SF5)</h2>
                 <div className="space-y-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                   <div className="h-4 bg-gray-200 rounded w-full"></div>
@@ -1986,15 +2127,15 @@ export default function EosyUpdating() {
               <div className="flex justify-between mt-16 pt-8 border-t border-gray-300">
                 <div className="text-center w-1/3">
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-sm font-bold">Class Adviser</p>
+                  <p className="text-sm font-extrabold">Class Adviser</p>
                 </div>
                 <div className="text-center w-1/3 relative">
                   {/* Blocked Signature Field */}
                   <div className="absolute inset-0 bg-red-100/80 backdrop-blur-sm flex items-center justify-center border-2 border-red-500 border-dashed z-40">
-                    <span className="text-red-700 font-bold text-sm uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
+                    <span className="text-red-700 font-extrabold text-sm uppercase text-center leading-tight">Signature Blocked<br />(Pending Finalization)</span>
                   </div>
                   <div className="border-b border-black mb-2 h-8"></div>
-                  <p className="text-sm font-bold">Official Registrar Signature</p>
+                  <p className="text-sm font-extrabold">Official Registrar Signature</p>
                 </div>
               </div>
             </div>
@@ -2003,7 +2144,7 @@ export default function EosyUpdating() {
             <span className="text-sm text-gray-500 italic">This copy cannot be officially distributed.</span>
             <div className="space-x-2">
               <Button variant="outline" onClick={() => setSf5WatermarkOpen(false)}>Close Preview</Button>
-              <Button onClick={() => setSf5WatermarkOpen(false)} className="bg-primary hover:bg-primary/90 text-white font-bold">
+              <Button onClick={() => setSf5WatermarkOpen(false)} className="bg-primary hover:bg-primary/90 text-white font-extrabold">
                 Download Draft PDF
               </Button>
             </div>
@@ -2013,7 +2154,6 @@ export default function EosyUpdating() {
 
       <EosyOverrideModal
         record={overrideRecord}
-        historicalOverride={hasOverride}
         onClose={() => setOverrideRecord(null)}
         onSuccess={() => {
           void fetchGradeRecords(activeTab);
