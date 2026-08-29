@@ -26,6 +26,8 @@
     "db:wipe-g7-2029-2030": "tsx prisma/seeds/wipe-g7-2029-2030.ts",
     "db:seed-g7-2030-2031": "tsx prisma/seeds/seed-g7-2030-2031.ts",
     "db:wipe-g7-2030-2031": "tsx prisma/seeds/wipe-g7-2030-2031.ts",
+    "db:seed-ancillary-roles": "tsx prisma/seeds/ancillary-roles-seed.ts",
+    "db:wipe-ancillary-roles": "tsx prisma/seeds/ancillary-roles-wipe.ts",
     "audit:smart-grades": "tsx src/scripts/audit-smart-grade-sync.ts",
     "simulate:lifecycle": "tsx src/scripts/run-lifecycle-simulation.ts"
   },

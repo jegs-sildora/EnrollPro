@@ -15,6 +15,7 @@ import {
   updateLrn,
   markDropout,
   markTransferredOut,
+  reactivateLearner,
   togglePortalAccess,
   resetPortalPassword,
   enrollSubjectDeficiencies,
@@ -157,6 +158,12 @@ router.post(
   "/:id/lifecycle/transfer-out",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   markTransferredOut,
+);
+
+router.patch(
+  "/:id/lifecycle/reactivate",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  reactivateLearner,
 );
 
 router.post(

@@ -657,7 +657,8 @@ const resolveApplicationId = async (
             data: { 
               eosyStatus: "DROPPED_OUT", 
               dropOutReason: reasonCode, 
-              dropOutDate: dropOutDate ? new Date(dropOutDate) : null 
+              dropOutDate: dropOutDate ? new Date(dropOutDate) : null,
+              dropOutInterventionNotes: reasonNote || null,
             },
           });
         }
@@ -732,7 +733,9 @@ const resolveApplicationId = async (
             where: { id: record.id },
             data: { 
               eosyStatus: "TRANSFERRED_OUT", 
-              transferOutDate: transferDate ? new Date(transferDate) : null 
+              transferOutDate: transferDate ? new Date(transferDate) : null,
+              transferOutSchoolName: destinationSchool || null,
+              transferOutReason: reasonNote || null,
             },
           });
         }
@@ -928,4 +931,88 @@ const resolveApplicationId = async (
     }
   };
 
-  
+  export const reactivateLearner = async (req: Request, res: Response) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(learnerId)) return res.status(400).json({ message: "Invalid student id" });
+      
+      const applicationId = await resolveApplicationId(
+        learnerId,
+        req.schoolYearId,
+      );
+      if (!applicationId) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const applicant = await prisma.enrollmentApplication.findUnique({
+        where: { id: applicationId },
+        include: { enrollmentRecord: true, learner: true, schoolYear: true },
+      });
+
+      if (!applicant) return res.status(404).json({ message: "Student not found" });
+
+      if (applicant.schoolYear && applicant.schoolYear.status !== "ACTIVE") {
+        return res.status(403).json({ message: "Cannot modify historical records." });
+      }
+
+      const setting = await prisma.schoolSetting.findFirst();
+      if (setting?.systemPhase === "EOSY_CLOSING") {
+        return res.status(403).json({ message: "Cannot modify status during EOSY Closing phase." });
+      }
+
+      const { reason } = req.body;
+      if (!reason) {
+        return res.status(400).json({ message: "Reactivation reason is required for audit logs." });
+      }
+
+      const record = applicant.enrollmentRecord;
+
+      await prisma.$transaction(async (tx) => {
+        if (record) {
+          await tx.enrollmentRecord.update({
+            where: { id: record.id },
+            data: { 
+              eosyStatus: null, 
+              dropOutReason: null, 
+              dropOutDate: null,
+              dropOutInterventionNotes: null,
+              transferOutDate: null,
+              transferOutSchoolName: null,
+              transferOutReason: null,
+            },
+          });
+        }
+        await tx.learner.update({
+          where: { id: applicant.learnerId },
+          data: { status: "ACTIVE" },
+        });
+        await tx.enrollmentApplication.update({
+          where: { id: applicationId },
+          data: { status: "OFFICIALLY_ENROLLED" },
+        });
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          actionType: "LEARNER_REACTIVATED",
+          description: `Reactivated ${applicant.learner.firstName} ${applicant.learner.lastName}. Reason: ${reason}`,
+          subjectType: "EnrollmentApplication",
+          recordId: applicationId,
+          ipAddress: req.ip || "unknown",
+          userAgent: req.headers["user-agent"] || null,
+        },
+      });
+
+      broadcastStudentInvalidation(applicant.schoolYearId, [applicant.learnerId]);
+
+      res.json({ message: "Learner reactivated successfully" });
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Error reactivating learner:", err);
+      res.status(500).json({ message: "Failed to reactivate learner" });
+    }
+  };

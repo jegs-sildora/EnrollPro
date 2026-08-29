@@ -1346,18 +1346,17 @@ export default function EosyUpdating() {
                           : "border-red-200 bg-red-50 text-red-700",
                     )}>
                       <span className="text-sm font-bold uppercase">{displayLabel}</span>
-                      {r.smartSyncStatus === "FINALIZED_SMART_GRADES_RECEIVED" && !isDeparture && (
-                        <span className="text-sm font-bold normal-case opacity-80">{syncLabel}</span>
-                      )}
-                      {r.academicDeficiencyNote && !isDeparture && (
-                        <span className="text-sm font-bold normal-case">Deficiency: {r.academicDeficiencyNote}</span>
-                      )}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-sm text-sm font-bold">
-                    {r.smartSyncReason ?? (isDeparture
-                      ? "This learner status was recorded by EnrollPro."
-                      : "The academic result matches the finalized SMART record for this school year and section.")}
+                  <TooltipContent className="max-w-sm text-sm font-bold flex flex-col gap-1">
+                    <span>
+                      {r.smartSyncReason ?? (isDeparture
+                        ? "This learner status was recorded by EnrollPro."
+                        : "The academic result matches the finalized record for this school year and section.")}
+                    </span>
+                    {r.academicDeficiencyNote && !isDeparture && (
+                      <span className="text-primary-foreground">Deficiency: {r.academicDeficiencyNote}</span>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

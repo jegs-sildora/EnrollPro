@@ -160,6 +160,7 @@ async function fetchSmartLearnerRows(
           eosyStatus: true,
           dropOutDate: true,
           dropOutReason: true,
+          transferOutDate: true,
           section: {
             select: { id: true, name: true, programType: true },
           },
@@ -462,6 +463,7 @@ export async function listDefaultSmartStudents(
       eosyStatus: application.enrollmentRecord?.eosyStatus ?? null,
       dropOutDate: application.enrollmentRecord?.dropOutDate ?? null,
       dropOutReason: application.enrollmentRecord?.dropOutReason ?? null,
+      transferOutDate: application.enrollmentRecord?.transferOutDate ?? null,
       schoolYear: {
         id: scope.schoolYearId,
         yearLabel: scope.schoolYearLabel,

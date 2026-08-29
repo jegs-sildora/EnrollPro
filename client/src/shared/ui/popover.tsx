@@ -18,7 +18,7 @@ const PopoverContent = React.forwardRef<
 			align={align}
 			sideOffset={sideOffset}
 			className={cn(
-				'z-50 w-72 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4 text-[hsl(var(--foreground))] shadow-md outline-none',
+				'z-[110] w-72 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4 text-[hsl(var(--foreground))] shadow-md outline-none',
 				motionClassNames.floatingContent,
 				className,
 			)}

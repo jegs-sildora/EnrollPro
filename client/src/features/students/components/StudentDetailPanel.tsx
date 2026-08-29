@@ -210,7 +210,7 @@ export function StudentDetailPanel({
   const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [transferOutDate, setTransferOutDate] = useState("");
+  const [transferOutDate, setTransferOutDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [transferOutSchoolName, setTransferOutSchoolName] = useState("");
   const [transferOutReason, setTransferOutReason] = useState("");
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
@@ -220,6 +220,35 @@ export function StudentDetailPanel({
     useState<string>("LACK_OF_INTEREST");
   const [dropoutInterventionNotes, setDropoutInterventionNotes] = useState("");
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
+
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [reactivateReason, setReactivateReason] = useState("");
+  const [isReactivating, setIsReactivating] = useState(false);
+
+  const handleReactivateSubmit = async () => {
+    if (!student || !reactivateReason) return;
+    setIsReactivating(true);
+    try {
+      await api.patch(`/students/${student.id}/lifecycle/reactivate`, {
+        reason: reactivateReason,
+      });
+      sileo.success({
+        title: "Learner Reactivated",
+        description: `${student.firstName} has been successfully reactivated.`,
+      });
+      setShowReactivateDialog(false);
+      setReactivateReason("");
+      onRefreshData?.();
+      await fetchStudent();
+    } catch (err: unknown) {
+      sileo.error({
+        title: "Reactivation Failed",
+        description: "An error occurred while reactivating the learner.",
+      });
+    } finally {
+      setIsReactivating(false);
+    }
+  };
 
   const handleTransferOutSubmit = () => {
     if (!student) return;
@@ -866,6 +895,10 @@ export function StudentDetailPanel({
                 <>
                   Alumni Record Details
                 </>
+              ) : student.enrollment?.eosyStatus === "TRANSFERRED_OUT" || student.enrollment?.eosyStatus === "DROPPED_OUT" ? (
+                <>
+                  Inactive Learner Details
+                </>
               ) : (
                 <>
                   Enrolled Learner Details
@@ -935,6 +968,14 @@ export function StudentDetailPanel({
                     <Badge className="bg-primary text-primary-foreground gap-1 rounded-md uppercase shadow-sm">
                       JHS Completer
                     </Badge>
+                  ) : student.enrollment?.eosyStatus === "TRANSFERRED_OUT" ? (
+                    <Badge className="bg-red-800 hover:bg-red-900 text-white gap-1 px-3 py-1 rounded-md uppercase shadow-sm">
+                      Transferred Out
+                    </Badge>
+                  ) : student.enrollment?.eosyStatus === "DROPPED_OUT" ? (
+                    <Badge className="bg-red-800 hover:bg-red-900 text-white gap-1 px-3 py-1 rounded-md uppercase shadow-sm">
+                      Dropped Out
+                    </Badge>
                   ) : (
                     <Badge className="bg-emerald-600 text-white gap-1 px-3 py-1 rounded-md uppercase  shadow-sm">
                       Officially Enrolled
@@ -952,7 +993,7 @@ export function StudentDetailPanel({
                   </Badge>
                 )}
               </div>
-              {!isEditing && canEditProfile && !isJhsCompleter && (
+              {!isEditing && canEditProfile && !isJhsCompleter && student.enrollment?.eosyStatus !== "TRANSFERRED_OUT" && student.enrollment?.eosyStatus !== "DROPPED_OUT" && (
                 <div className="mt-4 flex justify-center w-full px-2">
                   <Button
                     variant="default"
@@ -2039,7 +2080,14 @@ export function StudentDetailPanel({
           <div className="flex gap-2">
             <Dialog
               open={showTransferOutDialog}
-              onOpenChange={setShowTransferOutDialog}>
+              onOpenChange={(open) => {
+                if (open) {
+                  setTransferOutDate(format(new Date(), "yyyy-MM-dd"));
+                  setTransferOutSchoolName("");
+                  setTransferOutReason("");
+                }
+                setShowTransferOutDialog(open);
+              }}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -2201,6 +2249,63 @@ export function StudentDetailPanel({
                     onClick={handleDropoutSubmit}
                     disabled={!dropoutDate || !dropoutReasonCode}>
                     Finalize Drop Out
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      ) : (student.enrollment?.eosyStatus === "DROPPED_OUT" || student.enrollment?.eosyStatus === "TRANSFERRED_OUT") ? (
+        <div className="p-2 border-t bg-[hsl(var(--muted)/30)]">
+          <div className="flex gap-2">
+            <Dialog
+              open={showReactivateDialog}
+              onOpenChange={(open) => {
+                if (open) setReactivateReason("");
+                setShowReactivateDialog(open);
+              }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex-1 font-bold text-base sm:text-base h-9 uppercase bg-blue-50 text-blue-700 hover:text-blue-800 hover:bg-blue-100 border-blue-200 shadow-sm">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Reactivate Learner
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby={undefined} className="w-full max-w-2xl p-0 overflow-hidden">
+                <DialogHeader className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+                  <DialogTitle className="text-blue-800 text-lg flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Reactivate Learner
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="p-6 space-y-6">
+                  <div className="text-sm text-gray-700">
+                    You are about to restore <strong>{student.firstName} {student.lastName}</strong> to the Active Masterlist under <strong>{student.gradeLevel || "N/A"} - {student.enrollment?.section || "N/A"}</strong>. Please specify the reason for this status change for the official audit logs.
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Reason for Reactivation <span className="text-red-500">*</span></Label>
+                    <Select value={reactivateReason} onValueChange={setReactivateReason}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a reason..." />
+                      </SelectTrigger>
+                      <SelectContent className="z-[110]">
+                        <SelectItem value="Clerical/Encoding Error">Clerical/Encoding Error</SelectItem>
+                        <SelectItem value="Transfer Cancelled (Did not proceed)">Transfer Cancelled (Did not proceed)</SelectItem>
+                        <SelectItem value="Returned to School / Balik-Aral (Within grace period)">Returned to School / Balik-Aral (Within grace period)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-md text-sm flex gap-3">
+                    <BadgeAlert className="h-5 w-5 shrink-0 text-yellow-600" />
+                    <p>Note: If this learner's inactive status was already synced to the national DepEd LIS, you must also manually revert their status in the official LIS portal to prevent discrepancies.</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 w-full mt-auto">
+                  <Button className="bg-muted text-gray-700" variant="outline" onClick={() => setShowReactivateDialog(false)} disabled={isReactivating}>Cancel</Button>
+                  <Button variant="default" className="!bg-blue-600 hover:!bg-blue-700 !text-white font-bold px-5 py-2 shadow-sm border-none" onClick={handleReactivateSubmit} disabled={!reactivateReason || isReactivating}>
+                    {isReactivating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                    Confirm Reactivation
                   </Button>
                 </div>
               </DialogContent>

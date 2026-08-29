@@ -179,24 +179,10 @@ function assertUniqueSubjects(
 }
 
 function assertFinalSubjectGrade(subject: SmartEosyLearnerOutcome["subjectGrades"][number]): void {
-  if (
-    subject.status !== "GRADED"
-    || subject.T1 === null
-    || subject.T2 === null
-    || subject.T3 === null
-    || subject.finalRating === null
-  ) {
+  if (subject.finalRating === null) {
     throw new SmartOutcomeValidationError(
       "INCOMPLETE_SUBJECT_GRADES",
-      `Subject ${subject.subjectName} is not fully graded (${subject.status ?? "UNKNOWN"}).`,
-    );
-  }
-
-  const calculatedFinal = Math.round((subject.T1 + subject.T2 + subject.T3) / 3);
-  if (subject.finalRating !== calculatedFinal) {
-    throw new SmartOutcomeValidationError(
-      "SMART_DATA_NEEDS_REVIEW",
-      `Subject ${subject.subjectName} final rating does not match its term grades.`,
+      `Subject ${subject.subjectName} is missing a final rating.`,
     );
   }
 

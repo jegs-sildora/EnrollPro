@@ -762,7 +762,7 @@ export default function Students() {
       await api.post(`/students/${payload.student.id}/lifecycle/dropout`, {
         dropOutDate: payload.dropOutDate,
         reasonCode: payload.reasonCode,
-        interventionNotes: payload.interventionNotes || undefined,
+        reasonNote: payload.interventionNotes || undefined,
       });
 
       sileo.success({
@@ -811,9 +811,9 @@ export default function Students() {
     setActionSubmitting(true);
     try {
       await api.post(`/students/${actionStudent.id}/lifecycle/transfer-out`, {
-        transferOutDate,
+        transferDate: transferOutDate,
         destinationSchool: transferOutSchoolName.trim(),
-        reason: transferOutReason.trim() || undefined,
+        reasonNote: transferOutReason.trim() || undefined,
       });
 
       sileo.success({
