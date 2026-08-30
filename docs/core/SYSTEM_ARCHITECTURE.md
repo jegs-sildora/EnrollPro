@@ -39,7 +39,7 @@ Primary EnrollPro route groups include:
 | `/learner/setup-password` | Learner first-password setup | Learner token |
 | `/learner/change-password` | Learner password change | Learner token |
 | `/learner/portal` | Learner-owned portal | Learner |
-| `/dashboard` | Master Dashboard | Authorized staff |
+| `/dashboard` | Dashboard | Authorized staff |
 | `/learner-enrollment` | Unified Learner Enrollment tabs | Registrar and system administrator |
 | `/section-assignment` | Section Assignment | Registrar and system administrator |
 | `/eosy` | EOSY Updating | Registrar and system administrator |
@@ -55,7 +55,7 @@ Primary EnrollPro route groups include:
 | `/help` | Enrollment, SF1, SF7, and rollover guidance | Authorized staff |
 | `/teacher/advisory` | Teacher advisory class | Teacher, adviser, registrar, or system administrator |
 
-The root route `/` redirects authenticated staff to the Master Dashboard. Removed
+The root route `/` redirects authenticated staff to the Dashboard. Removed
 workflow routes are not retained as aliases; current navigation points directly
 to Learner Enrollment, Section Assignment, and System Configuration.
 

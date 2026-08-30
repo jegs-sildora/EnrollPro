@@ -578,7 +578,7 @@ function AppSidebar() {
                   <NavItem
                     to="/dashboard"
                     icon={LayoutDashboard}
-                    label="Master Dashboard"
+                    label="Dashboard"
                     pathname={pathname}
                   />
 

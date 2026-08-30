@@ -80,7 +80,7 @@ export default function DashboardIndex() {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
-    setTitle("Master Dashboard");
+    setTitle("Dashboard");
     return () => setTitle(null);
   }, [setTitle]);
 

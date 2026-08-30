@@ -399,35 +399,46 @@ export function IntakePipelinePanel({
         </TooltipProvider>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center p-6 pt-0 overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-0 text-base">
+        <div className="w-full">
+          <table className="w-full min-w-0 ">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-base uppercase text-foreground">
-                <th className="py-2 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200 text-center">Grade</th>
-                <th className="px-1 py-2 text-center font-bold leading-tight">Continuing or Promoted</th>
-                <th className="px-1 py-2 text-center font-bold leading-tight">New Entrants</th>
-                <th className="px-1 py-2 text-center font-bold">Transferees</th>
-                <th className="px-1 py-2 text-center font-bold whitespace-normal leading-tight w-24">Returning / ALS / OSCYA</th>
-                <th className="pl-1 py-2 text-center font-bold">Total</th>
+              <tr className="border-b border-slate-200 text-center uppercase text-foreground">
+                <th className="py-2 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">Grade</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">Continuing</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">New</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">Transferee</th>
+                <th className="px-1 py-2 text-center font-bold leading-tight">Balik-Aral</th>
+                <th className="px-1 py-2 text-center font-bold bg-slate-50 border-l border-slate-200 rounded-tr-md">TOTAL</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                  <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
-                    <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-sm", getGradeLevelBadgeStyles(row.gradeLevelName))}>
-                      {row.gradeLevelName}
-                    </span>
-                  </td>
-                  <td className="px-1 py-3 text-center font-bold">{row.continuingLearners}</td>
-                  <td className="px-1 py-3 text-center font-bold">{row.newEntrants}</td>
-                  <td className="px-1 py-3 text-center font-bold">{row.transferee}</td>
-                  <td className="px-1 py-3 text-center font-bold">{row.returningLearners}</td>
-                  <td className="pl-1 py-3 text-center font-bold text-primary">
-                    {row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const total = row.continuingLearners + row.newEntrants + row.transferee + row.returningLearners;
+                return (
+                  <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                    <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
+                      <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
+                        {row.gradeLevelName}
+                      </span>
+                    </td>
+                    <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                      {row.continuingLearners}
+                    </td>
+                    <td className={cn("px-1 py-3 text-center", row.newEntrants > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                      {row.newEntrants}
+                    </td>
+                    <td className={cn("px-1 py-3 text-center", row.transferee > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                      {row.transferee}
+                    </td>
+                    <td className={cn("px-1 py-3 text-center", row.returningLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
+                      {row.returningLearners}
+                    </td>
+                    <td className={cn("px-1 py-3 text-center font-bold bg-slate-50 border-l border-slate-200", total > 0 ? "text-primary" : "text-muted-foreground/60")}>
+                      {total}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

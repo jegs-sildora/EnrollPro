@@ -379,6 +379,7 @@ const createDraftPlacement = (
   gradeLevelId: number,
   learners: PoolLearner[],
   sections: SectionSummary[],
+  homogeneousSectionCount: number,
 ): DraftPlacement => {
   const rostersBySectionId = new Map<number, DraftLearnerPlacement[]>(
     sections.map((section) => [section.id, []]),
@@ -389,15 +390,49 @@ const createDraftPlacement = (
   );
 
   for (const programType of programTypes) {
-    const programLearners = interleaveBySex(
-      learners.filter(
-        (learner) => getAutoDraftProgramType(learner) === programType,
-      ),
+    const rawProgramLearners = learners.filter(
+      (learner) => getAutoDraftProgramType(learner) === programType,
     );
     const programSections = sections.filter(
       (section) => section.programType === programType,
     );
-    const slots = buildDraftSlots(programSections);
+
+    let programLearners: PoolLearner[] = [];
+    let slots: number[] = [];
+
+    if (programType === "REGULAR" && homogeneousSectionCount > 0) {
+      const sortedLearners = [...rawProgramLearners].sort(sortLearnersByAverage);
+      const orderedSections = [...programSections].sort(
+        (first, second) =>
+          first.sortOrder - second.sortOrder ||
+          first.name.localeCompare(second.name) ||
+          first.id - second.id,
+      );
+
+      const topSections = orderedSections.slice(0, homogeneousSectionCount);
+      const remainingSections = orderedSections.slice(homogeneousSectionCount);
+
+      const topSlots: number[] = [];
+      for (const section of topSections) {
+        const capacity = Math.max(0, section.maxCapacity - section.currentCount);
+        for (let i = 0; i < capacity; i++) {
+          topSlots.push(section.id);
+        }
+      }
+
+      const topLearnersCount = topSlots.length;
+      const topLearners = sortedLearners.slice(0, topLearnersCount);
+      const remainingLearners = sortedLearners.slice(topLearnersCount);
+
+      const remainingSlots = buildDraftSlots(remainingSections);
+      const interleavedRemainingLearners = interleaveBySex(remainingLearners);
+
+      programLearners = [...topLearners, ...interleavedRemainingLearners];
+      slots = [...topSlots, ...remainingSlots];
+    } else {
+      programLearners = interleaveBySex(rawProgramLearners);
+      slots = buildDraftSlots(programSections);
+    }
 
     for (const [index, learner] of programLearners.entries()) {
       const sectionId = slots[index];
@@ -671,6 +706,7 @@ export function SectioningWorkspace() {
       parsedGradeLevelId,
       currentGradePool,
       currentGradeSections,
+      homogeneousSectionCount,
     );
     const populatedSectionIds = draft.rosters
       .filter((roster) => roster.learners.length > 0)

@@ -215,9 +215,10 @@ export function StudentDetailPanel({
   const [transferOutReason, setTransferOutReason] = useState("");
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
 
-  const [dropoutDate, setDropoutDate] = useState("");
+  const [dropoutDate, setDropoutDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [dropoutReasonCode, setDropoutReasonCode] =
     useState<string>("LACK_OF_INTEREST");
+  const [dropoutOtherReason, setDropoutOtherReason] = useState("");
   const [dropoutInterventionNotes, setDropoutInterventionNotes] = useState("");
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
 
@@ -263,14 +264,24 @@ export function StudentDetailPanel({
   };
 
   const handleDropoutSubmit = () => {
-    if (!student) return;
+    if (!student || !dropoutDate || !dropoutReasonCode) return;
 
-    onDropout?.({
-      student,
-      dropOutDate: dropoutDate,
-      reasonCode: dropoutReasonCode,
-      interventionNotes: dropoutInterventionNotes.toUpperCase(),
-    });
+    if (dropoutReasonCode === "OTHERS" && !dropoutOtherReason.trim()) {
+      sileo.error({
+        title: "Validation Error",
+        description: "Please specify the other reason.",
+      });
+      return;
+    }
+
+    if (onDropout) {
+      onDropout({
+        student,
+        dropOutDate: dropoutDate,
+        reasonCode: dropoutReasonCode === "OTHERS" ? `OTHERS: ${dropoutOtherReason.trim().toUpperCase()}` : dropoutReasonCode,
+        interventionNotes: dropoutInterventionNotes.toUpperCase(),
+      });
+    }
     setShowDropoutDialog(false);
   };
   const [error, setError] = useState<string | null>(null);
@@ -2125,7 +2136,7 @@ export function StudentDetailPanel({
                       <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground font-bold"
                       placeholder="e.g., Bacolod City National High School"
                       value={transferOutSchoolName}
                       onChange={(e) => setTransferOutSchoolName(e.target.value.toUpperCase())}
@@ -2145,7 +2156,7 @@ export function StudentDetailPanel({
                   <div className="space-y-2">
                     <Label>Reason for Transfer (Optional)</Label>
                     <Input
-                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground"
+                      className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none placeholder:text-muted-foreground !font-bold"
                       placeholder="Optional reason"
                       value={transferOutReason}
                       onChange={(e) => setTransferOutReason(e.target.value.toUpperCase())}
@@ -2192,7 +2203,7 @@ export function StudentDetailPanel({
                 <div className="text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded-md mx-6 mb-6">
                   Warning: Dropping out a learner requires recorded intervention
                   history. This action will finalize their status for the
-                  current School Year.
+                  current school year.
                 </div>
                 <div className="space-y-4 px-6 pb-0">
                   <div className="space-y-2">
@@ -2211,28 +2222,42 @@ export function StudentDetailPanel({
                       Official Reason{" "}
                       <span className="text-red-500 ml-1">*</span>
                     </Label>
-                    <Select
-                      value={dropoutReasonCode}
-                      onValueChange={setDropoutReasonCode}>
-                      <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="FINANCIAL_MATTERS">
-                          Financial
-                        </SelectItem>
-                        <SelectItem value="ILLNESS">Illness</SelectItem>
-                        <SelectItem value="FAMILY_MATTERS">
-                          Family Matters
-                        </SelectItem>
-                        <SelectItem value="CHILD_LABOR">Child Labor</SelectItem>
-                        <SelectItem value="RELOCATION">Relocation</SelectItem>
-                        <SelectItem value="LACK_OF_INTEREST">
-                          Lack of Interest
-                        </SelectItem>
-                        <SelectItem value="OTHERS">Others</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-3">
+                      <div className={dropoutReasonCode === "OTHERS" ? "w-1/2" : "w-full"}>
+                        <Select
+                          value={dropoutReasonCode}
+                          onValueChange={setDropoutReasonCode}>
+                          <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold uppercase">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FINANCIAL_MATTERS">
+                              Financial
+                            </SelectItem>
+                            <SelectItem value="ILLNESS">Illness</SelectItem>
+                            <SelectItem value="FAMILY_MATTERS">
+                              Family Matters
+                            </SelectItem>
+                            <SelectItem value="CHILD_LABOR">Child Labor</SelectItem>
+                            <SelectItem value="RELOCATION">Relocation</SelectItem>
+                            <SelectItem value="LACK_OF_INTEREST">
+                              Lack of Interest
+                            </SelectItem>
+                            <SelectItem value="OTHERS">Others</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {dropoutReasonCode === "OTHERS" && (
+                        <div className="w-1/2">
+                          <Input
+                            placeholder="Please specify"
+                            value={dropoutOtherReason}
+                            onChange={(e) => setDropoutOtherReason(e.target.value)}
+                            className="focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:outline-none !outline-none font-bold uppercase"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Intervention Notes (Optional)</Label>

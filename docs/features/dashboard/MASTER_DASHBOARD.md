@@ -1,8 +1,8 @@
-# Master Dashboard
+# Dashboard
 
 Last reviewed: 2026-07-24
 
-The Master Dashboard is the school-year operational summary. `GET /api/dashboard/stats` supplies school-year-scoped values.
+The Dashboard is the school-year operational summary. `GET /api/dashboard/stats` supplies school-year-scoped values.
 
 ## Summary
 

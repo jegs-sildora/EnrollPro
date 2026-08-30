@@ -19,7 +19,7 @@ Last reviewed: 2026-07-24
 
 | Document | Owner | Purpose |
 | --- | --- | --- |
-| [Master Dashboard](features/dashboard/MASTER_DASHBOARD.md) | Product and Registrar | Phase-aware operational summary and actions |
+| [Dashboard](features/dashboard/MASTER_DASHBOARD.md) | Product and Registrar | Phase-aware operational summary and actions |
 | [Learner Enrollment and Sectioning](features/enrollment/LEARNER_ENROLLMENT_AND_SECTIONING.md) | Registrar | Intake, verification, temporary enrollment, sectioning, and SF1 |
 | [Learner Records](features/learners/LEARNER_RECORDS.md) | Registrar | Learner identity, contacts, health, portal, and lifecycle records |
 | [Personnel and SF7](features/personnel/PERSONNEL_AND_SF7.md) | School Head and Administrator | Personnel profiles, advisership, schedules, and SF7 |

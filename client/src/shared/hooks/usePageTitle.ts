@@ -18,8 +18,8 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
 
   // Exact matches first
   const exact: Record<string, string> = {
-    "/": "Master Dashboard",
-    "/dashboard": "Master Dashboard",
+    "/": "Dashboard",
+    "/dashboard": "Dashboard",
     "/login": "Sign In",
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",

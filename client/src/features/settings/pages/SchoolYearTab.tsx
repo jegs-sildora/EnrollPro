@@ -456,24 +456,21 @@ export default function SchoolYearTab() {
   const [localAlgorithmState, setLocalAlgorithmState] = useState({
     enableHomogeneousSections: enableHomogeneousSections ?? false,
     homogeneousSectionCount: homogeneousSectionCount ?? 5,
-    heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
   });
 
   useEffect(() => {
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
       homogeneousSectionCount: homogeneousSectionCount ?? 5,
-      heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
     });
-  }, [enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
+  }, [enableHomogeneousSections, homogeneousSectionCount]);
 
   const isAlgorithmChanged = useMemo(() => {
     return (
       localAlgorithmState.enableHomogeneousSections !== (enableHomogeneousSections ?? false) ||
-      localAlgorithmState.homogeneousSectionCount !== (homogeneousSectionCount ?? 5) ||
-      localAlgorithmState.heterogeneousRoundRobin !== (heterogeneousRoundRobin ?? false)
+      localAlgorithmState.homogeneousSectionCount !== (homogeneousSectionCount ?? 5)
     );
-  }, [localAlgorithmState, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin]);
+  }, [localAlgorithmState, enableHomogeneousSections, homogeneousSectionCount]);
 
   useEffect(() => {
     setSelectedPhase(systemPhase);
@@ -513,11 +510,10 @@ export default function SchoolYearTab() {
     setLocalAlgorithmState({
       enableHomogeneousSections: enableHomogeneousSections ?? false,
       homogeneousSectionCount: homogeneousSectionCount ?? 5,
-      heterogeneousRoundRobin: heterogeneousRoundRobin ?? false,
     });
 
     setSelectedPhase(systemPhase);
-  }, [activeYear, activeTerm, enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin, systemPhase]);
+  }, [activeYear, activeTerm, enableHomogeneousSections, homogeneousSectionCount, systemPhase]);
 
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
 
@@ -1179,12 +1175,18 @@ export default function SchoolYearTab() {
                 <div className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm md:col-span-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-lg font-bold">Top Basic Education Curriculum (BEC) Sectioning</Label>
-                      <p className="text-base text-foreground">Group top-performing learners into dedicated sections based on General Average.</p>
+                      <Label className="text-lg font-bold">Enable Top BEC Sections</Label>
+                      <p className="text-sm text-foreground">Group top-performing learners into dedicated sections based on their previous general average.</p>
                     </div>
                     <Switch
                       checked={localAlgorithmState.enableHomogeneousSections}
-                      onCheckedChange={(checked) => setLocalAlgorithmState(prev => ({ ...prev, enableHomogeneousSections: checked }))}
+                      onCheckedChange={(checked) => {
+                        setLocalAlgorithmState(prev => ({ 
+                          ...prev, 
+                          enableHomogeneousSections: checked,
+                          homogeneousSectionCount: checked ? prev.homogeneousSectionCount : 0
+                        }));
+                      }}
                       disabled={isArchived}
                     />
                   </div>
@@ -1197,7 +1199,7 @@ export default function SchoolYearTab() {
                           min="1"
                           placeholder="5"
                           className="h-10 py-2 px-3 font-bold"
-                          value={localAlgorithmState.homogeneousSectionCount}
+                          value={localAlgorithmState.homogeneousSectionCount || ""}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
                             if (!isNaN(val)) {
@@ -1211,17 +1213,14 @@ export default function SchoolYearTab() {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-lg font-bold">Standard BEC Sectioning (Heterogeneous)</Label>
-                      <p className="text-base text-foreground">Evenly distribute remaining learners to ensure balanced sections.</p>
+                <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm md:col-span-2">
+                  <div className="flex items-start gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-lg font-bold">Regular BEC Sections</Label>
+                      <p className="text-sm text-foreground leading-relaxed max-w-[90%]">
+                        All remaining learners will be evenly distributed across regular sections to balance overall academic performance. This mixed-ability setup is a mandatory DepEd standard.
+                      </p>
                     </div>
-                    <Switch
-                      checked={localAlgorithmState.heterogeneousRoundRobin}
-                      onCheckedChange={(checked) => setLocalAlgorithmState(prev => ({ ...prev, heterogeneousRoundRobin: checked }))}
-                      disabled={isArchived}
-                    />
                   </div>
                 </div>
               </div>

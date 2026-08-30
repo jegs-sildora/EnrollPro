@@ -509,7 +509,7 @@ export async function updatePrograms(req: Request, res: Response): Promise<void>
 }
 
 export async function updateAlgorithm(req: Request, res: Response): Promise<void> {
-  const { enableHomogeneousSections, homogeneousSectionCount, heterogeneousRoundRobin } = req.body;
+  const { enableHomogeneousSections, homogeneousSectionCount } = req.body;
 
   const settings = await getOrCreateSettings();
 
@@ -518,7 +518,7 @@ export async function updateAlgorithm(req: Request, res: Response): Promise<void
     data: {
       enableHomogeneousSections,
       homogeneousSectionCount,
-      heterogeneousRoundRobin,
+      heterogeneousRoundRobin: true,
     },
   });
 
