@@ -334,7 +334,7 @@ export function CurriculumDistributionPanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
         <CardTitle className="text-lg font-bold">
-          Learners by Curriculum Program
+          Learners by Curricular Program
         </CardTitle>
         <TooltipProvider>
           <Tooltip>
@@ -345,7 +345,7 @@ export function CurriculumDistributionPanel({
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" align="start" className="max-w-xs">
-              Enrolled learners grouped by their current curriculum program.
+              Enrolled learners grouped by their current Curricular Program.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -690,7 +690,7 @@ export function ActiveTallyPanel({
           {formula.map(([label, value, operator], index) => (
             <div key={label} className="relative rounded-md border border-slate-200 p-4">
               {index > 0 && (
-                <span className="absolute -left-3 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-base font-bold sm:flex">
+                <span className="absolute -left-4 top-1/2 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-base font-bold sm:flex">
                   {operator}
                 </span>
               )}

@@ -93,33 +93,35 @@ export function PhaseOfficial({ stats }: { stats: DashboardStats }) {
         </Alert>
       )}
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <OperationalQueueCard
-          title="Pending Enrollment"
-          value={pendingTotal}
-          detail="Learner applications waiting for school verification"
-          zeroLabel="No Pending Enrollment Records"
-          actionLabel="Process Enrollment Records"
-          onAction={() => navigate("/learner-enrollment?tab=incoming")}
-        />
-        <OperationalQueueCard
-          title="Unsectioned Learners"
-          value={unassignedTotal}
-          detail="Enrolled learners waiting for an SF1 class section"
-          zeroLabel="All Enrolled Learners Have Sections"
-          actionLabel="Assign Class Sections"
-          onAction={() => navigate("/section-assignment")}
-        />
-        <OperationalQueueCard
-          title="Missing School Requirements"
-          value={deficientTotal}
-          detail="Learners requiring SF9 or PSA document follow-up"
-          zeroLabel="All Required Documents Recorded"
-          actionLabel="Review Missing Requirements"
-          onAction={() => navigate("/learner-enrollment?tab=incoming")}
-          warning
-        />
-      </section>
+      {(pendingTotal > 0 || unassignedTotal > 0 || deficientTotal > 0) && (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <OperationalQueueCard
+            title="Pending Enrollment"
+            value={pendingTotal}
+            detail="Learner applications waiting for school verification"
+            zeroLabel="No Pending Enrollment Records"
+            actionLabel="Process Enrollment Records"
+            onAction={() => navigate("/learner-enrollment?tab=incoming")}
+          />
+          <OperationalQueueCard
+            title="Unsectioned Learners"
+            value={unassignedTotal}
+            detail="Enrolled learners waiting for an SF1 class section"
+            zeroLabel="All Enrolled Learners Have Sections"
+            actionLabel="Assign Class Sections"
+            onAction={() => navigate("/section-assignment")}
+          />
+          <OperationalQueueCard
+            title="Missing School Requirements"
+            value={deficientTotal}
+            detail="Learners requiring SF9 or PSA document follow-up"
+            zeroLabel="All Required Documents Recorded"
+            actionLabel="Review Missing Requirements"
+            onAction={() => navigate("/learner-enrollment?tab=incoming")}
+            warning
+          />
+        </section>
+      )}
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <CurriculumDistributionPanel

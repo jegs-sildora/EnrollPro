@@ -392,7 +392,7 @@ export default function Step5Enrollment() {
               <BookOpen className="w-5 h-5 text-primary" />
             </div>
             <Label className="text-base font-bold text-primary">
-              Preferred Curriculum Program <span className="text-destructive">*</span>
+              Preferred Curricular Program <span className="text-destructive">*</span>
             </Label>
           </div>
 
@@ -411,7 +411,7 @@ export default function Step5Enrollment() {
             }}
           >
             <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12">
-              <SelectValue placeholder="Select Preferred Curriculum Program" />
+              <SelectValue placeholder="Select Preferred Curricular Program" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="REGULAR">Regular Basic Education Curriculum (BEC)</SelectItem>

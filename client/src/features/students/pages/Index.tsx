@@ -954,7 +954,7 @@ export default function Students() {
                     {row.original.fullName}
                   </span>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                    <span className="font-bold">
+                    <span>
                       LRN: {row.original.lrn}
                     </span>
                     {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -1049,7 +1049,7 @@ export default function Students() {
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="CURRICULUM PROGRAM"
+              title="Curricular Program"
               className="justify-center [&_button]:!m-0"
             />
           ),

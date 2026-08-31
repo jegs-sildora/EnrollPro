@@ -20,7 +20,7 @@ export function resolvePageTitle(pathname: string, search: string): string | nul
   const exact: Record<string, string> = {
     "/": "Dashboard",
     "/dashboard": "Dashboard",
-    "/login": "Sign In",
+    "/personnel/login": "Personnel Login",
     "/change-password": "Change Password",
     "/enrollment": "Basic Education Enrollment Form",
     "/applications/enrollment": "Enrollment",

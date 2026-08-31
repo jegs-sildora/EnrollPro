@@ -1412,10 +1412,10 @@ export default function SchoolYearTab() {
         variant="primary"
         confirmClassName="bg-primary text-primary-foreground"
         description={
-          <span className="block font-bold text-foreground space-y-4 text-base">
+          <span className="block text-foreground space-y-4 text-base">
             {selectedPhase === "OFFICIAL_ENROLLMENT" && (
               <>
-                <p>You are about to open the official enrollment portals for School Year {activeYear?.yearLabel || "2026–2027"}.</p>
+                <p>You are about to open the official enrollment portal for School Year {activeYear?.yearLabel || "2026–2027"}.</p>
                 <p>Confirming this activates encoding for incoming Grade 7, Transferees, and Balik-Aral learners. The system will begin staging learner profiles for Beginning of School Year (BOSY) LIS tagging.</p>
               </>
             )}
@@ -1442,11 +1442,11 @@ export default function SchoolYearTab() {
         }
         cancelText={
           selectedPhase === "OFFICIAL_ENROLLMENT"
-            ? "Keep Enrollment Closed"
+            ? "Cancel"
             : selectedPhase === "CLASSES_ONGOING"
               ? "Keep Regular Enrollment Open"
               : selectedPhase === "EOSY_CLOSING"
-                ? "Keep School Year Active"
+                ? "Cancel"
                 : "Cancel"
         }
         confirmText={

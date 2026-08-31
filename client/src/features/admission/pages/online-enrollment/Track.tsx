@@ -302,7 +302,7 @@ export default function TrackApplication({
                   />
                   <InfoBlock
                     icon={BookOpen}
-                    label="Curriculum Program"
+                    label="Curricular Program"
                     value={programLabel}
                   />
                   {application.enrollment?.section ? (

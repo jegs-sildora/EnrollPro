@@ -483,7 +483,7 @@ export function VerificationWorkspace() {
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
                   <CheckCircle2 className="h-8 w-8 text-primary" />
                   <span className="font-bold text-base leading-tight">
-                    {activeTab === "PENDING" && "No pending applications in the queue"}
+                    {activeTab === "PENDING" && "No pending applications"}
                     {activeTab === "READY" && "All verified learners have been assigned to sections"}
                     {activeTab === "INCOMPLETE" && "No applications require parent follow up"}
                   </span>

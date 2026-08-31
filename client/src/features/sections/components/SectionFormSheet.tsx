@@ -111,7 +111,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-bold text-base uppercase">Curriculum Program</Label>
+                        <Label className="font-bold text-base uppercase">Curricular Program</Label>
                         <Select
                           value={formData.curriculumProgram}
                           onValueChange={(value) =>
