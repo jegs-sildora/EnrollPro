@@ -49,5 +49,5 @@ Use an explicit school-year ID for reconciliation. Refresh identities after Enro
 
 MRF maintenance records remain in MRF when a learner or staff account becomes inactive. Use the EnrollPro status to prevent new transactions without erasing MRF history.
 
-See [Microservice Architecture](../../../ARCHITECTURE_MICROSERVICES.md) and [Integration API v1](INTEGRATION_API_V1.md).
-
+See [Microservice Architecture](../../../ARCHITECTURE_MICROSERVICES.md) and
+[EnrollPro API](./ENROLLPRO-API.md).

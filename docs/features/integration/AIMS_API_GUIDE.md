@@ -1,6 +1,6 @@
 # AIMS API Guide
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-31
 
 ## Boundary
 
@@ -44,3 +44,7 @@ Use only the fields required for interventions. Do not request or retain parent,
 - `503` dependency unavailable
 
 See [EnrollPro API](ENROLLPRO-API.md) for the authoritative route catalog and [School Year Lifecycle](ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) for refresh timing.
+
+For source-year learning-history preservation, new-year class initialization,
+learner lifecycle handling, and role-facing reconciliation states, see
+[AIMS School Year Rollover](./AIMS-SCHOOL-YEAR-ROLLOVER.md).

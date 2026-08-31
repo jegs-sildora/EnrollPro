@@ -2,7 +2,7 @@
 
 This index lists the maintained EnrollPro product documentation. The implementation remains authoritative when a document becomes stale.
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-31
 
 ## Repository And Core
 
@@ -33,11 +33,13 @@ Last reviewed: 2026-07-24
 | --- | --- | --- |
 | [EnrollPro API](features/integration/ENROLLPRO-API.md) | API Engineering | Mounted API catalog and authentication requirements |
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
-| [Integration API v1](features/integration/INTEGRATION_API_V1.md) | Integration Engineering | Public and protected downstream feed contracts |
 | [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
 | [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
 | [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
+| [SMART School Year Rollover](features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md) | SMART and EnrollPro Teams | EOSY publication, grade history, new-year gradebooks, and roster reconciliation |
+| [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |
+| [AIMS School Year Rollover](features/integration/AIMS-SCHOOL-YEAR-ROLLOVER.md) | AIMS and EnrollPro Teams | Learning-history preservation, class initialization, and membership reconciliation |
 | [MRF API Guide](features/integration/MRF_API_GUIDE.md) | MRF and EnrollPro Teams | Minimized personnel and learner identity feed |
 
 ## Maintenance Rules

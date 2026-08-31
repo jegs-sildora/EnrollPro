@@ -1,6 +1,6 @@
 # EnrollPro Microservice Architecture
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-31
 
 ## Purpose
 
@@ -60,7 +60,7 @@ Private network transport may use Tailscale or another school-approved network. 
 - Staff and teacher routes use an authenticated EnrollPro session or bearer token.
 - Learner routes use a learner-scoped JWT.
 - The MRF identity feed uses `X-Integration-Key`.
-- Existing public integration feeds remain compatibility endpoints and must contain only approved fields.
+- Machine integration feeds require an approved service key and contain only the fields needed by their documented consumer.
 - SMART, AIMS, and ATLAS must send their exact login page as `returnTo` and refuse login when EnrollPro credential verification returns `PASSWORD_CHANGE_REQUIRED`. They navigate to the returned absolute EnrollPro password-change URL and create their own session only after EnrollPro redirects back and the user signs in with the replacement password.
 
 Integration keys and user credentials must never appear in logs, responses, or committed documentation.
@@ -68,6 +68,10 @@ Integration keys and user credentials must never appear in logs, responses, or c
 ## School-Year Synchronization
 
 Companion systems may read current context during normal operations. The active school year changes only after EnrollPro completes its atomic rollover transaction.
+
+System-specific rollover behavior is documented separately from API contracts.
+The runbooks define historical-data treatment, role-facing states, and the
+post-commit reconciliation required by each companion system.
 
 Downstream refresh order:
 
@@ -91,6 +95,8 @@ No downstream system should switch years before EnrollPro completes the atomic r
 ## References
 
 - [EnrollPro API](docs/features/integration/ENROLLPRO-API.md)
-- [Integration API v1](docs/features/integration/INTEGRATION_API_V1.md)
 - [School Year Lifecycle](docs/features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md)
+- [ATLAS School Year Rollover](docs/features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md)
+- [SMART School Year Rollover](docs/features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md)
+- [AIMS School Year Rollover](docs/features/integration/AIMS-SCHOOL-YEAR-ROLLOVER.md)
 - [Subsystem Quick Start](docs/features/integration/SUBSYSTEM_API_QUICK_START.md)

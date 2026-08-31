@@ -1,6 +1,6 @@
 # ATLAS API Guide
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-31
 
 ## Boundary
 
@@ -50,5 +50,11 @@ ATLAS_SCHOOL_ID=optional-external-school-id
 ## Rollover
 
 ATLAS refreshes school-year, section, faculty, and adviser context only after the EnrollPro atomic rollover commits. New sections contain no advisers and require new-year assignment.
+
+ATLAS preserves source-year published schedules and revisions, starts the new
+year without copied teaching loads or room assignments, and blocks timetable
+generation until the new workload is reviewed. Role-facing behavior, drift
+states, and the complete reconciliation order are in
+[ATLAS School Year Rollover](./ATLAS-SCHOOL-YEAR-ROLLOVER.md).
 
 See [EnrollPro API](ENROLLPRO-API.md) and [Personnel and SF7](../personnel/PERSONNEL_AND_SF7.md).

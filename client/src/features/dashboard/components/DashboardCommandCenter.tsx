@@ -218,8 +218,9 @@ export function DashboardActionToolbar({
 
         {isEosy && (
           <Button
+            variant="outline"
             onClick={() => navigate("/eosy")}
-            className="w-full justify-center hover:bg-primary/90"
+            className="w-full justify-center hover:bg-primary hover:text-primary-foreground"
           >
             <ClipboardCheck className="mr-2 size-4" />
             Monitor Final Grades

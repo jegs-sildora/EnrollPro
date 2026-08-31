@@ -1,6 +1,6 @@
 # SMART API Guide
 
-Last reviewed: 2026-08-15
+Last reviewed: 2026-08-31
 
 ## Ownership
 
@@ -104,7 +104,13 @@ EnrollPro rejects the complete synchronization request when it contains:
 - a school-year mismatch
 - an invalid promotion outcome
 
-Successful results are stored in the normalized SMART outcome tables with learning-area results, optional publication time and revision, synchronization time, and a payload checksum. Compatibility fields on `EnrollmentRecord` are updated from the same validated result. Learners with `PARTIAL`, `NG`, a null promotion status, or a missing final subject rating remain unresolved and stay marked `Action Required`.
+Successful results are stored in the versioned `__smartOutcome` envelope within
+the enrollment application's reported-grade JSON. The envelope contains exact
+learning-area results, publication time, revision, synchronization time, and a
+payload checksum. Compatibility fields on `EnrollmentRecord` are updated from
+the same validated result. Learners with `PARTIAL`, `NG`, a null promotion
+status, or a missing final subject rating remain unresolved and stay marked
+`Action Required`.
 
 Conditionally promoted deficiency notes are derived only from failed or incomplete learning-area results returned by SMART. EnrollPro does not infer or invent subjects.
 
@@ -145,3 +151,7 @@ GET /api/integration/v1/school-year?schoolYearId=:id
 Historical school-year requests use immutable `EnrollmentHistory` data where live enrollment rows have been archived.
 
 Attendance remains entirely in SMART. EnrollPro supplies identity, enrollment, section, and school-year context only.
+
+For source-year publication, historical grade treatment, new-year gradebook
+initialization, learner outcome handling, and role-facing states, see
+[SMART School Year Rollover](./SMART-SCHOOL-YEAR-ROLLOVER.md).

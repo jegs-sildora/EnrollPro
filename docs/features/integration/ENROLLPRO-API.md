@@ -122,7 +122,7 @@ Base path: `/api/system`
 | Method | Path | Auth and roles | Purpose |
 | --- | --- | --- | --- |
 | GET | `/public-config` | Public | Learner-login branding and public system context |
-| GET | `/rollover-readiness` | `SYSTEM_ADMIN` | SMART, SF5, SF6, section, and target-year rollover blockers |
+| GET | `/rollover-readiness` | `SYSTEM_ADMIN` | SMART, section, target-year, SF5, and SF6 readiness status; current enforcement gaps are documented in the lifecycle guide |
 
 ## Settings
 

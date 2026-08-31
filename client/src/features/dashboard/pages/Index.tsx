@@ -62,10 +62,10 @@ function DashboardPhaseBanner({
   if (phase === "EOSY_CLOSING") {
     return (
       <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3 shadow-sm">
-        <p className="text-lg font-bold text-foreground">
+        <p className="text-xl font-bold text-primary">
           EOSY Closing for S.Y. {ayLabel}
         </p>
-        <p className="text-base  text-foreground">
+        <p className="text-sm text-foreground">
           Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
         </p>
       </div>

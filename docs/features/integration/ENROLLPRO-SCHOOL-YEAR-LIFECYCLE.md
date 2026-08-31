@@ -1,228 +1,338 @@
-# EnrollPro School Year Lifecycle for SMART, AIMS, ATLAS, and MRF
+# EnrollPro School Year Lifecycle
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-31
 
 ## Purpose
 
-This guide explains how EnrollPro handles learner intake, class placement, End of School Year processing, archival, and transition to the next school year. It is intended for developers integrating SMART, AIMS, ATLAS, and MRF.
+This document is the shared school-year rollover reference for EnrollPro,
+SMART, ATLAS, AIMS, and MRF. It explains the operational sequence, the atomic
+publication boundary, the records that remain historical, and the point at
+which companion systems may begin using a new school year.
 
-The implementation sources of truth are:
+The companion runbooks provide system-specific instructions:
 
-1. `server/prisma/schema.prisma`
-2. `shared/src/constants/index.ts` and shared schemas
-3. Mounted routes in `server/src/app.ts`
-4. School-year, BOSY, sectioning, remedial, and EOSY services and controllers
+- [ATLAS School Year Rollover](./ATLAS-SCHOOL-YEAR-ROLLOVER.md)
+- [SMART School Year Rollover](./SMART-SCHOOL-YEAR-ROLLOVER.md)
+- [AIMS School Year Rollover](./AIMS-SCHOOL-YEAR-ROLLOVER.md)
 
-The complete route catalog is in [ENROLLPRO-API.md](./ENROLLPRO-API.md).
+The implementation sources of truth are the Prisma schema, shared contracts,
+mounted Express routes, and school-year domain services. This guide does not
+authorize a rollover or replace the administrator readiness review.
 
-## System Ownership
+## Ownership And Publication Authority
 
-| System | Authoritative data | Data received from EnrollPro |
+| System | Authoritative data | Rollover responsibility |
 | --- | --- | --- |
-| EnrollPro | Learner and personnel identity, enrollment applications, grade and section placement, school-year context, BOSY and EOSY lifecycle state | SMART final grades and ATLAS teaching-load context are pulled when required |
-| SMART | Quarterly grades, final grades, attendance, and class records | Official section rosters, learner identity, grade level, and school year |
-| AIMS | Courses, assessments, submissions, mastery, and remediation activities | Official learner context, section placement, program, and remedial requirement flag |
-| ATLAS | Schedules, rooms, subjects, teaching loads, and faculty assignments | Faculty, designation, section, adviser, and school-year context |
-| MRF | Maintenance and waste reports, dispatch, collection, and operational status | DPA-minimized learner and personnel identity context |
+| EnrollPro | Learner and personnel identity, enrollment, official section placement, school-year context, adviser records, school forms, and enrollment history | Publishes the new active school year after the atomic transaction commits |
+| SMART | Grades, learning-area results, promotion outcomes, and attendance | Publishes complete final outcomes before EnrollPro rollover and starts new-year class records from EnrollPro rosters |
+| ATLAS | Schedules, teaching loads, rooms, and published timetable revisions | Mirrors the committed EnrollPro year, then prepares new teaching loads and schedules |
+| AIMS | Interventions, LMS activity, assessments, submissions, and mastery | Archives old-year learning activity and creates new class context from official EnrollPro placement |
+| MRF | Maintenance, facilities, waste, and related operations | Refreshes only the minimized identity and school-year context it requires |
 
-Companion systems must use EnrollPro identifiers and school-year scope. They must not create a competing enrollment or section masterlist.
+Only EnrollPro may activate the next operational school year. Companion systems
+must not infer a rollover from dates, create a competing section masterlist, or
+switch years while EnrollPro still reports the source year as active.
 
-## Academic Phases
+## Authoritative School Year State
 
-`SchoolSetting.systemPhase` controls available workflows.
+`SchoolSetting.activeSchoolYearId` and exactly one `SchoolYear` row with
+`status=ACTIVE` must identify the same year. EnrollPro fails closed when the
+settings record is missing or duplicated, when no single active row exists, or
+when the pointer and active row disagree.
 
-| Phase | EnrollPro behavior | Integration guidance |
+Companion systems resolve current context through the protected integration
+feeds. They should store the numeric `schoolYearId`, readable `yearLabel`, and
+their last successful synchronization time. An explicit archived
+`schoolYearId` is immutable historical scope and must never replace the current
+year in a user session.
+
+## Lifecycle Phases
+
+`SchoolSetting.systemPhase` controls the EnrollPro workflow.
+
+| Phase | EnrollPro operations | Companion-system behavior |
 | --- | --- | --- |
-| `OFFICIAL_ENROLLMENT` | Regular enrollment, continuing confirmation, verification, and sectioning | Refresh sections and identity context frequently |
-| `CLASSES_ONGOING` | Regular public intake is closed; authorized staff may encode late enrollees | Late additions become visible after section assignment |
-| `EOSY_CLOSING` | Enrollment mutations are restricted and EOSY records are processed | SMART grade reconciliation must finish before final lock |
+| `OFFICIAL_ENROLLMENT` | Intake, continuing-learner confirmation, documentary review, and sectioning | Refresh official rosters after placement; do not include pending confirmation as class membership |
+| `CLASSES_ONGOING` | Public intake is closed; authorized staff may encode and section late learners; transfers and dropouts remain available | Apply roster additions and departures without changing historical activity |
+| `EOSY_CLOSING` | Intake and profile mutations are restricted; SMART outcomes and school forms are prepared | Keep source-year context active until EnrollPro publishes the new year |
 
-The public configuration endpoints expose the current phase and active school year. Internal EnrollPro requests may also carry `x-school-year-context-id`.
+EnrollPro has no Early Registration workflow. Incoming Grade 7, transferee,
+Balik-Aral, and staff-assisted walk-in processing are enrollment operations.
 
-## BOSY Intake and Enrollment
+## Official Enrollment And BOSY
 
 ### Continuing Learners
 
-Full rollover creates a current-year `EnrollmentApplication` for eligible prior-year learners.
+Atomic rollover creates a target-year `EnrollmentApplication` only for an
+eligible continuing learner.
 
-1. Eligible records enter `PENDING_CONFIRMATION`.
-2. A registrar confirms the learner through `POST /api/bosy/confirm-return/:applicationId` or bulk confirmation.
-3. EnrollPro checks SF9, accepted certification, PSA Birth Certificate, and the learner missing-requirements list.
-4. Complete records move to `READY_FOR_SECTIONING` with `isTemporarilyEnrolled=false`.
-5. Records with missing documents also move to `READY_FOR_SECTIONING`, but `isTemporarilyEnrolled=true` and `complianceStatus=PENDING`.
-6. A learner who will not return moves to `TRANSFERRING_OUT` and is removed from the active intake and sectioning queues.
+1. `PENDING_CONFIRMATION` means the learner has not yet confirmed return.
+2. `REMEDIAL_HOLD` means the learner is excluded from active intake pending an
+   approved SMART remedial-result contract.
+3. Registrar confirmation checks required records and moves an eligible learner
+   to `READY_FOR_SECTIONING`.
+4. Missing documentary requirements may produce temporary enrollment and
+   follow-up, but do not create section membership by themselves.
+5. Section placement creates the target-year `EnrollmentRecord` and changes the
+   application to `OFFICIALLY_ENROLLED`.
 
-Confirmation does not create an `EnrollmentRecord`. It only makes the learner eligible for class placement.
+Pending confirmation and remedial hold records are not official SMART or AIMS
+class members. ATLAS may see empty cloned sections before any learner is placed.
 
-### Incoming Grade 7, Transferees, and Walk-in Learners
+### New And Returning Intake
 
-1. Public applications enter through `POST /api/applications` or existing-learner updates through `POST /api/applications/update-existing`.
-2. Authorized staff use `POST /api/enrollment/walk-in` for assisted intake.
-3. Documentary review uses the enrollment verification and intake endpoints.
-4. Cleared learners move to `READY_FOR_SECTIONING`.
-5. Missing-document cases may be marked temporarily enrolled or deficient without delaying class placement.
+Incoming Grade 7, transferees, Balik-Aral learners, and authorized walk-ins use
+the current enrollment workflow. EnrollPro validates documentary status, grade,
+program, school-year scope, duplicate placement, and section capacity before it
+creates an official enrollment record.
 
 ### Section Assignment Boundary
 
-The unassigned pool contains `READY_FOR_SECTIONING` applications with no `EnrollmentRecord`.
-
-Class placement may use bulk assignment, reviewed draft commit, inline slotting, transfer, or batch sectioning. EnrollPro validates:
-
-- the learner is still ready for sectioning
-- the learner and section belong to the same school year
-- grade level and curricular program match
-- the learner does not already have an enrollment record
-- section capacity is respected unless an authorized reviewed-draft override is used
-
-Successful placement creates `EnrollmentRecord`, records the sectioning method, and changes the application to `OFFICIALLY_ENROLLED`.
-
-After placement, SMART and AIMS may ingest the learner, ATLAS may use the updated section structure, and MRF may reconcile the learner identity.
+EnrollPro owns section names, grade level, program, capacity, rank, order, and
+official learner placement. Companion systems consume that placement. A course,
+gradebook, timetable, or LMS class in another system cannot enroll a learner in
+EnrollPro.
 
 ## Classes Ongoing
 
-When the phase becomes `CLASSES_ONGOING`:
+During classes ongoing:
 
-- regular public intake is closed according to enrollment-window rules
-- authorized staff may encode late enrollees
-- confirmed or directly encoded applications are marked as late where applicable
-- class placement still creates the authoritative enrollment record
-- transfers and dropouts update learner lifecycle state and must be reflected in downstream systems
+- authorized late enrollees receive the current school-year and late-enrollee
+  context before section placement
+- SMART and AIMS add a learner only after an official section record appears
+- ATLAS refreshes changed section, faculty, and adviser context without
+  rewriting a published historical schedule
+- dropped-out and transferred-out learners leave the active population but
+  remain visible in the correct historical and audit views
+- each system preserves its own attendance, schedule, intervention, and
+  transaction history
 
-Partner systems should refresh EnrollPro feeds after sectioning, transfer, dropout, adviser, personnel, or school-year events. EnrollPro browser clients use authenticated SSE invalidation through `GET /api/events/stream`; this SSE stream is not a cross-service event bus.
+The authenticated EnrollPro browser stream at `GET /api/events/stream` is for
+EnrollPro cache invalidation. It is not a general cross-system event bus.
 
-## EOSY Processing
+## EOSY Closing
 
-### Entering EOSY Closing
+### SMART Final Outcomes
 
-System administrators set the phase through `PATCH /api/settings/phase`. Entering `EOSY_CLOSING` restricts enrollment and learner-profile mutations that would invalidate year-end records.
+1. SMART publishes final section outcomes for the active source year.
+2. EnrollPro synchronizes a section through
+   `POST /api/integration/smart/sections/:id/sync-grades`.
+3. The EnrollPro server calls SMART by shared section name and school-year label
+   using its server-only Bearer credential.
+4. EnrollPro validates the section, Grade 7 to 10 level, school year, unique
+   12-digit LRN, learner name, complete T1 to T3 grades, final rating, remarks,
+   general average, publication time, and final promotion outcome.
+5. `PARTIAL`, `NG`, missing, unpublished, duplicate, mismatched, or malformed
+   results remain blockers. EnrollPro does not create fallback grades.
+6. Valid outcomes are stored in the versioned `__smartOutcome` envelope and
+   compatibility fields are updated from the same validated result.
 
-### Grade and Status Reconciliation
+Teachers and class advisers do not encode or finalize grades in EnrollPro.
+SMART owns academic results and attendance. EnrollPro permits local EOSY status
+entry only for an official dropout or transfer-out record.
 
-1. EnrollPro pulls final section outcomes from SMART through its protected trigger `POST /api/integration/smart/sections/:id/sync-grades`. The server calls SMART's `POST /api/integration/sections/:sectionId/sync-grades?schoolYear=YYYY-YYYY` endpoint using the server-only `Authorization: Bearer ...` credential.
-2. SMART must provide a 12-digit LRN, subject or learning-area results, and a finalized promotion outcome for learners that are ready for rollover. `PARTIAL`, `NG`, null promotion status, and missing final ratings remain unresolved. Optional publication time and revision metadata are stored when SMART provides them.
-3. EnrollPro rejects incomplete SMART payloads, including `PARTIAL` or `NG` subject rows, and never fabricates grades or academic deficiencies.
-4. SMART records are matched to EnrollPro by LRN and stored as normalized final academic outcomes.
-5. Final outcomes use:
-   - `PROMOTED`
-   - `CONDITIONALLY_PROMOTED`
-   - `RETAINED`
-   - `DROPPED_OUT`
-   - `TRANSFERRED_OUT`
-6. Conditionally promoted records derive their deficiency note from failed or incomplete SMART learning areas.
-7. A section cannot be rollover-ready while an active learner lacks a finalized SMART outcome.
+### Section And School Forms
 
-### Locking and Reports
+Authorized staff review SMART synchronization status, resolve unmatched
+learners, finalize sections, and record immutable SF5 and SF6 artifacts. Each
+artifact version stores its source checksum, payload checksum, recording user,
+and timestamp. A later SMART correction changes the academic source and should
+make the affected SF5 and school-wide SF6 version stale.
 
-1. Teachers and class advisers review their advisory roster but do not encode or submit grades in EnrollPro.
-2. SMART publishes finalized grades, learning-area results, and promotion outcomes. Authorized EnrollPro staff synchronize and verify those outcomes.
-3. EnrollPro permits local EOSY status entry only for officially dropped-out or transferred-out learners.
-4. Sections and grade levels are finalized and locked after all required SMART outcomes are present.
-5. Staff preview or download SF5 and SF6, then explicitly record official artifacts through the SF5 and SF6 recording endpoints.
-6. Each artifact stores the payload, version, source checksum, recording user, and timestamp.
-7. A later SMART correction changes the source checksum and makes the affected SF5 and school-wide SF6 stale.
-8. Enrollment history and school-year archival are not written at this stage. They are written inside atomic rollover.
+Recording a form does not archive learners, activate a school year, or notify a
+companion system to switch years.
 
-Grade 10 learners marked `PROMOTED` become `JHS_COMPLETER`. Companion portals must not grant active learner access to JHS completers.
+## Rollover Readiness Contract
 
-## Full School Year Rollover
+The coordinated production contract requires:
 
-### Readiness Gate
+- the selected source year is the single active year and is in `EOSY_CLOSING`
+- every populated source section is finalized
+- every active academic learner has a checksum-valid SMART outcome matching the
+  source year, section, final average, and EOSY status
+- dropped-out and transferred-out learners have their applicable local status
+- every required SF5 and the school-wide SF6 artifact are current
+- the consecutive target year has a reviewed complete calendar
+- the target year contains no sections, applications, enrollment records,
+  history, advisers, designations, schedules, health records, or form artifacts
+- no conflicting source-year enrollment history already exists
 
-`GET /api/system/rollover-readiness` and the rollover service require:
+The readiness endpoint is `GET /api/system/rollover-readiness`. A failed gate
+must show plain blockers such as Missing SMART Outcome, SMART Outcome Mismatch,
+Unfinished Section, Missing or Stale SF5, Missing or Stale SF6, Target Year Has
+Records, Active School Year Conflict, or Enrollment History Conflict.
 
-- the selected source year is active and the system is in `EOSY_CLOSING`
-- every section is finalized
-- every active learner has a final SMART outcome matching the local EOSY result
-- dropped and transferred learners have their local final result
-- every section has a current SF5 artifact
-- the school year has a current SF6 artifact
-- an empty consecutive target year has complete reviewed calendar dates
-- an existing target-year shell contains no operational records
-- the active school-year row and school settings pointer agree
+## Atomic Rollover
 
-If the gate fails, rollover returns `422` with class-level blockers.
+`POST /api/school-years/rollover` accepts `sourceSchoolYearId` and is restricted
+to a system administrator. The service uses a serializable Prisma transaction
+and a PostgreSQL advisory transaction lock.
 
-### Atomic Rollover Work
+Inside the transaction, EnrollPro:
 
-`POST /api/school-years/rollover` accepts `sourceSchoolYearId`. It acquires a PostgreSQL
-advisory transaction lock and runs with serializable isolation:
+1. Rechecks readiness after acquiring the lock.
+2. Resolves the consecutive target school year.
+3. Clones section name, grade, capacity, program, sort order, grouping flags,
+   and rank.
+4. Copies no learners, enrollment records, active advisers, teaching schedules,
+   or companion-system records into target sections.
+5. Creates one immutable `EnrollmentHistory` row per source learner and verifies
+   complete history coverage.
+6. Applies the Grade 7 to Grade 10 outcome matrix.
+7. Creates target-year pending confirmations and Grade 10 remedial holds where
+   applicable.
+8. Revokes source-year active adviserships.
+9. Removes source live applications and enrollment records only after history
+   coverage succeeds.
+10. Archives the source year, activates the target year, points school settings
+    to it, resets the phase to `OFFICIAL_ENROLLMENT`, and writes one rollover
+    audit record.
 
-1. Recheck every readiness rule inside the transaction.
-2. Reject a target-year shell containing sections, applications, enrollment records, history, adviserships, designations, schedules, health records, or school-form artifacts.
-3. Clone grade-level section structure, capacity, program, ordering, and section rank.
-4. Do not copy learners, enrollment records, or active advisers into target sections.
-5. Snapshot source enrollment records into `EnrollmentHistory`.
-6. Carry forward learner academic outcomes and previous-year context.
-7. Create target-year BOSY applications for eligible continuing learners.
-8. Revoke active source-year adviserships.
-9. Remove live source applications and enrollment records after history is written.
-10. Apply the previously reviewed target-year calendar without shifting dates, archive the source year, activate the target year, set `OFFICIAL_ENROLLMENT`, and write one audit log.
-11. Broadcast browser and integration invalidations only after the transaction commits.
+No SMART, ATLAS, AIMS, or MRF network call belongs inside this transaction.
 
-### Rollover Outcome Matrix
+## Outcome Matrix
 
-| Source learner | Target result |
+| Source result | Target-year result |
 | --- | --- |
 | Grade 7 to 9 `PROMOTED` | Next grade, `PENDING_CONFIRMATION` |
 | Grade 7 to 9 `CONDITIONALLY_PROMOTED` | Next grade, `PENDING_CONFIRMATION`, remedial flag retained |
 | Grade 7 to 9 `RETAINED` | Same grade, `PENDING_CONFIRMATION` |
 | Grade 10 `PROMOTED` | `JHS_COMPLETER`; no active target application |
-| Grade 10 `CONDITIONALLY_PROMOTED` | Hidden Grade 10 `REMEDIAL_HOLD` |
+| Grade 10 `CONDITIONALLY_PROMOTED` | Grade 10 `REMEDIAL_HOLD`; excluded from active intake |
 | Grade 10 `RETAINED` | Grade 10 `PENDING_CONFIRMATION` |
-| `TRANSFERRED_OUT` | Archived as transferred; no target application |
-| `DROPPED_OUT` | Archived as dropped; no automatic target application |
+| `TRANSFERRED_OUT` | Historical transfer record; no target application |
+| `DROPPED_OUT` | Historical dropout record; no automatic target application |
 
-Returning dropouts must use a manual Balik-Aral or returning learner intake path.
+A returning dropout uses the reviewed returning-learner intake process. A JHS
+completer must not receive an active learner session in SMART or AIMS.
 
-### Remedial Hold Resolution
+## Commit And Companion Refresh
 
-EnrollPro exposes Grade 10 remedial holds through `GET /api/remedial/pending` for monitoring only. It does not accept a manually encoded summer grade or promotion decision. A hold remains excluded from active intake until a reviewed SMART remedial-result contract can supply and validate the published result.
+The successful rollover response is the publication boundary. After commit,
+EnrollPro broadcasts browser invalidations containing the source year, new
+active year, rollover time, and event revision. It also sends its optional SMART
+webhook. ATLAS and AIMS do not currently receive a shared service event and must
+poll or run their documented reconciliation action.
 
-Remedial holds are excluded from active intake, class placement, and official population feeds until resolved.
+Recommended order:
 
-## Authoritative Transaction Boundary
+1. Confirm the rollover request returned success.
+2. Read `GET /api/integration/v1/health`.
+3. Read `GET /api/integration/v1/school-year` and verify the new ID and label.
+4. ATLAS reconciles the active year, empty section structure, and active faculty.
+5. Registrars confirm returning learners and complete new-year sectioning.
+6. SMART and AIMS ingest only officially sectioned learners.
+7. MRF refreshes minimized identity context where required.
+8. Each companion records source ID, row counts, completion time, and failures.
 
-There is no separate school-level EOSY transition endpoint. SF5 and SF6
-recording does not create or activate a new year. The successful response from
-`POST /api/school-years/rollover` is the only publication boundary for the new
-active year.
+## Current And Archived Data
 
-## Companion-System Synchronization Sequence
+Current-year feeds use live `EnrollmentApplication` and `EnrollmentRecord`
+rows. After rollover removes those source-year rows, supported archived feeds
+read `EnrollmentHistory` and return `source: ENROLLMENT_HISTORY` in metadata.
 
-### Before EOSY Finalization
+Archived views must:
 
-- SMART publishes complete section grades and resolves unmatched LRNs.
-- EnrollPro pulls SMART grades and finalizes all EOSY statuses.
-- ATLAS may continue serving current-year schedules but must not infer next-year assignments.
-- AIMS closes current-year intervention work against the current school-year ID.
-- MRF continues operational work but must retain the school-year identifier attached to identity snapshots.
+- display the archived school-year label prominently
+- remain read-only
+- use the historical grade, section, adviser, final average, and EOSY outcome
+- keep old schedules, attendance, interventions, submissions, and grades in the
+  system that owns them
+- never combine archived rows with the current operational roster
 
-### After Full Rollover
+## Protected Integration Feeds
 
-1. Check `GET /api/integration/v1/health`.
-2. Resolve the target year with `GET /api/integration/v1/school-year`.
-3. ATLAS refreshes faculty and new empty section structures.
-4. EnrollPro completes BOSY confirmations and class placement.
-5. SMART and AIMS refresh only officially sectioned learners.
-6. MRF refreshes `/default/mrf/identities` with its service key.
-7. Each system stores `schoolYearId`, generated time, and its last successful synchronization result.
+Except for health, these routes require an approved integration key through
+`X-Integration-Key` or `Authorization: Bearer`:
 
-### Archived-Year Reconciliation
+| Route | Rollover use |
+| --- | --- |
+| `GET /api/integration/v1/health` | Reachability and dependency status |
+| `GET /api/integration/v1/school-year` | Active or explicit school-year identity and dates |
+| `GET /api/integration/v1/active-term` | Current term derived from configured dates |
+| `GET /api/integration/v1/sections` | Section, grade, program, capacity, count, and adviser context |
+| `GET /api/integration/v1/sections/:sectionId/learners` | Official current roster or archived history roster |
+| `GET /api/integration/v1/default/faculty` | Active personnel and current-year designation context |
+| `GET /api/integration/v1/default/smart/students` | SMART-ready current or archived learner rows |
+| `GET /api/integration/v1/default/aims/context` | AIMS-ready current or archived learner context |
 
-When `schoolYearId` points to an archived year, learner, SMART, AIMS, section roster, and MRF identity feeds use `EnrollmentHistory` where live applications and records have been removed. Consumers should expect `source: ENROLLMENT_HISTORY`, nullable live record identifiers, and final EOSY values.
+Consumers must follow pagination and use `schoolYearId` for deterministic
+reconciliation. Stable learner identity is `externalId`; the 12-digit LRN is the
+DepEd identifier. Personnel matching uses the EnrollPro employee number where
+the specific contract requires it.
 
-## Reliability, Privacy, and Audit Rules
+## Role-Facing Experience
 
-- Always scope synchronization by `schoolYearId`; never merge records from different years.
-- Use learner `externalId` as the stable cross-system identity and LRN as the DepEd identifier.
-- Treat retries as idempotent upserts keyed by stable identity plus school year.
-- Preserve the last successful snapshot if EnrollPro is temporarily unreachable.
-- Do not connect companion systems directly to the EnrollPro PostgreSQL database.
-- Do not synchronize passwords, parent details, health records, or unrelated learner PII.
-- Keep integration keys outside source control and rotate them after exposure.
-- Record synchronization time, source endpoint, school-year scope, row count, and failures.
-- Do not write grades, schedules, interventions, or maintenance records back into EnrollPro unless a mounted, documented endpoint explicitly owns that operation.
+Every companion screen must show the selected school year, `Current` or
+`Archived` state, source status, last successful synchronization, and a clear
+retry action when appropriate.
 
-EnrollPro has no Early Registration workflow. It has no hardware or Internet of
-Things dependency. All rollover validation and state changes are
-software-only operations.
+| User | Required rollover experience |
+| --- | --- |
+| Teacher or class adviser | Retain read-only old-year records; show no new assignment, gradebook, or class until the owning workflow publishes it |
+| Learner | Retain historical grades and activity; show new-year data only after official placement and companion synchronization |
+| Registrar | Show roster alignment, pending confirmation, unmatched learner, departure, and sectioning status without permitting companion data to change enrollment |
+| School administrator | Show readiness, active-year alignment, synchronization progress, row counts, failures, and audit evidence |
+
+Do not replace old content with an empty current-year view while synchronization
+is still running. Use plain DepEd wording such as Waiting for New School Year
+Data, Roster Needs Review, No Adviser Assigned, and Schedule Not Yet Published.
+
+## Reliability, Privacy, And Audit
+
+- Synchronization is an idempotent upsert keyed by stable identity and school
+  year; do not match by name alone.
+- Preserve the last successful snapshot during an outage and label it with its
+  year and synchronization time.
+- Never switch to a year that EnrollPro has not published as active.
+- Do not connect directly to the EnrollPro PostgreSQL database.
+- Do not copy passwords, parent details, health records, or unrelated learner
+  information into companion systems.
+- Do not expose integration keys in browser code, logs, screenshots, or API
+  responses.
+- Record endpoint, school-year ID, generated time, row count, skipped rows, and
+  failure reason for each reconciliation.
+- Do not fabricate a grade, schedule, adviser, intervention, enrollment, or
+  promotion outcome when an owning system is unavailable.
+
+Staff using a configured default password must complete the EnrollPro password
+change flow before a companion system creates its own session. The companion
+must supply and restore its exact approved `returnTo` address.
+
+## Code-Verified Release-Safety Gaps
+
+The following current implementation details differ from the coordinated
+production contract and must be treated as release blockers, not approved
+rollover behavior:
+
+1. If no target-year shell exists, the rollover service currently creates one
+   by adding one year to source dates. A reviewed next-year calendar is not
+   guaranteed.
+2. Current readiness can count SF5 as acceptable for a finalized or empty
+   section even when no current artifact exists.
+3. SF6 status is calculated, but the current rollover readiness gate does not
+   block when SF6 is missing or stale.
+4. The academic phase endpoint currently accepts movement between any of the
+   three phases instead of enforcing forward-only transitions.
+5. EnrollPro browser SSE and the SMART webhook do not provide a shared ATLAS or
+   AIMS event bus. Those systems require explicit post-commit reconciliation.
+6. The active-term feed currently defaults to T1 when the date is outside every
+   configured term. Consumers must display the returned term as EnrollPro
+   context and must not infer rollover from it.
+7. The SMART synchronization service still contains an environment-controlled
+   development fallback that can generate academic values. It must remain
+   disabled in production and should be removed before rollover approval.
+8. SMART publication time is optional in the current response schema and is not
+   required by rollover matching. The production contract requires published
+   final outcomes, so a missing publication time must not be treated as final.
+
+Until these gaps are remediated and verified, administrators must not treat a
+green screen alone as sufficient evidence for a coordinated production
+rollover.
+
+## References
+
+- [Microservice Architecture](../../../ARCHITECTURE_MICROSERVICES.md)
+- [EnrollPro API](./ENROLLPRO-API.md)
+- [Subsystem Quick Start](./SUBSYSTEM_API_QUICK_START.md)
+- [School Year Operations](../school-year/SCHOOL_YEAR_OPERATIONS.md)

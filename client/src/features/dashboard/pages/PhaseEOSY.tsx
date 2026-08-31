@@ -25,7 +25,6 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Class Sections Finalized"
           actionLabel="Review Class Sections"
           onAction={() => navigate("/eosy?status=pending")}
-          icon={<ClipboardCheck className="size-5 text-primary" />}
         />
         <OperationalQueueCard
           title="Incomplete Learner Results"
@@ -34,17 +33,15 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
           zeroLabel="All Learner Outcomes Recorded"
           actionLabel="Review Final Grade Records"
           onAction={() => navigate("/eosy")}
-          icon={<ComplianceWarningIcon active={readiness.incompleteLearnerOutcomes > 0} />}
           warning
         />
         <OperationalQueueCard
-          title="Learners Needing Academic Review"
+          title="Learners Needing Review"
           value={academicReview}
           detail="Conditionally promoted and retained learners"
           zeroLabel="No Academic Deficiency Cases"
           actionLabel="Review Academic Outcomes"
           onAction={() => navigate("/eosy")}
-          icon={<Award className="size-5 text-primary" />}
           warning
         />
       </section>
