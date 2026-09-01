@@ -1196,7 +1196,7 @@ export default function EosyUpdating() {
             <div className="flex min-w-0 items-center gap-3 py-1 pl-1">
               <UserPhoto
                 photo={r.enrollmentApplication.learner.studentPhoto}
-                containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0"
+                containerClassName="w-12 h-12 rounded-full shadow-sm shrink-0 border-2 border-primary border-solid"
                 className="w-full h-full object-cover"
                 alt={`${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`}
                 fallbackIcon={
