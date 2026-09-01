@@ -15,7 +15,7 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Badge } from "@/shared/ui/badge";
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import { Eye } from "lucide-react";
 import { useHeaderStore } from "@/store/header.slice";
 import { useAuthStore } from "@/store/auth.slice";
@@ -619,7 +619,7 @@ export default function Teachers() {
                   <span className="break-words text-base font-bold uppercase leading-tight">
                     {formatTeacherName(row.original)}
                   </span>
-                  <span className="font-bold text-foreground mt-1 uppercase">
+                  <span className="text-foreground mt-1 uppercase">
                     EMPLOYEE ID: {row.original.employeeId || "N/A"}
                   </span>
                 </div>
@@ -734,7 +734,7 @@ export default function Teachers() {
                       getGradeLevelBadgeStyles(adv.gradeLevelName || "Grade")
                     )}
                   >
-                    {adv.gradeLevelName || "Grade"}
+                    {formatGradeLevel(adv.gradeLevelName || "Grade")}
                   </Badge>
                   <span className="font-bold text-sm leading-tight text-center uppercase">
                     {adv.name}

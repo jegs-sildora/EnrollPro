@@ -1536,12 +1536,12 @@ export function SectioningWorkspace() {
                                 <div>
                                   <h4
                                     className={cn(
-                                      "font-bold text-lg uppercase transition-colors flex items-center gap-2",
+                                      "font-bold text-xl uppercase transition-colors flex items-center gap-2",
                                       isSelected ? "text-primary" : "text-foreground",
                                     )}>
                                     {s.name}
                                   </h4>
-                                  <span className="font-bold uppercase text-foreground">
+                                  <span className="text-sm uppercase text-foreground">
                                     Adviser: {s.adviser || "No Adviser Assigned"}
                                   </span>
                                 </div>
@@ -1585,7 +1585,7 @@ export function SectioningWorkspace() {
                                 </div>
                               </div>
                               <div className="space-y-2">
-                                <div className="flex items-center justify-between text-base font-bold">
+                                <div className="flex items-center justify-between text-sm">
                                   <span className="text-foreground uppercase">
                                     Capacity Fill
                                   </span>

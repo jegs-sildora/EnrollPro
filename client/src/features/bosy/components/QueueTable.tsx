@@ -22,7 +22,7 @@ import type { BOSYQueueItem } from "../types";
 import {
   formatApplicationStatus,
   cn,
-  getGradeLevelBadgeStyles,
+  getGradeLevelBadgeStyles, formatGradeLevel,
 } from "@/shared/lib/utils";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
@@ -293,7 +293,7 @@ function QueueMobileCard({
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={cn("rounded-md px-3 py-1 text-sm font-bold", getGradeLevelBadgeStyles(item.gradeLevelName))}>
-                  {item.gradeLevelName}
+                  {formatGradeLevel(item.gradeLevelName)}
                 </Badge>
                 {statusBadge(item)}
               </div>

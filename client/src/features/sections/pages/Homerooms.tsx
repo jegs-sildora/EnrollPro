@@ -832,7 +832,7 @@ export default function Homerooms() {
       }
 
       if (steEnabled) {
-        opts.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology & Engineering (STE)" });
+        opts.push({ value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "Science, Technology, and Engineering (STE)" });
       }
       if (spaEnabled) {
         opts.push({ value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "Special Program in the Arts (SPA)" });

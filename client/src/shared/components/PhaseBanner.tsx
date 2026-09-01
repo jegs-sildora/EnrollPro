@@ -44,9 +44,8 @@ export function PhaseBanner() {
           className="mb-2 px-4 sm:px-6 pt-4"
         >
           <Alert className="bg-amber-50 border-amber-200 text-amber-900 relative">
-            <AlertCircle className="h-4 w-4 !text-amber-600" />
-            <AlertTitle className="font-bold">Late Enrollment Active</AlertTitle>
-            <AlertDescription className="text-base font-bold mt-1">
+            <AlertTitle className="font-bold text-lg">Late Enrollment Active</AlertTitle>
+            <AlertDescription className="text-sm font-semibold">
               Regular enrollment is closed. All new records encoded will be automatically tagged as Late Enrollee.
             </AlertDescription>
             <Button

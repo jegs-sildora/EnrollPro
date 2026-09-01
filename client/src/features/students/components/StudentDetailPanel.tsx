@@ -46,7 +46,7 @@ import {
 } from "@/shared/ui/select";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { getImageUrl, formatEosyStatus, cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import { getImageUrl, formatEosyStatus, cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/types/application-detail";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -1028,7 +1028,7 @@ export function StudentDetailPanel({
                 </p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-base font-bold text-foreground">
-                    {student.gradeLevel}
+                    {formatGradeLevel(student.gradeLevel)}
                     {student.enrollment?.section && ` - ${student.enrollment.section}`}
                   </span>
                   <TooltipProvider>

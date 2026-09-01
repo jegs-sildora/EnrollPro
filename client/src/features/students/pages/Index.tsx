@@ -41,7 +41,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   formatManilaDate,
   formatScpType,
-  getGradeLevelBadgeStyles,
+  getGradeLevelBadgeStyles, formatGradeLevel,
   SCP_ACRONYMS,
   cn,
 } from "@/shared/lib/utils";
@@ -1390,7 +1390,7 @@ export default function Students() {
                             getGradeLevelBadgeStyles(student.gradeLevel)
                           )}
                         >
-                          {student.gradeLevel}
+                          {formatGradeLevel(student.gradeLevel)}
                         </Badge>
                       </div>
                       <div>

@@ -22,11 +22,16 @@ export const getGradeLevelBadgeStyles = (gradeLevel: string | null | undefined):
   return "bg-gray-50 text-gray-700 border-gray-200";
 };
 
+export const formatGradeLevel = (gradeLevel: string | null | undefined): string => {
+  if (!gradeLevel) return "";
+  return gradeLevel.replace(/Grade\s+/i, "G");
+};
+
 
 export const MANILA_TIME_ZONE = "Asia/Manila";
 
 export const SCP_LABELS: Record<string, string> = {
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
   REGULAR: "Basic Education Curriculum",

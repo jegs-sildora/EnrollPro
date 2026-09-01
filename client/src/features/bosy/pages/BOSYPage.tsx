@@ -50,7 +50,7 @@ import {
 } from "@/shared/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { Badge } from "@/shared/ui/badge";
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import {
   createFadeShiftVariants,
   createMotionTransition,
@@ -713,7 +713,7 @@ export default function BOSYPage() {
                             <Badge
                               variant="outline"
                               className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(confirmSingleTarget.gradeLevelName))}>
-                              {confirmSingleTarget.gradeLevelName}
+                              {formatGradeLevel(confirmSingleTarget.gradeLevelName)}
                             </Badge>
                             {confirmSingleTarget.missingDocuments.length > 0 && (
                               <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
@@ -762,7 +762,7 @@ export default function BOSYPage() {
                             <Badge
                               variant="outline"
                               className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(transferTarget.gradeLevelName))}>
-                              {transferTarget.gradeLevelName}
+                              {formatGradeLevel(transferTarget.gradeLevelName)}
                             </Badge>
                           </div>
                         )}
@@ -799,7 +799,7 @@ export default function BOSYPage() {
                             <Badge
                               variant="outline"
                               className={cn("text-sm font-bold uppercase", getGradeLevelBadgeStyles(revokeTarget.gradeLevelName))}>
-                              {revokeTarget.gradeLevelName}
+                              {formatGradeLevel(revokeTarget.gradeLevelName)}
                             </Badge>
                           </div>
                         )}
@@ -861,7 +861,7 @@ export default function BOSYPage() {
                                           <Badge
                                             variant="outline"
                                             className={cn(" font-bold uppercase", getGradeLevelBadgeStyles(item.gradeLevelName))}>
-                                            {item.gradeLevelName}
+                                            {formatGradeLevel(item.gradeLevelName)}
                                           </Badge>
                                         </td>
                                       </tr>

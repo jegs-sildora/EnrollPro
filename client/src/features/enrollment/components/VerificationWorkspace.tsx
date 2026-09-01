@@ -25,7 +25,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import { WalkInEncodePanel } from "./WalkInEncodePanel";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -77,7 +77,7 @@ interface ApiErrorResponse {
 
 const SCP_LABELS: Record<string, string> = {
   REGULAR: "Regular Basic Education Curriculum (BEC)",
-  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering (STE)",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology, and Engineering (STE)",
   SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts (SPA)",
   SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports (SPS)",
   SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism (SPJ)",
@@ -519,7 +519,7 @@ export function VerificationWorkspace() {
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0 ml-3">
                         <Badge variant="outline" className={cn("text-sm uppercase font-bold w-fit px-2.5 py-0.5", getGradeLevelBadgeStyles(app.gradeLevel.name))}>
-                          {app.gradeLevel.name}
+                          {formatGradeLevel(app.gradeLevel.name)}
                         </Badge>
                         <div className="flex items-center text-sm text-foreground font-bold whitespace-nowrap text-foreground">
                           <Clock className="w-3 h-3 mr-1 shrink-0" />
@@ -564,7 +564,7 @@ export function VerificationWorkspace() {
                       </div>
                       <div className="flex flex-col min-w-0 items-start">
                         <span className="text-sm font-bold uppercase text-foreground flex items-center gap-1">Incoming Grade</span>
-                        <Badge variant="outline" className={cn("font-bold uppercase text-base shrink-0 mt-1 w-fit px-3 py-1", getGradeLevelBadgeStyles(selectedApp.gradeLevel.name))}>{selectedApp.gradeLevel.name}</Badge>
+                        <Badge variant="outline" className={cn("font-bold uppercase text-base shrink-0 mt-1 w-fit px-3 py-1", getGradeLevelBadgeStyles(selectedApp.gradeLevel.name))}>{formatGradeLevel(selectedApp.gradeLevel.name)}</Badge>
                       </div>
                     </div>
 

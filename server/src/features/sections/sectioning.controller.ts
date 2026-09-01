@@ -81,7 +81,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
         girls,
         adviser: s.advisers[0]?.teacher
           ? `${s.advisers[0].teacher.lastName}, ${s.advisers[0].teacher.firstName}`
-          : "No Adviser",
+          : "Unassigned",
       };
     });
 

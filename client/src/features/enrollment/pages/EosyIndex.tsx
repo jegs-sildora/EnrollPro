@@ -55,7 +55,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils";
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
 import type { EosyStatus } from "@enrollpro/shared";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";

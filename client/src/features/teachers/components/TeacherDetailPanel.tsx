@@ -638,7 +638,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         )}
                       </div>
                       {!isAdding && (
-                        <p className=" mt-2 uppercase text-foreground font-bold">
+                        <p className=" mt-2 uppercase text-foreground">
                           Employee ID: <span>{teacher?.employeeId || "—"}</span>
                         </p>
                       )}

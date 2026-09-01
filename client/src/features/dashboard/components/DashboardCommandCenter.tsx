@@ -30,7 +30,7 @@ import {
 import { Progress } from "@/shared/ui/progress"
 import { Badge } from "@/shared/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
-import { cn, getGradeLevelBadgeStyles } from "@/shared/lib/utils"
+import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils"
 import { useAuthStore } from "@/store/auth.slice"
 import { useSettingsStore } from "@/store/settings.slice"
 import type { DashboardStats } from "../types"
@@ -107,7 +107,7 @@ export function DashboardSummaryRibbon({
                           <span className="sr-only">Help</span>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" align="start" className="max-w-xs text-primary-foreground">
+                      <TooltipContent side="top" align="start" className="max-w-xs text-primary bg-card">
                         {item.helper}
                       </TooltipContent>
                     </Tooltip>
@@ -419,7 +419,7 @@ export function IntakePipelinePanel({
                   <tr key={row.gradeLevelId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                     <td className="py-3 px-1 font-bold sticky left-0 bg-card z-20 whitespace-nowrap border-r border-slate-200">
                       <span className={cn("inline-block whitespace-nowrap rounded-md border px-2 py-1 text-xs", getGradeLevelBadgeStyles(row.gradeLevelName))}>
-                        {row.gradeLevelName}
+                        {formatGradeLevel(row.gradeLevelName)}
                       </span>
                     </td>
                     <td className={cn("px-1 py-3 text-center", row.continuingLearners > 0 ? "font-bold text-foreground" : "font-normal text-muted-foreground/60")}>
