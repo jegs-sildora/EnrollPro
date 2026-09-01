@@ -1,6 +1,6 @@
 # EnrollPro API Reference
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-09-01
 
 ## Purpose and Source of Truth
 
@@ -25,6 +25,7 @@ The configured host may be local, private-network, or deployed. Companion system
 | Learner JWT | `Authorization: Bearer <learner-token>` | `/api/learner` self-service routes |
 | Integration key | `X-Integration-Key: <secret>` or `Authorization: Bearer <secret>` | ATLAS, SMART, and AIMS integration feeds |
 | MRF service key | `X-Integration-Key: <secret>` or `Authorization: Bearer <secret>` | `/api/integration/v1/default/mrf/identities` |
+| Companion SSO secret | `Authorization: Bearer <system-specific-secret>` | Server-side one-time-code exchange only |
 | Public | No credential | Public application and reference-data feeds |
 
 Protected API calls may send `x-school-year-context-id: <positive integer>`. If absent, EnrollPro resolves `SchoolSetting.activeSchoolYearId`, then the latest active school year. Partner v1 feeds use `schoolYearId`; feeds documented as optional fall back to the active year.
@@ -100,6 +101,9 @@ Base path: `/api/auth`
 | GET | `/me` | Staff JWT | Return the authenticated staff profile |
 | PATCH | `/change-password` | Staff cookie or bearer fallback | Change the authenticated staff password |
 | PATCH | `/external/change-password` | Five-minute password-change ticket | Replace a default password during a companion-system login handoff without issuing an EnrollPro staff session |
+| GET | `/companion-sso/catalog` | Staff JWT | Return role eligibility and server configuration status for ATLAS, AIMS, SMART, and MRF |
+| POST | `/companion-sso/:system/launch` | Staff JWT | Create a 60-second one-time code and return the configured companion callback URL |
+| POST | `/companion-sso/:system/exchange` | Companion-specific Bearer secret | Atomically consume a one-time code and return minimized identity and active school-year context |
 
 If `/verify` receives valid credentials for an account with
 `mustChangePassword=true`, it denies companion-system login with HTTP `428` and
@@ -112,6 +116,17 @@ the URL fragment. SMART, AIMS, and ATLAS must open that EnrollPro path in a
 popup or full-page handoff. After the existing EnrollPro password form succeeds,
 the companion system must ask the user to sign in again with the new password.
 The ticket cannot be used as a normal staff session.
+
+Sidebar SSO is a separate login-free navigation contract. `:system` accepts
+`atlas`, `aims`, `smart`, or `mrf`. Launch is denied for inactive users,
+unsupported roles, JHS completers, default-password accounts, incomplete staff
+identities, unavailable active-year context, and unconfigured companions. The
+exchange body is `{ "code": "<single-use-code>" }`; the destination backend
+must authenticate with its dedicated `*_SSO_CLIENT_SECRET`. A code is scoped to
+one companion, expires after 60 seconds, and can be consumed once. The response
+contains a stable EnrollPro subject, employee ID or LRN, name, permitted roles,
+and active school-year ID and label. It never contains a password, EnrollPro
+JWT, EnrollPro cookie, or companion secret.
 
 Learner authentication is mounted under `/api/learner`, not `/api/auth`.
 

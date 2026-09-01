@@ -1,6 +1,6 @@
 # Subsystem API Quick Start
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-09-01
 
 This guide gives SMART, ATLAS, AIMS, and MRF teams the minimum EnrollPro setup. The complete catalog is in [EnrollPro API](ENROLLPRO-API.md).
 
@@ -12,6 +12,32 @@ ENROLLPRO_INTEGRATION_BASE_URL=https://configured-enrollpro-host/api/integration
 ```
 
 Do not commit a real host or key. A Tailscale address may be supplied through these variables for a private deployment.
+
+## Sidebar SSO
+
+The EnrollPro staff sidebar uses a 60-second, single-use authorization code. It
+does not share an EnrollPro password, JWT, or cookie. Each companion must expose
+a browser callback, exchange the code from its backend, and create its own
+HTTP-only session.
+
+```text
+POST <ENROLLPRO_BASE_URL>/api/auth/companion-sso/<system>/exchange
+Authorization: Bearer <SYSTEM_SSO_CLIENT_SECRET>
+Content-Type: application/json
+
+{"code":"<single-use-code>"}
+```
+
+The `<system>` value is `atlas`, `aims`, `smart`, or `mrf`. Do not exchange the
+code in browser JavaScript or retry a failed code. Return the user to EnrollPro
+to start a new launch after an expired or failed exchange.
+
+Implementation guides:
+
+- [ATLAS EnrollPro SSO](ATLAS-ENROLLPRO-SSO.md)
+- [AIMS EnrollPro SSO](AIMS-ENROLLPRO-SSO.md)
+- [SMART EnrollPro SSO](SMART-ENROLLPRO-SSO.md)
+- [MRF EnrollPro SSO](MRF-ENROLLPRO-SSO.md)
 
 ## Shared Staff Login
 

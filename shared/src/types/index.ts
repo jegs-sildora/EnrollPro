@@ -75,6 +75,14 @@ import type {
   learnerSetupPasswordSchema,
   learnerAuthResponseSchema,
 } from "../schemas/learner.schema.js";
+import type {
+  companionSystemSchema,
+  companionSsoCatalogItemSchema,
+  companionSsoCatalogResponseSchema,
+  companionSsoExchangeSchema,
+  companionSsoExchangeResponseSchema,
+  companionSsoLaunchResponseSchema,
+} from "../schemas/companion-sso.schema.js";
 
 // ─── Auth Types ────────────────────────────────────────
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -176,3 +184,21 @@ export type LearnerLookupInput = z.infer<typeof learnerLookupSchema>;
 export type LearnerLoginInput = z.infer<typeof learnerLoginSchema>;
 export type LearnerSetupPasswordInput = z.infer<typeof learnerSetupPasswordSchema>;
 export type LearnerAuthResponse = z.infer<typeof learnerAuthResponseSchema>;
+
+// Companion-system SSO Types
+export type CompanionSystem = z.infer<typeof companionSystemSchema>;
+export type CompanionSsoCatalogItem = z.infer<
+  typeof companionSsoCatalogItemSchema
+>;
+export type CompanionSsoCatalogResponse = z.infer<
+  typeof companionSsoCatalogResponseSchema
+>;
+export type CompanionSsoExchangeInput = z.infer<
+  typeof companionSsoExchangeSchema
+>;
+export type CompanionSsoLaunchResponse = z.infer<
+  typeof companionSsoLaunchResponseSchema
+>;
+export type CompanionSsoExchangeResponse = z.infer<
+  typeof companionSsoExchangeResponseSchema
+>;

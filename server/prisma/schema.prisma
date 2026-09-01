@@ -41,8 +41,27 @@ model User {
   teacherProfile                       Teacher?                @relation("UserTeacherProfile")
   createdBy                            User?                   @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers                         User[]                  @relation("UserCreatedBy")
+  companionSsoAuthorizationCodes      CompanionSsoAuthorizationCode[]
 
   @@map("users")
+}
+
+/// Short-lived one-time codes used to establish a companion-system session
+model CompanionSsoAuthorizationCode {
+  id          Int             @id @default(autoincrement())
+  codeHash    String          @unique(map: "uq_companion_sso_codes_hash") @map("code_hash") @db.Char(64)
+  userId      Int             @map("user_id")
+  companion   CompanionSystem
+  expiresAt   DateTime        @map("expires_at") @db.Timestamptz(6)
+  consumedAt  DateTime?       @map("consumed_at") @db.Timestamptz(6)
+  ipAddress   String          @map("ip_address") @db.VarChar(45)
+  userAgent   String?         @map("user_agent")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt], map: "idx_companion_sso_codes_user_created")
+  @@index([expiresAt, consumedAt], map: "idx_companion_sso_codes_expiry")
+  @@map("companion_sso_authorization_codes")
 }
 
 /// Faculty members who serve as section advisers; not login users
@@ -588,6 +607,15 @@ enum Role {
   MRF
 
   @@map("user_role")
+}
+
+enum CompanionSystem {
+  ATLAS
+  AIMS
+  SMART
+  MRF
+
+  @@map("companion_system")
 }
 
 enum ComplianceStatus {

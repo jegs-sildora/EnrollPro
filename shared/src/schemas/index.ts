@@ -11,3 +11,4 @@ export * from "./walk-in.schema.js";
 export * from "./sf7.schema.js";
 export * from "./sf1.schema.js";
 export * from "./smart-eosy.schema.js";
+export * from "./companion-sso.schema.js";

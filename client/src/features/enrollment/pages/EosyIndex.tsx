@@ -1210,7 +1210,7 @@ export default function EosyUpdating() {
                   {row.original.enrollmentApplication.learner.lastName}, {row.original.enrollmentApplication.learner.firstName}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                  <span className="text-base text-foreground font-bold uppercase">
+                  <span className="text-base text-foreground uppercase">
                     LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                   </span>
                   {row.original.nextYearCurriculum === "REGULAR" &&

@@ -1,6 +1,6 @@
 # Security And Access
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-09-01
 
 ## Authentication
 
@@ -15,6 +15,18 @@ existing password-change form. The handoff does not issue a normal EnrollPro
 staff session. Companion return destinations are allowlisted through
 `COMPANION_APP_URLS` and bound into the signed handoff ticket. Configure
 `ENROLLPRO_PUBLIC_URL` with the browser-facing EnrollPro address.
+
+Authenticated EnrollPro staff may also launch a configured companion from the
+sidebar through one-time SSO. EnrollPro creates a random authorization code,
+stores only its SHA-256 hash, and expires it after 60 seconds. The companion
+backend exchanges the code once using its dedicated Bearer secret, validates
+the minimized EnrollPro identity and active school year, then creates its own
+session. EnrollPro cookies, JWTs, and passwords are never shared across domains.
+
+ATLAS, AIMS, and SMART allow `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `TEACHER`, and
+`CLASS_ADVISER`. MRF allows `SYSTEM_ADMIN` and `MRF`. Inactive users,
+JHS completers, unsupported roles, identities without an employee ID or LRN,
+and accounts using a default password are denied.
 
 ## Roles
 
@@ -34,6 +46,10 @@ Operational writes use the active school year. Authorized staff may inspect arch
 
 Protected companion feeds use dedicated environment variables and `X-Integration-Key`. Each consumer receives only the feed needed for its purpose. Keys must be different from user JWT secrets and must be rotated outside source control.
 
+Companion SSO uses separate `*_SSO_CLIENT_SECRET` values. These secrets must be
+unique per companion and must not reuse feed, grade, schedule, JWT, or password
+handoff keys. Only the destination backend may hold its SSO secret.
+
 Public compatibility feeds remain limited to documented data. Do not add sensitive learner or personnel fields to a public response.
 
 ## Data Privacy
@@ -50,6 +66,10 @@ Birth records, health information, parent details, passwords, audit internals, a
 ## Audit And Realtime Events
 
 Sensitive mutations should record actor, action, affected record, school-year context, and timestamp. Realtime SSE events contain invalidation topics and identifiers, not full private records.
+
+SSO audit entries record launch, exchange, denial, and replay outcomes without
+recording the plaintext authorization code, callback query, client secret, or
+companion session token.
 
 ## Files And Exports
 

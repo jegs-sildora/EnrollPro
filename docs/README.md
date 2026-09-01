@@ -2,7 +2,7 @@
 
 This index lists the maintained EnrollPro product documentation. The implementation remains authoritative when a document becomes stale.
 
-Last reviewed: 2026-08-31
+Last reviewed: 2026-09-01
 
 ## Repository And Core
 
@@ -41,6 +41,10 @@ Last reviewed: 2026-08-31
 | [ATLAS School Year Rollover](features/integration/ATLAS-SCHOOL-YEAR-ROLLOVER.md) | ATLAS and EnrollPro Teams | Schedule history, active-year alignment, teaching-load review, and publication |
 | [AIMS School Year Rollover](features/integration/AIMS-SCHOOL-YEAR-ROLLOVER.md) | AIMS and EnrollPro Teams | Learning-history preservation, class initialization, and membership reconciliation |
 | [MRF API Guide](features/integration/MRF_API_GUIDE.md) | MRF and EnrollPro Teams | Minimized personnel and learner identity feed |
+| [ATLAS EnrollPro SSO](features/integration/ATLAS-ENROLLPRO-SSO.md) | ATLAS and EnrollPro Teams | One-time identity handoff and ATLAS session creation |
+| [AIMS EnrollPro SSO](features/integration/AIMS-ENROLLPRO-SSO.md) | AIMS and EnrollPro Teams | One-time identity handoff and AIMS session creation |
+| [SMART EnrollPro SSO](features/integration/SMART-ENROLLPRO-SSO.md) | SMART and EnrollPro Teams | One-time identity handoff and SMART session creation |
+| [MRF EnrollPro SSO](features/integration/MRF-ENROLLPRO-SSO.md) | MRF and EnrollPro Teams | Pending MRF callback configuration and session contract |
 
 ## Maintenance Rules
 

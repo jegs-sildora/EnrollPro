@@ -1,6 +1,6 @@
 # Data Model And Status
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-09-01
 
 `server/prisma/schema.prisma` is the authoritative data model.
 
@@ -9,6 +9,7 @@ Last reviewed: 2026-07-24
 | Prisma model | Responsibility |
 | --- | --- |
 | `User` | Staff and learner account identity, roles, credentials, and access status |
+| `CompanionSsoAuthorizationCode` | Hashed, 60-second, single-use companion SSO authorization code and request audit context |
 | `Teacher` | Personnel identity, service, appointment, funding, qualifications, and SF7 profile |
 | `TeacherSchedulePeriod` | School-year SF7 teaching-period snapshot |
 | `SchoolSetting` | School identity, active-year reference, branding, and operational configuration |
@@ -83,6 +84,7 @@ Appointments include regular or permanent, provisional, substitute, contractual,
 | --- | --- |
 | `SectionAdviserStatus` | `ACTIVE`, `HANDED_OVER`, `REVOKED` |
 | `Role` | `SYSTEM_ADMIN`, `HEAD_REGISTRAR`, `CLASS_ADVISER`, `TEACHER`, `LEARNER`, `MRF` |
+| `CompanionSystem` | `ATLAS`, `AIMS`, `SMART`, `MRF` |
 | `ComplianceStatus` | `PENDING`, `COMPLIED`, `OVERDUE` |
 | `PrimaryContactType` | `FATHER`, `MOTHER`, `GUARDIAN` |
 | `Sex` | `MALE`, `FEMALE` |

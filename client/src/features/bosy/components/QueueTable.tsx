@@ -439,7 +439,7 @@ export function QueueTable({
                   {learnerName}
                 </span>
                 <span
-                  className="mt-1 truncate font-bold uppercase text-foreground xl:whitespace-normal"
+                  className="mt-1 truncate uppercase text-foreground xl:whitespace-normal"
                   title={r.lrn ?? "NO LRN"}>
                   LRN: {r.lrn ?? "NO LRN"}
                 </span>

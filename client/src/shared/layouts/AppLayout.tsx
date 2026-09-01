@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link, useOutlet } from "react-router";
+import axios from "axios";
 import { Toaster, sileo } from "sileo";
 import {
   LayoutDashboard,
@@ -24,7 +25,15 @@ import {
   Wrench,
   KeyRound,
   UserRound,
+  LoaderCircle,
 } from "lucide-react";
+import type {
+  CompanionSsoCatalogItem,
+  CompanionSsoCatalogResponse,
+  CompanionSsoLaunchResponse,
+  CompanionSystem,
+  Role,
+} from "@enrollpro/shared";
 
 import {
   Sidebar,
@@ -509,9 +518,84 @@ const NavItem = memo(function NavItem({
   );
 });
 
+const COMPANION_ROLE_ACCESS: Record<CompanionSystem, readonly Role[]> = {
+  ATLAS: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
+  AIMS: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
+  SMART: ["SYSTEM_ADMIN", "HEAD_REGISTRAR", "TEACHER", "CLASS_ADVISER"],
+  MRF: ["SYSTEM_ADMIN", "MRF"],
+};
+
+function canSeeCompanion(system: CompanionSystem, roles: readonly Role[]): boolean {
+  const allowed = new Set<Role>(COMPANION_ROLE_ACCESS[system]);
+  return roles.some((role) => allowed.has(role));
+}
+
+function companionErrorMessage(error: unknown): string {
+  if (axios.isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message ?? "The integrated system could not be opened.";
+  }
+  return "The integrated system could not be opened.";
+}
+
+const CompanionNavItem = memo(function CompanionNavItem({
+  system,
+  icon: Icon,
+  label,
+  subtext,
+  availability,
+  fallbackReason,
+  isLaunching,
+  launchBlocked,
+  onLaunch,
+}: {
+  system: CompanionSystem;
+  icon: React.ElementType;
+  label: string;
+  subtext: string;
+  availability: CompanionSsoCatalogItem | null;
+  fallbackReason: string;
+  isLaunching: boolean;
+  launchBlocked: boolean;
+  onLaunch: (system: CompanionSystem) => void;
+}) {
+  const isAvailable = availability?.enabled === true && availability.eligible;
+  const disabledReason = availability?.disabledReason
+    ?? fallbackReason;
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        type="button"
+        disabled={!isAvailable || launchBlocked}
+        tooltip={isAvailable ? `Open ${label}` : disabledReason}
+        onClick={() => onLaunch(system)}
+        className="disabled:cursor-not-allowed disabled:opacity-60">
+        {isLaunching ? (
+          <LoaderCircle className="size-4 shrink-0 animate-spin" />
+        ) : (
+          <Icon className="size-4 shrink-0" />
+        )}
+        <div className="flex w-full flex-col items-start justify-center overflow-hidden">
+          <span className="w-full truncate text-left text-sm font-semibold leading-tight">
+            {isLaunching ? `Opening ${label}` : label}
+          </span>
+          <span className="w-full truncate text-left text-sm leading-tight">
+            {isLaunching
+              ? "Preparing secure sign-in"
+              : isAvailable
+                ? subtext
+                : disabledReason}
+          </span>
+        </div>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+});
+
 function AppSidebar() {
   const location = useLocation();
   const { schoolName, logoUrl, systemPhase } = useSettingsStore();
+  const userRoles = useAuthStore((s) => s.user?.roles ?? []);
   const isAdmin = useAuthStore((s) => s.user?.roles?.includes("SYSTEM_ADMIN"));
   const isHeadRegistrar = useAuthStore(
     (s) => s.user?.roles?.includes("HEAD_REGISTRAR"),
@@ -520,7 +604,93 @@ function AppSidebar() {
   const isTeacher = useAuthStore(
     (s) => s.user?.roles?.includes("TEACHER") || s.user?.roles?.includes("MRF"),
   );
+  const [companionCatalog, setCompanionCatalog] = useState<
+    CompanionSsoCatalogItem[]
+  >([]);
+  const [companionCatalogState, setCompanionCatalogState] = useState<
+    "loading" | "ready" | "unavailable"
+  >("loading");
+  const [launchingCompanion, setLaunchingCompanion] = useState<
+    CompanionSystem | null
+  >(null);
+  const { confirmOrRun } = useUnsavedChangesPrompt();
   const pathname = location.pathname;
+
+  useEffect(() => {
+    let active = true;
+    const loadCatalog = async () => {
+      try {
+        const response = await api.get<CompanionSsoCatalogResponse>(
+          "/auth/companion-sso/catalog",
+        );
+        if (active) {
+          setCompanionCatalog(response.data.systems);
+          setCompanionCatalogState("ready");
+        }
+      } catch {
+        if (active) {
+          setCompanionCatalog([]);
+          setCompanionCatalogState("unavailable");
+        }
+      }
+    };
+    void loadCatalog();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const launchCompanion = useCallback(
+    (system: CompanionSystem) => {
+      if (launchingCompanion) return;
+      confirmOrRun(() => {
+        const launch = async () => {
+          setLaunchingCompanion(system);
+          try {
+            const response = await api.post<CompanionSsoLaunchResponse>(
+              `/auth/companion-sso/${system.toLowerCase()}/launch`,
+            );
+            window.location.assign(response.data.launchUrl);
+          } catch (error: unknown) {
+            setLaunchingCompanion(null);
+            if (
+              axios.isAxiosError<{ code?: string }>(error)
+              && error.response?.data?.code === "PASSWORD_CHANGE_REQUIRED"
+            ) {
+              sileo.error({
+                title: "Password Change Required",
+                description: companionErrorMessage(error),
+              });
+              window.location.assign("/change-password");
+              return;
+            }
+            sileo.error({
+              title: `Could Not Open ${system}`,
+              description: companionErrorMessage(error),
+            });
+          }
+        };
+        void launch();
+      });
+    },
+    [confirmOrRun, launchingCompanion],
+  );
+
+  const companionAvailability = useCallback(
+    (system: CompanionSystem) =>
+      companionCatalog.find((item) => item.system === system) ?? null,
+    [companionCatalog],
+  );
+  const companionFallbackReason = companionCatalogState === "unavailable"
+    ? "Integrated-system login status is unavailable."
+    : "Checking login availability.";
+
+  const hasCompanionNavigation = ([
+    "AIMS",
+    "SMART",
+    "ATLAS",
+    "MRF",
+  ] as const).some((system) => canSeeCompanion(system, userRoles));
 
   return (
     <Sidebar collapsible="icon">
@@ -639,38 +809,66 @@ function AppSidebar() {
                 </>
               )}
 
-              {isAdmin && (
+              {hasCompanionNavigation && (
                 <>
                   <NavDivider label="Integrated Systems" />
-                  <NavItem
-                    to="/admin/integration?tab=aims"
-                    icon={Database}
-                    label="AIMS"
-                    subtext="Academic Info"
-                    pathname={pathname}
-                  />
-                  <NavItem
-                    to="/admin/integration?tab=smart"
-                    icon={CheckCircle2}
-                    label="SMART"
-                    subtext="Simplified Master Records and Tracking"
-                    pathname={pathname}
-                  />
-                  <NavItem
-                    to="/admin/integration?tab=atlas"
-                    icon={CalendarClock}
-                    label="ATLAS"
-                    subtext="Automated Teaching and Learning Assessment System"
-                    pathname={pathname}
-                  />
-                  <NavItem
-                    to="/admin/integration?tab=mrf"
-                    icon={Wrench}
-                    label="MRF"
-                    subtext="Maintenance Requests"
-                    pathname={pathname}
-                  />
+                  {canSeeCompanion("AIMS", userRoles) && (
+                    <CompanionNavItem
+                      system="AIMS"
+                      icon={Database}
+                      label="AIMS"
+                      subtext="Academic Info"
+                      availability={companionAvailability("AIMS")}
+                      fallbackReason={companionFallbackReason}
+                      isLaunching={launchingCompanion === "AIMS"}
+                      launchBlocked={launchingCompanion !== null}
+                      onLaunch={launchCompanion}
+                    />
+                  )}
+                  {canSeeCompanion("SMART", userRoles) && (
+                    <CompanionNavItem
+                      system="SMART"
+                      icon={CheckCircle2}
+                      label="SMART"
+                      subtext="Simplified Master Records and Tracking"
+                      availability={companionAvailability("SMART")}
+                      fallbackReason={companionFallbackReason}
+                      isLaunching={launchingCompanion === "SMART"}
+                      launchBlocked={launchingCompanion !== null}
+                      onLaunch={launchCompanion}
+                    />
+                  )}
+                  {canSeeCompanion("ATLAS", userRoles) && (
+                    <CompanionNavItem
+                      system="ATLAS"
+                      icon={CalendarClock}
+                      label="ATLAS"
+                      subtext="Teaching Loads and Schedules"
+                      availability={companionAvailability("ATLAS")}
+                      fallbackReason={companionFallbackReason}
+                      isLaunching={launchingCompanion === "ATLAS"}
+                      launchBlocked={launchingCompanion !== null}
+                      onLaunch={launchCompanion}
+                    />
+                  )}
+                  {canSeeCompanion("MRF", userRoles) && (
+                    <CompanionNavItem
+                      system="MRF"
+                      icon={Wrench}
+                      label="MRF"
+                      subtext="Maintenance Requests"
+                      availability={companionAvailability("MRF")}
+                      fallbackReason={companionFallbackReason}
+                      isLaunching={launchingCompanion === "MRF"}
+                      launchBlocked={launchingCompanion !== null}
+                      onLaunch={launchCompanion}
+                    />
+                  )}
+                </>
+              )}
 
+              {isAdmin && (
+                <>
                   <NavDivider label="System Administration" />
                   <NavItem
                     to="/audit-logs"
