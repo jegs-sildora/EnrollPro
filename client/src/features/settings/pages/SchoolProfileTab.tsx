@@ -38,6 +38,12 @@ import { updateIdentitySchema } from "@enrollpro/shared/schemas";
 
 import { Switch } from "@/shared/ui/switch";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
+import {
   UnsavedChangesBar,
   useUnsavedChanges,
 } from "@/shared/hooks/useUnsavedChanges";
@@ -436,17 +442,23 @@ export default function SchoolProfileTab() {
                   <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  <span className="break-words min-w-0">Active Academic Programs</span>
+                  <span className="break-words min-w-0">Active Special Curricular Programs (SCPs)</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-                  <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm">
+                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">STE</FormLabel>
-                        <p className="text-base leading-tight text-foreground">Science, Technology, and Engineering</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FormLabel className="text-xl cursor-help font-bold">STE</FormLabel>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-sm font-bold">Science, Technology, and Engineering</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Switch
                         checked={form.watch("steEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("steEnabled", checked)}
@@ -455,12 +467,18 @@ export default function SchoolProfileTab() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm">
+                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">SPA</FormLabel>
-                        <p className="text-base leading-tight text-foreground">Special Program in the Arts</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FormLabel className="text-xl cursor-help font-bold">SPA</FormLabel>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-sm font-bold">Special Program in the Arts</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Switch
                         checked={form.watch("spaEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("spaEnabled", checked)}
@@ -469,12 +487,18 @@ export default function SchoolProfileTab() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm">
+                  <div className="flex flex-col justify-center gap-2 rounded-lg border p-4 shadow-sm min-h-[4.5rem]">
                     <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">SPS</FormLabel>
-                        <p className="text-base leading-tight text-foreground">Special Program in Sports</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FormLabel className="text-xl cursor-help font-bold">SPS</FormLabel>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-sm font-bold">Special Program in Sports</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Switch
                         checked={form.watch("spsEnabled")}
                         onCheckedChange={(checked) => handleToggleProgram("spsEnabled", checked)}

@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import type { LearnerAuthPayload } from "../../middleware/authenticate-learner.js";
 import { getStoredSmartSubjects } from "../integration/smart-outcome-envelope.js";
+import { fetchSmartSf10ByLrn } from "../integration/smart-sf10.service.js";
 import { isConfiguredDefaultPassword } from "../auth/default-password.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -602,7 +603,45 @@ export async function getLearnerDashboardUnified(req: Request, res: Response): P
       };
     });
 
-  const academicHistory = [...applicationHistory, ...archivedHistory].sort(
+  let smartSf10Records: Awaited<ReturnType<typeof fetchSmartSf10ByLrn>> = [];
+  try {
+    if (learner.lrn) {
+      smartSf10Records = await fetchSmartSf10ByLrn(learner.lrn);
+    }
+  } catch (error) {
+    console.error("Failed to fetch SMART SF10 records:", error);
+  }
+
+  const smartHistory = smartSf10Records.map((record) => {
+    const rawGrades: Record<string, any> = {};
+    record.subjectGrades?.forEach((sg: any) => {
+      rawGrades[sg.subjectName] = {
+        T1: sg.T1,
+        T2: sg.T2,
+        T3: sg.T3,
+        Q1: sg.Q1,
+        Q2: sg.Q2,
+        Q3: sg.Q3,
+        Q4: sg.Q4,
+        Final: sg.final,
+        remarks: sg.remarks,
+      };
+    });
+    return {
+      grade_level: record.gradeLevel,
+      school_year: record.schoolYear,
+      status: "Completed",
+      term_format: "TRIMESTER",
+      grades: Object.keys(rawGrades).length > 0 ? rawGrades : null,
+      general_average: record.generalAverage,
+    };
+  });
+
+  const localHistory = [...applicationHistory, ...archivedHistory];
+  const smartYears = new Set(smartHistory.map((h) => h.school_year));
+  const filteredLocalHistory = localHistory.filter((h) => !smartYears.has(h.school_year));
+
+  const academicHistory = [...smartHistory, ...filteredLocalHistory].sort(
     (left, right) => right.school_year.localeCompare(left.school_year),
   );
 

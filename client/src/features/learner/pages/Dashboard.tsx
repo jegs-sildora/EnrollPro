@@ -317,9 +317,9 @@ function AcademicHistoryAccordion({
                     <tr className="border-b border-border">
                       <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Learning Areas</th>
                       <th colSpan={isTrimester ? 3 : 4} className="px-4 py-2 text-center font-bold border-r border-border">
-                        {isTrimester ? "Term" : "Quarter"}
+                        {isTrimester ? "Term Rating" : "Quarter Rating"}
                       </th>
-                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Final Grading</th>
+                      <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle border-r border-border">Final Rating</th>
                       <th rowSpan={2} className="px-4 py-2 text-center font-bold align-middle">Remarks</th>
                     </tr>
                     <tr>

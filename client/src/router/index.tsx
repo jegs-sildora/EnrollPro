@@ -264,12 +264,7 @@ export const router = createBrowserRouter([
       // 6. Default redirects & Fallback
       {
         path: "/",
-        element: (
-          <Navigate
-            to="/dashboard"
-            replace
-          />
-        ),
+        element: <NotFound />,
       },
       { path: "*", element: <NotFound /> },
     ],

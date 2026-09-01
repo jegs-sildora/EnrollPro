@@ -319,14 +319,31 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
   const logoUrl = `/uploads/${req.file.filename}`;
 
   // Extract full palette
-  const palette = await extractPalette(absolutePath);
-  const accentHsl =
-    palette.find((c) => {
+  let palette = await extractPalette(absolutePath);
+
+  const isEmemhsLogo = 
+    (req.file?.originalname && req.file.originalname.toLowerCase().includes("ememhs")) || 
+    (req.file?.filename && req.file.filename.toLowerCase().includes("ememhs"));
+  const isEmemhsSchool = settings.schoolName && settings.schoolName.toLowerCase().includes("ememhs");
+  
+  let accentHsl = "221 83% 53%"; // fallback default
+
+  if (isEmemhsLogo || isEmemhsSchool) {
+    accentHsl = "343 100% 29%"; // Equivalent to #96002a
+    // Ensure it's in the palette at the front
+    palette = palette.filter(c => c.hsl !== accentHsl);
+    palette.unshift({ hsl: accentHsl, hex: "#96002a", foreground: "0 0% 100%" } as any);
+  } else {
+    accentHsl = palette.find((c) => {
       const parts = c.hsl.split(" ");
       const s = parseInt(parts[1]);
       const l = parseInt(parts[2]);
       return s >= 20 && l >= 15 && l <= 85;
     })?.hsl ?? "221 83% 53%";
+  }
+
+  // Trim to 5 colors max for UI
+  palette = palette.slice(0, 5);
 
   const colorScheme = {
     palette,

@@ -152,8 +152,8 @@ export async function extractPalette(
 				unique.push(c);
 			}
 
-			// Maximum 5 colors
-			if (unique.length >= 5) break;
+			// Maximum 10 colors
+			if (unique.length >= 10) break;
 		}
 
 		if (unique.length === 0) {

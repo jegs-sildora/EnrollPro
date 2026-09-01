@@ -567,7 +567,7 @@ const CompanionNavItem = memo(function CompanionNavItem({
       <SidebarMenuButton
         type="button"
         disabled={!isAvailable || launchBlocked}
-        tooltip={isAvailable ? `Open ${label}` : disabledReason}
+        tooltip={isLaunching ? "Preparing secure sign-in" : isAvailable ? subtext : disabledReason}
         onClick={() => onLaunch(system)}
         className="disabled:cursor-not-allowed disabled:opacity-60">
         {isLaunching ? (
@@ -575,18 +575,9 @@ const CompanionNavItem = memo(function CompanionNavItem({
         ) : (
           <Icon className="size-4 shrink-0" />
         )}
-        <div className="flex w-full flex-col items-start justify-center overflow-hidden">
-          <span className="w-full truncate text-left text-sm font-semibold leading-tight">
-            {isLaunching ? `Opening ${label}` : label}
-          </span>
-          <span className="w-full truncate text-left text-sm leading-tight">
-            {isLaunching
-              ? "Preparing secure sign-in"
-              : isAvailable
-                ? subtext
-                : disabledReason}
-          </span>
-        </div>
+        <span>
+          {isLaunching ? `Opening ${label}` : label}
+        </span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

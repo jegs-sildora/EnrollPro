@@ -90,30 +90,30 @@ export function DashboardSummaryRibbon({
         return (
           <Card
             key={item.key}
-            className="group border-slate-200 bg-card shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
+            className="group border-white/10 bg-white/10 shadow-sm cursor-pointer hover:bg-white/20 transition-colors backdrop-blur-sm"
             onClick={() => navigate(item.route)}
           >
             <CardContent className="flex min-h-24 items-center gap-4 p-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-lg font-bold leading-tight text-foreground mb-2">
+                  <p className="text-sm font-bold uppercase tracking-wider leading-tight text-white/90 mb-2">
                     {item.label}
                   </p>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="mt-0.5 text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
+                        <button type="button" className="mt-0.5 text-white/70 hover:text-white outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full shrink-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100">
                           <HelpCircle className="size-4" />
                           <span className="sr-only">Help</span>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" align="start" className="max-w-xs">
+                      <TooltipContent side="top" align="start" className="max-w-xs text-primary-foreground">
                         {item.helper}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="mt-1 text-3xl font-bold leading-none text-primary">
+                <p className="mt-1 text-3xl font-bold leading-none text-white">
                   <AnimatedNumber value={summary[item.key]} />
                 </p>
               </div>
@@ -357,7 +357,7 @@ export function CurriculumDistributionPanel({
           return (
             <div key={item.programType} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-base">
-                <span className="min-w-0 truncate font-bold">
+                <span className="min-w-0 truncate font-bold uppercase">
                   {item.label}
                 </span>
                 <span className="shrink-0">

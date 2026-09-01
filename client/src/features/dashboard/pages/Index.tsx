@@ -26,53 +26,43 @@ function DashboardPhaseBanner({
   phase,
   isArchived,
   ayLabel,
+  children,
 }: {
   phase: string;
   isArchived: boolean;
   ayLabel: string | null;
+  children?: React.ReactNode;
 }) {
+  let title = "";
+  let subtitle = "";
+
   if (isArchived) {
-    return (
-      <div className="rounded-md border border-slate-200 bg-card px-4 py-3 shadow-sm">
-        <p className="text-lg font-bold text-foreground">
-          Archived School Year Summary
-        </p>
-        <p className="text-base font-bold text-foreground">
-          Final records for S.Y. {ayLabel}. Changes are not allowed for an archived school year.
-        </p>
-      </div>
-    );
+    title = "Archived School Year Summary";
+    subtitle = `Final records for S.Y. ${ayLabel}. Changes are not allowed for an archived school year.`;
+  } else if (phase === "ENROLLMENT_OPERATIONS") {
+    title = `Enrollment Operations for S.Y. ${ayLabel}`;
+    subtitle = "Process learner applications, verify school requirements, and complete section assignment.";
+  } else if (phase === "EOSY_CLOSING") {
+    title = `EOSY Closing for S.Y. ${ayLabel}`;
+    subtitle = "Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.";
+  } else {
+    title = `Ongoing Classes for S.Y. ${ayLabel}`;
+    subtitle = "Manage learner records, track attendance, and record health profiles.";
   }
 
-  if (phase === "ENROLLMENT_OPERATIONS") {
-    return (
-      <div className="bg-card">
-        <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 shadow-sm">
-          <p className="text-lg font-bold text-primary">
-            Enrollment Operations for S.Y. {ayLabel}
-          </p>
-          <p className="text-base font-semibold text-foreground">
-            Process learner applications, verify school requirements, and complete section assignment.
-          </p>
+  return (
+    <div className="rounded-2xl bg-primary p-6 shadow-md flex flex-col gap-6 text-primary-foreground relative overflow-hidden mt-6">
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+          <p className="text-sm text-primary-foreground">{subtitle}</p>
         </div>
       </div>
-    );
-  }
-
-  if (phase === "EOSY_CLOSING") {
-    return (
-      <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-3 shadow-sm">
-        <p className="text-xl font-bold text-primary">
-          EOSY Closing for S.Y. {ayLabel}
-        </p>
-        <p className="text-sm text-foreground">
-          Enrollment is locked while final grades, promotion outcomes, and official school forms are completed.
-        </p>
+      <div className="relative z-10">
+        {children}
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
 
 export default function DashboardIndex() {
@@ -169,12 +159,15 @@ export default function DashboardIndex() {
           phase={dashboardPhase}
           isArchived={isArchived}
           ayLabel={ayLabel}
-        />
+        >
+          <DashboardSummaryRibbon summary={stats.summaryRibbon} />
+        </DashboardPhaseBanner>
+        
         <DashboardActionToolbar
           phase={dashboardPhase}
           isArchived={isArchived}
         />
-        <DashboardSummaryRibbon summary={stats.summaryRibbon} />
+        
         <div className="min-w-0 flex-1">{content}</div>
       </motion.div>
     </AnimatePresence>
