@@ -14,6 +14,7 @@ interface PreFlightBlockerModalProps {
   onOpenChange: (open: boolean) => void;
   unlockedClassesCount: number;
   irregularBlockerCount: number;
+  incompleteSubjectGradesCount: number;
   targetScopeName: string;
 }
 
@@ -22,10 +23,12 @@ export function PreFlightBlockerModal({
   onOpenChange,
   unlockedClassesCount,
   irregularBlockerCount,
+  incompleteSubjectGradesCount,
   targetScopeName,
 }: PreFlightBlockerModalProps) {
   const hasUnlockedClasses = unlockedClassesCount > 0;
   const hasIrregularBlockers = irregularBlockerCount > 0;
+  const hasIncompleteGrades = incompleteSubjectGradesCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,10 +59,22 @@ export function PreFlightBlockerModal({
             <div className="bg-amber-50 border border-amber-200 rounded p-3">
               <div className="flex items-start text-amber-900  text-base leading-tight">
                 <span className="mr-2">⚠️</span>
-                <span>{irregularBlockerCount} Learners require End-of-School-Year (EOSY) Class grades.</span>
+                <span>{irregularBlockerCount} Learner(s) require End-of-School-Year (EOSY) Class grades.</span>
               </div>
               <span className="text-amber-700 block text-base ml-6 mt-0.5">
                 Review the unresolved SMART results or record an official dropped-out or transferred-out status.
+              </span>
+            </div>
+          )}
+
+          {hasIncompleteGrades && (
+            <div className="bg-amber-50 border border-amber-200 rounded p-3">
+              <div className="flex items-start text-amber-900  text-base leading-tight">
+                <span className="mr-2">⚠️</span>
+                <span>{incompleteSubjectGradesCount} Learner(s) have INCOMPLETE SUBJECT GRADES fetched from SMART API.</span>
+              </div>
+              <span className="text-amber-700 block text-base ml-6 mt-0.5">
+                Ensure all subjects are graded before finalizing the school year.
               </span>
             </div>
           )}

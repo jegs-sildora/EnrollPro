@@ -3,6 +3,7 @@ import axios from "axios";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import { getAtlasHeaders } from "../../lib/atlas.js";
 import {
   broadcastDomainInvalidation,
   broadcastEosyInvalidation,
@@ -87,17 +88,22 @@ export async function syncAtlasFaculty(
     const baseUrl = process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net";
 
     try {
-      // Direct trigger without API key headers
+      const headers = getAtlasHeaders(true);
       const response = await axios.post(
         `${baseUrl}/api/v1/faculty/sync`,
-        { mode: "reconcile" },
-        { timeout: 15000 },
+        {
+          mode: "reconcile",
+          schoolId: process.env.ATLAS_SCHOOL_ID
+            ? Number(process.env.ATLAS_SCHOOL_ID.trim())
+            : 1,
+        },
+        { headers, timeout: 15000 },
       );
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "ATLAS_FACULTY_SYNC",
-        description: `Triggered ATLAS faculty sync. Result: ${response.data.activeCount || 0} records.`,
+        description: `Triggered authenticated ATLAS faculty sync. Result: ${response.data.activeCount || 0} records.`,
         subjectType: "Teacher",
         recordId: req.user!.userId,
         req,
@@ -118,6 +124,14 @@ export async function syncAtlasFaculty(
          : fetchError instanceof Error
            ? fetchError.message
            : "Unknown ATLAS connection error";
+           
+       if (axios.isAxiosError(fetchError) && (fetchError.response?.status === 401 || fetchError.response?.status === 403)) {
+         throw new AppError(
+           500,
+           "ATLAS rejected our credentials. Verify ATLAS_API_KEY.",
+         );
+       }
+       
        console.error("ATLAS sync trigger failed:", message);
        throw new AppError(
         503,

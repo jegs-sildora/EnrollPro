@@ -409,26 +409,46 @@ const createDraftPlacement = (
           first.id - second.id,
       );
 
+      const allSlots = buildDraftSlots(orderedSections);
+      // Determine the active slots based on the number of available learners
+      const activeSlots = allSlots.slice(0, sortedLearners.length);
+
       const topSections = orderedSections.slice(0, homogeneousSectionCount);
-      const remainingSections = orderedSections.slice(homogeneousSectionCount);
+      const topSectionIds = new Set(topSections.map((s) => s.id));
+
+      const topSlotsFilter = activeSlots.filter((id) => topSectionIds.has(id));
+      const topCounts = new Map<number, number>();
+      for (const id of topSlotsFilter) {
+        topCounts.set(id, (topCounts.get(id) ?? 0) + 1);
+      }
 
       const topSlots: number[] = [];
       for (const section of topSections) {
-        const capacity = Math.max(0, section.maxCapacity - section.currentCount);
-        for (let i = 0; i < capacity; i++) {
+        const count = topCounts.get(section.id) ?? 0;
+        for (let i = 0; i < count; i++) {
           topSlots.push(section.id);
         }
       }
+
+      const remainingSlots = activeSlots.filter((id) => !topSectionIds.has(id));
 
       const topLearnersCount = topSlots.length;
       const topLearners = sortedLearners.slice(0, topLearnersCount);
       const remainingLearners = sortedLearners.slice(topLearnersCount);
 
-      const remainingSlots = buildDraftSlots(remainingSections);
       const interleavedRemainingLearners = interleaveBySex(remainingLearners);
 
       programLearners = [...topLearners, ...interleavedRemainingLearners];
       slots = [...topSlots, ...remainingSlots];
+      
+      // For unplaced learners (if learners > slots), we must pad the slots array
+      // so the loop correctly identifies them as unplaced (undefined slot).
+      if (sortedLearners.length > allSlots.length) {
+         const unplacedCount = sortedLearners.length - allSlots.length;
+         for (let i = 0; i < unplacedCount; i++) {
+            slots.push(undefined as unknown as number);
+         }
+      }
     } else {
       programLearners = interleaveBySex(rawProgramLearners);
       slots = buildDraftSlots(programSections);

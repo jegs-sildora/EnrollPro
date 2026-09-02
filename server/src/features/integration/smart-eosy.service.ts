@@ -24,6 +24,7 @@ interface SmartSyncResult {
     lrn: string;
     status: SmartSyncIssueStatus;
     reason: string;
+    partialSubjects?: Record<string, import("./smart-outcome-envelope.js").StoredSmartSubjectGrades>;
   }>;
   learnerIds: number[];
 }
@@ -551,7 +552,12 @@ async function syncFinalSmartSectionOutcomesInternal(
     );
   }
 
-  const rawOutcomesList = parsed.data.outcomes;
+  const isHomeroomGuidance = (name: string) => name.trim().toUpperCase().startsWith("HOMEROOM GUIDANCE");
+  const rawOutcomesList = parsed.data.outcomes.map(outcome => ({
+    ...outcome,
+    subjectGrades: outcome.subjectGrades.filter(s => !isHomeroomGuidance(s.subjectName)),
+    learningAreas: outcome.learningAreas?.filter(a => !isHomeroomGuidance(a.name)),
+  }));
 
   if (
     parsed.data.outcomesSynced !== rawOutcomesList.length
@@ -579,12 +585,24 @@ async function syncFinalSmartSectionOutcomesInternal(
       normalizedOutcomes.push(normalizeSmartOutcome(item, expectedGrade));
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : "Invalid final outcome.";
+      const partialSubjects: Record<string, import("./smart-outcome-envelope.js").StoredSmartSubjectGrades> = {};
+      for (const subj of item.subjectGrades) {
+        partialSubjects[subj.subjectName] = {
+          T1: subj.T1,
+          T2: subj.T2,
+          T3: subj.T3,
+          Final: subj.finalRating,
+          remarks: subj.remarks,
+        };
+      }
+      
       unresolvedOutcomes.push({
         lrn: item.lrn,
         status: error instanceof SmartOutcomeValidationError
           ? error.status
           : "SMART_DATA_NEEDS_REVIEW",
         reason,
+        partialSubjects,
       });
     }
   }
@@ -720,6 +738,7 @@ async function syncFinalSmartSectionOutcomesInternal(
               {
                 status: unresolved.status,
                 reason: unresolved.reason,
+                partialSubjects: unresolved.partialSubjects,
               },
             ),
           },

@@ -1070,7 +1070,16 @@ export default function EosyUpdating() {
     return filteredRecords.filter((r) => {
       return r.eosyStatus !== "DROPPED_OUT"
         && r.eosyStatus !== "TRANSFERRED_OUT"
-        && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED";
+        && r.smartSyncStatus !== "FINALIZED_SMART_GRADES_RECEIVED"
+        && r.smartSyncStatus !== "INCOMPLETE_SUBJECT_GRADES";
+    }).length;
+  }, [filteredRecords]);
+
+  const incompleteSubjectGradesCount = useMemo(() => {
+    return filteredRecords.filter((r) => {
+      return r.eosyStatus !== "DROPPED_OUT"
+        && r.eosyStatus !== "TRANSFERRED_OUT"
+        && r.smartSyncStatus === "INCOMPLETE_SUBJECT_GRADES";
     }).length;
   }, [filteredRecords]);
 
@@ -1078,7 +1087,9 @@ export default function EosyUpdating() {
   const hasUnlockedClasses = scopedUnlockedClassesCount > 0;
   const scopedIrregularBlockerCount = pendingIrregularCount;
   const hasIrregularBlockers = scopedIrregularBlockerCount > 0;
-  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0) + (pendingCount > 0 ? 1 : 0);
+  const scopedIncompleteGradesCount = incompleteSubjectGradesCount;
+  const hasIncompleteGrades = scopedIncompleteGradesCount > 0;
+  const blockersCount = (hasUnlockedClasses ? 1 : 0) + (hasIrregularBlockers ? 1 : 0) + (hasIncompleteGrades ? 1 : 0) + (pendingCount > 0 ? 1 : 0);
 
   const targetScopeName = sectionFilter === "ALL" ? `All ${activeGradeName}` : `Section: ${sectionFilter}`;
   const descriptionTarget = sectionFilter === "ALL"
@@ -1751,12 +1762,12 @@ export default function EosyUpdating() {
                                   </TooltipTrigger>
                                   <TooltipContent side="top" align="end" className="bg-destructive text-destructive-foreground border-none p-4 shadow-xl rounded-lg text-base leading-tight max-w-xs">
                                     <p className="font-bold mb-2 flex items-center gap-2">
-                                      <AlertCircle className="w-4 h-4" />
                                       Pending Requirements
                                     </p>
                                     <div className="space-y-1.5 text-destructive-foreground/90">
                                       {hasUnlockedClasses && <p>• {scopedUnlockedClassesCount} section(s) still have learners waiting for finalized SMART grades.</p>}
                                       {hasIrregularBlockers && <p>• {scopedIrregularBlockerCount ?? 0} learner(s) have incomplete or unverified SMART outcomes.</p>}
+                                      {hasIncompleteGrades && <p>• {scopedIncompleteGradesCount ?? 0} learner(s) have INCOMPLETE SUBJECT GRADES fetched from SMART API.</p>}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1938,6 +1949,7 @@ export default function EosyUpdating() {
         onOpenChange={setPreFlightModalOpen}
         unlockedClassesCount={scopedUnlockedClassesCount}
         irregularBlockerCount={scopedIrregularBlockerCount ?? 0}
+        incompleteSubjectGradesCount={scopedIncompleteGradesCount ?? 0}
         targetScopeName={targetScopeName}
       />
 

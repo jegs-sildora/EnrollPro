@@ -37,7 +37,7 @@ ATLAS_SCHOOL_ID=optional-external-school-id
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/api/integration/atlas/sync-faculty` | Ask ATLAS to reconcile EnrollPro faculty |
+| POST | `/api/integration/atlas/sync-faculty` | Ask ATLAS to reconcile EnrollPro faculty (authenticates to ATLAS using `ATLAS_API_KEY`) |
 | GET | `/api/integration/atlas/faculty/:id/teaching-load` | Read a teacher teaching load through EnrollPro |
 | POST | `/api/sf7/sync-atlas` | Replace EnrollPro SF7 schedule snapshots with published ATLAS assignments |
 | GET | `/api/teachers/:id/schedule-periods` | Read the stored school-year SF7 snapshot |

@@ -8,6 +8,7 @@ import type {
   Sf7ImportPreviewRow,
   Sf7SchedulePeriodPreview,
 } from "@enrollpro/shared";
+import { getAtlasHeaders } from "../../lib/atlas.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   TeacherFundingSource,
@@ -682,10 +683,6 @@ export async function commitSf7Import(
   };
 }
 
-function atlasHeaders(): Record<string, string> {
-  const key = process.env.ATLAS_API_KEY?.trim();
-  return key ? { Authorization: `Bearer ${key}`, "X-Integration-Key": key } : {};
-}
 
 export async function syncSf7FromAtlas(
   schoolYearId: number,
@@ -695,7 +692,7 @@ export async function syncSf7FromAtlas(
   });
   const schoolId = process.env.ATLAS_SCHOOL_ID?.trim() || settings?.depedSchoolId || String(settings?.id ?? 1);
   const baseUrl = process.env.ATLAS_API_BASE_URL || "https://njgrm.buru-degree.ts.net";
-  const headers = atlasHeaders();
+  const headers = getAtlasHeaders();
 
   const [teachers, facultyResponse] = await Promise.all([
     prisma.teacher.findMany({

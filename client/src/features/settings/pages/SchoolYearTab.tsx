@@ -1217,8 +1217,8 @@ export default function SchoolYearTab() {
                   <div className="flex items-start gap-3">
                     <div className="space-y-1">
                       <Label className="text-lg font-bold">Regular BEC Sections</Label>
-                      <p className="text-sm text-foreground leading-relaxed max-w-[90%]">
-                        All remaining learners will be evenly distributed across regular sections to balance overall academic performance. This mixed-ability setup is a mandatory DepEd standard.
+                      <p className="text-sm text-foreground leading-relaxed">
+                        All remaining learners will be evenly distributed across regular BEC sections to balance overall academic performance.
                       </p>
                     </div>
                   </div>
@@ -1234,11 +1234,8 @@ export default function SchoolYearTab() {
                   <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <Archive className="h-5 w-5" />
                   </div>
-                  School Year Archive
+                  Previous School Years
                 </CardTitle>
-                <CardDescription>
-                  Historical years are kept for audit and reporting.
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto w-full -mx-4 px-4 sm:mx-0 sm:px-0">

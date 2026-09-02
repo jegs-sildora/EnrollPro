@@ -56,7 +56,8 @@ function getSubjects(
 ): { subjects: Sf9SubjectRow[]; envelopeAverage: number | null } {
   const root = reportedGrades ?? {};
   const envelope = asObject(root.__smartOutcome);
-  const subjectMap = asObject(envelope?.subjects);
+  const issue = asObject(root.__smartSyncIssue);
+  const subjectMap = asObject(envelope?.subjects) ?? asObject(issue?.partialSubjects);
   const subjects: Sf9SubjectRow[] = [];
 
   if (!subjectMap) {
@@ -177,7 +178,7 @@ export function EosySf9GradeTable({
         </div>
       ) : (
         <div className="rounded-md border border-dashed border-border bg-card px-5 py-8 text-center text-sm font-bold text-muted-foreground">
-          No SMART grades are available for this learner in S.Y. {schoolYearLabel}.
+          No EOSY grades are available for this learner in S.Y. {schoolYearLabel}.
         </div>
       )}
     </div>

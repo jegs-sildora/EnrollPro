@@ -14,6 +14,7 @@ export interface SmartSyncIssue {
   status: SmartSyncIssueStatus;
   reason: string;
   synchronizedAt: string;
+  partialSubjects?: Record<string, StoredSmartSubjectGrades>;
 }
 
 export interface StoredSmartSubjectGrades {
@@ -208,7 +209,8 @@ export function replaceSmartOutcomeWithIssue(
       status: issue.status,
       reason: issue.reason,
       synchronizedAt: issue.synchronizedAt ?? new Date().toISOString(),
-    },
+      ...(issue.partialSubjects && Object.keys(issue.partialSubjects).length > 0 ? { partialSubjects: issue.partialSubjects } : {}),
+    } as unknown as Prisma.InputJsonValue,
   };
 }
 

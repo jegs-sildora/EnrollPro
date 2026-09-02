@@ -126,10 +126,10 @@ export function AtomicRolloverDialog({
 
   const description = (
     <div className="flex flex-col items-center">
-      <span className="text-center text-base pt-2 font-normal pb-4">
+      <span className="text-center text-base pt-2 pb-4">
         The system will archive the current year and execute the following actions:
       </span>
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 text-left font-normal w-full">
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 text-left w-full">
         <ul className="space-y-3">
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
