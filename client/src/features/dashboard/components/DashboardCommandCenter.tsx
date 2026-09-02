@@ -47,7 +47,7 @@ interface DashboardSummaryRibbonProps {
 const SUMMARY_ITEMS = [
   {
     key: "totalEnrollment" as const,
-    label: "Total Enrolled Learners",
+    label: "Total Enrollees",
     helper: "Officially enrolled learners assigned to a valid class section",
     icon: GraduationCap,
     route: "/learners",
@@ -113,7 +113,7 @@ export function DashboardSummaryRibbon({
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="mt-1 text-3xl font-bold leading-none text-white">
+                <p className="mt-1 text-3xl font-black leading-none text-white">
                   <AnimatedNumber value={summary[item.key]} />
                 </p>
               </div>
@@ -161,7 +161,7 @@ export function DashboardActionToolbar({
     >
       <div className="flex-1 min-w-0 lg:pr-2">
         <div className="flex items-center gap-2">
-          <p className="text-lg font-bold text-primary">
+          <p className="text-xl font-extrabold text-primary">
             Quick Actions
           </p>
           <TooltipProvider>
@@ -262,7 +262,7 @@ export function OperationalQueueCard({
     >
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-bold">{title}</CardTitle>
+          <CardTitle className="text-xl font-extrabold">{title}</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -282,7 +282,7 @@ export function OperationalQueueCard({
       <CardContent className="flex flex-1 flex-col pt-1">
         <p
           className={cn(
-            "text-4xl font-bold",
+            "text-4xl font-black",
             isClear ? "text-foreground" : warning ? "text-destructive" : "text-primary",
           )}
         >
@@ -334,7 +334,7 @@ export function CurriculumDistributionPanel({
   return (
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-lg font-bold">
+        <CardTitle className="text-xl font-extrabold">
           Learners by Curricular Program
         </CardTitle>
         <TooltipProvider>
@@ -382,7 +382,7 @@ export function IntakePipelinePanel({
   return (
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-lg font-bold">
+        <CardTitle className="text-xl font-extrabold">
           Enrollment Records by Grade
         </CardTitle>
         <TooltipProvider>
@@ -487,7 +487,7 @@ export function SectionSaturationPanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-bold">
+          <CardTitle className="text-xl font-extrabold">
             Class Section Capacity
           </CardTitle>
           <TooltipProvider>
@@ -597,7 +597,7 @@ export function Sf1CompliancePanel({
     <Card className="group flex h-full flex-col border-slate-200 bg-card shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-bold">
+          <CardTitle className="text-xl font-extrabold">
             SF1 Learner Information Check
           </CardTitle>
           <TooltipProvider>
@@ -669,7 +669,7 @@ export function ActiveTallyPanel({
   return (
     <Card className="group border-slate-200 bg-card shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
-        <CardTitle className="text-lg font-bold">
+        <CardTitle className="text-xl font-extrabold">
           Current Enrollment Count
         </CardTitle>
         <TooltipProvider>

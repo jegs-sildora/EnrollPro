@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { PrismaClient, Sex } from "../../src/generated/prisma/index.js";
+import { PrismaClient, Sex, Role } from "../../src/generated/prisma/index.js";
+import * as bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -71,10 +72,34 @@ async function main() {
   const getDeptId = (code: string) => departments.find(d => d.code === code)?.id;
 
   const dummyTeachers = [
-    { employeeId: "2000061", deptCode: "ENG", firstName: "Jose Gabriel", lastName: "Santos", sex: Sex.MALE },
-    { employeeId: "2000062", deptCode: "MATH", firstName: "Maria Angela", lastName: "Reyes", sex: Sex.FEMALE },
-    { employeeId: "2000063", deptCode: "ESP", firstName: "Juan Miguel", lastName: "Cruz", sex: Sex.MALE },
-    { employeeId: "2000064", deptCode: "MAPEH", firstName: "Anna Patricia", lastName: "Garcia", sex: Sex.FEMALE },
+    { 
+      employeeId: "2000061", deptCode: "ENG", firstName: "Jose Gabriel", middleName: "Mercado", lastName: "Santos", sex: Sex.MALE,
+      email: "josegabriel.santos@deped.gov.ph", contactNumber: "09171234561", specialization: "ENGLISH", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "ENGLISH", 
+      minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1990-05-15"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000062", deptCode: "MATH", firstName: "Maria Angela", middleName: "Villanueva", lastName: "Reyes", sex: Sex.FEMALE,
+      email: "mariaangela.reyes@deped.gov.ph", contactNumber: "09181234562", specialization: "MATHEMATICS", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MATHEMATICS", 
+      minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1992-08-22"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000063", deptCode: "ESP", firstName: "Juan Miguel", middleName: "Bautista", lastName: "Cruz", sex: Sex.MALE,
+      email: "juanmiguel.cruz@deped.gov.ph", contactNumber: "09191234563", specialization: "EDUKASYON SA PAGPAPAKATAO", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "EDUKASYON SA PAGPAPAKATAO", 
+      minorSpecialization: "", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1985-11-30"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000064", deptCode: "MAPEH", firstName: "Anna Patricia", middleName: "Ramos", lastName: "Garcia", sex: Sex.FEMALE,
+      email: "annapatricia.garcia@deped.gov.ph", contactNumber: "09201234564", specialization: "MAPEH", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MAPEH", 
+      minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1995-02-14"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
   ];
 
   for (const t of dummyTeachers) {
@@ -84,23 +109,76 @@ async function main() {
       continue;
     }
 
-    await prisma.teacher.upsert({
+    const defaultPassword = await bcrypt.hash("DepEd2026!", 10);
+
+    const user = await prisma.user.upsert({
       where: { employeeId: t.employeeId },
-      update: {},
+      update: {
+        firstName: t.firstName,
+        middleName: t.middleName,
+        lastName: t.lastName,
+        email: t.email,
+        sex: t.sex,
+        roles: [Role.TEACHER]
+      },
       create: {
         employeeId: t.employeeId,
         firstName: t.firstName,
+        middleName: t.middleName,
+        lastName: t.lastName,
+        email: t.email,
+        sex: t.sex,
+        password: defaultPassword,
+        roles: [Role.TEACHER],
+      }
+    });
+
+    await prisma.teacher.upsert({
+      where: { employeeId: t.employeeId },
+      update: {
+        middleName: t.middleName,
+        email: t.email,
+        contactNumber: t.contactNumber,
+        specialization: t.specialization,
+        undergraduateDegree: t.undergraduateDegree,
+        postgraduateDegree: t.postgraduateDegree,
+        majorSpecialization: t.majorSpecialization,
+        minorSpecialization: t.minorSpecialization,
+        plantillaPosition: t.plantillaPosition,
+        designation: t.designation,
+        birthdate: t.birthdate,
+        personnelType: t.personnelType,
+        functionalAssignment: t.functionalAssignment,
+        userId: user.id,
+      },
+      create: {
+        employeeId: t.employeeId,
+        firstName: t.firstName,
+        middleName: t.middleName,
         lastName: t.lastName,
         sex: t.sex,
+        email: t.email,
+        contactNumber: t.contactNumber,
+        specialization: t.specialization,
+        undergraduateDegree: t.undergraduateDegree,
+        postgraduateDegree: t.postgraduateDegree,
+        majorSpecialization: t.majorSpecialization,
+        minorSpecialization: t.minorSpecialization,
+        plantillaPosition: t.plantillaPosition,
+        designation: t.designation,
+        birthdate: t.birthdate,
+        personnelType: t.personnelType,
+        functionalAssignment: t.functionalAssignment,
         departmentId: deptId,
         isActive: true,
         serviceStatus: "ACTIVE",
         natureOfAppointment: "REGULAR_PERMANENT",
         fundingSource: "NATIONAL",
-        ancillaryRoles: [] // Do not assign ancillary minutes to the new dummy teachers
+        ancillaryRoles: [], // Do not assign ancillary minutes to the new dummy teachers
+        userId: user.id,
       }
     });
-    console.log(`Inserted dummy teacher ${t.employeeId} for department ${t.deptCode}`);
+    console.log(`Inserted dummy teacher ${t.employeeId} for department ${t.deptCode} (User ID: ${user.id})`);
   }
 
   console.log("Seeding complete.");

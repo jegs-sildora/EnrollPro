@@ -171,16 +171,14 @@ const SelectItem = React.forwardRef<
       ref={ref}
       textValue={safeTextValue}
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-base font-bold outline-none focus:bg-primary focus:text-primary-foreground data-disabled:pointer-events-none ",
+        "group relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-base font-bold outline-none focus:bg-primary focus:text-primary-foreground data-disabled:pointer-events-none ",
         motionClassNames.controlSurface,
         className,
       )}
       {...props}>
-      <span className={cn("absolute left-2 flex h-3.5 w-3.5 items-center justify-center", motionClassNames.controlIndicator)}>
-        <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4 text-primary-foreground" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
+      <SelectPrimitive.ItemIndicator className={cn("absolute left-2 flex h-3.5 w-3.5 items-center justify-center", motionClassNames.controlIndicator)}>
+        <Check className="h-4 w-4 text-foreground group-focus:text-primary-foreground" />
+      </SelectPrimitive.ItemIndicator>
 
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>

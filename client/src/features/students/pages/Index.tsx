@@ -265,23 +265,6 @@ const formatLearningProgramLabel = (
     : displayName;
 };
 
-const getGradeLevelColorDotClass = (gradeLevel: string | null | undefined): string => {
-  const normalized = String(gradeLevel || "").trim().toLowerCase();
-  if (normalized.includes("7") || normalized.includes("g7")) {
-    return "bg-emerald-500";
-  }
-  if (normalized.includes("8") || normalized.includes("g8")) {
-    return "bg-amber-500";
-  }
-  if (normalized.includes("9") || normalized.includes("g9")) {
-    return "bg-rose-500";
-  }
-  if (normalized.includes("10") || normalized.includes("g10")) {
-    return "bg-sky-500";
-  }
-  return "bg-muted-foreground";
-};
-
 const getGradeLevelTextClass = (gradeLevel: string | null | undefined): string => {
   const normalized = String(gradeLevel || "").trim().toLowerCase();
   if (normalized.includes("7") || normalized.includes("g7")) return "text-emerald-700";
@@ -1154,19 +1137,18 @@ export default function Students() {
                   });
                 }}>
                 <SelectTrigger className="h-10 w-full leading-tight font-bold sm:w-40">
-                  <SelectValue placeholder="All Grades" />
+                  <SelectValue placeholder="All Grade Level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="leading-tight font-bold">
-                    All Grades
+                  <SelectItem value="all" className="leading-tight font-bold uppercase">
+                    All Grade Level
                   </SelectItem>
                   {gradeLevels.map((gl) => (
                     <SelectItem
                       key={gl.id}
                       value={gl.id.toString()}
-                      className="leading-tight font-bold">
+                      className="leading-tight font-bold uppercase">
                       <div className="flex items-center gap-2">
-                        <span className={cn("w-2.5 h-2.5 rounded-full border border-black/10 shrink-0", getGradeLevelColorDotClass(gl.name))} />
                         <span>{gl.name}</span>
                       </div>
                     </SelectItem>
