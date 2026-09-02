@@ -310,58 +310,7 @@ const resolveApplicationId = async (
     }
   };
 
-  export const enrollSubjectDeficiencies = async (req: Request, res: Response) => {
-    try {
-      const userId = getRequestUserId(req);
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
 
-      const learnerId = Number.parseInt(String(req.params.id ?? ""), 10);
-      if (Number.isNaN(learnerId)) {
-        return res.status(400).json({ message: "Invalid student id" });
-      }
-
-      const { schoolYearId, assignments } = req.body;
-      if (!schoolYearId || !Array.isArray(assignments)) {
-        return res.status(400).json({ message: "Invalid payload" });
-      }
-
-      await prisma.$transaction(async (tx) => {
-        for (const assignment of assignments) {
-          const { subjectName, sectionId } = assignment;
-          
-          await tx.subjectDeficiency.upsert({
-            where: {
-              uq_subject_deficiency_learner_sy_subj: {
-                learnerId,
-                schoolYearId,
-                subjectName,
-              }
-            },
-            create: {
-              learnerId,
-              schoolYearId,
-              subjectName,
-              sectionId,
-              status: "ENROLLED"
-            },
-            update: {
-              sectionId,
-              status: "ENROLLED"
-            }
-          });
-        }
-      });
-
-      broadcastStudentInvalidation(schoolYearId, [learnerId]);
-
-      res.json({ message: "Subject deficiencies successfully enrolled." });
-    } catch (error) {
-      console.error("Error enrolling subject deficiencies:", error);
-      res.status(500).json({ message: "Failed to enroll subject deficiencies" });
-    }
-  };
 
   export const clearDeficiency = async (req: Request, res: Response) => {
     try {

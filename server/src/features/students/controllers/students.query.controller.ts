@@ -8,6 +8,11 @@ import {
   findStudents,
   getStudentsSummary as fetchStudentsSummary,
 } from "../students.service.js";
+import { fetchSmartSf10ByLrn } from "../../integration/smart-sf10.service.js";
+import {
+  parseStoredGrades,
+  getHistoricalReportedGrades,
+} from "../../learner/grade-utils.js";
 
 type FamilyMemberLike = {
   relationship: string;
@@ -498,12 +503,69 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         orderBy: { schoolYearId: 'asc' }
       });
       
-      const historicalGrades = histories.map(h => ({
-        gradeLevel: h.gradeLevel.name,
-        genAve: h.genAve,
-        schoolYear: h.schoolYear.yearLabel,
-        completedAt: h.createdAt
-      }));
+      const archivedHistory = histories.map(h => {
+        const rawGrades = parseStoredGrades(
+          getHistoricalReportedGrades(h.academicOutcomeSnapshot),
+          h.gradeLevel.name,
+        );
+        return {
+          grade_level: h.gradeLevel.name,
+          school_year: h.schoolYear.yearLabel,
+          status: "Completed",
+          term_format: h.schoolYear.termFormat ?? "TRIMESTER",
+          grades: rawGrades,
+          general_average: rawGrades ? h.genAve : null,
+          completedAt: h.createdAt
+        };
+      });
+
+      let smartSf10Records: Awaited<ReturnType<typeof fetchSmartSf10ByLrn>> = [];
+      try {
+        if (applicant.learner?.lrn) {
+          smartSf10Records = await fetchSmartSf10ByLrn(applicant.learner.lrn);
+        }
+      } catch (error) {
+        console.error("Failed to fetch SMART SF10 records:", error);
+      }
+
+      const smartHistory = smartSf10Records.map((record) => {
+        const rawGrades: Record<string, any> = {};
+        record.subjectGrades?.forEach((sg: any) => {
+          rawGrades[sg.subjectName] = {
+            T1: sg.T1,
+            T2: sg.T2,
+            T3: sg.T3,
+            Q1: sg.Q1,
+            Q2: sg.Q2,
+            Q3: sg.Q3,
+            Q4: sg.Q4,
+            Final: sg.final,
+            remarks: sg.remarks,
+          };
+        });
+        return {
+          grade_level: record.gradeLevel ? record.gradeLevel.replace("GRADE_", "Grade ") : "Unknown",
+          school_year: record.schoolYear,
+          status: "Completed",
+          term_format: "TRIMESTER",
+          grades: Object.keys(rawGrades).length > 0 ? rawGrades : null,
+          general_average: record.generalAverage,
+        };
+      });
+
+      const smartYears = new Set(smartHistory.map((h) => h.school_year));
+      const smartGrades = new Set(smartHistory.map((h) => h.grade_level));
+      
+      const filteredLocalHistory = archivedHistory.filter((h) => {
+        if (smartYears.has(h.school_year)) return false;
+        // Don't filter by activeGradeLevel here because this is just profile view of history, but if it conflicts, SMART wins
+        if (smartGrades.has(h.grade_level)) return false;
+        return true;
+      });
+
+      const academicHistory = [...filteredLocalHistory, ...smartHistory].sort(
+        (a, b) => a.school_year.localeCompare(b.school_year)
+      );
 
       // Compute remedial requirements from the most recent history
       const latestHistory = histories.length > 0 ? histories[histories.length - 1] : null;
@@ -538,8 +600,8 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
               subjectCode: subjectCode,
               grade: 74, // Mock grade as it's not stored in the note
               status: existingRecord ? existingRecord.status : "PENDING_ENROLLMENT",
-              sectionId: existingRecord?.sectionId ? String(existingRecord.sectionId) : undefined,
-              teacherId: ""
+              teacherId: "",
+              schoolYear: latestHistory.schoolYear.yearLabel
             };
           })
         : [];
@@ -660,9 +722,10 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           : null,
         createdAt: applicant.createdAt,
         updatedAt: applicant.updatedAt,
+        academicHistory,
       };
 
-      res.json({ student, historicalGrades });
+      res.json({ student });
     } catch (error) {
       console.error("[getStudentById] Error:", error);
       res.status(500).json({

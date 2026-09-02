@@ -486,6 +486,13 @@ const NavItem = memo(function NavItem({
     isActive = true;
   }
 
+  if (
+    to === "/learners" &&
+    pathname.startsWith("/learner/")
+  ) {
+    isActive = true;
+  }
+
   // Surgical exclusion for EOSY updating overlapping with Sectioning & Masterlists
   if (
     to === "/section-assignment" &&

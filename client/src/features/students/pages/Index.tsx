@@ -977,7 +977,7 @@ export default function Students() {
                         getGradeLevelBadgeStyles(row.original.gradeLevel)
                       )}
                     >
-                      {row.original.gradeLevel || "Grade"}
+                      {formatGradeLevel(row.original.gradeLevel) || "Grade"}
                     </Badge>
                     <span className="font-bold text-sm leading-tight text-center uppercase cursor-help">
                       {formatSectionLabel(row.original.section)}

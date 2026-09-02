@@ -232,7 +232,7 @@ model Section {
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
   enrollmentHistories EnrollmentHistory[]
   schoolFormArtifacts SchoolFormArtifact[]
-  subjectDeficiencies SubjectDeficiency[]
+
 
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
@@ -868,7 +868,6 @@ model SubjectDeficiency {
   id           Int      @id @default(autoincrement())
   learnerId    Int      @map("learner_id")
   schoolYearId Int      @map("school_year_id")
-  sectionId    Int      @map("section_id")
   subjectName  String   @map("subject_name")
   status       String   @default("ENROLLED")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -876,11 +875,9 @@ model SubjectDeficiency {
 
   learner      Learner    @relation(fields: [learnerId], references: [id], onDelete: Cascade)
   schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  section      Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([learnerId, schoolYearId, subjectName], name: "uq_subject_deficiency_learner_sy_subj")
   @@index([learnerId], map: "idx_subject_deficiency_learner_id")
   @@index([schoolYearId], map: "idx_subject_deficiency_school_year_id")
-  @@index([sectionId], map: "idx_subject_deficiency_section_id")
   @@map("subject_deficiencies")
 }

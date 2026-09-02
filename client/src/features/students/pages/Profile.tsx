@@ -162,8 +162,8 @@ export default function StudentProfile() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className={cn("relative z-20 text-sm uppercase truncate flex items-center justify-center", activeTab === "back_subjects" ? "text-white" : "text-foreground")}>
-                Subject Deficiencies
+              <span className={cn("relative z-20 uppercase truncate flex items-center justify-center", activeTab === "back_subjects" ? "text-white" : "text-foreground")}>
+                BACK SUBJECTS
               </span>
             </TabsTrigger>
           )}
