@@ -400,59 +400,120 @@ const createDraftPlacement = (
     let programLearners: PoolLearner[] = [];
     let slots: number[] = [];
 
-    if (programType === "REGULAR" && homogeneousSectionCount > 0) {
-      const sortedLearners = [...rawProgramLearners].sort(sortLearnersByAverage);
-      const orderedSections = [...programSections].sort(
-        (first, second) =>
-          first.sortOrder - second.sortOrder ||
-          first.name.localeCompare(second.name) ||
-          first.id - second.id,
-      );
+    const sortedLearners = [...rawProgramLearners].sort(sortLearnersByAverage);
+    const orderedSections = [...programSections].sort(
+      (first, second) =>
+        first.sortOrder - second.sortOrder ||
+        first.name.localeCompare(second.name) ||
+        first.id - second.id,
+    );
 
-      const allSlots = buildDraftSlots(orderedSections);
-      // Determine the active slots based on the number of available learners
-      const activeSlots = allSlots.slice(0, sortedLearners.length);
+    const totalLearners = sortedLearners.length;
+    if (totalLearners === 0 || orderedSections.length === 0) {
+      unplacedLearners.push(...sortedLearners);
+      continue;
+    }
 
-      const topSections = orderedSections.slice(0, homogeneousSectionCount);
-      const topSectionIds = new Set(topSections.map((s) => s.id));
+    const males = sortedLearners.filter((l) => l.sex === "MALE");
+    const females = sortedLearners.filter((l) => l.sex === "FEMALE");
 
-      const topSlotsFilter = activeSlots.filter((id) => topSectionIds.has(id));
-      const topCounts = new Map<number, number>();
-      for (const id of topSlotsFilter) {
-        topCounts.set(id, (topCounts.get(id) ?? 0) + 1);
+    const allSlots = buildDraftSlots(orderedSections);
+    const activeSlots = allSlots.slice(0, totalLearners);
+
+    const sectionTotalSlots = new Map<number, number>(
+      orderedSections.map((s) => [s.id, 0])
+    );
+    for (const id of activeSlots) {
+      sectionTotalSlots.set(id, sectionTotalSlots.get(id)! + 1);
+    }
+
+    const sectionMaleSlots = new Map<number, number>();
+    const sectionFemaleSlots = new Map<number, number>();
+
+    let allocatedMales = 0;
+    const maleFractions = new Map<number, number>();
+
+    for (const section of orderedSections) {
+      const total = sectionTotalSlots.get(section.id)!;
+      if (total === 0) {
+        sectionMaleSlots.set(section.id, 0);
+        continue;
       }
+      const exactMales = total * (males.length / totalLearners);
+      const baseMales = Math.floor(exactMales);
+      sectionMaleSlots.set(section.id, baseMales);
+      allocatedMales += baseMales;
+      maleFractions.set(section.id, exactMales - baseMales);
+    }
 
-      const topSlots: number[] = [];
-      for (const section of topSections) {
-        const count = topCounts.get(section.id) ?? 0;
-        for (let i = 0; i < count; i++) {
-          topSlots.push(section.id);
+    const remainingMalesCount = males.length - allocatedMales;
+    const sortedByFraction = [...orderedSections].sort(
+      (a, b) =>
+        (maleFractions.get(b.id) ?? 0) - (maleFractions.get(a.id) ?? 0) ||
+        a.id - b.id
+    );
+
+    for (let i = 0; i < remainingMalesCount; i++) {
+      const section = sortedByFraction[i % sortedByFraction.length];
+      sectionMaleSlots.set(section.id, sectionMaleSlots.get(section.id)! + 1);
+    }
+
+    for (const section of orderedSections) {
+      const total = sectionTotalSlots.get(section.id)!;
+      const mSlots = sectionMaleSlots.get(section.id)!;
+      sectionFemaleSlots.set(section.id, total - mSlots);
+    }
+
+    const activeHomoCount = programType === "REGULAR" ? homogeneousSectionCount : 0;
+    const topSections = orderedSections.slice(0, activeHomoCount);
+    const remainingSections = orderedSections.slice(activeHomoCount);
+
+    const maleSlotsArray: number[] = [];
+    const femaleSlotsArray: number[] = [];
+
+    for (const section of topSections) {
+      const mCount = sectionMaleSlots.get(section.id)!;
+      for (let i = 0; i < mCount; i++) maleSlotsArray.push(section.id);
+      
+      const fCount = sectionFemaleSlots.get(section.id)!;
+      for (let i = 0; i < fCount; i++) femaleSlotsArray.push(section.id);
+    }
+
+    const remMaleCounts = new Map(remainingSections.map((s) => [s.id, sectionMaleSlots.get(s.id)!]));
+    const remFemaleCounts = new Map(remainingSections.map((s) => [s.id, sectionFemaleSlots.get(s.id)!]));
+
+    let forward = true;
+    while (Array.from(remMaleCounts.values()).some((c) => c > 0)) {
+      const pass = forward ? remainingSections : [...remainingSections].reverse();
+      for (const section of pass) {
+        if (remMaleCounts.get(section.id)! > 0) {
+          maleSlotsArray.push(section.id);
+          remMaleCounts.set(section.id, remMaleCounts.get(section.id)! - 1);
         }
       }
-
-      const remainingSlots = activeSlots.filter((id) => !topSectionIds.has(id));
-
-      const topLearnersCount = topSlots.length;
-      const topLearners = sortedLearners.slice(0, topLearnersCount);
-      const remainingLearners = sortedLearners.slice(topLearnersCount);
-
-      const interleavedRemainingLearners = interleaveBySex(remainingLearners);
-
-      programLearners = [...topLearners, ...interleavedRemainingLearners];
-      slots = [...topSlots, ...remainingSlots];
-      
-      // For unplaced learners (if learners > slots), we must pad the slots array
-      // so the loop correctly identifies them as unplaced (undefined slot).
-      if (sortedLearners.length > allSlots.length) {
-         const unplacedCount = sortedLearners.length - allSlots.length;
-         for (let i = 0; i < unplacedCount; i++) {
-            slots.push(undefined as unknown as number);
-         }
-      }
-    } else {
-      programLearners = interleaveBySex(rawProgramLearners);
-      slots = buildDraftSlots(programSections);
+      forward = !forward;
     }
+
+    forward = true;
+    while (Array.from(remFemaleCounts.values()).some((c) => c > 0)) {
+      const pass = forward ? remainingSections : [...remainingSections].reverse();
+      for (const section of pass) {
+        if (remFemaleCounts.get(section.id)! > 0) {
+          femaleSlotsArray.push(section.id);
+          remFemaleCounts.set(section.id, remFemaleCounts.get(section.id)! - 1);
+        }
+      }
+      forward = !forward;
+    }
+
+    const placedMales = males.slice(0, maleSlotsArray.length);
+    const unplacedMales = males.slice(maleSlotsArray.length);
+    
+    const placedFemales = females.slice(0, femaleSlotsArray.length);
+    const unplacedFemales = females.slice(femaleSlotsArray.length);
+
+    programLearners = [...placedMales, ...placedFemales, ...unplacedMales, ...unplacedFemales];
+    slots = [...maleSlotsArray, ...femaleSlotsArray];
 
     for (const [index, learner] of programLearners.entries()) {
       const sectionId = slots[index];
