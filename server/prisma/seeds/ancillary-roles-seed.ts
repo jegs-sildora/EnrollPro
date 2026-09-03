@@ -66,7 +66,7 @@ async function main() {
 
   // 2. Add the 4 dummy teachers without ancillary roles
   const departments = await prisma.department.findMany({
-    where: { code: { in: ['ENG', 'MATH', 'ESP', 'MAPEH', 'SCI', 'FIL'] } }
+    where: { code: { in: ['ENG', 'MATH', 'ESP', 'MAPEH', 'SCI', 'FIL', 'TLE'] } }
   });
 
   const getDeptId = (code: string) => departments.find(d => d.code === code)?.id;
@@ -183,6 +183,27 @@ async function main() {
       undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
       minorSpecialization: "BIOLOGY", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1982-02-18"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000077", deptCode: "TLE", firstName: "Gregorio", middleName: "Santos", lastName: "Panganiban", sex: Sex.MALE,
+      email: "gregorio.panganiban@deped.gov.ph", contactNumber: "09292000077", specialization: "TLE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "TLE", 
+      minorSpecialization: "ICT", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1995-05-10"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000078", deptCode: "TLE", firstName: "Lourdes", middleName: "Garcia", lastName: "Reyes", sex: Sex.FEMALE,
+      email: "lourdes.reyes@deped.gov.ph", contactNumber: "09302000078", specialization: "TLE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "TLE", 
+      minorSpecialization: "AFA", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1988-11-22"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000079", deptCode: "TLE", firstName: "Eduardo", middleName: "Mendoza", lastName: "Villareal", sex: Sex.MALE,
+      email: "eduardo.villareal@deped.gov.ph", contactNumber: "09312000079", specialization: "TLE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "TLE", 
+      minorSpecialization: "FCS", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1992-03-15"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     }
   ];
 

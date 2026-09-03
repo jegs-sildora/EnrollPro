@@ -760,8 +760,8 @@ export default function EosyUpdating() {
         });
       } else {
         sileo.success({
-          title: "SMART Outcomes Synchronized",
-          description: `Successfully synchronized ${totalSynced} learner outcome(s) across all ${targetSections.length} section(s) in Grades 7–10 from SMART.`,
+          title: "EOSY Grades Synchronized",
+          description: `Successfully synchronized ${totalSynced} EOSY grades across all ${targetSections.length} section(s) in Grades 7–10`,
         });
       }
     } catch (err: unknown) {
@@ -1692,7 +1692,7 @@ export default function EosyUpdating() {
                             ) : (
                               <>
                                 <RefreshCw className="h-4 w-4" />
-                                <span>SYNC SMART</span>
+                                <span>SYNC GRADES</span>
                               </>
                             )}
                           </Button>

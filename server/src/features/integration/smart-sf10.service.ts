@@ -102,31 +102,6 @@ export async function fetchSmartSf10ByLrn(lrn: string): Promise<SmartSf10Record[
       throw new Error("SMART returned an unsuccessful response or invalid data for SF10 grades.");
     }
   } catch (error: unknown) {
-    if (process.env.SMART_SYNC_FALLBACK_ENABLED === "true") {
-      // Return mock historical records if SMART is unreachable or returns invalid HTML
-      return [
-        {
-          schoolYear: "2026-2027",
-          gradeLevel: "GRADE_7",
-          section: "Rizal",
-          generalAverage: 88,
-          honors: null,
-          promotionStatus: "Promoted",
-          subjectGrades: [
-            { subjectCode: "FIL7", subjectName: "Filipino", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "ENG7", subjectName: "English", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "MATH7", subjectName: "Mathematics", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "SCI7", subjectName: "Science", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "AP7", subjectName: "Araling Panlipunan (AP)", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "ESP7", subjectName: "Edukasyon sa Pagpapakatao (EsP)", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "TLE7", subjectName: "Technology and Livelihood Education (TLE)", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "MAPEH7", subjectName: "MAPEH", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "DEVREAD7", subjectName: "Developmental Reading", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" },
-            { subjectCode: "SPA7", subjectName: "Special Program in the Arts: Specialization", T1: 84, T2: 82, T3: 85, final: 84, remarks: "Passed" }
-          ],
-        }
-      ];
-    }
     throw new AppError(502, "SMART API is unreachable or returned invalid data.");
   }
 

@@ -48,22 +48,22 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
 
       <Card className="border-slate-200 bg-card shadow-sm">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-          <CardTitle className="text-lg font-bold">
+          <CardTitle className="text-xl font-extrabold">
             Rollover Readiness Checklist
           </CardTitle>
-          <p className=" text-foreground text-sm">
+          <p className="text-foreground text-sm">
             All requirements must be satisfied before transitioning to the next school year
           </p>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link to="/eosy?status=pending" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
-              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+              <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${readiness.pendingSections === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                 {readiness.pendingSections === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
               </div>
               <div>
-                <p className="font-bold text-foreground">Section Finalization</p>
-                <p className=" text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
+                <p className="font-bold text-foreground text-lg">Section Finalization</p>
+                <p className="text-foreground text-sm">All class advisers must submit and finalize their EOSY records</p>
               </div>
             </Link>
 
@@ -72,30 +72,11 @@ export function PhaseEOSY({ stats }: { stats: DashboardStats }) {
                 {readiness.incompleteLearnerOutcomes === 0 ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
               </div>
               <div>
-                <p className="font-bold text-foreground">SMART Grade Synchronization</p>
-                <p className=" text-foreground text-sm">All learner outcomes must be resolved and synced</p>
+                <p className="font-bold text-foreground text-lg">EOSY Grade Synchronization</p>
+                <p className="text-foreground text-sm">All learner grades must be resolved and synced</p>
               </div>
             </Link>
 
-            <Link to="/eosy" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
-              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.sf5Ready && readiness.sf6Ready ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {readiness.sf5Ready && readiness.sf6Ready ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
-              </div>
-              <div>
-                <p className="font-bold text-foreground">School Form Generation</p>
-                <p className=" text-foreground text-sm">School Forms 5 and 6 must be ready for review</p>
-              </div>
-            </Link>
-
-            <Link to="/settings" className="flex items-start gap-4 rounded-lg p-3 -m-3 transition-colors hover:bg-slate-50 cursor-pointer">
-              <div className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${readiness.calendarPolicyApproved ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {readiness.calendarPolicyApproved ? <Check className="size-4" strokeWidth={3} /> : <AlertTriangle className="size-4" strokeWidth={3} />}
-              </div>
-              <div>
-                <p className="font-bold text-foreground">Calendar Policy Approval</p>
-                <p className=" text-foreground text-sm">School year calendar policies must be approved</p>
-              </div>
-            </Link>
           </div>
         </CardContent>
       </Card>
