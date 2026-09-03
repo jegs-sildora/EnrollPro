@@ -442,7 +442,7 @@ export default function SchoolProfileTab() {
                   <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  <span className="break-words min-w-0">Active Special Curricular Programs (SCPs)</span>
+                  <span className="break-words min-w-0">Active Special Curricular Programs (SCP)</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">

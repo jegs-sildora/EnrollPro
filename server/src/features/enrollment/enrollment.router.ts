@@ -6,6 +6,8 @@ import {
   getPendingVerifications,
   flagDeficient,
   directEncodeWalkIn,
+  cancelApplication,
+  restoreApplication,
 } from "./enrollment.controller.js";
 
 const router: Router = Router();
@@ -29,6 +31,20 @@ router.patch(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   flagDeficient,
+);
+
+router.patch(
+  "/:applicationId/cancel",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  cancelApplication,
+);
+
+router.patch(
+  "/:applicationId/restore",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  restoreApplication,
 );
 
 router.post(

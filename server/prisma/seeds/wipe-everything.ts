@@ -14,7 +14,9 @@ async function main() {
     const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename::text as tablename 
       FROM pg_tables 
-      WHERE schemaname='public' AND tablename != '_prisma_migrations';
+      WHERE schemaname='public' 
+        AND tablename != '_prisma_migrations'
+        AND tablename NOT IN ('Region', 'Province', 'CityMunicipality', 'Barangay');
     `;
 
     if (tablenames.length === 0) {
@@ -26,7 +28,7 @@ async function main() {
       .map(({ tablename }) => `"public"."${tablename}"`)
       .join(", ");
 
-    await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`);
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE;`);
     console.log(`✅ Successfully wiped everything from the database.`);
   } catch (error) {
     console.error("❌ Failed to wipe database:", error);

@@ -257,7 +257,9 @@ export const seedDatabase = async () => {
           userId: user.id,
           plantillaPosition,
           designation: "CLASS ADVISER",
-          departmentId: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code],
+          departments: {
+            connect: { id: deptMap[DEPARTMENTS[i % DEPARTMENTS.length].code] }
+          },
           birthdate,
           personnelType: "TEACHING",
           undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION",

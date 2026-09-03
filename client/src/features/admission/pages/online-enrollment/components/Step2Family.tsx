@@ -170,7 +170,7 @@ export default function Step2Family() {
               id="currentAddress.street"
               {...register("currentAddress.street")}
               className="h-11 font-bold uppercase"
-              placeholder="e.g. RIZAL STREET"
+              placeholder="e.g. SITIO CALAMBUGA"
               onInput={(e) => {
                 (e.target as HTMLInputElement).value = (
                   e.target as HTMLInputElement

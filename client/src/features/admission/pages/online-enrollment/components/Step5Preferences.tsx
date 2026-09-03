@@ -410,7 +410,7 @@ export default function Step5Enrollment() {
               }
             }}
           >
-            <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12">
+            <SelectTrigger id="scpType" className="w-full bg-muted font-bold h-12 uppercase">
               <SelectValue placeholder="Select Preferred Curricular Program" />
             </SelectTrigger>
             <SelectContent>

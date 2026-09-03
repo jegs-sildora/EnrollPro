@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { motionTokens } from "@/shared/lib/motion";
 import { isAxiosError } from "axios";
@@ -12,7 +12,9 @@ import {
   User as UserIcon,
   Clock,
   School,
-  AlertTriangle
+  AlertTriangle,
+  Trash2,
+  HelpCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "@/shared/api/axiosInstance";
@@ -23,6 +25,8 @@ import { Card, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Switch } from "@/shared/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
@@ -103,6 +107,19 @@ const getGradeCardClasses = (gradeName: string) => {
   return "bg-slate-50 border-slate-600 shadow-sm";
 };
 
+function VerificationRow({ label, children, valueClassName }: { label: React.ReactNode, children?: React.ReactNode, valueClassName?: string }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[30%_70%] border-b border-border last:border-0">
+      <div className="bg-muted text-foreground font-bold text-base uppercase px-4 py-3 border-r border-border flex items-center">
+        {label}
+      </div>
+      <div className={cn("bg-card text-base leading-tight font-bold text-foreground px-4 py-3 border-r border-border last:border-0 flex items-center", valueClassName)}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function VerificationWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const queryClient = useQueryClient();
@@ -115,6 +132,51 @@ export function VerificationWorkspace() {
   const [assignedProgram, setAssignedProgram] = useState<string>("REGULAR");
   const [confirmModalState, setConfirmModalState] = useState<"TEMPORARY" | "OFFICIAL" | null>(null);
 
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState<string>("");
+
+  const cancelMutation = useMutation({
+    mutationFn: (reason: string) => api.patch(`/enrollment/${selectedAppId}/cancel`, { reason }),
+    onSuccess: () => {
+      sileo.success({
+        title: "Application Cancelled",
+        description: `${selectedApp?.learner.firstName}'s application has been cancelled.`
+      });
+      queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
+      setCancelModalOpen(false);
+      setSelectedAppId(null);
+    },
+    onError: (err: any) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err.message;
+      sileo.error({
+        title: "Cancellation Failed",
+        description: message || "Failed to cancel application."
+      });
+    }
+  });
+
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+
+  const restoreMutation = useMutation({
+    mutationFn: () => api.patch(`/enrollment/${selectedAppId}/restore`),
+    onSuccess: () => {
+      sileo.success({
+        title: "Application Restored",
+        description: `${selectedApp?.learner.firstName}'s application has been successfully restored.`
+      });
+      queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
+      setRestoreModalOpen(false);
+      setSelectedAppId(null);
+    },
+    onError: (err: any) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err.message;
+      sileo.error({
+        title: "Restore Failed",
+        description: message || "Failed to restore application."
+      });
+    }
+  });
+
   const {
     inputValue: searchQuery,
     setInputValue: setSearchQuery,
@@ -123,7 +185,7 @@ export function VerificationWorkspace() {
 
   const [intakeCategoryFilter, setIntakeCategoryFilter] = useState<string>("ALL");
   const [programFilter, setProgramFilter] = useState<string>("ALL");
-  type VerificationTab = "PENDING" | "READY" | "INCOMPLETE";
+  type VerificationTab = "PENDING" | "READY" | "INCOMPLETE" | "CANCELLED";
   const [activeTab, setActiveTab] =
     useState<VerificationTab>("PENDING");
 
@@ -172,6 +234,8 @@ export function VerificationWorkspace() {
       );
     } else if (activeTab === "INCOMPLETE") {
       result = result.filter((app) => app.status === "FOR_REVISION");
+    } else if (activeTab === "CANCELLED") {
+      result = result.filter((app) => app.status === "WITHDRAWN");
     }
 
     return result;
@@ -439,11 +503,16 @@ export function VerificationWorkspace() {
                     key: "INCOMPLETE",
                     title: "Deficient",
                     value: pendingVerifications.filter(a => a.status === "FOR_REVISION").length
+                  },
+                  {
+                    key: "CANCELLED",
+                    title: "Cancelled",
+                    value: pendingVerifications.filter(a => a.status === "WITHDRAWN").length
                   }
                 ] as const;
 
                 return (
-                  <div className="grid grid-cols-3 h-10 w-full divide-x divide-gray-200">
+                  <div className="grid grid-cols-4 h-10 w-full divide-x divide-gray-200">
                     {metrics.map((m) => {
                       const isActive = activeTab === m.key;
                       return (
@@ -467,7 +536,7 @@ export function VerificationWorkspace() {
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
-                          <span className="truncate relative z-20 text-sm">{m.title}</span>
+                          <span className="truncate relative z-20 text-xs">{m.title}</span>
                           <span className="ml-1 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-sm text-primary-foreground relative z-20">
                             {m.value}
                           </span>
@@ -481,11 +550,20 @@ export function VerificationWorkspace() {
             <div className="flex-1 overflow-y-auto">
               {filteredVerifications.length === 0 ? (
                 <div className="h-full flex items-center justify-center flex-col gap-3 text-foreground p-8 text-center">
-                  <CheckCircle2 className="h-8 w-8 text-primary" />
-                  <span className="font-bold text-base leading-tight">
-                    {activeTab === "PENDING" && "No pending applications"}
-                    {activeTab === "READY" && "All verified learners have been assigned to sections"}
-                    {activeTab === "INCOMPLETE" && "No applications require parent follow up"}
+                  {activeSearchQuery ? (
+                    <Search className="h-8 w-8 text-foreground" />
+                  ) : activeTab === "CANCELLED" ? (
+                    <CheckCircle2 className="h-8 w-8 text-foreground" />
+                  ) : (
+                    <CheckCircle2 className="h-8 w-8 text-primary" />
+                  )}
+                  <span className="font-bold text-base leading-tight text-foreground">
+                    {activeSearchQuery
+                      ? "No results found"
+                      : activeTab === "PENDING" ? "No pending applications"
+                        : activeTab === "READY" ? "All verified learners have been assigned to sections"
+                          : activeTab === "INCOMPLETE" ? "No applications require parent follow up"
+                            : "No cancelled applications"}
                   </span>
                 </div>
               ) : (
@@ -518,9 +596,15 @@ export function VerificationWorkspace() {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0 ml-3">
-                        <Badge variant="outline" className={cn("text-sm uppercase font-bold w-fit px-2.5 py-0.5", getGradeLevelBadgeStyles(app.gradeLevel.name))}>
-                          {formatGradeLevel(app.gradeLevel.name)}
-                        </Badge>
+                        {app.status === "WITHDRAWN" ? (
+                          <Badge variant="outline" className="text-sm uppercase font-bold w-fit px-2.5 py-0.5 border-red-500/30 text-red-600 bg-red-50">
+                            CANCELLED
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className={cn("text-sm uppercase font-bold w-fit px-2.5 py-0.5", getGradeLevelBadgeStyles(app.gradeLevel.name))}>
+                            {formatGradeLevel(app.gradeLevel.name)}
+                          </Badge>
+                        )}
                         <div className="flex items-center text-sm text-foreground font-bold whitespace-nowrap text-foreground">
                           <Clock className="w-3 h-3 mr-1 shrink-0" />
                           {format(new Date(app.createdAt), "MMM d, h:mm a")}
@@ -538,69 +622,28 @@ export function VerificationWorkspace() {
             {selectedApp ? (
               <>
                 <div className="flex-1 overflow-y-auto p-6 md:p-12 relative w-full overflow-x-hidden">
-                  <div className={cn("mb-8 p-6 rounded-xl border border-border/50 flex flex-col gap-4", getGradeCardClasses(selectedApp.gradeLevel.name))}>
-                    <div className="flex flex-wrap items-center gap-3 w-full">
+                  <div className="mb-6 flex flex-wrap justify-between items-center gap-4 w-full border-b border-border pb-4">
+                    <div className="flex items-center gap-3">
                       <UserPhoto
                         photo={selectedApp.learner.studentPhoto}
-                        containerClassName="w-16 h-16 rounded-full shadow-sm border shrink-0 border-2 border-primary/20"
+                        containerClassName="w-12 h-12 rounded-full shadow-sm border shrink-0 border-primary/20"
                         className="w-full h-full object-cover"
                         alt={`${selectedApp.learner.firstName} ${selectedApp.learner.lastName}`}
                       />
-                      <h2 className="text-2xl font-bold uppercase tracking-tight text-foreground whitespace-normal break-words">
-                        {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
-                      </h2>
-                      {selectedApp.learner.sex === "MALE" ? (
-                        <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base shrink-0">MALE</Badge>
-                      ) : (
-                        <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-base shrink-0">FEMALE</Badge>
-                      )}
-                    </div>
-
-                    {/* TRACKING AND ENROLLMENT DATA */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full bg/20 border border-border/50 rounded-lg p-4">
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-bold uppercase text-foreground flex items-center gap-1">LRN</span>
-                        <span className="text-base leading-tight font-bold text-foreground truncate">{selectedApp.learner.lrn || "NO LRN"}</span>
-                      </div>
-                      <div className="flex flex-col min-w-0 items-start">
-                        <span className="text-sm font-bold uppercase text-foreground flex items-center gap-1">Incoming Grade</span>
-                        <Badge variant="outline" className={cn("font-bold uppercase text-base shrink-0 mt-1 w-fit px-3 py-1", getGradeLevelBadgeStyles(selectedApp.gradeLevel.name))}>{formatGradeLevel(selectedApp.gradeLevel.name)}</Badge>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-bold uppercase tracking-tight text-foreground whitespace-normal break-words leading-none">
+                            {selectedApp.learner.lastName}, {selectedApp.learner.firstName} {selectedApp.learner.middleName}
+                          </h2>
+                          {selectedApp.learner.sex === "MALE" ? (
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-50 uppercase font-bold text-base px-2 py-0">MALE</Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-pink-500/30 text-pink-600 bg-pink-50 uppercase font-bold text-xs px-2 py-0">FEMALE</Badge>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-foreground uppercase">LRN: {selectedApp.learner.lrn || "NO LRN"}</span>
                       </div>
                     </div>
-
-                    {/* GLANCEABLE CONTACT SNAPSHOT */}
-                    {(() => {
-                      const primaryContact = selectedApp.familyMembers?.find(
-                        (m) =>
-                          m.relationship === "MOTHER" ||
-                          m.relationship === "FATHER" ||
-                          m.relationship === "GUARDIAN"
-                      ) || selectedApp.familyMembers?.[0];
-
-                      if (primaryContact) {
-                        return (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full bg/20 border border-border/50 rounded-lg p-4">
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-bold uppercase text-foreground">Primary Contact</span>
-                              <span className="text-base leading-tight font-bold text-foreground truncate">
-                                {primaryContact.lastName}, {primaryContact.firstName}
-                              </span>
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-bold uppercase text-foreground">Relationship</span>
-                              <span className="text-base leading-tight font-bold text-foreground truncate">{primaryContact.relationship}</span>
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-bold uppercase text-foreground">Contact Number</span>
-                              <span className="text-base leading-tight font-bold text-foreground truncate">{primaryContact.contactNumber || "N/A"}</span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-
-
                   </div>
 
                   {duplicateInfo && (
@@ -617,40 +660,107 @@ export function VerificationWorkspace() {
                     </div>
                   )}
 
-                  {(selectedApp.previousSchool || selectedApp.learner?.previousGenAve) && (
+                  {selectedApp.status === "WITHDRAWN" ? (
                     <div className="space-y-4 mb-8">
                       <h3 className="text-base font-bold text-primary uppercase flex items-center gap-2">
-                        Academic History
+                        Application Summary
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-sm font-bold uppercase text-foreground mb-1">School Name</p>
-                          <p className="text-base leading-tight font-bold">{selectedApp.previousSchool?.schoolName || "N/A"}</p>
-                        </div>
-                        <div className="bg/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-sm font-bold uppercase text-foreground mb-1">Final General Average</p>
-                          <p className="text-base leading-tight font-bold">{selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}</p>
-                        </div>
+                      <div className="w-full bg-white border border-border/50 rounded-sm overflow-hidden shadow-sm flex flex-col">
+                        {/* Contact Information */}
+                        {(() => {
+                          const primaryContact = selectedApp.familyMembers?.find(
+                            (m) =>
+                              m.relationship === "MOTHER" ||
+                              m.relationship === "FATHER" ||
+                              m.relationship === "GUARDIAN"
+                          ) || selectedApp.familyMembers?.[0];
+
+                          if (primaryContact) {
+                            return (
+                              <VerificationRow label="Primary Contact">
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-foreground">{primaryContact.lastName}, {primaryContact.firstName}</span>
+                                  <span className="text-sm text-foreground uppercase tracking-tight mt-0.5">{primaryContact.relationship}</span>
+                                  <span className="text-sm text-foreground mt-0.5">{primaryContact.contactNumber || "N/A"}</span>
+                                </div>
+                              </VerificationRow>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        {/* Academic Background */}
+                        <VerificationRow label="Previous School">
+                          {selectedApp.previousSchool?.schoolName || "N/A"}
+                        </VerificationRow>
+                        <VerificationRow label="Final General Average">
+                          {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}
+                        </VerificationRow>
+                        {/* Program Assignment */}
+                        <VerificationRow label="Requested Curriculum">
+                          {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
+                        </VerificationRow>
+                        <VerificationRow label="Assigned Program">
+                          {SCP_LABELS[assignedProgram] || assignedProgram.replace(/_/g, " ")}
+                        </VerificationRow>
+                        {/* Required Documents */}
+                        <VerificationRow label="Physical SF9 (Report Card)">
+                          {!selectedApp.isMissingSf9 ? (
+                            <Badge variant="outline" className="border-green-500/30 text-green-700 bg-green-50 uppercase font-bold text-sm">Submitted</Badge>
+                          ) : (
+                            <span className="text-foreground uppercase font-bold text-sm">Missing</span>
+                          )}
+                        </VerificationRow>
+                        <VerificationRow label="PSA Birth Certificate">
+                          {!selectedApp.isMissingPsa ? (
+                            <Badge variant="outline" className="border-green-500/30 text-green-700 bg-green-50 uppercase font-bold text-sm">Submitted</Badge>
+                          ) : (
+                            <span className="text-foreground uppercase font-bold text-sm">Missing</span>
+                          )}
+                        </VerificationRow>
                       </div>
                     </div>
-                  )}
+                  ) : (
+                    <div className="w-full bg-white border border-border/50 rounded-sm overflow-hidden shadow-sm mb-8 flex flex-col">
+                      {/* Section 1: Contact Information */}
+                      {(() => {
+                        const primaryContact = selectedApp.familyMembers?.find(
+                          (m) =>
+                            m.relationship === "MOTHER" ||
+                            m.relationship === "FATHER" ||
+                            m.relationship === "GUARDIAN"
+                        ) || selectedApp.familyMembers?.[0];
 
-                  <div className="space-y-4 mb-8">
-                    <h3 className="text-base font-bold text-primary uppercase flex items-center gap-2">
-                      Curriculum Assignment
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 gap-4">
-                        <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
-                          <label className="text-sm font-bold uppercase text-foreground">Requested Curriculum (From Online Enrollment Form)</label>
-                          <div className="h-10 px-3 py-2 bg/50 rounded-md border border-border flex items-center text-base leading-tight text-foreground font-bold">
-                            {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
-                          </div>
-                        </div>
-                        <div className="bg/30 p-4 rounded-xl border border-border/50 space-y-2">
-                          <label className="text-sm font-bold uppercase text-primary">Official Program Assignment</label>
+                        if (primaryContact) {
+                          return (
+                            <VerificationRow label="Primary Contact">
+                              <div className="flex flex-col">
+                                <span className="text-base font-bold text-foreground">{primaryContact.lastName}, {primaryContact.firstName}</span>
+                                <span className="text-sm text-foreground uppercase tracking-tight mt-0.5">{primaryContact.relationship}</span>
+                                <span className="text-sm text-foreground mt-0.5">{primaryContact.contactNumber || "N/A"}</span>
+                              </div>
+                            </VerificationRow>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {/* Section 2: Academic History */}
+                      <VerificationRow label="Previous School">
+                        {selectedApp.previousSchool?.schoolName || "N/A"}
+                      </VerificationRow>
+                      <VerificationRow label="Final Gen Ave">
+                        {selectedApp.previousSchool?.generalAverage || selectedApp.learner?.previousGenAve || "N/A"}
+                      </VerificationRow>
+
+                      {/* Section 3: Curriculum Assignment */}
+                      <VerificationRow label="Requested Curriculum">
+                        {SCP_LABELS[selectedApp.applicantType] || selectedApp.applicantType.replace(/_/g, " ")}
+                      </VerificationRow>
+                      <VerificationRow label="Official Program">
+                        <div className="flex flex-col w-full py-1">
                           <Select value={assignedProgram} onValueChange={setAssignedProgram}>
-                            <SelectTrigger className="w-full font-bold">
+                            <SelectTrigger className="w-full font-bold h-10 bg-white">
                               <SelectValue placeholder="Select Program" />
                             </SelectTrigger>
                             <SelectContent>
@@ -670,89 +780,130 @@ export function VerificationWorkspace() {
                               })}
                             </SelectContent>
                           </Select>
+                          {assignedProgram !== "REGULAR" && (
+                            <div className="mt-3 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-md border border-amber-200/50">
+                              <AlertTriangle className="w-4 h-4 shrink-0" />
+                              <span className="text-sm font-bold">Requires manual verification against SCP passers list.</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      {assignedProgram !== "REGULAR" && (
-                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-200/50">
-                          <AlertTriangle className="w-4 h-4 shrink-0" />
-                          <span className="text-base font-bold">Requires manual verification against the official SCP passers list.</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                      </VerificationRow>
 
-                  <div className="space-y-4">
-                    <h3 className="text-base font-bold text-primary uppercase flex items-center gap-2">
-                      Required Documents
-                    </h3>
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-6">
-                      <label className="flex items-start gap-4 cursor-pointer group">
-                        <Checkbox
-                          className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                          checked={sf9Verified}
-                          onCheckedChange={(c) => setSf9Verified(!!c)}
-                          disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
-                        />
-                        <div className="space-y-1">
-                          <p className="text-base font-bold group-hover:text-primary transition-colors">Physical SF9 Verified</p>
-                          <p className="text-base  text-foreground">Original report card signed by previous school principal.</p>
+                      {/* Section 4: Required Documents Verification */}
+                      <VerificationRow
+                        label={
+                          <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help">Physical SF9 (Report Card)</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Original report card signed by previous school principal.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        }
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="sf9-switch"
+                            checked={sf9Verified}
+                            onCheckedChange={setSf9Verified}
+                            disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                          />
+                          <label htmlFor="sf9-switch" className="text-base font-bold cursor-pointer">
+                            {sf9Verified ? "Verified" : "Unverified"}
+                          </label>
                         </div>
-                      </label>
-
-                      <label className="flex items-start gap-4 cursor-pointer group">
-                        <Checkbox
-                          className="mt-1 w-6 h-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                          checked={psaVerified}
-                          onCheckedChange={(c) => setPsaVerified(!!c)}
-                          disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
-                        />
-                        <div className="space-y-1">
-                          <p className="text-base font-bold group-hover:text-primary transition-colors">PSA Birth Certificate Verified</p>
-                          <p className="text-base  text-foreground">Clear copy of Philippine Statistics Authority issued certificate.</p>
+                      </VerificationRow>
+                      <VerificationRow
+                        label={
+                          <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help">PSA Birth Certificate</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Clear copy of Philippine Statistics Authority issued certificate.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        }
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="psa-switch"
+                            checked={psaVerified}
+                            onCheckedChange={setPsaVerified}
+                            disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                          />
+                          <label htmlFor="psa-switch" className="text-base font-bold cursor-pointer">
+                            {psaVerified ? "Verified" : "Unverified"}
+                          </label>
                         </div>
-                      </label>
+                      </VerificationRow>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Action Footer */}
-                {selectedApp.status !== "READY_FOR_SECTIONING" && (
-                  <div className="p-4 sm:p-6 border-t border-border bg/10 grid grid-cols-1 gap-4 w-full">
-                    {!(sf9Verified && psaVerified) ? (
-                      <Button
-                        onClick={() => setConfirmModalState("TEMPORARY")}
-                        disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                        variant="outline"
-                        className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
-                      >
-                        <span className="truncate">Enroll as Temporary (Missing Docs)</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => setConfirmModalState("OFFICIAL")}
-                        disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
-                        className={cn(
-                          "w-full h-14 text-sm sm:text-base leading-tight font-bold uppercase transition-all shadow-none overflow-hidden",
-                          !duplicateInfo
-                            ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                            : "bg text-foreground hover:bg opacity-50"
-                        )}
-                      >
-                        {processing ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Approving...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-5 h-5 mr-2" />
-                            Officially Enroll
-                          </>
-                        )}
-                      </Button>
-                    )}
+                {selectedApp.status === "WITHDRAWN" ? (
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex justify-end items-center gap-4 w-full">
+                    <Button
+                      className="h-14 px-8 text-sm sm:text-base leading-tight font-bold uppercase bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => setRestoreModalOpen(true)}
+                      disabled={processing || isHistoricalReadOnly}
+                    >
+                      Restore Application
+                    </Button>
                   </div>
-                )}
+                ) : selectedApp.status !== "READY_FOR_SECTIONING" ? (
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex gap-4 w-full">
+                    <Button
+                      variant="ghost"
+                      className="h-14 w-[35%] text-sm sm:text-base leading-tight font-bold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
+                      onClick={() => setCancelModalOpen(true)}
+                      disabled={processing || isHistoricalReadOnly}
+                    >
+                      Cancel Application
+                    </Button>
+                    <div className="w-[65%]">
+                      {!(sf9Verified && psaVerified) ? (
+                        <Button
+                          onClick={() => setConfirmModalState("TEMPORARY")}
+                          disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                          variant="outline"
+                          className="w-full h-14 px-4 text-sm sm:text-base leading-tight font-bold uppercase text-amber-600 hover:bg-amber-600/10 hover:text-amber-700 border-amber-600/30 overflow-hidden"
+                        >
+                          <span className="truncate">Enroll as Temporary (Missing Docs)</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => setConfirmModalState("OFFICIAL")}
+                          disabled={processing || isHistoricalReadOnly || Boolean(duplicateInfo)}
+                          className={cn(
+                            "w-full h-14 text-sm sm:text-base leading-tight font-bold uppercase transition-all shadow-none overflow-hidden",
+                            !duplicateInfo
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                              : "bg text-foreground hover:bg opacity-50"
+                          )}
+                        >
+                          {processing ? (
+                            <>
+                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 mr-2" />
+                              Officially Enroll
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="h-full flex items-center justify-center flex-col gap-4 text-foreground p-8 text-center">
@@ -858,6 +1009,67 @@ export function VerificationWorkspace() {
             void approveLearner();
           }
         }}
+      />
+
+      <ConfirmationModal
+        open={cancelModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCancelModalOpen(false);
+            setCancelReason("");
+          }
+        }}
+        title="Cancel Enrollment Application"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-foreground">
+              Are you sure you want to cancel the application for{" "}
+              <strong>
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+              </strong>
+              ? This will remove them from the 'For Review' queue.
+            </p>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-bold text-foreground">Cancellation Reason</label>
+              <Select value={cancelReason} onValueChange={setCancelReason}>
+                <SelectTrigger className="w-full bg-muted font-bold text-base h-12 uppercase">
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Clerical / Encoding Error (Duplicate)" className="font-bold uppercase">Clerical / Encoding Error (Duplicate)</SelectItem>
+                  <SelectItem value="Learner Withdrew Application" className="font-bold uppercase">Learner Withdrew Application</SelectItem>
+                  <SelectItem value="Invalid / Missing Credentials" className="font-bold uppercase">Invalid / Missing Credentials</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        }
+        variant="danger"
+        confirmText="Confirm Cancellation"
+        confirmDisabled={!cancelReason}
+        loading={cancelMutation.isPending}
+        onConfirm={() => cancelMutation.mutate(cancelReason)}
+      />
+
+      <ConfirmationModal
+        open={restoreModalOpen}
+        onOpenChange={setRestoreModalOpen}
+        title="Restore Enrollment Application"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-foreground">
+              You are about to restore the application for{" "}
+              <strong>
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+              </strong>
+              . This will move them back to the 'For Review' queue for active processing.
+            </p>
+          </div>
+        }
+        variant="success"
+        confirmText="Confirm Restore"
+        loading={restoreMutation.isPending}
+        onConfirm={() => restoreMutation.mutate()}
       />
     </div>
   );

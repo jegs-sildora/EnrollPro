@@ -288,7 +288,7 @@ export default function Step1Personal() {
             autoComplete="off"
             placeholder="ENTER 12-DIGIT LRN"
             maxLength={12}
-            disabled={hasNoLrn || isValidatingLrn}
+            disabled={hasNoLrn}
             className={cn(
               "h-14 text-lg pl-12 font-bold text-center border-2 tracking-widest",
               hasNoLrn && "bg-muted cursor-not-allowed text-base leading-tight",

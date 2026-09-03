@@ -175,7 +175,7 @@ export async function getPendingVerifications(req: Request, res: Response) {
     where: {
       schoolYearId,
       status: {
-        in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION"],
+        in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "FOR_REVISION", "WITHDRAWN"],
       },
       learnerType: {
         in: ["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"],
@@ -252,6 +252,101 @@ export async function flagDeficient(req: Request, res: Response) {
   });
 }
 
+/**
+ * PATCH /api/enrollment/:applicationId/cancel
+ *
+ * Cancels a walk-in application from the FOR REVIEW queue.
+ * Requires a cancellation reason.
+ */
+export async function cancelApplication(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
+  const userId = req.user!.userId;
+  const { applicationId } = req.params;
+  const { reason } = req.body;
+
+  if (!reason) {
+    throw new AppError(400, "Cancellation reason is required.");
+  }
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: Number(applicationId) },
+    include: { learner: true },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  if (application.status !== "PENDING_VERIFICATION") {
+    throw new AppError(
+      409,
+      `Application is in status '${application.status}'. Only PENDING_VERIFICATION applications can be cancelled.`,
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: Number(applicationId) },
+    data: { status: "WITHDRAWN" },
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "WALK_IN_APPLICATION_CANCELLED",
+    description: `Cancelled application for ${application.learner.lastName}, ${application.learner.firstName}. Reason: ${reason}`,
+    subjectType: "EnrollmentApplication",
+    recordId: Number(applicationId),
+    req,
+  });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
+  res.json({ success: true, application: updated });
+}
+
+/**
+ * PATCH /api/enrollment/:applicationId/restore
+ *
+ * Restores a cancelled/withdrawn application back to the FOR REVIEW queue.
+ */
+export async function restoreApplication(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
+  const userId = req.user!.userId;
+  const { applicationId } = req.params;
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: Number(applicationId) },
+    include: { learner: true },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  if (application.status !== "WITHDRAWN") {
+    throw new AppError(
+      409,
+      `Application is in status '${application.status}'. Only WITHDRAWN applications can be restored.`,
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: Number(applicationId) },
+    data: { status: "PENDING_VERIFICATION" },
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "WALK_IN_APPLICATION_RESTORED",
+    description: `Restored application for ${application.learner.lastName}, ${application.learner.firstName}.`,
+    subjectType: "EnrollmentApplication",
+    recordId: Number(applicationId),
+    req,
+  });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
+  res.json({ success: true, application: updated });
+}
 
 export async function directEncodeWalkIn(req: Request, res: Response) {
   try {

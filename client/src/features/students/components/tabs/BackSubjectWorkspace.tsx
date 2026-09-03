@@ -36,7 +36,7 @@ export function BackSubjectWorkspace({ student }: BackSubjectWorkspaceProps) {
         {deficiencies.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-xl bg-muted/20">
             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <FileX className="h-8 w-8 text-muted-foreground" />
+              <FileX className="h-8 w-8 text-foreground" />
             </div>
             <h3 className="text-xl font-bold text-foreground">No Records Found</h3>
             <p className="text-muted-foreground mt-2 font-medium">
@@ -51,9 +51,9 @@ export function BackSubjectWorkspace({ student }: BackSubjectWorkspaceProps) {
             const badgeClasses = isPassed
               ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
               : isEnrolled
-              ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-              : "bg-orange-100 text-orange-800 hover:bg-orange-100";
-              
+                ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                : "bg-orange-100 text-orange-800 hover:bg-orange-100";
+
             return (
               <div key={def.id} className="border rounded-xl p-4 bg-card text-card-foreground shadow-sm grid grid-cols-12 gap-4 items-center transition-all hover:border-primary/30">
                 {/* Column 1: Subject Identity */}

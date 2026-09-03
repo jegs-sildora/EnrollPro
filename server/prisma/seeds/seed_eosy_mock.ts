@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient, EosyStatus } from "../../src/generated/prisma/index.js";
+import { buildSmartOutcomeEnvelope, mergeSmartOutcomeIntoReportedGrades } from "../../src/features/integration/smart-outcome-envelope.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -41,6 +42,9 @@ async function main() {
             gradeLevelId: gl.id,
           },
         },
+        include: {
+          enrollmentApplication: true,
+        },
         orderBy: {
           id: "asc",
         },
@@ -58,12 +62,34 @@ async function main() {
 
         // 1. The Retained Learner (65-74)
         const retainedGrade = Math.floor(Math.random() * (74 - 65 + 1)) + 65;
+        const retainedEnvelope = buildSmartOutcomeEnvelope({
+          schoolYearId: activeSchoolYear.id,
+          sectionId: records[0].sectionId,
+          finalGeneralAverage: retainedGrade,
+          finalOutcome: "RETAINED",
+          publishedAt: new Date().toISOString(),
+          revision: "1",
+          subjects: { "Math": { Final: retainedGrade } },
+        });
         await tx.enrollmentRecord.update({
           where: { id: retainedId },
           data: { finalAverage: retainedGrade, eosyStatus: "RETAINED" },
         });
+        await tx.enrollmentApplication.update({
+          where: { id: records[0].enrollmentApplicationId! },
+          data: { reportedGrades: mergeSmartOutcomeIntoReportedGrades(records[0].enrollmentApplication?.reportedGrades, retainedEnvelope) },
+        });
 
         // 2. The Irregular (Conditionally Promoted) Learner (passing e.g. 76)
+        const irregularEnvelope = buildSmartOutcomeEnvelope({
+          schoolYearId: activeSchoolYear.id,
+          sectionId: records[1].sectionId,
+          finalGeneralAverage: 76,
+          finalOutcome: "CONDITIONALLY_PROMOTED",
+          publishedAt: new Date().toISOString(),
+          revision: "1",
+          subjects: { "Math": { Final: 74 }, "Science": { Final: 74 } },
+        });
         await tx.enrollmentRecord.update({
           where: { id: irregularId },
           data: { 
@@ -71,6 +97,10 @@ async function main() {
             eosyStatus: "CONDITIONALLY_PROMOTED",
             academicDeficiencyNote: "Mathematics, Science" // Added 2 failed subjects for testing
           },
+        });
+        await tx.enrollmentApplication.update({
+          where: { id: records[1].enrollmentApplicationId! },
+          data: { reportedGrades: mergeSmartOutcomeIntoReportedGrades(records[1].enrollmentApplication?.reportedGrades, irregularEnvelope) },
         });
 
         // 3. The Transferred Out Learner (NULL grade)
@@ -93,9 +123,22 @@ async function main() {
       for (let i = startIndex; i < records.length; i++) {
         // We ensure random grade with 2 decimals
         const passGrade = Math.round((Math.random() * (98 - 75) + 75) * 100) / 100;
+        const passEnvelope = buildSmartOutcomeEnvelope({
+          schoolYearId: activeSchoolYear.id,
+          sectionId: records[i].sectionId,
+          finalGeneralAverage: passGrade,
+          finalOutcome: "PROMOTED",
+          publishedAt: new Date().toISOString(),
+          revision: "1",
+          subjects: { "Math": { Final: passGrade } },
+        });
         await tx.enrollmentRecord.update({
           where: { id: records[i].id },
           data: { finalAverage: passGrade, eosyStatus: "PROMOTED" },
+        });
+        await tx.enrollmentApplication.update({
+          where: { id: records[i].enrollmentApplicationId! },
+          data: { reportedGrades: mergeSmartOutcomeIntoReportedGrades(records[i].enrollmentApplication?.reportedGrades, passEnvelope) },
         });
         totalSeeded++;
       }

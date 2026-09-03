@@ -256,7 +256,7 @@ export default function Step4PreviousSchool() {
                 type="button"
                 onClick={() => setValue("lastSchoolType", lt.value, { shouldValidate: true, shouldDirty: true })}
                 className={cn(
-                  "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-11",
+                  "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-11 uppercase",
                   selectedLastSchoolType === lt.value
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-muted hover:bg-primary/5 text-foreground hover:text-foreground",
