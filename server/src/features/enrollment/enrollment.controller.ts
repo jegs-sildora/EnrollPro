@@ -348,6 +348,57 @@ export async function restoreApplication(req: Request, res: Response) {
   res.json({ success: true, application: updated });
 }
 
+/**
+ * PATCH /api/enrollment/:applicationId/revert
+ *
+ * Reverts an officially enrolled application back to the FOR REVIEW queue.
+ * Requires a reversal reason.
+ */
+export async function revertApplication(req: Request, res: Response) {
+  await assertStaffIntakeAllowed();
+  const userId = req.user!.userId;
+  const { applicationId } = req.params;
+  const { reason } = req.body;
+
+  if (!reason) {
+    throw new AppError(400, "Reversal reason is required.");
+  }
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: Number(applicationId) },
+    include: { learner: true },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  if (application.status !== "READY_FOR_SECTIONING") {
+    throw new AppError(
+      409,
+      `Application is in status '${application.status}'. Only ENROLLED (READY_FOR_SECTIONING) applications can be reverted.`,
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: Number(applicationId) },
+    data: { status: "PENDING_VERIFICATION" },
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "ENROLLMENT_REVERTED_TO_REVIEW",
+    description: `Enrollment Reverted to Review for ${application.learner.lastName}, ${application.learner.firstName}. Reason: ${reason}`,
+    subjectType: "EnrollmentApplication",
+    recordId: Number(applicationId),
+    req,
+  });
+
+  broadcastEnrollmentInvalidation(application.schoolYearId, [application.learnerId]);
+
+  res.json({ success: true, application: updated });
+}
+
 export async function directEncodeWalkIn(req: Request, res: Response) {
   try {
     const intakeContext = await assertStaffIntakeAllowed();
