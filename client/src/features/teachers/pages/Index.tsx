@@ -125,7 +125,7 @@ function buildTeacherSearchIndex(teacher: Teacher): string {
       `${teacher.firstName} ${teacher.middleName ?? ""} ${teacher.lastName}`,
       teacher.employeeId ?? "",
       teacher.contactNumber ?? "",
-      teacher.department ?? "",
+      (teacher.departments || []).join(", "),
       teacher.specialization ?? "",
       teacher.designation?.advisorySection?.name ?? "",
       teacher.designation?.advisorySection?.gradeLevelName ?? "",
@@ -455,8 +455,9 @@ export default function Teachers() {
 
       const matchesDepartment =
         departmentFilter === "all" ||
-        (teacher.department ?? "").toUpperCase() ===
-        departmentFilter.toUpperCase();
+        (teacher.departments || []).some(
+          (d) => d.toUpperCase() === departmentFilter.toUpperCase()
+        );
 
       const matchesActiveMetric =
         activeMetric === "total" ||
@@ -525,8 +526,8 @@ export default function Teachers() {
         valA = getJobTitleLocal(a);
         valB = getJobTitleLocal(b);
       } else if (sortBy === "department") {
-        valA = a.department || "";
-        valB = b.department || "";
+        valA = (a.departments && a.departments.length > 0) ? a.departments.join(", ") : "";
+        valB = (b.departments && b.departments.length > 0) ? b.departments.join(", ") : "";
       } else if (sortBy === "advisoryClass") {
         const advA = formatAdvisorySectionSummary(a.designation?.advisorySection);
         const advB = formatAdvisorySectionSummary(b.designation?.advisorySection);
@@ -687,7 +688,7 @@ export default function Teachers() {
               />
             ),
             cell: ({ row }) => {
-              const dept = row.original.department;
+              const dept = row.original.departments?.join(", ");
               const display = DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === dept)?.label || dept || "—";
               return (
                 <div className="flex w-full justify-center py-3">

@@ -66,7 +66,7 @@ async function main() {
 
   // 2. Add the 4 dummy teachers without ancillary roles
   const departments = await prisma.department.findMany({
-    where: { code: { in: ['ENG', 'MATH', 'ESP', 'MAPEH'] } }
+    where: { code: { in: ['ENG', 'MATH', 'ESP', 'MAPEH', 'SCI', 'FIL'] } }
   });
 
   const getDeptId = (code: string) => departments.find(d => d.code === code)?.id;
@@ -100,6 +100,90 @@ async function main() {
       minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
       birthdate: new Date("1995-02-14"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
     },
+    { 
+      employeeId: "2000065", deptCode: "SCI", firstName: "Ricardo", middleName: "Torres", lastName: "Santos", sex: Sex.MALE,
+      email: "ricardo.santos@deped.gov.ph", contactNumber: "09172000065", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1988-03-12"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000066", deptCode: "SCI", firstName: "Marites", middleName: "Laxamana", lastName: "Del Rosario", sex: Sex.FEMALE,
+      email: "marites.delrosario@deped.gov.ph", contactNumber: "09182000066", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1991-06-25"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000067", deptCode: "SCI", firstName: "Jonathan", middleName: "Cruz", lastName: "Villanueva", sex: Sex.MALE,
+      email: "jonathan.villanueva@deped.gov.ph", contactNumber: "09192000067", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1994-09-08"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000068", deptCode: "SCI", firstName: "Karen", middleName: "Gomez", lastName: "Tolentino", sex: Sex.FEMALE,
+      email: "karen.tolentino@deped.gov.ph", contactNumber: "09202000068", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1983-12-19"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000069", deptCode: "SCI", firstName: "Dennis", middleName: "Aquino", lastName: "Bautista", sex: Sex.MALE,
+      email: "dennis.bautista@deped.gov.ph", contactNumber: "09212000069", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1990-04-05"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000070", deptCode: "MAPEH", firstName: "Rowena", middleName: "Lim", lastName: "Marcelo", sex: Sex.FEMALE,
+      email: "rowena.marcelo@deped.gov.ph", contactNumber: "09222000070", specialization: "MAPEH", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "MAPEH", 
+      minorSpecialization: "", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1987-07-16"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000071", deptCode: "MAPEH", firstName: "Frederick", middleName: "Reyes", lastName: "Ocampo", sex: Sex.MALE,
+      email: "frederick.ocampo@deped.gov.ph", contactNumber: "09232000071", specialization: "MAPEH", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "MAPEH", 
+      minorSpecialization: "", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1996-10-27"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000072", deptCode: "FIL", firstName: "Divina", middleName: "Mendoza", lastName: "Escarez", sex: Sex.FEMALE,
+      email: "divina.escarez@deped.gov.ph", contactNumber: "09242000072", specialization: "FILIPINO", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "FILIPINO", 
+      minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1989-01-03"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000073", deptCode: "ENG", firstName: "Corazon", middleName: "Garcia", lastName: "Ramirez", sex: Sex.FEMALE,
+      email: "corazon.ramirez@deped.gov.ph", contactNumber: "09252000073", specialization: "ENGLISH", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "ENGLISH", 
+      minorSpecialization: "DEVELOPMENTAL READING", plantillaPosition: "TEACHER III", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1986-04-12"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000074", deptCode: "FIL", firstName: "Alfredo", middleName: "Santos", lastName: "Marquez", sex: Sex.MALE,
+      email: "alfredo.marquez@deped.gov.ph", contactNumber: "09262000074", specialization: "FILIPINO", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "FILIPINO", 
+      minorSpecialization: "DEVELOPMENTAL READING", plantillaPosition: "TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1994-09-21"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000075", deptCode: "ESP", firstName: "Teresita", middleName: "Reyes", lastName: "Domingo", sex: Sex.FEMALE,
+      email: "teresita.domingo@deped.gov.ph", contactNumber: "09272000075", specialization: "EDUKASYON SA PAGPAPAKATAO", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "", majorSpecialization: "EDUKASYON SA PAGPAPAKATAO", 
+      minorSpecialization: "", plantillaPosition: "TEACHER II", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1991-11-05"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    },
+    { 
+      employeeId: "2000076", deptCode: "SCI", firstName: "Roberto", middleName: "Cruz", lastName: "Alcantara", sex: Sex.MALE,
+      email: "roberto.alcantara@deped.gov.ph", contactNumber: "09282000076", specialization: "SCIENCE", 
+      undergraduateDegree: "BACHELOR OF SECONDARY EDUCATION", postgraduateDegree: "MASTER OF ARTS IN EDUCATION", majorSpecialization: "SCIENCE", 
+      minorSpecialization: "BIOLOGY", plantillaPosition: "MASTER TEACHER I", designation: "SUBJECT TEACHER", 
+      birthdate: new Date("1982-02-18"), personnelType: "TEACHING", functionalAssignment: "CLASSROOM TEACHING"
+    }
   ];
 
   for (const t of dummyTeachers) {
@@ -169,7 +253,7 @@ async function main() {
         birthdate: t.birthdate,
         personnelType: t.personnelType,
         functionalAssignment: t.functionalAssignment,
-        departmentId: deptId,
+        departments: { connect: [{ id: deptId }] },
         isActive: true,
         serviceStatus: "ACTIVE",
         natureOfAppointment: "REGULAR_PERMANENT",
@@ -179,6 +263,26 @@ async function main() {
       }
     });
     console.log(`Inserted dummy teacher ${t.employeeId} for department ${t.deptCode} (User ID: ${user.id})`);
+  }
+
+  // 3. Resolve the 3 no-department teachers
+  const idleTeachers = [
+    { employeeId: "1234501", deptCode: "MAPEH" }, // Jose Rizal
+    { employeeId: "1234502", deptCode: "SCI" },   // Apolinario Mabini
+    { employeeId: "1234503", deptCode: "SCI" },   // Melchora Aquino
+  ];
+
+  for (const idle of idleTeachers) {
+    const deptId = getDeptId(idle.deptCode);
+    if (deptId) {
+      await prisma.teacher.update({
+        where: { employeeId: idle.employeeId },
+        data: { departments: { connect: [{ id: deptId }] } }
+      });
+      console.log(`Updated idle teacher ${idle.employeeId} with department ${idle.deptCode}`);
+    } else {
+      console.warn(`Department ${idle.deptCode} not found for idle teacher ${idle.employeeId}`);
+    }
   }
 
   console.log("Seeding complete.");

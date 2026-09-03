@@ -2,6 +2,7 @@ import { PreviousSchool } from "@/features/enrollment/components/BeefSections";
 import { FileBadge2 } from "lucide-react";
 import { AcademicHistoryAccordion } from "@/shared/components/AcademicHistoryAccordion";
 import type { AcademicHistory } from "@/shared/components/AcademicHistoryAccordion";
+import { useSettingsStore } from "@/store/settings.slice";
 
 interface AcademicHistoryTabProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,6 +10,10 @@ interface AcademicHistoryTabProps {
 }
 
 export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
+  const activeSchoolYearLabel = useSettingsStore((s) => s.activeSchoolYearLabel);
+  const viewingSchoolYearLabel = useSettingsStore((s) => s.viewingSchoolYearLabel);
+  const targetYear = viewingSchoolYearLabel || activeSchoolYearLabel;
+
   if (!student) return null;
 
   return (
@@ -29,7 +34,7 @@ export function AcademicHistoryTab({ student }: AcademicHistoryTabProps) {
                 <AcademicHistoryAccordion
                   key={idx}
                   history={history}
-                  isDefaultOpen={idx === 0}
+                  isDefaultOpen={targetYear ? (history.school_year === targetYear || history.school_year.includes(targetYear) || targetYear.includes(history.school_year)) : idx === 0}
                 />
               ))}
             </div>

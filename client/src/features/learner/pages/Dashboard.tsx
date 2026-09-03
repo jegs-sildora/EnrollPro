@@ -491,8 +491,8 @@ export default function LearnerDashboard() {
                             <div className="mb-8 mt-0 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                               <div className="flex items-center gap-3">
                                 <div>
-                                  <h3 className="text-2xl font-bold text-gray-900 uppercase dark:text-foreground">
-                                    Official School Form 9 (SF9) - Historical Academic Records
+                                  <h3 className="text-2xl font-bold text-primary uppercase dark:text-foreground">
+                                    Historical Academic Records
                                   </h3>
                                 </div>
                               </div>
@@ -504,7 +504,13 @@ export default function LearnerDashboard() {
                                 <AcademicHistoryAccordion
                                   key={idx}
                                   history={history}
-                                  isDefaultOpen={history.status === "Active"}
+                                  isDefaultOpen={
+                                    history.status === "Active" || 
+                                    history.status === "ACTIVE" ||
+                                    history.school_year === data.activeSchoolYear ||
+                                    history.school_year.includes(data.activeSchoolYear) ||
+                                    data.activeSchoolYear.includes(history.school_year)
+                                  }
                                 />
                               ))
                             ) : (
@@ -532,7 +538,7 @@ export default function LearnerDashboard() {
                         <div id="sf1-section" className="bg-background border border-border shadow-sm rounded-sm p-6 mb-8 print:break-inside-avoid space-y-5">
                           <div className="bg-transparent pb-0 print:bg-transparent">
                             <div className="mb-8 mt-0 flex items-center gap-3">
-                              <h3 className="text-2xl font-bold text-gray-900 uppercase dark:text-foreground">
+                              <h3 className="text-2xl font-bold text-primary uppercase dark:text-foreground">
                                 Official Learner Profile
                               </h3>
                             </div>

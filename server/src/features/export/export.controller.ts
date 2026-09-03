@@ -735,7 +735,7 @@ export const exportSF7 = async (req: Request, res: Response) => {
     const teachers = await prisma.teacher.findMany({
       where: { isActive: true, serviceStatus: 'ACTIVE' },
       include: {
-        department: true,
+        departments: true,
         schedulePeriods: {
           where: { schoolYearId },
         },

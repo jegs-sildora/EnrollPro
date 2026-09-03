@@ -191,7 +191,7 @@ export async function index(req: Request, res: Response) {
 
     const teachers = await prisma.teacher.findMany({
       include: {
-        department: true,
+        departments: true,
         user: {
           select: {
             id: true,
@@ -234,7 +234,7 @@ export async function index(req: Request, res: Response) {
         indigenousCommunity: teacher.indigenousCommunity,
         natureOfAppointment: teacher.natureOfAppointment,
         fundingSource: teacher.fundingSource,
-        department: teacher.department?.code || null,
+        departments: teacher.departments.map(d => d.code),
         plantillaPosition: teacher.plantillaPosition,
         photoPath: teacher.photoPath,
         sex: teacher.sex,
@@ -314,7 +314,7 @@ export async function show(req: Request, res: Response) {
   try {
     const teacher = await prisma.teacher.findUnique({
       where: { id },
-      include: { department: true },
+      include: { departments: true },
     });
 
     if (!teacher) {
@@ -326,7 +326,7 @@ export async function show(req: Request, res: Response) {
         ...teacher,
         designationTitle: teacher.designation,
         subjects: [],
-        department: teacher.department?.code || null,
+        departments: teacher.departments.map(d => d.code),
         serviceStatus: teacher.serviceStatus,
         ancillaryRoles: teacher.ancillaryRoles,
       },
@@ -347,7 +347,7 @@ interface TeacherUpsertPayload {
   contactNumber?: string | null;
   sex: "MALE" | "FEMALE";
   specialization?: string | null;
-  departmentCode?: string | null;
+  departments?: string[];
   plantillaPosition?: string | null;
   birthdate?: string | null;
   personnelType?: string | null;
@@ -374,7 +374,7 @@ export async function store(req: Request, res: Response) {
       contactNumber,
       sex,
       specialization,
-      department,
+      departments,
       plantillaPosition,
       birthdate,
       personnelType,
@@ -418,7 +418,7 @@ export async function store(req: Request, res: Response) {
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
-    const deptCode = normalizeOptionalUpperText(department);
+    const deptCodes = (Array.isArray(departments) ? departments.map(d => normalizeOptionalUpperText(d)).filter(Boolean) : []) as string[];
 
     const teacher = await prisma.$transaction(async (tx) => {
       const defaultPasswordHash = await bcrypt.hash(password || "DepEd2026!", 10);
@@ -475,7 +475,7 @@ export async function store(req: Request, res: Response) {
           contactNumber: normalizedContactNumber,
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           specialization: normalizeOptionalUpperText(specialization),
-          department: deptCode ? { connect: { code: deptCode } } : undefined,
+          departments: deptCodes.length > 0 ? { connect: deptCodes.map(code => ({ code })) } : undefined,
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
           designation: "SUBJECT TEACHER",
           user: { connect: { id: upsertedUser.id } },
@@ -556,7 +556,7 @@ export async function update(req: Request, res: Response) {
       contactNumber,
       sex,
       specialization,
-      department,
+      departments,
       plantillaPosition,
       roles,
       serviceStatus,
@@ -603,7 +603,7 @@ export async function update(req: Request, res: Response) {
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
-    const deptCode = normalizeOptionalUpperText(department);
+    const deptCodes = (Array.isArray(departments) ? departments.map(d => normalizeOptionalUpperText(d)).filter(Boolean) : []) as string[];
 
     const updatedTeacher = await prisma.$transaction(async (tx) => {
       // 1. Update the User record if it exists (linked by employeeId)
@@ -635,9 +635,7 @@ export async function update(req: Request, res: Response) {
           contactNumber: normalizedContactNumber,
           sex: req.body.sex === "MALE" ? "MALE" : "FEMALE",
           specialization: normalizeOptionalUpperText(specialization),
-          department: deptCode
-            ? { connect: { code: deptCode } }
-            : { disconnect: true },
+          departments: { set: deptCodes.map(code => ({ code })) },
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
           ...(serviceStatus ? { serviceStatus, isActive: serviceStatus === "ACTIVE" } : {}),
           birthdate: parseDateOnly(birthdate),

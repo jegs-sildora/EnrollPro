@@ -32,7 +32,7 @@ export interface Teacher {
   sex: "MALE" | "FEMALE";
   designationTitle: string | null;
   specialization: string | null;
-  department: string | null;
+  departments: string[];
   plantillaPosition: string | null;
   undergraduateDegree: string | null;
   postgraduateDegree: string | null;

@@ -1059,7 +1059,7 @@ export default function Students() {
                         {acronym}
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                    <TooltipContent side="top" className={cn("px-3 py-2 border", getGradeLevelBadgeStyles(row.original.gradeLevel))}>
                       <p className="font-bold text-sm">{displayName}</p>
                     </TooltipContent>
                   </Tooltip>

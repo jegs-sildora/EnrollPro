@@ -499,7 +499,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
           schoolYearId: { lte: schoolYearId },
           gradeLevel: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } }
         },
-        include: { gradeLevel: true, schoolYear: true },
+        include: { gradeLevel: true, schoolYear: true, section: true },
         orderBy: { schoolYearId: 'asc' }
       });
       
@@ -510,6 +510,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         );
         return {
           grade_level: h.gradeLevel.name,
+          section_name: h.section?.name || null,
           school_year: h.schoolYear.yearLabel,
           status: "Completed",
           term_format: h.schoolYear.termFormat ?? "TRIMESTER",
@@ -545,6 +546,7 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
         });
         return {
           grade_level: record.gradeLevel ? record.gradeLevel.replace("GRADE_", "Grade ") : "Unknown",
+          section_name: record.section || null,
           school_year: record.schoolYear,
           status: "Completed",
           term_format: "TRIMESTER",

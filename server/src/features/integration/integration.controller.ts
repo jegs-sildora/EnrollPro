@@ -21,7 +21,7 @@ import { resolveActiveSchoolYearState } from "../school-year/services/active-sch
 type TeacherForFaculty = Prisma.TeacherGetPayload<{
   include: {
     _count: { select: { advisoryHistory: true } };
-    department: { select: { id: true; code: true; name: true } };
+    departments: { select: { id: true; code: true; name: true } };
     teacherDesignations: {
       include: {
         updatedBy: { select: { id: true; firstName: true; lastName: true } };
@@ -551,7 +551,7 @@ export async function listIntegrationFaculty(
       take: limit,
       include: {
         _count: { select: { advisoryHistory: true } },
-        department: {
+        departments: {
           select: {
             id: true,
             code: true,
@@ -607,9 +607,9 @@ export async function listIntegrationFaculty(
       majorSpecialization: teacher.majorSpecialization ?? null,
       minorSpecialization: teacher.minorSpecialization ?? null,
       isActive: teacher.isActive,
-      departmentId: teacher.departmentId ?? null,
-      departmentCode: teacher.department?.code ?? null,
-      departmentName: teacher.department?.name ?? null,
+      
+      departmentCode: teacher.departments?.[0]?.code ?? null,
+      departmentName: teacher.departments?.[0]?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
       schoolId: scope.schoolId,
       schoolName: scope.schoolName,

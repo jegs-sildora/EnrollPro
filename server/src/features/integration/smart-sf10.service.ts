@@ -75,7 +75,7 @@ export async function fetchSmartSf10ByLrn(lrn: string): Promise<SmartSf10Record[
         const response = await axios.get<unknown>(
           `${cleanBaseUrl}/api/integration/students/${encodeURIComponent(lrn)}/sf10-grades`,
           {
-            headers: { Authorization: `Bearer ${smartToken}` },
+            headers: { 'X-EnrollPro-API-Key': smartToken },
             timeout: 10_000,
           }
         );

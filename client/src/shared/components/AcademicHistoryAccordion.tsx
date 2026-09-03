@@ -19,6 +19,7 @@ export interface SubjectGrades {
 
 export interface AcademicHistory {
   grade_level: string;
+  section_name?: string | null;
   school_year: string;
   status: string;
   term_format?: string | null;
@@ -99,7 +100,7 @@ export function AcademicHistoryAccordion({
       T3: unifiedGrade,
       Q4: unifiedGrade,
       Final: unifiedGrade,
-      remarks: grades.every((grade) => grade.remarks === "Passed") ? "Passed" : "Failed",
+      remarks: unifiedGrade !== null ? (unifiedGrade >= 75 ? "Passed" : "Failed") : null,
     };
   };
 
@@ -173,7 +174,7 @@ export function AcademicHistoryAccordion({
       >
         <div className="flex items-center gap-2">
           <span className="text-base leading-tight font-bold text-foreground uppercase">
-            {history.grade_level} &bull; S.Y. {history.school_year}
+            {history.grade_level}{history.section_name ? ` - ${history.section_name}` : ''} &bull; S.Y. {history.school_year}
           </span>
         </div>
         <ChevronDown

@@ -169,7 +169,7 @@ class SmartSseBridge {
         {
           headers: {
             Accept: "text/event-stream",
-            Authorization: `Bearer ${config.token}`,
+            'X-EnrollPro-API-Key': config.token,
           },
           signal: controller.signal,
         },

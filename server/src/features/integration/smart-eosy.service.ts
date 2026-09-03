@@ -394,7 +394,7 @@ async function syncFinalSmartSectionOutcomesInternal(
           undefined,
           {
             params: { schoolYear: section.schoolYear.yearLabel },
-            headers: { Authorization: `Bearer ${smartToken}` },
+            headers: { 'X-EnrollPro-API-Key': smartToken },
             timeout: 10_000,
           },
         );

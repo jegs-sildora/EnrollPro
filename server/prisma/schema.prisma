@@ -88,7 +88,6 @@ model Teacher {
   photoPath           String?              @map("photo_path")
   plantillaPosition   String?              @map("plantilla_position")
   designation         String?
-  departmentId        Int?                 @map("department_id")
   sex                 Sex
   userId              Int?                 @unique(map: "uq_teachers_user_id") @map("user_id")
   serviceStatus       String               @default("ACTIVE") @map("service_status")
@@ -99,7 +98,7 @@ model Teacher {
   advisoryHistory     SectionAdviser[]
   teacherDesignations TeacherDesignation[]
   schedulePeriods     TeacherSchedulePeriod[]
-  department          Department?          @relation("DepartmentTeachers", fields: [departmentId], references: [id])
+  departments         Department[]         @relation("DepartmentTeachers")
   user                User?                @relation("UserTeacherProfile", fields: [userId], references: [id])
   historicalAdvisories EnrollmentHistory[]
 

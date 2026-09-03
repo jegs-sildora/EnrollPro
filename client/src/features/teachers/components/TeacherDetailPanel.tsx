@@ -108,7 +108,7 @@ const formSchema = z
       .regex(/^\d{7}$/, "Enter the 7-digit DepEd Employee ID.")
       .nullable(),
     plantillaPosition: z.string().min(1, "Select the DepEd position (plantilla)."),
-    department: z.string().optional().nullable(),
+    departments: z.array(z.string()).default([]),
     functionalAssignment: z.string().optional().nullable(),
     specialization: z.string().optional().nullable(),
     undergraduateDegree: z.string().optional().nullable(),
@@ -281,7 +281,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
       personnelType: null,
       employeeId: null,
       plantillaPosition: "",
-      department: "",
+      departments: [],
       functionalAssignment: "",
       specialization: "",
       undergraduateDegree: "",
@@ -311,7 +311,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
   useEffect(() => {
     setValue("personnelType", isFormTeachingStaff ? "TEACHING" : "NON_TEACHING", { shouldValidate: true });
     if (!isFormTeachingStaff) {
-      setValue("department", "");
+      setValue("departments", []);
     }
   }, [isFormTeachingStaff, setValue]);
 
@@ -340,7 +340,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         personnelType: toPersonnelType(teacher.personnelType),
         employeeId: teacher.employeeId || null,
         plantillaPosition: teacher.plantillaPosition === "MRF Coordinator" ? "" : (teacher.plantillaPosition || ""),
-        department: !isTeacherOrAdviser ? "" : (teacher.department || ""),
+        departments: !isTeacherOrAdviser ? [] : (teacher.departments || []),
         functionalAssignment: teacher.functionalAssignment || "",
         specialization: teacher.specialization || "",
         undergraduateDegree: teacher.undergraduateDegree || "",
@@ -369,7 +369,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         personnelType: null,
         employeeId: null,
         plantillaPosition: "",
-        department: "",
+        departments: [],
         functionalAssignment: "",
         specialization: "",
         undergraduateDegree: "",
@@ -453,7 +453,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         personnelType: data.personnelType,
         employeeId: data.employeeId,
         plantillaPosition: (data.plantillaPosition === "__NONE__" || data.plantillaPosition === "MRF Coordinator") ? "" : data.plantillaPosition,
-        department: data.department === "__NONE__" ? "" : data.department,
+        departments: data.departments,
         functionalAssignment: data.personnelType === "NON_TEACHING" ? data.functionalAssignment : null,
         specialization: data.specialization || "",
         undergraduateDegree: data.undergraduateDegree || "",
@@ -701,7 +701,7 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         <ViewRow label="Personnel Type" value={teacher.personnelType === "TEACHING" ? "Teaching" : teacher.personnelType === "NON_TEACHING" ? "Non-Teaching" : "—"} />
                         <ViewRow label="Position" value={teacher.plantillaPosition} />
                         {teacher.personnelType === "TEACHING" && (
-                          <ViewRow label="Subject Area" value={DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === teacher.department)?.label || teacher.department} />
+                          <ViewRow label="Subject Area" value={(teacher.departments || []).map(d => DEPED_TEACHER_DEPARTMENT_OPTIONS.find(opt => opt.value === d)?.label || d).join(", ")} />
                         )}
                         {teacher.personnelType === "NON_TEACHING" && (
                           <ViewRow label="Office" value={teacher.functionalAssignment} />
@@ -1078,26 +1078,22 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                         </div>
 
                         {formPersonnelType === "TEACHING" && (
-                          <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t border-border">
+                          <div className="grid gap-4 mt-4 pt-4 border-t border-border">
                             <div className="space-y-1.5">
                               <Label className="text-base font-bold uppercase text-foreground">Subject Area / Major</Label>
                               <Controller
-                                name="department"
+                                name="departments"
                                 control={control}
                                 render={({ field }) => (
-                                  <Select onValueChange={(v) => field.onChange(v === "__NONE__" ? "" : v)} value={field.value || "__NONE__"}>
-                                    <SelectTrigger disabled={!isEditing} className="font-bold text-base leading-tight h-10 uppercase">
-                                      <SelectValue placeholder="Search department (e.g., Mathematics, Science, English)" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[300px]">
-                                      <SelectItem value="__NONE__">No subject area set yet</SelectItem>
-                                      {DEPED_TEACHER_DEPARTMENT_OPTIONS.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                          {opt.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <MultiSearchableCombobox
+                                    items={[...DEPED_TEACHER_DEPARTMENT_OPTIONS]}
+                                    value={field.value || []}
+                                    onChange={(value) => field.onChange(value)}
+                                    disabled={!isEditing}
+                                    placeholder="Select subject areas"
+                                    searchPlaceholder="Search subject areas..."
+                                    className="w-full font-bold text-base leading-tight bg-background text-foreground border-border"
+                                  />
                                 )}
                               />
                             </div>

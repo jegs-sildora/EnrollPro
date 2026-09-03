@@ -19,7 +19,7 @@ const MAX_PAGE_SIZE = 200;
 type TeacherForDefault = Prisma.TeacherGetPayload<{
   include: {
     _count: { select: { advisoryHistory: true } };
-    department: { select: { id: true; code: true; name: true } };
+    departments: { select: { id: true; code: true; name: true } };
     teacherDesignations: {
       include: {
         advisorySection: {
@@ -278,13 +278,13 @@ export async function listDefaultFaculty(
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
       _count: { select: { advisoryHistory: true } },
-      department: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
+      departments: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
         },
-      },
       teacherDesignations: {
         where: { schoolYearId: scope.schoolYearId },
         include: {
@@ -321,9 +321,9 @@ export async function listDefaultFaculty(
       contactNumber: teacher.contactNumber,
       specialization: teacher.specialization,
       isActive: teacher.isActive,
-      departmentId: teacher.departmentId ?? null,
-      departmentCode: teacher.department?.code ?? null,
-      departmentName: teacher.department?.name ?? null,
+      
+      departmentCode: teacher.departments?.[0]?.code ?? null,
+      departmentName: teacher.departments?.[0]?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
       isClassAdviser: designation?.isClassAdviser ?? false,
       effectiveFrom: designation?.effectiveFrom ?? null,
