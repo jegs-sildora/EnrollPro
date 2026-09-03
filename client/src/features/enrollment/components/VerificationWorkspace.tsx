@@ -1,32 +1,24 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { motionTokens } from "@/shared/lib/motion";
 import { isAxiosError } from "axios";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   Search,
   CheckCircle2,
   Loader2,
-  FileText,
-  User as UserIcon,
   Clock,
-  School,
-  AlertTriangle,
-  Trash2,
-  HelpCircle
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "@/shared/api/axiosInstance";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Card, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { Switch } from "@/shared/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn, getGradeLevelBadgeStyles, formatGradeLevel } from "@/shared/lib/utils";
@@ -146,8 +138,8 @@ export function VerificationWorkspace() {
       setCancelModalOpen(false);
       setSelectedAppId(null);
     },
-    onError: (err: any) => {
-      const message = isAxiosError(err) ? err.response?.data?.message : err.message;
+    onError: (err: unknown) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err instanceof Error ? err.message : "Unknown error";
       sileo.error({
         title: "Cancellation Failed",
         description: message || "Failed to cancel application."
@@ -168,11 +160,35 @@ export function VerificationWorkspace() {
       setRestoreModalOpen(false);
       setSelectedAppId(null);
     },
-    onError: (err: any) => {
-      const message = isAxiosError(err) ? err.response?.data?.message : err.message;
+    onError: (err: unknown) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err instanceof Error ? err.message : "Unknown error";
       sileo.error({
         title: "Restore Failed",
         description: message || "Failed to restore application."
+      });
+    }
+  });
+
+  const [revertModalOpen, setRevertModalOpen] = useState(false);
+  const [revertReason, setRevertReason] = useState("");
+
+  const revertMutation = useMutation({
+    mutationFn: () => api.patch(`/enrollment/${selectedAppId}/revert`, { reason: revertReason }),
+    onSuccess: () => {
+      sileo.success({
+        title: "Enrollment Reverted",
+        description: `${selectedApp?.learner.firstName} has been reverted to the For Review queue.`
+      });
+      queryClient.invalidateQueries({ queryKey: ["enrollment", "pending-verifications"] });
+      setRevertModalOpen(false);
+      setRevertReason("");
+      setSelectedAppId(null);
+    },
+    onError: (err: unknown) => {
+      const message = isAxiosError(err) ? err.response?.data?.message : err instanceof Error ? err.message : "Unknown error";
+      sileo.error({
+        title: "Revert Failed",
+        description: message || "Failed to revert enrollment."
       });
     }
   });
@@ -789,59 +805,46 @@ export function VerificationWorkspace() {
                         </div>
                       </VerificationRow>
 
-                      {/* Section 4: Required Documents Verification */}
-                      <VerificationRow
-                        label={
-                          <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help">Physical SF9 (Report Card)</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Original report card signed by previous school principal.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        }
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="sf9-switch"
+                      {/* Section 4: Required Documents Verification (Checklist) */}
+                      <div className="w-full p-4 sm:p-6 border-t border-border/50 flex flex-col gap-5">
+                        <h4 className="text-sm font-bold text-primary uppercase tracking-tight">Required Documents</h4>
+                        
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="sf9-checkbox"
                             checked={sf9Verified}
-                            onCheckedChange={setSf9Verified}
+                            onCheckedChange={(checked) => setSf9Verified(checked === true)}
                             disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                            className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
-                          <label htmlFor="sf9-switch" className="text-base font-bold cursor-pointer">
-                            {sf9Verified ? "Verified" : "Unverified"}
-                          </label>
+                          <div className="flex flex-col gap-0.5">
+                            <label htmlFor="sf9-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                              Physical SF9 Verified
+                            </label>
+                            <span className="text-sm text-foreground leading-snug">
+                              Original report card signed by previous school principal.
+                            </span>
+                          </div>
                         </div>
-                      </VerificationRow>
-                      <VerificationRow
-                        label={
-                          <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help">PSA Birth Certificate</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Clear copy of Philippine Statistics Authority issued certificate.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        }
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="psa-switch"
+
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="psa-checkbox"
                             checked={psaVerified}
-                            onCheckedChange={setPsaVerified}
+                            onCheckedChange={(checked) => setPsaVerified(checked === true)}
                             disabled={isHistoricalReadOnly || selectedApp.status === "READY_FOR_SECTIONING"}
+                            className="mt-1 h-5 w-5 rounded-sm border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                           />
-                          <label htmlFor="psa-switch" className="text-base font-bold cursor-pointer">
-                            {psaVerified ? "Verified" : "Unverified"}
-                          </label>
+                          <div className="flex flex-col gap-0.5">
+                            <label htmlFor="psa-checkbox" className="text-base font-bold text-foreground cursor-pointer select-none">
+                              PSA Birth Certificate Verified
+                            </label>
+                            <span className="text-sm text-foreground leading-snug">
+                              Clear copy of Philippine Statistics Authority issued certificate.
+                            </span>
+                          </div>
                         </div>
-                      </VerificationRow>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -902,6 +905,17 @@ export function VerificationWorkspace() {
                         </Button>
                       )}
                     </div>
+                  </div>
+                ) : selectedApp.status === "READY_FOR_SECTIONING" ? (
+                  <div className="p-4 sm:p-6 border-t border-border bg/10 flex items-center w-full">
+                    <Button
+                      variant="ghost"
+                      className="h-14 w-full text-sm sm:text-base leading-tight font-bold uppercase text-orange-600 hover:text-orange-700 hover:bg-orange-50 border border-orange-200"
+                      onClick={() => setRevertModalOpen(true)}
+                      disabled={processing || isHistoricalReadOnly}
+                    >
+                      Revert to 'For Review'
+                    </Button>
                   </div>
                 ) : null}
               </>
@@ -1070,6 +1084,45 @@ export function VerificationWorkspace() {
         confirmText="Confirm Restore"
         loading={restoreMutation.isPending}
         onConfirm={() => restoreMutation.mutate()}
+      />
+
+      <ConfirmationModal
+        open={revertModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRevertModalOpen(false);
+            setRevertReason("");
+          }
+        }}
+        title="Revert Enrollment Status"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-foreground">
+              You are about to reverse the enrollment for{" "}
+              <strong>
+                {selectedApp?.learner.lastName}, {selectedApp?.learner.firstName}
+              </strong>
+              . This will remove them from the 'Enrolled' list and place them back into the 'For Review' queue. They will not be available for Section Assignment.
+            </p>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-bold text-foreground">Reversal Reason</label>
+              <Select value={revertReason} onValueChange={setRevertReason}>
+                <SelectTrigger className="w-full bg-muted font-bold text-base h-12 uppercase">
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Clerical / Encoding Error" className="font-bold uppercase">Clerical / Encoding Error</SelectItem>
+                  <SelectItem value="Pending Additional Document Verification" className="font-bold uppercase">Pending Additional Document Verification</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        }
+        variant="danger"
+        confirmText="Confirm Reversal"
+        confirmDisabled={!revertReason}
+        loading={revertMutation.isPending}
+        onConfirm={() => revertMutation.mutate()}
       />
     </div>
   );

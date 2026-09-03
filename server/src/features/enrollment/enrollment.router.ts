@@ -8,6 +8,7 @@ import {
   directEncodeWalkIn,
   cancelApplication,
   restoreApplication,
+  revertApplication,
 } from "./enrollment.controller.js";
 
 const router: Router = Router();
@@ -45,6 +46,13 @@ router.patch(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   restoreApplication,
+);
+
+router.patch(
+  "/:applicationId/revert",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  revertApplication,
 );
 
 router.post(
