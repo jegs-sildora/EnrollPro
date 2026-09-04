@@ -36,6 +36,8 @@ export default function EnrollmentSuccess({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "F5" || (e.ctrlKey && e.key === "r") || (e.metaKey && e.key === "r")) {
         e.preventDefault();

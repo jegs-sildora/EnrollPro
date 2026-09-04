@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --exclude \"uploads/**\" src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "test": "tsx src/scratch.ts",
+    "restore": "git checkout server/src/features/integration/integration.default.controller.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:migrate": "npx prisma migrate dev",

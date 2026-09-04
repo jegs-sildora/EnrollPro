@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, ScrollRestoration } from "react-router";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import api from "@/shared/api/axiosInstance";
@@ -216,6 +216,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
 
   return (
     <UnsavedChangesProvider>
+      <ScrollRestoration />
       {children ? <>{children}</> : <Outlet />}
     </UnsavedChangesProvider>
   );

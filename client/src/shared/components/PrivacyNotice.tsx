@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -23,6 +23,11 @@ export default function PrivacyNotice({
   const [agreed, setAgreed] = useState(false);
   const [hasScrolledNotice, setHasScrolledNotice] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
+
   const { schoolName } = useSettingsStore();
 
   const handleNoticeScroll = (e: React.UIEvent<HTMLDivElement>) => {

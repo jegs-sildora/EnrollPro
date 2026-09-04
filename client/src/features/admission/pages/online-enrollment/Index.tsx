@@ -52,11 +52,13 @@ export default function Apply() {
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
     setHasConsented(true);
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const handleIntakeChoice = (choice: "NEW" | "RETURNING") => {
     sessionStorage.setItem(INTAKE_KEY, choice);
     setIntakeChoice(choice);
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const handleReset = () => {
@@ -65,6 +67,7 @@ export default function Apply() {
     setHasConsented(false);
     setIntakeChoice(null);
     setSubmittedSuccessData(null);
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const handleBackHome = () => {
@@ -323,8 +326,14 @@ export default function Apply() {
                       exit={{ opacity: 0, scale: 1.02 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}>
                       <EnrollmentForm
-                        onBack={() => setIntakeChoice(null)}
-                        onSuccess={(data) => setSubmittedSuccessData(data)}
+                        onBack={() => {
+                          setIntakeChoice(null);
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                        }}
+                        onSuccess={(data) => {
+                          setSubmittedSuccessData(data);
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                        }}
                       />
                     </motion.div>
                   )}

@@ -130,6 +130,7 @@ async function fetchSmartLearnerRows(
   schoolYearId: number,
   skip = 0,
   take = MAX_PAGE_SIZE,
+  learnerType?: "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING"
 ) {
   return prisma.enrollmentApplication.findMany({
     where: {
@@ -137,6 +138,7 @@ async function fetchSmartLearnerRows(
       // Include dropped students so SMART can reflect their status in class records
       status: { in: OFFICIAL_ENROLLMENT_STATUSES },
       enrollmentRecord: { isNot: null },
+      ...(learnerType ? { learnerType } : {}),
     },
     include: {
       learner: {
@@ -446,6 +448,104 @@ export async function listDefaultSmartStudents(
 
   // DPA: SMART is a grading system — birthdate, sex, userId, portal account
   // are NOT included. Only LRN, name, grade/section, and EOSY/drop-out status.
+  res.json({
+    data: applications.map((application) => ({
+      enrollmentApplicationId: application.id,
+      enrollmentStatus: application.status,
+      lrn: application.learner.lrn,
+      isPendingLrn: application.learner.isPendingLrnCreation,
+      fullName: buildLearnerName(application.learner),
+      firstName: application.learner.firstName,
+      lastName: application.learner.lastName,
+      middleName: application.learner.middleName,
+      extensionName: application.learner.extensionName,
+      gradeLevel: application.gradeLevel,
+      section: application.enrollmentRecord?.section ?? null,
+      enrolledAt: application.enrollmentRecord?.enrolledAt ?? null,
+      eosyStatus: application.enrollmentRecord?.eosyStatus ?? null,
+      dropOutDate: application.enrollmentRecord?.dropOutDate ?? null,
+      dropOutReason: application.enrollmentRecord?.dropOutReason ?? null,
+      transferOutDate: application.enrollmentRecord?.transferOutDate ?? null,
+      schoolYear: {
+        id: scope.schoolYearId,
+        yearLabel: scope.schoolYearLabel,
+      },
+    })),
+    meta: {
+      sourceSystem: "SMART",
+      generatedAt: new Date().toISOString(),
+      scopeSchoolYearId: scope.schoolYearId,
+      scopeSchoolYearLabel: scope.schoolYearLabel,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  });
+}
+
+
+export async function listDefaultSmartTransferees(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const scopeResult = await resolveSchoolYearScope(req);
+  if ("status" in scopeResult) {
+    res.status(scopeResult.status).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: scopeResult.message,
+      },
+    });
+    return;
+  }
+
+  const { scope } = scopeResult;
+
+  // Pagination
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: scope.schoolYearId },
+    select: { status: true },
+  });
+
+  if (schoolYear?.status === "ARCHIVED") {
+    res.json({
+      data: [],
+      meta: {
+        sourceSystem: "SMART",
+        source: "ENROLLMENT_HISTORY",
+        generatedAt: new Date().toISOString(),
+        scopeSchoolYearId: scope.schoolYearId,
+        scopeSchoolYearLabel: scope.schoolYearLabel,
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+        message: "Archived transferees not yet supported in integration feed.",
+      },
+    });
+    return;
+  }
+
+  const [total, applications] = await Promise.all([
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId: scope.schoolYearId,
+        status: { in: OFFICIAL_ENROLLMENT_STATUSES },
+        enrollmentRecord: { isNot: null },
+        learnerType: "TRANSFEREE",
+      },
+    }),
+    fetchSmartLearnerRows(scope.schoolYearId, skip, limit, "TRANSFEREE"),
+  ]);
+
   res.json({
     data: applications.map((application) => ({
       enrollmentApplicationId: application.id,

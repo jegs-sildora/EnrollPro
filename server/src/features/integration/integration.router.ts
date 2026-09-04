@@ -13,6 +13,7 @@ import {
   listDefaultFaculty,
   listDefaultMrfIdentities,
   listDefaultSmartStudents,
+  listDefaultSmartTransferees,
   listIntegrationStaff,
 } from "./integration.default.controller.js";
 import { requireIntegrationApiKey } from "./integration-api-key.middleware.js";
@@ -40,6 +41,7 @@ router.get("/sections", requireAnyKey, listIntegrationSections);
 router.get("/sections/:sectionId/learners", requireAnyKey, listSectionLearners);
 router.get("/default/faculty", requireAnyKey, listDefaultFaculty);
 router.get("/default/smart/students", requireAnyKey, listDefaultSmartStudents);
+router.get("/default/smart/transferees", requireAnyKey, listDefaultSmartTransferees);
 router.get("/default/aims/context", requireAnyKey, listDefaultAimsContext);
 router.get(
   "/default/mrf/identities",

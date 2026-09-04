@@ -35,6 +35,7 @@ Last reviewed: 2026-09-01
 | [School Year Lifecycle](features/integration/ENROLLPRO-SCHOOL-YEAR-LIFECYCLE.md) | Architecture | BOSY, classes ongoing, EOSY, rollover, and downstream refresh order |
 | [Subsystem Quick Start](features/integration/SUBSYSTEM_API_QUICK_START.md) | Companion Teams | Minimum setup for SMART, ATLAS, AIMS, and MRF |
 | [SMART API Guide](features/integration/SMART_API_GUIDE.md) | SMART and EnrollPro Teams | Identity context and final academic outcome exchange |
+| [SMART Transferee API](features/integration/SMART-TRANSFEREE-API.md) | SMART and EnrollPro Teams | Dedicated endpoint for synchronizing transferee learners |
 | [ATLAS API Guide](features/integration/ATLAS_API_GUIDE.md) | ATLAS and EnrollPro Teams | Faculty context and schedule synchronization |
 | [AIMS API Guide](features/integration/AIMS_API_GUIDE.md) | AIMS and EnrollPro Teams | Learner and class context for interventions |
 | [SMART School Year Rollover](features/integration/SMART-SCHOOL-YEAR-ROLLOVER.md) | SMART and EnrollPro Teams | EOSY publication, grade history, new-year gradebooks, and roster reconciliation |

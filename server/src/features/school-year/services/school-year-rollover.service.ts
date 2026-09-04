@@ -399,14 +399,10 @@ async function getReadiness(
     }
   }
 
-  const allSectionsFinalized = sourceYear.sections.every(s => s.isEosyFinalized);
+  const allSectionsFinalized = sourceYear.sections.every(s => s.isEosyFinalized || s.enrollmentRecords.length === 0);
   const sf6Status = await getSchoolFormArtifactStatus("SF6", schoolYearId, null, client);
 
-  if (allSectionsFinalized && !sf6Status.recorded) {
-    globalBlockers.push({ code: "SF6_NOT_RECORDED", message: "School Form 6 has not been generated and finalized." });
-  } else if (sf6Status.recorded && !sf6Status.current) {
-    globalBlockers.push({ code: "SF6_STALE", message: "School Form 6 is stale and needs to be regenerated." });
-  }
+  // Removed SF6 blockers as per user request
 
   if (sourceYear.yearLabel) {
     try {
@@ -425,7 +421,7 @@ async function getReadiness(
     }
   }
 
-  const ready = globalBlockers.length === 0 && blockers.length === 0 && allSectionsFinalized && sf6Status.current;
+  const ready = globalBlockers.length === 0 && blockers.length === 0 && allSectionsFinalized;
   return {
     ready,
     schoolYearFinalized: sourceYear.isEosyFinalized,

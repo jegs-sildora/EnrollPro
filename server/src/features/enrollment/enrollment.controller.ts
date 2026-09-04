@@ -455,7 +455,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
 
       // 2. Create Application
       const isTemporarilyEnrolled = !(hasSf9 && hasPsa);
-      const applicantType = learnerType === "NEW_ENROLLEE" ? "REGULAR" : learnerType;
+      const applicantType = (assignedProgram as ApplicantType) || "REGULAR";
 
       const application = await tx.enrollmentApplication.create({
         data: {
@@ -463,6 +463,7 @@ export async function directEncodeWalkIn(req: Request, res: Response) {
           schoolYearId,
           gradeLevelId,
           applicantType,
+          learnerType,
           assignedProgram: assignedProgram || null,
           isLateEnrollee: intakeContext.systemPhase === "CLASSES_ONGOING",
           admissionChannel: "F2F",

@@ -290,10 +290,12 @@ export default function EnrollmentForm({
   });
 
   const scrollToTopInstant = () => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   };
 
-
+  useEffect(() => {
+    scrollToTopInstant();
+  }, []);
 
   // Auto-save draft on every change
   useEffect(() => {

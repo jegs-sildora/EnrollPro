@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -19,6 +20,10 @@ interface IntakeChoiceProps {
 }
 
 export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center space-y-2">
